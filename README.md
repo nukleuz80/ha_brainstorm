@@ -90,13 +90,13 @@ title: Brainstorm Hub
 
 #### Variante A: Interaktiver Dialog-Modus (Empfohlen)
 Triggere den Dialog per Sprachbefehl, Szene oder Alexa-Routine:
-> 🗣️ *„Alexa, Neue Idee“*  
+> 🗣️ *„Alexa, Neue Idee“* oder *„Alexa, Brainstorm“*  
 > 🤖 **Alexa:** *„Was möchtest du notieren?“*  
 > 🗣️ **Du:** *„Im Garten müssen die Rosen geschnitten werden.“*  
 > 🤖 **Alexa:** *„Zu Brainstorm hinzugefügt unter Haus & Garten.“*
 
 #### Variante B: Schnelle Direktbefehle
-Direkt in einem Satz sprechen (Automation stoppt eventuelle Musik-Wiedergabe automatisch):
+Direkt in einem Satz sprechen (Automation sendet automatisch einen internen Stopp-Befehl für eventuell gestartete Skills/Musik und bestätigt direkt):
 - 🗣️ *„Alexa, **Idee** Rasensprenger reparieren.“* ➔ `Haus & Garten`
 - 🗣️ *„Alexa, **Notiere** Kellerlicht dimmen.“* ➔ `Smarthome`
 - 🗣️ *„Alexa, **Merke dir für den Garten** Tomaten düngen.“* ➔ `Haus & Garten`
