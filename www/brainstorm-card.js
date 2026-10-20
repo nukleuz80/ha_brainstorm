@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.1.0 - Multi-step Backend Options, Dedicated Quick-Add-Category Button, Pills Wrapping, Completed Ideas View
+ * Version 1.2.0 - Two-tier input layout: Category toolbar with Auto & Quick-Add above, wide input & submit below
  */
 class BrainstormCard extends HTMLElement {
   constructor() {
@@ -269,7 +269,79 @@ class BrainstormCard extends HTMLElement {
           padding: 3px 9px;
           border-radius: 12px;
         }
-        /* Input Bar */
+        /* Input & Category Toolbar */
+        .input-section {
+          margin-bottom: 16px;
+        }
+        .cat-toolbar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+          margin-bottom: 8px;
+        }
+        .cat-toolbar-left {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex: 1 1 auto;
+          min-width: 0;
+        }
+        .cat-toolbar-label {
+          font-size: 0.85rem;
+          font-weight: 500;
+          color: var(--secondary-text-color, #757575);
+          white-space: nowrap;
+          flex-shrink: 0;
+        }
+        select.cat-select {
+          flex: 1 1 auto;
+          min-width: 140px;
+          max-width: 280px;
+          border: 1px solid var(--divider-color, rgba(0, 0, 0, 0.12));
+          background: var(--card-background-color, #ffffff);
+          font-size: 0.85rem;
+          font-weight: 500;
+          color: var(--primary-text-color, #212121);
+          border-radius: 8px;
+          padding: 6px 10px;
+          outline: none;
+          cursor: pointer;
+          box-sizing: border-box;
+          transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        select.cat-select:focus {
+          border-color: var(--primary-color, #03a9f4);
+          box-shadow: 0 0 0 2px var(--primary-color-alpha, rgba(3, 169, 244, 0.2));
+        }
+        .cat-add-btn {
+          flex: 0 0 auto;
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          background: var(--secondary-background-color, rgba(0, 0, 0, 0.04));
+          border: 1px dashed var(--divider-color, rgba(0, 0, 0, 0.2));
+          color: var(--primary-color, #03a9f4);
+          border-radius: 8px;
+          padding: 6px 10px;
+          font-size: 0.82rem;
+          font-weight: 600;
+          cursor: pointer;
+          box-sizing: border-box;
+          transition: all 0.15s ease;
+          white-space: nowrap;
+        }
+        .cat-add-btn:hover {
+          background: var(--primary-color-alpha, rgba(3, 169, 244, 0.1));
+          border-color: var(--primary-color, #03a9f4);
+        }
+        .cat-add-btn:active {
+          transform: scale(0.96);
+        }
+        .plus-icon {
+          font-size: 0.85rem;
+          line-height: 1;
+        }
         .input-container {
           display: flex;
           align-items: center;
@@ -278,7 +350,6 @@ class BrainstormCard extends HTMLElement {
           border: 1px solid var(--divider-color, rgba(0, 0, 0, 0.1));
           border-radius: 12px;
           padding: 6px 8px;
-          margin-bottom: 16px;
           width: 100%;
           box-sizing: border-box;
           transition: border-color 0.2s, box-shadow 0.2s;
@@ -296,48 +367,11 @@ class BrainstormCard extends HTMLElement {
           font-size: 0.95rem;
           color: var(--primary-text-color, #212121);
           outline: none;
-          padding: 8px 4px;
+          padding: 8px 6px;
           box-sizing: border-box;
         }
         input[type="text"]::placeholder {
           color: var(--secondary-text-color, #757575);
-        }
-        select.cat-select {
-          flex: 0 0 auto;
-          max-width: 125px;
-          border: none;
-          background: var(--card-background-color, #ffffff);
-          font-size: 0.85rem;
-          color: var(--secondary-text-color, #555);
-          border-radius: 8px;
-          padding: 6px 8px;
-          outline: none;
-          cursor: pointer;
-          box-sizing: border-box;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-        .cat-add-btn {
-          flex: 0 0 auto;
-          background: var(--card-background-color, #ffffff);
-          border: 1px solid var(--divider-color, rgba(0, 0, 0, 0.12));
-          color: var(--primary-color, #03a9f4);
-          border-radius: 8px;
-          height: 36px;
-          width: 36px;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 0.95rem;
-          box-sizing: border-box;
-          transition: background 0.15s, transform 0.1s;
-        }
-        .cat-add-btn:hover {
-          background: var(--primary-color-alpha, rgba(3, 169, 244, 0.12));
-        }
-        .cat-add-btn:active {
-          transform: scale(0.94);
         }
         button.send-btn {
           flex: 0 0 auto;
@@ -345,8 +379,8 @@ class BrainstormCard extends HTMLElement {
           color: white;
           border: none;
           border-radius: 8px;
-          padding: 0 12px;
-          height: 36px;
+          padding: 0 16px;
+          height: 38px;
           cursor: pointer;
           font-weight: 600;
           display: flex;
@@ -363,22 +397,15 @@ class BrainstormCard extends HTMLElement {
           transform: scale(0.96);
         }
         @media (max-width: 440px) {
-          .input-container {
-            flex-wrap: wrap;
-          }
-          input[type="text"] {
-            width: 100%;
-            flex: 1 1 100%;
+          .cat-toolbar {
+            gap: 6px;
           }
           select.cat-select {
-            flex: 1 1 auto;
-            max-width: none;
-          }
-          .cat-add-btn {
-            flex: 0 0 auto;
+            min-width: 110px;
           }
           button.send-btn {
-            flex: 0 0 auto;
+            padding: 0 10px;
+            font-size: 0.85rem;
           }
         }
         /* Filter Pills */
@@ -620,19 +647,30 @@ class BrainstormCard extends HTMLElement {
           <div class="badge" id="badgeCount">0 Ideen</div>
         </div>
 
-        <div class="input-container">
-          <input 
-            type="text" 
-            id="ideaInput" 
-            placeholder="Blitz-Idee tippen... (z.B. 'Garten: Baum schneiden')" 
-          />
-          <select class="cat-select" id="catSelect">
-            <option value="auto">Auto (Erkennen)</option>
-          </select>
-          <button class="cat-add-btn" id="quickAddCatBtn" title="Neue Kategorie anlegen">➕</button>
-          <button class="send-btn" id="sendBtn">
-            <span>Hinzufügen</span>
-          </button>
+        <div class="input-section">
+          <div class="cat-toolbar">
+            <div class="cat-toolbar-left">
+              <span class="cat-toolbar-label">Kategorie:</span>
+              <select class="cat-select" id="catSelect">
+                <option value="auto">Auto (Erkennen)</option>
+              </select>
+            </div>
+            <button class="cat-add-btn" id="quickAddCatBtn" title="Neue Kategorie anlegen">
+              <span class="plus-icon">➕</span>
+              <span class="btn-text">Kategorie</span>
+            </button>
+          </div>
+
+          <div class="input-container">
+            <input 
+              type="text" 
+              id="ideaInput" 
+              placeholder="Blitz-Idee tippen... (z.B. 'Garten: Baum schneiden')" 
+            />
+            <button class="send-btn" id="sendBtn">
+              <span>Hinzufügen</span>
+            </button>
+          </div>
         </div>
 
         <div class="pills" id="pillsContainer"></div>
