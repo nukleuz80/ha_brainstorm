@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.5 - Dynamic Home Assistant Theme colors & color mode switcher
+ * Version 1.4.6 - Visual Card Configuration Editor (ha-form & interactive options)
  */
 class BrainstormCard extends HTMLElement {
   constructor() {
@@ -12,6 +12,18 @@ class BrainstormCard extends HTMLElement {
     this._config = {
       title: "Brainstorm Hub",
       sensor: "sensor.brainstorm_ideen_ubersicht",
+      color_mode: "theme",
+      default_category: "all",
+      max_items: 0,
+      show_quick_input: true,
+      show_categories: true,
+      show_badge: true,
+      show_mindmap_button: true,
+      show_color_toggle: true,
+      show_source_icons: true,
+      show_timestamps: true,
+      allow_edit: true,
+      allow_delete: true,
     };
     let savedColorMode = "theme";
     try {
@@ -25,10 +37,26 @@ class BrainstormCard extends HTMLElement {
     this._isDialogOpen = false;
   }
 
-  static getStubConfig() {
+  static async getConfigElement() {
+    return document.createElement("brainstorm-card-editor");
+  }
+
+  static getStubConfig(hass) {
     return {
       title: "Brainstorm Hub",
       sensor: "sensor.brainstorm_ideen_ubersicht",
+      color_mode: "theme",
+      default_category: "all",
+      max_items: 0,
+      show_quick_input: true,
+      show_categories: true,
+      show_badge: true,
+      show_mindmap_button: true,
+      show_color_toggle: true,
+      show_source_icons: true,
+      show_timestamps: true,
+      allow_edit: true,
+      allow_delete: true,
     };
   }
 
@@ -38,13 +66,29 @@ class BrainstormCard extends HTMLElement {
       {
         title: "Brainstorm Hub",
         sensor: "sensor.brainstorm_ideen_ubersicht",
+        color_mode: "theme",
+        default_category: "all",
+        max_items: 0,
+        show_quick_input: true,
+        show_categories: true,
+        show_badge: true,
+        show_mindmap_button: true,
+        show_color_toggle: true,
+        show_source_icons: true,
+        show_timestamps: true,
+        allow_edit: true,
+        allow_delete: true,
       },
       config
     );
     if (config.color_mode) {
       this._colorMode = config.color_mode;
     }
+    if (config.default_category && (!this._initialized || this._selectedCategory === "all")) {
+      this._selectedCategory = config.default_category;
+    }
     this._lastUpdated = null; // Force refresh on config change
+    this._lastColorMode = null;
     if (this._initialized) {
       this._updateContent();
     }
@@ -1194,17 +1238,17 @@ class BrainstormCard extends HTMLElement {
                 <path d="M232 366 C232 366, 238 382, 256 382 C274 382, 280 366, 280 366 Z" fill="#4a5568"/>
               </svg>
             </div>
-            <span id="cardTitle">${this._config.title}</span>
+            <span id="cardTitle">${this._config.title !== undefined ? this._config.title : "Brainstorm Hub"}</span>
           </div>
           <div class="header-right">
-            <div class="badge" id="badgeCount">0 Ideen</div>
-            <button class="color-mode-btn" id="cardColorModeBtn" title="${this._colorMode === 'theme' ? 'Farbmodus: Theme-Farben aktiv (Klicken für Bunt)' : 'Farbmodus: Bunt aktiv (Klicken für Theme-Farben)'}">${this._colorMode === 'theme' ? '🎨' : '🌈'}</button>
-            <button class="view-toggle-btn" id="viewToggleBtn" title="Mindmap als Layer öffnen">🧠 Mindmap</button>
+            <div class="badge" id="badgeCount" style="display: ${this._config.show_badge !== false ? "inline-flex" : "none"};">0 Ideen</div>
+            <button class="color-mode-btn" id="cardColorModeBtn" style="display: ${this._config.show_color_toggle !== false ? "flex" : "none"};" title="${this._colorMode === 'theme' ? 'Farbmodus: Theme-Farben aktiv (Klicken für Bunt)' : 'Farbmodus: Bunt aktiv (Klicken für Theme-Farben)'}">${this._colorMode === 'theme' ? '🎨' : '🌈'}</button>
+            <button class="view-toggle-btn" id="viewToggleBtn" style="display: ${this._config.show_mindmap_button !== false ? "flex" : "none"};" title="Mindmap als Layer öffnen">🧠 Mindmap</button>
           </div>
         </div>
 
         <div id="listViewWrap">
-          <div class="input-section">
+          <div class="input-section" style="display: ${this._config.show_quick_input !== false ? "block" : "none"};">
             <div class="cat-toolbar">
               <div class="cat-toolbar-left">
                 <span class="cat-toolbar-label">Kategorie:</span>
@@ -1230,7 +1274,7 @@ class BrainstormCard extends HTMLElement {
             </div>
           </div>
 
-          <div class="pills" id="pillsContainer"></div>
+          <div class="pills" id="pillsContainer" style="display: ${this._config.show_categories !== false ? "flex" : "none"};"></div>
 
           <div class="ideas-list" id="ideasList"></div>
         </div>
@@ -1395,17 +1439,40 @@ class BrainstormCard extends HTMLElement {
       const completedCount = attributes.completed_count || completedIdeas.length || 0;
       const isCompletedView = this._selectedCategory === "__completed__";
 
-    // 1. Update Title and Badge
+    // 1. Update Title, Badge and Controls
     const titleEl = this.shadowRoot.getElementById("cardTitle");
-    if (titleEl && this._config.title) titleEl.textContent = this._config.title;
+    if (titleEl) {
+      titleEl.textContent = this._config.title !== undefined ? this._config.title : "Brainstorm Hub";
+    }
 
     const badgeEl = this.shadowRoot.getElementById("badgeCount");
     if (badgeEl) {
+      badgeEl.style.display = this._config.show_badge !== false ? "inline-flex" : "none";
       if (completedCount > 0) {
         badgeEl.textContent = `${activeIdeas.length} aktiv • ${completedCount} erledigt`;
       } else {
         badgeEl.textContent = `${activeIdeas.length} Ideen`;
       }
+    }
+
+    const cardColorModeBtn = this.shadowRoot.getElementById("cardColorModeBtn");
+    if (cardColorModeBtn) {
+      cardColorModeBtn.style.display = this._config.show_color_toggle !== false ? "flex" : "none";
+    }
+
+    const viewToggleBtn = this.shadowRoot.getElementById("viewToggleBtn");
+    if (viewToggleBtn) {
+      viewToggleBtn.style.display = this._config.show_mindmap_button !== false ? "flex" : "none";
+    }
+
+    const inputSection = this.shadowRoot.querySelector(".input-section");
+    if (inputSection) {
+      inputSection.style.display = this._config.show_quick_input !== false ? "block" : "none";
+    }
+
+    const pillsContainer = this.shadowRoot.getElementById("pillsContainer");
+    if (pillsContainer) {
+      pillsContainer.style.display = this._config.show_categories !== false ? "flex" : "none";
     }
 
     // 2. Update Select Dropdown without resetting user selection or closing
@@ -1490,11 +1557,15 @@ class BrainstormCard extends HTMLElement {
     }
 
     // 4. Update Filtered Ideas List
-    const filteredIdeas = isCompletedView
+    let filteredIdeas = isCompletedView
       ? completedIdeas
       : this._selectedCategory === "all"
       ? activeIdeas
       : activeIdeas.filter((i) => i.category === this._selectedCategory);
+
+    if (this._config.max_items && typeof this._config.max_items === "number" && this._config.max_items > 0) {
+      filteredIdeas = filteredIdeas.slice(0, this._config.max_items);
+    }
 
     const ideasList = this.shadowRoot.getElementById("ideasList");
     if (ideasList) {
@@ -1511,6 +1582,11 @@ class BrainstormCard extends HTMLElement {
           </div>
         `;
       } else {
+        const canEdit = this._config.allow_edit !== false && !isCompletedView;
+        const canDelete = this._config.allow_delete !== false;
+        const showSource = this._config.show_source_icons !== false;
+        const showTime = this._config.show_timestamps !== false;
+
         ideasList.innerHTML = filteredIdeas
           .map(
             (item) => `
@@ -1522,17 +1598,17 @@ class BrainstormCard extends HTMLElement {
                 data-completed="${isCompletedView ? "true" : "false"}"
               >${isCompletedView ? "✓" : ""}</button>
               <div class="idea-content">
-                <div class="idea-text" title="${isCompletedView ? "" : "Klicken zum Bearbeiten"}" data-id="${item.id}">${item.text}</div>
+                <div class="idea-text" title="${canEdit ? "Klicken zum Bearbeiten" : ""}" data-id="${item.id}" style="${canEdit ? "" : "cursor: default;"}">${this._escapeHtml(item.text)}</div>
                 <div class="idea-meta">
-                  <span class="category-tag ${isCompletedView ? "" : "clickable"}" title="${isCompletedView ? "Kategorie" : "Kategorie ändern"}" data-id="${item.id}" data-cat="${item.category}" style="color: ${this._getCategoryColor(item.category)}; background: color-mix(in srgb, ${this._getCategoryColor(item.category)} 12%, var(--secondary-background-color, rgba(0,0,0,0.06))); border: 1px solid color-mix(in srgb, ${this._getCategoryColor(item.category)} 25%, transparent);">${item.category}</span>
-                  <span>${this._getSourceIcon(item.source)}</span>
-                  <span>•</span>
-                  <span>${this._formatTime(item.created_at)}</span>
+                  <span class="category-tag ${canEdit ? "clickable" : ""}" title="${canEdit ? "Kategorie ändern" : "Kategorie"}" data-id="${item.id}" data-cat="${item.category}" style="color: ${this._getCategoryColor(item.category)}; background: color-mix(in srgb, ${this._getCategoryColor(item.category)} 12%, var(--secondary-background-color, rgba(0,0,0,0.06))); border: 1px solid color-mix(in srgb, ${this._getCategoryColor(item.category)} 25%, transparent);">${this._escapeHtml(item.category)}</span>
+                  ${showSource ? `<span>${this._getSourceIcon(item.source)}</span>` : ""}
+                  ${showSource && showTime ? `<span>•</span>` : ""}
+                  ${showTime ? `<span>${this._formatTime(item.created_at)}</span>` : ""}
                 </div>
               </div>
               <div class="item-actions">
-                ${isCompletedView ? "" : `<button class="edit-btn" title="Bearbeiten" data-id="${item.id}">✎</button>`}
-                <button class="delete-btn" title="Löschen" data-id="${item.id}">✕</button>
+                ${canEdit ? `<button class="edit-btn" title="Bearbeiten" data-id="${item.id}">✎</button>` : ""}
+                ${canDelete ? `<button class="delete-btn" title="Löschen" data-id="${item.id}">✕</button>` : ""}
               </div>
             </div>
           `
@@ -1554,6 +1630,7 @@ class BrainstormCard extends HTMLElement {
 
         ideasList.querySelectorAll(".edit-btn").forEach((btn) => {
           btn.addEventListener("click", () => {
+            if (!canEdit) return;
             const id = btn.getAttribute("data-id");
             const item = activeIdeas.find((i) => i.id === id);
             if (item) this._editIdea(id, item.text, item.category);
@@ -1562,6 +1639,7 @@ class BrainstormCard extends HTMLElement {
 
         ideasList.querySelectorAll(".idea-text").forEach((el) => {
           el.addEventListener("click", () => {
+            if (!canEdit) return;
             const id = el.getAttribute("data-id");
             if (isCompletedView) return;
             const item = activeIdeas.find((i) => i.id === id);
@@ -1571,6 +1649,7 @@ class BrainstormCard extends HTMLElement {
 
         ideasList.querySelectorAll(".category-tag.clickable").forEach((el) => {
           el.addEventListener("click", () => {
+            if (!canEdit) return;
             const id = el.getAttribute("data-id");
             const currentCat = el.getAttribute("data-cat");
             const item = activeIdeas.find((i) => i.id === id);
@@ -1600,6 +1679,260 @@ class BrainstormCard extends HTMLElement {
   }
 }
 
+const BRAINSTORM_CARD_SCHEMA = [
+  {
+    name: "title",
+    label: "Kartentitel",
+    selector: { text: {} },
+  },
+  {
+    name: "sensor",
+    label: "Sensor-Entität",
+    selector: { entity: { domain: ["sensor"] } },
+  },
+  {
+    name: "color_mode",
+    label: "Standard-Farbmodus",
+    selector: {
+      select: {
+        mode: "dropdown",
+        options: [
+          { value: "theme", label: "🎨 Theme-Farben (Dynamisch nach Home Assistant Theme)" },
+          { value: "multicolor", label: "🌈 Bunt (Multicolor-Kategoriefarben)" },
+        ],
+      },
+    },
+  },
+  {
+    name: "default_category",
+    label: "Standard-Filterkategorie beim Öffnen (z.B. all oder Inbox)",
+    selector: { text: {} },
+  },
+  {
+    name: "max_items",
+    label: "Maximale Notizenanzahl (0 = Unbegrenzt)",
+    selector: { number: { min: 0, max: 200, mode: "box" } },
+  },
+  {
+    name: "show_quick_input",
+    label: "Schnelleingabe-Feld für neue Notizen anzeigen",
+    selector: { boolean: {} },
+  },
+  {
+    name: "show_categories",
+    label: "Kategorie-Leiste (Filter-Pills) anzeigen",
+    selector: { boolean: {} },
+  },
+  {
+    name: "show_badge",
+    label: "Zähler-Badge im Header anzeigen",
+    selector: { boolean: {} },
+  },
+  {
+    name: "show_mindmap_button",
+    label: "Mindmap-Schaltfläche (🧠) im Header anzeigen",
+    selector: { boolean: {} },
+  },
+  {
+    name: "show_color_toggle",
+    label: "Farbmodus-Umschalter (🎨/🌈) im Header anzeigen",
+    selector: { boolean: {} },
+  },
+  {
+    name: "show_source_icons",
+    label: "Quellen-Icons anzeigen (Alexa, Assist, Handy, Dashboard)",
+    selector: { boolean: {} },
+  },
+  {
+    name: "show_timestamps",
+    label: "Relative Zeitangaben anzeigen (z.B. 'vor 5 Min.')",
+    selector: { boolean: {} },
+  },
+  {
+    name: "allow_edit",
+    label: "Bearbeiten von Notizen erlauben (Klick & Stift-Icon)",
+    selector: { boolean: {} },
+  },
+  {
+    name: "allow_delete",
+    label: "Löschen von Notizen erlauben (✕-Schaltfläche)",
+    selector: { boolean: {} },
+  },
+];
+
+class BrainstormCardEditor extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: "open" });
+    this._config = {};
+    this._hass = null;
+    this._form = null;
+  }
+
+  setConfig(config) {
+    this._config = { ...config };
+    this._render();
+  }
+
+  set hass(hass) {
+    this._hass = hass;
+    if (this._form) {
+      this._form.hass = hass;
+    }
+  }
+
+  async _render() {
+    if (!this.shadowRoot) return;
+
+    if (window.loadCardHelpers) {
+      try {
+        const helpers = await window.loadCardHelpers();
+        if (helpers && helpers.createCardElement) {
+          await helpers.createCardElement({ type: "entities", entities: [] });
+        }
+      } catch {}
+    }
+
+    if (this._form) {
+      this._form.data = this._config;
+      if (this._hass) this._form.hass = this._hass;
+      return;
+    }
+
+    this.shadowRoot.innerHTML = `
+      <style>
+        .editor-container {
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+          padding: 8px 0;
+          font-family: var(--paper-font-body1_-_font-family, Roboto, sans-serif);
+        }
+        .editor-header {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding-bottom: 10px;
+          border-bottom: 1px solid var(--divider-color, rgba(0,0,0,0.12));
+          color: var(--primary-text-color, #212121);
+          font-weight: 600;
+          font-size: 1.05rem;
+        }
+        .editor-header img {
+          width: 26px;
+          height: 26px;
+          object-fit: contain;
+        }
+        .fallback-container {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+        .fallback-row {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+        .fallback-label {
+          font-size: 0.85rem;
+          font-weight: 500;
+          color: var(--secondary-text-color, #757575);
+        }
+        .fallback-input, .fallback-select {
+          padding: 8px 12px;
+          border-radius: 8px;
+          border: 1px solid var(--divider-color, #ccc);
+          background: var(--card-background-color, #fff);
+          color: var(--primary-text-color, #000);
+          font-size: 0.9rem;
+        }
+      </style>
+      <div class="editor-container">
+        <div class="editor-header">
+          <img src="/local/brainstorm-bulb.svg" alt="Brainstorm" onerror="this.style.display='none'" />
+          <span>Brainstorm Hub – Visuelle Kartenkonfiguration</span>
+        </div>
+        <div id="formContainer"></div>
+      </div>
+    `;
+
+    const formContainer = this.shadowRoot.getElementById("formContainer");
+
+    if (customElements.get("ha-form")) {
+      const form = document.createElement("ha-form");
+      form.hass = this._hass;
+      form.data = this._config;
+      form.schema = BRAINSTORM_CARD_SCHEMA;
+      form.computeLabel = (s) => s.label || s.name;
+      form.computeHelper = (s) => s.helper || "";
+      form.addEventListener("value-changed", (ev) => {
+        if (!ev.detail || !ev.detail.value) return;
+        this._config = { ...this._config, ...ev.detail.value };
+        this.dispatchEvent(
+          new CustomEvent("config-changed", {
+            detail: { config: this._config },
+            bubbles: true,
+            composed: true,
+          })
+        );
+      });
+      formContainer.appendChild(form);
+      this._form = form;
+    } else {
+      this._renderFallback(formContainer);
+    }
+  }
+
+  _renderFallback(container) {
+    container.innerHTML = `
+      <div class="fallback-container">
+        <div class="fallback-row">
+          <label class="fallback-label">Kartentitel</label>
+          <input class="fallback-input" id="fbTitle" type="text" value="${this._config.title || 'Brainstorm Hub'}" />
+        </div>
+        <div class="fallback-row">
+          <label class="fallback-label">Sensor-Entität</label>
+          <input class="fallback-input" id="fbSensor" type="text" value="${this._config.sensor || 'sensor.brainstorm_ideen_ubersicht'}" />
+        </div>
+        <div class="fallback-row">
+          <label class="fallback-label">Farbmodus</label>
+          <select class="fallback-select" id="fbColorMode">
+            <option value="theme" ${(this._config.color_mode || 'theme') === 'theme' ? 'selected' : ''}>🎨 Theme-Farben</option>
+            <option value="multicolor" ${this._config.color_mode === 'multicolor' ? 'selected' : ''}>🌈 Bunt (Multicolor)</option>
+          </select>
+        </div>
+      </div>
+    `;
+    const fbTitle = container.querySelector("#fbTitle");
+    const fbSensor = container.querySelector("#fbSensor");
+    const fbColorMode = container.querySelector("#fbColorMode");
+
+    const emitChange = () => {
+      this._config = {
+        ...this._config,
+        title: fbTitle ? fbTitle.value : this._config.title,
+        sensor: fbSensor ? fbSensor.value : this._config.sensor,
+        color_mode: fbColorMode ? fbColorMode.value : this._config.color_mode,
+      };
+      this.dispatchEvent(
+        new CustomEvent("config-changed", {
+          detail: { config: this._config },
+          bubbles: true,
+          composed: true,
+        })
+      );
+    };
+
+    if (fbTitle) fbTitle.addEventListener("input", emitChange);
+    if (fbSensor) fbSensor.addEventListener("input", emitChange);
+    if (fbColorMode) fbColorMode.addEventListener("change", emitChange);
+  }
+}
+
+if (!customElements.get("brainstorm-card-editor")) {
+  customElements.define("brainstorm-card-editor", BrainstormCardEditor);
+}
+
 if (!customElements.get("brainstorm-card")) {
   customElements.define("brainstorm-card", BrainstormCard);
 }
@@ -1610,5 +1943,6 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
     name: "Brainstorm Card",
     preview: true,
     description: "Moderne Schnellerfassung und Themen-Filter für Brainstorm Hub",
+    documentationURL: "https://github.com/nukleuz80/ha_brainstorm",
   });
 }

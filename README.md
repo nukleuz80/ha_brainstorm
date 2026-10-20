@@ -1,7 +1,7 @@
 # 🧠 Brainstorm Hub for Home Assistant
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/default)
-[![Version](https://img.shields.io/badge/version-1.4.5-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.4.6-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/nukleuz80/ha_brainstorm)
@@ -72,8 +72,8 @@ Egal ob beim Kochen, im Garten oder unterwegs: Erfasse Geistesblitze sekundensch
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js` und `www/brainstorm-mindmap-card.js` in `/config/www/`.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.4.5` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.4.5` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.4.6` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.4.6` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ---
@@ -166,6 +166,7 @@ Die Integration stellt folgende Services bereit:
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.4.6`** | 20.10.2026 | **Visuelle Kartenkonfiguratoren (Lovelace Visual Editor):** Vollständige Unterstützung des nativen Home Assistant UI-Karteneditors (`getConfigElement()` & `getStubConfig()`) für beide Karten (`brainstorm-card` und `brainstorm-mindmap-card`). Alle Einstellungen lassen sich nun komfortabel per Klick, Dropdown und Schalter ohne YAML-Code anpassen: Kartentitel, Sensor-Auswahl mit Entitätenfilter, Farbmodus (`theme` vs. `multicolor`), Standard-Kategorie, Maximalanzahl an Notizen (`max_items`), Ein-/Ausblenden der Schnelleingabezeile, Kategorie-Filterleiste, Zähler-Badge, Mindmap-Button, Theme-Farbumschalter, Quellen-Icons, Zeitstempel sowie Bearbeitungs- und Löschrechte. In der Mindmap zusätzlich Steuerung von Höhe (`height`), Glühbirnen-Wasserzeichen, Toolbar, Vollbild-Button und Zoom-/Zentrier-Controls. |
 | **`v1.4.5`** | 20.10.2026 | **Dynamische Home Assistant Theme-Farben & Farbmodus-Umschalter:** Neuer Farbmodus-Umschalter (`🎨` Theme-Modus ⇄ `🌈` Bunt-Modus) sowohl in der Lovelace-Hauptkarte als auch in der Mindmap. Im Theme-Modus passen sich alle Knoten, Kategorie-Pills, Verbindungslinien und Tags dynamisch an das aktive Home Assistant Theme an (`var(--primary-color)` und semantische Farbvariablen via `color-mix`), sodass sich das Design nahtlos in Dark/Light-Themes sowie Mushroom/Minimalist-Themes einfügt. Präferenz wird browserweit in `localStorage` (`brainstorm_color_mode`) und via Card-Option (`color_mode`) synchronisiert. |
 | **`v1.4.4`** | 20.10.2026 | **Transparente Glühbirne & Vollständige Raumnutzung:** Ersatz des überlagerten Wasserzeichens durch ein transparentes SVG der leuchtenden Brainstorm-Birne (`brainstorm-bulb.svg` ohne störenden grauen Kasten, 100% freigestellt). Vollständige Ausnutzung der gesamten Bildschirm-/Popup-Höhe im 3/4-Modal (`height: 100%`, dynamische Radius-Skalierung und `ResizeObserver` zur Beseitigung ungenutzter Freiflächen). |
 | **`v1.4.3`** | 20.10.2026 | **Zitterfreie Interaktion & Native Mushroom-Dialoge:** Beseitigung jeglichen Ruckelns/Zitterns beim Anklicken und Bearbeiten von Notizen (Hysterese-Drag-Schwelle von 5px, Entfernung sprung-auslösender Hover-Translationen und Drosselung unnötiger State-Re-Renders). Vollständiger Ersatz aller nativen Browser-Prompts (`prompt()` / `confirm()`) durch hochwertige, animierte In-Card Mushroom-Dialoge für Notiz-Bearbeitung, Kategorie-Auswahl-Chips und Neuanlage. |

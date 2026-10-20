@@ -1,6 +1,6 @@
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.4.5
+ * Version: 1.4.6 - Visual Card Configuration Editor
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -33,19 +33,39 @@ class BrainstormMindmapCard extends HTMLElement {
     this._isModalOpen = false;
   }
 
-  static getStubConfig() {
+  static async getConfigElement() {
+    return document.createElement("brainstorm-mindmap-card-editor");
+  }
+
+  static getStubConfig(hass) {
     return {
       title: "Brainstorm Mindmap",
+      sensor: "sensor.brainstorm_ideen_ubersicht",
+      color_mode: "theme",
       height: "calc(100vh - 32px)",
       default_category: "Inbox",
+      show_bulb_watermark: true,
+      show_toolbar: true,
+      show_color_toggle: true,
+      show_fullscreen_btn: true,
+      show_controls: true,
+      show_add_btn: true,
     };
   }
 
   setConfig(config) {
     this._config = {
       title: "Brainstorm Mindmap",
+      sensor: "sensor.brainstorm_ideen_ubersicht",
+      color_mode: "theme",
       height: "calc(100vh - 32px)",
       default_category: "Inbox",
+      show_bulb_watermark: true,
+      show_toolbar: true,
+      show_color_toggle: true,
+      show_fullscreen_btn: true,
+      show_controls: true,
+      show_add_btn: true,
       ...config,
     };
     if (config.color_mode) {
@@ -54,6 +74,41 @@ class BrainstormMindmapCard extends HTMLElement {
     if (this._config.default_category && !this._initialized) {
       this._selectedCategory = this._config.default_category;
     }
+    if (this._initialized) {
+      this._applyConfigUpdates();
+    }
+  }
+
+  _applyConfigUpdates() {
+    if (!this.shadowRoot) return;
+    const titleEl = this.shadowRoot.getElementById("cardTitle");
+    if (titleEl) titleEl.textContent = this._config.title !== undefined ? this._config.title : "Brainstorm Mindmap";
+
+    const topBar = this.shadowRoot.querySelector(".top-bar");
+    if (topBar) topBar.style.display = this._config.show_toolbar !== false ? "flex" : "none";
+
+    const bulbWrap = this.shadowRoot.querySelector(".center-bulb-wrapper");
+    if (bulbWrap) bulbWrap.style.display = this._config.show_bulb_watermark !== false ? "block" : "none";
+
+    const colorModeBtn = this.shadowRoot.getElementById("colorModeBtn");
+    if (colorModeBtn) colorModeBtn.style.display = this._config.show_color_toggle !== false ? "inline-flex" : "none";
+
+    const fullscreenBtn = this.shadowRoot.getElementById("fullscreenToggleBtn");
+    if (fullscreenBtn) fullscreenBtn.style.display = this._config.show_fullscreen_btn !== false ? "inline-flex" : "none";
+
+    const controlsPanel = this.shadowRoot.querySelector(".controls-panel");
+    if (controlsPanel) controlsPanel.style.display = this._config.show_controls !== false ? "flex" : "none";
+
+    const addNoteBtn = this.shadowRoot.getElementById("addNoteBtn");
+    if (addNoteBtn) addNoteBtn.style.display = this._config.show_add_btn !== false ? "flex" : "none";
+
+    const cardRoot = this.shadowRoot.getElementById("cardRoot");
+    if (cardRoot && this._config.height && !this._isFullscreen) {
+      cardRoot.style.height = this._config.height;
+    }
+
+    this._lastDataSignature = "";
+    this._updateContent();
   }
 
   getCardSize() {
@@ -837,19 +892,19 @@ class BrainstormMindmapCard extends HTMLElement {
 
       <ha-card id="cardRoot">
         <!-- Top Bar -->
-        <div class="top-bar">
+        <div class="top-bar" style="display: ${this._config.show_toolbar !== false ? 'flex' : 'none'};">
           <div class="top-left">
             <div class="brand-logo">
               <img src="/local/brainstorm-logo.svg" onerror="this.src='/local/brainstorm-logo.png'" alt="Logo" />
             </div>
-            <div class="title" id="cardTitle">${this._config.title || "Brainstorm Mindmap"}</div>
+            <div class="title" id="cardTitle">${this._config.title !== undefined ? this._config.title : "Brainstorm Mindmap"}</div>
           </div>
           <div class="pills-container" id="pillsBar"></div>
           <div class="top-right">
-            <button class="top-tool-btn" id="colorModeBtn" title="${this._colorMode === 'theme' ? 'Farbmodus: Theme-Farben aktiv (Klicken für Bunt)' : 'Farbmodus: Bunt aktiv (Klicken für Theme-Farben)'}">
+            <button class="top-tool-btn" id="colorModeBtn" style="display: ${this._config.show_color_toggle !== false ? 'inline-flex' : 'none'};" title="${this._colorMode === 'theme' ? 'Farbmodus: Theme-Farben aktiv (Klicken für Bunt)' : 'Farbmodus: Bunt aktiv (Klicken für Theme-Farben)'}">
               ${this._colorMode === 'theme' ? '🎨' : '🌈'}
             </button>
-            <button class="fullscreen-btn" id="fullscreenToggleBtn" title="Vollbild umschalten (ESC zum Beenden)">⛶</button>
+            <button class="fullscreen-btn" id="fullscreenToggleBtn" style="display: ${this._config.show_fullscreen_btn !== false ? 'inline-flex' : 'none'};" title="Vollbild umschalten (ESC zum Beenden)">⛶</button>
           </div>
         </div>
 
@@ -859,7 +914,7 @@ class BrainstormMindmapCard extends HTMLElement {
           <div class="viewport" id="viewport">
             <svg class="connectors" id="connectorsLayer"></svg>
             <div class="center-node" id="centerNode">
-              <div class="center-bulb-wrapper">
+              <div class="center-bulb-wrapper" style="display: ${this._config.show_bulb_watermark !== false ? 'block' : 'none'};">
                 <img src="/local/brainstorm-bulb.svg" class="center-bulb-img" alt="Brainstorm" />
               </div>
               <div class="center-content">
@@ -875,13 +930,13 @@ class BrainstormMindmapCard extends HTMLElement {
         </div>
 
         <!-- Bottom Left: Add Note -->
-        <button class="add-note-btn" id="addNoteBtn">
+        <button class="add-note-btn" id="addNoteBtn" style="display: ${this._config.show_add_btn !== false ? 'flex' : 'none'};">
           <span>➕</span>
           <span>Neue Idee</span>
         </button>
 
         <!-- Bottom Right: Zoom & Reset Controls -->
-        <div class="controls-panel">
+        <div class="controls-panel" style="display: ${this._config.show_controls !== false ? 'flex' : 'none'};">
           <button class="control-btn" id="zoomInBtn" title="Vergrößern">+</button>
           <button class="control-btn" id="zoomOutBtn" title="Verkleinern">−</button>
           <button class="control-btn" id="resetViewBtn" title="Zentrieren / Anordnen">⟲</button>
@@ -1293,13 +1348,37 @@ class BrainstormMindmapCard extends HTMLElement {
         return i.category === this._selectedCategory;
       });
 
-      // Update Color Mode Button
+      // Update Card Elements from Config
+      const titleEl = this.shadowRoot.getElementById("cardTitle");
+      if (titleEl) titleEl.textContent = this._config.title !== undefined ? this._config.title : "Brainstorm Mindmap";
+
+      const topBar = this.shadowRoot.querySelector(".top-bar");
+      if (topBar) topBar.style.display = this._config.show_toolbar !== false ? "flex" : "none";
+
+      const bulbWrap = this.shadowRoot.querySelector(".center-bulb-wrapper");
+      if (bulbWrap) bulbWrap.style.display = this._config.show_bulb_watermark !== false ? "block" : "none";
+
       const colorModeBtn = this.shadowRoot.getElementById("colorModeBtn");
       if (colorModeBtn) {
+        colorModeBtn.style.display = this._config.show_color_toggle !== false ? "inline-flex" : "none";
         colorModeBtn.innerHTML = this._colorMode === "theme" ? "🎨" : "🌈";
         colorModeBtn.title = this._colorMode === "theme"
           ? "Farbmodus: Theme-Farben aktiv (Klicken für Bunt)"
           : "Farbmodus: Bunt aktiv (Klicken für Theme-Farben)";
+      }
+
+      const fullscreenBtn = this.shadowRoot.getElementById("fullscreenToggleBtn");
+      if (fullscreenBtn) fullscreenBtn.style.display = this._config.show_fullscreen_btn !== false ? "inline-flex" : "none";
+
+      const controlsPanel = this.shadowRoot.querySelector(".controls-panel");
+      if (controlsPanel) controlsPanel.style.display = this._config.show_controls !== false ? "flex" : "none";
+
+      const addNoteBtn = this.shadowRoot.getElementById("addNoteBtn");
+      if (addNoteBtn) addNoteBtn.style.display = this._config.show_add_btn !== false ? "flex" : "none";
+
+      const cardRoot = this.shadowRoot.getElementById("cardRoot");
+      if (cardRoot && this._config.height && !this._isFullscreen) {
+        cardRoot.style.height = this._config.height;
       }
 
       // 1. Update Top Category Pills
@@ -1821,6 +1900,245 @@ class BrainstormMindmapCard extends HTMLElement {
   }
 }
 
+const MINDMAP_CARD_SCHEMA = [
+  {
+    name: "title",
+    label: "Mindmap-Titel",
+    selector: { text: {} },
+  },
+  {
+    name: "sensor",
+    label: "Sensor-Entität",
+    selector: { entity: { domain: ["sensor"] } },
+  },
+  {
+    name: "color_mode",
+    label: "Standard-Farbmodus",
+    selector: {
+      select: {
+        mode: "dropdown",
+        options: [
+          { value: "theme", label: "🎨 Theme-Farben (Dynamisch nach Home Assistant Theme)" },
+          { value: "multicolor", label: "🌈 Bunt (Multicolor-Kategoriefarben)" },
+        ],
+      },
+    },
+  },
+  {
+    name: "height",
+    label: "Höhe der Mindmap (z.B. 600px, 75vh, calc(100vh - 32px))",
+    selector: { text: {} },
+  },
+  {
+    name: "default_category",
+    label: "Standard-Kategorie im Fokus",
+    selector: { text: {} },
+  },
+  {
+    name: "show_bulb_watermark",
+    label: "Leuchtende Glühbirne im Zentrum als Wasserzeichen anzeigen",
+    selector: { boolean: {} },
+  },
+  {
+    name: "show_toolbar",
+    label: "Obere Werkzeugleiste (Titel & Filter-Pills) anzeigen",
+    selector: { boolean: {} },
+  },
+  {
+    name: "show_color_toggle",
+    label: "Farbmodus-Umschalter (🎨/🌈) in Toolbar anzeigen",
+    selector: { boolean: {} },
+  },
+  {
+    name: "show_fullscreen_btn",
+    label: "Vollbild-Schaltfläche (⛶) anzeigen",
+    selector: { boolean: {} },
+  },
+  {
+    name: "show_controls",
+    label: "Zoom- & Zentrieren-Schaltflächen anzeigen",
+    selector: { boolean: {} },
+  },
+  {
+    name: "show_add_btn",
+    label: "Neue Notiz-Schaltfläche (+ Idee) anzeigen",
+    selector: { boolean: {} },
+  },
+];
+
+class BrainstormMindmapCardEditor extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: "open" });
+    this._config = {};
+    this._hass = null;
+    this._form = null;
+  }
+
+  setConfig(config) {
+    this._config = { ...config };
+    this._render();
+  }
+
+  set hass(hass) {
+    this._hass = hass;
+    if (this._form) {
+      this._form.hass = hass;
+    }
+  }
+
+  async _render() {
+    if (!this.shadowRoot) return;
+
+    if (window.loadCardHelpers) {
+      try {
+        const helpers = await window.loadCardHelpers();
+        if (helpers && helpers.createCardElement) {
+          await helpers.createCardElement({ type: "entities", entities: [] });
+        }
+      } catch {}
+    }
+
+    if (this._form) {
+      this._form.data = this._config;
+      if (this._hass) this._form.hass = this._hass;
+      return;
+    }
+
+    this.shadowRoot.innerHTML = `
+      <style>
+        .editor-container {
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+          padding: 8px 0;
+          font-family: var(--paper-font-body1_-_font-family, Roboto, sans-serif);
+        }
+        .editor-header {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding-bottom: 10px;
+          border-bottom: 1px solid var(--divider-color, rgba(0,0,0,0.12));
+          color: var(--primary-text-color, #212121);
+          font-weight: 600;
+          font-size: 1.05rem;
+        }
+        .editor-header img {
+          width: 26px;
+          height: 26px;
+          object-fit: contain;
+        }
+        .fallback-container {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+        .fallback-row {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+        .fallback-label {
+          font-size: 0.85rem;
+          font-weight: 500;
+          color: var(--secondary-text-color, #757575);
+        }
+        .fallback-input, .fallback-select {
+          padding: 8px 12px;
+          border-radius: 8px;
+          border: 1px solid var(--divider-color, #ccc);
+          background: var(--card-background-color, #fff);
+          color: var(--primary-text-color, #000);
+          font-size: 0.9rem;
+        }
+      </style>
+      <div class="editor-container">
+        <div class="editor-header">
+          <img src="/local/brainstorm-bulb.svg" alt="Brainstorm" onerror="this.style.display='none'" />
+          <span>Brainstorm Mindmap – Visuelle Kartenkonfiguration</span>
+        </div>
+        <div id="formContainer"></div>
+      </div>
+    `;
+
+    const formContainer = this.shadowRoot.getElementById("formContainer");
+
+    if (customElements.get("ha-form")) {
+      const form = document.createElement("ha-form");
+      form.hass = this._hass;
+      form.data = this._config;
+      form.schema = MINDMAP_CARD_SCHEMA;
+      form.computeLabel = (s) => s.label || s.name;
+      form.computeHelper = (s) => s.helper || "";
+      form.addEventListener("value-changed", (ev) => {
+        if (!ev.detail || !ev.detail.value) return;
+        this._config = { ...this._config, ...ev.detail.value };
+        this.dispatchEvent(
+          new CustomEvent("config-changed", {
+            detail: { config: this._config },
+            bubbles: true,
+            composed: true,
+          })
+        );
+      });
+      formContainer.appendChild(form);
+      this._form = form;
+    } else {
+      this._renderFallback(formContainer);
+    }
+  }
+
+  _renderFallback(container) {
+    container.innerHTML = `
+      <div class="fallback-container">
+        <div class="fallback-row">
+          <label class="fallback-label">Mindmap-Titel</label>
+          <input class="fallback-input" id="fbTitle" type="text" value="${this._config.title || 'Brainstorm Mindmap'}" />
+        </div>
+        <div class="fallback-row">
+          <label class="fallback-label">Sensor-Entität</label>
+          <input class="fallback-input" id="fbSensor" type="text" value="${this._config.sensor || 'sensor.brainstorm_ideen_ubersicht'}" />
+        </div>
+        <div class="fallback-row">
+          <label class="fallback-label">Farbmodus</label>
+          <select class="fallback-select" id="fbColorMode">
+            <option value="theme" ${(this._config.color_mode || 'theme') === 'theme' ? 'selected' : ''}>🎨 Theme-Farben</option>
+            <option value="multicolor" ${this._config.color_mode === 'multicolor' ? 'selected' : ''}>🌈 Bunt (Multicolor)</option>
+          </select>
+        </div>
+      </div>
+    `;
+    const fbTitle = container.querySelector("#fbTitle");
+    const fbSensor = container.querySelector("#fbSensor");
+    const fbColorMode = container.querySelector("#fbColorMode");
+
+    const emitChange = () => {
+      this._config = {
+        ...this._config,
+        title: fbTitle ? fbTitle.value : this._config.title,
+        sensor: fbSensor ? fbSensor.value : this._config.sensor,
+        color_mode: fbColorMode ? fbColorMode.value : this._config.color_mode,
+      };
+      this.dispatchEvent(
+        new CustomEvent("config-changed", {
+          detail: { config: this._config },
+          bubbles: true,
+          composed: true,
+        })
+      );
+    };
+
+    if (fbTitle) fbTitle.addEventListener("input", emitChange);
+    if (fbSensor) fbSensor.addEventListener("input", emitChange);
+    if (fbColorMode) fbColorMode.addEventListener("change", emitChange);
+  }
+}
+
+if (!customElements.get("brainstorm-mindmap-card-editor")) {
+  customElements.define("brainstorm-mindmap-card-editor", BrainstormMindmapCardEditor);
+}
+
 // Register custom element & Lovelace customCard entry
 customElements.define("brainstorm-mindmap-card", BrainstormMindmapCard);
 
@@ -1834,7 +2152,7 @@ window.customCards.push({
 });
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.5 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.6 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );
