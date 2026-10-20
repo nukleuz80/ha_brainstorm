@@ -1,6 +1,6 @@
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.4.2
+ * Version: 1.4.3
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -21,9 +21,11 @@ class BrainstormMindmapCard extends HTMLElement {
     this._nodePositions = new Map(); // id -> {x, y}
     this._centerPos = { x: 400, y: 300 };
     this._activeDrag = null; // { id, startMouseX, startMouseY, startNodeX, startNodeY }
+    this._pendingDrag = null; // { id, cloud, startMouseX, startMouseY, startNodeX, startNodeY }
     this._initialized = false;
     this._lastUpdated = null;
-    this._lastIdeasHash = "";
+    this._lastDataSignature = "";
+    this._isModalOpen = false;
   }
 
   static getStubConfig() {
@@ -55,6 +57,20 @@ class BrainstormMindmapCard extends HTMLElement {
     if (!this._initialized) {
       this._initDom();
     }
+    const sensor = this._getSensorEntity();
+    if (!sensor) return;
+
+    const ideas = sensor.attributes.ideas || [];
+    const categories = sensor.attributes.categories || [];
+    const sig = `${sensor.last_updated}_${this._selectedCategory}_${ideas.length}_${categories.length}`;
+    if (this._lastDataSignature === sig) {
+      return;
+    }
+    // Don't re-render and interrupt active interactions
+    if (this._activeDrag || this._pendingDrag || this._isModalOpen) {
+      return;
+    }
+    this._lastDataSignature = sig;
     this._updateContent();
   }
 
@@ -388,18 +404,19 @@ class BrainstormMindmapCard extends HTMLElement {
           border-radius: 14px;
           padding: 12px 14px;
           box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-          cursor: move;
-          transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+          cursor: grab;
+          user-select: none;
+          transition: border-color 0.15s ease, box-shadow 0.15s ease;
         }
         .note-cloud:hover {
-          box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
-          transform: translateY(-2px);
+          box-shadow: 0 4px 18px rgba(0, 0, 0, 0.09);
+          border-color: color-mix(in srgb, var(--cat-color, var(--primary-color, #03a9f4)) 40%, var(--divider-color, rgba(127, 127, 127, 0.2)));
           z-index: 15;
         }
         .note-cloud.dragging {
-          transform: scale(1.04);
-          box-shadow: 0 10px 24px rgba(0, 0, 0, 0.14);
-          z-index: 20;
+          cursor: grabbing;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+          z-index: 25;
         }
 
         /* Cloud Top Meta */
@@ -416,10 +433,19 @@ class BrainstormMindmapCard extends HTMLElement {
           font-size: 0.68rem;
           text-transform: uppercase;
           letter-spacing: 0.4px;
-          padding: 2px 6px;
-          border-radius: 6px;
-          background: color-mix(in srgb, var(--cat-color, var(--primary-color)) 10%, transparent);
+          padding: 3px 8px;
+          border-radius: 8px;
+          background: color-mix(in srgb, var(--cat-color, var(--primary-color)) 12%, transparent);
           color: var(--cat-color, var(--primary-color));
+          cursor: pointer;
+          transition: filter 0.15s ease, transform 0.15s ease;
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+        }
+        .cat-tag:hover {
+          filter: brightness(0.92);
+          transform: scale(1.03);
         }
         .cloud-source {
           display: flex;
@@ -437,6 +463,7 @@ class BrainstormMindmapCard extends HTMLElement {
           word-break: break-word;
           margin-bottom: 8px;
           user-select: text;
+          cursor: pointer;
         }
 
         /* Cloud Actions */
@@ -445,8 +472,8 @@ class BrainstormMindmapCard extends HTMLElement {
           align-items: center;
           justify-content: flex-end;
           gap: 6px;
-          opacity: 0.6;
-          transition: opacity 0.2s ease;
+          opacity: 0.85;
+          transition: opacity 0.15s ease;
         }
         .note-cloud:hover .cloud-actions {
           opacity: 1;
@@ -455,21 +482,21 @@ class BrainstormMindmapCard extends HTMLElement {
           background: var(--secondary-background-color, rgba(127, 127, 127, 0.08));
           border: 1px solid var(--ha-card-border-color, var(--divider-color, rgba(127, 127, 127, 0.15)));
           color: var(--secondary-text-color, #64748b);
-          width: 26px;
-          height: 26px;
+          width: 28px;
+          height: 28px;
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 0.75rem;
+          font-size: 0.8rem;
           cursor: pointer;
-          transition: all 0.15s ease;
+          transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
         }
         .action-btn:hover {
           background: var(--primary-color, #03a9f4);
           color: #ffffff;
           border-color: var(--primary-color, #03a9f4);
-          transform: scale(1.1);
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
         }
         .action-btn.done-btn:hover {
           background: var(--success-color, #16a34a);
@@ -505,12 +532,12 @@ class BrainstormMindmapCard extends HTMLElement {
           justify-content: center;
           cursor: pointer;
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-          transition: all 0.15s ease;
+          transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
         }
         .control-btn:hover {
           background: var(--secondary-background-color, rgba(127, 127, 127, 0.1));
           color: var(--primary-color, #03a9f4);
-          transform: scale(1.06);
+          border-color: var(--primary-color, #03a9f4);
         }
 
         /* Quick Add Button (Bottom Left) */
@@ -549,6 +576,225 @@ class BrainstormMindmapCard extends HTMLElement {
           color: var(--secondary-text-color, #64748b);
           text-align: center;
           pointer-events: none;
+        }
+
+        /* Dialog Modal (Mushroom / Minimalist UI) */
+        .dialog-backdrop {
+          position: absolute;
+          inset: 0;
+          z-index: 100;
+          border-radius: inherit;
+          background: rgba(0, 0, 0, 0.45);
+          backdrop-filter: blur(6px);
+          -webkit-backdrop-filter: blur(6px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 16px;
+          box-sizing: border-box;
+          animation: dialogFadeIn 0.18s ease-out;
+        }
+        @keyframes dialogFadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        .dialog-box {
+          background: var(--ha-card-background, var(--card-background-color, #ffffff));
+          color: var(--primary-text-color, #212121);
+          width: 100%;
+          max-width: 420px;
+          border-radius: 20px;
+          border: 1px solid var(--ha-card-border-color, var(--divider-color, rgba(127, 127, 127, 0.2)));
+          box-shadow: 0 12px 36px rgba(0, 0, 0, 0.25);
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          animation: dialogSlideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes dialogSlideUp {
+          from { transform: translateY(12px) scale(0.96); opacity: 0; }
+          to { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        .dialog-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 14px 18px;
+          border-bottom: 1px solid var(--divider-color, rgba(127, 127, 127, 0.15));
+        }
+        .dialog-title {
+          font-size: 1rem;
+          font-weight: 700;
+          color: var(--primary-text-color, #212121);
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .dialog-close {
+          width: 28px;
+          height: 28px;
+          border-radius: 50%;
+          border: 1px solid var(--divider-color, rgba(127, 127, 127, 0.2));
+          background: var(--secondary-background-color, rgba(127, 127, 127, 0.1));
+          color: var(--secondary-text-color, #64748b);
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 14px;
+          transition: all 0.15s ease;
+        }
+        .dialog-close:hover {
+          color: var(--primary-text-color, #212121);
+          background: var(--divider-color, rgba(127, 127, 127, 0.2));
+        }
+        .dialog-body {
+          padding: 18px;
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+          max-height: 70vh;
+          overflow-y: auto;
+          box-sizing: border-box;
+        }
+        .dialog-note-preview {
+          font-size: 0.82rem;
+          color: var(--secondary-text-color, #64748b);
+          background: var(--secondary-background-color, rgba(127, 127, 127, 0.07));
+          padding: 8px 12px;
+          border-radius: 10px;
+          border-left: 3px solid var(--primary-color, #03a9f4);
+          line-height: 1.35;
+          max-height: 60px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .dialog-label {
+          font-size: 0.75rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.6px;
+          color: var(--secondary-text-color, #64748b);
+        }
+        .dialog-categories-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(115px, 1fr));
+          gap: 8px;
+        }
+        .dialog-cat-chip {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 9px 12px;
+          border-radius: 14px;
+          border: 1.5px solid var(--divider-color, rgba(127, 127, 127, 0.18));
+          background: var(--secondary-background-color, rgba(127, 127, 127, 0.05));
+          color: var(--primary-text-color, #212121);
+          font-size: 0.85rem;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.15s ease;
+          text-align: left;
+        }
+        .dialog-cat-chip:hover {
+          border-color: var(--chip-color, var(--primary-color, #03a9f4));
+          background: color-mix(in srgb, var(--chip-color, var(--primary-color, #03a9f4)) 12%, transparent);
+          transform: translateY(-1px);
+        }
+        .dialog-cat-chip.selected {
+          border-color: var(--chip-color, var(--primary-color, #03a9f4));
+          background: color-mix(in srgb, var(--chip-color, var(--primary-color, #03a9f4)) 18%, transparent);
+          font-weight: 700;
+        }
+        .dialog-cat-dot {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          background: var(--chip-color, var(--primary-color, #03a9f4));
+          flex-shrink: 0;
+        }
+        .dialog-cat-name {
+          flex: 1;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .dialog-cat-count {
+          font-size: 0.72rem;
+          opacity: 0.65;
+          font-weight: 600;
+        }
+        .dialog-new-cat-row {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-top: 4px;
+        }
+        .dialog-input {
+          flex: 1;
+          border: 1px solid var(--ha-card-border-color, var(--divider-color, rgba(127, 127, 127, 0.2)));
+          background: var(--card-background-color, var(--ha-card-background, #ffffff));
+          color: var(--primary-text-color, #212121);
+          padding: 8px 12px;
+          border-radius: 12px;
+          font-size: 0.85rem;
+          outline: none;
+        }
+        .dialog-input:focus {
+          border-color: var(--primary-color, #03a9f4);
+          box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-color, #03a9f4) 20%, transparent);
+        }
+        .dialog-textarea {
+          width: 100%;
+          box-sizing: border-box;
+          min-height: 80px;
+          border: 1px solid var(--ha-card-border-color, var(--divider-color, rgba(127, 127, 127, 0.2)));
+          background: var(--card-background-color, var(--ha-card-background, #ffffff));
+          color: var(--primary-text-color, #212121);
+          padding: 10px 12px;
+          border-radius: 12px;
+          font-size: 0.9rem;
+          font-family: inherit;
+          resize: vertical;
+          outline: none;
+          line-height: 1.4;
+        }
+        .dialog-textarea:focus {
+          border-color: var(--primary-color, #03a9f4);
+          box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-color, #03a9f4) 20%, transparent);
+        }
+        .dialog-footer {
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          gap: 8px;
+          margin-top: 6px;
+        }
+        .dialog-btn {
+          padding: 8px 16px;
+          border-radius: 12px;
+          font-size: 0.85rem;
+          font-weight: 600;
+          cursor: pointer;
+          border: 1px solid transparent;
+          transition: all 0.15s ease;
+        }
+        .dialog-btn-cancel {
+          background: var(--secondary-background-color, rgba(127, 127, 127, 0.1));
+          color: var(--secondary-text-color, #64748b);
+          border-color: var(--divider-color, rgba(127, 127, 127, 0.2));
+        }
+        .dialog-btn-cancel:hover {
+          background: var(--divider-color, rgba(127, 127, 127, 0.2));
+          color: var(--primary-text-color, #212121);
+        }
+        .dialog-btn-primary {
+          background: var(--primary-color, #03a9f4);
+          color: var(--text-primary-color, #ffffff);
+        }
+        .dialog-btn-primary:hover {
+          filter: brightness(1.08);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
         }
       </style>
 
@@ -598,6 +844,17 @@ class BrainstormMindmapCard extends HTMLElement {
           <button class="control-btn" id="zoomOutBtn" title="Verkleinern">−</button>
           <button class="control-btn" id="resetViewBtn" title="Zentrieren / Anordnen">⟲</button>
         </div>
+
+        <!-- In-Card Modal Dialog (Mushroom Style) -->
+        <div class="dialog-backdrop" id="mindmapDialog" style="display: none;">
+          <div class="dialog-box" id="dialogBox">
+            <div class="dialog-header">
+              <div class="dialog-title" id="dialogTitle">Titel</div>
+              <button class="dialog-close" id="dialogCloseBtn" title="Schließen (ESC)">✕</button>
+            </div>
+            <div class="dialog-body" id="dialogBody"></div>
+          </div>
+        </div>
       </ha-card>
     `;
 
@@ -611,12 +868,30 @@ class BrainstormMindmapCard extends HTMLElement {
     const resetViewBtn = this.shadowRoot.getElementById("resetViewBtn");
     const addNoteBtn = this.shadowRoot.getElementById("addNoteBtn");
     const centerNode = this.shadowRoot.getElementById("centerNode");
+    const mindmapDialog = this.shadowRoot.getElementById("mindmapDialog");
+    const dialogCloseBtn = this.shadowRoot.getElementById("dialogCloseBtn");
+
+    // Modal Close
+    if (dialogCloseBtn) {
+      dialogCloseBtn.addEventListener("click", () => this._closeDialog());
+    }
+    if (mindmapDialog) {
+      mindmapDialog.addEventListener("click", (e) => {
+        if (e.target === mindmapDialog) this._closeDialog();
+      });
+    }
 
     // Canvas Pan (Drag background)
     canvasArea.addEventListener("mousedown", (e) => {
-      if (e.target.closest(".note-cloud") || e.target.closest(".center-node") || e.target.closest(".action-btn")) {
+      if (
+        e.target.closest(".note-cloud") ||
+        e.target.closest(".center-node") ||
+        e.target.closest(".action-btn") ||
+        e.target.closest(".dialog-box")
+      ) {
         return;
       }
+      if (e.button !== 0) return;
       this._isPanning = true;
       this._startPan = { x: e.clientX - this._panX, y: e.clientY - this._panY };
     });
@@ -628,6 +903,17 @@ class BrainstormMindmapCard extends HTMLElement {
         this._panY = e.clientY - this._startPan.y;
         this._applyTransform();
         return;
+      }
+
+      // Check pending node drag threshold (5px hysteresis to prevent click jitter)
+      if (this._pendingDrag && !this._activeDrag) {
+        const dist = Math.hypot(e.clientX - this._pendingDrag.startMouseX, e.clientY - this._pendingDrag.startMouseY);
+        if (dist > 5) {
+          this._activeDrag = this._pendingDrag;
+          if (this._pendingDrag.cloud) {
+            this._pendingDrag.cloud.classList.add("dragging");
+          }
+        }
       }
 
       // 2. Node Dragging
@@ -654,6 +940,7 @@ class BrainstormMindmapCard extends HTMLElement {
         if (el) el.classList.remove("dragging");
         this._activeDrag = null;
       }
+      this._pendingDrag = null;
     });
 
     // Mouse Wheel Zoom
@@ -668,7 +955,7 @@ class BrainstormMindmapCard extends HTMLElement {
     let touchStartPan = null;
 
     canvasArea.addEventListener("touchstart", (e) => {
-      if (e.touches.length === 1 && !e.target.closest(".note-cloud")) {
+      if (e.touches.length === 1 && !e.target.closest(".note-cloud") && !e.target.closest(".dialog-box")) {
         touchStartPan = {
           x: e.touches[0].clientX - this._panX,
           y: e.touches[0].clientY - this._panY,
@@ -682,6 +969,35 @@ class BrainstormMindmapCard extends HTMLElement {
     });
 
     canvasArea.addEventListener("touchmove", (e) => {
+      // Check touch drag threshold for pending node
+      if (this._pendingDrag && !this._activeDrag && e.touches.length === 1) {
+        const touch = e.touches[0];
+        const dist = Math.hypot(touch.clientX - this._pendingDrag.startMouseX, touch.clientY - this._pendingDrag.startMouseY);
+        if (dist > 8) {
+          this._activeDrag = this._pendingDrag;
+          if (this._pendingDrag.cloud) {
+            this._pendingDrag.cloud.classList.add("dragging");
+          }
+        }
+      }
+
+      if (this._activeDrag && e.touches.length === 1) {
+        const touch = e.touches[0];
+        const dx = (touch.clientX - this._activeDrag.startMouseX) / this._scale;
+        const dy = (touch.clientY - this._activeDrag.startMouseY) / this._scale;
+        const newX = this._activeDrag.startNodeX + dx;
+        const newY = this._activeDrag.startNodeY + dy;
+
+        this._nodePositions.set(this._activeDrag.id, { x: newX, y: newY });
+        const el = this.shadowRoot.getElementById(`cloud_${this._activeDrag.id}`);
+        if (el) {
+          el.style.left = `${newX}px`;
+          el.style.top = `${newY}px`;
+        }
+        this._drawConnections();
+        return;
+      }
+
       if (e.touches.length === 1 && touchStartPan && !this._activeDrag) {
         this._panX = e.touches[0].clientX - touchStartPan.x;
         this._panY = e.touches[0].clientY - touchStartPan.y;
@@ -704,6 +1020,12 @@ class BrainstormMindmapCard extends HTMLElement {
     canvasArea.addEventListener("touchend", () => {
       touchStartPan = null;
       lastTouchDist = null;
+      if (this._activeDrag) {
+        const el = this.shadowRoot.getElementById(`cloud_${this._activeDrag.id}`);
+        if (el) el.classList.remove("dragging");
+        this._activeDrag = null;
+      }
+      this._pendingDrag = null;
     });
 
     // Fullscreen Toggle
@@ -724,8 +1046,12 @@ class BrainstormMindmapCard extends HTMLElement {
     }
 
     window.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && cardRoot && cardRoot.classList.contains("is-fullscreen")) {
-        toggleFullscreen();
+      if (e.key === "Escape") {
+        if (this._isModalOpen) {
+          this._closeDialog();
+        } else if (cardRoot && cardRoot.classList.contains("is-fullscreen")) {
+          toggleFullscreen();
+        }
       }
     });
 
@@ -736,8 +1062,8 @@ class BrainstormMindmapCard extends HTMLElement {
       this._centerLayout(true);
     });
 
-    // Quick Add
-    addNoteBtn.addEventListener("click", () => this._promptAddIdea());
+    // Quick Add -> Show Dialog Modal
+    addNoteBtn.addEventListener("click", () => this._showAddDialog());
 
     // Center Node Click -> Cycle category
     centerNode.addEventListener("click", () => {
@@ -747,6 +1073,7 @@ class BrainstormMindmapCard extends HTMLElement {
       const idx = categories.indexOf(this._selectedCategory);
       const nextIdx = (idx + 1) % categories.length;
       this._selectedCategory = categories[nextIdx];
+      this._lastDataSignature = ""; // force re-render
       this._centerLayout(true);
       this._updateContent();
     });
@@ -949,17 +1276,19 @@ class BrainstormMindmapCard extends HTMLElement {
         html += `
           <div class="note-cloud" id="cloud_${idea.id}" data-id="${idea.id}" style="--cat-color: ${color};">
             <div class="cloud-meta">
-              <span class="cat-tag" style="background: color-mix(in srgb, ${color} 12%, transparent); color: ${color};">${idea.category}</span>
+              <span class="cat-tag" data-cat="${this._escapeHtml(idea.category)}" title="Kategorie ändern">
+                🏷️ ${this._escapeHtml(idea.category)}
+              </span>
               <span class="cloud-source" title="${idea.source || 'Dashboard'}">
                 <span>${sourceIcon}</span>
                 <span>${timeAgo}</span>
               </span>
             </div>
-            <div class="cloud-text">${this._escapeHtml(idea.text)}</div>
+            <div class="cloud-text" title="Klicken zum Bearbeiten">${this._escapeHtml(idea.text)}</div>
             <div class="cloud-actions">
               <button class="action-btn done-btn" data-act="done" data-id="${idea.id}" title="Als erledigt markieren">✓</button>
-              <button class="action-btn" data-act="edit" data-id="${idea.id}" data-text="${this._escapeHtml(idea.text)}" title="Bearbeiten">✏️</button>
-              <button class="action-btn" data-act="move" data-id="${idea.id}" data-cat="${idea.category}" title="Kategorie ändern">📁</button>
+              <button class="action-btn" data-act="edit" data-id="${idea.id}" title="Bearbeiten">✏️</button>
+              <button class="action-btn" data-act="move" data-id="${idea.id}" title="Kategorie ändern">📁</button>
               <button class="action-btn del-btn" data-act="delete" data-id="${idea.id}" title="Löschen">🗑️</button>
             </div>
           </div>
@@ -1004,21 +1333,40 @@ class BrainstormMindmapCard extends HTMLElement {
       // Attach Node Drag & Action Listeners
       container.querySelectorAll(".note-cloud").forEach((cloud) => {
         const id = cloud.getAttribute("data-id");
+        const idea = filteredIdeas.find((i) => i.id === id);
+        if (!idea) return;
 
-        // Drag start on cloud
+        // Mouse down records pending drag - only moves if threshold > 5px (prevents click jitter!)
         cloud.addEventListener("mousedown", (e) => {
-          if (e.target.closest(".action-btn")) return;
-          e.stopPropagation();
-          cloud.classList.add("dragging");
+          if (e.target.closest(".action-btn") || e.target.closest(".cat-tag")) return;
+          if (e.button !== 0) return;
           const pos = this._nodePositions.get(id) || { x: 0, y: 0 };
-          this._activeDrag = {
+          this._pendingDrag = {
             id: id,
+            cloud: cloud,
             startMouseX: e.clientX,
             startMouseY: e.clientY,
             startNodeX: pos.x,
             startNodeY: pos.y,
           };
         });
+
+        // Touch start records pending drag
+        cloud.addEventListener("touchstart", (e) => {
+          if (e.target.closest(".action-btn") || e.target.closest(".cat-tag")) return;
+          if (e.touches.length === 1) {
+            const touch = e.touches[0];
+            const pos = this._nodePositions.get(id) || { x: 0, y: 0 };
+            this._pendingDrag = {
+              id: id,
+              cloud: cloud,
+              startMouseX: touch.clientX,
+              startMouseY: touch.clientY,
+              startNodeX: pos.x,
+              startNodeY: pos.y,
+            };
+          }
+        }, { passive: true });
 
         // Hover highlight connector
         cloud.addEventListener("mouseenter", () => {
@@ -1030,16 +1378,33 @@ class BrainstormMindmapCard extends HTMLElement {
           if (path) path.classList.remove("highlight");
         });
 
+        // Text click or edit button -> Edit Dialog
+        const textEl = cloud.querySelector(".cloud-text");
+        if (textEl) {
+          textEl.addEventListener("click", (e) => {
+            e.stopPropagation();
+            this._showEditDialog(idea.id, idea.text, idea.category);
+          });
+        }
+
+        // Category Tag click -> Category Picker
+        const catTagEl = cloud.querySelector(".cat-tag");
+        if (catTagEl) {
+          catTagEl.addEventListener("click", (e) => {
+            e.stopPropagation();
+            this._showCategoryPicker(idea.id, idea.category, idea.text);
+          });
+        }
+
         // Action buttons
         cloud.querySelectorAll(".action-btn").forEach((btn) => {
           btn.addEventListener("click", (e) => {
             e.stopPropagation();
             const act = btn.getAttribute("data-act");
-            const noteId = btn.getAttribute("data-id");
-            if (act === "done") this._completeIdea(noteId);
-            else if (act === "edit") this._editIdea(noteId, btn.getAttribute("data-text"));
-            else if (act === "move") this._changeCategory(noteId, btn.getAttribute("data-cat"), categories);
-            else if (act === "delete") this._deleteIdea(noteId);
+            if (act === "done") this._completeIdea(idea.id);
+            else if (act === "edit") this._showEditDialog(idea.id, idea.text, idea.category);
+            else if (act === "move") this._showCategoryPicker(idea.id, idea.category, idea.text);
+            else if (act === "delete") this._showDeleteConfirm(idea.id, idea.text);
           });
         });
       });
@@ -1058,77 +1423,303 @@ class BrainstormMindmapCard extends HTMLElement {
       .replace(/'/g, "&#039;");
   }
 
-  // --- Backend Actions ---
+  // --- Modal Dialog System (Mushroom / Minimalist UI) ---
 
-  async _promptAddIdea() {
-    const text = prompt("Neue Idee für Brainstorm eingeben:");
-    if (!text || !text.trim()) return;
+  _openDialog(title, renderFn) {
+    const dialog = this.shadowRoot.getElementById("mindmapDialog");
+    const titleEl = this.shadowRoot.getElementById("dialogTitle");
+    const bodyEl = this.shadowRoot.getElementById("dialogBody");
+    if (!dialog || !titleEl || !bodyEl) return;
 
+    this._isModalOpen = true;
+    titleEl.innerHTML = title;
+    bodyEl.innerHTML = "";
+    renderFn(bodyEl);
+    dialog.style.display = "flex";
+  }
+
+  _closeDialog() {
+    const dialog = this.shadowRoot.getElementById("mindmapDialog");
+    if (dialog) dialog.style.display = "none";
+    this._isModalOpen = false;
+  }
+
+  _showCategoryPicker(id, currentCategory, noteText) {
     const sensor = this._getSensorEntity();
-    const categories = sensor ? sensor.attributes.categories || ["Inbox"] : ["Inbox"];
-    const cat = this._selectedCategory && this._selectedCategory !== "all" ? this._selectedCategory : "Inbox";
+    const categories = sensor ? (sensor.attributes.categories || ["Inbox"]) : ["Inbox"];
+    const counts = sensor ? (sensor.attributes.category_counts || {}) : {};
 
-    try {
-      await this._hass.callService("brainstorm", "add_idea", {
-        text: text.trim(),
-        category: cat,
-        source: "dashboard",
+    this._openDialog("🏷️ Kategorie auswählen", (body) => {
+      let previewHtml = "";
+      if (noteText) {
+        previewHtml = `<div class="dialog-note-preview">"${this._escapeHtml(noteText)}"</div>`;
+      }
+
+      body.innerHTML = `
+        ${previewHtml}
+        <div class="dialog-label">Kategorie wählen:</div>
+        <div class="dialog-categories-grid">
+          ${categories
+            .map((cat) => {
+              const isSel = cat === currentCategory;
+              const color = this._getCategoryColor(cat);
+              const count = counts[cat] || 0;
+              return `
+                <div class="dialog-cat-chip ${isSel ? "selected" : ""}" data-cat="${this._escapeHtml(cat)}" style="--chip-color: ${color};">
+                  <span class="dialog-cat-dot"></span>
+                  <span class="dialog-cat-name">${this._escapeHtml(cat)}</span>
+                  <span class="dialog-cat-count">${isSel ? "✓" : count}</span>
+                </div>
+              `;
+            })
+            .join("")}
+        </div>
+        <div class="dialog-label" style="margin-top: 6px;">Oder neue Kategorie anlegen:</div>
+        <div class="dialog-new-cat-row">
+          <input type="text" class="dialog-input" id="newCatInput" placeholder="Kategoriename..." />
+          <button class="dialog-btn dialog-btn-primary" id="addNewCatBtn">➕ Erstellen</button>
+        </div>
+      `;
+
+      // Select existing category
+      body.querySelectorAll(".dialog-cat-chip").forEach((chip) => {
+        chip.addEventListener("click", async () => {
+          const newCat = chip.getAttribute("data-cat");
+          this._closeDialog();
+          if (newCat && newCat !== currentCategory) {
+            try {
+              await this._hass.callService("brainstorm", "update_idea", {
+                id: id,
+                category: newCat,
+              });
+            } catch (err) {
+              console.error("[BrainstormMindmap] Failed to change category:", err);
+            }
+          }
+        });
       });
-    } catch (e) {
-      console.error("Failed to add idea via mindmap:", e);
-    }
+
+      // Add new category
+      const newCatInput = body.querySelector("#newCatInput");
+      const addNewCatBtn = body.querySelector("#addNewCatBtn");
+      const handleCreateCat = async () => {
+        const val = (newCatInput.value || "").trim();
+        if (!val) return;
+        this._closeDialog();
+        try {
+          await this._hass.callService("brainstorm", "add_category", { name: val });
+          await this._hass.callService("brainstorm", "update_idea", { id: id, category: val });
+        } catch (err) {
+          console.error("[BrainstormMindmap] Failed to create category:", err);
+        }
+      };
+
+      addNewCatBtn.addEventListener("click", handleCreateCat);
+      newCatInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") handleCreateCat();
+      });
+      setTimeout(() => newCatInput && newCatInput.focus(), 60);
+    });
+  }
+
+  _showEditDialog(id, currentText, currentCategory) {
+    const sensor = this._getSensorEntity();
+    const categories = sensor ? (sensor.attributes.categories || ["Inbox"]) : ["Inbox"];
+    let selectedCat = currentCategory || "Inbox";
+
+    this._openDialog("✏️ Notiz bearbeiten", (body) => {
+      body.innerHTML = `
+        <div class="dialog-label">Notiztext:</div>
+        <textarea class="dialog-textarea" id="editTextarea" rows="3">${this._escapeHtml(currentText)}</textarea>
+
+        <div class="dialog-label">Kategorie:</div>
+        <div class="dialog-categories-grid" id="editCatGrid">
+          ${categories
+            .map((cat) => {
+              const isSel = cat === selectedCat;
+              const color = this._getCategoryColor(cat);
+              return `
+                <div class="dialog-cat-chip ${isSel ? "selected" : ""}" data-cat="${this._escapeHtml(cat)}" style="--chip-color: ${color};">
+                  <span class="dialog-cat-dot"></span>
+                  <span class="dialog-cat-name">${this._escapeHtml(cat)}</span>
+                </div>
+              `;
+            })
+            .join("")}
+        </div>
+
+        <div class="dialog-footer">
+          <button class="dialog-btn dialog-btn-cancel" id="cancelEditBtn">Abbrechen</button>
+          <button class="dialog-btn dialog-btn-primary" id="saveEditBtn">Speichern</button>
+        </div>
+      `;
+
+      const textarea = body.querySelector("#editTextarea");
+      const saveBtn = body.querySelector("#saveEditBtn");
+      const cancelBtn = body.querySelector("#cancelEditBtn");
+      const catChips = body.querySelectorAll(".dialog-cat-chip");
+
+      setTimeout(() => {
+        if (textarea) {
+          textarea.focus();
+          textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+        }
+      }, 50);
+
+      catChips.forEach((chip) => {
+        chip.addEventListener("click", () => {
+          catChips.forEach((c) => c.classList.remove("selected"));
+          chip.classList.add("selected");
+          selectedCat = chip.getAttribute("data-cat");
+        });
+      });
+
+      const handleSave = async () => {
+        const newText = (textarea.value || "").trim();
+        if (!newText) return;
+        this._closeDialog();
+
+        const payload = { id: id, text: newText };
+        if (selectedCat && selectedCat !== currentCategory) {
+          payload.category = selectedCat;
+        }
+
+        try {
+          await this._hass.callService("brainstorm", "update_idea", payload);
+        } catch (err) {
+          console.error("[BrainstormMindmap] Failed to update idea:", err);
+        }
+      };
+
+      saveBtn.addEventListener("click", handleSave);
+      cancelBtn.addEventListener("click", () => this._closeDialog());
+      textarea.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+          e.preventDefault();
+          handleSave();
+        }
+      });
+    });
+  }
+
+  _showAddDialog() {
+    const sensor = this._getSensorEntity();
+    const categories = sensor ? (sensor.attributes.categories || ["Inbox"]) : ["Inbox"];
+    let selectedCat = this._selectedCategory && this._selectedCategory !== "all" ? this._selectedCategory : "Inbox";
+
+    this._openDialog("💡 Neue Idee erfassen", (body) => {
+      body.innerHTML = `
+        <div class="dialog-label">Idee / Gedanke:</div>
+        <textarea class="dialog-textarea" id="addTextarea" placeholder="Was möchtest du festhalten?..." rows="3"></textarea>
+
+        <div class="dialog-label">Kategorie:</div>
+        <div class="dialog-categories-grid" id="addCatGrid">
+          ${categories
+            .map((cat) => {
+              const isSel = cat === selectedCat;
+              const color = this._getCategoryColor(cat);
+              return `
+                <div class="dialog-cat-chip ${isSel ? "selected" : ""}" data-cat="${this._escapeHtml(cat)}" style="--chip-color: ${color};">
+                  <span class="dialog-cat-dot"></span>
+                  <span class="dialog-cat-name">${this._escapeHtml(cat)}</span>
+                </div>
+              `;
+            })
+            .join("")}
+        </div>
+
+        <div class="dialog-footer">
+          <button class="dialog-btn dialog-btn-cancel" id="cancelAddBtn">Abbrechen</button>
+          <button class="dialog-btn dialog-btn-primary" id="saveAddBtn">Hinzufügen</button>
+        </div>
+      `;
+
+      const textarea = body.querySelector("#addTextarea");
+      const saveBtn = body.querySelector("#saveAddBtn");
+      const cancelBtn = body.querySelector("#cancelAddBtn");
+      const catChips = body.querySelectorAll(".dialog-cat-chip");
+
+      setTimeout(() => {
+        if (textarea) textarea.focus();
+      }, 50);
+
+      catChips.forEach((chip) => {
+        chip.addEventListener("click", () => {
+          catChips.forEach((c) => c.classList.remove("selected"));
+          chip.classList.add("selected");
+          selectedCat = chip.getAttribute("data-cat");
+        });
+      });
+
+      const handleAdd = async () => {
+        const text = (textarea.value || "").trim();
+        if (!text) return;
+        this._closeDialog();
+
+        try {
+          await this._hass.callService("brainstorm", "add_idea", {
+            text: text,
+            category: selectedCat,
+            source: "dashboard",
+          });
+        } catch (err) {
+          console.error("[BrainstormMindmap] Failed to add idea:", err);
+        }
+      };
+
+      saveBtn.addEventListener("click", handleAdd);
+      cancelBtn.addEventListener("click", () => this._closeDialog());
+      textarea.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+          e.preventDefault();
+          handleAdd();
+        }
+      });
+    });
+  }
+
+  _showDeleteConfirm(id, noteText) {
+    this._openDialog("🗑️ Notiz löschen?", (body) => {
+      body.innerHTML = `
+        <div class="dialog-note-preview">"${this._escapeHtml(noteText)}"</div>
+        <p style="margin: 8px 0; font-size: 0.88rem; color: var(--secondary-text-color, #64748b);">
+          Möchtest du diese Notiz wirklich unwiderruflich aus Brainstorm entfernen?
+        </p>
+        <div class="dialog-footer">
+          <button class="dialog-btn dialog-btn-cancel" id="cancelDelBtn">Abbrechen</button>
+          <button class="dialog-btn dialog-btn-primary" id="confirmDelBtn" style="background: var(--error-color, #db4437);">Löschen</button>
+        </div>
+      `;
+
+      body.querySelector("#cancelDelBtn").addEventListener("click", () => this._closeDialog());
+      body.querySelector("#confirmDelBtn").addEventListener("click", async () => {
+        this._closeDialog();
+        try {
+          await this._hass.callService("brainstorm", "delete_idea", { id: id });
+        } catch (err) {
+          console.error("[BrainstormMindmap] Failed to delete idea:", err);
+        }
+      });
+    });
   }
 
   async _completeIdea(id) {
+    const el = this.shadowRoot.getElementById(`cloud_${id}`);
+    if (el) {
+      el.style.transition = "opacity 0.25s ease, transform 0.25s ease";
+      el.style.opacity = "0.2";
+      el.style.transform = "scale(0.85)";
+    }
     try {
       await this._hass.callService("brainstorm", "update_idea", {
         id: id,
         status: "completed",
       });
     } catch (e) {
-      console.error("Failed to complete idea:", e);
-    }
-  }
-
-  async _editIdea(id, currentText) {
-    const newText = prompt("Idee bearbeiten:", currentText);
-    if (newText !== null && newText.trim() && newText.trim() !== currentText) {
-      try {
-        await this._hass.callService("brainstorm", "update_idea", {
-          id: id,
-          text: newText.trim(),
-        });
-      } catch (e) {
-        console.error("Failed to update idea:", e);
-      }
-    }
-  }
-
-  async _changeCategory(id, currentCategory, availableCategories) {
-    const newCat = prompt(
-      `Kategorie ändern:\nVerfügbar: ${availableCategories.join(", ")}`,
-      currentCategory
-    );
-    if (newCat !== null && newCat.trim() && newCat.trim() !== currentCategory) {
-      try {
-        await this._hass.callService("brainstorm", "update_idea", {
-          id: id,
-          category: newCat.trim(),
-        });
-      } catch (e) {
-        console.error("Failed to change category:", e);
-      }
-    }
-  }
-
-  async _deleteIdea(id) {
-    if (confirm("Möchtest du diese Notiz wirklich löschen?")) {
-      try {
-        await this._hass.callService("brainstorm", "delete_idea", {
-          id: id,
-        });
-      } catch (e) {
-        console.error("Failed to delete idea:", e);
+      console.error("[BrainstormMindmap] Failed to complete idea:", e);
+      if (el) {
+        el.style.opacity = "1";
+        el.style.transform = "none";
       }
     }
   }
@@ -1147,7 +1738,7 @@ window.customCards.push({
 });
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.2 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.3 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

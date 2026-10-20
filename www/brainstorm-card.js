@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.2 - Mushroom design alignment & 3/4 screen popup layer for mindmap
+ * Version 1.4.3 - Mushroom design alignment, smooth modals & jitter-free UI
  */
 class BrainstormCard extends HTMLElement {
   constructor() {
@@ -16,6 +16,7 @@ class BrainstormCard extends HTMLElement {
     this._initialized = false;
     this._lastUpdated = null;
     this._lastCategory = "all";
+    this._isDialogOpen = false;
   }
 
   static getStubConfig() {
@@ -45,7 +46,9 @@ class BrainstormCard extends HTMLElement {
     if (!this._initialized) {
       this._initDom();
     } else {
-      this._updateContent();
+      if (!this._isDialogOpen) {
+        this._updateContent();
+      }
       const popupMindmap = this.shadowRoot.getElementById("popupMindmap");
       const mindmapModal = this.shadowRoot.getElementById("mindmapModal");
       if (popupMindmap && mindmapModal && mindmapModal.style.display === "flex") {
@@ -152,68 +155,247 @@ class BrainstormCard extends HTMLElement {
     }
   }
 
-  async _editIdea(id, currentText) {
-    const newText = prompt("Idee bearbeiten:", currentText);
-    if (newText !== null && newText.trim() && newText.trim() !== currentText) {
-      try {
-        await this._hass.callService("brainstorm", "update_idea", {
-          id: id,
-          text: newText.trim(),
-        });
-      } catch (e) {
-        console.error("Failed to update idea", e);
-      }
-    }
+  _openDialog(title, renderFn) {
+    const dialog = this.shadowRoot.getElementById("cardDialog");
+    const titleEl = this.shadowRoot.getElementById("cardDialogTitle");
+    const bodyEl = this.shadowRoot.getElementById("cardDialogBody");
+    if (!dialog || !titleEl || !bodyEl) return;
+
+    this._isDialogOpen = true;
+    titleEl.innerHTML = title;
+    bodyEl.innerHTML = "";
+    renderFn(bodyEl);
+    dialog.style.display = "flex";
   }
 
-  async _changeCategory(id, currentCategory, availableCategories) {
-    const newCategory = prompt(
-      `Kategorie ändern:\nVerfügbar: ${availableCategories.join(", ")}`,
-      currentCategory
-    );
-    if (newCategory !== null && newCategory.trim() && newCategory.trim() !== currentCategory) {
-      try {
-        await this._hass.callService("brainstorm", "update_idea", {
-          id: id,
-          category: newCategory.trim(),
-        });
-      } catch (e) {
-        console.error("Failed to update category", e);
-      }
-    }
+  _closeDialog() {
+    const dialog = this.shadowRoot.getElementById("cardDialog");
+    if (dialog) dialog.style.display = "none";
+    this._isDialogOpen = false;
   }
 
-  async _addCategory() {
-    const name = prompt("Name der neuen Kategorie eingeben:");
-    if (name && name.trim()) {
-      try {
-        await this._hass.callService("brainstorm", "add_category", {
-          name: name.trim(),
-        });
-      } catch (e) {
-        console.error("Failed to add category", e);
-      }
-    }
-  }
+  _editIdea(id, currentText, currentCategory) {
+    const sensor = this._getSensorEntity();
+    const categories = sensor ? (sensor.attributes.categories || ["Inbox"]) : ["Inbox"];
+    let selectedCat = currentCategory || "Inbox";
 
-  async _removeCategory(categoryName) {
-    if (categoryName === "Inbox") return;
-    if (
-      confirm(
-        `Kategorie "${categoryName}" wirklich löschen?\nEnthaltene Ideen werden automatisch in die Inbox verschoben.`
-      )
-    ) {
-      try {
-        await this._hass.callService("brainstorm", "remove_category", {
-          name: categoryName,
-        });
-        if (this._selectedCategory === categoryName) {
-          this._selectedCategory = "all";
+    this._openDialog("✏️ Notiz bearbeiten", (body) => {
+      body.innerHTML = `
+        <div class="action-dialog-label">Notiztext:</div>
+        <textarea class="action-dialog-textarea" id="editTextarea" rows="3">${this._escapeHtml(currentText)}</textarea>
+
+        <div class="action-dialog-label">Kategorie:</div>
+        <div class="action-dialog-categories-grid" id="editCatGrid">
+          ${categories
+            .map((cat) => {
+              const isSel = cat === selectedCat;
+              const color = this._getCategoryColor(cat);
+              return `
+                <div class="action-dialog-cat-chip ${isSel ? "selected" : ""}" data-cat="${this._escapeHtml(cat)}" style="--chip-color: ${color};">
+                  <span class="action-dialog-cat-dot"></span>
+                  <span class="action-dialog-cat-name">${this._escapeHtml(cat)}</span>
+                </div>
+              `;
+            })
+            .join("")}
+        </div>
+
+        <div class="action-dialog-footer">
+          <button class="action-dialog-btn action-dialog-btn-cancel" id="cancelEditBtn">Abbrechen</button>
+          <button class="action-dialog-btn action-dialog-btn-primary" id="saveEditBtn">Speichern</button>
+        </div>
+      `;
+
+      const textarea = body.querySelector("#editTextarea");
+      const saveBtn = body.querySelector("#saveEditBtn");
+      const cancelBtn = body.querySelector("#cancelEditBtn");
+      const catChips = body.querySelectorAll(".action-dialog-cat-chip");
+
+      setTimeout(() => {
+        if (textarea) {
+          textarea.focus();
+          textarea.setSelectionRange(textarea.value.length, textarea.value.length);
         }
-      } catch (e) {
-        console.error("Failed to remove category", e);
+      }, 50);
+
+      catChips.forEach((chip) => {
+        chip.addEventListener("click", () => {
+          catChips.forEach((c) => c.classList.remove("selected"));
+          chip.classList.add("selected");
+          selectedCat = chip.getAttribute("data-cat");
+        });
+      });
+
+      const handleSave = async () => {
+        const newText = (textarea.value || "").trim();
+        if (!newText) return;
+        this._closeDialog();
+
+        const payload = { id: id, text: newText };
+        if (selectedCat && selectedCat !== currentCategory) {
+          payload.category = selectedCat;
+        }
+
+        try {
+          await this._hass.callService("brainstorm", "update_idea", payload);
+        } catch (err) {
+          console.error("Failed to update idea", err);
+        }
+      };
+
+      saveBtn.addEventListener("click", handleSave);
+      cancelBtn.addEventListener("click", () => this._closeDialog());
+      textarea.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+          e.preventDefault();
+          handleSave();
+        }
+      });
+    });
+  }
+
+  _changeCategory(id, currentCategory, noteText) {
+    const sensor = this._getSensorEntity();
+    const categories = sensor ? (sensor.attributes.categories || ["Inbox"]) : ["Inbox"];
+    const counts = sensor ? (sensor.attributes.category_counts || {}) : {};
+
+    this._openDialog("🏷️ Kategorie auswählen", (body) => {
+      let previewHtml = "";
+      if (noteText) {
+        previewHtml = `<div class="action-dialog-note-preview">"${this._escapeHtml(noteText)}"</div>`;
       }
-    }
+
+      body.innerHTML = `
+        ${previewHtml}
+        <div class="action-dialog-label">Kategorie wählen:</div>
+        <div class="action-dialog-categories-grid">
+          ${categories
+            .map((cat) => {
+              const isSel = cat === currentCategory;
+              const color = this._getCategoryColor(cat);
+              const count = counts[cat] || 0;
+              return `
+                <div class="action-dialog-cat-chip ${isSel ? "selected" : ""}" data-cat="${this._escapeHtml(cat)}" style="--chip-color: ${color};">
+                  <span class="action-dialog-cat-dot"></span>
+                  <span class="action-dialog-cat-name">${this._escapeHtml(cat)}</span>
+                  <span class="action-dialog-cat-count">${isSel ? "✓" : count}</span>
+                </div>
+              `;
+            })
+            .join("")}
+        </div>
+        <div class="action-dialog-label" style="margin-top: 6px;">Oder neue Kategorie anlegen:</div>
+        <div class="action-dialog-new-cat-row">
+          <input type="text" class="action-dialog-input" id="newCatInput" placeholder="Kategoriename..." />
+          <button class="action-dialog-btn action-dialog-btn-primary" id="addNewCatBtn">➕ Erstellen</button>
+        </div>
+      `;
+
+      body.querySelectorAll(".action-dialog-cat-chip").forEach((chip) => {
+        chip.addEventListener("click", async () => {
+          const newCat = chip.getAttribute("data-cat");
+          this._closeDialog();
+          if (newCat && newCat !== currentCategory) {
+            try {
+              await this._hass.callService("brainstorm", "update_idea", {
+                id: id,
+                category: newCat,
+              });
+            } catch (err) {
+              console.error("Failed to update category", err);
+            }
+          }
+        });
+      });
+
+      const newCatInput = body.querySelector("#newCatInput");
+      const addNewCatBtn = body.querySelector("#addNewCatBtn");
+      const handleCreateCat = async () => {
+        const val = (newCatInput.value || "").trim();
+        if (!val) return;
+        this._closeDialog();
+        try {
+          await this._hass.callService("brainstorm", "add_category", { name: val });
+          await this._hass.callService("brainstorm", "update_idea", { id: id, category: val });
+        } catch (err) {
+          console.error("Failed to add category", err);
+        }
+      };
+
+      addNewCatBtn.addEventListener("click", handleCreateCat);
+      newCatInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") handleCreateCat();
+      });
+      setTimeout(() => newCatInput && newCatInput.focus(), 60);
+    });
+  }
+
+  _addCategory() {
+    this._openDialog("➕ Neue Kategorie", (body) => {
+      body.innerHTML = `
+        <div class="action-dialog-label">Name der neuen Kategorie:</div>
+        <input type="text" class="action-dialog-input" id="createCatInput" placeholder="z. B. Smart Home, Finanzen, Einkaufen..." />
+        <div class="action-dialog-footer">
+          <button class="action-dialog-btn action-dialog-btn-cancel" id="cancelAddCatBtn">Abbrechen</button>
+          <button class="action-dialog-btn action-dialog-btn-primary" id="saveAddCatBtn">Kategorie erstellen</button>
+        </div>
+      `;
+
+      const input = body.querySelector("#createCatInput");
+      const saveBtn = body.querySelector("#saveAddCatBtn");
+      const cancelBtn = body.querySelector("#cancelAddCatBtn");
+
+      const handleAdd = async () => {
+        const name = (input.value || "").trim();
+        if (!name) return;
+        this._closeDialog();
+        try {
+          await this._hass.callService("brainstorm", "add_category", { name: name });
+        } catch (err) {
+          console.error("Failed to add category", err);
+        }
+      };
+
+      saveBtn.addEventListener("click", handleAdd);
+      cancelBtn.addEventListener("click", () => this._closeDialog());
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") handleAdd();
+      });
+      setTimeout(() => input && input.focus(), 60);
+    });
+  }
+
+  _removeCategory(categoryName) {
+    if (categoryName === "Inbox") return;
+    this._openDialog("🗑️ Kategorie löschen?", (body) => {
+      body.innerHTML = `
+        <p style="margin: 8px 0; font-size: 0.9rem; line-height: 1.4; color: var(--primary-text-color, #212121);">
+          Möchtest du die Kategorie <strong>"${this._escapeHtml(categoryName)}"</strong> wirklich löschen?
+        </p>
+        <p style="margin: 0 0 12px 0; font-size: 0.8rem; color: var(--secondary-text-color, #64748b);">
+          Enthaltene Notizen werden automatisch in die Kategorie <em>Inbox</em> verschoben.
+        </p>
+        <div class="action-dialog-footer">
+          <button class="action-dialog-btn action-dialog-btn-cancel" id="cancelRemoveCatBtn">Abbrechen</button>
+          <button class="action-dialog-btn action-dialog-btn-primary" id="confirmRemoveCatBtn" style="background: var(--error-color, #db4437);">Löschen</button>
+        </div>
+      `;
+
+      body.querySelector("#cancelRemoveCatBtn").addEventListener("click", () => this._closeDialog());
+      body.querySelector("#confirmRemoveCatBtn").addEventListener("click", async () => {
+        this._closeDialog();
+        try {
+          await this._hass.callService("brainstorm", "remove_category", {
+            name: categoryName,
+          });
+          if (this._selectedCategory === categoryName) {
+            this._selectedCategory = "all";
+          }
+        } catch (e) {
+          console.error("Failed to remove category", e);
+        }
+      });
+    });
   }
 
   _initDom() {
@@ -369,6 +551,219 @@ class BrainstormCard extends HTMLElement {
           color: #ffffff;
           border-color: var(--error-color, #db4437);
           transform: scale(1.08);
+        }
+        /* Action Dialog Modal (Mushroom / Minimalist UI) */
+        .action-dialog-backdrop {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          height: 100dvh;
+          background: rgba(0, 0, 0, 0.55);
+          backdrop-filter: blur(6px);
+          -webkit-backdrop-filter: blur(6px);
+          z-index: 999999;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 16px;
+          box-sizing: border-box;
+          animation: modalFadeIn 0.18s ease-out;
+        }
+        .action-dialog-box {
+          background: var(--ha-card-background, var(--card-background-color, #ffffff));
+          color: var(--primary-text-color, #212121);
+          width: 100%;
+          max-width: 440px;
+          border-radius: 20px;
+          border: 1px solid var(--ha-card-border-color, var(--divider-color, rgba(127, 127, 127, 0.2)));
+          box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          animation: modalScaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .action-dialog-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 14px 18px;
+          border-bottom: 1px solid var(--divider-color, rgba(127, 127, 127, 0.15));
+        }
+        .action-dialog-title {
+          font-size: 1rem;
+          font-weight: 700;
+          color: var(--primary-text-color, #212121);
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .action-dialog-close {
+          width: 28px;
+          height: 28px;
+          border-radius: 50%;
+          border: 1px solid var(--divider-color, rgba(127, 127, 127, 0.2));
+          background: var(--secondary-background-color, rgba(127, 127, 127, 0.1));
+          color: var(--secondary-text-color, #64748b);
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 14px;
+          transition: all 0.15s ease;
+        }
+        .action-dialog-close:hover {
+          color: var(--primary-text-color, #212121);
+          background: var(--divider-color, rgba(127, 127, 127, 0.2));
+        }
+        .action-dialog-body {
+          padding: 18px;
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+          max-height: 70vh;
+          overflow-y: auto;
+          box-sizing: border-box;
+        }
+        .action-dialog-note-preview {
+          font-size: 0.82rem;
+          color: var(--secondary-text-color, #64748b);
+          background: var(--secondary-background-color, rgba(127, 127, 127, 0.07));
+          padding: 8px 12px;
+          border-radius: 10px;
+          border-left: 3px solid var(--primary-color, #03a9f4);
+          line-height: 1.35;
+          max-height: 60px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .action-dialog-label {
+          font-size: 0.75rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.6px;
+          color: var(--secondary-text-color, #64748b);
+        }
+        .action-dialog-categories-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(115px, 1fr));
+          gap: 8px;
+        }
+        .action-dialog-cat-chip {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 9px 12px;
+          border-radius: 14px;
+          border: 1.5px solid var(--divider-color, rgba(127, 127, 127, 0.18));
+          background: var(--secondary-background-color, rgba(127, 127, 127, 0.05));
+          color: var(--primary-text-color, #212121);
+          font-size: 0.85rem;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.15s ease;
+          text-align: left;
+        }
+        .action-dialog-cat-chip:hover {
+          border-color: var(--chip-color, var(--primary-color, #03a9f4));
+          background: color-mix(in srgb, var(--chip-color, var(--primary-color, #03a9f4)) 12%, transparent);
+          transform: translateY(-1px);
+        }
+        .action-dialog-cat-chip.selected {
+          border-color: var(--chip-color, var(--primary-color, #03a9f4));
+          background: color-mix(in srgb, var(--chip-color, var(--primary-color, #03a9f4)) 18%, transparent);
+          font-weight: 700;
+        }
+        .action-dialog-cat-dot {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          background: var(--chip-color, var(--primary-color, #03a9f4));
+          flex-shrink: 0;
+        }
+        .action-dialog-cat-name {
+          flex: 1;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .action-dialog-cat-count {
+          font-size: 0.72rem;
+          opacity: 0.65;
+          font-weight: 600;
+        }
+        .action-dialog-new-cat-row {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-top: 4px;
+        }
+        .action-dialog-input {
+          flex: 1;
+          border: 1px solid var(--ha-card-border-color, var(--divider-color, rgba(127, 127, 127, 0.2)));
+          background: var(--card-background-color, var(--ha-card-background, #ffffff));
+          color: var(--primary-text-color, #212121);
+          padding: 8px 12px;
+          border-radius: 12px;
+          font-size: 0.85rem;
+          outline: none;
+        }
+        .action-dialog-input:focus {
+          border-color: var(--primary-color, #03a9f4);
+          box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-color, #03a9f4) 20%, transparent);
+        }
+        .action-dialog-textarea {
+          width: 100%;
+          box-sizing: border-box;
+          min-height: 80px;
+          border: 1px solid var(--ha-card-border-color, var(--divider-color, rgba(127, 127, 127, 0.2)));
+          background: var(--card-background-color, var(--ha-card-background, #ffffff));
+          color: var(--primary-text-color, #212121);
+          padding: 10px 12px;
+          border-radius: 12px;
+          font-size: 0.9rem;
+          font-family: inherit;
+          resize: vertical;
+          outline: none;
+          line-height: 1.4;
+        }
+        .action-dialog-textarea:focus {
+          border-color: var(--primary-color, #03a9f4);
+          box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-color, #03a9f4) 20%, transparent);
+        }
+        .action-dialog-footer {
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          gap: 8px;
+          margin-top: 6px;
+        }
+        .action-dialog-btn {
+          padding: 8px 16px;
+          border-radius: 12px;
+          font-size: 0.85rem;
+          font-weight: 600;
+          cursor: pointer;
+          border: 1px solid transparent;
+          transition: all 0.15s ease;
+        }
+        .action-dialog-btn-cancel {
+          background: var(--secondary-background-color, rgba(127, 127, 127, 0.1));
+          color: var(--secondary-text-color, #64748b);
+          border-color: var(--divider-color, rgba(127, 127, 127, 0.2));
+        }
+        .action-dialog-btn-cancel:hover {
+          background: var(--divider-color, rgba(127, 127, 127, 0.2));
+          color: var(--primary-text-color, #212121);
+        }
+        .action-dialog-btn-primary {
+          background: var(--primary-color, #03a9f4);
+          color: var(--text-primary-color, #ffffff);
+        }
+        .action-dialog-btn-primary:hover {
+          filter: brightness(1.08);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
         }
         /* Input & Category Toolbar */
         .input-section {
@@ -790,6 +1185,17 @@ class BrainstormCard extends HTMLElement {
             <brainstorm-mindmap-card id="popupMindmap" style="width: 100%; height: 100%; display: block;"></brainstorm-mindmap-card>
           </div>
         </div>
+
+        <!-- Action Dialog Modal (Mushroom Style) -->
+        <div class="action-dialog-backdrop" id="cardDialog" style="display: none;">
+          <div class="action-dialog-box" id="cardDialogBox">
+            <div class="action-dialog-header">
+              <div class="action-dialog-title" id="cardDialogTitle">Titel</div>
+              <button class="action-dialog-close" id="cardDialogCloseBtn" title="Schließen (ESC)">✕</button>
+            </div>
+            <div class="action-dialog-body" id="cardDialogBody"></div>
+          </div>
+        </div>
       </ha-card>
     `;
 
@@ -801,6 +1207,17 @@ class BrainstormCard extends HTMLElement {
     const mindmapModal = this.shadowRoot.getElementById("mindmapModal");
     const closeMindmapModalBtn = this.shadowRoot.getElementById("closeMindmapModalBtn");
     const popupMindmap = this.shadowRoot.getElementById("popupMindmap");
+    const cardDialog = this.shadowRoot.getElementById("cardDialog");
+    const cardDialogCloseBtn = this.shadowRoot.getElementById("cardDialogCloseBtn");
+
+    if (cardDialogCloseBtn) {
+      cardDialogCloseBtn.addEventListener("click", () => this._closeDialog());
+    }
+    if (cardDialog) {
+      cardDialog.addEventListener("click", (e) => {
+        if (e.target === cardDialog) this._closeDialog();
+      });
+    }
 
     const openMindmapModal = () => {
       if (!mindmapModal) return;
@@ -838,8 +1255,12 @@ class BrainstormCard extends HTMLElement {
     }
 
     window.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && mindmapModal && mindmapModal.style.display === "flex") {
-        closeMindmapModal();
+      if (e.key === "Escape") {
+        if (this._isDialogOpen) {
+          this._closeDialog();
+        } else if (mindmapModal && mindmapModal.style.display === "flex") {
+          closeMindmapModal();
+        }
       }
     });
 
@@ -1052,7 +1473,7 @@ class BrainstormCard extends HTMLElement {
           btn.addEventListener("click", () => {
             const id = btn.getAttribute("data-id");
             const item = activeIdeas.find((i) => i.id === id);
-            if (item) this._editIdea(id, item.text);
+            if (item) this._editIdea(id, item.text, item.category);
           });
         });
 
@@ -1061,7 +1482,7 @@ class BrainstormCard extends HTMLElement {
             const id = el.getAttribute("data-id");
             if (isCompletedView) return;
             const item = activeIdeas.find((i) => i.id === id);
-            if (item) this._editIdea(id, item.text);
+            if (item) this._editIdea(id, item.text, item.category);
           });
         });
 
@@ -1069,7 +1490,8 @@ class BrainstormCard extends HTMLElement {
           el.addEventListener("click", () => {
             const id = el.getAttribute("data-id");
             const currentCat = el.getAttribute("data-cat");
-            this._changeCategory(id, currentCat, categories);
+            const item = activeIdeas.find((i) => i.id === id);
+            this._changeCategory(id, currentCat, item ? item.text : "");
           });
         });
 
