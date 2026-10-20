@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.3 - Mushroom design alignment, smooth modals & jitter-free UI
+ * Version 1.4.4 - Transparent glowing bulb & full viewport utilization
  */
 class BrainstormCard extends HTMLElement {
   constructor() {
@@ -1182,7 +1182,7 @@ class BrainstormCard extends HTMLElement {
         <div class="mindmap-modal-backdrop" id="mindmapModal" style="display: none;">
           <div class="mindmap-modal-content">
             <button class="mindmap-modal-close" id="closeMindmapModalBtn" title="Mindmap schließen (ESC)">✕</button>
-            <brainstorm-mindmap-card id="popupMindmap" style="width: 100%; height: 100%; display: block;"></brainstorm-mindmap-card>
+            <brainstorm-mindmap-card id="popupMindmap" style="width: 100%; height: 100%; display: flex; flex: 1; min-height: 0;"></brainstorm-mindmap-card>
           </div>
         </div>
 
@@ -1223,12 +1223,15 @@ class BrainstormCard extends HTMLElement {
       if (!mindmapModal) return;
       mindmapModal.style.display = "flex";
       if (popupMindmap && this._hass) {
+        if (typeof popupMindmap.setConfig === "function") {
+          popupMindmap.setConfig({ height: "100%", is_popup: true });
+        }
         popupMindmap.hass = this._hass;
         setTimeout(() => {
           if (typeof popupMindmap._centerLayout === "function") {
             popupMindmap._centerLayout(true);
           }
-        }, 60);
+        }, 80);
       }
     };
 

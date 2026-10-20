@@ -1,6 +1,6 @@
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.4.3
+ * Version: 1.4.4
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -138,12 +138,15 @@ class BrainstormMindmapCard extends HTMLElement {
         }
         :host {
           display: block;
+          width: 100%;
+          height: 100%;
           font-family: var(--ha-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
         }
         ha-card {
           position: relative;
           width: 100%;
-          height: ${this._config.height || "580px"};
+          height: 100%;
+          min-height: 480px;
           background: var(--ha-card-background, var(--card-background-color, #ffffff));
           border-radius: var(--ha-card-border-radius, 16px);
           border: var(--ha-card-border-width, 1px) solid var(--ha-card-border-color, var(--divider-color, rgba(127, 127, 127, 0.12)));
@@ -281,9 +284,10 @@ class BrainstormMindmapCard extends HTMLElement {
 
         /* Map Canvas & Viewport */
         .canvas-area {
-          flex: 1;
+          flex: 1 1 auto;
           width: 100%;
           height: 100%;
+          min-height: 0;
           position: relative;
           cursor: grab;
           overflow: hidden;
@@ -335,10 +339,10 @@ class BrainstormMindmapCard extends HTMLElement {
         /* Center Node */
         .center-node {
           position: absolute;
-          width: 144px;
-          height: 144px;
-          margin-left: -72px;
-          margin-top: -72px;
+          width: 154px;
+          height: 154px;
+          margin-left: -77px;
+          margin-top: -77px;
           border-radius: 50%;
           z-index: 5;
           display: flex;
@@ -348,43 +352,52 @@ class BrainstormMindmapCard extends HTMLElement {
           text-align: center;
           cursor: pointer;
           background: var(--ha-card-background, var(--card-background-color, #ffffff));
-          border: 2px solid var(--primary-color, #03a9f4);
+          border: 2.5px solid var(--cat-color, var(--primary-color, #03a9f4));
           box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-          transition: transform 0.25s ease, box-shadow 0.25s ease;
+          transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
           overflow: hidden;
+          padding: 8px 10px;
+          box-sizing: border-box;
         }
         .center-node:hover {
           transform: scale(1.04);
-          box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+          box-shadow: 0 8px 26px rgba(0, 0, 0, 0.12);
         }
-        .center-logo-watermark {
-          position: absolute;
-          inset: 0;
-          background-image: url('/local/brainstorm-logo.svg'), url('/local/brainstorm-logo.png');
-          background-size: 68%;
-          background-position: center;
-          background-repeat: no-repeat;
-          opacity: 0.14;
+        .center-bulb-wrapper {
+          width: 52px;
+          height: 52px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 2px;
+          filter: drop-shadow(0 2px 8px color-mix(in srgb, var(--cat-color, #03a9f4) 40%, transparent));
+        }
+        .center-bulb-img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
           pointer-events: none;
         }
         .center-content {
-          position: relative;
-          z-index: 2;
-          padding: 8px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          line-height: 1.15;
         }
         .center-title {
-          font-size: 1.1rem;
+          font-size: 1.05rem;
           font-weight: 700;
           color: var(--primary-text-color, #212121);
-          letter-spacing: 0.3px;
+          letter-spacing: 0.2px;
         }
         .center-badge {
-          margin-top: 4px;
-          font-size: 0.75rem;
+          margin-top: 3px;
+          font-size: 0.72rem;
           font-weight: 600;
-          color: var(--primary-color, #03a9f4);
-          background: color-mix(in srgb, var(--primary-color, #03a9f4) 10%, transparent);
-          border: 1px solid color-mix(in srgb, var(--primary-color, #03a9f4) 25%, transparent);
+          color: var(--cat-color, var(--primary-color, #03a9f4));
+          background: color-mix(in srgb, var(--cat-color, var(--primary-color, #03a9f4)) 12%, transparent);
+          border: 1px solid color-mix(in srgb, var(--cat-color, var(--primary-color, #03a9f4)) 25%, transparent);
           padding: 2px 8px;
           border-radius: 12px;
           display: inline-block;
@@ -819,7 +832,9 @@ class BrainstormMindmapCard extends HTMLElement {
           <div class="viewport" id="viewport">
             <svg class="connectors" id="connectorsLayer"></svg>
             <div class="center-node" id="centerNode">
-              <div class="center-logo-watermark"></div>
+              <div class="center-bulb-wrapper">
+                <img src="/local/brainstorm-bulb.svg" class="center-bulb-img" alt="Brainstorm" />
+              </div>
               <div class="center-content">
                 <div class="center-title" id="centerTitle">Inbox</div>
                 <div class="center-badge" id="centerBadge">0 Notizen</div>
@@ -879,6 +894,28 @@ class BrainstormMindmapCard extends HTMLElement {
       mindmapDialog.addEventListener("click", (e) => {
         if (e.target === mindmapDialog) this._closeDialog();
       });
+    }
+
+    // Responsive Canvas Resize Observer (fills 100% of modal height & width)
+    if (window.ResizeObserver && canvasArea) {
+      if (this._resizeObserver) {
+        this._resizeObserver.disconnect();
+      }
+      this._resizeObserver = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const w = entry.contentRect.width;
+          const h = entry.contentRect.height;
+          if (w > 50 && h > 50) {
+            this._centerPos = { x: w / 2, y: h / 2 };
+            if (centerNode) {
+              centerNode.style.left = `${this._centerPos.x}px`;
+              centerNode.style.top = `${this._centerPos.y}px`;
+            }
+            this._drawConnections();
+          }
+        }
+      });
+      this._resizeObserver.observe(canvasArea);
     }
 
     // Canvas Pan (Drag background)
@@ -1141,13 +1178,18 @@ class BrainstormMindmapCard extends HTMLElement {
       return;
     }
 
-    // Determine radius based on count
-    const baseRadius = count <= 6 ? 210 : count <= 12 ? 260 : 310;
+    // Determine radius based on canvas dimensions and note count
+    const canvasArea = this.shadowRoot.getElementById("canvasArea");
+    const h = canvasArea && canvasArea.clientHeight > 0 ? canvasArea.clientHeight : 600;
+    const w = canvasArea && canvasArea.clientWidth > 0 ? canvasArea.clientWidth : 800;
+    const minDim = Math.min(w, h);
+
+    const baseRadius = Math.max(180, Math.min(minDim * 0.34, count <= 6 ? 230 : count <= 12 ? 290 : 350));
     const angleStep = (2 * Math.PI) / count;
 
     ideas.forEach((idea, i) => {
       // Add slight organic offset to give an organic thought cloud feel
-      const radiusJitter = (i % 2 === 0 ? 1 : 0.88) * baseRadius;
+      const radiusJitter = (i % 2 === 0 ? 1 : 0.92) * baseRadius;
       const angle = i * angleStep - Math.PI / 2;
       const x = this._centerPos.x + Math.cos(angle) * radiusJitter;
       const y = this._centerPos.y + Math.sin(angle) * radiusJitter;
@@ -1248,6 +1290,7 @@ class BrainstormMindmapCard extends HTMLElement {
 
         // Accent border color matching category
         const catColor = this._getCategoryColor(this._selectedCategory === "all" ? "Inbox" : this._selectedCategory);
+        centerNode.style.setProperty("--cat-color", catColor);
         centerNode.style.borderColor = catColor;
         centerNode.style.boxShadow = "0 4px 20px rgba(0, 0, 0, 0.08)";
       }
@@ -1738,7 +1781,7 @@ window.customCards.push({
 });
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.3 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.4 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );
