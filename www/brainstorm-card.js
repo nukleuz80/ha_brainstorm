@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.0 - Add smart NLP text normalization, grammar & infinitive formatting
+ * Version 1.4.1 - Mindmap theme colors and near-fullscreen layout
  */
 class BrainstormCard extends HTMLElement {
   constructor() {

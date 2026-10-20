@@ -1,6 +1,6 @@
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.4.0
+ * Version: 1.4.1
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Features:
@@ -36,7 +36,7 @@ class BrainstormMindmapCard extends HTMLElement {
   static getStubConfig() {
     return {
       title: "Brainstorm Mindmap",
-      height: "580px",
+      height: "calc(100vh - 32px)",
       default_category: "Inbox",
     };
   }
@@ -44,7 +44,7 @@ class BrainstormMindmapCard extends HTMLElement {
   setConfig(config) {
     this._config = {
       title: "Brainstorm Mindmap",
-      height: "580px",
+      height: "calc(100vh - 32px)",
       default_category: "Inbox",
       ...config,
     };
@@ -189,25 +189,33 @@ class BrainstormMindmapCard extends HTMLElement {
           text-shadow: 0 1px 4px rgba(0,0,0,0.5);
         }
         .fullscreen-btn {
-          background: rgba(255,255,255,0.08);
-          border: 1px solid rgba(255,255,255,0.15);
+          background: var(--secondary-background-color, rgba(255,255,255,0.08));
+          border: 1px solid var(--divider-color, rgba(255,255,255,0.15));
           color: var(--primary-text-color, #f0f6fc);
           border-radius: 8px;
-          width: 32px;
-          height: 32px;
+          width: 40px;
+          height: 40px;
           display: flex;
           align-items: center;
           justify-content: center;
           cursor: pointer;
-          font-size: 0.95rem;
+          font-size: 1.1rem;
           backdrop-filter: blur(8px);
           transition: all 0.2s ease;
         }
         .fullscreen-btn:hover {
-          background: rgba(0, 245, 255, 0.25);
-          border-color: #00f5ff;
+          background: var(--primary-color, #03a9f4);
+          border-color: var(--primary-color, #03a9f4);
+          color: var(--text-primary-color, #fff);
+          transform: scale(1.05);
+        }
+        .fullscreen-btn.is-fullscreen {
+          background: var(--error-color, #db4437);
+          border-color: var(--error-color, #db4437);
           color: #fff;
-          transform: scale(1.08);
+        }
+        .fullscreen-btn.is-fullscreen:hover {
+          filter: brightness(0.9);
         }
         ha-card.is-fullscreen {
           position: fixed !important;
@@ -215,6 +223,7 @@ class BrainstormMindmapCard extends HTMLElement {
           left: 0 !important;
           width: 100vw !important;
           height: 100vh !important;
+          height: 100dvh !important;
           z-index: 99999 !important;
           border-radius: 0 !important;
           margin: 0 !important;
@@ -233,28 +242,30 @@ class BrainstormMindmapCard extends HTMLElement {
           display: none;
         }
         .cat-pill {
-          padding: 5px 11px;
-          font-size: 0.78rem;
+          padding: 6px 12px;
+          min-height: 36px;
+          font-size: 0.8rem;
           font-weight: 600;
           border-radius: 20px;
           cursor: pointer;
-          background: rgba(255,255,255,0.07);
+          background: var(--secondary-background-color, rgba(255,255,255,0.07));
           color: var(--secondary-text-color, #8b949e);
-          border: 1px solid rgba(255,255,255,0.12);
+          border: 1px solid var(--divider-color, rgba(255,255,255,0.12));
           backdrop-filter: blur(8px);
           white-space: nowrap;
           transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .cat-pill:hover {
-          background: rgba(255,255,255,0.15);
-          color: #fff;
+          background: var(--primary-color, #03a9f4);
+          border-color: var(--primary-color, #03a9f4);
+          color: var(--text-primary-color, #fff);
           transform: translateY(-1px);
         }
         .cat-pill.active {
-          background: linear-gradient(135deg, rgba(0, 245, 255, 0.25), rgba(157, 78, 221, 0.25));
-          color: #00f5ff;
-          border-color: #00f5ff;
-          box-shadow: 0 0 12px rgba(0, 245, 255, 0.3);
+          background: color-mix(in srgb, var(--category-color, var(--primary-color)) 18%, var(--card-background-color, #fff));
+          color: var(--category-color, var(--primary-color));
+          border-color: var(--category-color, var(--primary-color));
+          box-shadow: 0 0 10px color-mix(in srgb, var(--category-color, var(--primary-color)) 22%, transparent);
         }
 
         /* Map Canvas & Viewport */
@@ -712,6 +723,7 @@ class BrainstormMindmapCard extends HTMLElement {
     const toggleFullscreen = () => {
       const isFs = cardRoot.classList.toggle("is-fullscreen");
       fullscreenBtn.innerHTML = isFs ? "✕" : "⛶";
+      fullscreenBtn.classList.toggle("is-fullscreen", isFs);
       fullscreenBtn.title = isFs ? "Vollbild beenden" : "Vollbild umschalten (ESC)";
       setTimeout(() => {
         this._centerLayout(false);
@@ -884,14 +896,14 @@ class BrainstormMindmapCard extends HTMLElement {
       if (pillsBar) {
         const counts = attributes.category_counts || {};
         pillsBar.innerHTML = `
-          <div class="cat-pill ${this._selectedCategory === "all" ? "active" : ""}" data-cat="all">
+          <div class="cat-pill ${this._selectedCategory === "all" ? "active" : ""}" data-cat="all" style="--category-color: var(--primary-color, #03a9f4);">
             Alle (${activeIdeas.length})
           </div>
           ${categories
             .map((cat) => {
               const c = counts[cat] || 0;
               return `
-                <div class="cat-pill ${this._selectedCategory === cat ? "active" : ""}" data-cat="${cat}">
+                <div class="cat-pill ${this._selectedCategory === cat ? "active" : ""}" data-cat="${cat}" style="--category-color: ${this._getCategoryColor(cat)};">
                   ${cat} (${c})
                 </div>
               `;
@@ -1146,7 +1158,7 @@ window.customCards.push({
 });
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.0 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.1 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );
