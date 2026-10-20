@@ -8,6 +8,7 @@ import uuid
 from typing import Any, Callable
 
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
@@ -465,6 +466,20 @@ class BrainstormStore:
         tags: list[str] | None = None,
     ) -> dict[str, Any]:
         """Add a new brainstorm idea."""
+        raw_check = (text or "").strip().lower()
+        if not raw_check or raw_check in {
+            "none",
+            "responsenone",
+            "responseno",
+            "null",
+            "undefined",
+            "abbrechen",
+            "stop",
+            "stopp",
+        }:
+            _LOGGER.warning("Ignored empty or invalid idea text: %s", text)
+            raise ServiceValidationError(f"Ungültiger oder leerer Notiz-Text: {text}")
+
         clean_text, resolved_cat, parsed_tags = self.parse_text_and_category(text, category)
 
         all_tags = list(set((tags or []) + parsed_tags))
