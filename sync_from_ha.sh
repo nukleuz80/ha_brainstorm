@@ -8,3 +8,4 @@ cp -f /config/www/brainstorm-card.js "$REPO_DIR/www/brainstorm-card.js"
 cp -f /config/www/brainstorm-logo.png "$REPO_DIR/www/brainstorm-logo.png" 2>/dev/null || true
 
 echo "Brainstorm repository synchronized successfully."
+
