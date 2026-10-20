@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.2.0 - Two-tier input layout: Category toolbar with Auto & Quick-Add above, wide input & submit below
+ * Version 1.2.1 - Fix undefined counts reference, robust error handling, fix missing ideas & config error
  */
 class BrainstormCard extends HTMLElement {
   constructor() {
@@ -702,38 +702,40 @@ class BrainstormCard extends HTMLElement {
   }
 
   _updateContent() {
-    if (!this._shadowRootReady()) return;
+    try {
+      if (!this._shadowRootReady()) return;
 
-    const sensorName = (this._config && this._config.sensor) || "sensor.brainstorm_ideen_ubersicht";
-    const sensorEntity = this._hass && this._hass.states ? this._hass.states[sensorName] : null;
-    if (!sensorEntity) return;
+      const sensorName = (this._config && this._config.sensor) || "sensor.brainstorm_ideen_ubersicht";
+      const sensorEntity = this._hass && this._hass.states ? this._hass.states[sensorName] : null;
+      if (!sensorEntity) return;
 
-    const currentSensorUpdated = sensorEntity.last_updated;
-    const catSelectEl = this.shadowRoot.getElementById("catSelect");
-    const isSelectActive = catSelectEl && (this.shadowRoot.activeElement === catSelectEl || document.activeElement === catSelectEl);
+      const currentSensorUpdated = sensorEntity.last_updated;
+      const catSelectEl = this.shadowRoot.getElementById("catSelect");
+      const isSelectActive = catSelectEl && (this.shadowRoot.activeElement === catSelectEl || document.activeElement === catSelectEl);
 
-    // If neither the sensor nor the selected category changed, skip DOM re-render entirely
-    if (
-      this._lastUpdated === currentSensorUpdated &&
-      this._lastCategory === this._selectedCategory
-    ) {
-      return;
-    }
+      // If neither the sensor nor the selected category changed, skip DOM re-render entirely
+      if (
+        this._lastUpdated === currentSensorUpdated &&
+        this._lastCategory === this._selectedCategory
+      ) {
+        return;
+      }
 
-    // If user is currently picking a category from the dropdown, don't interrupt them
-    if (isSelectActive && this._lastUpdated !== null) {
-      return;
-    }
+      // If user is currently picking a category from the dropdown, don't interrupt them
+      if (isSelectActive && this._lastUpdated !== null) {
+        return;
+      }
 
-    this._lastUpdated = currentSensorUpdated;
-    this._lastCategory = this._selectedCategory;
+      this._lastUpdated = currentSensorUpdated;
+      this._lastCategory = this._selectedCategory;
 
-    const attributes = sensorEntity.attributes || {};
-    const categories = attributes.categories || ["Inbox", "Smarthome", "Haus & Garten", "Projekte", "Alltag"];
-    const activeIdeas = attributes.ideas || [];
-    const completedIdeas = attributes.completed_ideas || [];
-    const completedCount = attributes.completed_count || completedIdeas.length || 0;
-    const isCompletedView = this._selectedCategory === "__completed__";
+      const attributes = sensorEntity.attributes || {};
+      const categories = attributes.categories || ["Inbox", "Smarthome", "Haus & Garten", "Projekte", "Alltag"];
+      const counts = attributes.category_counts || {};
+      const activeIdeas = attributes.ideas || [];
+      const completedIdeas = attributes.completed_ideas || [];
+      const completedCount = attributes.completed_count || completedIdeas.length || 0;
+      const isCompletedView = this._selectedCategory === "__completed__";
 
     // 1. Update Title and Badge
     const titleEl = this.shadowRoot.getElementById("cardTitle");
@@ -920,7 +922,10 @@ class BrainstormCard extends HTMLElement {
         });
       }
     }
+  } catch (err) {
+    console.error("Brainstorm card _updateContent error:", err);
   }
+}
 
   _shadowRootReady() {
     return this.shadowRoot && this.shadowRoot.getElementById("ideaInput") !== null;
