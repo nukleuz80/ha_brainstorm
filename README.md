@@ -1,6 +1,7 @@
 # 🧠 Brainstorm Hub for Home Assistant
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/default)
+[![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/nukleuz80/ha_brainstorm)
@@ -24,7 +25,7 @@ Egal ob beim Kochen, im Garten oder unterwegs: Erfasse Geistesblitze sekundensch
 - 🏷️ **Intelligente, automatische Kategorisierung:**
   - Mehrstufige semantische Heuristik: Erkennung von Präfixen (*„Garten: …“*), Präpositionen (*„im Garten …“*, *„für das Smarthome …“*) und Kontext-Schlagwörtern (Pool, Rasen, Heizung, ESPHome, Lampe etc.).
   - Standard-Kategorien: *Haus & Garten*, *Smarthome*, *Projekte*, *Alltag*, *Inbox*.
-- 🎴 **Moderne Custom Lovelace Cards (v1.3.0):**
+- 🎴 **Moderne Custom Lovelace Cards (v1.4.0):**
   - **Brainstorm Card (`custom:brainstorm-card`):**
     - Zweistöckiges Design mit Schnellerfassungs-Toolbar, Auto-Kategorisierung und Pill-Filtern.
     - Integrierter Ansichts-Umschalter (`🧠 Mindmap` ⇄ `📋 Liste`) direkt in der Kopfzeile.
@@ -158,6 +159,18 @@ Die Integration stellt folgende Services bereit:
 | `brainstorm.add_category` | Erstellt eine neue Kategorie | `name` (erforderlich) |
 | `brainstorm.remove_category` | Entfernt eine Kategorie (Ideen wandern in `Inbox`) | `name` (erforderlich) |
 | `brainstorm.export_markdown` | Triggert sofortigen Markdown-Export | `path` (optional) |
+
+---
+
+## 📜 Versionshistorie & Changelog
+
+| Version | Datum | Status & Highlights |
+| :--- | :--- | :--- |
+| **`v1.4.0`** | 20.10.2026 | **Intelligente Text-Optimierung & NLP:** Automatische Bereinigung gesprochener Notizen (Filterung von Gesprächsfloskeln, Partizip-zu-Infinitiv-Transformation, Rechtschreibprüfung und automatische Substantiv-Großschreibung). Schalter im Options-Flow hinzugefügt. |
+| **`v1.3.0`** | 20.10.2026 | **Brainstorm Mindmap Card:** Neue interaktive Lovelace-Karte (`custom:brainstorm-mindmap-card`) mit Radial-Synapsen-Layout, transparentem Logo-Wasserzeichen im Zentrum, Gedankenwolken und Vollbild-Modus (`⛶`). Integrierter Umschalter (`🧠 Mindmap` ⇄ `📋 Liste`) in der Hauptkarte. |
+| **`v1.2.1`** | 20.10.2026 | **Fehlerbehebungen & Stabilität:** Beseitigung von `ResponseNone`-Einträgen, Vermeidung von Musik-Kollisionen bei Alexa-Befehlen, Korrektur des Assist-Wildcard-Parsing-Fehlers, Behebung des Dashboard-Kartenfehlers (`counts is not defined`). |
+| **`v1.1.0`** | 20.10.2026 | **Frontend Redesign & Standards:** 2-stufiges Layout für die Lovelace Card, HACS-Kompatibilität, vollständige `DeviceInfo`-Anbindung und Assist-Sprachunterstützung. |
+| **`v1.0.0`** | 19.10.2026 | **Initiales Release:** Kern-Integration Brainstorm Hub, To-do-Plattform, Markdown-Export und Alexa-Sprachdialog. |
 
 ---
 
