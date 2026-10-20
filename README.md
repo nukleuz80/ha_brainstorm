@@ -18,12 +18,20 @@ Egal ob beim Kochen, im Garten oder unterwegs: Erfasse Geistesblitze sekundensch
 - 🏷️ **Intelligente, automatische Kategorisierung:**
   - Mehrstufige semantische Heuristik: Erkennung von Präfixen (*„Garten: …“*), Präpositionen (*„im Garten …“*, *„für das Smarthome …“*) und Kontext-Schlagwörtern (Pool, Rasen, Heizung, ESPHome, Lampe etc.).
   - Standard-Kategorien: *Haus & Garten*, *Smarthome*, *Projekte*, *Alltag*, *Inbox*.
-- 🎴 **Moderne Custom Lovelace Card (v1.2.1):**
-  - **Zweistöckiges Design:** Obere Toolbar mit Kategorie-Dropdown (*Auto Erkennen* oder feste Kategorie) und schnellem `➕`-Button zum Anlegen neuer Kategorien.
-  - **Breite Eingabezeile:** Volle Breite für das Textfeld und übersichtlicher Hinzufügen-Button.
-  - **Pills mit Zeilenumbruch:** Keine abgeschnittenen Buttons mehr auf Smartphones.
-  - **Erledigt-Verwaltung:** Ideen abhaken, durchstreichen und über den Filter `✓ Erledigt` jederzeit einsehen, wiederherstellen oder löschen.
-  - **Quellen-Badges:** Zeigt auf einen Blick, woher die Idee stammt (`🗣️ Alexa`, `✨ Assist`, `💻 Dashboard`, `📝 Notiz`).
+- 🎴 **Moderne Custom Lovelace Cards (v1.3.0):**
+  - **Brainstorm Card (`custom:brainstorm-card`):**
+    - Zweistöckiges Design mit Schnellerfassungs-Toolbar, Auto-Kategorisierung und Pill-Filtern.
+    - Integrierter Ansichts-Umschalter (`🧠 Mindmap` ⇄ `📋 Liste`) direkt in der Kopfzeile.
+    - Erledigt-Verwaltung mit Durchstreich-Animation, Bearbeitungsfunktion und Quellen-Badges.
+  - **NEU: Brainstorm Mindmap Card (`custom:brainstorm-mindmap-card`):**
+    - Interaktives Radial-Synapsen-Layout für eine visuelle Gedankenlandkarte.
+    - Zentraler Knotenpunkt (Inbox / Fokus-Kategorie) mit edlem, transparentem Brainstorm-Logo im Hintergrund.
+    - Notizen dargestellt als charmante Gedankenwolken mit gestrichelten Konturen und Kategorie-Farbcodes.
+    - Organische Bézier-Verbindungslinien, die beim Überfahren aufleuchten.
+    - Frei verschiebbare Notizen per Drag & Drop (auf Desktop und Touchscreens).
+    - Stufenloser Zoom & Pan per Mausrad, Pinch-Geste oder Steuerungsbuttons.
+    - **Vollbild-Modus (`⛶`):** Per Knopfdruck oder Dashboard-Einbindung als beeindruckendes Vollbild-Erlebnis (ESC zum Schließen).
+    - Direkte Aktionen an jeder Gedankenwolke (Erledigen, Text editieren, Kategorie wechseln, Löschen).
 - ⚙️ **Konfigurations- & Options-Flow im HA-Backend:**
   - Unter *Einstellungen ➔ Geräte & Dienste ➔ Brainstorm Hub ➔ Konfigurieren* Kategorien komfortabel pflegen (hinzufügen, löschen, anpassen) und Optionen steuern.
   - Sichere Migration: Beim Löschen einer Kategorie werden verbliebene Ideen automatisch in die `Inbox` verschoben.
@@ -55,10 +63,10 @@ Egal ob beim Kochen, im Garten oder unterwegs: Erfasse Geistesblitze sekundensch
 
 1. Lade das neueste Release herunter.
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
-3. Kopiere die Datei `www/brainstorm-card.js` in `/config/www/`.
-4. Trage die Ressource unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.2.1`
-   - **Typ:** `JavaScript-Modul`
+3. Kopiere die Dateien `www/brainstorm-card.js` und `www/brainstorm-mindmap-card.js` in `/config/www/`.
+4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
+   - **URL:** `/local/brainstorm-card.js?v=1.3.0` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.3.0` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ---
@@ -73,14 +81,23 @@ Egal ob beim Kochen, im Garten oder unterwegs: Erfasse Geistesblitze sekundensch
 
 ---
 
-## 🎴 Dashboard Card einbinden
+## 🎴 Dashboard Cards einbinden
 
-Füge deiner Lovelace-Oberfläche eine neue Karte hinzu (Code-Editor):
-
+### 1. Brainstorm Card (Listenansicht mit integriertem Mindmap-Umschalter)
 ```yaml
 type: custom:brainstorm-card
 title: Brainstorm Hub
 ```
+
+### 2. Brainstorm Mindmap Card (Dedizierte interaktive Gedankenlandkarte)
+Ideal für reguläre Dashboard-Karten oder als **Panel-Ansicht (Vollbild)** auf Tablets und Monitoren:
+```yaml
+type: custom:brainstorm-mindmap-card
+title: Brainstorm Mindmap
+height: 600px               # Optionale Höhe (z.B. 550px, 600px, 100%)
+default_category: Inbox     # Standard-Kategorie beim Laden (oder 'all')
+```
+*Tipp:* Klicke oben rechts auf das Vollbild-Symbol `⛶`, um die Mindmap jederzeit auf den gesamten Bildschirm zu vergrößern!
 
 ---
 

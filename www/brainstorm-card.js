@@ -1,13 +1,14 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.2.1 - Fix undefined counts reference, robust error handling, fix missing ideas & config error
+ * Version 1.3.0 - Add interactive Mindmap view toggle & support for brainstorm-mindmap-card
  */
 class BrainstormCard extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
     this._selectedCategory = "all";
+    this._viewMode = "list"; // 'list' | 'mindmap'
     this._config = {
       title: "Brainstorm Hub",
       sensor: "sensor.brainstorm_ideen_ubersicht",
@@ -45,6 +46,10 @@ class BrainstormCard extends HTMLElement {
       this._initDom();
     } else {
       this._updateContent();
+      const embeddedMindmap = this.shadowRoot.getElementById("embeddedMindmap");
+      if (embeddedMindmap && this._viewMode === "mindmap") {
+        embeddedMindmap.hass = hass;
+      }
     }
   }
 
@@ -271,6 +276,29 @@ class BrainstormCard extends HTMLElement {
           font-weight: 600;
           padding: 3px 9px;
           border-radius: 12px;
+        }
+        .header-right {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .view-toggle-btn {
+          background: rgba(255, 255, 255, 0.08);
+          border: 1px solid var(--divider-color, rgba(255, 255, 255, 0.15));
+          color: var(--primary-text-color, #ffffff);
+          font-size: 0.75rem;
+          font-weight: 600;
+          padding: 4px 10px;
+          border-radius: 12px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          transition: all 0.2s ease;
+        }
+        .view-toggle-btn:hover {
+          background: rgba(0, 245, 255, 0.2);
+          border-color: #00f5ff;
         }
         /* Input & Category Toolbar */
         .input-section {
@@ -647,38 +675,47 @@ class BrainstormCard extends HTMLElement {
             </div>
             <span id="cardTitle">${this._config.title}</span>
           </div>
-          <div class="badge" id="badgeCount">0 Ideen</div>
+          <div class="header-right">
+            <div class="badge" id="badgeCount">0 Ideen</div>
+            <button class="view-toggle-btn" id="viewToggleBtn" title="Zwischen Listenansicht und Mindmap umschalten">🧠 Mindmap</button>
+          </div>
         </div>
 
-        <div class="input-section">
-          <div class="cat-toolbar">
-            <div class="cat-toolbar-left">
-              <span class="cat-toolbar-label">Kategorie:</span>
-              <select class="cat-select" id="catSelect">
-                <option value="auto">Auto (Erkennen)</option>
-              </select>
+        <div id="listViewWrap">
+          <div class="input-section">
+            <div class="cat-toolbar">
+              <div class="cat-toolbar-left">
+                <span class="cat-toolbar-label">Kategorie:</span>
+                <select class="cat-select" id="catSelect">
+                  <option value="auto">Auto (Erkennen)</option>
+                </select>
+              </div>
+              <button class="cat-add-btn" id="quickAddCatBtn" title="Neue Kategorie anlegen">
+                <span class="plus-icon">➕</span>
+                <span class="btn-text">Kategorie</span>
+              </button>
             </div>
-            <button class="cat-add-btn" id="quickAddCatBtn" title="Neue Kategorie anlegen">
-              <span class="plus-icon">➕</span>
-              <span class="btn-text">Kategorie</span>
-            </button>
+
+            <div class="input-container">
+              <input 
+                type="text" 
+                id="ideaInput" 
+                placeholder="Blitz-Idee tippen... (z.B. 'Garten: Baum schneiden')" 
+              />
+              <button class="send-btn" id="sendBtn">
+                <span>Hinzufügen</span>
+              </button>
+            </div>
           </div>
 
-          <div class="input-container">
-            <input 
-              type="text" 
-              id="ideaInput" 
-              placeholder="Blitz-Idee tippen... (z.B. 'Garten: Baum schneiden')" 
-            />
-            <button class="send-btn" id="sendBtn">
-              <span>Hinzufügen</span>
-            </button>
-          </div>
+          <div class="pills" id="pillsContainer"></div>
+
+          <div class="ideas-list" id="ideasList"></div>
         </div>
 
-        <div class="pills" id="pillsContainer"></div>
-
-        <div class="ideas-list" id="ideasList"></div>
+        <div id="mindmapViewWrap" style="display: none; height: 560px; margin-top: 8px; border-radius: 14px; overflow: hidden;">
+          <brainstorm-mindmap-card id="embeddedMindmap"></brainstorm-mindmap-card>
+        </div>
       </ha-card>
     `;
 
@@ -686,6 +723,34 @@ class BrainstormCard extends HTMLElement {
     const inputEl = this.shadowRoot.getElementById("ideaInput");
     const sendBtn = this.shadowRoot.getElementById("sendBtn");
     const quickAddCatBtn = this.shadowRoot.getElementById("quickAddCatBtn");
+    const viewToggleBtn = this.shadowRoot.getElementById("viewToggleBtn");
+    const listViewWrap = this.shadowRoot.getElementById("listViewWrap");
+    const mindmapViewWrap = this.shadowRoot.getElementById("mindmapViewWrap");
+    const embeddedMindmap = this.shadowRoot.getElementById("embeddedMindmap");
+
+    if (viewToggleBtn && listViewWrap && mindmapViewWrap) {
+      viewToggleBtn.addEventListener("click", () => {
+        if (this._viewMode === "list") {
+          this._viewMode = "mindmap";
+          listViewWrap.style.display = "none";
+          mindmapViewWrap.style.display = "block";
+          viewToggleBtn.innerHTML = "📋 Liste";
+          if (embeddedMindmap && this._hass) {
+            embeddedMindmap.hass = this._hass;
+            setTimeout(() => {
+              if (typeof embeddedMindmap._centerLayout === "function") {
+                embeddedMindmap._centerLayout(true);
+              }
+            }, 50);
+          }
+        } else {
+          this._viewMode = "list";
+          mindmapViewWrap.style.display = "none";
+          listViewWrap.style.display = "block";
+          viewToggleBtn.innerHTML = "🧠 Mindmap";
+        }
+      });
+    }
 
     if (quickAddCatBtn) {
       quickAddCatBtn.addEventListener("click", () => this._addCategory());
