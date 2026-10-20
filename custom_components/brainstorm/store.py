@@ -21,6 +21,7 @@ from .const import (
     ATTR_TAGS,
     ATTR_TEXT,
     ATTR_UPDATED_AT,
+    CONF_SMART_FORMATTING,
     DEFAULT_CATEGORIES,
     DEFAULT_MARKDOWN_PATH,
     DOMAIN,
@@ -31,6 +32,7 @@ from .const import (
     STORAGE_KEY,
     STORAGE_VERSION,
 )
+from .nlp import clean_and_format_idea_text
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -224,6 +226,13 @@ CATEGORY_KEYWORDS: dict[str, list[str]] = {
         "mitbringen",
         "apotheke",
         "medikament",
+        "kinder",
+        "kind",
+        "flughafen",
+        "bahnhof",
+        "schule",
+        "kita",
+        "kindergarten",
         "arzt",
         "zahnarzt",
         "termin",
@@ -283,6 +292,14 @@ class BrainstormStore:
         self._listeners: list[Callable[[], None]] = []
         self._auto_export = self.options.get("auto_export_markdown", False)
         self._markdown_path = self.options.get("markdown_path", DEFAULT_MARKDOWN_PATH)
+        self._smart_formatting = self.options.get(CONF_SMART_FORMATTING, True)
+
+    def update_options(self, options: dict[str, Any]) -> None:
+        """Update options dynamically."""
+        self.options = options
+        self._auto_export = options.get("auto_export_markdown", False)
+        self._markdown_path = options.get("markdown_path", DEFAULT_MARKDOWN_PATH)
+        self._smart_formatting = options.get(CONF_SMART_FORMATTING, True)
 
     @property
     def categories(self) -> list[str]:
@@ -455,6 +472,12 @@ class BrainstormStore:
         # Fallback to Inbox
         if not category or category not in self._categories:
             category = "Inbox"
+
+        # 5. Smart NLP Text Normalization
+        if self._smart_formatting:
+            formatted = clean_and_format_idea_text(clean_text)
+            if formatted:
+                clean_text = formatted
 
         return clean_text, category, tags
 

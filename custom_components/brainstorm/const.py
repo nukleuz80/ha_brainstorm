@@ -8,6 +8,7 @@ STORAGE_VERSION = 1
 CONF_CATEGORIES = "categories"
 CONF_AUTO_EXPORT_MARKDOWN = "auto_export_markdown"
 CONF_MARKDOWN_PATH = "markdown_path"
+CONF_SMART_FORMATTING = "smart_formatting"
 
 DEFAULT_CATEGORIES = [
     "Inbox",

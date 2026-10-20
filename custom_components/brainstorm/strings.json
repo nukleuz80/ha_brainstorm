@@ -39,6 +39,7 @@
         "description": "Configure Brainstorm Hub behavior and Markdown export.",
         "data": {
           "default_category": "Default category for new ideas",
+          "smart_formatting": "Smart Text Optimization (grammar, capitalization, infinitive formatting)",
           "auto_export_markdown": "Auto-export ideas to Markdown files",
           "markdown_path": "File path for Markdown files"
         }

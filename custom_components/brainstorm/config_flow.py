@@ -14,6 +14,7 @@ from homeassistant.helpers import selector
 from .const import (
     CONF_AUTO_EXPORT_MARKDOWN,
     CONF_MARKDOWN_PATH,
+    CONF_SMART_FORMATTING,
     DEFAULT_MARKDOWN_PATH,
     DOMAIN,
 )
@@ -163,6 +164,10 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                         mode=selector.SelectSelectorMode.DROPDOWN,
                     )
                 ),
+                vol.Optional(
+                    CONF_SMART_FORMATTING,
+                    default=options.get(CONF_SMART_FORMATTING, True),
+                ): selector.BooleanSelector(),
                 vol.Optional(
                     CONF_AUTO_EXPORT_MARKDOWN,
                     default=options.get(CONF_AUTO_EXPORT_MARKDOWN, False),
