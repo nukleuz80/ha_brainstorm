@@ -53,6 +53,53 @@ title: Brainstorm Hub
 
 ---
 
+## 🗣️ Alexa Sprachsteuerung: Varianten & Beispiele
+
+Ideen können auf verschiedene Arten per Sprache mit Alexa erfasst werden:
+
+### 1. Interaktiver Dialog-Modus (Empfohlen)
+Aktiviere den Dialog über die Szene oder eine Alexa-Routine:
+- *"Alexa, aktiviere Neue Idee"*
+- *"Alexa, starte Brainstorm"*
+- *"Alexa, Neue Idee"*
+
+**Alexa fragt:** *„Was möchtest du notieren?“*  
+**Deine Antwort (Beispiele):**
+1. **Haus & Garten:** *"Im Garten müssen die Rosen geschnitten werden"*
+2. **Haus & Garten (mit Kategorie):** *"Garten: Neue Solarleuchten für die Terrasse kaufen"*
+3. **Smarthome:** *"Neuen Zigbee Bewegungsmelder im Flur anlernen"*
+4. **Smarthome:** *"Heizungsautomation für das Badezimmer überprüfen"*
+5. **Projekte:** *"Projekt: Holzregal für die Werkstatt bauen"*
+6. **Projekte:** *"Geburtstagsüberraschung für Anna planen"*
+7. **Alltag:** *"Kühlschrank am Wochenende abtauen"*
+8. **Alltag:** *"Mülltonnen heute Abend an die Straße stellen"*
+9. **Alltag / Haushalt:** *"Akkus der Fernbedienung aufladen"*
+10. **Inbox (Allgemein):** *"Telefonnummer vom Handwerker heraussuchen"*
+
+---
+
+### 2. Schnelle Direktbefehle (Ein-Satz-Erfassung)
+Ohne vorherige Nachfrage direkt in einem Satz sprechen:
+1. *"Alexa, **Idee** Rasensprenger reparieren"* ➔ `Haus & Garten`
+2. *"Alexa, **Notiere** Licht im Keller automatisch ausschalten"* ➔ `Smarthome`
+3. *"Alexa, **Merke dir für den Garten** Blumen giessen"* ➔ `Haus & Garten`
+4. *"Alexa, **Notiz** Waschmaschine entkalken"* ➔ `Alltag`
+5. *"Alexa, **Neue Idee für Projekte** Smart Mirror mit Raspberry Pi bauen"* ➔ `Projekte`
+6. *"Alexa, **Brainstorm** Balkonkraftwerk Ertrag auswerten"* ➔ `Smarthome`
+7. *"Alexa, **Schreibe** ESPHome Sensor kalibrieren"* ➔ `Smarthome`
+8. *"Alexa, **Merke** Steuerunterlagen sortieren"* ➔ `Alltag`
+9. *"Alexa, **Erinnere mich an** Poolfilter reinigen"* ➔ `Haus & Garten`
+10. *"Alexa, **Idee** Notizbuch für Besprechung einpacken"* ➔ `Inbox`
+
+---
+
+### 3. Home Assistant Assist / Cloud Intent
+Über Home Assistant Assist oder Cloud-Intents:
+- *"Setze Rasenmähen auf Brainstorm"*
+- *"Neue Idee im Bereich Smarthome Heizplan anpassen"*
+
+---
+
 ## 📄 Lizenz
 
 MIT License © 2026 nukleuz80
