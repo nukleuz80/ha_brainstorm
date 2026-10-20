@@ -12,6 +12,7 @@ from homeassistant.components.todo import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
@@ -71,6 +72,13 @@ class BrainstormTodoList(TodoListEntity):
         self._attr_unique_id = f"{entry_id}_todo_{safe_cat}"
         self._attr_name = f"Brainstorm: {category}"
         self._attr_icon = "mdi:lightbulb-outline"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, entry_id)},
+            name="Brainstorm Hub",
+            manufacturer="nukleuz80",
+            model="Brainstorm Hub",
+            sw_version="1.1.0",
+        )
 
     async def async_added_to_hass(self) -> None:
         """Register listener when added to hass."""
