@@ -1,0 +1,134 @@
+add_idea:
+  name: Idee hinzufügen
+  description: Fügt blitzschnell eine neue Brainstorm-Idee hinzu. Erkennt automatisch Kategorien im Text (z.B. 'Garten: Blumen pflanzen' oder '#smarthome').
+  fields:
+    text:
+      name: Text / Idee
+      description: Der Inhalt des Gedankens oder der Idee.
+      required: true
+      example: "Wohnzimmer: Neue LED Leiste anbringen"
+      selector:
+        text:
+          multiline: true
+    category:
+      name: Kategorie (Optional)
+      description: Thema/Kategorie. Bleibt dies leer, wird sie aus dem Text ermittelt oder 'Inbox' zugewiesen.
+      required: false
+      example: "Smarthome"
+      selector:
+        text:
+    source:
+      name: Quelle
+      description: Woher die Idee stammt (z.B. alexa, companion, dashboard, etc.).
+      required: false
+      default: "manual"
+      example: "alexa"
+      selector:
+        text:
+    tags:
+      name: Tags
+      description: Zusätzliche Schlagworte.
+      required: false
+      selector:
+        object:
+
+update_idea:
+  name: Idee bearbeiten
+  description: Aktualisiert Text, Kategorie oder Status einer bestehenden Idee.
+  fields:
+    id:
+      name: ID
+      description: Eindeutige ID der Idee.
+      required: true
+      example: "a1b2c3d4"
+      selector:
+        text:
+    text:
+      name: Neuer Text
+      description: Geänderter Text.
+      required: false
+      selector:
+        text:
+    category:
+      name: Kategorie
+      description: Neue Kategorie.
+      required: false
+      selector:
+        text:
+    status:
+      name: Status
+      description: Neuer Status (active, completed, archived).
+      required: false
+      selector:
+        select:
+          options:
+            - active
+            - completed
+            - archived
+
+delete_idea:
+  name: Idee löschen
+  description: Entfernt eine Idee dauerhaft.
+  fields:
+    id:
+      name: ID
+      description: ID der zu löschenden Idee.
+      required: true
+      selector:
+        text:
+
+get_ideas:
+  name: Ideen abrufen
+  description: Gibt eine Liste gespeicherter Ideen zurück (für Templates oder Automationen).
+  fields:
+    category:
+      name: Kategorie
+      description: Optional nach Kategorie filtern.
+      required: false
+      selector:
+        text:
+    status:
+      name: Status
+      description: Status-Filter (active, completed oder all).
+      default: "active"
+      selector:
+        select:
+          options:
+            - active
+            - completed
+            - all
+
+add_category:
+  name: Kategorie hinzufügen
+  description: Erstellt eine neue Brainstorm-Kategorie und die dazugehörige To-do-Liste.
+  fields:
+    name:
+      name: Kategoriename
+      description: Name der neuen Kategorie.
+      required: true
+      example: "Reisen"
+      selector:
+        text:
+
+remove_category:
+  name: Kategorie entfernen
+  description: Entfernt eine Kategorie (verbleibende Ideen werden nach 'Inbox' verschoben).
+  fields:
+    name:
+      name: Kategoriename
+      description: Name der Kategorie.
+      required: true
+      selector:
+        text:
+
+export_markdown:
+  name: Nach Markdown exportieren
+  description: Schreibt alle Kategorien und Ideen als Markdown-Dateien ins Dateisystem.
+  fields:
+    path:
+      name: Pfad
+      description: Zielordner (Standard: /config/brainstorm).
+      required: false
+      selector:
+        text:
+

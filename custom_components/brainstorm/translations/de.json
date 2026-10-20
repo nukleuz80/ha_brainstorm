@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Brainstorm Hub einrichten",
+        "description": "Erfasse Ideen und Gedanken blitzschnell per Sprache und Text.",
+        "data": {
+          "auto_export_markdown": "Ideen automatisch als Markdown-Dateien exportieren",
+          "markdown_path": "Dateipfad für Markdown-Dateien"
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Brainstorm Hub ist bereits eingerichtet."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Brainstorm Hub Optionen",
+        "description": "Wähle einen Bereich zum Konfigurieren:",
+        "menu_options": {
+          "categories": "Kategorien verwalten",
+          "general": "Allgemeine Einstellungen & Export"
+        }
+      },
+      "categories": {
+        "title": "Kategorien verwalten",
+        "description": "Aktuelle Kategorien:\n**{current_cats}**\n\nHier kannst du neue Kategorien hinzufügen, bestehende löschen oder die Liste anpassen.",
+        "data": {
+          "add_category": "➕ Neue Kategorie anlegen (optional)",
+          "delete_category": "🗑️ Kategorie löschen (optional)",
+          "edit_categories": "✏️ Komplette Liste anpassen (durch Komma getrennt)"
+        }
+      },
+      "general": {
+        "title": "Allgemeine Einstellungen",
+        "description": "Passe das Verhalten von Brainstorm Hub und den Markdown-Export an.",
+        "data": {
+          "default_category": "Standard-Kategorie für neue Ideen",
+          "auto_export_markdown": "Ideen automatisch als Markdown exportieren",
+          "markdown_path": "Dateipfad für Markdown-Dateien"
+        }
+      }
+    }
+  }
+}
+
