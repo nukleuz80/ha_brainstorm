@@ -2,49 +2,80 @@
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/default)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/nukleuz80/ha_brainstorm)
 
-**Brainstorm Hub** ist eine smarte Ideen- und Gedanken-Sammelzentrale für Home Assistant. Erfasse Geistesblitze per Sprache (Alexa Custom Skill / Cloud), Dashboard oder Automationen, lasse sie automatisch nach Kategorien einordnen und synchronisiere sie optional als Markdown-Notizen.
+**Brainstorm Hub** ist die smarte Ideen-, Gedanken- und Notizen-Sammelzentrale für dein Home Assistant Smarthome.  
+Egal ob beim Kochen, im Garten oder unterwegs: Erfasse Geistesblitze sekundenschnell per Sprache (**Amazon Alexa** oder **Home Assistant Assist**), über das Lovelace-Dashboard oder Automationen. Brainstorm ordnet deine Ideen durch intelligente Heuristiken automatisch der passenden Kategorie zu und synchronisiert sie auf Wunsch als Markdown-Dateien für Obsidian, Logseq oder Nextcloud.
 
 ---
 
-## ✨ Features
+## 🌟 Highlights & Features
 
-- 🗣️ **Spracherfassung (Alexa Dialog & Nabu Casa Cloud):** Schnelles Aufnehmen von Notizen über Alexa ("Alexa, starte Brainstorm...").
-- 🏷️ **Intelligente Kategorisierung:** Automatische Einordnung in Kategorien wie *Haus & Garten*, *Smarthome*, *Projekte*, *Alltag* und *Inbox*.
-- ⚙️ **Kategorienverwaltung:** Direkt im Home Assistant Backend (Optionen-Flow) oder komfortabel auf der Dashboard-Karte (Erstellen, Bearbeiten, Löschen).
-- 📝 **Automatischer Markdown-Export:** Speichert Ideen und Notizen geordnet nach Kategorien in Markdown-Dateien für Obsidian, Logseq etc.
-- 🎴 **Custom Lovelace Card:** Moderne Übersichtskarte mit Filtern, Schnell-Eingabe, Quell-Icons (🗣️ Alexa, 📝 Notiz, 🎛️ Dashboard) und Erledigt-Verwaltung.
-- ✅ **Erledigt-Status:** Ideen abhaken, durchstreichen und bei Bedarf wiederherstellen oder löschen.
+- 🗣️ **Zwei-Wege-Spracherfassung:**
+  - **Amazon Alexa:** Interaktiver Dialog-Modus (über Alexa Actionable Notifications Skill) und schnelle Direktbefehle ohne Musikunterbrechung oder ungewollte Einkaufslisten-Einträge.
+  - **Home Assistant Assist:** Vollständige Unterstützung via lokaler Spracherkennung (Custom Sentences mit Wildcard-Support) und nativer Home Assistant Listen-Befehle.
+- 🏷️ **Intelligente, automatische Kategorisierung:**
+  - Mehrstufige semantische Heuristik: Erkennung von Präfixen (*„Garten: …“*), Präpositionen (*„im Garten …“*, *„für das Smarthome …“*) und Kontext-Schlagwörtern (Pool, Rasen, Heizung, ESPHome, Lampe etc.).
+  - Standard-Kategorien: *Haus & Garten*, *Smarthome*, *Projekte*, *Alltag*, *Inbox*.
+- 🎴 **Moderne Custom Lovelace Card (v1.2.1):**
+  - **Zweistöckiges Design:** Obere Toolbar mit Kategorie-Dropdown (*Auto Erkennen* oder feste Kategorie) und schnellem `➕`-Button zum Anlegen neuer Kategorien.
+  - **Breite Eingabezeile:** Volle Breite für das Textfeld und übersichtlicher Hinzufügen-Button.
+  - **Pills mit Zeilenumbruch:** Keine abgeschnittenen Buttons mehr auf Smartphones.
+  - **Erledigt-Verwaltung:** Ideen abhaken, durchstreichen und über den Filter `✓ Erledigt` jederzeit einsehen, wiederherstellen oder löschen.
+  - **Quellen-Badges:** Zeigt auf einen Blick, woher die Idee stammt (`🗣️ Alexa`, `✨ Assist`, `💻 Dashboard`, `📝 Notiz`).
+- ⚙️ **Konfigurations- & Options-Flow im HA-Backend:**
+  - Unter *Einstellungen ➔ Geräte & Dienste ➔ Brainstorm Hub ➔ Konfigurieren* Kategorien komfortabel pflegen (hinzufügen, löschen, anpassen) und Optionen steuern.
+  - Sichere Migration: Beim Löschen einer Kategorie werden verbliebene Ideen automatisch in die `Inbox` verschoben.
+- 📝 **Automatischer Markdown-Export:**
+  - Exportiert Ideen strukturiert nach Kategorien in Markdown-Dateien (z. B. `/config/brainstorm/`).
+  - Ideal für Personal Knowledge Management (Obsidian, Logseq, Foam, SilverBullet).
+- 📋 **Native Home Assistant To-do Plattform:**
+  - Jede Brainstorm-Kategorie wird als echte Home Assistant To-do-Liste bereitgestellt (`todo.brainstorm_haus_garten`, `todo.brainstorm_inbox`, usw.).
+- 🏛️ **100% Home Assistant Standard-konform:**
+  - Entwickelt nach den offiziellen Richtlinien von [contributors.home-assistant.io](https://contributors.home-assistant.io/) (strikte Typisierung, non-blocking Event-Loop, `DeviceInfo`, saubere Translation-Keys).
 
 ---
 
 ## 📦 Installation
 
-### Über HACS (Custom Repository)
-1. In Home Assistant **HACS** öffnen.
-2. Oben rechts auf das Drei-Punkte-Menü ➔ **Benutzerdefinierte Repositories** klicken.
-3. Repository-URL eintragen: `https://github.com/nukleuz80/ha_brainstorm`
-4. Kategorie: **Integration**
-5. Auf **Hinzufügen** klicken und anschließend die Integration installieren.
-6. Home Assistant neu starten.
+### Methode 1: Über HACS (Empfohlen)
 
-### Manuelle Installation
-1. Den Ordner `custom_components/brainstorm` in dein `/config/custom_components/`-Verzeichnis kopieren.
-2. Die Datei `www/brainstorm-card.js` in dein `/config/www/`-Verzeichnis kopieren.
-3. Unter *Einstellungen ➔ Dashboards ➔ Ressourcen* `/local/brainstorm-card.js` als JavaScript-Modul hinzufügen.
-4. Home Assistant neu starten.
+1. Öffne **HACS** in deinem Home Assistant.
+2. Klicke oben rechts auf das Drei-Punkte-Menü ➔ **Benutzerdefinierte Repositories**.
+3. Trage folgende Repository-URL ein:
+   ```text
+   https://github.com/nukleuz80/ha_brainstorm
+   ```
+4. Wähle als Kategorie: **Integration**.
+5. Klicke auf **Hinzufügen** und installiere die Integration.
+6. Starte Home Assistant neu.
+
+### Methode 2: Manuelle Installation
+
+1. Lade das neueste Release herunter.
+2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
+3. Kopiere die Datei `www/brainstorm-card.js` in `/config/www/`.
+4. Trage die Ressource unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
+   - **URL:** `/local/brainstorm-card.js?v=1.2.1`
+   - **Typ:** `JavaScript-Modul`
+5. Starte Home Assistant neu.
 
 ---
 
 ## 🛠️ Konfiguration
 
-1. Unter **Einstellungen ➔ Geräte & Dienste ➔ Integration hinzufügen** nach **Brainstorm Hub** suchen.
-2. Den Schritten des Einrichtungsassistenten folgen.
-3. Über **Konfigurieren** lassen sich Kategorien pflegen und der automatische Markdown-Export einstellen.
+1. Gehe in Home Assistant auf **Einstellungen ➔ Geräte & Dienste ➔ Integration hinzufügen**.
+2. Suche nach **Brainstorm Hub** und schließe die Ersteinrichtung ab.
+3. Über den Button **Konfigurieren** stehen dir zwei Menübereiche zur Verfügung:
+   - **📁 Kategorien verwalten:** Neue Kategorien hinzufügen, ungenutzte löschen oder per Kommaliste anpassen.
+   - **⚙️ Allgemeine Einstellungen & Export:** Standard-Kategorie festlegen, automatischen Markdown-Export aktivieren und Zielpfad konfigurieren.
 
 ---
 
-## 🎴 Lovelace Card
+## 🎴 Dashboard Card einbinden
+
+Füge deiner Lovelace-Oberfläche eine neue Karte hinzu (Code-Editor):
 
 ```yaml
 type: custom:brainstorm-card
@@ -53,54 +84,62 @@ title: Brainstorm Hub
 
 ---
 
-## 🗣️ Alexa Sprachsteuerung: Varianten & Beispiele
+## 🗣️ Sprachsteuerung
 
-Ideen können auf verschiedene Arten per Sprache mit Alexa erfasst werden:
+### 1. Amazon Alexa
 
-### 1. Interaktiver Dialog-Modus (Empfohlen)
-Aktiviere den Dialog über die Szene oder eine Alexa-Routine:
-- *"Alexa, aktiviere Neue Idee"*
-- *"Alexa, starte Brainstorm"*
-- *"Alexa, Neue Idee"*
+#### Variante A: Interaktiver Dialog-Modus (Empfohlen)
+Triggere den Dialog per Sprachbefehl, Szene oder Alexa-Routine:
+> 🗣️ *„Alexa, Neue Idee“*  
+> 🤖 **Alexa:** *„Was möchtest du notieren?“*  
+> 🗣️ **Du:** *„Im Garten müssen die Rosen geschnitten werden.“*  
+> 🤖 **Alexa:** *„Zu Brainstorm hinzugefügt unter Haus & Garten.“*
 
-**Alexa fragt:** *„Was möchtest du notieren?“*  
-**Deine Antwort (Beispiele):**
-1. **Haus & Garten:** *"Im Garten müssen die Rosen geschnitten werden"*
-2. **Haus & Garten (mit Kategorie):** *"Garten: Neue Solarleuchten für die Terrasse kaufen"*
-3. **Smarthome:** *"Neuen Zigbee Bewegungsmelder im Flur anlernen"*
-4. **Smarthome:** *"Heizungsautomation für das Badezimmer überprüfen"*
-5. **Projekte:** *"Projekt: Holzregal für die Werkstatt bauen"*
-6. **Projekte:** *"Geburtstagsüberraschung für Anna planen"*
-7. **Alltag:** *"Kühlschrank am Wochenende abtauen"*
-8. **Alltag:** *"Mülltonnen heute Abend an die Straße stellen"*
-9. **Alltag / Haushalt:** *"Akkus der Fernbedienung aufladen"*
-10. **Inbox (Allgemein):** *"Telefonnummer vom Handwerker heraussuchen"*
+#### Variante B: Schnelle Direktbefehle
+Direkt in einem Satz sprechen (Automation stoppt eventuelle Musik-Wiedergabe automatisch):
+- 🗣️ *„Alexa, **Idee** Rasensprenger reparieren.“* ➔ `Haus & Garten`
+- 🗣️ *„Alexa, **Notiere** Kellerlicht dimmen.“* ➔ `Smarthome`
+- 🗣️ *„Alexa, **Merke dir für den Garten** Tomaten düngen.“* ➔ `Haus & Garten`
+- 🗣️ *„Alexa, **Brainstorm** Balkonkraftwerk Ertrag auswerten.“* ➔ `Smarthome`
+- 🗣️ *„Alexa, **Neue Idee für Projekte** Smart Mirror bauen.“* ➔ `Projekte`
 
 ---
 
-### 2. Schnelle Direktbefehle (Ein-Satz-Erfassung)
-Ohne vorherige Nachfrage direkt in einem Satz sprechen:
-1. *"Alexa, **Idee** Rasensprenger reparieren"* ➔ `Haus & Garten`
-2. *"Alexa, **Notiere** Licht im Keller automatisch ausschalten"* ➔ `Smarthome`
-3. *"Alexa, **Merke dir für den Garten** Blumen giessen"* ➔ `Haus & Garten`
-4. *"Alexa, **Notiz** Waschmaschine entkalken"* ➔ `Alltag`
-5. *"Alexa, **Neue Idee für Projekte** Smart Mirror mit Raspberry Pi bauen"* ➔ `Projekte`
-6. *"Alexa, **Brainstorm** Balkonkraftwerk Ertrag auswerten"* ➔ `Smarthome`
-7. *"Alexa, **Schreibe** ESPHome Sensor kalibrieren"* ➔ `Smarthome`
-8. *"Alexa, **Merke** Steuerunterlagen sortieren"* ➔ `Alltag`
-9. *"Alexa, **Erinnere mich an** Poolfilter reinigen"* ➔ `Haus & Garten`
-10. *"Alexa, **Idee** Notizbuch für Besprechung einpacken"* ➔ `Inbox`
+### 2. Home Assistant Assist
+
+Assist versteht deine Notizen sowohl über dedizierte Sprachmuster als auch über Standard-Listenbefehle:
+
+#### Freie Brainstorm-Befehle:
+* 🗣️ *„Setze Rasenmähen auf Brainstorm“*
+* 🗣️ *„Neue Idee Blumen gießen“*
+* 🗣️ *„Notiere Backup der Datenbank erstellen“*
+* 🗣️ *„Merke dir Reifen wechseln“*
+* 🗣️ *„Brainstorm Zigbee Bewegungsmelder testen“*
+
+#### Native Listenbefehle:
+* 🗣️ *„Setze Rasenmähen auf die Liste Brainstorm Haus und Garten“*
+* 🗣️ *„Füge Milch zu Brainstorm Inbox hinzu“*
+* 🗣️ *„Hake Rasenmähen auf Brainstorm Haus und Garten ab“*
 
 ---
 
-### 3. Home Assistant Assist / Cloud Intent
-Über Home Assistant Assist oder Cloud-Intents:
-- *"Setze Rasenmähen auf Brainstorm"*
-- *"Neue Idee im Bereich Smarthome Heizplan anpassen"*
+## 🛠️ Dienste (Services)
+
+Die Integration stellt folgende Services bereit:
+
+| Service | Beschreibung | Parameter |
+| :--- | :--- | :--- |
+| `brainstorm.add_idea` | Erstellt eine neue Idee mit automatischer oder manueller Kategorie | `text` (erforderlich), `category` (optional), `source` (optional), `tags` (optional) |
+| `brainstorm.update_idea` | Aktualisiert Text, Kategorie oder Status (`active` / `completed`) | `id` (erforderlich), `text`, `category`, `status` |
+| `brainstorm.delete_idea` | Löscht eine Idee unwiderruflich | `id` (erforderlich) |
+| `brainstorm.add_category` | Erstellt eine neue Kategorie | `name` (erforderlich) |
+| `brainstorm.remove_category` | Entfernt eine Kategorie (Ideen wandern in `Inbox`) | `name` (erforderlich) |
+| `brainstorm.export_markdown` | Triggert sofortigen Markdown-Export | `path` (optional) |
 
 ---
 
 ## 📄 Lizenz
 
-MIT License © 2026 nukleuz80
+Dieses Projekt ist unter der **MIT-Lizenz** lizenziert – siehe [LICENSE](LICENSE) für Details.
 
+Copyright © 2026 [nukleuz80](https://github.com/nukleuz80)

@@ -33,3 +33,12 @@ This project strictly adheres to the official Home Assistant developer documenta
   - Implement `setConfig`, `getCardSize`, and `getStubConfig`.
   - Use official theme CSS custom properties (`var(--primary-color)`, `var(--card-background-color)`, `var(--primary-text-color)`, etc.) to support both light and dark themes seamlessly.
   - Ensure full responsiveness on mobile screens (responsive wraps, minimum touch target sizes).
+
+## 4. Versioning, Releases & Documentation Maintenance
+- **Synchronized Versioning**: Versions across all touchpoints (`manifest.json`, `brainstorm-card.js`, `lovelace_resources`, `lovelace.yaml`, and Git tags) must strictly match and be bumped consistently on every feature or bugfix release.
+- **Repository README (`README.md`)**:
+  - Maintain an exhaustive, professional, and clear project description.
+  - Document all supported voice command variants (Alexa Dialog, Alexa Direct, Assist Sentences, To-do list intents).
+  - Include up-to-date installation instructions for both HACS and manual methods, card configuration, and screenshots.
+  - Keep release notes clear and informative for users.
+
