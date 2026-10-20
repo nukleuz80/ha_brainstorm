@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.1 - Mindmap theme colors and near-fullscreen layout
+ * Version 1.4.2 - Mushroom design alignment & 3/4 screen popup layer for mindmap
  */
 class BrainstormCard extends HTMLElement {
   constructor() {
@@ -46,9 +46,10 @@ class BrainstormCard extends HTMLElement {
       this._initDom();
     } else {
       this._updateContent();
-      const embeddedMindmap = this.shadowRoot.getElementById("embeddedMindmap");
-      if (embeddedMindmap && this._viewMode === "mindmap") {
-        embeddedMindmap.hass = hass;
+      const popupMindmap = this.shadowRoot.getElementById("popupMindmap");
+      const mindmapModal = this.shadowRoot.getElementById("mindmapModal");
+      if (popupMindmap && mindmapModal && mindmapModal.style.display === "flex") {
+        popupMindmap.hass = hass;
       }
     }
   }
@@ -283,22 +284,91 @@ class BrainstormCard extends HTMLElement {
           gap: 8px;
         }
         .view-toggle-btn {
-          background: rgba(255, 255, 255, 0.08);
-          border: 1px solid var(--divider-color, rgba(255, 255, 255, 0.15));
-          color: var(--primary-text-color, #ffffff);
+          background: var(--secondary-background-color, rgba(127, 127, 127, 0.1));
+          border: 1px solid var(--ha-card-border-color, var(--divider-color, rgba(127, 127, 127, 0.15)));
+          color: var(--primary-text-color, #212121);
           font-size: 0.75rem;
           font-weight: 600;
-          padding: 4px 10px;
+          padding: 5px 12px;
           border-radius: 12px;
           cursor: pointer;
           display: flex;
           align-items: center;
-          gap: 4px;
+          gap: 5px;
           transition: all 0.2s ease;
         }
         .view-toggle-btn:hover {
-          background: rgba(0, 245, 255, 0.2);
-          border-color: #00f5ff;
+          background: var(--primary-color, #03a9f4);
+          color: var(--text-primary-color, #ffffff);
+          border-color: var(--primary-color, #03a9f4);
+        }
+        /* Mindmap Modal Layer (3/4 Screen Popup) */
+        .mindmap-modal-backdrop {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          height: 100dvh;
+          background: rgba(0, 0, 0, 0.65);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          z-index: 99999;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 24px;
+          box-sizing: border-box;
+          animation: modalFadeIn 0.2s ease-out;
+        }
+        @keyframes modalFadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        .mindmap-modal-content {
+          position: relative;
+          width: 75vw;
+          height: 75vh;
+          height: 75dvh;
+          min-width: 320px;
+          max-width: 1400px;
+          background: var(--ha-card-background, var(--card-background-color, #ffffff));
+          border-radius: var(--ha-card-border-radius, 20px);
+          border: 1px solid var(--ha-card-border-color, var(--divider-color, rgba(127, 127, 127, 0.15)));
+          box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          animation: modalScaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes modalScaleIn {
+          from { transform: scale(0.95); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
+        }
+        .mindmap-modal-close {
+          position: absolute;
+          top: 14px;
+          right: 14px;
+          z-index: 100;
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          border: 1px solid var(--ha-card-border-color, var(--divider-color, rgba(127, 127, 127, 0.15)));
+          background: var(--ha-card-background, var(--card-background-color, #ffffff));
+          color: var(--primary-text-color, #212121);
+          font-size: 1.1rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+          transition: all 0.2s ease;
+        }
+        .mindmap-modal-close:hover {
+          background: var(--error-color, #db4437);
+          color: #ffffff;
+          border-color: var(--error-color, #db4437);
+          transform: scale(1.08);
         }
         /* Input & Category Toolbar */
         .input-section {
@@ -677,7 +747,7 @@ class BrainstormCard extends HTMLElement {
           </div>
           <div class="header-right">
             <div class="badge" id="badgeCount">0 Ideen</div>
-            <button class="view-toggle-btn" id="viewToggleBtn" title="Zwischen Listenansicht und Mindmap umschalten">🧠 Mindmap</button>
+            <button class="view-toggle-btn" id="viewToggleBtn" title="Mindmap als Layer öffnen">🧠 Mindmap</button>
           </div>
         </div>
 
@@ -713,8 +783,12 @@ class BrainstormCard extends HTMLElement {
           <div class="ideas-list" id="ideasList"></div>
         </div>
 
-        <div id="mindmapViewWrap" style="display: none; height: 560px; margin-top: 8px; border-radius: 14px; overflow: hidden;">
-          <brainstorm-mindmap-card id="embeddedMindmap"></brainstorm-mindmap-card>
+        <!-- Mindmap Modal Layer (3/4 Screen Popup) -->
+        <div class="mindmap-modal-backdrop" id="mindmapModal" style="display: none;">
+          <div class="mindmap-modal-content">
+            <button class="mindmap-modal-close" id="closeMindmapModalBtn" title="Mindmap schließen (ESC)">✕</button>
+            <brainstorm-mindmap-card id="popupMindmap" style="width: 100%; height: 100%; display: block;"></brainstorm-mindmap-card>
+          </div>
         </div>
       </ha-card>
     `;
@@ -724,33 +798,50 @@ class BrainstormCard extends HTMLElement {
     const sendBtn = this.shadowRoot.getElementById("sendBtn");
     const quickAddCatBtn = this.shadowRoot.getElementById("quickAddCatBtn");
     const viewToggleBtn = this.shadowRoot.getElementById("viewToggleBtn");
-    const listViewWrap = this.shadowRoot.getElementById("listViewWrap");
-    const mindmapViewWrap = this.shadowRoot.getElementById("mindmapViewWrap");
-    const embeddedMindmap = this.shadowRoot.getElementById("embeddedMindmap");
+    const mindmapModal = this.shadowRoot.getElementById("mindmapModal");
+    const closeMindmapModalBtn = this.shadowRoot.getElementById("closeMindmapModalBtn");
+    const popupMindmap = this.shadowRoot.getElementById("popupMindmap");
 
-    if (viewToggleBtn && listViewWrap && mindmapViewWrap) {
-      viewToggleBtn.addEventListener("click", () => {
-        if (this._viewMode === "list") {
-          this._viewMode = "mindmap";
-          listViewWrap.style.display = "none";
-          mindmapViewWrap.style.display = "block";
-          viewToggleBtn.innerHTML = "📋 Liste";
-          if (embeddedMindmap && this._hass) {
-            embeddedMindmap.hass = this._hass;
-            setTimeout(() => {
-              if (typeof embeddedMindmap._centerLayout === "function") {
-                embeddedMindmap._centerLayout(true);
-              }
-            }, 50);
+    const openMindmapModal = () => {
+      if (!mindmapModal) return;
+      mindmapModal.style.display = "flex";
+      if (popupMindmap && this._hass) {
+        popupMindmap.hass = this._hass;
+        setTimeout(() => {
+          if (typeof popupMindmap._centerLayout === "function") {
+            popupMindmap._centerLayout(true);
           }
-        } else {
-          this._viewMode = "list";
-          mindmapViewWrap.style.display = "none";
-          listViewWrap.style.display = "block";
-          viewToggleBtn.innerHTML = "🧠 Mindmap";
+        }, 60);
+      }
+    };
+
+    const closeMindmapModal = () => {
+      if (mindmapModal) {
+        mindmapModal.style.display = "none";
+      }
+    };
+
+    if (viewToggleBtn) {
+      viewToggleBtn.addEventListener("click", openMindmapModal);
+    }
+
+    if (closeMindmapModalBtn) {
+      closeMindmapModalBtn.addEventListener("click", closeMindmapModal);
+    }
+
+    if (mindmapModal) {
+      mindmapModal.addEventListener("click", (e) => {
+        if (e.target === mindmapModal) {
+          closeMindmapModal();
         }
       });
     }
+
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && mindmapModal && mindmapModal.style.display === "flex") {
+        closeMindmapModal();
+      }
+    });
 
     if (quickAddCatBtn) {
       quickAddCatBtn.addEventListener("click", () => this._addCategory());
