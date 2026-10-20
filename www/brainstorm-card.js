@@ -53,6 +53,9 @@ class BrainstormCard extends HTMLElement {
     if (s.includes("alexa") || s === "voice") {
       return "🗣️ Alexa";
     }
+    if (s.includes("assist")) {
+      return "✨ Assist";
+    }
     if (s.includes("companion_voice") || s.includes("mic") || s.includes("speech")) {
       return "🎙️ Sprache";
     }
