@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.4 - Transparent glowing bulb & full viewport utilization
+ * Version 1.4.5 - Dynamic Home Assistant Theme colors & color mode switcher
  */
 class BrainstormCard extends HTMLElement {
   constructor() {
@@ -13,6 +13,12 @@ class BrainstormCard extends HTMLElement {
       title: "Brainstorm Hub",
       sensor: "sensor.brainstorm_ideen_ubersicht",
     };
+    let savedColorMode = "theme";
+    try {
+      savedColorMode = localStorage.getItem("brainstorm_color_mode") || "theme";
+    } catch {}
+    this._colorMode = savedColorMode; // 'theme' | 'multicolor'
+    this._lastColorMode = null;
     this._initialized = false;
     this._lastUpdated = null;
     this._lastCategory = "all";
@@ -35,6 +41,9 @@ class BrainstormCard extends HTMLElement {
       },
       config
     );
+    if (config.color_mode) {
+      this._colorMode = config.color_mode;
+    }
     this._lastUpdated = null; // Force refresh on config change
     if (this._initialized) {
       this._updateContent();
@@ -55,6 +64,32 @@ class BrainstormCard extends HTMLElement {
         popupMindmap.hass = hass;
       }
     }
+  }
+
+  _getCategoryColor(category) {
+    if (this._colorMode === "theme") {
+      const themeColors = {
+        Inbox: "var(--primary-color, #03a9f4)",
+        Smarthome: "color-mix(in srgb, var(--primary-color, #03a9f4) 85%, var(--accent-color, #38bdf8))",
+        "Haus & Garten": "color-mix(in srgb, var(--primary-color, #03a9f4) 75%, var(--success-color, #10b981))",
+        Projekte: "color-mix(in srgb, var(--primary-color, #03a9f4) 80%, var(--info-color, #818cf8))",
+        Alltag: "color-mix(in srgb, var(--primary-color, #03a9f4) 80%, var(--warning-color, #fb923c))",
+        Ideen: "color-mix(in srgb, var(--primary-color, #03a9f4) 85%, var(--accent-color, #f472b6))",
+        default: "var(--primary-color, #03a9f4)",
+      };
+      return themeColors[category] || "var(--primary-color, #03a9f4)";
+    }
+
+    const colors = {
+      Inbox: "var(--primary-color, #3b82f6)",
+      Smarthome: "#0284c7",
+      "Haus & Garten": "#16a34a",
+      Projekte: "#9333ea",
+      Alltag: "#ea580c",
+      Ideen: "#db2777",
+      default: "#475569",
+    };
+    return colors[category] || colors.default;
   }
 
   _getSourceIcon(source) {
@@ -483,6 +518,27 @@ class BrainstormCard extends HTMLElement {
           background: var(--primary-color, #03a9f4);
           color: var(--text-primary-color, #ffffff);
           border-color: var(--primary-color, #03a9f4);
+        }
+        .color-mode-btn {
+          background: var(--secondary-background-color, rgba(127, 127, 127, 0.1));
+          border: 1px solid var(--ha-card-border-color, var(--divider-color, rgba(127, 127, 127, 0.15)));
+          color: var(--primary-text-color, #212121);
+          border-radius: 50%;
+          width: 28px;
+          height: 28px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          font-size: 0.9rem;
+          box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+          transition: all 0.2s ease;
+        }
+        .color-mode-btn:hover {
+          background: var(--primary-color, #03a9f4);
+          color: var(--text-primary-color, #ffffff);
+          border-color: var(--primary-color, #03a9f4);
+          transform: scale(1.05);
         }
         /* Mindmap Modal Layer (3/4 Screen Popup) */
         .mindmap-modal-backdrop {
@@ -1142,6 +1198,7 @@ class BrainstormCard extends HTMLElement {
           </div>
           <div class="header-right">
             <div class="badge" id="badgeCount">0 Ideen</div>
+            <button class="color-mode-btn" id="cardColorModeBtn" title="${this._colorMode === 'theme' ? 'Farbmodus: Theme-Farben aktiv (Klicken für Bunt)' : 'Farbmodus: Bunt aktiv (Klicken für Theme-Farben)'}">${this._colorMode === 'theme' ? '🎨' : '🌈'}</button>
             <button class="view-toggle-btn" id="viewToggleBtn" title="Mindmap als Layer öffnen">🧠 Mindmap</button>
           </div>
         </div>
@@ -1219,12 +1276,28 @@ class BrainstormCard extends HTMLElement {
       });
     }
 
+    const cardColorModeBtn = this.shadowRoot.getElementById("cardColorModeBtn");
+    if (cardColorModeBtn) {
+      cardColorModeBtn.addEventListener("click", () => {
+        this._colorMode = this._colorMode === "theme" ? "multicolor" : "theme";
+        try {
+          localStorage.setItem("brainstorm_color_mode", this._colorMode);
+        } catch {}
+        cardColorModeBtn.innerHTML = this._colorMode === "theme" ? "🎨" : "🌈";
+        cardColorModeBtn.title = this._colorMode === "theme"
+          ? "Farbmodus: Theme-Farben aktiv (Klicken für Bunt)"
+          : "Farbmodus: Bunt aktiv (Klicken für Theme-Farben)";
+        this._lastColorMode = null; // Force re-render
+        this._updateContent();
+      });
+    }
+
     const openMindmapModal = () => {
       if (!mindmapModal) return;
       mindmapModal.style.display = "flex";
       if (popupMindmap && this._hass) {
         if (typeof popupMindmap.setConfig === "function") {
-          popupMindmap.setConfig({ height: "100%", is_popup: true });
+          popupMindmap.setConfig({ height: "100%", is_popup: true, color_mode: this._colorMode });
         }
         popupMindmap.hass = this._hass;
         setTimeout(() => {
@@ -1296,10 +1369,11 @@ class BrainstormCard extends HTMLElement {
       const catSelectEl = this.shadowRoot.getElementById("catSelect");
       const isSelectActive = catSelectEl && (this.shadowRoot.activeElement === catSelectEl || document.activeElement === catSelectEl);
 
-      // If neither the sensor nor the selected category changed, skip DOM re-render entirely
+      // If neither the sensor nor the selected category nor color mode changed, skip DOM re-render entirely
       if (
         this._lastUpdated === currentSensorUpdated &&
-        this._lastCategory === this._selectedCategory
+        this._lastCategory === this._selectedCategory &&
+        this._lastColorMode === this._colorMode
       ) {
         return;
       }
@@ -1311,6 +1385,7 @@ class BrainstormCard extends HTMLElement {
 
       this._lastUpdated = currentSensorUpdated;
       this._lastCategory = this._selectedCategory;
+      this._lastColorMode = this._colorMode;
 
       const attributes = sensorEntity.attributes || {};
       const categories = attributes.categories || ["Inbox", "Smarthome", "Haus & Garten", "Projekte", "Alltag"];
@@ -1360,10 +1435,15 @@ class BrainstormCard extends HTMLElement {
         ${categories
           .map((cat) => {
             const count = counts[cat] || 0;
-            const isActive = this._selectedCategory === cat ? "active" : "";
+            const isActive = this._selectedCategory === cat;
             const canDelete = cat !== "Inbox" && isActive;
+            const catColor = this._getCategoryColor(cat);
+            const pillStyle = isActive
+              ? `background: ${catColor}; border-color: ${catColor}; color: #ffffff;`
+              : "";
             return `
-              <div class="pill ${isActive}" data-cat="${cat}">
+              <div class="pill ${isActive ? "active" : ""}" data-cat="${cat}" style="${pillStyle}">
+                <span class="pill-dot" style="display:inline-block; width:7px; height:7px; border-radius:50%; background:${catColor}; margin-right:4px;"></span>
                 <span>${cat}</span>
                 <span class="pill-count">${count}</span>
                 ${canDelete ? `<span class="remove-cat-btn" title="Kategorie '${cat}' löschen" data-delcat="${cat}">✕</span>` : ""}
@@ -1444,7 +1524,7 @@ class BrainstormCard extends HTMLElement {
               <div class="idea-content">
                 <div class="idea-text" title="${isCompletedView ? "" : "Klicken zum Bearbeiten"}" data-id="${item.id}">${item.text}</div>
                 <div class="idea-meta">
-                  <span class="category-tag ${isCompletedView ? "" : "clickable"}" title="${isCompletedView ? "Kategorie" : "Kategorie ändern"}" data-id="${item.id}" data-cat="${item.category}">${item.category}</span>
+                  <span class="category-tag ${isCompletedView ? "" : "clickable"}" title="${isCompletedView ? "Kategorie" : "Kategorie ändern"}" data-id="${item.id}" data-cat="${item.category}" style="color: ${this._getCategoryColor(item.category)}; background: color-mix(in srgb, ${this._getCategoryColor(item.category)} 12%, var(--secondary-background-color, rgba(0,0,0,0.06))); border: 1px solid color-mix(in srgb, ${this._getCategoryColor(item.category)} 25%, transparent);">${item.category}</span>
                   <span>${this._getSourceIcon(item.source)}</span>
                   <span>•</span>
                   <span>${this._formatTime(item.created_at)}</span>

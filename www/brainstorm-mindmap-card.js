@@ -1,6 +1,6 @@
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.4.4
+ * Version: 1.4.5
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -13,6 +13,11 @@ class BrainstormMindmapCard extends HTMLElement {
     this._config = {};
     this._hass = null;
     this._selectedCategory = "all"; // 'all', 'Inbox', etc.
+    let savedColorMode = "theme";
+    try {
+      savedColorMode = localStorage.getItem("brainstorm_color_mode") || "theme";
+    } catch {}
+    this._colorMode = savedColorMode; // 'theme' | 'multicolor'
     this._scale = 1;
     this._panX = 0;
     this._panY = 0;
@@ -43,6 +48,9 @@ class BrainstormMindmapCard extends HTMLElement {
       default_category: "Inbox",
       ...config,
     };
+    if (config.color_mode) {
+      this._colorMode = config.color_mode;
+    }
     if (this._config.default_category && !this._initialized) {
       this._selectedCategory = this._config.default_category;
     }
@@ -89,6 +97,20 @@ class BrainstormMindmapCard extends HTMLElement {
   }
 
   _getCategoryColor(category) {
+    if (this._colorMode === "theme") {
+      // Dynamic Home Assistant Theme integration
+      const themeColors = {
+        Inbox: "var(--primary-color, #03a9f4)",
+        Smarthome: "color-mix(in srgb, var(--primary-color, #03a9f4) 85%, var(--accent-color, #38bdf8))",
+        "Haus & Garten": "color-mix(in srgb, var(--primary-color, #03a9f4) 75%, var(--success-color, #10b981))",
+        Projekte: "color-mix(in srgb, var(--primary-color, #03a9f4) 80%, var(--info-color, #818cf8))",
+        Alltag: "color-mix(in srgb, var(--primary-color, #03a9f4) 80%, var(--warning-color, #fb923c))",
+        Ideen: "color-mix(in srgb, var(--primary-color, #03a9f4) 85%, var(--accent-color, #f472b6))",
+        default: "var(--primary-color, #03a9f4)",
+      };
+      return themeColors[category] || "var(--primary-color, #03a9f4)";
+    }
+
     const colors = {
       Inbox: "var(--primary-color, #3b82f6)",
       Smarthome: "#0284c7",
@@ -204,6 +226,7 @@ class BrainstormMindmapCard extends HTMLElement {
           font-weight: 700;
           color: var(--primary-text-color, #212121);
         }
+        .top-tool-btn,
         .fullscreen-btn {
           background: var(--ha-card-background, var(--card-background-color, #ffffff));
           border: 1px solid var(--ha-card-border-color, var(--divider-color, rgba(127, 127, 127, 0.15)));
@@ -219,6 +242,7 @@ class BrainstormMindmapCard extends HTMLElement {
           box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
           transition: all 0.2s ease;
         }
+        .top-tool-btn:hover,
         .fullscreen-btn:hover {
           background: var(--secondary-background-color, rgba(127, 127, 127, 0.1));
           color: var(--primary-color, #03a9f4);
@@ -822,6 +846,9 @@ class BrainstormMindmapCard extends HTMLElement {
           </div>
           <div class="pills-container" id="pillsBar"></div>
           <div class="top-right">
+            <button class="top-tool-btn" id="colorModeBtn" title="${this._colorMode === 'theme' ? 'Farbmodus: Theme-Farben aktiv (Klicken für Bunt)' : 'Farbmodus: Bunt aktiv (Klicken für Theme-Farben)'}">
+              ${this._colorMode === 'theme' ? '🎨' : '🌈'}
+            </button>
             <button class="fullscreen-btn" id="fullscreenToggleBtn" title="Vollbild umschalten (ESC zum Beenden)">⛶</button>
           </div>
         </div>
@@ -893,6 +920,23 @@ class BrainstormMindmapCard extends HTMLElement {
     if (mindmapDialog) {
       mindmapDialog.addEventListener("click", (e) => {
         if (e.target === mindmapDialog) this._closeDialog();
+      });
+    }
+
+    // Color Mode Toggle (Theme vs Multicolor)
+    const colorModeBtn = this.shadowRoot.getElementById("colorModeBtn");
+    if (colorModeBtn) {
+      colorModeBtn.addEventListener("click", () => {
+        this._colorMode = this._colorMode === "theme" ? "multicolor" : "theme";
+        try {
+          localStorage.setItem("brainstorm_color_mode", this._colorMode);
+        } catch {}
+        colorModeBtn.innerHTML = this._colorMode === "theme" ? "🎨" : "🌈";
+        colorModeBtn.title = this._colorMode === "theme"
+          ? "Farbmodus: Theme-Farben aktiv (Klicken für Bunt)"
+          : "Farbmodus: Bunt aktiv (Klicken für Theme-Farben)";
+        this._lastDataSignature = ""; // force re-render
+        this._updateContent();
       });
     }
 
@@ -1248,6 +1292,15 @@ class BrainstormMindmapCard extends HTMLElement {
         if (this._selectedCategory === "all") return true;
         return i.category === this._selectedCategory;
       });
+
+      // Update Color Mode Button
+      const colorModeBtn = this.shadowRoot.getElementById("colorModeBtn");
+      if (colorModeBtn) {
+        colorModeBtn.innerHTML = this._colorMode === "theme" ? "🎨" : "🌈";
+        colorModeBtn.title = this._colorMode === "theme"
+          ? "Farbmodus: Theme-Farben aktiv (Klicken für Bunt)"
+          : "Farbmodus: Bunt aktiv (Klicken für Theme-Farben)";
+      }
 
       // 1. Update Top Category Pills
       const pillsBar = this.shadowRoot.getElementById("pillsBar");
@@ -1781,7 +1834,7 @@ window.customCards.push({
 });
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.4 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.5 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );
