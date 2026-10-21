@@ -583,7 +583,7 @@ class BrainstormStore:
     async def async_add_category(self, category_name: str) -> bool:
         """Add a new category."""
         clean_name = category_name.strip()
-        if not clean_name or clean_name in self._categories:
+        if not clean_name or any(c.lower() == clean_name.lower() for c in self._categories):
             return False
         self._categories.append(clean_name)
         await self.async_save()

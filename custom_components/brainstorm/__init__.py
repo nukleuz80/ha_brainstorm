@@ -8,6 +8,7 @@ import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse, callback
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 
@@ -215,10 +216,14 @@ def _register_services(hass: HomeAssistant) -> None:
         """Handle adding a category."""
         store = _get_active_store(hass)
         if not store:
-            raise ValueError("Brainstorm store is not initialized")
+            raise ServiceValidationError("Brainstorm store is not initialized")
 
-        name = call.data["name"]
+        name = call.data.get("name", "").strip()
+        if not name:
+            raise ServiceValidationError("Der Kategoriename darf nicht leer sein.")
         success = await store.async_add_category(name)
+        if not success:
+            raise ServiceValidationError(f"Die Kategorie '{name}' existiert bereits.")
         return {"success": success, "categories": store.categories}
 
     async def handle_remove_category(call: ServiceCall) -> dict[str, Any]:

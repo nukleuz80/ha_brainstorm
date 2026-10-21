@@ -1,6 +1,6 @@
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.4.9
+ * Version: 1.4.10
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -897,6 +897,28 @@ class BrainstormMindmapCard extends HTMLElement {
           filter: brightness(1.08);
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
         }
+        .dialog-error {
+          color: var(--error-color, #db4437);
+          font-size: 0.8rem;
+          margin-top: 6px;
+          line-height: 1.3;
+          font-weight: 500;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+        .dialog-input.input-error,
+        .dialog-textarea.input-error {
+          border-color: var(--error-color, #db4437) !important;
+          box-shadow: 0 0 0 2px color-mix(in srgb, var(--error-color, #db4437) 25%, transparent) !important;
+          animation: dialog-shake 0.3s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        }
+        @keyframes dialog-shake {
+          10%, 90% { transform: translate3d(-1px, 0, 0); }
+          20%, 80% { transform: translate3d(2px, 0, 0); }
+          30%, 50%, 70% { transform: translate3d(-3px, 0, 0); }
+          40%, 60% { transform: translate3d(3px, 0, 0); }
+        }
       </style>
 
       <ha-card id="cardRoot">
@@ -1663,6 +1685,7 @@ class BrainstormMindmapCard extends HTMLElement {
           <input type="text" class="dialog-input" id="newCatInput" placeholder="Kategoriename..." />
           <button class="dialog-btn dialog-btn-primary" id="addNewCatBtn">➕ Erstellen</button>
         </div>
+        <div class="dialog-error" id="newCatError" style="display: none;"></div>
       `;
 
       // Select existing category
@@ -1683,12 +1706,41 @@ class BrainstormMindmapCard extends HTMLElement {
         });
       });
 
-      // Add new category
+      // Add new category with validation
       const newCatInput = body.querySelector("#newCatInput");
+      const newCatError = body.querySelector("#newCatError");
       const addNewCatBtn = body.querySelector("#addNewCatBtn");
+
+      const showCatError = (msg) => {
+        if (!newCatError || !newCatInput) return;
+        newCatError.textContent = msg;
+        newCatError.style.display = "flex";
+        newCatInput.classList.remove("input-error");
+        void newCatInput.offsetWidth;
+        newCatInput.classList.add("input-error");
+        newCatInput.focus();
+      };
+
+      const clearCatError = () => {
+        if (newCatError) {
+          newCatError.textContent = "";
+          newCatError.style.display = "none";
+        }
+        if (newCatInput) newCatInput.classList.remove("input-error");
+      };
+
+      newCatInput.addEventListener("input", clearCatError);
+
       const handleCreateCat = async () => {
         const val = (newCatInput.value || "").trim();
-        if (!val) return;
+        if (!val) {
+          showCatError("⚠️ Bitte gib einen Kategorienamen ein.");
+          return;
+        }
+        if (categories.some((c) => c.toLowerCase() === val.toLowerCase())) {
+          showCatError(`⚠️ Die Kategorie "${val}" existiert bereits.`);
+          return;
+        }
         this._closeDialog();
         try {
           await this._hass.callService("brainstorm", "add_category", { name: val });
@@ -1715,6 +1767,7 @@ class BrainstormMindmapCard extends HTMLElement {
       body.innerHTML = `
         <div class="dialog-label">Notiztext:</div>
         <textarea class="dialog-textarea" id="editTextarea" rows="3">${this._escapeHtml(currentText)}</textarea>
+        <div class="dialog-error" id="editTextError" style="display: none;"></div>
 
         <div class="dialog-label">Kategorie:</div>
         <div class="dialog-categories-grid" id="editCatGrid">
@@ -1739,9 +1792,30 @@ class BrainstormMindmapCard extends HTMLElement {
       `;
 
       const textarea = body.querySelector("#editTextarea");
+      const textError = body.querySelector("#editTextError");
       const saveBtn = body.querySelector("#saveEditBtn");
       const cancelBtn = body.querySelector("#cancelEditBtn");
       const catChips = body.querySelectorAll(".dialog-cat-chip");
+
+      const showTextError = (msg) => {
+        if (!textError || !textarea) return;
+        textError.textContent = msg;
+        textError.style.display = "flex";
+        textarea.classList.remove("input-error");
+        void textarea.offsetWidth;
+        textarea.classList.add("input-error");
+        textarea.focus();
+      };
+
+      const clearTextError = () => {
+        if (textError) {
+          textError.textContent = "";
+          textError.style.display = "none";
+        }
+        if (textarea) textarea.classList.remove("input-error");
+      };
+
+      textarea.addEventListener("input", clearTextError);
 
       setTimeout(() => {
         if (textarea) {
@@ -1760,7 +1834,10 @@ class BrainstormMindmapCard extends HTMLElement {
 
       const handleSave = async () => {
         const newText = (textarea.value || "").trim();
-        if (!newText) return;
+        if (!newText) {
+          showTextError("⚠️ Der Text darf nicht leer sein.");
+          return;
+        }
         this._closeDialog();
 
         const payload = { id: id, text: newText };
@@ -1795,6 +1872,7 @@ class BrainstormMindmapCard extends HTMLElement {
       body.innerHTML = `
         <div class="dialog-label">Idee / Gedanke:</div>
         <textarea class="dialog-textarea" id="addTextarea" placeholder="Was möchtest du festhalten?..." rows="3"></textarea>
+        <div class="dialog-error" id="addTextError" style="display: none;"></div>
 
         <div class="dialog-label">Kategorie:</div>
         <div class="dialog-categories-grid" id="addCatGrid">
@@ -1819,9 +1897,30 @@ class BrainstormMindmapCard extends HTMLElement {
       `;
 
       const textarea = body.querySelector("#addTextarea");
+      const textError = body.querySelector("#addTextError");
       const saveBtn = body.querySelector("#saveAddBtn");
       const cancelBtn = body.querySelector("#cancelAddBtn");
       const catChips = body.querySelectorAll(".dialog-cat-chip");
+
+      const showTextError = (msg) => {
+        if (!textError || !textarea) return;
+        textError.textContent = msg;
+        textError.style.display = "flex";
+        textarea.classList.remove("input-error");
+        void textarea.offsetWidth;
+        textarea.classList.add("input-error");
+        textarea.focus();
+      };
+
+      const clearTextError = () => {
+        if (textError) {
+          textError.textContent = "";
+          textError.style.display = "none";
+        }
+        if (textarea) textarea.classList.remove("input-error");
+      };
+
+      textarea.addEventListener("input", clearTextError);
 
       setTimeout(() => {
         if (textarea) textarea.focus();
@@ -1837,7 +1936,10 @@ class BrainstormMindmapCard extends HTMLElement {
 
       const handleAdd = async () => {
         const text = (textarea.value || "").trim();
-        if (!text) return;
+        if (!text) {
+          showTextError("⚠️ Der Text darf nicht leer sein.");
+          return;
+        }
         this._closeDialog();
 
         try {
@@ -2165,7 +2267,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.9 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.10 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

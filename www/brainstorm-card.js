@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.9 - Fix missing _escapeHtml and _getSensorEntity methods
+ * Version 1.4.10 - Add inline category & note validation with shake animation
  */
 class BrainstormCard extends HTMLElement {
   constructor() {
@@ -287,6 +287,7 @@ class BrainstormCard extends HTMLElement {
       body.innerHTML = `
         <div class="action-dialog-label">Notiztext:</div>
         <textarea class="action-dialog-textarea" id="editTextarea" rows="3">${this._escapeHtml(currentText)}</textarea>
+        <div class="action-dialog-error" id="editTextError" style="display: none;"></div>
 
         <div class="action-dialog-label">Kategorie:</div>
         <div class="action-dialog-categories-grid" id="editCatGrid">
@@ -311,6 +312,7 @@ class BrainstormCard extends HTMLElement {
       `;
 
       const textarea = body.querySelector("#editTextarea");
+      const textError = body.querySelector("#editTextError");
       const saveBtn = body.querySelector("#saveEditBtn");
       const cancelBtn = body.querySelector("#cancelEditBtn");
       const catChips = body.querySelectorAll(".action-dialog-cat-chip");
@@ -322,6 +324,26 @@ class BrainstormCard extends HTMLElement {
         }
       }, 50);
 
+      const showTextError = (msg) => {
+        if (!textError || !textarea) return;
+        textError.textContent = msg;
+        textError.style.display = "flex";
+        textarea.classList.remove("input-error");
+        void textarea.offsetWidth;
+        textarea.classList.add("input-error");
+        textarea.focus();
+      };
+
+      const clearTextError = () => {
+        if (textError) {
+          textError.textContent = "";
+          textError.style.display = "none";
+        }
+        if (textarea) textarea.classList.remove("input-error");
+      };
+
+      textarea.addEventListener("input", clearTextError);
+
       catChips.forEach((chip) => {
         chip.addEventListener("click", () => {
           catChips.forEach((c) => c.classList.remove("selected"));
@@ -332,7 +354,10 @@ class BrainstormCard extends HTMLElement {
 
       const handleSave = async () => {
         const newText = (textarea.value || "").trim();
-        if (!newText) return;
+        if (!newText) {
+          showTextError("⚠️ Der Text darf nicht leer sein.");
+          return;
+        }
         this._closeDialog();
 
         const payload = { id: id, text: newText };
@@ -393,6 +418,7 @@ class BrainstormCard extends HTMLElement {
           <input type="text" class="action-dialog-input" id="newCatInput" placeholder="Kategoriename..." />
           <button class="action-dialog-btn action-dialog-btn-primary" id="addNewCatBtn">➕ Erstellen</button>
         </div>
+        <div class="action-dialog-error" id="newCatError" style="display: none;"></div>
       `;
 
       body.querySelectorAll(".action-dialog-cat-chip").forEach((chip) => {
@@ -413,10 +439,39 @@ class BrainstormCard extends HTMLElement {
       });
 
       const newCatInput = body.querySelector("#newCatInput");
+      const newCatError = body.querySelector("#newCatError");
       const addNewCatBtn = body.querySelector("#addNewCatBtn");
+
+      const showCatError = (msg) => {
+        if (!newCatError || !newCatInput) return;
+        newCatError.textContent = msg;
+        newCatError.style.display = "flex";
+        newCatInput.classList.remove("input-error");
+        void newCatInput.offsetWidth;
+        newCatInput.classList.add("input-error");
+        newCatInput.focus();
+      };
+
+      const clearCatError = () => {
+        if (newCatError) {
+          newCatError.textContent = "";
+          newCatError.style.display = "none";
+        }
+        if (newCatInput) newCatInput.classList.remove("input-error");
+      };
+
+      newCatInput.addEventListener("input", clearCatError);
+
       const handleCreateCat = async () => {
         const val = (newCatInput.value || "").trim();
-        if (!val) return;
+        if (!val) {
+          showCatError("⚠️ Bitte gib einen Kategorienamen ein.");
+          return;
+        }
+        if (categories.some((c) => c.toLowerCase() === val.toLowerCase())) {
+          showCatError(`⚠️ Die Kategorie "${val}" existiert bereits.`);
+          return;
+        }
         this._closeDialog();
         try {
           await this._hass.callService("brainstorm", "add_category", { name: val });
@@ -435,11 +490,15 @@ class BrainstormCard extends HTMLElement {
   }
 
   _addCategory() {
+    const sensor = this._getSensorEntity();
+    const existingCats = (sensor && sensor.attributes && sensor.attributes.categories) || [];
+
     this._openDialog("➕ Neue Kategorie", (body) => {
       body.innerHTML = `
         <div class="action-dialog-label">Name der neuen Kategorie:</div>
-        <div style="width: 100%; display: flex;">
-          <input type="text" class="action-dialog-input" id="createCatInput" placeholder="z. B. Smart Home, Finanzen, Einkaufen..." style="width: 100%; flex: 1;" />
+        <div style="width: 100%; display: flex; flex-direction: column;">
+          <input type="text" class="action-dialog-input" id="createCatInput" placeholder="z. B. Smart Home, Finanzen, Einkaufen..." style="width: 100%;" />
+          <div class="action-dialog-error" id="createCatError" style="display: none;"></div>
         </div>
         <div class="action-dialog-footer">
           <button class="action-dialog-btn action-dialog-btn-cancel" id="cancelAddCatBtn">Abbrechen</button>
@@ -448,12 +507,40 @@ class BrainstormCard extends HTMLElement {
       `;
 
       const input = body.querySelector("#createCatInput");
+      const errDiv = body.querySelector("#createCatError");
       const saveBtn = body.querySelector("#saveAddCatBtn");
       const cancelBtn = body.querySelector("#cancelAddCatBtn");
 
+      const showError = (msg) => {
+        if (!errDiv || !input) return;
+        errDiv.textContent = msg;
+        errDiv.style.display = "flex";
+        input.classList.remove("input-error");
+        void input.offsetWidth;
+        input.classList.add("input-error");
+        input.focus();
+      };
+
+      const clearError = () => {
+        if (errDiv) {
+          errDiv.textContent = "";
+          errDiv.style.display = "none";
+        }
+        if (input) input.classList.remove("input-error");
+      };
+
+      input.addEventListener("input", clearError);
+
       const handleAdd = async () => {
         const name = (input.value || "").trim();
-        if (!name) return;
+        if (!name) {
+          showError("⚠️ Bitte gib einen Kategorienamen ein.");
+          return;
+        }
+        if (existingCats.some((c) => c.toLowerCase() === name.toLowerCase())) {
+          showError(`⚠️ Die Kategorie "${name}" existiert bereits.`);
+          return;
+        }
         this._closeDialog();
         try {
           await this._hass.callService("brainstorm", "add_category", { name: name });
@@ -900,6 +987,28 @@ class BrainstormCard extends HTMLElement {
         .action-dialog-btn-primary:hover {
           filter: brightness(1.08);
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+        .action-dialog-error {
+          color: var(--error-color, #db4437);
+          font-size: 0.8rem;
+          margin-top: 6px;
+          line-height: 1.3;
+          font-weight: 500;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+        .action-dialog-input.input-error,
+        .action-dialog-textarea.input-error {
+          border-color: var(--error-color, #db4437) !important;
+          box-shadow: 0 0 0 2px color-mix(in srgb, var(--error-color, #db4437) 25%, transparent) !important;
+          animation: dialog-shake 0.3s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        }
+        @keyframes dialog-shake {
+          10%, 90% { transform: translate3d(-1px, 0, 0); }
+          20%, 80% { transform: translate3d(2px, 0, 0); }
+          30%, 50%, 70% { transform: translate3d(-3px, 0, 0); }
+          40%, 60% { transform: translate3d(3px, 0, 0); }
         }
         /* Input & Category Toolbar */
         .input-section {
