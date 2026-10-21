@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.8 - Fix category dialog input field layout & width
+ * Version 1.4.9 - Fix missing _escapeHtml and _getSensorEntity methods
  */
 class BrainstormCard extends HTMLElement {
   constructor() {
@@ -108,6 +108,31 @@ class BrainstormCard extends HTMLElement {
         popupMindmap.hass = hass;
       }
     }
+  }
+
+  _getSensorEntity() {
+    if (!this._hass) return null;
+    const configured = (this._config && this._config.sensor) || "sensor.brainstorm_ideen_ubersicht";
+    if (this._hass.states && this._hass.states[configured]) {
+      return this._hass.states[configured];
+    }
+    if (this._hass.states && this._hass.states["sensor.brainstorm_hub_brainstorm_ideen_ubersicht"]) {
+      return this._hass.states["sensor.brainstorm_hub_brainstorm_ideen_ubersicht"];
+    }
+    if (this._hass.states && this._hass.states["sensor.brainstorm_ideen_ubersicht"]) {
+      return this._hass.states["sensor.brainstorm_ideen_ubersicht"];
+    }
+    return null;
+  }
+
+  _escapeHtml(text) {
+    if (text === null || text === undefined) return "";
+    return String(text)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   }
 
   _getCategoryColor(category) {
@@ -1416,8 +1441,7 @@ class BrainstormCard extends HTMLElement {
     try {
       if (!this._shadowRootReady()) return;
 
-      const sensorName = (this._config && this._config.sensor) || "sensor.brainstorm_ideen_ubersicht";
-      const sensorEntity = this._hass && this._hass.states ? this._hass.states[sensorName] : null;
+      const sensorEntity = this._getSensorEntity();
       if (!sensorEntity) return;
 
       const currentSensorUpdated = sensorEntity.last_updated;
