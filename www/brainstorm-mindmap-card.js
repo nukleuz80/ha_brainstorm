@@ -1,6 +1,6 @@
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.4.7
+ * Version: 1.4.8
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -821,16 +821,25 @@ class BrainstormMindmapCard extends HTMLElement {
           align-items: center;
           gap: 8px;
           margin-top: 4px;
+          width: 100%;
         }
         .dialog-input {
-          flex: 1;
+          width: 100%;
+          box-sizing: border-box;
           border: 1px solid var(--ha-card-border-color, var(--divider-color, rgba(127, 127, 127, 0.2)));
           background: var(--card-background-color, var(--ha-card-background, #ffffff));
           color: var(--primary-text-color, #212121);
-          padding: 8px 12px;
+          padding: 10px 14px;
           border-radius: 12px;
-          font-size: 0.85rem;
+          font-size: 0.92rem;
+          font-family: inherit;
           outline: none;
+          min-height: 42px;
+          display: block;
+        }
+        .dialog-new-cat-row .dialog-input {
+          flex: 1;
+          width: auto;
         }
         .dialog-input:focus {
           border-color: var(--primary-color, #03a9f4);
@@ -2156,7 +2165,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.7 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.8 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.7 - Fix duplicate pillsContainer declaration & stabilize visual card editor
+ * Version 1.4.8 - Fix category dialog input field layout & width
  */
 class BrainstormCard extends HTMLElement {
   constructor() {
@@ -413,7 +413,9 @@ class BrainstormCard extends HTMLElement {
     this._openDialog("➕ Neue Kategorie", (body) => {
       body.innerHTML = `
         <div class="action-dialog-label">Name der neuen Kategorie:</div>
-        <input type="text" class="action-dialog-input" id="createCatInput" placeholder="z. B. Smart Home, Finanzen, Einkaufen..." />
+        <div style="width: 100%; display: flex;">
+          <input type="text" class="action-dialog-input" id="createCatInput" placeholder="z. B. Smart Home, Finanzen, Einkaufen..." style="width: 100%; flex: 1;" />
+        </div>
         <div class="action-dialog-footer">
           <button class="action-dialog-btn action-dialog-btn-cancel" id="cancelAddCatBtn">Abbrechen</button>
           <button class="action-dialog-btn action-dialog-btn-primary" id="saveAddCatBtn">Kategorie erstellen</button>
@@ -798,16 +800,25 @@ class BrainstormCard extends HTMLElement {
           align-items: center;
           gap: 8px;
           margin-top: 4px;
+          width: 100%;
         }
         .action-dialog-input {
-          flex: 1;
+          width: 100%;
+          box-sizing: border-box;
           border: 1px solid var(--ha-card-border-color, var(--divider-color, rgba(127, 127, 127, 0.2)));
           background: var(--card-background-color, var(--ha-card-background, #ffffff));
           color: var(--primary-text-color, #212121);
-          padding: 8px 12px;
+          padding: 10px 14px;
           border-radius: 12px;
-          font-size: 0.85rem;
+          font-size: 0.92rem;
+          font-family: inherit;
           outline: none;
+          min-height: 42px;
+          display: block;
+        }
+        .action-dialog-new-cat-row .action-dialog-input {
+          flex: 1;
+          width: auto;
         }
         .action-dialog-input:focus {
           border-color: var(--primary-color, #03a9f4);
