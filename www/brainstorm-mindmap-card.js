@@ -1,6 +1,6 @@
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.4.10
+ * Version: 1.4.11
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -72,7 +72,7 @@ class BrainstormMindmapCard extends HTMLElement {
       this._colorMode = config.color_mode;
     }
     if (this._config.default_category && !this._initialized) {
-      this._selectedCategory = this._config.default_category;
+      this._selectedCategory = String(this._config.default_category).trim();
     }
     if (this._initialized) {
       this._applyConfigUpdates();
@@ -1299,7 +1299,7 @@ class BrainstormMindmapCard extends HTMLElement {
     if (!sensor) return;
     const ideas = (sensor.attributes.ideas || []).filter((i) => {
       if (this._selectedCategory === "all") return true;
-      return i.category === this._selectedCategory;
+      return String(i.category || "").trim() === String(this._selectedCategory || "").trim();
     });
 
     const count = ideas.length;
@@ -1376,7 +1376,7 @@ class BrainstormMindmapCard extends HTMLElement {
       // Filter ideas by selected category
       const filteredIdeas = activeIdeas.filter((i) => {
         if (this._selectedCategory === "all") return true;
-        return i.category === this._selectedCategory;
+        return String(i.category || "").trim() === String(this._selectedCategory || "").trim();
       });
 
       // Update Card Elements from Config
@@ -1424,7 +1424,7 @@ class BrainstormMindmapCard extends HTMLElement {
             .map((cat) => {
               const c = counts[cat] || 0;
               return `
-                <div class="cat-pill ${this._selectedCategory === cat ? "active" : ""}" data-cat="${cat}" style="--category-color: ${this._getCategoryColor(cat)};">
+                <div class="cat-pill ${String(this._selectedCategory || "").trim() === String(cat || "").trim() ? "active" : ""}" data-cat="${cat}" style="--category-color: ${this._getCategoryColor(cat)};">
                   ${cat} (${c})
                 </div>
               `;
@@ -1434,7 +1434,7 @@ class BrainstormMindmapCard extends HTMLElement {
 
         pillsBar.querySelectorAll(".cat-pill").forEach((pill) => {
           pill.addEventListener("click", () => {
-            this._selectedCategory = pill.getAttribute("data-cat");
+            this._selectedCategory = String(pill.getAttribute("data-cat") || "").trim();
             this._updateContent();
             this._arrangeNodesRadially();
           });
@@ -2267,7 +2267,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.10 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.11 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.10 - Add inline category & note validation with shake animation
+ * Version 1.4.11 - Robust category whitespace trimming for default_category and pills
  */
 class BrainstormCard extends HTMLElement {
   constructor() {
@@ -85,7 +85,7 @@ class BrainstormCard extends HTMLElement {
       this._colorMode = config.color_mode;
     }
     if (config.default_category && (!this._initialized || this._selectedCategory === "all")) {
-      this._selectedCategory = config.default_category;
+      this._selectedCategory = String(config.default_category).trim();
     }
     this._lastUpdated = null; // Force refresh on config change
     this._lastColorMode = null;
@@ -581,7 +581,7 @@ class BrainstormCard extends HTMLElement {
           await this._hass.callService("brainstorm", "remove_category", {
             name: categoryName,
           });
-          if (this._selectedCategory === categoryName) {
+          if (String(this._selectedCategory).trim() === String(categoryName).trim()) {
             this._selectedCategory = "all";
           }
         } catch (e) {
@@ -1645,7 +1645,7 @@ class BrainstormCard extends HTMLElement {
         ${categories
           .map((cat) => {
             const count = counts[cat] || 0;
-            const isActive = this._selectedCategory === cat;
+            const isActive = String(this._selectedCategory || "").trim() === String(cat || "").trim();
             const canDelete = cat !== "Inbox" && isActive;
             const catColor = this._getCategoryColor(cat);
             const pillStyle = isActive
@@ -1680,7 +1680,7 @@ class BrainstormCard extends HTMLElement {
       pillsContainer.querySelectorAll(".pill[data-cat]").forEach((pill) => {
         pill.addEventListener("click", (e) => {
           if (e.target.closest(".remove-cat-btn")) return;
-          this._selectedCategory = pill.getAttribute("data-cat");
+          this._selectedCategory = String(pill.getAttribute("data-cat") || "").trim();
           this._updateContent();
         });
       });
@@ -1704,7 +1704,7 @@ class BrainstormCard extends HTMLElement {
       ? completedIdeas
       : this._selectedCategory === "all"
       ? activeIdeas
-      : activeIdeas.filter((i) => i.category === this._selectedCategory);
+      : activeIdeas.filter((i) => String(i.category || "").trim() === String(this._selectedCategory || "").trim());
 
     if (this._config.max_items && typeof this._config.max_items === "number" && this._config.max_items > 0) {
       filteredIdeas = filteredIdeas.slice(0, this._config.max_items);
