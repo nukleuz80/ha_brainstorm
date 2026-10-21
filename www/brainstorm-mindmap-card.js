@@ -1,6 +1,6 @@
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.4.6 - Visual Card Configuration Editor
+ * Version: 1.4.7
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -2140,19 +2140,23 @@ if (!customElements.get("brainstorm-mindmap-card-editor")) {
 }
 
 // Register custom element & Lovelace customCard entry
-customElements.define("brainstorm-mindmap-card", BrainstormMindmapCard);
+if (!customElements.get("brainstorm-mindmap-card")) {
+  customElements.define("brainstorm-mindmap-card", BrainstormMindmapCard);
+}
 
 window.customCards = window.customCards || [];
-window.customCards.push({
-  type: "brainstorm-mindmap-card",
-  name: "Brainstorm Mindmap Card",
-  description: "Interaktive Mindmap-Darstellung für deine Brainstorm Hub Notizen und Ideen.",
-  preview: true,
-  documentationURL: "https://github.com/nukleuz80/ha_brainstorm",
-});
+if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
+  window.customCards.push({
+    type: "brainstorm-mindmap-card",
+    name: "Brainstorm Mindmap Card",
+    description: "Interaktive Mindmap-Darstellung für deine Brainstorm Hub Notizen und Ideen.",
+    preview: true,
+    documentationURL: "https://github.com/nukleuz80/ha_brainstorm",
+  });
+}
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.6 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.7 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

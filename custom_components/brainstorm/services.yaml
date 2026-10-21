@@ -1,6 +1,6 @@
 add_idea:
   name: Idee hinzufügen
-  description: Fügt blitzschnell eine neue Brainstorm-Idee hinzu. Erkennt automatisch Kategorien im Text (z.B. 'Garten: Blumen pflanzen' oder '#smarthome').
+  description: "Fügt blitzschnell eine neue Brainstorm-Idee hinzu. Erkennt automatisch Kategorien im Text (z.B. 'Garten: Blumen pflanzen' oder '#smarthome')."
   fields:
     text:
       name: Text / Idee

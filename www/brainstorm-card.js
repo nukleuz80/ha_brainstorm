@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.6 - Visual Card Configuration Editor (ha-form & interactive options)
+ * Version 1.4.7 - Fix duplicate pillsContainer declaration & stabilize visual card editor
  */
 class BrainstormCard extends HTMLElement {
   constructor() {
@@ -1492,7 +1492,6 @@ class BrainstormCard extends HTMLElement {
     }
 
     // 3. Update Category Pills
-    const pillsContainer = this.shadowRoot.getElementById("pillsContainer");
     if (pillsContainer) {
       pillsContainer.innerHTML = `
         <div class="pill ${this._selectedCategory === "all" ? "active" : ""}" data-cat="all">
