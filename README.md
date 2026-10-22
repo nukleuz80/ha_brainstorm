@@ -1,7 +1,7 @@
 # 🧠 Brainstorm Hub for Home Assistant
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/default)
-[![Version](https://img.shields.io/badge/version-1.4.11-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.4.12-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/nukleuz80/ha_brainstorm)
@@ -72,8 +72,8 @@ Egal ob beim Kochen, im Garten oder unterwegs: Erfasse Geistesblitze sekundensch
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js` und `www/brainstorm-mindmap-card.js` in `/config/www/`.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.4.11` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.4.11` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.4.12` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.4.12` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ---
@@ -166,6 +166,7 @@ Die Integration stellt folgende Services bereit:
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.4.12`** | 22.10.2026 | **Resilienter Sensor-Fallback & Integration-Scoped Picker:** Automatischer Fallback auf `sensor.brainstorm_ideen_ubersicht`, falls in der Kartenkonfiguration eine fremde Entität (z. B. Feuchte-/Temperatursensor) ohne `ideas`-Attribut hinterlegt ist. Schutz im visuellen Editor durch Einschränkung des Entitäten-Selectors auf `integration: brainstorm`. |
 | **`v1.4.11`** | 22.10.2026 | **Whitespace-Trimming & Robuster Kategorie-Filter:** Automatisches `.trim()` auf Kategorienamen bei Initialisierung (`default_category`), Pill-Klicks und Filterlogik in `brainstorm-card` und `brainstorm-mindmap-card`. Verhindert das versehentliche Nicht-Anzeigen von Ideen bei versehentlich eingegebenen Leerzeichen am Ende von Kategorienamen (z. B. `"Brainstorm "`). |
 | **`v1.4.10`** | 21.10.2026 | **Kategorie- & Notiz-Validierung:** Robuste Validierung beim Erstellen und Ändern von Kategorien sowie beim Bearbeiten von Notizen in beiden Lovelace-Karten. Verhindert das Absenden leerer Eingaben oder von Duplikaten (Groß-/Kleinschreibung-unabhängig) mit klarer Fehlermeldung (`⚠️ Bitte gib einen Kategorienamen ein.`), roter Umrandung und sanfter Schüttel-Animation (`dialog-shake`). Automatisches Zurücksetzen der Fehleranzeige beim Weitertippen. Ergänzung von `ServiceValidationError` im Backend (`__init__.py` und `store.py`) für saubere Fehlermeldungen bei Service-Aufrufen. |
 | **`v1.4.9`** | 21.10.2026 | **Notizen-Rendering Fix:** Behebung eines Laufzeitfehlers (`TypeError: this._escapeHtml is not a function`), durch den aktive Ideen in der Hauptkarten-Listenansicht nicht gerendert wurden. Implementierung von `_escapeHtml()` und `_getSensorEntity()` in `BrainstormCard`. |

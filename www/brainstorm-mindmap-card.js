@@ -1,6 +1,6 @@
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.4.11
+ * Version: 1.4.12
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -139,8 +139,14 @@ class BrainstormMindmapCard extends HTMLElement {
 
   _getSensorEntity() {
     if (!this._hass) return null;
-    if (this._config.entity && this._hass.states[this._config.entity]) {
-      return this._hass.states[this._config.entity];
+    const conf = this._config.entity || this._config.sensor;
+    if (
+      conf &&
+      this._hass.states[conf] &&
+      this._hass.states[conf].attributes &&
+      Array.isArray(this._hass.states[conf].attributes.ideas)
+    ) {
+      return this._hass.states[conf];
     }
     if (this._hass.states["sensor.brainstorm_hub_brainstorm_ideen_ubersicht"]) {
       return this._hass.states["sensor.brainstorm_hub_brainstorm_ideen_ubersicht"];
@@ -148,7 +154,7 @@ class BrainstormMindmapCard extends HTMLElement {
     if (this._hass.states["sensor.brainstorm_ideen_ubersicht"]) {
       return this._hass.states["sensor.brainstorm_ideen_ubersicht"];
     }
-    return null;
+    return conf && this._hass.states[conf] ? this._hass.states[conf] : null;
   }
 
   _getCategoryColor(category) {
@@ -2020,7 +2026,7 @@ const MINDMAP_CARD_SCHEMA = [
   {
     name: "sensor",
     label: "Sensor-Entität",
-    selector: { entity: { domain: ["sensor"] } },
+    selector: { entity: { domain: ["sensor"], integration: "brainstorm" } },
   },
   {
     name: "color_mode",
@@ -2267,7 +2273,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.11 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.12 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

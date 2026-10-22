@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.11 - Robust category whitespace trimming for default_category and pills
+ * Version 1.4.12 - Resilient sensor fallback and integration-scoped entity selector
  */
 class BrainstormCard extends HTMLElement {
   constructor() {
@@ -113,7 +113,12 @@ class BrainstormCard extends HTMLElement {
   _getSensorEntity() {
     if (!this._hass) return null;
     const configured = (this._config && this._config.sensor) || "sensor.brainstorm_ideen_ubersicht";
-    if (this._hass.states && this._hass.states[configured]) {
+    if (
+      this._hass.states &&
+      this._hass.states[configured] &&
+      this._hass.states[configured].attributes &&
+      Array.isArray(this._hass.states[configured].attributes.ideas)
+    ) {
       return this._hass.states[configured];
     }
     if (this._hass.states && this._hass.states["sensor.brainstorm_hub_brainstorm_ideen_ubersicht"]) {
@@ -122,7 +127,7 @@ class BrainstormCard extends HTMLElement {
     if (this._hass.states && this._hass.states["sensor.brainstorm_ideen_ubersicht"]) {
       return this._hass.states["sensor.brainstorm_ideen_ubersicht"];
     }
-    return null;
+    return this._hass.states ? this._hass.states[configured] : null;
   }
 
   _escapeHtml(text) {
@@ -1831,7 +1836,7 @@ const BRAINSTORM_CARD_SCHEMA = [
   {
     name: "sensor",
     label: "Sensor-Entität",
-    selector: { entity: { domain: ["sensor"] } },
+    selector: { entity: { domain: ["sensor"], integration: "brainstorm" } },
   },
   {
     name: "color_mode",
