@@ -98,6 +98,18 @@ get_ideas:
             - completed
             - all
 
+get_announcement:
+  name: Sprachansage generieren
+  description: Erzeugt einen flüssigen, gesprochenen Ansagetext für Alexa oder Assist über alle oder eine bestimmte Kategorie.
+  fields:
+    category:
+      name: Kategorie (Optional)
+      description: Optional nach einer bestimmten Kategorie filtern (z.B. Smarthome). Ohne Angabe werden alle aktiven Kategorien vorgelesen.
+      required: false
+      example: "Smarthome"
+      selector:
+        text:
+
 add_category:
   name: Kategorie hinzufügen
   description: Erstellt eine neue Brainstorm-Kategorie und die dazugehörige To-do-Liste.

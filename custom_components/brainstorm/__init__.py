@@ -33,6 +33,13 @@ SERVICE_GET_IDEAS = "get_ideas"
 SERVICE_ADD_CATEGORY = "add_category"
 SERVICE_REMOVE_CATEGORY = "remove_category"
 SERVICE_EXPORT_MARKDOWN = "export_markdown"
+SERVICE_GET_ANNOUNCEMENT = "get_announcement"
+
+SERVICE_GET_ANNOUNCEMENT_SCHEMA = vol.Schema(
+    {
+        vol.Optional(ATTR_CATEGORY): vol.Any(None, cv.string),
+    }
+)
 
 SERVICE_ADD_IDEA_SCHEMA = vol.Schema(
     {
@@ -245,6 +252,35 @@ def _register_services(hass: HomeAssistant) -> None:
         path = call.data.get("path")
         await store.async_export_to_markdown(path)
         return {"success": True}
+
+    async def handle_get_announcement(call: ServiceCall) -> dict[str, Any]:
+        """Handle generating spoken announcement text."""
+        store = _get_active_store(hass)
+        if not store:
+            raise ServiceValidationError("Brainstorm store is not initialized")
+
+        category = call.data.get(ATTR_CATEGORY)
+        speech_text = store.get_announcement_text(category=category)
+        active_ideas = [i for i in store.ideas if i.get(ATTR_STATUS) == "active"]
+        if category and str(category).strip().lower() not in ["all", "alle"]:
+            active_ideas = [
+                i
+                for i in active_ideas
+                if (i.get(ATTR_CATEGORY) or "").lower() == str(category).strip().lower()
+            ]
+        return {
+            "speech": speech_text,
+            "count": len(active_ideas),
+            "category": category,
+        }
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_GET_ANNOUNCEMENT,
+        handle_get_announcement,
+        schema=SERVICE_GET_ANNOUNCEMENT_SCHEMA,
+        supports_response=SupportsResponse.ONLY,
+    )
 
     hass.services.async_register(
         DOMAIN,

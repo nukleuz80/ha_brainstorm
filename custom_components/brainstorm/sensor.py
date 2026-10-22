@@ -96,6 +96,7 @@ class BrainstormOverviewSensor(SensorEntity):
         ]
 
         return {
+            "speech_overview": self._store.get_announcement_text(),
             "active_count": len(active_ideas),
             "completed_count": len(completed_ideas),
             "categories": self._store.categories,

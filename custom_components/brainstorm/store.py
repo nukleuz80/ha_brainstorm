@@ -646,6 +646,82 @@ class BrainstormStore:
             results.append(idea)
         return results
 
+    def get_announcement_text(self, category: str | None = None) -> str:
+        """Generate a concise, natural German TTS speech text of active ideas."""
+        active_ideas = [i for i in self.ideas if i.get(ATTR_STATUS) == "active"]
+
+        def _format_count(n: int) -> str:
+            words = {
+                1: "einen",
+                2: "zwei",
+                3: "drei",
+                4: "vier",
+                5: "fünf",
+                6: "sechs",
+                7: "sieben",
+                8: "acht",
+                9: "neun",
+                10: "zehn",
+            }
+            if n == 1:
+                return "einen Eintrag"
+            return f"{words.get(n, str(n))} Einträge"
+
+        def _format_items(items: list[str]) -> str:
+            clean = [it.strip().rstrip(".!,;:") for it in items if it and it.strip()]
+            if not clean:
+                return ""
+            if len(clean) == 1:
+                return clean[0]
+            if len(clean) == 2:
+                return f"{clean[0]} und {clean[1]}"
+            return f"{', '.join(clean[:-1])} und {clean[-1]}"
+
+        # If a specific category was requested
+        if category and str(category).strip() and str(category).strip().lower() not in ["all", "alle", "none"]:
+            clean_cat = str(category).strip().lower()
+            # Match case-insensitively or with common variations (e.g. haus und garten / garten)
+            matched = None
+            for c in self._categories:
+                c_norm = c.lower().replace("&", "und").strip()
+                if c.lower() == clean_cat or c_norm == clean_cat:
+                    matched = c
+                    break
+                if clean_cat in ["garten", "haus"] and "garten" in c.lower():
+                    matched = c
+                    break
+
+            target_cat = matched or str(category).strip()
+            cat_ideas = [
+                i.get(ATTR_TEXT, "")
+                for i in active_ideas
+                if (i.get(ATTR_CATEGORY) or "").lower() == target_cat.lower()
+            ]
+            spoken_cat = target_cat.replace("&", "und")
+            if not cat_ideas:
+                return f"In der Kategorie {spoken_cat} gibt es aktuell keine offenen Einträge."
+            return f"{spoken_cat} hat {_format_count(len(cat_ideas))}: {_format_items(cat_ideas)}."
+
+        # All categories
+        if not active_ideas:
+            return "Du hast aktuell keine offenen Notizen in Brainstorm."
+
+        parts = []
+        for cat in self._categories:
+            cat_ideas = [
+                i.get(ATTR_TEXT, "")
+                for i in active_ideas
+                if i.get(ATTR_CATEGORY) == cat
+            ]
+            if not cat_ideas:
+                continue
+            spoken_cat = cat.replace("&", "und")
+            parts.append(
+                f"{spoken_cat} hat {_format_count(len(cat_ideas))}: {_format_items(cat_ideas)}."
+            )
+
+        return " ".join(parts)
+
     async def async_export_to_markdown(self, target_dir: str | None = None) -> None:
         """Export all categories and ideas into readable Markdown files."""
         export_dir = target_dir or self._markdown_path

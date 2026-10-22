@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.12 - Resilient sensor fallback and integration-scoped entity selector
+ * Version 1.4.13 - Voice announcement & TTS query support
  */
 class BrainstormCard extends HTMLElement {
   constructor() {
