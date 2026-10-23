@@ -1,7 +1,7 @@
 # 🧠 Brainstorm Hub for Home Assistant
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/default)
-[![Version](https://img.shields.io/badge/version-1.4.16-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.4.17-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/nukleuz80/ha_brainstorm)
@@ -72,8 +72,8 @@ Egal ob beim Kochen, im Garten oder unterwegs: Erfasse Geistesblitze sekundensch
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js` und `www/brainstorm-mindmap-card.js` in `/config/www/`.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.4.16` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.4.16` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.4.17` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.4.17` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ---
@@ -172,6 +172,7 @@ Die Integration stellt folgende Services bereit:
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.4.17`** | 23.10.2026 | **Individuelle Kategoriefarben & Pill-Dots:** Vollständige Neuausrichtung des Farbsystems. Jede Kategorie erhält nun eine unverwechselbare, harmonische und kontraststarke Einzelfarbe (z. B. Inbox = Royal Blue `#2563eb`, Smarthome = Aqua/Cyan `#06b6d4`, Haus & Garten = Emerald Green `#10b981`, Projekte = Indigo `#6366f1`, Alltag = Warm Amber `#f59e0b`, Brainstorm = Electric Purple `#a855f7`, Ideen = Pink `#ec4899`, Einkauf = Orange `#ea580c`, Finanzen = Teal `#14b8a6`, Familie = Rose `#f43f5e`, Gesundheit = Lime `#84cc16`). Automatische, deterministische Zuweisung einzigartiger Farbtöne für alle benutzerdefinierten Kategorien via Hash-Algorithmus. Kartenkanten, synaptische Verbindungslinien und Kategorie-Tags in Mindmap und Notizenliste spiegeln die Kategoriefarbe unmittelbar wider. Ergänzung von farbigen Indikatorpunkten (`pill-dot`) in der oberen Kategorie-Leiste zur sofortigen optischen Orientierung. |
 | **`v1.4.16`** | 23.10.2026 | **Organische Multi-Ring Mindmap & Antikollisions-Layout:** Vollständige Neukonzeption der visuellen Mindmap-Knotenanordnung. Statt aller Notizen auf einem engen Kreisradius nutzt Brainstorm Mindmap nun ein intelligentes, mehrstufiges konzentrisches Ellipsen-Layout (1 Ring bei bis zu 6 Notizen, 2 Ringe bei 7–12 Notizen, 3 gestaffelte Ringe bei 13–20+ Notizen) unter optimaler Ausnutzung der Bildschirmbreite. Ein nativer Physik-Entspannungsdurchlauf (25 Iterationen) verhindert jegliche Überlappungen zwischen Ideenkarten und stellt sicher, dass das zentrale Glühbirnen-Symbol stets vollständig frei und sichtbar bleibt. Farbkodierte synaptische Bézier-Verbindungslinien passend zur jeweiligen Notizkategorie mit interaktivem Hover-Leuchten. Automatisches Zoom-to-Fit bei vielen Notizen und Beibehaltung manuell verschobener Karten. |
 | **`v1.4.15`** | 23.10.2026 | **Bugfix Visueller Karteneditor & Seitenleisten-Dashboard:** Behebung eines Problems, bei dem Schalter im visuellen Lovelace-Karteneditor (`ha-form`) beim Ein- oder Ausschalten keine Wirkung zeigten und stets alle Elemente angezeigt blieben. Implementierung robuster Standardwerte (`default: true` in Schema & Initialisierung), vollständige Synchronisation deaktivierter Schalter (`show_quick_input`, `show_categories`, `show_badge`, `show_mindmap_button`, `show_color_toggle`, `show_source_icons`, `show_timestamps`, `allow_edit`, `allow_delete` bzw. `show_bulb_watermark`, `show_toolbar`, `show_fullscreen_btn`, `show_controls`, `show_add_btn`) und Beseitigung von Event-Bubbling-Kollisionen. Sofortige Live-Reaktivität in der Kartenvorschau und auf Dashboards. Optimierung der Dashboard-Einbindung für die Seitenleiste (Mindmap oben im Großformat, Notizenliste darunter). |
 | **`v1.4.14`** | 23.10.2026 | **Geräte-Herkunftserfassung für Alexa & Assist:** Erfassung und optische Anzeige des konkreten Auslösegeräts bei Spracheingaben sowohl in `brainstorm-card` als auch in `brainstorm-mindmap-card` (z. B. `🗣️ Alexa (Echo Show Küche)`, `🗣️ Alexa (Wohnzimmer Echo Dot)`, `✨ Assist (Jan)` oder `✨ Assist (Küche Satellit)`). Vollständige Unterstützung in Sensor-Attributen (`device`), To-Do-Listen-Beschreibungen, Markdown-Export und `add_idea`/`update_idea`-Services. |

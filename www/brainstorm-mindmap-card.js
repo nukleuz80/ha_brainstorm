@@ -1,6 +1,6 @@
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.4.16
+ * Version: 1.4.17
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -9,7 +9,7 @@
 const BRAINSTORM_MINDMAP_DEFAULTS = {
   title: "Brainstorm Mindmap",
   sensor: "sensor.brainstorm_ideen_ubersicht",
-  color_mode: "theme",
+  color_mode: "multicolor",
   height: "calc(100vh - 32px)",
   default_category: "Inbox",
   show_bulb_watermark: true,
@@ -27,11 +27,11 @@ class BrainstormMindmapCard extends HTMLElement {
     this._config = { ...BRAINSTORM_MINDMAP_DEFAULTS };
     this._hass = null;
     this._selectedCategory = "all"; // 'all', 'Inbox', etc.
-    let savedColorMode = "theme";
+    let savedColorMode = "multicolor";
     try {
-      savedColorMode = localStorage.getItem("brainstorm_color_mode") || "theme";
+      savedColorMode = localStorage.getItem("brainstorm_color_mode") || "multicolor";
     } catch {}
-    this._colorMode = savedColorMode; // 'theme' | 'multicolor'
+    this._colorMode = savedColorMode; // 'multicolor' | 'theme'
     this._scale = 1;
     this._panX = 0;
     this._panY = 0;
@@ -160,30 +160,69 @@ class BrainstormMindmapCard extends HTMLElement {
   }
 
   _getCategoryColor(category) {
-    if (this._colorMode === "theme") {
-      // Dynamic Home Assistant Theme integration
-      const themeColors = {
-        Inbox: "var(--primary-color, #03a9f4)",
-        Smarthome: "color-mix(in srgb, var(--primary-color, #03a9f4) 85%, var(--accent-color, #38bdf8))",
-        "Haus & Garten": "color-mix(in srgb, var(--primary-color, #03a9f4) 75%, var(--success-color, #10b981))",
-        Projekte: "color-mix(in srgb, var(--primary-color, #03a9f4) 80%, var(--info-color, #818cf8))",
-        Alltag: "color-mix(in srgb, var(--primary-color, #03a9f4) 80%, var(--warning-color, #fb923c))",
-        Ideen: "color-mix(in srgb, var(--primary-color, #03a9f4) 85%, var(--accent-color, #f472b6))",
-        default: "var(--primary-color, #03a9f4)",
-      };
-      return themeColors[category] || "var(--primary-color, #03a9f4)";
+    if (!category) return "#2563eb";
+    const catNorm = String(category).trim().toLowerCase();
+
+    // 1. Curated, high-contrast, beautiful palette for all standard categories
+    const categoryPalette = {
+      "inbox": "#2563eb",         // Royal / Tech Blue 🔵
+      "smarthome": "#06b6d4",     // Vivid Aqua / Cyan 🔷
+      "haus & garten": "#10b981", // Fresh Emerald Green 🟢
+      "haus": "#10b981",
+      "garten": "#10b981",
+      "projekte": "#6366f1",      // Vibrant Indigo 🟣
+      "projekt": "#6366f1",
+      "alltag": "#f59e0b",        // Warm Amber / Gold 🟡
+      "brainstorm": "#a855f7",    // Electric Purple 🔮
+      "ideen": "#ec4899",         // Vivid Pink / Rose 🌸
+      "idee": "#ec4899",
+      "einkauf": "#ea580c",       // Coral Orange 🍊
+      "shopping": "#ea580c",
+      "finanzen": "#14b8a6",      // Mint / Teal 🪙
+      "finanz": "#14b8a6",
+      "familie": "#f43f5e",       // Deep Rose ❤️
+      "kinder": "#fb7185",
+      "arbeit": "#0284c7",        // Sky Blue 💼
+      "beruf": "#0284c7",
+      "work": "#0284c7",
+      "gesundheit": "#84cc16",    // Lime Green 🍏
+      "sport": "#84cc16",
+      "fitness": "#84cc16",
+      "auto": "#e11d48",          // Crimson 🚗
+      "urlaub": "#38bdf8",        // Ocean Cyan 🏖️
+      "reise": "#38bdf8",
+      "notizen": "#8b5cf6",
+    };
+
+    if (categoryPalette[catNorm]) {
+      return categoryPalette[catNorm];
     }
 
-    const colors = {
-      Inbox: "var(--primary-color, #3b82f6)",
-      Smarthome: "#0284c7",
-      "Haus & Garten": "#16a34a",
-      Projekte: "#9333ea",
-      Alltag: "#ea580c",
-      Ideen: "#db2777",
-      default: "#475569",
-    };
-    return colors[category] || colors.default;
+    // 2. Deterministic hash palette for any custom/new user-defined category
+    const fallbackPalette = [
+      "#06b6d4", // Cyan
+      "#10b981", // Emerald
+      "#f59e0b", // Amber
+      "#a855f7", // Purple
+      "#ec4899", // Pink
+      "#2563eb", // Blue
+      "#ea580c", // Orange
+      "#14b8a6", // Teal
+      "#6366f1", // Indigo
+      "#f43f5e", // Rose
+      "#84cc16", // Lime
+      "#0284c7", // Sky Blue
+      "#d946ef", // Fuchsia
+      "#eab308", // Yellow
+    ];
+
+    let hash = 0;
+    for (let i = 0; i < catNorm.length; i++) {
+      hash = (hash << 5) - hash + catNorm.charCodeAt(i);
+      hash |= 0;
+    }
+    const idx = Math.abs(hash) % fallbackPalette.length;
+    return fallbackPalette[idx];
   }
 
   _getSourceBadge(source, device) {
@@ -364,6 +403,9 @@ class BrainstormMindmapCard extends HTMLElement {
           border: 1px solid var(--ha-card-border-color, var(--divider-color, rgba(127, 127, 127, 0.15)));
           box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
           white-space: nowrap;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
           transition: all 0.2s ease;
         }
         .cat-pill:hover {
@@ -372,10 +414,18 @@ class BrainstormMindmapCard extends HTMLElement {
           transform: translateY(-1px);
         }
         .cat-pill.active {
-          background: color-mix(in srgb, var(--category-color, var(--primary-color)) 12%, var(--card-background-color, #ffffff));
+          background: color-mix(in srgb, var(--category-color, var(--primary-color)) 15%, var(--card-background-color, #ffffff));
           color: var(--category-color, var(--primary-color));
           border-color: var(--category-color, var(--primary-color));
-          box-shadow: 0 1px 6px color-mix(in srgb, var(--category-color, var(--primary-color)) 20%, transparent);
+          box-shadow: 0 2px 8px color-mix(in srgb, var(--category-color, var(--primary-color)) 25%, transparent);
+        }
+        .pill-dot {
+          display: inline-block;
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: var(--category-color, var(--primary-color));
+          flex-shrink: 0;
         }
 
         /* Map Canvas & Viewport */
@@ -1596,15 +1646,20 @@ class BrainstormMindmapCard extends HTMLElement {
       if (pillsBar) {
         const counts = attributes.category_counts || {};
         pillsBar.innerHTML = `
-          <div class="cat-pill ${this._selectedCategory === "all" ? "active" : ""}" data-cat="all" style="--category-color: var(--primary-color, #03a9f4);">
-            Alle (${activeIdeas.length})
+          <div class="cat-pill ${this._selectedCategory === "all" ? "active" : ""}" data-cat="all" style="--category-color: var(--primary-color, #a855f7);">
+            <span class="pill-dot" style="background: var(--primary-color, #a855f7);"></span>
+            <span>Alle (${activeIdeas.length})</span>
           </div>
           ${categories
             .map((cat) => {
               const c = counts[cat] || 0;
+              const catColor = this._getCategoryColor(cat);
+              const isActive = String(this._selectedCategory || "").trim() === String(cat || "").trim();
               return `
-                <div class="cat-pill ${String(this._selectedCategory || "").trim() === String(cat || "").trim() ? "active" : ""}" data-cat="${cat}" style="--category-color: ${this._getCategoryColor(cat)};">
-                  ${cat} (${c})
+                <div class="cat-pill ${isActive ? "active" : ""}" data-cat="${cat}" style="--category-color: ${catColor};">
+                  <span class="pill-dot" style="background: ${catColor};"></span>
+                  <span>${cat}</span>
+                  <span style="opacity: 0.75; font-size: 0.72rem;">(${c})</span>
                 </div>
               `;
             })
@@ -1631,10 +1686,12 @@ class BrainstormMindmapCard extends HTMLElement {
         centerBadge.textContent = `${filteredIdeas.length} ${filteredIdeas.length === 1 ? "Idee" : "Ideen"}`;
 
         // Accent border color matching category
-        const catColor = this._getCategoryColor(this._selectedCategory === "all" ? "Inbox" : this._selectedCategory);
+        const catColor = this._selectedCategory === "all"
+          ? "var(--primary-color, #a855f7)"
+          : this._getCategoryColor(this._selectedCategory);
         centerNode.style.setProperty("--cat-color", catColor);
         centerNode.style.borderColor = catColor;
-        centerNode.style.boxShadow = "0 4px 20px rgba(0, 0, 0, 0.08)";
+        centerNode.style.boxShadow = `0 4px 20px color-mix(in srgb, ${catColor} 25%, transparent)`;
       }
 
       // 3. Render Note Clouds
@@ -2477,7 +2534,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.16 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.17 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

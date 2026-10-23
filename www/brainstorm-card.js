@@ -1,12 +1,12 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.16 - Visual Editor toggle fix & state synchronization
+ * Version 1.4.17 - Distinct Category Colors & Multi-Ring Mindmap
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",
   sensor: "sensor.brainstorm_ideen_ubersicht",
-  color_mode: "theme",
+  color_mode: "multicolor",
   default_category: "all",
   max_items: 0,
   show_quick_input: true,
@@ -27,11 +27,11 @@ class BrainstormCard extends HTMLElement {
     this._selectedCategory = "all";
     this._viewMode = "list"; // 'list' | 'mindmap'
     this._config = { ...BRAINSTORM_CARD_DEFAULTS };
-    let savedColorMode = "theme";
+    let savedColorMode = "multicolor";
     try {
-      savedColorMode = localStorage.getItem("brainstorm_color_mode") || "theme";
+      savedColorMode = localStorage.getItem("brainstorm_color_mode") || "multicolor";
     } catch {}
-    this._colorMode = savedColorMode; // 'theme' | 'multicolor'
+    this._colorMode = savedColorMode; // 'multicolor' | 'theme'
     this._lastColorMode = null;
     this._initialized = false;
     this._lastUpdated = null;
@@ -123,29 +123,69 @@ class BrainstormCard extends HTMLElement {
   }
 
   _getCategoryColor(category) {
-    if (this._colorMode === "theme") {
-      const themeColors = {
-        Inbox: "var(--primary-color, #03a9f4)",
-        Smarthome: "color-mix(in srgb, var(--primary-color, #03a9f4) 85%, var(--accent-color, #38bdf8))",
-        "Haus & Garten": "color-mix(in srgb, var(--primary-color, #03a9f4) 75%, var(--success-color, #10b981))",
-        Projekte: "color-mix(in srgb, var(--primary-color, #03a9f4) 80%, var(--info-color, #818cf8))",
-        Alltag: "color-mix(in srgb, var(--primary-color, #03a9f4) 80%, var(--warning-color, #fb923c))",
-        Ideen: "color-mix(in srgb, var(--primary-color, #03a9f4) 85%, var(--accent-color, #f472b6))",
-        default: "var(--primary-color, #03a9f4)",
-      };
-      return themeColors[category] || "var(--primary-color, #03a9f4)";
+    if (!category) return "#2563eb";
+    const catNorm = String(category).trim().toLowerCase();
+
+    // 1. Curated, high-contrast, beautiful palette for all standard categories
+    const categoryPalette = {
+      "inbox": "#2563eb",         // Royal / Tech Blue 🔵
+      "smarthome": "#06b6d4",     // Vivid Aqua / Cyan 🔷
+      "haus & garten": "#10b981", // Fresh Emerald Green 🟢
+      "haus": "#10b981",
+      "garten": "#10b981",
+      "projekte": "#6366f1",      // Vibrant Indigo 🟣
+      "projekt": "#6366f1",
+      "alltag": "#f59e0b",        // Warm Amber / Gold 🟡
+      "brainstorm": "#a855f7",    // Electric Purple 🔮
+      "ideen": "#ec4899",         // Vivid Pink / Rose 🌸
+      "idee": "#ec4899",
+      "einkauf": "#ea580c",       // Coral Orange 🍊
+      "shopping": "#ea580c",
+      "finanzen": "#14b8a6",      // Mint / Teal 🪙
+      "finanz": "#14b8a6",
+      "familie": "#f43f5e",       // Deep Rose ❤️
+      "kinder": "#fb7185",
+      "arbeit": "#0284c7",        // Sky Blue 💼
+      "beruf": "#0284c7",
+      "work": "#0284c7",
+      "gesundheit": "#84cc16",    // Lime Green 🍏
+      "sport": "#84cc16",
+      "fitness": "#84cc16",
+      "auto": "#e11d48",          // Crimson 🚗
+      "urlaub": "#38bdf8",        // Ocean Cyan 🏖️
+      "reise": "#38bdf8",
+      "notizen": "#8b5cf6",
+    };
+
+    if (categoryPalette[catNorm]) {
+      return categoryPalette[catNorm];
     }
 
-    const colors = {
-      Inbox: "var(--primary-color, #3b82f6)",
-      Smarthome: "#0284c7",
-      "Haus & Garten": "#16a34a",
-      Projekte: "#9333ea",
-      Alltag: "#ea580c",
-      Ideen: "#db2777",
-      default: "#475569",
-    };
-    return colors[category] || colors.default;
+    // 2. Deterministic hash palette for any custom/new user-defined category
+    const fallbackPalette = [
+      "#06b6d4", // Cyan
+      "#10b981", // Emerald
+      "#f59e0b", // Amber
+      "#a855f7", // Purple
+      "#ec4899", // Pink
+      "#2563eb", // Blue
+      "#ea580c", // Orange
+      "#14b8a6", // Teal
+      "#6366f1", // Indigo
+      "#f43f5e", // Rose
+      "#84cc16", // Lime
+      "#0284c7", // Sky Blue
+      "#d946ef", // Fuchsia
+      "#eab308", // Yellow
+    ];
+
+    let hash = 0;
+    for (let i = 0; i < catNorm.length; i++) {
+      hash = (hash << 5) - hash + catNorm.charCodeAt(i);
+      hash |= 0;
+    }
+    const idx = Math.abs(hash) % fallbackPalette.length;
+    return fallbackPalette[idx];
   }
 
   _getSourceBadge(source, device) {
@@ -1232,6 +1272,7 @@ class BrainstormCard extends HTMLElement {
           gap: 12px;
           background: var(--card-background-color, #ffffff);
           border: 1px solid var(--divider-color, rgba(0,0,0,0.06));
+          border-left: 3.5px solid var(--item-cat-color, var(--divider-color));
           border-radius: 10px;
           padding: 12px;
           transition: background 0.15s, border-color 0.15s;
@@ -1741,7 +1782,7 @@ class BrainstormCard extends HTMLElement {
         ideasList.innerHTML = filteredIdeas
           .map(
             (item) => `
-            <div class="idea-item ${isCompletedView ? "completed" : ""}" data-id="${item.id}">
+            <div class="idea-item ${isCompletedView ? "completed" : ""}" data-id="${item.id}" style="--item-cat-color: ${this._getCategoryColor(item.category)};">
               <button 
                 class="check-btn ${isCompletedView ? "checked" : ""}" 
                 title="${isCompletedView ? "Wieder als aktiv markieren" : "Als erledigt markieren"}" 
