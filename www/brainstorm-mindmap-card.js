@@ -1,16 +1,30 @@
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.4.14
+ * Version: 1.4.15
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
  */
 
+const BRAINSTORM_MINDMAP_DEFAULTS = {
+  title: "Brainstorm Mindmap",
+  sensor: "sensor.brainstorm_ideen_ubersicht",
+  color_mode: "theme",
+  height: "calc(100vh - 32px)",
+  default_category: "Inbox",
+  show_bulb_watermark: true,
+  show_toolbar: true,
+  show_color_toggle: true,
+  show_fullscreen_btn: true,
+  show_controls: true,
+  show_add_btn: true,
+};
+
 class BrainstormMindmapCard extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
-    this._config = {};
+    this._config = { ...BRAINSTORM_MINDMAP_DEFAULTS };
     this._hass = null;
     this._selectedCategory = "all"; // 'all', 'Inbox', etc.
     let savedColorMode = "theme";
@@ -38,38 +52,25 @@ class BrainstormMindmapCard extends HTMLElement {
   }
 
   static getStubConfig(hass) {
-    return {
-      title: "Brainstorm Mindmap",
-      sensor: "sensor.brainstorm_ideen_ubersicht",
-      color_mode: "theme",
-      height: "calc(100vh - 32px)",
-      default_category: "Inbox",
-      show_bulb_watermark: true,
-      show_toolbar: true,
-      show_color_toggle: true,
-      show_fullscreen_btn: true,
-      show_controls: true,
-      show_add_btn: true,
-    };
+    return { ...BRAINSTORM_MINDMAP_DEFAULTS };
   }
 
   setConfig(config) {
-    this._config = {
-      title: "Brainstorm Mindmap",
-      sensor: "sensor.brainstorm_ideen_ubersicht",
-      color_mode: "theme",
-      height: "calc(100vh - 32px)",
-      default_category: "Inbox",
-      show_bulb_watermark: true,
-      show_toolbar: true,
-      show_color_toggle: true,
-      show_fullscreen_btn: true,
-      show_controls: true,
-      show_add_btn: true,
-      ...config,
-    };
-    if (config.color_mode) {
-      this._colorMode = config.color_mode;
+    if (!config) config = {};
+    const parsedConfig = { ...BRAINSTORM_MINDMAP_DEFAULTS };
+    for (const key of Object.keys(BRAINSTORM_MINDMAP_DEFAULTS)) {
+      if (key in config) {
+        if (typeof BRAINSTORM_MINDMAP_DEFAULTS[key] === "boolean") {
+          parsedConfig[key] = config[key] === true || config[key] === "true";
+        } else {
+          parsedConfig[key] = config[key];
+        }
+      }
+    }
+    this._config = { ...config, ...parsedConfig };
+
+    if (this._config.color_mode) {
+      this._colorMode = this._config.color_mode;
     }
     if (this._config.default_category && !this._initialized) {
       this._selectedCategory = String(this._config.default_category).trim();
@@ -85,22 +86,22 @@ class BrainstormMindmapCard extends HTMLElement {
     if (titleEl) titleEl.textContent = this._config.title !== undefined ? this._config.title : "Brainstorm Mindmap";
 
     const topBar = this.shadowRoot.querySelector(".top-bar");
-    if (topBar) topBar.style.display = this._config.show_toolbar !== false ? "flex" : "none";
+    if (topBar) topBar.style.display = this._config.show_toolbar === true ? "flex" : "none";
 
     const bulbWrap = this.shadowRoot.querySelector(".center-bulb-wrapper");
-    if (bulbWrap) bulbWrap.style.display = this._config.show_bulb_watermark !== false ? "block" : "none";
+    if (bulbWrap) bulbWrap.style.display = this._config.show_bulb_watermark === true ? "block" : "none";
 
     const colorModeBtn = this.shadowRoot.getElementById("colorModeBtn");
-    if (colorModeBtn) colorModeBtn.style.display = this._config.show_color_toggle !== false ? "inline-flex" : "none";
+    if (colorModeBtn) colorModeBtn.style.display = this._config.show_color_toggle === true ? "inline-flex" : "none";
 
     const fullscreenBtn = this.shadowRoot.getElementById("fullscreenToggleBtn");
-    if (fullscreenBtn) fullscreenBtn.style.display = this._config.show_fullscreen_btn !== false ? "inline-flex" : "none";
+    if (fullscreenBtn) fullscreenBtn.style.display = this._config.show_fullscreen_btn === true ? "inline-flex" : "none";
 
     const controlsPanel = this.shadowRoot.querySelector(".controls-panel");
-    if (controlsPanel) controlsPanel.style.display = this._config.show_controls !== false ? "flex" : "none";
+    if (controlsPanel) controlsPanel.style.display = this._config.show_controls === true ? "flex" : "none";
 
     const addNoteBtn = this.shadowRoot.getElementById("addNoteBtn");
-    if (addNoteBtn) addNoteBtn.style.display = this._config.show_add_btn !== false ? "flex" : "none";
+    if (addNoteBtn) addNoteBtn.style.display = this._config.show_add_btn === true ? "flex" : "none";
 
     const cardRoot = this.shadowRoot.getElementById("cardRoot");
     if (cardRoot && this._config.height && !this._isFullscreen) {
@@ -948,7 +949,7 @@ class BrainstormMindmapCard extends HTMLElement {
 
       <ha-card id="cardRoot">
         <!-- Top Bar -->
-        <div class="top-bar" style="display: ${this._config.show_toolbar !== false ? 'flex' : 'none'};">
+        <div class="top-bar" style="display: ${this._config.show_toolbar === true ? 'flex' : 'none'};">
           <div class="top-left">
             <div class="brand-logo">
               <img src="/local/brainstorm-logo.svg" onerror="this.src='/local/brainstorm-logo.png'" alt="Logo" />
@@ -957,10 +958,10 @@ class BrainstormMindmapCard extends HTMLElement {
           </div>
           <div class="pills-container" id="pillsBar"></div>
           <div class="top-right">
-            <button class="top-tool-btn" id="colorModeBtn" style="display: ${this._config.show_color_toggle !== false ? 'inline-flex' : 'none'};" title="${this._colorMode === 'theme' ? 'Farbmodus: Theme-Farben aktiv (Klicken für Bunt)' : 'Farbmodus: Bunt aktiv (Klicken für Theme-Farben)'}">
+            <button class="top-tool-btn" id="colorModeBtn" style="display: ${this._config.show_color_toggle === true ? 'inline-flex' : 'none'};" title="${this._colorMode === 'theme' ? 'Farbmodus: Theme-Farben aktiv (Klicken für Bunt)' : 'Farbmodus: Bunt aktiv (Klicken für Theme-Farben)'}">
               ${this._colorMode === 'theme' ? '🎨' : '🌈'}
             </button>
-            <button class="fullscreen-btn" id="fullscreenToggleBtn" style="display: ${this._config.show_fullscreen_btn !== false ? 'inline-flex' : 'none'};" title="Vollbild umschalten (ESC zum Beenden)">⛶</button>
+            <button class="fullscreen-btn" id="fullscreenToggleBtn" style="display: ${this._config.show_fullscreen_btn === true ? 'inline-flex' : 'none'};" title="Vollbild umschalten (ESC zum Beenden)">⛶</button>
           </div>
         </div>
 
@@ -970,7 +971,7 @@ class BrainstormMindmapCard extends HTMLElement {
           <div class="viewport" id="viewport">
             <svg class="connectors" id="connectorsLayer"></svg>
             <div class="center-node" id="centerNode">
-              <div class="center-bulb-wrapper" style="display: ${this._config.show_bulb_watermark !== false ? 'block' : 'none'};">
+              <div class="center-bulb-wrapper" style="display: ${this._config.show_bulb_watermark === true ? 'block' : 'none'};">
                 <img src="/local/brainstorm-bulb.svg" class="center-bulb-img" alt="Brainstorm" />
               </div>
               <div class="center-content">
@@ -986,13 +987,13 @@ class BrainstormMindmapCard extends HTMLElement {
         </div>
 
         <!-- Bottom Left: Add Note -->
-        <button class="add-note-btn" id="addNoteBtn" style="display: ${this._config.show_add_btn !== false ? 'flex' : 'none'};">
+        <button class="add-note-btn" id="addNoteBtn" style="display: ${this._config.show_add_btn === true ? 'flex' : 'none'};">
           <span>➕</span>
           <span>Neue Idee</span>
         </button>
 
         <!-- Bottom Right: Zoom & Reset Controls -->
-        <div class="controls-panel" style="display: ${this._config.show_controls !== false ? 'flex' : 'none'};">
+        <div class="controls-panel" style="display: ${this._config.show_controls === true ? 'flex' : 'none'};">
           <button class="control-btn" id="zoomInBtn" title="Vergrößern">+</button>
           <button class="control-btn" id="zoomOutBtn" title="Verkleinern">−</button>
           <button class="control-btn" id="resetViewBtn" title="Zentrieren / Anordnen">⟲</button>
@@ -1409,14 +1410,14 @@ class BrainstormMindmapCard extends HTMLElement {
       if (titleEl) titleEl.textContent = this._config.title !== undefined ? this._config.title : "Brainstorm Mindmap";
 
       const topBar = this.shadowRoot.querySelector(".top-bar");
-      if (topBar) topBar.style.display = this._config.show_toolbar !== false ? "flex" : "none";
+      if (topBar) topBar.style.display = this._config.show_toolbar === true ? "flex" : "none";
 
       const bulbWrap = this.shadowRoot.querySelector(".center-bulb-wrapper");
-      if (bulbWrap) bulbWrap.style.display = this._config.show_bulb_watermark !== false ? "block" : "none";
+      if (bulbWrap) bulbWrap.style.display = this._config.show_bulb_watermark === true ? "block" : "none";
 
       const colorModeBtn = this.shadowRoot.getElementById("colorModeBtn");
       if (colorModeBtn) {
-        colorModeBtn.style.display = this._config.show_color_toggle !== false ? "inline-flex" : "none";
+        colorModeBtn.style.display = this._config.show_color_toggle === true ? "inline-flex" : "none";
         colorModeBtn.innerHTML = this._colorMode === "theme" ? "🎨" : "🌈";
         colorModeBtn.title = this._colorMode === "theme"
           ? "Farbmodus: Theme-Farben aktiv (Klicken für Bunt)"
@@ -1424,13 +1425,13 @@ class BrainstormMindmapCard extends HTMLElement {
       }
 
       const fullscreenBtn = this.shadowRoot.getElementById("fullscreenToggleBtn");
-      if (fullscreenBtn) fullscreenBtn.style.display = this._config.show_fullscreen_btn !== false ? "inline-flex" : "none";
+      if (fullscreenBtn) fullscreenBtn.style.display = this._config.show_fullscreen_btn === true ? "inline-flex" : "none";
 
       const controlsPanel = this.shadowRoot.querySelector(".controls-panel");
-      if (controlsPanel) controlsPanel.style.display = this._config.show_controls !== false ? "flex" : "none";
+      if (controlsPanel) controlsPanel.style.display = this._config.show_controls === true ? "flex" : "none";
 
       const addNoteBtn = this.shadowRoot.getElementById("addNoteBtn");
-      if (addNoteBtn) addNoteBtn.style.display = this._config.show_add_btn !== false ? "flex" : "none";
+      if (addNoteBtn) addNoteBtn.style.display = this._config.show_add_btn === true ? "flex" : "none";
 
       const cardRoot = this.shadowRoot.getElementById("cardRoot");
       if (cardRoot && this._config.height && !this._isFullscreen) {
@@ -2041,16 +2042,19 @@ const MINDMAP_CARD_SCHEMA = [
   {
     name: "title",
     label: "Mindmap-Titel",
+    default: "Brainstorm Mindmap",
     selector: { text: {} },
   },
   {
     name: "sensor",
     label: "Sensor-Entität",
-    selector: { entity: { domain: ["sensor"], integration: "brainstorm" } },
+    default: "sensor.brainstorm_ideen_ubersicht",
+    selector: { entity: { domain: ["sensor"] } },
   },
   {
     name: "color_mode",
     label: "Standard-Farbmodus",
+    default: "theme",
     selector: {
       select: {
         mode: "dropdown",
@@ -2064,41 +2068,49 @@ const MINDMAP_CARD_SCHEMA = [
   {
     name: "height",
     label: "Höhe der Mindmap (z.B. 600px, 75vh, calc(100vh - 32px))",
+    default: "calc(100vh - 32px)",
     selector: { text: {} },
   },
   {
     name: "default_category",
     label: "Standard-Kategorie im Fokus",
+    default: "Inbox",
     selector: { text: {} },
   },
   {
     name: "show_bulb_watermark",
     label: "Leuchtende Glühbirne im Zentrum als Wasserzeichen anzeigen",
+    default: true,
     selector: { boolean: {} },
   },
   {
     name: "show_toolbar",
     label: "Obere Werkzeugleiste (Titel & Filter-Pills) anzeigen",
+    default: true,
     selector: { boolean: {} },
   },
   {
     name: "show_color_toggle",
     label: "Farbmodus-Umschalter (🎨/🌈) in Toolbar anzeigen",
+    default: true,
     selector: { boolean: {} },
   },
   {
     name: "show_fullscreen_btn",
     label: "Vollbild-Schaltfläche (⛶) anzeigen",
+    default: true,
     selector: { boolean: {} },
   },
   {
     name: "show_controls",
     label: "Zoom- & Zentrieren-Schaltflächen anzeigen",
+    default: true,
     selector: { boolean: {} },
   },
   {
     name: "show_add_btn",
     label: "Neue Notiz-Schaltfläche (+ Idee) anzeigen",
+    default: true,
     selector: { boolean: {} },
   },
 ];
@@ -2107,13 +2119,16 @@ class BrainstormMindmapCardEditor extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
-    this._config = {};
+    this._config = { ...BRAINSTORM_MINDMAP_DEFAULTS };
     this._hass = null;
     this._form = null;
   }
 
   setConfig(config) {
-    this._config = { ...config };
+    this._config = {
+      ...BRAINSTORM_MINDMAP_DEFAULTS,
+      ...(config || {}),
+    };
     this._render();
   }
 
@@ -2209,8 +2224,24 @@ class BrainstormMindmapCardEditor extends HTMLElement {
       form.computeLabel = (s) => s.label || s.name;
       form.computeHelper = (s) => s.helper || "";
       form.addEventListener("value-changed", (ev) => {
+        ev.stopPropagation();
         if (!ev.detail || !ev.detail.value) return;
-        this._config = { ...this._config, ...ev.detail.value };
+        const val = ev.detail.value;
+        const newConfig = {
+          type: "custom:brainstorm-mindmap-card",
+          ...this._config,
+          ...val,
+        };
+        for (const [key, defVal] of Object.entries(BRAINSTORM_MINDMAP_DEFAULTS)) {
+          if (typeof defVal === "boolean") {
+            if (key in val) {
+              newConfig[key] = Boolean(val[key]);
+            } else {
+              newConfig[key] = false;
+            }
+          }
+        }
+        this._config = newConfig;
         this.dispatchEvent(
           new CustomEvent("config-changed", {
             detail: { config: this._config },
@@ -2293,7 +2324,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.14 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.15 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

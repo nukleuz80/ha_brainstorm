@@ -51,7 +51,7 @@ class BrainstormOverviewSensor(SensorEntity):
             name="Brainstorm Hub",
             manufacturer="nukleuz80",
             model="Brainstorm Hub",
-            sw_version="1.4.14",
+            sw_version="1.4.15",
         )
 
     async def async_added_to_hass(self) -> None:

@@ -152,7 +152,7 @@ export_markdown:
   fields:
     path:
       name: Pfad
-      description: Zielordner (Standard: /config/brainstorm).
+      description: "Zielordner (Standard: /config/brainstorm)."
       required: false
       selector:
         text:

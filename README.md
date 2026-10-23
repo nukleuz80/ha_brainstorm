@@ -1,7 +1,7 @@
 # 🧠 Brainstorm Hub for Home Assistant
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/default)
-[![Version](https://img.shields.io/badge/version-1.4.14-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.4.15-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/nukleuz80/ha_brainstorm)
@@ -72,8 +72,8 @@ Egal ob beim Kochen, im Garten oder unterwegs: Erfasse Geistesblitze sekundensch
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js` und `www/brainstorm-mindmap-card.js` in `/config/www/`.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.4.14` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.4.14` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.4.15` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.4.15` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ---
@@ -105,6 +105,12 @@ height: 600px               # Optionale Höhe (z.B. 550px, 600px, 100%)
 default_category: Inbox     # Standard-Kategorie beim Laden (oder 'all')
 ```
 *Tipp:* Klicke oben rechts auf das Vollbild-Symbol `⛶`, um die Mindmap jederzeit auf den gesamten Bildschirm zu vergrößern!
+
+### 3. Eigenständiges Seitenleisten-Dashboard (`Brainstorm Hub`)
+Für maximale Übersicht lässt sich Brainstorm als vollwertiger Menüpunkt direkt in der linken Home Assistant Seitenleiste einbinden (z. B. unter Pfad `/brainstorm-hub`):
+- **Ansicht 1: Übersicht (Kombiniert):** Die interaktive Gedankenlandkarte (`custom:brainstorm-mindmap-card`) thront oben im Großformat (z. B. Höhe 580px), während sich die Schnelleingabe und Notizenliste (`custom:brainstorm-card`) mit Filtern und Badges direkt darunter befindet.
+- **Ansicht 2: Mindmap Vollbild:** 100% Panel-Ansicht für ausgedehntes visuelles Brainstorming.
+- **Ansicht 3: Listenansicht:** Schnelle, fokussierte Notizenliste für Tastatur- und Touch-Eingaben.
 
 ---
 
@@ -166,6 +172,7 @@ Die Integration stellt folgende Services bereit:
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.4.15`** | 23.10.2026 | **Bugfix Visueller Karteneditor & Seitenleisten-Dashboard:** Behebung eines Problems, bei dem Schalter im visuellen Lovelace-Karteneditor (`ha-form`) beim Ein- oder Ausschalten keine Wirkung zeigten und stets alle Elemente angezeigt blieben. Implementierung robuster Standardwerte (`default: true` in Schema & Initialisierung), vollständige Synchronisation deaktivierter Schalter (`show_quick_input`, `show_categories`, `show_badge`, `show_mindmap_button`, `show_color_toggle`, `show_source_icons`, `show_timestamps`, `allow_edit`, `allow_delete` bzw. `show_bulb_watermark`, `show_toolbar`, `show_fullscreen_btn`, `show_controls`, `show_add_btn`) und Beseitigung von Event-Bubbling-Kollisionen. Sofortige Live-Reaktivität in der Kartenvorschau und auf Dashboards. Optimierung der Dashboard-Einbindung für die Seitenleiste (Mindmap oben im Großformat, Notizenliste darunter). |
 | **`v1.4.14`** | 23.10.2026 | **Geräte-Herkunftserfassung für Alexa & Assist:** Erfassung und optische Anzeige des konkreten Auslösegeräts bei Spracheingaben sowohl in `brainstorm-card` als auch in `brainstorm-mindmap-card` (z. B. `🗣️ Alexa (Echo Show Küche)`, `🗣️ Alexa (Wohnzimmer Echo Dot)`, `✨ Assist (Jan)` oder `✨ Assist (Küche Satellit)`). Vollständige Unterstützung in Sensor-Attributen (`device`), To-Do-Listen-Beschreibungen, Markdown-Export und `add_idea`/`update_idea`-Services. |
 | **`v1.4.13`** | 22.10.2026 | **Sprachausgabe & Abfrage via Alexa & Assist:** Neuer Service `brainstorm.get_announcement` und Attribut `speech_overview` zur schnellen, flüssigen und gut verständlichen Sprachausgabe aktiver Notizen aller oder einzelner Kategorien (z. B. *„Smarthome hat drei Einträge: a, b und c“*). Interaktiver Alexa-Sprachdialog (*„Alexa, öffne Brainstorm“* ➔ *„Eintrag oder Ansage?“*) und native Assist-Intents (*„Was steht in Brainstorm?“*, *„Was habe ich in Smarthome notiert?“*). |
 | **`v1.4.12`** | 22.10.2026 | **Resilienter Sensor-Fallback & Integration-Scoped Picker:** Automatischer Fallback auf `sensor.brainstorm_ideen_ubersicht`, falls in der Kartenkonfiguration eine fremde Entität (z. B. Feuchte-/Temperatursensor) ohne `ideas`-Attribut hinterlegt ist. Schutz im visuellen Editor durch Einschränkung des Entitäten-Selectors auf `integration: brainstorm`. |
