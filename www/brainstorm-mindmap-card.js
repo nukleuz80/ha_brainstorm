@@ -1,6 +1,6 @@
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.4.15
+ * Version: 1.4.16
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -38,6 +38,7 @@ class BrainstormMindmapCard extends HTMLElement {
     this._isPanning = false;
     this._startPan = { x: 0, y: 0 };
     this._nodePositions = new Map(); // id -> {x, y}
+    this._userMovedNodes = new Set();
     this._centerPos = { x: 400, y: 300 };
     this._activeDrag = null; // { id, startMouseX, startMouseY, startNodeX, startNodeY }
     this._pendingDrag = null; // { id, cloud, startMouseX, startMouseY, startNodeX, startNodeY }
@@ -413,22 +414,25 @@ class BrainstormMindmapCard extends HTMLElement {
           position: absolute;
           top: 0;
           left: 0;
-          width: 2000px;
-          height: 2000px;
+          width: 100%;
+          height: 100%;
+          overflow: visible;
           pointer-events: none;
           z-index: 1;
         }
         .synapse-path {
           fill: none;
-          stroke: var(--divider-color, rgba(127, 127, 127, 0.25));
+          stroke: var(--path-color, var(--divider-color, rgba(127, 127, 127, 0.25)));
+          stroke-opacity: 0.38;
           stroke-width: 1.8;
           stroke-dasharray: 4, 4;
-          transition: stroke 0.2s ease, stroke-width 0.2s ease;
+          transition: stroke 0.2s ease, stroke-width 0.2s ease, stroke-opacity 0.2s ease;
         }
         .synapse-path.highlight {
-          stroke: var(--primary-color, #03a9f4);
-          stroke-width: 2.6;
-          stroke-dasharray: none;
+          stroke: var(--path-color, var(--primary-color, #03a9f4)) !important;
+          stroke-opacity: 0.95 !important;
+          stroke-width: 2.8 !important;
+          stroke-dasharray: none !important;
         }
 
         /* Center Node */
@@ -1067,7 +1071,11 @@ class BrainstormMindmapCard extends HTMLElement {
               centerNode.style.left = `${this._centerPos.x}px`;
               centerNode.style.top = `${this._centerPos.y}px`;
             }
-            this._drawConnections();
+            if (!this._userMovedNodes || this._userMovedNodes.size === 0) {
+              this._arrangeNodesRadially();
+            } else {
+              this._drawConnections();
+            }
           }
         }
       });
@@ -1129,6 +1137,9 @@ class BrainstormMindmapCard extends HTMLElement {
     window.addEventListener("mouseup", () => {
       if (this._isPanning) this._isPanning = false;
       if (this._activeDrag) {
+        if (this._userMovedNodes) {
+          this._userMovedNodes.add(this._activeDrag.id);
+        }
         const el = this.shadowRoot.getElementById(`cloud_${this._activeDrag.id}`);
         if (el) el.classList.remove("dragging");
         this._activeDrag = null;
@@ -1214,6 +1225,9 @@ class BrainstormMindmapCard extends HTMLElement {
       touchStartPan = null;
       lastTouchDist = null;
       if (this._activeDrag) {
+        if (this._userMovedNodes) {
+          this._userMovedNodes.add(this._activeDrag.id);
+        }
         const el = this.shadowRoot.getElementById(`cloud_${this._activeDrag.id}`);
         if (el) el.classList.remove("dragging");
         this._activeDrag = null;
@@ -1316,6 +1330,8 @@ class BrainstormMindmapCard extends HTMLElement {
     }
 
     if (recomputeRadial) {
+      if (this._userMovedNodes) this._userMovedNodes.clear();
+      this._nodePositions.clear();
       this._arrangeNodesRadially();
     }
   }
@@ -1334,30 +1350,160 @@ class BrainstormMindmapCard extends HTMLElement {
       return;
     }
 
-    // Determine radius based on canvas dimensions and note count
+    // Determine dimensions from canvas
     const canvasArea = this.shadowRoot.getElementById("canvasArea");
-    const h = canvasArea && canvasArea.clientHeight > 0 ? canvasArea.clientHeight : 600;
-    const w = canvasArea && canvasArea.clientWidth > 0 ? canvasArea.clientWidth : 800;
-    const minDim = Math.min(w, h);
+    let w = 800;
+    let h = 600;
+    if (canvasArea) {
+      const rect = canvasArea.getBoundingClientRect();
+      w = canvasArea.clientWidth || rect.width || 800;
+      h = canvasArea.clientHeight || rect.height || 600;
+    }
 
-    const baseRadius = Math.max(180, Math.min(minDim * 0.34, count <= 6 ? 230 : count <= 12 ? 290 : 350));
-    const angleStep = (2 * Math.PI) / count;
+    this._centerPos = { x: w / 2, y: h / 2 };
 
-    ideas.forEach((idea, i) => {
-      // Add slight organic offset to give an organic thought cloud feel
-      const radiusJitter = (i % 2 === 0 ? 1 : 0.92) * baseRadius;
-      const angle = i * angleStep - Math.PI / 2;
-      const x = this._centerPos.x + Math.cos(angle) * radiusJitter;
-      const y = this._centerPos.y + Math.sin(angle) * radiusJitter;
+    const centerNode = this.shadowRoot.getElementById("centerNode");
+    if (centerNode) {
+      centerNode.style.left = `${this._centerPos.x}px`;
+      centerNode.style.top = `${this._centerPos.y}px`;
+    }
 
-      this._nodePositions.set(idea.id, { x, y });
+    // Partition nodes into concentric elliptical rings to prevent clustering
+    const rings = [];
+    if (count <= 6) {
+      rings.push(ideas);
+    } else if (count <= 12) {
+      const nInner = Math.min(5, Math.max(3, Math.floor(count * 0.42)));
+      rings.push(ideas.slice(0, nInner));
+      rings.push(ideas.slice(nInner));
+    } else if (count <= 20) {
+      const n1 = 5;
+      const n2 = Math.min(7, Math.floor((count - 5) * 0.55));
+      rings.push(ideas.slice(0, n1));
+      rings.push(ideas.slice(n1, n1 + n2));
+      rings.push(ideas.slice(n1 + n2));
+    } else {
+      let rem = [...ideas];
+      let cap = 5;
+      while (rem.length > 0) {
+        const take = Math.min(cap, rem.length);
+        rings.push(rem.slice(0, take));
+        rem = rem.slice(take);
+        cap += 3;
+      }
+    }
 
-      const el = this.shadowRoot.getElementById(`cloud_${idea.id}`);
+    // Concentric elliptical radii
+    const rx0 = count <= 6 ? Math.max(260, Math.min(w * 0.30, 360)) : Math.max(250, Math.min(w * 0.22, 310));
+    const ry0 = count <= 6 ? Math.max(180, Math.min(h * 0.30, 220)) : Math.max(175, Math.min(h * 0.24, 185));
+    const drx = Math.max(210, Math.min(w * 0.16, 250));
+    const dry = Math.max(110, Math.min(h * 0.16, 135));
+
+    const positionedItems = [];
+
+    rings.forEach((ringIdeas, r) => {
+      const n = ringIdeas.length;
+      if (n === 0) return;
+      const rx = rx0 + r * drx;
+      const ry = ry0 + r * dry;
+      const phase = -Math.PI / 2 + (r * Math.PI / (n * 2));
+      const angleStep = (2 * Math.PI) / n;
+
+      ringIdeas.forEach((idea, j) => {
+        // If user already moved this specific node manually, preserve its position
+        if (this._userMovedNodes && this._userMovedNodes.has(idea.id) && this._nodePositions.has(idea.id)) {
+          const existingPos = this._nodePositions.get(idea.id);
+          positionedItems.push({ idea, x: existingPos.x, y: existingPos.y, fixed: true });
+          return;
+        }
+
+        const angle = phase + j * angleStep;
+        const x = this._centerPos.x + Math.cos(angle) * rx;
+        const y = this._centerPos.y + Math.sin(angle) * ry;
+        positionedItems.push({ idea, x, y, fixed: false });
+      });
+    });
+
+    // Collision relaxation pass: repel from center bulb and avoid card overlaps
+    const cardW = 230;
+    const cardH = 100;
+    const minCenterDistX = 185;
+    const minCenterDistY = 135;
+
+    for (let iter = 0; iter < 25; iter++) {
+      // 1. Center push-out
+      for (const item of positionedItems) {
+        if (item.fixed) continue;
+        const cdx = item.x - this._centerPos.x;
+        const cdy = item.y - this._centerPos.y;
+        const norm = (cdx / minCenterDistX) ** 2 + (cdy / minCenterDistY) ** 2;
+        if (norm < 1.0 && norm > 0.0001) {
+          const factor = Math.sqrt(1.0 / norm) * 1.04;
+          item.x = this._centerPos.x + cdx * factor;
+          item.y = this._centerPos.y + cdy * factor;
+        }
+      }
+
+      // 2. Card-to-card repulsion
+      for (let i = 0; i < positionedItems.length; i++) {
+        for (let j = i + 1; j < positionedItems.length; j++) {
+          const a = positionedItems[i];
+          const b = positionedItems[j];
+          const dx = b.x - a.x;
+          const dy = b.y - a.y;
+          const adx = Math.abs(dx);
+          const ady = Math.abs(dy);
+
+          if (adx < cardW && ady < cardH) {
+            const ox = cardW - adx;
+            const oy = cardH - ady;
+            if (ox / cardW < oy / cardH) {
+              const pushX = (dx >= 0 ? 1 : -1) * (ox / 2 + 1.5);
+              if (!a.fixed) a.x -= pushX;
+              if (!b.fixed) b.x += pushX;
+            } else {
+              const pushY = (dy >= 0 ? 1 : -1) * (oy / 2 + 1.5);
+              if (!a.fixed) a.y -= pushY;
+              if (!b.fixed) b.y += pushY;
+            }
+          }
+        }
+      }
+    }
+
+    // Apply positions to state & DOM
+    positionedItems.forEach((item) => {
+      this._nodePositions.set(item.idea.id, { x: item.x, y: item.y });
+      const el = this.shadowRoot.getElementById(`cloud_${item.idea.id}`);
       if (el) {
-        el.style.left = `${x}px`;
-        el.style.top = `${y}px`;
+        el.style.left = `${item.x}px`;
+        el.style.top = `${item.y}px`;
       }
     });
+
+    // Auto-fit scale if nodes exceed viewport and view is at default scale
+    if (positionedItems.length > 0 && this._scale >= 0.95 && this._scale <= 1.05) {
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      positionedItems.forEach((item) => {
+        if (item.x - 120 < minX) minX = item.x - 120;
+        if (item.x + 120 > maxX) maxX = item.x + 120;
+        if (item.y - 55 < minY) minY = item.y - 55;
+        if (item.y + 55 > maxY) maxY = item.y + 55;
+      });
+
+      const spanW = maxX - minX + 50;
+      const spanH = maxY - minY + 50;
+
+      if (spanW > w || spanH > h) {
+        const scaleX = w / spanW;
+        const scaleY = h / spanH;
+        const fitScale = Math.max(0.70, Math.min(1.0, Math.min(scaleX, scaleY) * 0.94));
+        this._scale = fitScale;
+        this._panX = (w / 2) * (1 - this._scale);
+        this._panY = (h / 2) * (1 - this._scale);
+        this._applyTransform();
+      }
+    }
 
     this._drawConnections();
   }
@@ -1366,8 +1512,15 @@ class BrainstormMindmapCard extends HTMLElement {
     const svg = this.shadowRoot.getElementById("connectorsLayer");
     if (!svg) return;
 
+    const sensor = this._getSensorEntity();
+    const allIdeas = (sensor && sensor.attributes && sensor.attributes.ideas) || [];
+    const ideasMap = new Map();
+    allIdeas.forEach((i) => ideasMap.set(i.id, i));
+
     let svgHtml = "";
     this._nodePositions.forEach((pos, id) => {
+      const idea = ideasMap.get(id);
+      const catColor = idea ? this._getCategoryColor(idea.category) : "var(--primary-color, #03a9f4)";
       const x1 = this._centerPos.x;
       const y1 = this._centerPos.y;
       const x2 = pos.x;
@@ -1383,7 +1536,7 @@ class BrainstormMindmapCard extends HTMLElement {
 
       const pathData = `M ${x1} ${y1} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${x2} ${y2}`;
       svgHtml += `
-        <path id="path_${id}" class="synapse-path" d="${pathData}" />
+        <path id="path_${id}" class="synapse-path" d="${pathData}" style="--path-color: ${catColor};" />
       `;
     });
 
@@ -2324,7 +2477,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.15 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.16 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

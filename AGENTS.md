@@ -47,3 +47,8 @@ This project strictly adheres to the official Home Assistant developer documenta
 ## 5. System Operations & Restart Policy
 - **NO Unprompted Restarts**: NEVER restart Home Assistant (`homeassistant.restart`, `ha core restart`, supervisor restart, etc.) without explicitly asking the user for permission first. Always ask first.
 
+## 6. Chat-Statistiken (Kontext & Token)
+- Behalte am Ende jeder Antwort die einzeilige Text-Statistik für das Kontext-Gesamtkontingent bei (z. B. `📊 Kontext-Gesamtkontingent: ~XX.XXX / 1.000.000 Tokens (X,X % belegt • XXX.XXX frei)`).
+- **Keine Artefakt-Karten / HTML-Boxen:** Es dürfen keine separaten Artefakte (wie `token_monitor.html` oder Artifact-Cards) dafür generiert oder eingebunden werden.
+
+

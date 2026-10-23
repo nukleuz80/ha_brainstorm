@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.15 - Visual Editor toggle fix & state synchronization
+ * Version 1.4.16 - Visual Editor toggle fix & state synchronization
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",
