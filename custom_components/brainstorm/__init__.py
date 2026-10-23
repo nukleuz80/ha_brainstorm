@@ -14,6 +14,7 @@ from homeassistant.helpers.typing import ConfigType
 
 from .const import (
     ATTR_CATEGORY,
+    ATTR_DEVICE,
     ATTR_ID,
     ATTR_SOURCE,
     ATTR_STATUS,
@@ -46,8 +47,10 @@ SERVICE_ADD_IDEA_SCHEMA = vol.Schema(
         vol.Required(ATTR_TEXT): cv.string,
         vol.Optional(ATTR_CATEGORY): vol.Any(None, cv.string),
         vol.Optional(ATTR_SOURCE, default="manual"): cv.string,
+        vol.Optional(ATTR_DEVICE): vol.Any(None, cv.string),
         vol.Optional(ATTR_TAGS): vol.All(cv.ensure_list, [cv.string]),
-    }
+    },
+    extra=vol.ALLOW_EXTRA,
 )
 
 SERVICE_UPDATE_IDEA_SCHEMA = vol.Schema(
@@ -56,7 +59,9 @@ SERVICE_UPDATE_IDEA_SCHEMA = vol.Schema(
         vol.Optional(ATTR_TEXT): cv.string,
         vol.Optional(ATTR_CATEGORY): cv.string,
         vol.Optional(ATTR_STATUS): vol.In(["active", "completed", "archived"]),
-    }
+        vol.Optional(ATTR_DEVICE): vol.Any(None, cv.string),
+    },
+    extra=vol.ALLOW_EXTRA,
 )
 
 SERVICE_DELETE_IDEA_SCHEMA = vol.Schema(
@@ -162,12 +167,14 @@ def _register_services(hass: HomeAssistant) -> None:
         text = call.data[ATTR_TEXT]
         category = call.data.get(ATTR_CATEGORY)
         source = call.data.get(ATTR_SOURCE, "manual")
+        device = call.data.get(ATTR_DEVICE)
         tags = call.data.get(ATTR_TAGS)
 
         idea = await store.async_add_idea(
             text=text,
             category=category,
             source=source,
+            device=device,
             tags=tags,
         )
         return {"success": True, "idea": idea}
@@ -182,12 +189,14 @@ def _register_services(hass: HomeAssistant) -> None:
         text = call.data.get(ATTR_TEXT)
         category = call.data.get(ATTR_CATEGORY)
         status = call.data.get(ATTR_STATUS)
+        device = call.data.get(ATTR_DEVICE)
 
         updated = await store.async_update_idea(
             idea_id=idea_id,
             text=text,
             category=category,
             status=status,
+            device=device,
         )
         return {"success": updated is not None, "idea": updated}
 

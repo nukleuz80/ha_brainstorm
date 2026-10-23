@@ -15,6 +15,7 @@ from homeassistant.util import dt as dt_util
 from .const import (
     ATTR_CATEGORY,
     ATTR_CREATED_AT,
+    ATTR_DEVICE,
     ATTR_ID,
     ATTR_SOURCE,
     ATTR_STATUS,
@@ -487,6 +488,7 @@ class BrainstormStore:
         category: str | None = None,
         source: str = "manual",
         tags: list[str] | None = None,
+        device: str | None = None,
     ) -> dict[str, Any]:
         """Add a new brainstorm idea."""
         raw_check = (text or "").strip().lower()
@@ -518,6 +520,7 @@ class BrainstormStore:
             ATTR_TEXT: clean_text,
             ATTR_CATEGORY: resolved_cat,
             ATTR_SOURCE: source,
+            ATTR_DEVICE: (device or "").strip() if device else None,
             ATTR_TAGS: all_tags,
             ATTR_STATUS: "active",
             ATTR_CREATED_AT: now_iso,
@@ -530,8 +533,7 @@ class BrainstormStore:
 
         # Fire event for automations (e.g. Alexa TTS confirmation or mobile push)
         self.hass.bus.async_fire(EVENT_IDEA_ADDED, idea)
-        _LOGGER.info("Brainstorm idea [%s] added in category '%s'", idea_id, resolved_cat)
-        return idea
+        _LOGGER.info("Brainstorm idea [%s] added in category '%s' (device: %s)", idea_id, resolved_cat, device)
         return idea
 
     async def async_update_idea(
@@ -540,6 +542,7 @@ class BrainstormStore:
         text: str | None = None,
         category: str | None = None,
         status: str | None = None,
+        device: str | None = None,
     ) -> dict[str, Any] | None:
         """Update an existing idea."""
         if idea_id not in self._ideas:
@@ -556,6 +559,8 @@ class BrainstormStore:
             idea[ATTR_CATEGORY] = cat_clean
         if status is not None:
             idea[ATTR_STATUS] = status
+        if device is not None:
+            idea[ATTR_DEVICE] = device.strip() if device else None
 
         idea[ATTR_UPDATED_AT] = dt_util.now().isoformat()
         await self.async_save()
@@ -751,7 +756,15 @@ class BrainstormStore:
                         for item in active:
                             created = item.get(ATTR_CREATED_AT, "")[:16].replace("T", " ")
                             src = item.get(ATTR_SOURCE, "")
-                            src_str = f" `[{src}]`" if src else ""
+                            dev = item.get(ATTR_DEVICE, "")
+                            if src and dev:
+                                src_str = f" `[{src} ({dev})]`"
+                            elif src:
+                                src_str = f" `[{src}]`"
+                            elif dev:
+                                src_str = f" `[{dev}]`"
+                            else:
+                                src_str = ""
                             f.write(f"- [ ] {item.get(ATTR_TEXT)}{src_str} _({created})_\n")
                         f.write("\n")
 

@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.13 - Voice announcement & TTS query support
+ * Version 1.4.14 - Device origin tracking for Alexa & Assist
  */
 class BrainstormCard extends HTMLElement {
   constructor() {
@@ -166,24 +166,36 @@ class BrainstormCard extends HTMLElement {
     return colors[category] || colors.default;
   }
 
-  _getSourceIcon(source) {
+  _getSourceBadge(source, device) {
     const s = (source || "").toLowerCase();
+    let icon = "📝";
+    let name = "Notiz";
     if (s.includes("alexa") || s === "voice") {
-      return "🗣️ Alexa";
+      icon = "🗣️";
+      name = "Alexa";
+    } else if (s.includes("assist")) {
+      icon = "✨";
+      name = "Assist";
+    } else if (s.includes("companion_voice") || s.includes("mic") || s.includes("speech")) {
+      icon = "🎙️";
+      name = "Sprache";
+    } else if (s.includes("companion") || s.includes("mobile") || s.includes("handy")) {
+      icon = "📱";
+      name = "Handy";
+    } else if (s.includes("dashboard")) {
+      icon = "💻";
+      name = "Dashboard";
     }
-    if (s.includes("assist")) {
-      return "✨ Assist";
+
+    if (device && String(device).trim()) {
+      const cleanDev = String(device).trim();
+      return `<span class="source-badge" title="Quelle: ${name} • Gerät: ${this._escapeHtml(cleanDev)}">${icon} ${this._escapeHtml(name)} <span class="source-device">(${this._escapeHtml(cleanDev)})</span></span>`;
     }
-    if (s.includes("companion_voice") || s.includes("mic") || s.includes("speech")) {
-      return "🎙️ Sprache";
-    }
-    if (s.includes("companion") || s.includes("mobile") || s.includes("handy")) {
-      return "📱 Handy";
-    }
-    if (s.includes("dashboard")) {
-      return "💻 Dashboard";
-    }
-    return "📝 Notiz";
+    return `<span class="source-badge" title="Quelle: ${name}">${icon} ${this._escapeHtml(name)}</span>`;
+  }
+
+  _getSourceIcon(source) {
+    return this._getSourceBadge(source);
   }
 
   _formatTime(isoString) {
@@ -1292,6 +1304,15 @@ class BrainstormCard extends HTMLElement {
         .category-tag.clickable:hover {
           background: var(--primary-color-alpha, rgba(3, 169, 244, 0.15));
         }
+        .source-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 3px;
+        }
+        .source-device {
+          opacity: 0.85;
+          font-weight: 500;
+        }
         .item-actions {
           display: flex;
           align-items: center;
@@ -1749,7 +1770,7 @@ class BrainstormCard extends HTMLElement {
                 <div class="idea-text" title="${canEdit ? "Klicken zum Bearbeiten" : ""}" data-id="${item.id}" style="${canEdit ? "" : "cursor: default;"}">${this._escapeHtml(item.text)}</div>
                 <div class="idea-meta">
                   <span class="category-tag ${canEdit ? "clickable" : ""}" title="${canEdit ? "Kategorie ändern" : "Kategorie"}" data-id="${item.id}" data-cat="${item.category}" style="color: ${this._getCategoryColor(item.category)}; background: color-mix(in srgb, ${this._getCategoryColor(item.category)} 12%, var(--secondary-background-color, rgba(0,0,0,0.06))); border: 1px solid color-mix(in srgb, ${this._getCategoryColor(item.category)} 25%, transparent);">${this._escapeHtml(item.category)}</span>
-                  ${showSource ? `<span>${this._getSourceIcon(item.source)}</span>` : ""}
+                  ${showSource ? `${this._getSourceBadge(item.source, item.device)}` : ""}
                   ${showSource && showTime ? `<span>•</span>` : ""}
                   ${showTime ? `<span>${this._formatTime(item.created_at)}</span>` : ""}
                 </div>

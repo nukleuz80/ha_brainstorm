@@ -25,6 +25,13 @@ add_idea:
       example: "alexa"
       selector:
         text:
+    device:
+      name: Erfassungsgerät
+      description: Das auslösende Gerät (z.B. "Echo Show Küche", "Wohnzimmer Echo Dot", "Jan (Handy)").
+      required: false
+      example: "Echo Show Küche"
+      selector:
+        text:
     tags:
       name: Tags
       description: Zusätzliche Schlagworte.
@@ -65,6 +72,12 @@ update_idea:
             - active
             - completed
             - archived
+    device:
+      name: Erfassungsgerät
+      description: Gerät aktualisieren.
+      required: false
+      selector:
+        text:
 
 delete_idea:
   name: Idee löschen

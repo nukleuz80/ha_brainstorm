@@ -1,6 +1,6 @@
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.4.13
+ * Version: 1.4.14
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -184,14 +184,23 @@ class BrainstormMindmapCard extends HTMLElement {
     return colors[category] || colors.default;
   }
 
+  _getSourceBadge(source, device) {
+    if (!source && !device) return "📝";
+    const s = String(source || "").toLowerCase();
+    let icon = "📝";
+    if (s.includes("assist")) icon = "✨";
+    else if (s.includes("alexa") || s.includes("voice") || s.includes("speech")) icon = "🗣️";
+    else if (s.includes("mobile") || s.includes("handy") || s.includes("companion")) icon = "📱";
+    else if (s.includes("dashboard")) icon = "💻";
+
+    if (device && String(device).trim()) {
+      return `${icon} <span class="cloud-device" title="Gerät: ${this._escapeHtml(String(device).trim())}">(${this._escapeHtml(String(device).trim())})</span>`;
+    }
+    return `${icon}`;
+  }
+
   _getSourceIcon(source) {
-    if (!source) return "📝";
-    const s = String(source).toLowerCase();
-    if (s.includes("assist")) return "✨";
-    if (s.includes("alexa") || s.includes("voice") || s.includes("speech")) return "🎙️";
-    if (s.includes("mobile") || s.includes("handy") || s.includes("companion")) return "📱";
-    if (s.includes("dashboard")) return "💻";
-    return "📝";
+    return this._getSourceBadge(source);
   }
 
   _formatTime(isoString) {
@@ -551,6 +560,16 @@ class BrainstormMindmapCard extends HTMLElement {
           gap: 4px;
           font-size: 0.72rem;
           color: var(--secondary-text-color, #64748b);
+        }
+        .cloud-device {
+          font-size: 0.68rem;
+          opacity: 0.85;
+          max-width: 110px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          display: inline-block;
+          vertical-align: middle;
         }
 
         /* Cloud Text */
@@ -1482,7 +1501,7 @@ class BrainstormMindmapCard extends HTMLElement {
       let html = "";
       filteredIdeas.forEach((idea) => {
         const color = this._getCategoryColor(idea.category);
-        const sourceIcon = this._getSourceIcon(idea.source);
+        const sourceBadge = this._getSourceBadge(idea.source, idea.device);
         const timeAgo = this._formatTime(idea.created_at);
 
         html += `
@@ -1491,8 +1510,9 @@ class BrainstormMindmapCard extends HTMLElement {
               <span class="cat-tag" data-cat="${this._escapeHtml(idea.category)}" title="Kategorie ändern">
                 🏷️ ${this._escapeHtml(idea.category)}
               </span>
-              <span class="cloud-source" title="${idea.source || 'Dashboard'}">
-                <span>${sourceIcon}</span>
+              <span class="cloud-source" title="Quelle: ${idea.source || 'Dashboard'}${idea.device ? ' • Gerät: ' + this._escapeHtml(idea.device) : ''}">
+                <span>${sourceBadge}</span>
+                <span>•</span>
                 <span>${timeAgo}</span>
               </span>
             </div>
@@ -2273,7 +2293,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.13 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.14 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

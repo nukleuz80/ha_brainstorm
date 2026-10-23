@@ -13,6 +13,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import (
     ATTR_CATEGORY,
     ATTR_CREATED_AT,
+    ATTR_DEVICE,
     ATTR_ID,
     ATTR_SOURCE,
     ATTR_STATUS,
@@ -50,7 +51,7 @@ class BrainstormOverviewSensor(SensorEntity):
             name="Brainstorm Hub",
             manufacturer="nukleuz80",
             model="Brainstorm Hub",
-            sw_version="1.4.4",
+            sw_version="1.4.14",
         )
 
     async def async_added_to_hass(self) -> None:
@@ -83,6 +84,7 @@ class BrainstormOverviewSensor(SensorEntity):
                 "category": latest.get(ATTR_CATEGORY),
                 "created_at": latest.get(ATTR_CREATED_AT),
                 "source": latest.get(ATTR_SOURCE),
+                "device": latest.get(ATTR_DEVICE),
             }
 
         recent_list = [
@@ -91,6 +93,7 @@ class BrainstormOverviewSensor(SensorEntity):
                 "category": i.get(ATTR_CATEGORY),
                 "created_at": i.get(ATTR_CREATED_AT),
                 "source": i.get(ATTR_SOURCE),
+                "device": i.get(ATTR_DEVICE),
             }
             for i in active_ideas[:5]
         ]
@@ -110,6 +113,7 @@ class BrainstormOverviewSensor(SensorEntity):
                     "category": i.get(ATTR_CATEGORY),
                     "created_at": i.get(ATTR_CREATED_AT),
                     "source": i.get(ATTR_SOURCE),
+                    "device": i.get(ATTR_DEVICE),
                     "status": i.get(ATTR_STATUS),
                 }
                 for i in active_ideas
@@ -121,6 +125,7 @@ class BrainstormOverviewSensor(SensorEntity):
                     "category": i.get(ATTR_CATEGORY),
                     "created_at": i.get(ATTR_CREATED_AT),
                     "source": i.get(ATTR_SOURCE),
+                    "device": i.get(ATTR_DEVICE),
                     "status": i.get(ATTR_STATUS),
                 }
                 for i in completed_ideas[:50]
