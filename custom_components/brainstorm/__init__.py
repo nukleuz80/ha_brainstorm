@@ -115,13 +115,17 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     return True
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+type BrainstormConfigEntry = ConfigEntry[BrainstormStore]
+
+
+async def async_setup_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) -> bool:
     """Set up Brainstorm Hub from a config entry."""
     hass.data.setdefault(DOMAIN, {})
 
     store = BrainstormStore(hass, entry.options or entry.data)
     await store.async_load()
 
+    entry.runtime_data = store
     hass.data[DOMAIN][entry.entry_id] = store
     hass.data[DOMAIN]["primary_store"] = store
 
@@ -135,7 +139,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) -> bool:
     """Unload a config entry."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
@@ -143,13 +147,16 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return unload_ok
 
 
-async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+async def async_reload_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) -> None:
     """Reload config entry."""
     await hass.config_entries.async_reload(entry.entry_id)
 
 
 def _get_active_store(hass: HomeAssistant) -> BrainstormStore | None:
     """Get the active store instance."""
+    entries = hass.config_entries.async_entries(DOMAIN)
+    if entries and hasattr(entries[0], "runtime_data") and entries[0].runtime_data is not None:
+        return entries[0].runtime_data
     data = hass.data.get(DOMAIN, {})
     return data.get("primary_store")
 

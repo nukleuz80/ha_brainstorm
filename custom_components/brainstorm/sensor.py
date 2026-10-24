@@ -22,6 +22,8 @@ from .const import (
 )
 from .store import BrainstormStore
 
+PARALLEL_UPDATES = 0
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -31,7 +33,11 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the Brainstorm sensor platform."""
-    store: BrainstormStore = hass.data[DOMAIN][entry.entry_id]
+    store: BrainstormStore = (
+        entry.runtime_data
+        if hasattr(entry, "runtime_data") and entry.runtime_data is not None
+        else hass.data[DOMAIN][entry.entry_id]
+    )
     async_add_entities([BrainstormOverviewSensor(store, entry.entry_id)])
 
 
@@ -51,7 +57,7 @@ class BrainstormOverviewSensor(SensorEntity):
             name="Brainstorm Hub",
             manufacturer="nukleuz80",
             model="Brainstorm Hub",
-            sw_version="1.4.17",
+            sw_version="1.4.18",
         )
 
     async def async_added_to_hass(self) -> None:

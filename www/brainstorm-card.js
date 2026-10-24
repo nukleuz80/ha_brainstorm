@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.17 - Distinct Category Colors & Multi-Ring Mindmap
+ * Version 1.4.18 - Bronze Quality Scale & Performance Optimizations
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",

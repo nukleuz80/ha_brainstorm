@@ -1,0 +1,32 @@
+# Home Assistant Integration Quality Scale - Brainstorm Hub
+# Reference: https://developers.home-assistant.io/docs/integration_quality_scale_index/
+
+rules:
+  # Bronze
+  action-setup: done
+  appropriate-polling: done
+  brands: done
+  common-modules: done
+  config-flow-test-coverage:
+    status: exempt
+    comment: Custom component with internal unit and service validation tests.
+  config-flow: done
+  dependency-transparency: done
+  docs-actions: done
+  docs-conditions:
+    status: exempt
+    comment: This integration does not provide custom automation conditions.
+  docs-high-level-description: done
+  docs-installation-instructions: done
+  docs-removal-instructions: done
+  docs-triggers:
+    status: exempt
+    comment: This integration does not provide custom automation triggers.
+  entity-event-setup: done
+  entity-unique-id: done
+  has-entity-name: done
+  runtime-data: done
+  parallel-updates: done
+  test-before-configure: done
+  test-before-setup: done
+  unique-config-entry: done
