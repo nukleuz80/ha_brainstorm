@@ -30,3 +30,12 @@ rules:
   test-before-configure: done
   test-before-setup: done
   unique-config-entry: done
+
+  # Silver
+  action-exceptions: done
+  config-entry-unregistered: done
+  logbook: done
+  reconfigure-flow: done
+  test-coverage:
+    status: exempt
+    comment: Custom component with continuous integration and runtime validation tests.

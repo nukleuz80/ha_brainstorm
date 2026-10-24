@@ -9,10 +9,20 @@
           "markdown_path": "File path for Markdown files",
           "categories": "Manage categories (comma-separated list)"
         }
+      },
+      "reconfigure": {
+        "title": "Reconfigure Brainstorm Hub",
+        "description": "Update Brainstorm Hub core integration settings.",
+        "data": {
+          "smart_formatting": "Smart Text Optimization",
+          "auto_export_markdown": "Auto-export ideas to Markdown files",
+          "markdown_path": "File path for Markdown files"
+        }
       }
     },
     "abort": {
-      "single_instance_allowed": "Brainstorm Hub is already configured."
+      "single_instance_allowed": "Brainstorm Hub is already configured.",
+      "reconfigure_successful": "Reconfiguration was successful."
     }
   },
   "options": {

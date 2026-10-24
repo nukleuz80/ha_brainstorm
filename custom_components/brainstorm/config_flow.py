@@ -46,6 +46,42 @@ class BrainstormConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(step_id="user", data_schema=data_schema)
 
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Handle reconfiguring the existing entry."""
+        config_entry = self._get_reconfigure_entry()
+        current_data = {**config_entry.data, **config_entry.options}
+
+        if user_input is not None:
+            return self.async_update_reload_and_abort(
+                config_entry,
+                data={**config_entry.data, **user_input},
+                reason="reconfigure_successful",
+            )
+
+        data_schema = vol.Schema(
+            {
+                vol.Optional(
+                    CONF_SMART_FORMATTING,
+                    default=current_data.get(CONF_SMART_FORMATTING, True),
+                ): bool,
+                vol.Optional(
+                    CONF_AUTO_EXPORT_MARKDOWN,
+                    default=current_data.get(CONF_AUTO_EXPORT_MARKDOWN, False),
+                ): bool,
+                vol.Optional(
+                    CONF_MARKDOWN_PATH,
+                    default=current_data.get(CONF_MARKDOWN_PATH, DEFAULT_MARKDOWN_PATH),
+                ): str,
+            }
+        )
+
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=data_schema,
+        )
+
     @staticmethod
     @callback
     def async_get_options_flow(

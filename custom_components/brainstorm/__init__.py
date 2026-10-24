@@ -144,6 +144,19 @@ async def async_unload_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) 
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id, None)
+        if not hass.config_entries.async_loaded_entries(DOMAIN):
+            hass.data[DOMAIN].pop("primary_store", None)
+            for service in [
+                SERVICE_ADD_IDEA,
+                SERVICE_UPDATE_IDEA,
+                SERVICE_DELETE_IDEA,
+                SERVICE_GET_IDEAS,
+                SERVICE_ADD_CATEGORY,
+                SERVICE_REMOVE_CATEGORY,
+                SERVICE_EXPORT_MARKDOWN,
+                SERVICE_GET_ANNOUNCEMENT,
+            ]:
+                hass.services.async_remove(DOMAIN, service)
     return unload_ok
 
 
@@ -169,7 +182,7 @@ def _register_services(hass: HomeAssistant) -> None:
         """Handle adding a new idea."""
         store = _get_active_store(hass)
         if not store:
-            raise ValueError("Brainstorm store is not initialized")
+            raise HomeAssistantError("Brainstorm store is not initialized")
 
         text = call.data[ATTR_TEXT]
         category = call.data.get(ATTR_CATEGORY)
@@ -190,7 +203,7 @@ def _register_services(hass: HomeAssistant) -> None:
         """Handle updating an existing idea."""
         store = _get_active_store(hass)
         if not store:
-            raise ValueError("Brainstorm store is not initialized")
+            raise HomeAssistantError("Brainstorm store is not initialized")
 
         idea_id = call.data[ATTR_ID]
         text = call.data.get(ATTR_TEXT)
@@ -211,7 +224,7 @@ def _register_services(hass: HomeAssistant) -> None:
         """Handle deleting an idea."""
         store = _get_active_store(hass)
         if not store:
-            raise ValueError("Brainstorm store is not initialized")
+            raise HomeAssistantError("Brainstorm store is not initialized")
 
         idea_id = call.data[ATTR_ID]
         deleted = await store.async_delete_idea(idea_id)
@@ -221,7 +234,7 @@ def _register_services(hass: HomeAssistant) -> None:
         """Handle fetching ideas."""
         store = _get_active_store(hass)
         if not store:
-            raise ValueError("Brainstorm store is not initialized")
+            raise HomeAssistantError("Brainstorm store is not initialized")
 
         category = call.data.get(ATTR_CATEGORY)
         status_filter = call.data.get(ATTR_STATUS, "active")
@@ -253,7 +266,7 @@ def _register_services(hass: HomeAssistant) -> None:
         """Handle removing a category."""
         store = _get_active_store(hass)
         if not store:
-            raise ValueError("Brainstorm store is not initialized")
+            raise HomeAssistantError("Brainstorm store is not initialized")
 
         name = call.data["name"]
         success = await store.async_remove_category(name)
@@ -263,7 +276,7 @@ def _register_services(hass: HomeAssistant) -> None:
         """Handle exporting ideas to markdown files."""
         store = _get_active_store(hass)
         if not store:
-            raise ValueError("Brainstorm store is not initialized")
+            raise HomeAssistantError("Brainstorm store is not initialized")
 
         path = call.data.get("path")
         await store.async_export_to_markdown(path)

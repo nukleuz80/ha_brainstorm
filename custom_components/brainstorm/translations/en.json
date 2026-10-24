@@ -1,0 +1,59 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Brainstorm Hub",
+        "description": "Capture ideas and thoughts quickly via voice and text.",
+        "data": {
+          "auto_export_markdown": "Auto-export ideas to Markdown files",
+          "markdown_path": "File path for Markdown files",
+          "categories": "Manage categories (comma-separated list)"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure Brainstorm Hub",
+        "description": "Update Brainstorm Hub core integration settings.",
+        "data": {
+          "smart_formatting": "Smart Text Optimization",
+          "auto_export_markdown": "Auto-export ideas to Markdown files",
+          "markdown_path": "File path for Markdown files"
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Brainstorm Hub is already configured.",
+      "reconfigure_successful": "Reconfiguration was successful."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Brainstorm Hub Options",
+        "description": "Choose a configuration section:",
+        "menu_options": {
+          "categories": "Manage Categories",
+          "general": "General Settings & Export"
+        }
+      },
+      "categories": {
+        "title": "Manage Categories",
+        "description": "Current categories:\n**{current_cats}**\n\nAdd new categories, delete existing ones, or edit the full list.",
+        "data": {
+          "add_category": "➕ Add new category (optional)",
+          "delete_category": "🗑️ Delete existing category (optional)",
+          "edit_categories": "✏️ Edit full list (comma-separated)"
+        }
+      },
+      "general": {
+        "title": "General Settings",
+        "description": "Configure Brainstorm Hub behavior and Markdown export.",
+        "data": {
+          "default_category": "Default category for new ideas",
+          "smart_formatting": "Smart Text Optimization (grammar, capitalization, infinitive formatting)",
+          "auto_export_markdown": "Auto-export ideas to Markdown files",
+          "markdown_path": "File path for Markdown files"
+        }
+      }
+    }
+  }
+}

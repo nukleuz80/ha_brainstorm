@@ -8,10 +8,20 @@
           "auto_export_markdown": "Ideen automatisch als Markdown-Dateien exportieren",
           "markdown_path": "Dateipfad für Markdown-Dateien"
         }
+      },
+      "reconfigure": {
+        "title": "Brainstorm Hub neu konfigurieren",
+        "description": "Passe die Grundeinstellungen von Brainstorm Hub an.",
+        "data": {
+          "smart_formatting": "Intelligente Text-Optimierung",
+          "auto_export_markdown": "Ideen automatisch als Markdown-Dateien exportieren",
+          "markdown_path": "Dateipfad für Markdown-Dateien"
+        }
       }
     },
     "abort": {
-      "single_instance_allowed": "Brainstorm Hub ist bereits eingerichtet."
+      "single_instance_allowed": "Brainstorm Hub ist bereits eingerichtet.",
+      "reconfigure_successful": "Die Konfiguration wurde erfolgreich aktualisiert."
     }
   },
   "options": {
