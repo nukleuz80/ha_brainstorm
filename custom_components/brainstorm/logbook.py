@@ -106,3 +106,4 @@ def async_describe_events(
     async_describe_event(DOMAIN, EVENT_IDEA_COMPLETED, async_describe_idea_completed)
     async_describe_event(DOMAIN, EVENT_IDEA_UPDATED, async_describe_idea_updated)
     async_describe_event(DOMAIN, EVENT_IDEA_DELETED, async_describe_idea_deleted)
+

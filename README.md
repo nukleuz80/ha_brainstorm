@@ -1,7 +1,7 @@
 # 🧠 Brainstorm Hub for Home Assistant
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/default)
-[![Version](https://img.shields.io/badge/version-1.4.19-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.4.20-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver-C0C0C0.svg)](https://developers.home-assistant.io/docs/integration_quality_scale_index/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
@@ -14,7 +14,16 @@ Egal ob beim Kochen, im Garten oder unterwegs: Erfasse Geistesblitze sekundensch
 
 ## 🌟 Highlights & Features
 
-- 🧠 **Intelligente Text-Optimierung & NLP-Bereinigung (NEU in v1.4.0):**
+- 🤖 **NEU (v1.4.20): Assist LLM Tools & Function-Calling API:**
+  - **Freie natürliche Sprache statt starren Befehlen:** Vollständige Integration in das native Home Assistant LLM API (`homeassistant.helpers.llm`). Sprachmodelle (wie OpenAI, Google Gemini, Ollama oder lokale LLMs) erhalten direkten Zugriff auf Brainstorm als Werkzeugsatz.
+  - **5 mächtige KI-Werkzeuge:**
+    - `brainstorm_add_idea`: Erfasst Gedanken und ordnet sie kontextbezogen der passenden Kategorie zu.
+    - `brainstorm_get_ideas`: Beantwortet Fragen zu bestehenden Notizen mit flexiblen Filtern nach Kategorie, Status und Freitext-Suche.
+    - `brainstorm_complete_idea`: Hakt Aufgaben per natürlicher Sprache ab (per ID oder Volltextsuche, z. B. *„Die Hecke ist geschnitten“*).
+    - `brainstorm_delete_idea`: Löscht Notizen unwiderruflich per Sprachbefehl.
+    - `brainstorm_list_categories`: Gibt der KI Überblick über alle Kategorien und Aufgabenstatistiken.
+  - **Universell einsetzbar:** Direkt in den Einstellungen jedes Sprachassistenten unter *LLM API: „Brainstorm Hub“* aktivierbar.
+- 🧠 **Intelligente Text-Optimierung & NLP-Bereinigung (v1.4.0):**
   - **Prägnante Notizen statt Gesprächsfloskeln:** Verwandelt gesprochene Sätze wie *„im brainstorm dass heute die kinder vom flughafen abgeholt werden müssen“* vollautomatisch in *„Heute Kinder vom Flughafen abholen“*.
   - **Filterung von Füllwörtern:** Entfernt Einleitungen (*„notiere bitte dass…“*, *„merke dir…“*, *„kannst du aufschreiben…“*, *„ich muss…“*, *„dass wir…“*).
   - **Grammatik-Transformation (Infinitiv):** Wandelt passive Hilfsverb-Endungen (*„…geschnitten werden müssen“* ➔ *„…schneiden“*, *„…repariert werden soll“* ➔ *„…reparieren“*, *„…bezahlt werden muss“* ➔ *„…bezahlen“*) in präzise Handlungsaufforderungen um.
@@ -173,6 +182,7 @@ Die Integration stellt folgende Services bereit:
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.4.20`** | 24.10.2026 | **Assist LLM Tools & Function-Calling Integration:** Vollständige Bereitstellung des offiziellen Home Assistant LLM API (`homeassistant.helpers.llm`) für Sprachmodelle (OpenAI, Google Gemini, Ollama, Groq, lokale LLMs). Implementierung von 5 nativen Werkzeugen (`brainstorm_add_idea`, `brainstorm_get_ideas`, `brainstorm_complete_idea`, `brainstorm_delete_idea`, `brainstorm_list_categories`). Ermöglicht völlig freie, kontextsensitive Konversationen (z. B. *„Was steht im Smarthome noch an?“*, *„Markiere Hecke schneiden als erledigt“* oder *„Wir brauchen neue Blumentöpfe, merk dir das mal“* mit automatischer Kategorisierung). Sauberes Unload-Lifecycle-Management via `async_on_unload`. |
 | **`v1.4.19`** | 24.10.2026 | **Erreichen des offiziellen Silver Quality Scale Status & Home Assistant Logbook / Aktivität Integration:** Vollständige Umsetzung und Erfüllung sämtlicher Kriterien der Home Assistant Integration Quality Scale für den **Silber-Status** (u. a. native `logbook.py`-Plattform mit `async_describe_events` zur lückenlosen Formatierung aller Brainstorm-Ereignisse – Idee erfasst, aktualisiert, erledigt, gelöscht – inklusive Icon und direkter Verknüpfung mit dem Geräte-Logbuch/Aktivitäts-Panel von Home Assistant; nativer Reconfigure-Flow (`async_step_reconfigure`) zur Live-Anpassung der Konfiguration direkt aus der HA-Oberfläche ohne Neuinstallation; standardkonforme Dienst-Fehlerbehandlung mittels `ServiceValidationError` und `HomeAssistantError` (`action-exceptions`); saubere Deregistrierung aller Dienste und Entitäten beim Entladen (`config-entry-unregistered`); offizielle Silver-Klassifizierung in `quality_scale.yaml` und `manifest.json`). |
 | **`v1.4.18`** | 24.10.2026 | **Erreichen des offiziellen Bronze Quality Scale Status & Alexa-Speedup:** Vollständige Zertifizierung und Erfüllung aller Kriterien der Home Assistant Integration Quality Scale für den **Bronze-Status** (u. a. `runtime-data` nach modernstem HA 2024.4+ Standard mit `entry.runtime_data = store`, Parallelitäts-Steuerung `PARALLEL_UPDATES = 0` auf den Plattformen `sensor` und `todo`, Ergänzung von `"quality_scale": "bronze"` in `manifest.json` sowie Bereitstellung der offiziellen `quality_scale.yaml`). Zudem umfassende Performance-Optimierung der Alexa-Sprachsteuerung: Wegfall von künstlichen Delays und redundanten Cloud-Stopps sowie Einführung der direkten Ein-Schritt-Spracherfassung (*„Brainstorm bereit. Sprich deine Notiz oder sage Ansage.“*) für 4x schnellere Dialoge. |
 | **`v1.4.17`** | 23.10.2026 | **Individuelle Kategoriefarben & Pill-Dots:** Vollständige Neuausrichtung des Farbsystems. Jede Kategorie erhält nun eine unverwechselbare, harmonische und kontraststarke Einzelfarbe (z. B. Inbox = Royal Blue `#2563eb`, Smarthome = Aqua/Cyan `#06b6d4`, Haus & Garten = Emerald Green `#10b981`, Projekte = Indigo `#6366f1`, Alltag = Warm Amber `#f59e0b`, Brainstorm = Electric Purple `#a855f7`, Ideen = Pink `#ec4899`, Einkauf = Orange `#ea580c`, Finanzen = Teal `#14b8a6`, Familie = Rose `#f43f5e`, Gesundheit = Lime `#84cc16`). Automatische, deterministische Zuweisung einzigartiger Farbtöne für alle benutzerdefinierten Kategorien via Hash-Algorithmus. Kartenkanten, synaptische Verbindungslinien und Kategorie-Tags in Mindmap und Notizenliste spiegeln die Kategoriefarbe unmittelbar wider. Ergänzung von farbigen Indikatorpunkten (`pill-dot`) in der oberen Kategorie-Leiste zur sofortigen optischen Orientierung. |

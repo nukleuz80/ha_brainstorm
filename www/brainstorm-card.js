@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.19 - Silver Quality Scale & HA Logbook Integration
+ * Version 1.4.20 - Assist LLM Tools & Function-Calling Integration
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",

@@ -135,6 +135,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) -
     # Register services
     _register_services(hass)
 
+    # Register LLM API for Assist & Conversation Agents
+    try:
+        from .llm import async_register_llm_api
+        unregister_llm = async_register_llm_api(hass)
+        entry.async_on_unload(unregister_llm)
+    except Exception as err:
+        _LOGGER.warning("Could not register Brainstorm LLM API: %s", err)
+
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
     return True
 
