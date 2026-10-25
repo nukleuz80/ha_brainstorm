@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.20 - Assist LLM Tools & Function-Calling Integration
+ * Version 1.4.21 - Enhanced Dynamic Category Resolution & Semantic Routing
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",

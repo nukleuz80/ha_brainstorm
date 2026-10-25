@@ -404,3 +404,4 @@ def async_register_llm_api(hass: HomeAssistant) -> Callable[[], None]:
     except Exception as err:
         _LOGGER.warning("Could not register Brainstorm Hub LLM API: %s", err)
         return lambda: None
+

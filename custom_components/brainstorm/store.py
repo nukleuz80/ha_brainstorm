@@ -42,6 +42,7 @@ CATEGORY_ALIASES: dict[str, list[str]] = {
     "Haus & Garten": [
         "haus & garten",
         "haus und garten",
+        "haus & gartenbereich",
         "garten",
         "haus",
         "gartenarbeit",
@@ -57,12 +58,62 @@ CATEGORY_ALIASES: dict[str, list[str]] = {
         "homeautomation",
         "home assistant",
         "homeassistant",
+        "iot",
     ],
-    "Projekte": ["projekte", "projekt", "basteln", "werkstatt", "bauprojekt"],
-    "Alltag": ["alltag", "haushalt", "erledigungen", "einkauf", "familie"],
+    "Projekte": [
+        "projekte",
+        "projekt",
+        "bauprojekte",
+        "bauprojekt",
+        "bastelprojekte",
+        "bastelprojekt",
+        "basteln",
+        "werkstatt",
+        "diy",
+    ],
+    "Alltag": [
+        "alltag",
+        "haushalt",
+        "erledigungen",
+        "erledigung",
+        "einkauf",
+        "einkäufe",
+        "familie",
+        "privat",
+        "persönlich",
+    ],
+    "Brainstorm": [
+        "brainstorm",
+        "brainstorming",
+        "brain storm",
+        "brain-storm",
+        "brainstorm hub",
+        "brainstorm app",
+        "mindmap",
+        "mind map",
+    ],
 }
 
 CATEGORY_KEYWORDS: dict[str, list[str]] = {
+    "Brainstorm": [
+        "brainstorm",
+        "brainstorming",
+        "mindmap",
+        "synapse",
+        "synapsen",
+        "gedanken",
+        "geistesblitz",
+        "ideenkarte",
+        "ideensammlung",
+        "kartendarstellung",
+        "visualisierung",
+        "radial",
+        "app",
+        "notiz-app",
+        "logbuch",
+        "funktion",
+        "karten",
+    ],
     "Haus & Garten": [
         "garten",
         "rasen",
@@ -179,6 +230,13 @@ CATEGORY_KEYWORDS: dict[str, list[str]] = {
     "Projekte": [
         "projekt",
         "projekte",
+        "erweitern",
+        "feature",
+        "entwicklung",
+        "entwickeln",
+        "programmieren",
+        "implementieren",
+        "konzept",
         "bauen",
         "basteln",
         "umbau",
@@ -369,6 +427,27 @@ class BrainstormStore:
         clean_text = text.strip()
         category: str | None = None
 
+        # Build dynamic alias and keyword lookup for all registered categories
+        active_aliases: dict[str, list[str]] = {}
+        active_keywords: dict[str, list[str]] = {}
+
+        for cat in self._categories:
+            if cat.lower() == "inbox":
+                continue
+            aliases = list(CATEGORY_ALIASES.get(cat, []))
+            cat_clean = cat.strip().lower()
+            if cat_clean not in aliases:
+                aliases.append(cat_clean)
+            if "&" in cat_clean:
+                aliases.append(cat_clean.replace("&", "und").strip())
+            active_aliases[cat] = aliases
+
+            kws = list(CATEGORY_KEYWORDS.get(cat, []))
+            for word in re.findall(r"[a-zA-Z0-9äöüÄÖÜß]{3,}", cat_clean):
+                if word not in kws and word not in ("und", "der", "die", "das"):
+                    kws.append(word)
+            active_keywords[cat] = kws
+
         # 0. Check explicit category if provided
         if explicit_category and explicit_category.strip() and explicit_category.lower() != "auto":
             exp = explicit_category.strip()
@@ -377,10 +456,10 @@ class BrainstormStore:
                 if c.lower() == exp.lower():
                     category = c
                     break
-            # Alias match (e.g. 'Garten' -> 'Haus & Garten')
+            # Alias match
             if not category:
-                for cat_name, aliases in CATEGORY_ALIASES.items():
-                    if cat_name in self._categories and exp.lower() in [a.lower() for a in aliases]:
+                for cat_name, aliases in active_aliases.items():
+                    if exp.lower() in [a.lower() for a in aliases]:
                         category = cat_name
                         break
             if not category:
@@ -399,29 +478,47 @@ class BrainstormStore:
             if match_prefix:
                 cand = match_prefix.group(1).strip()
                 rem_text = match_prefix.group(2).strip()
-                # Direct match with existing categories
                 for c in self._categories:
                     if c.lower() == cand.lower():
                         category = c
                         clean_text = rem_text
                         break
-                # Alias match (e.g. 'Garten' -> 'Haus & Garten')
                 if not category:
-                    for cat_name, aliases in CATEGORY_ALIASES.items():
-                        if cat_name in self._categories and cand.lower() in [a.lower() for a in aliases]:
+                    for cat_name, aliases in active_aliases.items():
+                        if cand.lower() in [a.lower() for a in aliases]:
                             category = cat_name
                             clean_text = rem_text
                             break
 
-        # 2. Prepositional Indicator phrases:
-        # e.g. 'für den Garten ...', 'im Garten ...', 'in der Werkstatt ...', 'fürs Smarthome ...'
+        # 2. Compound Project / Topic Prefix:
+        # e.g. 'Projekt Brainstorm erweitern' -> Category: 'Brainstorm', Text: 'Brainstorm erweitern'
+        # or 'Projekt Gartenhaus bauen' -> Category: 'Projekte', Text: 'Gartenhaus bauen'
         if not category:
-            for cat_name, aliases in CATEGORY_ALIASES.items():
-                if cat_name not in self._categories:
-                    continue
+            match_compound = re.match(
+                r"^(?:im\s+|in\s+|für\s+|beim\s+)?(?:projekt|thema|bereich)\s+([a-zA-Z0-9äöüÄÖÜß\-_&]{2,30})(?::|\s+dass\s+|\s+ich\s+|\s+wir\s+|\s*,\s*|\s+)(.+)$",
+                clean_text,
+                re.IGNORECASE,
+            )
+            if match_compound:
+                target_cand = match_compound.group(1).strip()
+                rem_content = match_compound.group(2).strip()
+                # Check if target_cand matches an active category (e.g. Brainstorm)
+                for cat_name, aliases in active_aliases.items():
+                    if target_cand.lower() in [a.lower() for a in aliases]:
+                        category = cat_name
+                        clean_text = f"{target_cand.capitalize()} {rem_content}"
+                        break
+                if not category and "Projekte" in self._categories:
+                    category = "Projekte"
+                    clean_text = f"{target_cand} {rem_content}"
+
+        # 3. Prepositional / Leading Indicator phrases:
+        # e.g. 'für den Garten ...', 'im Garten ...', 'fürs Smarthome ...', 'für Brainstorm ...'
+        if not category:
+            for cat_name, aliases in active_aliases.items():
                 for alias in sorted(aliases, key=len, reverse=True):
                     pattern = (
-                        rf"^(?:(?:für|fürs|im|in\s+der|in\s+dem|auf\s+der|auf\s+dem|am)\s+"
+                        rf"^(?:(?:für|fürs|im|in\s+der|in\s+dem|auf\s+der|auf\s+dem|am|beim|zum|zur)\s+"
                         rf"(?:den\s+|das\s+|die\s+|dem\s+)?)?{re.escape(alias)}"
                         rf"(?::|\s+dass\s+|\s+ich\s+|\s+wir\s+|\s*,\s*|\s+)(.+)$"
                     )
@@ -433,7 +530,7 @@ class BrainstormStore:
                 if category:
                     break
 
-        # 3. Hashtags matching
+        # 4. Hashtags matching
         if not category and tags:
             for tag in tags:
                 for c in self._categories:
@@ -441,40 +538,48 @@ class BrainstormStore:
                         category = c
                         break
                 if not category:
-                    for cat_name, aliases in CATEGORY_ALIASES.items():
-                        if cat_name in self._categories and tag.lower() in [a.lower() for a in aliases]:
+                    for cat_name, aliases in active_aliases.items():
+                        if tag.lower() in [a.lower() for a in aliases]:
                             category = cat_name
                             break
                 if category:
                     break
 
-        # 4. Contextual Keyword Scoring (Semantic matching)
+        # 5. Contextual Keyword & Semantic Scoring
         if not category:
             lower_text = clean_text.lower()
-            words = re.findall(r"[a-zA-Z0-9äöüÄÖÜß]+", lower_text)
-            scores: dict[str, int] = {c: 0 for c in self._categories}
+            words = set(re.findall(r"[a-zA-Z0-9äöüÄÖÜß]+", lower_text))
+            scores: dict[str, int] = {c: 0 for c in self._categories if c.lower() != "inbox"}
 
-            for cat_name, kws in CATEGORY_KEYWORDS.items():
-                if cat_name in self._categories:
-                    for kw in kws:
-                        if " " in kw:
-                            if kw in lower_text:
-                                scores[cat_name] += 3
-                        else:
-                            if kw in words:
-                                scores[cat_name] += 2
-                            elif any(w.startswith(kw) or w.endswith(kw) for w in words if len(w) > 4 and len(kw) > 3):
-                                scores[cat_name] += 1
+            for cat_name, kws in active_keywords.items():
+                cat_aliases = active_aliases.get(cat_name, [cat_name.lower()])
+                # High priority if an alias is directly mentioned in the sentence
+                for alias in cat_aliases:
+                    if alias in words:
+                        scores[cat_name] += 12
+                    elif " " in alias and alias in lower_text:
+                        scores[cat_name] += 10
 
-            best_cat = max(scores, key=scores.get)
-            if scores[best_cat] > 0:
-                category = best_cat
+                for kw in kws:
+                    if " " in kw:
+                        if kw in lower_text:
+                            scores[cat_name] += 4
+                    else:
+                        if kw in words:
+                            scores[cat_name] += 3
+                        elif any(w.startswith(kw) or w.endswith(kw) for w in words if len(w) > 4 and len(kw) > 3):
+                            scores[cat_name] += 1
+
+            if scores:
+                best_cat = max(scores, key=scores.get)
+                if scores[best_cat] > 0:
+                    category = best_cat
 
         # Fallback to Inbox
         if not category or category not in self._categories:
             category = "Inbox"
 
-        # 5. Smart NLP Text Normalization
+        # 6. Smart NLP Text Normalization
         if self._smart_formatting:
             formatted = clean_and_format_idea_text(clean_text)
             if formatted:
