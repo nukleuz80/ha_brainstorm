@@ -1,7 +1,7 @@
 # 🧠 Brainstorm Hub for Home Assistant
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/default)
-[![Version](https://img.shields.io/badge/version-1.4.21-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.4.22-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver-C0C0C0.svg)](https://developers.home-assistant.io/docs/integration_quality_scale_index/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
@@ -14,7 +14,14 @@ Egal ob beim Kochen, im Garten oder unterwegs: Erfasse Geistesblitze sekundensch
 
 ## 🌟 Highlights & Features
 
-- 🤖 **NEU (v1.4.20): Assist LLM Tools & Function-Calling API:**
+- 🎯 **NEU (v1.4.22): Intelligentes Prioritäten-Management & Visuelle Dringlichkeitsstufen:**
+  - **4 Prioritätsstufen:** `low` (🟢 Niedrig), `medium` (🟡 Mittel / Standard), `high` (🔴 Hoch) und `urgent` (🔥 Dringend).
+  - **Automatische Spracherkennung (NLP & Heuristik):** Natürliche Erkennung von Dringlichkeits-Signalwörtern und Tags per Sprache oder Texteingabe (z. B. *„Dringend Garten: Rasenmäher reparieren“*, *„Garten: Wichtig Rasenmäher reparieren“*, *„Sofort Notiz…“*, *„Prio 1…“*, *„Wenn Zeit ist…“*, *„!urgent“*, *„!high“*, *„!low“*). Das System erkennt Prioritäten unabhängig von der Reihenfolge vor oder nach dem Kategoriepräfix, filtert die Signalwörter sauber aus dem Notiztext und setzt die Priorität automatisch.
+  - **1-Klick Prioritätswechsel im Dashboard:** Direktes Weiterschalten der Priorität (`Mittel` ➔ `Hoch` ➔ `Dringend` ➔ `Niedrig`) per Klick auf das Prioritäts-Badge in der Notizenliste (`brainstorm-card`) oder der Mindmap (`brainstorm-mindmap-card`).
+  - **Prioritätsauswahl in Toolbar & Dialogen:** Schnellauswahl in der Erfassungszeile sowie farbige Chip-Auswahl in Neu- und Bearbeiten-Dialogen.
+  - **Visuelle Effekte in der Mindmap:** Dringende Gedankenwolken (`urgent`) pulsieren mit einem sanften Feuereffekt (`cloud-urgent`), während hohe Prioritäten (`high`) durch einen dezenten Warm-Glow hervorgehoben werden.
+  - **Vollständige Plattform-Integration:** Prioritäten werden im Sensor (`priority_counts`), in To-do-Listen (`todo.brainstorm_*`), im Logbook, in den LLM-Tools und beim Markdown-Export (`[🔥 Dringend]`, `[🔴 Hoch]`) lückenlos gepflegt.
+- 🤖 **Assist LLM Tools & Function-Calling API (v1.4.20):**
   - **Freie natürliche Sprache statt starren Befehlen:** Vollständige Integration in das native Home Assistant LLM API (`homeassistant.helpers.llm`). Sprachmodelle (wie OpenAI, Google Gemini, Ollama oder lokale LLMs) erhalten direkten Zugriff auf Brainstorm als Werkzeugsatz.
   - **5 mächtige KI-Werkzeuge:**
     - `brainstorm_add_idea`: Erfasst Gedanken und ordnet sie kontextbezogen der passenden Kategorie zu.
@@ -196,6 +203,7 @@ Die Integration stellt folgende Services bereit:
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.4.22`** | 25.10.2026 | **Prioritäten-Management & Visuelle Dringlichkeit:** Einführung von vier Prioritätsstufen (`low` 🟢, `medium` 🟡, `high` 🔴, `urgent` 🔥) mit automatischer Signalwort- und Tag-Erkennung (`dringend`, `wichtig`, `sofort`, `eilig`, `prio 1`, `wenn zeit`, `!urgent`, `!high` etc.) bei Spracheingaben via Alexa und Assist. 2-Pass-Parsing filtert Signalwörter unabhängig von der Reihenfolge der Kategoriepräfixe sauber heraus. 1-Klick-Prioritätswechsel direkt auf den Badges beider Lovelace-Cards (`brainstorm-card` und `brainstorm-mindmap-card`). Feuer- und Puls-Effekte für dringende Gedankenwolken in der Mindmap. Vollständige Integration in Sensoren (`priority_counts`), To-do-Listen, Logbook, Markdown-Export und Assist LLM Function-Calling API. |
 | **`v1.4.21`** | 25.10.2026 | **Dynamische Kategorie-Erkennung & Semantisches Routing:** Vollständige dynamische Synthese von Aliassen und Schlagwörtern für alle aktiven Kategorien (inkl. *„Brainstorm“* und frei erstellten Kategorien) zur Laufzeit. Direkte Erkennung zusammengesetzter Projekt- und Themenpräfixe (*„Projekt Brainstorm erweitern“* ➔ ordnet *„Brainstorm erweitern“* zielsicher der Kategorie *„Projekte“* bzw. *„Brainstorm“* zu, statt in der Inbox zu landen). Behebung einer Fehlleitung im Alexa-Hauptmenü-Workflow (`brainstorm_alexa_main_menu_response`), bei der gesprochene Notizen mit Projektbezug versehentlich als Abfragebefehl abgefangen wurden. |
 | **`v1.4.20`** | 24.10.2026 | **Assist LLM Tools & Function-Calling Integration:** Vollständige Bereitstellung des offiziellen Home Assistant LLM API (`homeassistant.helpers.llm`) für Sprachmodelle (OpenAI, Google Gemini, Ollama, Groq, lokale LLMs). Implementierung von 5 nativen Werkzeugen (`brainstorm_add_idea`, `brainstorm_get_ideas`, `brainstorm_complete_idea`, `brainstorm_delete_idea`, `brainstorm_list_categories`). Ermöglicht völlig freie, kontextsensitive Konversationen (z. B. *„Was steht im Smarthome noch an?“*, *„Markiere Hecke schneiden als erledigt“* oder *„Wir brauchen neue Blumentöpfe, merk dir das mal“* mit automatischer Kategorisierung). Sauberes Unload-Lifecycle-Management via `async_on_unload`. |
 | **`v1.4.19`** | 24.10.2026 | **Erreichen des offiziellen Silver Quality Scale Status & Home Assistant Logbook / Aktivität Integration:** Vollständige Umsetzung und Erfüllung sämtlicher Kriterien der Home Assistant Integration Quality Scale für den **Silber-Status** (u. a. native `logbook.py`-Plattform mit `async_describe_events` zur lückenlosen Formatierung aller Brainstorm-Ereignisse – Idee erfasst, aktualisiert, erledigt, gelöscht – inklusive Icon und direkter Verknüpfung mit dem Geräte-Logbuch/Aktivitäts-Panel von Home Assistant; nativer Reconfigure-Flow (`async_step_reconfigure`) zur Live-Anpassung der Konfiguration direkt aus der HA-Oberfläche ohne Neuinstallation; standardkonforme Dienst-Fehlerbehandlung mittels `ServiceValidationError` und `HomeAssistantError` (`action-exceptions`); saubere Deregistrierung aller Dienste und Entitäten beim Entladen (`config-entry-unregistered`); offizielle Silver-Klassifizierung in `quality_scale.yaml` und `manifest.json`). |

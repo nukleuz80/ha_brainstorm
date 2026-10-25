@@ -32,9 +32,18 @@ ATTR_CATEGORY = "category"
 ATTR_SOURCE = "source"
 ATTR_DEVICE = "device"
 ATTR_TAGS = "tags"
+ATTR_PRIORITY = "priority"
 ATTR_STATUS = "status"
 ATTR_CREATED_AT = "created_at"
 ATTR_UPDATED_AT = "updated_at"
+
+# Priorities
+PRIORITY_LOW = "low"
+PRIORITY_MEDIUM = "medium"
+PRIORITY_HIGH = "high"
+PRIORITY_URGENT = "urgent"
+VALID_PRIORITIES = [PRIORITY_LOW, PRIORITY_MEDIUM, PRIORITY_HIGH, PRIORITY_URGENT]
+DEFAULT_PRIORITY = PRIORITY_MEDIUM
 
 # Platforms
 PLATFORMS = ["todo", "sensor"]

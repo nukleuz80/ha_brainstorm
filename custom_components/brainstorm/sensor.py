@@ -15,9 +15,11 @@ from .const import (
     ATTR_CREATED_AT,
     ATTR_DEVICE,
     ATTR_ID,
+    ATTR_PRIORITY,
     ATTR_SOURCE,
     ATTR_STATUS,
     ATTR_TEXT,
+    DEFAULT_PRIORITY,
     DOMAIN,
 )
 from .store import BrainstormStore
@@ -57,7 +59,7 @@ class BrainstormOverviewSensor(SensorEntity):
             name="Brainstorm Hub",
             manufacturer="nukleuz80",
             model="Brainstorm Hub",
-            sw_version="1.4.21",
+            sw_version="1.4.22",
         )
 
     async def async_added_to_hass(self) -> None:
@@ -82,12 +84,20 @@ class BrainstormOverviewSensor(SensorEntity):
                 [i for i in active_ideas if i.get(ATTR_CATEGORY) == cat]
             )
 
+        counts_by_prio = {
+            "urgent": len([i for i in active_ideas if i.get(ATTR_PRIORITY) == "urgent"]),
+            "high": len([i for i in active_ideas if i.get(ATTR_PRIORITY) == "high"]),
+            "medium": len([i for i in active_ideas if i.get(ATTR_PRIORITY, DEFAULT_PRIORITY) == "medium"]),
+            "low": len([i for i in active_ideas if i.get(ATTR_PRIORITY) == "low"]),
+        }
+
         latest = active_ideas[0] if active_ideas else None
         latest_info = None
         if latest:
             latest_info = {
                 "text": latest.get(ATTR_TEXT),
                 "category": latest.get(ATTR_CATEGORY),
+                "priority": latest.get(ATTR_PRIORITY, DEFAULT_PRIORITY),
                 "created_at": latest.get(ATTR_CREATED_AT),
                 "source": latest.get(ATTR_SOURCE),
                 "device": latest.get(ATTR_DEVICE),
@@ -97,6 +107,7 @@ class BrainstormOverviewSensor(SensorEntity):
             {
                 "text": i.get(ATTR_TEXT),
                 "category": i.get(ATTR_CATEGORY),
+                "priority": i.get(ATTR_PRIORITY, DEFAULT_PRIORITY),
                 "created_at": i.get(ATTR_CREATED_AT),
                 "source": i.get(ATTR_SOURCE),
                 "device": i.get(ATTR_DEVICE),
@@ -110,6 +121,7 @@ class BrainstormOverviewSensor(SensorEntity):
             "completed_count": len(completed_ideas),
             "categories": self._store.categories,
             "category_counts": counts_by_cat,
+            "priority_counts": counts_by_prio,
             "latest_idea": latest_info,
             "recent_ideas": recent_list,
             "ideas": [
@@ -117,6 +129,7 @@ class BrainstormOverviewSensor(SensorEntity):
                     "id": i.get(ATTR_ID),
                     "text": i.get(ATTR_TEXT),
                     "category": i.get(ATTR_CATEGORY),
+                    "priority": i.get(ATTR_PRIORITY, DEFAULT_PRIORITY),
                     "created_at": i.get(ATTR_CREATED_AT),
                     "source": i.get(ATTR_SOURCE),
                     "device": i.get(ATTR_DEVICE),
@@ -129,6 +142,7 @@ class BrainstormOverviewSensor(SensorEntity):
                     "id": i.get(ATTR_ID),
                     "text": i.get(ATTR_TEXT),
                     "category": i.get(ATTR_CATEGORY),
+                    "priority": i.get(ATTR_PRIORITY, DEFAULT_PRIORITY),
                     "created_at": i.get(ATTR_CREATED_AT),
                     "source": i.get(ATTR_SOURCE),
                     "device": i.get(ATTR_DEVICE),

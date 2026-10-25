@@ -17,6 +17,18 @@ add_idea:
       example: "Smarthome"
       selector:
         text:
+    priority:
+      name: Priorität (Optional)
+      description: Dringlichkeit der Idee (low, medium, high, urgent). Wird andernfalls automatisch erkannt.
+      required: false
+      example: "high"
+      selector:
+        select:
+          options:
+            - low
+            - medium
+            - high
+            - urgent
     source:
       name: Quelle
       description: Woher die Idee stammt (z.B. alexa, companion, dashboard, etc.).
@@ -62,6 +74,18 @@ update_idea:
       required: false
       selector:
         text:
+    priority:
+      name: Priorität
+      description: Neue Priorität (low, medium, high, urgent).
+      required: false
+      example: "high"
+      selector:
+        select:
+          options:
+            - low
+            - medium
+            - high
+            - urgent
     status:
       name: Status
       description: Neuer Status (active, completed, archived).
@@ -100,6 +124,17 @@ get_ideas:
       required: false
       selector:
         text:
+    priority:
+      name: Priorität
+      description: Optional nach Priorität filtern (low, medium, high, urgent).
+      required: false
+      selector:
+        select:
+          options:
+            - low
+            - medium
+            - high
+            - urgent
     status:
       name: Status
       description: Status-Filter (active, completed oder all).

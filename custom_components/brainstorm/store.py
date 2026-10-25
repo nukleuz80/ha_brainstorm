@@ -17,6 +17,7 @@ from .const import (
     ATTR_CREATED_AT,
     ATTR_DEVICE,
     ATTR_ID,
+    ATTR_PRIORITY,
     ATTR_SOURCE,
     ATTR_STATUS,
     ATTR_TAGS,
@@ -25,13 +26,19 @@ from .const import (
     CONF_SMART_FORMATTING,
     DEFAULT_CATEGORIES,
     DEFAULT_MARKDOWN_PATH,
+    DEFAULT_PRIORITY,
     DOMAIN,
     EVENT_IDEA_ADDED,
     EVENT_IDEA_COMPLETED,
     EVENT_IDEA_DELETED,
     EVENT_IDEA_UPDATED,
+    PRIORITY_HIGH,
+    PRIORITY_LOW,
+    PRIORITY_MEDIUM,
+    PRIORITY_URGENT,
     STORAGE_KEY,
     STORAGE_VERSION,
+    VALID_PRIORITIES,
 )
 from .nlp import clean_and_format_idea_text
 
@@ -396,7 +403,11 @@ class BrainstormStore:
         """Load ideas and categories from storage."""
         data = await self._store.async_load()
         if data:
-            self._ideas = {item[ATTR_ID]: item for item in data.get("ideas", [])}
+            self._ideas = {}
+            for item in data.get("ideas", []):
+                if ATTR_PRIORITY not in item:
+                    item[ATTR_PRIORITY] = DEFAULT_PRIORITY
+                self._ideas[item[ATTR_ID]] = item
             loaded_cats = data.get("categories", [])
             for cat in loaded_cats:
                 if cat not in self._categories:
@@ -420,11 +431,85 @@ class BrainstormStore:
         if self._auto_export:
             await self.async_export_to_markdown()
 
+    def parse_priority(
+        self, text: str, explicit_priority: str | None = None
+    ) -> tuple[str, str]:
+        """Extract priority from explicit value, tags, prefixes, or return medium as default."""
+        if explicit_priority:
+            e = str(explicit_priority).strip().lower()
+            if e in ("urgent", "dringend", "sofort", "notfall", "highest"):
+                return text, PRIORITY_URGENT
+            if e in ("high", "hoch", "wichtig", "prio1", "1"):
+                return text, PRIORITY_HIGH
+            if e in ("low", "niedrig", "prio3", "3", "später"):
+                return text, PRIORITY_LOW
+            return text, PRIORITY_MEDIUM
+
+        clean = text.strip()
+
+        # Priority tags anywhere (e.g. !urgent, !high, !low, !wichtig)
+        tag_match = re.search(
+            r"(?:^|\s)(!(?:urgent|dringend|notfall|sofort|high|hoch|wichtig|prio1|1|low|niedrig|prio3|3|medium|mittel|normal|prio2|2))(?:\s|$)",
+            clean,
+            re.IGNORECASE,
+        )
+        if tag_match:
+            tag = tag_match.group(1).lower().lstrip("!")
+            clean = re.sub(re.escape(tag_match.group(0).strip()), "", clean).strip()
+            if tag in ("urgent", "dringend", "notfall", "sofort"):
+                return clean, PRIORITY_URGENT
+            if tag in ("high", "hoch", "wichtig", "prio1", "1"):
+                return clean, PRIORITY_HIGH
+            if tag in ("low", "niedrig", "prio3", "3"):
+                return clean, PRIORITY_LOW
+            return clean, PRIORITY_MEDIUM
+
+        # Urgent prefixes
+        m_urg = re.match(
+            r"^(?:dringend|sofort|eilig|asap|notfall|höchste\s+priorität|prio\s+dringend|prio\s+sofort)(?::|\s+|,)\s*(.+)$",
+            clean,
+            re.IGNORECASE,
+        )
+        if m_urg:
+            return m_urg.group(1).strip(), PRIORITY_URGENT
+
+        # High prefixes
+        m_high = re.match(
+            r"^(?:wichtig|hohe\s+priorität|priorität\s+hoch|prio\s+1|prio\s+hoch)(?::|\s+|,)\s*(.+)$",
+            clean,
+            re.IGNORECASE,
+        )
+        if m_high:
+            return m_high.group(1).strip(), PRIORITY_HIGH
+
+        # Low prefixes
+        m_low = re.match(
+            r"^(?:niedrige\s+priorität|priorität\s+niedrig|prio\s+3|prio\s+niedrig|wenn\s+zeit(?:\s+ist)?|später\s+mal|irgendwann|optional)(?::|\s+|,)\s*(.+)$",
+            clean,
+            re.IGNORECASE,
+        )
+        if m_low:
+            return m_low.group(1).strip(), PRIORITY_LOW
+
+        # Medium prefixes
+        m_med = re.match(
+            r"^(?:normale\s+priorität|mittlere\s+priorität|priorität\s+normal|priorität\s+mittel|prio\s+2|prio\s+mittel)(?::|\s+|,)\s*(.+)$",
+            clean,
+            re.IGNORECASE,
+        )
+        if m_med:
+            return m_med.group(1).strip(), PRIORITY_MEDIUM
+
+        return clean, PRIORITY_MEDIUM
+
     def parse_text_and_category(
-        self, text: str, explicit_category: str | None = None
-    ) -> tuple[str, str, list[str]]:
-        """Parse raw text to extract category, clean text and hashtags using multi-tier heuristics."""
-        clean_text = text.strip()
+        self,
+        text: str,
+        explicit_category: str | None = None,
+        explicit_priority: str | None = None,
+    ) -> tuple[str, str, list[str], str]:
+        """Parse raw text to extract category, clean text, hashtags and priority."""
+        clean_text, resolved_prio = self.parse_priority(text, explicit_priority)
         category: str | None = None
 
         # Build dynamic alias and keyword lookup for all registered categories
@@ -579,18 +664,25 @@ class BrainstormStore:
         if not category or category not in self._categories:
             category = "Inbox"
 
-        # 6. Smart NLP Text Normalization
+        # 6. Check priority once more if still medium (in case priority keyword appeared after stripped category prefix)
+        if resolved_prio == PRIORITY_MEDIUM and not explicit_priority:
+            clean_text, detected_prio = self.parse_priority(clean_text)
+            if detected_prio != PRIORITY_MEDIUM:
+                resolved_prio = detected_prio
+
+        # 7. Smart NLP Text Normalization
         if self._smart_formatting:
             formatted = clean_and_format_idea_text(clean_text)
             if formatted:
                 clean_text = formatted
 
-        return clean_text, category, tags
+        return clean_text, category, tags, resolved_prio
 
     async def async_add_idea(
         self,
         text: str,
         category: str | None = None,
+        priority: str | None = None,
         source: str = "manual",
         tags: list[str] | None = None,
         device: str | None = None,
@@ -610,7 +702,9 @@ class BrainstormStore:
             _LOGGER.warning("Ignored empty or invalid idea text: %s", text)
             raise ServiceValidationError(f"Ungültiger oder leerer Notiz-Text: {text}")
 
-        clean_text, resolved_cat, parsed_tags = self.parse_text_and_category(text, category)
+        clean_text, resolved_cat, parsed_tags, resolved_prio = self.parse_text_and_category(
+            text, category, priority
+        )
 
         all_tags = list(set((tags or []) + parsed_tags))
         now_iso = dt_util.now().isoformat()
@@ -624,6 +718,7 @@ class BrainstormStore:
             ATTR_ID: idea_id,
             ATTR_TEXT: clean_text,
             ATTR_CATEGORY: resolved_cat,
+            ATTR_PRIORITY: resolved_prio,
             ATTR_SOURCE: source,
             ATTR_DEVICE: (device or "").strip() if device else None,
             ATTR_TAGS: all_tags,
@@ -638,7 +733,13 @@ class BrainstormStore:
 
         # Fire event for automations (e.g. Alexa TTS confirmation or mobile push)
         self.hass.bus.async_fire(EVENT_IDEA_ADDED, idea)
-        _LOGGER.info("Brainstorm idea [%s] added in category '%s' (device: %s)", idea_id, resolved_cat, device)
+        _LOGGER.info(
+            "Brainstorm idea [%s] added in category '%s' (prio: %s, device: %s)",
+            idea_id,
+            resolved_cat,
+            resolved_prio,
+            device,
+        )
         return idea
 
     async def async_update_idea(
@@ -646,6 +747,7 @@ class BrainstormStore:
         idea_id: str,
         text: str | None = None,
         category: str | None = None,
+        priority: str | None = None,
         status: str | None = None,
         device: str | None = None,
     ) -> dict[str, Any] | None:
@@ -662,6 +764,9 @@ class BrainstormStore:
             if cat_clean not in self._categories:
                 self._categories.append(cat_clean)
             idea[ATTR_CATEGORY] = cat_clean
+        if priority is not None:
+            _, normalized_prio = self.parse_priority("", priority)
+            idea[ATTR_PRIORITY] = normalized_prio
         if status is not None:
             idea[ATTR_STATUS] = status
         if device is not None:
@@ -670,6 +775,14 @@ class BrainstormStore:
         idea[ATTR_UPDATED_AT] = dt_util.now().isoformat()
         await self.async_save()
         self._notify_listeners()
+
+        event_name = (
+            EVENT_IDEA_COMPLETED
+            if status == "completed"
+            else EVENT_IDEA_UPDATED
+        )
+        self.hass.bus.async_fire(event_name, idea)
+        return idea
 
         event_name = (
             EVENT_IDEA_COMPLETED
@@ -744,14 +857,19 @@ class BrainstormStore:
         return True
 
     def get_ideas_by_category(
-        self, category: str | None = None, status: str | None = "active"
+        self,
+        category: str | None = None,
+        status: str | None = "active",
+        priority: str | None = None,
     ) -> list[dict[str, Any]]:
-        """Filter ideas by category and status."""
+        """Filter ideas by category, status and priority."""
         results = []
         for idea in self.ideas:
             if category and idea.get(ATTR_CATEGORY) != category:
                 continue
             if status and idea.get(ATTR_STATUS) != status:
+                continue
+            if priority and idea.get(ATTR_PRIORITY, DEFAULT_PRIORITY) != priority:
                 continue
             results.append(idea)
         return results
@@ -870,7 +988,16 @@ class BrainstormStore:
                                 src_str = f" `[{dev}]`"
                             else:
                                 src_str = ""
-                            f.write(f"- [ ] {item.get(ATTR_TEXT)}{src_str} _({created})_\n")
+                            prio = item.get(ATTR_PRIORITY, DEFAULT_PRIORITY)
+                            if prio == PRIORITY_URGENT:
+                                prio_str = " `[🔥 Dringend]`"
+                            elif prio == PRIORITY_HIGH:
+                                prio_str = " `[🔴 Hoch]`"
+                            elif prio == PRIORITY_LOW:
+                                prio_str = " `[🟢 Niedrig]`"
+                            else:
+                                prio_str = ""
+                            f.write(f"- [ ] {item.get(ATTR_TEXT)}{prio_str}{src_str} _({created})_\n")
                         f.write("\n")
 
                     if completed:

@@ -16,6 +16,7 @@ from .const import (
     ATTR_CATEGORY,
     ATTR_DEVICE,
     ATTR_ID,
+    ATTR_PRIORITY,
     ATTR_SOURCE,
     ATTR_STATUS,
     ATTR_TAGS,
@@ -46,6 +47,7 @@ SERVICE_ADD_IDEA_SCHEMA = vol.Schema(
     {
         vol.Required(ATTR_TEXT): cv.string,
         vol.Optional(ATTR_CATEGORY): vol.Any(None, cv.string),
+        vol.Optional(ATTR_PRIORITY): vol.Any(None, cv.string),
         vol.Optional(ATTR_SOURCE, default="manual"): cv.string,
         vol.Optional(ATTR_DEVICE): vol.Any(None, cv.string),
         vol.Optional(ATTR_TAGS): vol.All(cv.ensure_list, [cv.string]),
@@ -58,6 +60,7 @@ SERVICE_UPDATE_IDEA_SCHEMA = vol.Schema(
         vol.Required(ATTR_ID): cv.string,
         vol.Optional(ATTR_TEXT): cv.string,
         vol.Optional(ATTR_CATEGORY): cv.string,
+        vol.Optional(ATTR_PRIORITY): vol.Any(None, cv.string),
         vol.Optional(ATTR_STATUS): vol.In(["active", "completed", "archived"]),
         vol.Optional(ATTR_DEVICE): vol.Any(None, cv.string),
     },
@@ -73,6 +76,7 @@ SERVICE_DELETE_IDEA_SCHEMA = vol.Schema(
 SERVICE_GET_IDEAS_SCHEMA = vol.Schema(
     {
         vol.Optional(ATTR_CATEGORY): cv.string,
+        vol.Optional(ATTR_PRIORITY): cv.string,
         vol.Optional(ATTR_STATUS, default="active"): vol.In(
             ["active", "completed", "all", ""]
         ),
@@ -120,6 +124,18 @@ type BrainstormConfigEntry = ConfigEntry[BrainstormStore]
 
 async def async_setup_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) -> bool:
     """Set up Brainstorm Hub from a config entry."""
+    import importlib
+    import sys
+    for mod in ["const", "nlp", "store", "sensor", "todo", "llm", "logbook"]:
+        full_name = f"custom_components.brainstorm.{mod}"
+        if full_name in sys.modules:
+            try:
+                importlib.reload(sys.modules[full_name])
+            except Exception as err:
+                _LOGGER.debug("Could not live-reload %s: %s", full_name, err)
+
+    from .store import BrainstormStore
+
     hass.data.setdefault(DOMAIN, {})
 
     store = BrainstormStore(hass, entry.options or entry.data)
@@ -194,6 +210,7 @@ def _register_services(hass: HomeAssistant) -> None:
 
         text = call.data[ATTR_TEXT]
         category = call.data.get(ATTR_CATEGORY)
+        priority = call.data.get(ATTR_PRIORITY)
         source = call.data.get(ATTR_SOURCE, "manual")
         device = call.data.get(ATTR_DEVICE)
         tags = call.data.get(ATTR_TAGS)
@@ -201,6 +218,7 @@ def _register_services(hass: HomeAssistant) -> None:
         idea = await store.async_add_idea(
             text=text,
             category=category,
+            priority=priority,
             source=source,
             device=device,
             tags=tags,
@@ -216,6 +234,7 @@ def _register_services(hass: HomeAssistant) -> None:
         idea_id = call.data[ATTR_ID]
         text = call.data.get(ATTR_TEXT)
         category = call.data.get(ATTR_CATEGORY)
+        priority = call.data.get(ATTR_PRIORITY)
         status = call.data.get(ATTR_STATUS)
         device = call.data.get(ATTR_DEVICE)
 
@@ -223,6 +242,7 @@ def _register_services(hass: HomeAssistant) -> None:
             idea_id=idea_id,
             text=text,
             category=category,
+            priority=priority,
             status=status,
             device=device,
         )
@@ -245,11 +265,14 @@ def _register_services(hass: HomeAssistant) -> None:
             raise HomeAssistantError("Brainstorm store is not initialized")
 
         category = call.data.get(ATTR_CATEGORY)
+        priority = call.data.get(ATTR_PRIORITY)
         status_filter = call.data.get(ATTR_STATUS, "active")
         if status_filter == "all" or not status_filter:
             status_filter = None
 
-        ideas = store.get_ideas_by_category(category=category, status=status_filter)
+        ideas = store.get_ideas_by_category(
+            category=category, status=status_filter, priority=priority
+        )
         return {
             "count": len(ideas),
             "ideas": ideas,

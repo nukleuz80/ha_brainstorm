@@ -19,6 +19,7 @@ from .const import (
     ATTR_CATEGORY,
     ATTR_DEVICE,
     ATTR_ID,
+    ATTR_PRIORITY,
     ATTR_SOURCE,
     ATTR_STATUS,
     ATTR_TEXT,
@@ -85,7 +86,7 @@ class BrainstormTodoList(TodoListEntity):
             name="Brainstorm Hub",
             manufacturer="nukleuz80",
             model="Brainstorm Hub",
-            sw_version="1.4.21",
+            sw_version="1.4.22",
         )
 
     async def async_added_to_hass(self) -> None:
@@ -103,13 +104,24 @@ class BrainstormTodoList(TodoListEntity):
             status = TodoItemStatus.COMPLETED if is_done else TodoItemStatus.NEEDS_ACTION
             src = item.get(ATTR_SOURCE)
             dev = item.get(ATTR_DEVICE)
-            desc = None
+            prio = item.get(ATTR_PRIORITY, "medium")
+
+            parts = []
+            if prio == "urgent":
+                parts.append("Priorität: 🔥 Dringend")
+            elif prio == "high":
+                parts.append("Priorität: 🔴 Hoch")
+            elif prio == "low":
+                parts.append("Priorität: 🟢 Niedrig")
+
             if dev and src:
-                desc = f"Quelle: {src} ({dev})"
+                parts.append(f"Quelle: {src} ({dev})")
             elif dev:
-                desc = f"Gerät: {dev}"
+                parts.append(f"Gerät: {dev}")
             elif src:
-                desc = f"Quelle: {src}"
+                parts.append(f"Quelle: {src}")
+
+            desc = " • ".join(parts) if parts else None
 
             todo_items.append(
                 TodoItem(

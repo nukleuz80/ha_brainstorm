@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.21 - Enhanced Dynamic Category Resolution & Semantic Routing
+ * Version 1.4.22 - Priority Management & Visual Urgency Badges
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",
@@ -235,9 +235,47 @@ class BrainstormCard extends HTMLElement {
     }
   }
 
+  _getPriorityBadge(priority, id = "") {
+    const p = (priority || "medium").toLowerCase();
+    const idAttr = id ? `data-id="${this._escapeHtml(id)}"` : "";
+    if (p === "urgent") {
+      return `<span class="prio-tag urgent" ${idAttr} data-prio="urgent" title="Priorität: 🔥 Dringend (Klicken zum Umschalten)">🔥 Dringend</span>`;
+    }
+    if (p === "high") {
+      return `<span class="prio-tag high" ${idAttr} data-prio="high" title="Priorität: 🔴 Hoch (Klicken zum Umschalten)">🔴 Hoch</span>`;
+    }
+    if (p === "low") {
+      return `<span class="prio-tag low" ${idAttr} data-prio="low" title="Priorität: 🟢 Niedrig (Klicken zum Umschalten)">🟢 Niedrig</span>`;
+    }
+    return `<span class="prio-tag medium" ${idAttr} data-prio="medium" title="Priorität: 🟡 Mittel (Klicken zum Umschalten)">🟡 Mittel</span>`;
+  }
+
+  _cyclePriority(currentPrio) {
+    const cycle = {
+      medium: "high",
+      high: "urgent",
+      urgent: "low",
+      low: "medium",
+    };
+    return cycle[currentPrio] || "medium";
+  }
+
+  async _toggleItemPriority(id, currentPrio) {
+    const nextPrio = this._cyclePriority(currentPrio);
+    try {
+      await this._hass.callService("brainstorm", "update_idea", {
+        id: id,
+        priority: nextPrio,
+      });
+    } catch (err) {
+      console.error("Failed to toggle priority", err);
+    }
+  }
+
   async _submitIdea() {
     const inputEl = this.shadowRoot.getElementById("ideaInput");
     const catSelectEl = this.shadowRoot.getElementById("catSelect");
+    const prioSelectEl = this.shadowRoot.getElementById("prioSelect");
     if (!inputEl) return;
 
     const text = inputEl.value.trim();
@@ -245,6 +283,7 @@ class BrainstormCard extends HTMLElement {
 
     const selectedCat = catSelectEl ? catSelectEl.value : "";
     const category = selectedCat && selectedCat !== "auto" ? selectedCat : null;
+    const priority = prioSelectEl ? prioSelectEl.value : "medium";
 
     inputEl.value = "";
     inputEl.disabled = true;
@@ -253,6 +292,7 @@ class BrainstormCard extends HTMLElement {
       const payload = {
         text: text,
         source: "dashboard",
+        priority: priority,
       };
       if (category) {
         payload.category = category;
@@ -317,16 +357,25 @@ class BrainstormCard extends HTMLElement {
     this._isDialogOpen = false;
   }
 
-  _editIdea(id, currentText, currentCategory) {
+  _editIdea(id, currentText, currentCategory, currentPriority = "medium") {
     const sensor = this._getSensorEntity();
     const categories = sensor ? (sensor.attributes.categories || ["Inbox"]) : ["Inbox"];
     let selectedCat = currentCategory || "Inbox";
+    let selectedPrio = (currentPriority || "medium").toLowerCase();
 
     this._openDialog("✏️ Notiz bearbeiten", (body) => {
       body.innerHTML = `
         <div class="action-dialog-label">Notiztext:</div>
         <textarea class="action-dialog-textarea" id="editTextarea" rows="3">${this._escapeHtml(currentText)}</textarea>
         <div class="action-dialog-error" id="editTextError" style="display: none;"></div>
+
+        <div class="action-dialog-label">Priorität:</div>
+        <div class="action-dialog-prio-grid" id="editPrioGrid">
+          <div class="action-dialog-prio-chip ${selectedPrio === "low" ? "selected" : ""}" data-prio="low" style="--chip-prio-color: #10b981;">🟢 Niedrig</div>
+          <div class="action-dialog-prio-chip ${selectedPrio === "medium" ? "selected" : ""}" data-prio="medium" style="--chip-prio-color: #eab308;">🟡 Mittel</div>
+          <div class="action-dialog-prio-chip ${selectedPrio === "high" ? "selected" : ""}" data-prio="high" style="--chip-prio-color: #f97316;">🔴 Hoch</div>
+          <div class="action-dialog-prio-chip ${selectedPrio === "urgent" ? "selected" : ""}" data-prio="urgent" style="--chip-prio-color: #ef4444;">🔥 Dringend</div>
+        </div>
 
         <div class="action-dialog-label">Kategorie:</div>
         <div class="action-dialog-categories-grid" id="editCatGrid">
@@ -355,6 +404,7 @@ class BrainstormCard extends HTMLElement {
       const saveBtn = body.querySelector("#saveEditBtn");
       const cancelBtn = body.querySelector("#cancelEditBtn");
       const catChips = body.querySelectorAll(".action-dialog-cat-chip");
+      const prioChips = body.querySelectorAll(".action-dialog-prio-chip");
 
       setTimeout(() => {
         if (textarea) {
@@ -383,6 +433,14 @@ class BrainstormCard extends HTMLElement {
 
       textarea.addEventListener("input", clearTextError);
 
+      prioChips.forEach((chip) => {
+        chip.addEventListener("click", () => {
+          prioChips.forEach((c) => c.classList.remove("selected"));
+          chip.classList.add("selected");
+          selectedPrio = chip.getAttribute("data-prio");
+        });
+      });
+
       catChips.forEach((chip) => {
         chip.addEventListener("click", () => {
           catChips.forEach((c) => c.classList.remove("selected"));
@@ -399,7 +457,7 @@ class BrainstormCard extends HTMLElement {
         }
         this._closeDialog();
 
-        const payload = { id: id, text: newText };
+        const payload = { id: id, text: newText, priority: selectedPrio };
         if (selectedCat && selectedCat !== currentCategory) {
           payload.category = selectedCat;
         }
@@ -946,6 +1004,39 @@ class BrainstormCard extends HTMLElement {
           opacity: 0.65;
           font-weight: 600;
         }
+        .action-dialog-prio-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 8px;
+          margin-bottom: 16px;
+        }
+        .action-dialog-prio-chip {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
+          padding: 8px 6px;
+          border-radius: 10px;
+          font-size: 0.82rem;
+          font-weight: 600;
+          cursor: pointer;
+          border: 1px solid var(--ha-card-border-color, var(--divider-color, rgba(127, 127, 127, 0.2)));
+          background: var(--card-background-color, var(--ha-card-background, #ffffff));
+          color: var(--primary-text-color, #222);
+          transition: all 0.15s ease;
+          user-select: none;
+        }
+        .action-dialog-prio-chip:hover {
+          border-color: var(--chip-prio-color, var(--primary-color, #03a9f4));
+          background: color-mix(in srgb, var(--chip-prio-color, var(--primary-color, #03a9f4)) 10%, transparent);
+        }
+        .action-dialog-prio-chip.selected {
+          border-color: var(--chip-prio-color, var(--primary-color, #03a9f4));
+          background: color-mix(in srgb, var(--chip-prio-color, var(--primary-color, #03a9f4)) 18%, transparent);
+          color: var(--chip-prio-color, var(--primary-color, #03a9f4));
+          font-weight: 700;
+          box-shadow: 0 0 0 1px var(--chip-prio-color, var(--primary-color, #03a9f4));
+        }
         .action-dialog-new-cat-row {
           display: flex;
           align-items: center;
@@ -1091,6 +1182,25 @@ class BrainstormCard extends HTMLElement {
           transition: border-color 0.2s, box-shadow 0.2s;
         }
         select.cat-select:focus {
+          border-color: var(--primary-color, #03a9f4);
+          box-shadow: 0 0 0 2px var(--primary-color-alpha, rgba(3, 169, 244, 0.2));
+        }
+        select.prio-select {
+          flex: 0 0 auto;
+          min-width: 105px;
+          border: 1px solid var(--divider-color, rgba(0, 0, 0, 0.12));
+          background: var(--card-background-color, #ffffff);
+          font-size: 0.82rem;
+          font-weight: 500;
+          color: var(--primary-text-color, #212121);
+          border-radius: 8px;
+          padding: 6px 8px;
+          outline: none;
+          cursor: pointer;
+          box-sizing: border-box;
+          transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        select.prio-select:focus {
           border-color: var(--primary-color, #03a9f4);
           box-shadow: 0 0 0 2px var(--primary-color-alpha, rgba(3, 169, 244, 0.2));
         }
@@ -1327,6 +1437,43 @@ class BrainstormCard extends HTMLElement {
         .category-tag.clickable:hover {
           background: var(--primary-color-alpha, rgba(3, 169, 244, 0.15));
         }
+        .prio-tag {
+          display: inline-flex;
+          align-items: center;
+          gap: 3px;
+          font-size: 0.72rem;
+          font-weight: 600;
+          padding: 2px 7px;
+          border-radius: 6px;
+          cursor: pointer;
+          user-select: none;
+          transition: transform 0.1s, opacity 0.15s, box-shadow 0.15s;
+        }
+        .prio-tag:hover {
+          opacity: 0.85;
+          transform: scale(1.04);
+        }
+        .prio-tag.urgent {
+          color: #ef4444;
+          background: color-mix(in srgb, #ef4444 14%, var(--card-background-color, #ffffff));
+          border: 1px solid color-mix(in srgb, #ef4444 35%, transparent);
+          box-shadow: 0 0 8px rgba(239, 68, 68, 0.2);
+        }
+        .prio-tag.high {
+          color: #f97316;
+          background: color-mix(in srgb, #f97316 14%, var(--card-background-color, #ffffff));
+          border: 1px solid color-mix(in srgb, #f97316 35%, transparent);
+        }
+        .prio-tag.medium {
+          color: #eab308;
+          background: color-mix(in srgb, #eab308 12%, var(--card-background-color, #ffffff));
+          border: 1px solid color-mix(in srgb, #eab308 25%, transparent);
+        }
+        .prio-tag.low {
+          color: #10b981;
+          background: color-mix(in srgb, #10b981 12%, var(--card-background-color, #ffffff));
+          border: 1px solid color-mix(in srgb, #10b981 25%, transparent);
+        }
         .source-badge {
           display: inline-flex;
           align-items: center;
@@ -1448,6 +1595,13 @@ class BrainstormCard extends HTMLElement {
                 <span class="cat-toolbar-label">Kategorie:</span>
                 <select class="cat-select" id="catSelect">
                   <option value="auto">Auto (Erkennen)</option>
+                </select>
+                <span class="cat-toolbar-label" style="margin-left: 6px;">Prio:</span>
+                <select class="prio-select" id="prioSelect">
+                  <option value="medium" selected>🟡 Mittel</option>
+                  <option value="high">🔴 Hoch</option>
+                  <option value="urgent">🔥 Dringend</option>
+                  <option value="low">🟢 Niedrig</option>
                 </select>
               </div>
               <button class="cat-add-btn" id="quickAddCatBtn" title="Neue Kategorie anlegen">
@@ -1793,6 +1947,7 @@ class BrainstormCard extends HTMLElement {
                 <div class="idea-text" title="${canEdit ? "Klicken zum Bearbeiten" : ""}" data-id="${item.id}" style="${canEdit ? "" : "cursor: default;"}">${this._escapeHtml(item.text)}</div>
                 <div class="idea-meta">
                   <span class="category-tag ${canEdit ? "clickable" : ""}" title="${canEdit ? "Kategorie ändern" : "Kategorie"}" data-id="${item.id}" data-cat="${item.category}" style="color: ${this._getCategoryColor(item.category)}; background: color-mix(in srgb, ${this._getCategoryColor(item.category)} 12%, var(--secondary-background-color, rgba(0,0,0,0.06))); border: 1px solid color-mix(in srgb, ${this._getCategoryColor(item.category)} 25%, transparent);">${this._escapeHtml(item.category)}</span>
+                  ${this._getPriorityBadge(item.priority, item.id)}
                   ${showSource ? `${this._getSourceBadge(item.source, item.device)}` : ""}
                   ${showSource && showTime ? `<span>•</span>` : ""}
                   ${showTime ? `<span>${this._formatTime(item.created_at)}</span>` : ""}
@@ -1825,7 +1980,7 @@ class BrainstormCard extends HTMLElement {
             if (!canEdit) return;
             const id = btn.getAttribute("data-id");
             const item = activeIdeas.find((i) => i.id === id);
-            if (item) this._editIdea(id, item.text, item.category);
+            if (item) this._editIdea(id, item.text, item.category, item.priority);
           });
         });
 
@@ -1835,7 +1990,16 @@ class BrainstormCard extends HTMLElement {
             const id = el.getAttribute("data-id");
             if (isCompletedView) return;
             const item = activeIdeas.find((i) => i.id === id);
-            if (item) this._editIdea(id, item.text, item.category);
+            if (item) this._editIdea(id, item.text, item.category, item.priority);
+          });
+        });
+
+        ideasList.querySelectorAll(".prio-tag").forEach((el) => {
+          el.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const id = el.getAttribute("data-id");
+            const currentPrio = el.getAttribute("data-prio") || "medium";
+            if (id && canEdit) this._toggleItemPriority(id, currentPrio);
           });
         });
 

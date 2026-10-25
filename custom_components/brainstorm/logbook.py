@@ -16,6 +16,7 @@ from homeassistant.core import Event, HomeAssistant, callback
 from .const import (
     ATTR_CATEGORY,
     ATTR_DEVICE,
+    ATTR_PRIORITY,
     ATTR_SOURCE,
     ATTR_TEXT,
     DOMAIN,
@@ -43,8 +44,17 @@ def async_describe_events(
         data = event.data or {}
         text = data.get(ATTR_TEXT, "Unbekannte Notiz")
         category = data.get(ATTR_CATEGORY, "Inbox")
+        priority = data.get(ATTR_PRIORITY)
         source = data.get(ATTR_SOURCE, "manual")
         device = data.get(ATTR_DEVICE)
+
+        prio_tag = ""
+        if priority == "urgent":
+            prio_tag = " [🔥 Dringend]"
+        elif priority == "high":
+            prio_tag = " [🔴 Hoch]"
+        elif priority == "low":
+            prio_tag = " [🟢 Niedrig]"
 
         origin_info = f"({category}"
         if device:
@@ -55,9 +65,9 @@ def async_describe_events(
 
         return {
             LOGBOOK_ENTRY_NAME: "Brainstorm Hub",
-            LOGBOOK_ENTRY_MESSAGE: f"Idee erfasst: \"{text}\" {origin_info}",
+            LOGBOOK_ENTRY_MESSAGE: f"Idee erfasst: \"{text}\"{prio_tag} {origin_info}",
             LOGBOOK_ENTRY_ENTITY_ID: OVERVIEW_ENTITY_ID,
-            LOGBOOK_ENTRY_ICON: "mdi:lightbulb-on",
+            LOGBOOK_ENTRY_ICON: "mdi:lightbulb-on" if priority != "urgent" else "mdi:alert-circle",
         }
 
     @callback

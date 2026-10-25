@@ -1,6 +1,6 @@
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.4.21
+ * Version: 1.4.22
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -256,6 +256,43 @@ class BrainstormMindmapCard extends HTMLElement {
       return date.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
     } catch {
       return "";
+    }
+  }
+
+  _getPriorityBadge(priority, id = "") {
+    const p = (priority || "medium").toLowerCase();
+    const idAttr = id ? `data-id="${this._escapeHtml(id)}"` : "";
+    if (p === "urgent") {
+      return `<span class="prio-tag urgent" ${idAttr} data-prio="urgent" title="Priorität: 🔥 Dringend (Klicken zum Umschalten)">🔥 Dringend</span>`;
+    }
+    if (p === "high") {
+      return `<span class="prio-tag high" ${idAttr} data-prio="high" title="Priorität: 🔴 Hoch (Klicken zum Umschalten)">🔴 Hoch</span>`;
+    }
+    if (p === "low") {
+      return `<span class="prio-tag low" ${idAttr} data-prio="low" title="Priorität: 🟢 Niedrig (Klicken zum Umschalten)">🟢 Niedrig</span>`;
+    }
+    return `<span class="prio-tag medium" ${idAttr} data-prio="medium" title="Priorität: 🟡 Mittel (Klicken zum Umschalten)">🟡 Mittel</span>`;
+  }
+
+  _cyclePriority(currentPrio) {
+    const cycle = {
+      medium: "high",
+      high: "urgent",
+      urgent: "low",
+      low: "medium",
+    };
+    return cycle[currentPrio] || "medium";
+  }
+
+  async _toggleItemPriority(id, currentPrio) {
+    const nextPrio = this._cyclePriority(currentPrio);
+    try {
+      await this._hass.callService("brainstorm", "update_idea", {
+        id: id,
+        priority: nextPrio,
+      });
+    } catch (err) {
+      console.error("[BrainstormMindmap] Failed to toggle priority:", err);
     }
   }
 
@@ -580,6 +617,50 @@ class BrainstormMindmapCard extends HTMLElement {
           box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
           z-index: 25;
         }
+        .note-cloud.cloud-urgent {
+          border-left-color: #ef4444 !important;
+          box-shadow: 0 0 14px rgba(239, 68, 68, 0.28) !important;
+        }
+        .note-cloud.cloud-high {
+          border-left-color: #f97316 !important;
+        }
+        .prio-tag {
+          font-weight: 600;
+          font-size: 0.68rem;
+          padding: 2px 7px;
+          border-radius: 8px;
+          cursor: pointer;
+          user-select: none;
+          transition: transform 0.15s ease, filter 0.15s ease;
+          display: inline-flex;
+          align-items: center;
+          gap: 3px;
+        }
+        .prio-tag:hover {
+          transform: scale(1.05);
+          filter: brightness(0.92);
+        }
+        .prio-tag.urgent {
+          color: #ef4444;
+          background: color-mix(in srgb, #ef4444 14%, var(--card-background-color, #ffffff));
+          border: 1px solid color-mix(in srgb, #ef4444 35%, transparent);
+          box-shadow: 0 0 6px rgba(239, 68, 68, 0.2);
+        }
+        .prio-tag.high {
+          color: #f97316;
+          background: color-mix(in srgb, #f97316 14%, var(--card-background-color, #ffffff));
+          border: 1px solid color-mix(in srgb, #f97316 35%, transparent);
+        }
+        .prio-tag.medium {
+          color: #eab308;
+          background: color-mix(in srgb, #eab308 12%, var(--card-background-color, #ffffff));
+          border: 1px solid color-mix(in srgb, #eab308 25%, transparent);
+        }
+        .prio-tag.low {
+          color: #10b981;
+          background: color-mix(in srgb, #10b981 12%, var(--card-background-color, #ffffff));
+          border: 1px solid color-mix(in srgb, #10b981 25%, transparent);
+        }
 
         /* Cloud Top Meta */
         .cloud-meta {
@@ -895,6 +976,39 @@ class BrainstormMindmapCard extends HTMLElement {
           font-size: 0.72rem;
           opacity: 0.65;
           font-weight: 600;
+        }
+        .dialog-prio-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 8px;
+          margin-bottom: 16px;
+        }
+        .dialog-prio-chip {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
+          padding: 8px 6px;
+          border-radius: 10px;
+          font-size: 0.82rem;
+          font-weight: 600;
+          cursor: pointer;
+          border: 1px solid var(--ha-card-border-color, var(--divider-color, rgba(127, 127, 127, 0.2)));
+          background: var(--card-background-color, var(--ha-card-background, #ffffff));
+          color: var(--primary-text-color, #222);
+          transition: all 0.15s ease;
+          user-select: none;
+        }
+        .dialog-prio-chip:hover {
+          border-color: var(--chip-prio-color, var(--primary-color, #03a9f4));
+          background: color-mix(in srgb, var(--chip-prio-color, var(--primary-color, #03a9f4)) 10%, transparent);
+        }
+        .dialog-prio-chip.selected {
+          border-color: var(--chip-prio-color, var(--primary-color, #03a9f4));
+          background: color-mix(in srgb, var(--chip-prio-color, var(--primary-color, #03a9f4)) 18%, transparent);
+          color: var(--chip-prio-color, var(--primary-color, #03a9f4));
+          font-weight: 700;
+          box-shadow: 0 0 0 1px var(--chip-prio-color, var(--primary-color, #03a9f4));
         }
         .dialog-new-cat-row {
           display: flex;
@@ -1714,13 +1828,17 @@ class BrainstormMindmapCard extends HTMLElement {
         const color = this._getCategoryColor(idea.category);
         const sourceBadge = this._getSourceBadge(idea.source, idea.device);
         const timeAgo = this._formatTime(idea.created_at);
+        const prio = (idea.priority || "medium").toLowerCase();
+        const prioClass = prio === "urgent" ? "cloud-urgent" : prio === "high" ? "cloud-high" : "";
+        const prioBadge = this._getPriorityBadge(idea.priority, idea.id);
 
         html += `
-          <div class="note-cloud" id="cloud_${idea.id}" data-id="${idea.id}" style="--cat-color: ${color};">
+          <div class="note-cloud ${prioClass}" id="cloud_${idea.id}" data-id="${idea.id}" style="--cat-color: ${color};">
             <div class="cloud-meta">
               <span class="cat-tag" data-cat="${this._escapeHtml(idea.category)}" title="Kategorie ändern">
                 🏷️ ${this._escapeHtml(idea.category)}
               </span>
+              ${prioBadge}
               <span class="cloud-source" title="Quelle: ${idea.source || 'Dashboard'}${idea.device ? ' • Gerät: ' + this._escapeHtml(idea.device) : ''}">
                 <span>${sourceBadge}</span>
                 <span>•</span>
@@ -1781,7 +1899,7 @@ class BrainstormMindmapCard extends HTMLElement {
 
         // Mouse down records pending drag - only moves if threshold > 5px (prevents click jitter!)
         cloud.addEventListener("mousedown", (e) => {
-          if (e.target.closest(".action-btn") || e.target.closest(".cat-tag")) return;
+          if (e.target.closest(".action-btn") || e.target.closest(".cat-tag") || e.target.closest(".prio-tag")) return;
           if (e.button !== 0) return;
           const pos = this._nodePositions.get(id) || { x: 0, y: 0 };
           this._pendingDrag = {
@@ -1796,7 +1914,7 @@ class BrainstormMindmapCard extends HTMLElement {
 
         // Touch start records pending drag
         cloud.addEventListener("touchstart", (e) => {
-          if (e.target.closest(".action-btn") || e.target.closest(".cat-tag")) return;
+          if (e.target.closest(".action-btn") || e.target.closest(".cat-tag") || e.target.closest(".prio-tag")) return;
           if (e.touches.length === 1) {
             const touch = e.touches[0];
             const pos = this._nodePositions.get(id) || { x: 0, y: 0 };
@@ -1821,12 +1939,21 @@ class BrainstormMindmapCard extends HTMLElement {
           if (path) path.classList.remove("highlight");
         });
 
+        // Priority Tag click -> Cycle Priority
+        const prioTagEl = cloud.querySelector(".prio-tag");
+        if (prioTagEl) {
+          prioTagEl.addEventListener("click", (e) => {
+            e.stopPropagation();
+            this._toggleItemPriority(idea.id, idea.priority || "medium");
+          });
+        }
+
         // Text click or edit button -> Edit Dialog
         const textEl = cloud.querySelector(".cloud-text");
         if (textEl) {
           textEl.addEventListener("click", (e) => {
             e.stopPropagation();
-            this._showEditDialog(idea.id, idea.text, idea.category);
+            this._showEditDialog(idea.id, idea.text, idea.category, idea.priority);
           });
         }
 
@@ -1845,7 +1972,7 @@ class BrainstormMindmapCard extends HTMLElement {
             e.stopPropagation();
             const act = btn.getAttribute("data-act");
             if (act === "done") this._completeIdea(idea.id);
-            else if (act === "edit") this._showEditDialog(idea.id, idea.text, idea.category);
+            else if (act === "edit") this._showEditDialog(idea.id, idea.text, idea.category, idea.priority);
             else if (act === "move") this._showCategoryPicker(idea.id, idea.category, idea.text);
             else if (act === "delete") this._showDeleteConfirm(idea.id, idea.text);
           });
@@ -1995,10 +2122,11 @@ class BrainstormMindmapCard extends HTMLElement {
     });
   }
 
-  _showEditDialog(id, currentText, currentCategory) {
+  _showEditDialog(id, currentText, currentCategory, currentPriority = "medium") {
     const sensor = this._getSensorEntity();
     const categories = sensor ? (sensor.attributes.categories || ["Inbox"]) : ["Inbox"];
     let selectedCat = currentCategory || "Inbox";
+    let selectedPrio = (currentPriority || "medium").toLowerCase();
 
     this._openDialog("✏️ Notiz bearbeiten", (body) => {
       body.innerHTML = `
@@ -2006,7 +2134,15 @@ class BrainstormMindmapCard extends HTMLElement {
         <textarea class="dialog-textarea" id="editTextarea" rows="3">${this._escapeHtml(currentText)}</textarea>
         <div class="dialog-error" id="editTextError" style="display: none;"></div>
 
-        <div class="dialog-label">Kategorie:</div>
+        <div class="dialog-label">Priorität:</div>
+        <div class="dialog-prio-grid" id="editPrioGrid">
+          <div class="dialog-prio-chip ${selectedPrio === "low" ? "selected" : ""}" data-prio="low">🟢 Niedrig</div>
+          <div class="dialog-prio-chip ${selectedPrio === "medium" ? "selected" : ""}" data-prio="medium">🟡 Mittel</div>
+          <div class="dialog-prio-chip ${selectedPrio === "high" ? "selected" : ""}" data-prio="high">🔴 Hoch</div>
+          <div class="dialog-prio-chip ${selectedPrio === "urgent" ? "selected" : ""}" data-prio="urgent">🔥 Dringend</div>
+        </div>
+
+        <div class="dialog-label" style="margin-top: 10px;">Kategorie:</div>
         <div class="dialog-categories-grid" id="editCatGrid">
           ${categories
             .map((cat) => {
@@ -2033,6 +2169,7 @@ class BrainstormMindmapCard extends HTMLElement {
       const saveBtn = body.querySelector("#saveEditBtn");
       const cancelBtn = body.querySelector("#cancelEditBtn");
       const catChips = body.querySelectorAll(".dialog-cat-chip");
+      const prioChips = body.querySelectorAll("#editPrioGrid .dialog-prio-chip");
 
       const showTextError = (msg) => {
         if (!textError || !textarea) return;
@@ -2061,6 +2198,14 @@ class BrainstormMindmapCard extends HTMLElement {
         }
       }, 50);
 
+      prioChips.forEach((chip) => {
+        chip.addEventListener("click", () => {
+          prioChips.forEach((c) => c.classList.remove("selected"));
+          chip.classList.add("selected");
+          selectedPrio = chip.getAttribute("data-prio") || "medium";
+        });
+      });
+
       catChips.forEach((chip) => {
         chip.addEventListener("click", () => {
           catChips.forEach((c) => c.classList.remove("selected"));
@@ -2077,7 +2222,7 @@ class BrainstormMindmapCard extends HTMLElement {
         }
         this._closeDialog();
 
-        const payload = { id: id, text: newText };
+        const payload = { id: id, text: newText, priority: selectedPrio };
         if (selectedCat && selectedCat !== currentCategory) {
           payload.category = selectedCat;
         }
@@ -2104,6 +2249,7 @@ class BrainstormMindmapCard extends HTMLElement {
     const sensor = this._getSensorEntity();
     const categories = sensor ? (sensor.attributes.categories || ["Inbox"]) : ["Inbox"];
     let selectedCat = this._selectedCategory && this._selectedCategory !== "all" ? this._selectedCategory : "Inbox";
+    let selectedPrio = "medium";
 
     this._openDialog("💡 Neue Idee erfassen", (body) => {
       body.innerHTML = `
@@ -2111,7 +2257,15 @@ class BrainstormMindmapCard extends HTMLElement {
         <textarea class="dialog-textarea" id="addTextarea" placeholder="Was möchtest du festhalten?..." rows="3"></textarea>
         <div class="dialog-error" id="addTextError" style="display: none;"></div>
 
-        <div class="dialog-label">Kategorie:</div>
+        <div class="dialog-label">Priorität:</div>
+        <div class="dialog-prio-grid" id="addPrioGrid">
+          <div class="dialog-prio-chip" data-prio="low">🟢 Niedrig</div>
+          <div class="dialog-prio-chip selected" data-prio="medium">🟡 Mittel</div>
+          <div class="dialog-prio-chip" data-prio="high">🔴 Hoch</div>
+          <div class="dialog-prio-chip" data-prio="urgent">🔥 Dringend</div>
+        </div>
+
+        <div class="dialog-label" style="margin-top: 10px;">Kategorie:</div>
         <div class="dialog-categories-grid" id="addCatGrid">
           ${categories
             .map((cat) => {
@@ -2138,6 +2292,7 @@ class BrainstormMindmapCard extends HTMLElement {
       const saveBtn = body.querySelector("#saveAddBtn");
       const cancelBtn = body.querySelector("#cancelAddBtn");
       const catChips = body.querySelectorAll(".dialog-cat-chip");
+      const prioChips = body.querySelectorAll("#addPrioGrid .dialog-prio-chip");
 
       const showTextError = (msg) => {
         if (!textError || !textarea) return;
@@ -2163,6 +2318,14 @@ class BrainstormMindmapCard extends HTMLElement {
         if (textarea) textarea.focus();
       }, 50);
 
+      prioChips.forEach((chip) => {
+        chip.addEventListener("click", () => {
+          prioChips.forEach((c) => c.classList.remove("selected"));
+          chip.classList.add("selected");
+          selectedPrio = chip.getAttribute("data-prio") || "medium";
+        });
+      });
+
       catChips.forEach((chip) => {
         chip.addEventListener("click", () => {
           catChips.forEach((c) => c.classList.remove("selected"));
@@ -2183,7 +2346,15 @@ class BrainstormMindmapCard extends HTMLElement {
           await this._hass.callService("brainstorm", "add_idea", {
             text: text,
             category: selectedCat,
+            priority: selectedPrio,
             source: "dashboard",
+          });
+        } catch (err) {
+          console.error("[BrainstormMindmap] Failed to add idea:", err);
+        }
+      };
+
+      saveBtn.addEventListener("click", handleAdd);
           });
         } catch (err) {
           console.error("[BrainstormMindmap] Failed to add idea:", err);
@@ -2534,7 +2705,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.21 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.22 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

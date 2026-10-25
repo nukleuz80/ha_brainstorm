@@ -13,6 +13,7 @@ from homeassistant.util.json import JsonObjectType
 from .const import (
     ATTR_CATEGORY,
     ATTR_ID,
+    ATTR_PRIORITY,
     ATTR_STATUS,
     ATTR_TEXT,
     DOMAIN,
@@ -63,6 +64,13 @@ class BrainstormAddIdeaTool(llm.Tool):
                     ),
                 ): cv.string,
                 vol.Optional(
+                    "priority",
+                    description=(
+                        "Optional priority ('low', 'medium', 'high', 'urgent'). "
+                        "If omitted, Brainstorm auto-detects urgency from text."
+                    ),
+                ): vol.In(["low", "medium", "high", "urgent"]),
+                vol.Optional(
                     "tags",
                     description="Optional list of tags or keywords for this note.",
                 ): vol.All(cv.ensure_list, [cv.string]),
@@ -83,6 +91,7 @@ class BrainstormAddIdeaTool(llm.Tool):
         args = tool_input.tool_args
         text = str(args.get("text", "")).strip()
         category = args.get("category")
+        priority = args.get("priority")
         tags = args.get("tags")
 
         if not text:
@@ -91,6 +100,7 @@ class BrainstormAddIdeaTool(llm.Tool):
         idea = await store.async_add_idea(
             text=text,
             category=category,
+            priority=priority,
             source="assist_llm",
             tags=tags,
         )
@@ -100,7 +110,8 @@ class BrainstormAddIdeaTool(llm.Tool):
             "id": idea[ATTR_ID],
             "text": idea[ATTR_TEXT],
             "category": idea[ATTR_CATEGORY],
-            "message": f"Idee erfolgreich in '{idea[ATTR_CATEGORY]}' erfasst.",
+            "priority": idea.get(ATTR_PRIORITY, "medium"),
+            "message": f"Idee erfolgreich in '{idea[ATTR_CATEGORY]}' (Priorität: {idea.get(ATTR_PRIORITY, 'medium')}) erfasst.",
         }
 
 
@@ -129,6 +140,10 @@ class BrainstormGetIdeasTool(llm.Tool):
                     default="active",
                 ): vol.In(["active", "completed", "all"]),
                 vol.Optional(
+                    "priority",
+                    description="Optional filter by priority: 'urgent', 'high', 'medium', or 'low'.",
+                ): vol.In(["urgent", "high", "medium", "low"]),
+                vol.Optional(
                     "search",
                     description="Optional search term to filter notes containing this text.",
                 ): cv.string,
@@ -149,12 +164,15 @@ class BrainstormGetIdeasTool(llm.Tool):
         args = tool_input.tool_args
         category = args.get("category")
         status_filter = args.get("status", "active")
+        priority_filter = args.get("priority")
         search_term = args.get("search")
 
         if status_filter == "all":
             status_filter = None
 
-        ideas = store.get_ideas_by_category(category=category, status=status_filter)
+        ideas = store.get_ideas_by_category(
+            category=category, status=status_filter, priority=priority_filter
+        )
 
         if search_term and search_term.strip():
             clean_search = search_term.strip().lower()
@@ -170,6 +188,7 @@ class BrainstormGetIdeasTool(llm.Tool):
                 "id": i.get(ATTR_ID),
                 "text": i.get(ATTR_TEXT),
                 "category": i.get(ATTR_CATEGORY),
+                "priority": i.get(ATTR_PRIORITY, "medium"),
                 "status": i.get(ATTR_STATUS),
                 "created_at": i.get("created_at"),
             }
