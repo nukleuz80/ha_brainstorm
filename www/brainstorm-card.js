@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.23 - Clean Responsive Header & Color Switch Fix
+ * Version 1.4.24 - Clean Responsive Header & Color Switch Fix
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",

@@ -86,7 +86,7 @@ class BrainstormTodoList(TodoListEntity):
             name="Brainstorm Hub",
             manufacturer="nukleuz80",
             model="Brainstorm Hub",
-            sw_version="1.4.23",
+            sw_version="1.4.24",
         )
 
     async def async_added_to_hass(self) -> None:
