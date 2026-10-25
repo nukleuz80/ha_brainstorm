@@ -131,9 +131,23 @@ Für maximale Übersicht lässt sich Brainstorm als vollwertiger Menüpunkt dire
 #### Variante A: Interaktiver Dialog-Modus (Empfohlen)
 Triggere den Dialog per Sprachbefehl, Szene oder Alexa-Routine:
 > 🗣️ *„Alexa, Neue Idee“* oder *„Alexa, Brainstorm“*  
-> 🤖 **Alexa:** *„Was möchtest du notieren?“*  
+> 🤖 **Alexa:** *„Brainstorm bereit. Sprich deine Notiz oder sage Ansage.“*  
 > 🗣️ **Du:** *„Im Garten müssen die Rosen geschnitten werden.“*  
-> 🤖 **Alexa:** *„Zu Brainstorm hinzugefügt unter Haus & Garten.“*
+> 🤖 **Alexa:** *„Gespeichert unter Haus & Garten.“*
+
+##### 📱 Einrichtung der Alexa-Routinen (Wichtig gegen Musik-Konflikte)
+Da **„Brainstorm“** auch der Name einer bekannten Rockband und diverser Songs ist, versucht Alexa bei Einzelwörtern ohne Routine standardmäßig, Musik über Amazon Music / Spotify abzuspielen. In Home Assistant fängt zwar ein unbedingter Stopp-Befehl anlaufende Streams ab – für ein absolut sauberes und lautloses Nutzererlebnis empfiehlt sich die Einrichtung von **zwei separaten Alexa-Routinen** in der Smartphone-App (da Amazon pro Routine immer nur genau **einen** Sprachauslöser erlaubt):
+
+1. **Routine 1: Vollständiger Aufruf**
+   * **Wenn Folgendes passiert:** Stimme ➔ `Alexa, öffne brainstorm`
+   * **Aktion hinzufügen:** Smart Home ➔ Szenen ➔ **`Brainstorm Hauptmenü`** *(in Alexa werden Home Assistant Skripte als Szenen bereitgestellt)*
+2. **Routine 2: Kurzer Direktaufruf**
+   * **Wenn Folgendes passiert:** Stimme ➔ `Alexa, brainstorm`
+   * **Aktion hinzufügen:** Smart Home ➔ Szenen ➔ **`Brainstorm Hauptmenü`**
+
+> [!TIP]
+> **Warum zwei getrennte Routinen?**  
+> Alexa-Routinen haben bei Amazon immer oberste Priorität vor der allgemeinen Musik- und Websuche. Sobald beide Varianten als separate Routinen angelegt sind, unterdrückt Alexa die Musiksuche vollständig und startet unmittelbar und lautlos die Brainstorm-Sprachabfrage.
 
 #### Variante B: Schnelle Direktbefehle
 Direkt in einem Satz sprechen (Automation sendet automatisch einen internen Stopp-Befehl für eventuell gestartete Skills/Musik und bestätigt direkt):
