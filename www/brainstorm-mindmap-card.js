@@ -1,6 +1,6 @@
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.4.24
+ * Version: 1.4.25
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -11,7 +11,7 @@ const BRAINSTORM_MINDMAP_DEFAULTS = {
   sensor: "sensor.brainstorm_ideen_ubersicht",
   color_mode: "multicolor",
   height: "calc(100vh - 32px)",
-  default_category: "Inbox",
+  default_category: "all",
   show_bulb_watermark: true,
   show_toolbar: true,
   show_color_toggle: true,
@@ -2415,83 +2415,6 @@ class BrainstormMindmapCard extends HTMLElement {
   }
 }
 
-const MINDMAP_CARD_SCHEMA = [
-  {
-    name: "title",
-    label: "Mindmap-Titel",
-    default: "Brainstorm Mindmap",
-    selector: { text: {} },
-  },
-  {
-    name: "sensor",
-    label: "Sensor-Entität",
-    default: "sensor.brainstorm_ideen_ubersicht",
-    selector: { entity: { domain: ["sensor"] } },
-  },
-  {
-    name: "color_mode",
-    label: "Standard-Farbmodus",
-    default: "theme",
-    selector: {
-      select: {
-        mode: "dropdown",
-        options: [
-          { value: "theme", label: "🎨 Theme-Farben (Dynamisch nach Home Assistant Theme)" },
-          { value: "multicolor", label: "🌈 Bunt (Multicolor-Kategoriefarben)" },
-        ],
-      },
-    },
-  },
-  {
-    name: "height",
-    label: "Höhe der Mindmap (z.B. 600px, 75vh, calc(100vh - 32px))",
-    default: "calc(100vh - 32px)",
-    selector: { text: {} },
-  },
-  {
-    name: "default_category",
-    label: "Standard-Kategorie im Fokus",
-    default: "Inbox",
-    selector: { text: {} },
-  },
-  {
-    name: "show_bulb_watermark",
-    label: "Leuchtende Glühbirne im Zentrum als Wasserzeichen anzeigen",
-    default: true,
-    selector: { boolean: {} },
-  },
-  {
-    name: "show_toolbar",
-    label: "Obere Werkzeugleiste (Titel & Filter-Pills) anzeigen",
-    default: true,
-    selector: { boolean: {} },
-  },
-  {
-    name: "show_color_toggle",
-    label: "Farbmodus-Umschalter (🎨/🌈) in Toolbar anzeigen",
-    default: true,
-    selector: { boolean: {} },
-  },
-  {
-    name: "show_fullscreen_btn",
-    label: "Vollbild-Schaltfläche (⛶) anzeigen",
-    default: true,
-    selector: { boolean: {} },
-  },
-  {
-    name: "show_controls",
-    label: "Zoom- & Zentrieren-Schaltflächen anzeigen",
-    default: true,
-    selector: { boolean: {} },
-  },
-  {
-    name: "show_add_btn",
-    label: "Neue Notiz-Schaltfläche (+ Idee) anzeigen",
-    default: true,
-    selector: { boolean: {} },
-  },
-];
-
 class BrainstormMindmapCardEditor extends HTMLElement {
   constructor() {
     super();
@@ -2506,6 +2429,10 @@ class BrainstormMindmapCardEditor extends HTMLElement {
       ...BRAINSTORM_MINDMAP_DEFAULTS,
       ...(config || {}),
     };
+    if (this._form) {
+      this._form.schema = this._getSchema();
+      this._form.data = this._config;
+    }
     this._render();
   }
 
@@ -2513,7 +2440,139 @@ class BrainstormMindmapCardEditor extends HTMLElement {
     this._hass = hass;
     if (this._form) {
       this._form.hass = hass;
+      this._form.schema = this._getSchema();
     }
+  }
+
+  _getCategoryOptions() {
+    const defaultList = ["Inbox", "Smarthome", "Haus & Garten", "Projekte", "Alltag", "Brainstorm"];
+    const categories = [];
+    const sensorName = (this._config && this._config.sensor) || "sensor.brainstorm_ideen_ubersicht";
+    if (this._hass && this._hass.states && this._hass.states[sensorName]) {
+      const stateObj = this._hass.states[sensorName];
+      if (stateObj.attributes && Array.isArray(stateObj.attributes.categories)) {
+        stateObj.attributes.categories.forEach((c) => {
+          if (!categories.includes(c)) categories.push(c);
+        });
+      }
+    }
+    defaultList.forEach((c) => {
+      if (!categories.includes(c)) categories.push(c);
+    });
+    if (this._config && this._config.default_category && this._config.default_category !== "all" && !categories.includes(this._config.default_category)) {
+      categories.push(this._config.default_category);
+    }
+
+    const icons = {
+      inbox: "📥",
+      smarthome: "🔷",
+      "haus & garten": "🟢",
+      haus: "🟢",
+      garten: "🟢",
+      projekte: "🟣",
+      alltag: "🟡",
+      brainstorm: "🔮",
+      ideen: "🌸",
+      einkauf: "🍊",
+      finanzen: "🪙",
+      familie: "❤️",
+      arbeit: "💼",
+      gesundheit: "🍏",
+    };
+
+    return [
+      { value: "all", label: "🌟 Alle Kategorien (Gesamtübersicht)" },
+      ...categories.map((c) => {
+        const icon = icons[c.toLowerCase()] || "🏷️";
+        return { value: c, label: `${icon} ${c}` };
+      }),
+    ];
+  }
+
+  _getSchema() {
+    const catOptions = this._getCategoryOptions();
+    return [
+      {
+        name: "title",
+        label: "Mindmap-Titel",
+        default: "Brainstorm Mindmap",
+        selector: { text: {} },
+      },
+      {
+        name: "sensor",
+        label: "Sensor-Entität",
+        default: "sensor.brainstorm_ideen_ubersicht",
+        selector: { entity: { domain: ["sensor"] } },
+      },
+      {
+        name: "color_mode",
+        label: "Standard-Farbmodus",
+        default: "theme",
+        selector: {
+          select: {
+            mode: "dropdown",
+            options: [
+              { value: "theme", label: "🎨 Theme-Farben (Dynamisch nach Home Assistant Theme)" },
+              { value: "multicolor", label: "🌈 Bunt (Multicolor-Kategoriefarben)" },
+            ],
+          },
+        },
+      },
+      {
+        name: "height",
+        label: "Höhe der Mindmap (z.B. 600px, 75vh, calc(100vh - 32px))",
+        default: "calc(100vh - 32px)",
+        selector: { text: {} },
+      },
+      {
+        name: "default_category",
+        label: "Standard-Kategorie im Fokus",
+        default: "all",
+        selector: {
+          select: {
+            mode: "dropdown",
+            custom_value: true,
+            options: catOptions,
+          },
+        },
+      },
+      {
+        name: "show_bulb_watermark",
+        label: "Leuchtende Glühbirne im Zentrum als Wasserzeichen anzeigen",
+        default: true,
+        selector: { boolean: {} },
+      },
+      {
+        name: "show_toolbar",
+        label: "Obere Werkzeugleiste (Titel & Filter-Pills) anzeigen",
+        default: true,
+        selector: { boolean: {} },
+      },
+      {
+        name: "show_color_toggle",
+        label: "Farbmodus-Umschalter (🎨/🌈) in Toolbar anzeigen",
+        default: true,
+        selector: { boolean: {} },
+      },
+      {
+        name: "show_fullscreen_btn",
+        label: "Vollbild-Schaltfläche (⛶) anzeigen",
+        default: true,
+        selector: { boolean: {} },
+      },
+      {
+        name: "show_controls",
+        label: "Zoom- & Zentrieren-Schaltflächen anzeigen",
+        default: true,
+        selector: { boolean: {} },
+      },
+      {
+        name: "show_add_btn",
+        label: "Neue Notiz-Schaltfläche (+ Idee) anzeigen",
+        default: true,
+        selector: { boolean: {} },
+      },
+    ];
   }
 
   async _render() {
@@ -2530,6 +2589,7 @@ class BrainstormMindmapCardEditor extends HTMLElement {
 
     if (this._form) {
       this._form.data = this._config;
+      this._form.schema = this._getSchema();
       if (this._hass) this._form.hass = this._hass;
       return;
     }
@@ -2597,7 +2657,7 @@ class BrainstormMindmapCardEditor extends HTMLElement {
       const form = document.createElement("ha-form");
       form.hass = this._hass;
       form.data = this._config;
-      form.schema = MINDMAP_CARD_SCHEMA;
+      form.schema = this._getSchema();
       form.computeLabel = (s) => s.label || s.name;
       form.computeHelper = (s) => s.helper || "";
       form.addEventListener("value-changed", (ev) => {
@@ -2646,6 +2706,12 @@ class BrainstormMindmapCardEditor extends HTMLElement {
           <input class="fallback-input" id="fbSensor" type="text" value="${this._config.sensor || 'sensor.brainstorm_ideen_ubersicht'}" />
         </div>
         <div class="fallback-row">
+          <label class="fallback-label">Standard-Kategorie im Fokus</label>
+          <select class="fallback-select" id="fbDefaultCat">
+            ${this._getCategoryOptions().map(o => `<option value="${o.value}" ${(this._config.default_category || 'all') === o.value ? 'selected' : ''}>${o.label}</option>`).join("")}
+          </select>
+        </div>
+        <div class="fallback-row">
           <label class="fallback-label">Farbmodus</label>
           <select class="fallback-select" id="fbColorMode">
             <option value="theme" ${(this._config.color_mode || 'theme') === 'theme' ? 'selected' : ''}>🎨 Theme-Farben</option>
@@ -2656,6 +2722,7 @@ class BrainstormMindmapCardEditor extends HTMLElement {
     `;
     const fbTitle = container.querySelector("#fbTitle");
     const fbSensor = container.querySelector("#fbSensor");
+    const fbDefaultCat = container.querySelector("#fbDefaultCat");
     const fbColorMode = container.querySelector("#fbColorMode");
 
     const emitChange = () => {
@@ -2663,6 +2730,7 @@ class BrainstormMindmapCardEditor extends HTMLElement {
         ...this._config,
         title: fbTitle ? fbTitle.value : this._config.title,
         sensor: fbSensor ? fbSensor.value : this._config.sensor,
+        default_category: fbDefaultCat ? fbDefaultCat.value : this._config.default_category,
         color_mode: fbColorMode ? fbColorMode.value : this._config.color_mode,
       };
       this.dispatchEvent(
@@ -2676,6 +2744,7 @@ class BrainstormMindmapCardEditor extends HTMLElement {
 
     if (fbTitle) fbTitle.addEventListener("input", emitChange);
     if (fbSensor) fbSensor.addEventListener("input", emitChange);
+    if (fbDefaultCat) fbDefaultCat.addEventListener("change", emitChange);
     if (fbColorMode) fbColorMode.addEventListener("change", emitChange);
   }
 }
@@ -2701,7 +2770,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.24 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.25 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

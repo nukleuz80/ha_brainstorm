@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.24 - Clean Responsive Header & Color Switch Fix
+ * Version 1.4.25 - Dynamic Category Dropdown in Card Editors
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",
@@ -2100,101 +2100,6 @@ class BrainstormCard extends HTMLElement {
   }
 }
 
-const BRAINSTORM_CARD_SCHEMA = [
-  {
-    name: "title",
-    label: "Kartentitel",
-    default: "Brainstorm Hub",
-    selector: { text: {} },
-  },
-  {
-    name: "sensor",
-    label: "Sensor-Entität",
-    default: "sensor.brainstorm_ideen_ubersicht",
-    selector: { entity: { domain: ["sensor"] } },
-  },
-  {
-    name: "color_mode",
-    label: "Standard-Farbmodus",
-    default: "theme",
-    selector: {
-      select: {
-        mode: "dropdown",
-        options: [
-          { value: "theme", label: "🎨 Theme-Farben (Dynamisch nach Home Assistant Theme)" },
-          { value: "multicolor", label: "🌈 Bunt (Multicolor-Kategoriefarben)" },
-        ],
-      },
-    },
-  },
-  {
-    name: "default_category",
-    label: "Standard-Filterkategorie beim Öffnen (z.B. all oder Inbox)",
-    default: "all",
-    selector: { text: {} },
-  },
-  {
-    name: "max_items",
-    label: "Maximale Notizenanzahl (0 = Unbegrenzt)",
-    default: 0,
-    selector: { number: { min: 0, max: 200, mode: "box" } },
-  },
-  {
-    name: "show_quick_input",
-    label: "Schnelleingabe-Feld für neue Notizen anzeigen",
-    default: true,
-    selector: { boolean: {} },
-  },
-  {
-    name: "show_categories",
-    label: "Kategorie-Leiste (Filter-Pills) anzeigen",
-    default: true,
-    selector: { boolean: {} },
-  },
-  {
-    name: "show_badge",
-    label: "Zähler-Badge im Header anzeigen",
-    default: true,
-    selector: { boolean: {} },
-  },
-  {
-    name: "show_mindmap_button",
-    label: "Mindmap-Schaltfläche (🧠) im Header anzeigen",
-    default: true,
-    selector: { boolean: {} },
-  },
-  {
-    name: "show_color_toggle",
-    label: "Farbmodus-Umschalter (🎨/🌈) im Header anzeigen",
-    default: true,
-    selector: { boolean: {} },
-  },
-  {
-    name: "show_source_icons",
-    label: "Quellen-Icons anzeigen (Alexa, Assist, Handy, Dashboard)",
-    default: true,
-    selector: { boolean: {} },
-  },
-  {
-    name: "show_timestamps",
-    label: "Relative Zeitangaben anzeigen (z.B. 'vor 5 Min.')",
-    default: true,
-    selector: { boolean: {} },
-  },
-  {
-    name: "allow_edit",
-    label: "Bearbeiten von Notizen erlauben (Klick & Stift-Icon)",
-    default: true,
-    selector: { boolean: {} },
-  },
-  {
-    name: "allow_delete",
-    label: "Löschen von Notizen erlauben (✕-Schaltfläche)",
-    default: true,
-    selector: { boolean: {} },
-  },
-];
-
 class BrainstormCardEditor extends HTMLElement {
   constructor() {
     super();
@@ -2209,6 +2114,10 @@ class BrainstormCardEditor extends HTMLElement {
       ...BRAINSTORM_CARD_DEFAULTS,
       ...(config || {}),
     };
+    if (this._form) {
+      this._form.schema = this._getSchema();
+      this._form.data = this._config;
+    }
     this._render();
   }
 
@@ -2216,7 +2125,157 @@ class BrainstormCardEditor extends HTMLElement {
     this._hass = hass;
     if (this._form) {
       this._form.hass = hass;
+      this._form.schema = this._getSchema();
     }
+  }
+
+  _getCategoryOptions() {
+    const defaultList = ["Inbox", "Smarthome", "Haus & Garten", "Projekte", "Alltag", "Brainstorm"];
+    const categories = [];
+    const sensorName = (this._config && this._config.sensor) || "sensor.brainstorm_ideen_ubersicht";
+    if (this._hass && this._hass.states && this._hass.states[sensorName]) {
+      const stateObj = this._hass.states[sensorName];
+      if (stateObj.attributes && Array.isArray(stateObj.attributes.categories)) {
+        stateObj.attributes.categories.forEach((c) => {
+          if (!categories.includes(c)) categories.push(c);
+        });
+      }
+    }
+    defaultList.forEach((c) => {
+      if (!categories.includes(c)) categories.push(c);
+    });
+    if (this._config && this._config.default_category && this._config.default_category !== "all" && !categories.includes(this._config.default_category)) {
+      categories.push(this._config.default_category);
+    }
+
+    const icons = {
+      inbox: "📥",
+      smarthome: "🔷",
+      "haus & garten": "🟢",
+      haus: "🟢",
+      garten: "🟢",
+      projekte: "🟣",
+      alltag: "🟡",
+      brainstorm: "🔮",
+      ideen: "🌸",
+      einkauf: "🍊",
+      finanzen: "🪙",
+      familie: "❤️",
+      arbeit: "💼",
+      gesundheit: "🍏",
+    };
+
+    return [
+      { value: "all", label: "🌟 Alle Kategorien (Standard)" },
+      ...categories.map((c) => {
+        const icon = icons[c.toLowerCase()] || "🏷️";
+        return { value: c, label: `${icon} ${c}` };
+      }),
+    ];
+  }
+
+  _getSchema() {
+    const catOptions = this._getCategoryOptions();
+    return [
+      {
+        name: "title",
+        label: "Kartentitel",
+        default: "Brainstorm Hub",
+        selector: { text: {} },
+      },
+      {
+        name: "sensor",
+        label: "Sensor-Entität",
+        default: "sensor.brainstorm_ideen_ubersicht",
+        selector: { entity: { domain: ["sensor"] } },
+      },
+      {
+        name: "color_mode",
+        label: "Standard-Farbmodus",
+        default: "theme",
+        selector: {
+          select: {
+            mode: "dropdown",
+            options: [
+              { value: "theme", label: "🎨 Theme-Farben (Dynamisch nach Home Assistant Theme)" },
+              { value: "multicolor", label: "🌈 Bunt (Multicolor-Kategoriefarben)" },
+            ],
+          },
+        },
+      },
+      {
+        name: "default_category",
+        label: "Standard-Filterkategorie beim Öffnen",
+        default: "all",
+        selector: {
+          select: {
+            mode: "dropdown",
+            custom_value: true,
+            options: catOptions,
+          },
+        },
+      },
+      {
+        name: "max_items",
+        label: "Maximale Notizenanzahl (0 = Unbegrenzt)",
+        default: 0,
+        selector: { number: { min: 0, max: 200, mode: "box" } },
+      },
+      {
+        name: "show_quick_input",
+        label: "Schnelleingabe-Feld für neue Notizen anzeigen",
+        default: true,
+        selector: { boolean: {} },
+      },
+      {
+        name: "show_categories",
+        label: "Kategorie-Leiste (Filter-Pills) anzeigen",
+        default: true,
+        selector: { boolean: {} },
+      },
+      {
+        name: "show_badge",
+        label: "Zähler-Badge im Header anzeigen",
+        default: true,
+        selector: { boolean: {} },
+      },
+      {
+        name: "show_mindmap_button",
+        label: "Mindmap-Schaltfläche (🧠) im Header anzeigen",
+        default: true,
+        selector: { boolean: {} },
+      },
+      {
+        name: "show_color_toggle",
+        label: "Farbmodus-Umschalter (🎨/🌈) im Header anzeigen",
+        default: true,
+        selector: { boolean: {} },
+      },
+      {
+        name: "show_source_icons",
+        label: "Quellen-Icons anzeigen (Alexa, Assist, Handy, Dashboard)",
+        default: true,
+        selector: { boolean: {} },
+      },
+      {
+        name: "show_timestamps",
+        label: "Relative Zeitangaben anzeigen (z.B. 'vor 5 Min.')",
+        default: true,
+        selector: { boolean: {} },
+      },
+      {
+        name: "allow_edit",
+        label: "Bearbeiten von Notizen erlauben (Klick & Stift-Icon)",
+        default: true,
+        selector: { boolean: {} },
+      },
+      {
+        name: "allow_delete",
+        label: "Löschen von Notizen erlauben (✕-Schaltfläche)",
+        default: true,
+        selector: { boolean: {} },
+      },
+    ];
   }
 
   async _render() {
@@ -2233,6 +2292,7 @@ class BrainstormCardEditor extends HTMLElement {
 
     if (this._form) {
       this._form.data = this._config;
+      this._form.schema = this._getSchema();
       if (this._hass) this._form.hass = this._hass;
       return;
     }
@@ -2300,7 +2360,7 @@ class BrainstormCardEditor extends HTMLElement {
       const form = document.createElement("ha-form");
       form.hass = this._hass;
       form.data = this._config;
-      form.schema = BRAINSTORM_CARD_SCHEMA;
+      form.schema = this._getSchema();
       form.computeLabel = (s) => s.label || s.name;
       form.computeHelper = (s) => s.helper || "";
       form.addEventListener("value-changed", (ev) => {
@@ -2349,6 +2409,12 @@ class BrainstormCardEditor extends HTMLElement {
           <input class="fallback-input" id="fbSensor" type="text" value="${this._config.sensor || 'sensor.brainstorm_ideen_ubersicht'}" />
         </div>
         <div class="fallback-row">
+          <label class="fallback-label">Standard-Filterkategorie beim Öffnen</label>
+          <select class="fallback-select" id="fbDefaultCat">
+            ${this._getCategoryOptions().map(o => `<option value="${o.value}" ${(this._config.default_category || 'all') === o.value ? 'selected' : ''}>${o.label}</option>`).join("")}
+          </select>
+        </div>
+        <div class="fallback-row">
           <label class="fallback-label">Farbmodus</label>
           <select class="fallback-select" id="fbColorMode">
             <option value="theme" ${(this._config.color_mode || 'theme') === 'theme' ? 'selected' : ''}>🎨 Theme-Farben</option>
@@ -2359,6 +2425,7 @@ class BrainstormCardEditor extends HTMLElement {
     `;
     const fbTitle = container.querySelector("#fbTitle");
     const fbSensor = container.querySelector("#fbSensor");
+    const fbDefaultCat = container.querySelector("#fbDefaultCat");
     const fbColorMode = container.querySelector("#fbColorMode");
 
     const emitChange = () => {
@@ -2366,6 +2433,7 @@ class BrainstormCardEditor extends HTMLElement {
         ...this._config,
         title: fbTitle ? fbTitle.value : this._config.title,
         sensor: fbSensor ? fbSensor.value : this._config.sensor,
+        default_category: fbDefaultCat ? fbDefaultCat.value : this._config.default_category,
         color_mode: fbColorMode ? fbColorMode.value : this._config.color_mode,
       };
       this.dispatchEvent(
@@ -2379,6 +2447,7 @@ class BrainstormCardEditor extends HTMLElement {
 
     if (fbTitle) fbTitle.addEventListener("input", emitChange);
     if (fbSensor) fbSensor.addEventListener("input", emitChange);
+    if (fbDefaultCat) fbDefaultCat.addEventListener("change", emitChange);
     if (fbColorMode) fbColorMode.addEventListener("change", emitChange);
   }
 }
