@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.22 - Priority Management & Visual Urgency Badges
+ * Version 1.4.23 - Clean Responsive Header & Color Switch Fix
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",
@@ -63,8 +63,8 @@ class BrainstormCard extends HTMLElement {
     }
     this._config = { ...config, ...parsedConfig };
 
-    if (this._config.color_mode) {
-      this._colorMode = this._config.color_mode;
+    if (config.color_mode) {
+      this._colorMode = config.color_mode;
     }
     if (this._config.default_category && (!this._initialized || this._selectedCategory === "all")) {
       this._selectedCategory = String(this._config.default_category).trim();
@@ -123,6 +123,9 @@ class BrainstormCard extends HTMLElement {
   }
 
   _getCategoryColor(category) {
+    if (this._colorMode === "theme") {
+      return "var(--primary-color, #a855f7)";
+    }
     if (!category) return "#2563eb";
     const catNorm = String(category).trim().toLowerCase();
 
@@ -715,24 +718,25 @@ class BrainstormCard extends HTMLElement {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          margin-bottom: 16px;
+          gap: 10px;
+          margin-bottom: 12px;
         }
-        .title {
-          font-size: 1.25rem;
-          font-weight: 700;
+        .header-main {
           display: flex;
           align-items: center;
           gap: 10px;
+          min-width: 0;
+          flex: 1 1 auto;
         }
         .logo-wrap {
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 32px;
-          height: 32px;
-          border-radius: 9px;
+          width: 34px;
+          height: 34px;
+          border-radius: 10px;
           overflow: hidden;
-          box-shadow: 0 2px 8px rgba(0, 245, 255, 0.25);
+          box-shadow: 0 2px 8px rgba(0, 245, 255, 0.22);
           flex-shrink: 0;
           background: #0d1117;
         }
@@ -742,58 +746,88 @@ class BrainstormCard extends HTMLElement {
           object-fit: cover;
           display: block;
         }
-        .badge {
-          background: var(--primary-color, #03a9f4);
-          color: var(--text-primary-color, #ffffff);
-          font-size: 0.75rem;
-          font-weight: 600;
-          padding: 3px 9px;
-          border-radius: 12px;
-        }
-        .header-right {
+        .header-titles {
           display: flex;
           align-items: center;
           gap: 8px;
+          min-width: 0;
+          flex-wrap: wrap;
         }
-        .view-toggle-btn {
-          background: var(--secondary-background-color, rgba(127, 127, 127, 0.1));
+        .card-title {
+          font-size: 1.15rem;
+          font-weight: 700;
+          color: var(--primary-text-color, #212121);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          line-height: 1.25;
+        }
+        .badge {
+          background: var(--primary-color, #03a9f4);
+          color: var(--text-primary-color, #ffffff);
+          font-size: 0.72rem;
+          font-weight: 600;
+          padding: 2px 8px;
+          border-radius: 10px;
+          white-space: nowrap;
+          line-height: 1.35;
+          flex-shrink: 0;
+        }
+        .header-actions {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-shrink: 0;
+        }
+        .color-mode-btn {
+          background: var(--secondary-background-color, rgba(127, 127, 127, 0.08));
           border: 1px solid var(--ha-card-border-color, var(--divider-color, rgba(127, 127, 127, 0.15)));
           color: var(--primary-text-color, #212121);
-          font-size: 0.75rem;
+          border-radius: 50%;
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          font-size: 0.95rem;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          padding: 0;
+          line-height: 1;
+        }
+        .color-mode-btn:hover {
+          background: var(--primary-color, #03a9f4);
+          color: var(--text-primary-color, #ffffff);
+          border-color: var(--primary-color, #03a9f4);
+          transform: scale(1.08);
+        }
+        .color-mode-btn:active {
+          transform: scale(0.94);
+        }
+        .view-toggle-btn {
+          background: var(--secondary-background-color, rgba(127, 127, 127, 0.08));
+          border: 1px solid var(--ha-card-border-color, var(--divider-color, rgba(127, 127, 127, 0.15)));
+          color: var(--primary-text-color, #212121);
+          font-size: 0.76rem;
           font-weight: 600;
-          padding: 5px 12px;
+          padding: 6px 12px;
           border-radius: 12px;
           cursor: pointer;
           display: flex;
           align-items: center;
           gap: 5px;
-          transition: all 0.2s ease;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          white-space: nowrap;
+          line-height: 1;
         }
         .view-toggle-btn:hover {
           background: var(--primary-color, #03a9f4);
           color: var(--text-primary-color, #ffffff);
           border-color: var(--primary-color, #03a9f4);
         }
-        .color-mode-btn {
-          background: var(--secondary-background-color, rgba(127, 127, 127, 0.1));
-          border: 1px solid var(--ha-card-border-color, var(--divider-color, rgba(127, 127, 127, 0.15)));
-          color: var(--primary-text-color, #212121);
-          border-radius: 50%;
-          width: 28px;
-          height: 28px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          font-size: 0.9rem;
-          box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
-          transition: all 0.2s ease;
-        }
-        .color-mode-btn:hover {
-          background: var(--primary-color, #03a9f4);
-          color: var(--text-primary-color, #ffffff);
-          border-color: var(--primary-color, #03a9f4);
-          transform: scale(1.05);
+        .view-toggle-btn:active {
+          transform: scale(0.96);
         }
         /* Mindmap Modal Layer (3/4 Screen Popup) */
         .mindmap-modal-backdrop {
@@ -1140,113 +1174,31 @@ class BrainstormCard extends HTMLElement {
           30%, 50%, 70% { transform: translate3d(-3px, 0, 0); }
           40%, 60% { transform: translate3d(3px, 0, 0); }
         }
-        /* Input & Category Toolbar */
+        /* Input & Category Section */
         .input-section {
-          margin-bottom: 16px;
+          margin-bottom: 12px;
         }
-        .cat-toolbar {
+        .quick-capture-card {
+          background: var(--secondary-background-color, rgba(127, 127, 127, 0.05));
+          border: 1px solid var(--ha-card-border-color, var(--divider-color, rgba(127, 127, 127, 0.12)));
+          border-radius: 14px;
+          padding: 6px 8px 6px 10px;
           display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 8px;
-          margin-bottom: 8px;
-        }
-        .cat-toolbar-left {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          flex: 1 1 auto;
-          min-width: 0;
-        }
-        .cat-toolbar-label {
-          font-size: 0.85rem;
-          font-weight: 500;
-          color: var(--secondary-text-color, #757575);
-          white-space: nowrap;
-          flex-shrink: 0;
-        }
-        select.cat-select {
-          flex: 1 1 auto;
-          min-width: 140px;
-          max-width: 280px;
-          border: 1px solid var(--divider-color, rgba(0, 0, 0, 0.12));
-          background: var(--card-background-color, #ffffff);
-          font-size: 0.85rem;
-          font-weight: 500;
-          color: var(--primary-text-color, #212121);
-          border-radius: 8px;
-          padding: 6px 10px;
-          outline: none;
-          cursor: pointer;
+          flex-direction: column;
+          gap: 6px;
           box-sizing: border-box;
           transition: border-color 0.2s, box-shadow 0.2s;
         }
-        select.cat-select:focus {
+        .quick-capture-card:focus-within {
           border-color: var(--primary-color, #03a9f4);
-          box-shadow: 0 0 0 2px var(--primary-color-alpha, rgba(3, 169, 244, 0.2));
-        }
-        select.prio-select {
-          flex: 0 0 auto;
-          min-width: 105px;
-          border: 1px solid var(--divider-color, rgba(0, 0, 0, 0.12));
-          background: var(--card-background-color, #ffffff);
-          font-size: 0.82rem;
-          font-weight: 500;
-          color: var(--primary-text-color, #212121);
-          border-radius: 8px;
-          padding: 6px 8px;
-          outline: none;
-          cursor: pointer;
-          box-sizing: border-box;
-          transition: border-color 0.2s, box-shadow 0.2s;
-        }
-        select.prio-select:focus {
-          border-color: var(--primary-color, #03a9f4);
-          box-shadow: 0 0 0 2px var(--primary-color-alpha, rgba(3, 169, 244, 0.2));
-        }
-        .cat-add-btn {
-          flex: 0 0 auto;
-          display: inline-flex;
-          align-items: center;
-          gap: 5px;
-          background: var(--secondary-background-color, rgba(0, 0, 0, 0.04));
-          border: 1px dashed var(--divider-color, rgba(0, 0, 0, 0.2));
-          color: var(--primary-color, #03a9f4);
-          border-radius: 8px;
-          padding: 6px 10px;
-          font-size: 0.82rem;
-          font-weight: 600;
-          cursor: pointer;
-          box-sizing: border-box;
-          transition: all 0.15s ease;
-          white-space: nowrap;
-        }
-        .cat-add-btn:hover {
-          background: var(--primary-color-alpha, rgba(3, 169, 244, 0.1));
-          border-color: var(--primary-color, #03a9f4);
-        }
-        .cat-add-btn:active {
-          transform: scale(0.96);
-        }
-        .plus-icon {
-          font-size: 0.85rem;
-          line-height: 1;
+          box-shadow: 0 0 0 2px var(--primary-color-alpha, rgba(3, 169, 244, 0.15));
         }
         .input-container {
           display: flex;
           align-items: center;
           gap: 8px;
-          background: var(--secondary-background-color, rgba(0, 0, 0, 0.04));
-          border: 1px solid var(--divider-color, rgba(0, 0, 0, 0.1));
-          border-radius: 12px;
-          padding: 6px 8px;
           width: 100%;
           box-sizing: border-box;
-          transition: border-color 0.2s, box-shadow 0.2s;
-        }
-        .input-container:focus-within {
-          border-color: var(--primary-color, #03a9f4);
-          box-shadow: 0 0 0 2px var(--primary-color-alpha, rgba(3, 169, 244, 0.2));
         }
         input[type="text"] {
           flex: 1 1 0;
@@ -1257,45 +1209,146 @@ class BrainstormCard extends HTMLElement {
           font-size: 0.95rem;
           color: var(--primary-text-color, #212121);
           outline: none;
-          padding: 8px 6px;
+          padding: 6px 2px;
           box-sizing: border-box;
         }
         input[type="text"]::placeholder {
           color: var(--secondary-text-color, #757575);
+          opacity: 0.85;
         }
         button.send-btn {
           flex: 0 0 auto;
           background: var(--primary-color, #03a9f4);
           color: white;
           border: none;
-          border-radius: 8px;
-          padding: 0 16px;
-          height: 38px;
+          border-radius: 10px;
+          padding: 0 14px;
+          height: 36px;
           cursor: pointer;
           font-weight: 600;
-          display: flex;
+          font-size: 0.86rem;
+          display: inline-flex;
           align-items: center;
+          gap: 5px;
           justify-content: center;
           white-space: nowrap;
           box-sizing: border-box;
           transition: opacity 0.2s, transform 0.1s;
         }
         button.send-btn:hover {
-          opacity: 0.9;
+          opacity: 0.92;
         }
         button.send-btn:active {
           transform: scale(0.96);
         }
-        @media (max-width: 440px) {
-          .cat-toolbar {
-            gap: 6px;
+        .send-icon {
+          font-size: 0.9rem;
+          line-height: 1;
+        }
+        .quick-meta-bar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 6px;
+          padding-top: 4px;
+          border-top: 1px solid var(--ha-card-border-color, var(--divider-color, rgba(127, 127, 127, 0.08)));
+        }
+        .quick-meta-left {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          flex-wrap: wrap;
+          flex: 1 1 auto;
+          min-width: 0;
+        }
+        .quick-select-wrap {
+          display: inline-flex;
+          align-items: center;
+          background: var(--card-background-color, rgba(255, 255, 255, 0.6));
+          border: 1px solid var(--ha-card-border-color, var(--divider-color, rgba(127, 127, 127, 0.15)));
+          border-radius: 8px;
+          padding: 2px 6px;
+          gap: 4px;
+          transition: border-color 0.2s;
+        }
+        .quick-select-wrap:focus-within {
+          border-color: var(--primary-color, #03a9f4);
+        }
+        .quick-select-icon {
+          font-size: 0.82rem;
+          line-height: 1;
+        }
+        select.cat-select {
+          border: none;
+          background: transparent;
+          font-size: 0.82rem;
+          font-weight: 500;
+          color: var(--primary-text-color, #212121);
+          outline: none;
+          cursor: pointer;
+          padding: 3px 2px;
+          max-width: 170px;
+          box-sizing: border-box;
+        }
+        select.prio-select {
+          border: none;
+          background: transparent;
+          font-size: 0.82rem;
+          font-weight: 500;
+          color: var(--primary-text-color, #212121);
+          outline: none;
+          cursor: pointer;
+          padding: 3px 2px;
+          box-sizing: border-box;
+        }
+        @media (max-width: 520px) {
+          ha-card {
+            padding: 12px 12px 14px 12px;
           }
-          select.cat-select {
-            min-width: 110px;
+          .header {
+            gap: 8px;
+            margin-bottom: 10px;
+          }
+          .card-title {
+            font-size: 1.05rem;
+          }
+          .badge {
+            font-size: 0.68rem;
+            padding: 2px 6px;
+          }
+          .quick-capture-card {
+            padding: 6px 8px;
+            gap: 5px;
           }
           button.send-btn {
             padding: 0 10px;
-            font-size: 0.85rem;
+            height: 34px;
+            font-size: 0.82rem;
+          }
+          .send-text {
+            display: none;
+          }
+          .send-icon {
+            font-size: 1.05rem;
+            margin: 0;
+          }
+          select.cat-select {
+            max-width: 130px;
+            font-size: 0.78rem;
+          }
+          select.prio-select {
+            font-size: 0.78rem;
+          }
+        }
+        @media (max-width: 380px) {
+          .view-toggle-btn .btn-text {
+            display: none;
+          }
+          .view-toggle-btn {
+            padding: 6px 8px;
+          }
+          select.cat-select {
+            max-width: 105px;
           }
         }
         /* Filter Pills */
@@ -1546,7 +1599,7 @@ class BrainstormCard extends HTMLElement {
 
       <ha-card>
         <div class="header">
-          <div class="title">
+          <div class="header-main">
             <div class="logo-wrap" title="Brainstorm Hub">
               <svg viewBox="0 0 512 512" class="brand-logo" xmlns="http://www.w3.org/2000/svg">
                 <defs>
@@ -1579,46 +1632,53 @@ class BrainstormCard extends HTMLElement {
                 <path d="M232 366 C232 366, 238 382, 256 382 C274 382, 280 366, 280 366 Z" fill="#4a5568"/>
               </svg>
             </div>
-            <span id="cardTitle">${this._config.title !== undefined ? this._config.title : "Brainstorm Hub"}</span>
+            <div class="header-titles">
+              <span class="card-title" id="cardTitle">${this._config.title !== undefined ? this._config.title : "Brainstorm Hub"}</span>
+              <div class="badge" id="badgeCount" style="display: ${this._config.show_badge === true ? "inline-flex" : "none"};">0 Ideen</div>
+            </div>
           </div>
-          <div class="header-right">
-            <div class="badge" id="badgeCount" style="display: ${this._config.show_badge === true ? "inline-flex" : "none"};">0 Ideen</div>
+          <div class="header-actions">
             <button class="color-mode-btn" id="cardColorModeBtn" style="display: ${this._config.show_color_toggle === true ? "flex" : "none"};" title="${this._colorMode === 'theme' ? 'Farbmodus: Theme-Farben aktiv (Klicken für Bunt)' : 'Farbmodus: Bunt aktiv (Klicken für Theme-Farben)'}">${this._colorMode === 'theme' ? '🎨' : '🌈'}</button>
-            <button class="view-toggle-btn" id="viewToggleBtn" style="display: ${this._config.show_mindmap_button === true ? "flex" : "none"};" title="Mindmap als Layer öffnen">🧠 Mindmap</button>
+            <button class="view-toggle-btn" id="viewToggleBtn" style="display: ${this._config.show_mindmap_button === true ? "flex" : "none"};" title="Mindmap als Layer öffnen">
+              <span class="btn-icon">🧠</span>
+              <span class="btn-text">Mindmap</span>
+            </button>
           </div>
         </div>
 
         <div id="listViewWrap">
           <div class="input-section" style="display: ${this._config.show_quick_input === true ? "block" : "none"};">
-            <div class="cat-toolbar">
-              <div class="cat-toolbar-left">
-                <span class="cat-toolbar-label">Kategorie:</span>
-                <select class="cat-select" id="catSelect">
-                  <option value="auto">Auto (Erkennen)</option>
-                </select>
-                <span class="cat-toolbar-label" style="margin-left: 6px;">Prio:</span>
-                <select class="prio-select" id="prioSelect">
-                  <option value="medium" selected>🟡 Mittel</option>
-                  <option value="high">🔴 Hoch</option>
-                  <option value="urgent">🔥 Dringend</option>
-                  <option value="low">🟢 Niedrig</option>
-                </select>
+            <div class="quick-capture-card">
+              <div class="input-container">
+                <input 
+                  type="text" 
+                  id="ideaInput" 
+                  placeholder="Blitz-Idee tippen... (z.B. 'Garten: Baum schneiden')" 
+                  autocomplete="off"
+                />
+                <button class="send-btn" id="sendBtn" title="Idee erfassen">
+                  <span class="send-icon">➕</span>
+                  <span class="send-text">Hinzufügen</span>
+                </button>
               </div>
-              <button class="cat-add-btn" id="quickAddCatBtn" title="Neue Kategorie anlegen">
-                <span class="plus-icon">➕</span>
-                <span class="btn-text">Kategorie</span>
-              </button>
-            </div>
-
-            <div class="input-container">
-              <input 
-                type="text" 
-                id="ideaInput" 
-                placeholder="Blitz-Idee tippen... (z.B. 'Garten: Baum schneiden')" 
-              />
-              <button class="send-btn" id="sendBtn">
-                <span>Hinzufügen</span>
-              </button>
+              <div class="quick-meta-bar">
+                <div class="quick-meta-left">
+                  <div class="quick-select-wrap cat-wrap">
+                    <span class="quick-select-icon">🏷️</span>
+                    <select class="cat-select" id="catSelect" title="Ziel-Kategorie auswählen">
+                      <option value="auto">Auto (Erkennen)</option>
+                    </select>
+                  </div>
+                  <div class="quick-select-wrap prio-wrap">
+                    <select class="prio-select" id="prioSelect" title="Priorität festlegen">
+                      <option value="medium" selected>🟡 Mittel</option>
+                      <option value="high">🔴 Hoch</option>
+                      <option value="urgent">🔥 Dringend</option>
+                      <option value="low">🟢 Niedrig</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1680,6 +1740,7 @@ class BrainstormCard extends HTMLElement {
           ? "Farbmodus: Theme-Farben aktiv (Klicken für Bunt)"
           : "Farbmodus: Bunt aktiv (Klicken für Theme-Farben)";
         this._lastColorMode = null; // Force re-render
+        this._lastUpdated = null;
         this._updateContent();
       });
     }
@@ -1805,6 +1866,10 @@ class BrainstormCard extends HTMLElement {
     const cardColorModeBtn = this.shadowRoot.getElementById("cardColorModeBtn");
     if (cardColorModeBtn) {
       cardColorModeBtn.style.display = this._config.show_color_toggle === true ? "flex" : "none";
+      cardColorModeBtn.innerHTML = this._colorMode === "theme" ? "🎨" : "🌈";
+      cardColorModeBtn.title = this._colorMode === "theme"
+        ? "Farbmodus: Theme-Farben aktiv (Klicken für Bunt)"
+        : "Farbmodus: Bunt aktiv (Klicken für Theme-Farben)";
     }
 
     const viewToggleBtn = this.shadowRoot.getElementById("viewToggleBtn");
