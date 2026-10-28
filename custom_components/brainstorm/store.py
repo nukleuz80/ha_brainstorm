@@ -17,6 +17,7 @@ from .const import (
     ATTR_CREATED_AT,
     ATTR_DEVICE,
     ATTR_ID,
+    ATTR_PARENT_ID,
     ATTR_PRIORITY,
     ATTR_SOURCE,
     ATTR_STATUS,
@@ -699,6 +700,7 @@ class BrainstormStore:
         source: str = "manual",
         tags: list[str] | None = None,
         device: str | None = None,
+        parent_id: str | None = None,
     ) -> dict[str, Any]:
         """Add a new brainstorm idea."""
         raw_check = (text or "").strip().lower()
@@ -727,11 +729,16 @@ class BrainstormStore:
         if resolved_cat not in self._categories:
             resolved_cat = "Inbox"
 
+        resolved_parent = None
+        if parent_id and parent_id.strip() in self._ideas:
+            resolved_parent = parent_id.strip()
+
         idea = {
             ATTR_ID: idea_id,
             ATTR_TEXT: clean_text,
             ATTR_CATEGORY: resolved_cat,
             ATTR_PRIORITY: resolved_prio,
+            ATTR_PARENT_ID: resolved_parent,
             ATTR_SOURCE: source,
             ATTR_DEVICE: (device or "").strip() if device else None,
             ATTR_TAGS: all_tags,
@@ -747,10 +754,11 @@ class BrainstormStore:
         # Fire event for automations (e.g. Alexa TTS confirmation or mobile push)
         self.hass.bus.async_fire(EVENT_IDEA_ADDED, idea)
         _LOGGER.info(
-            "Brainstorm idea [%s] added in category '%s' (prio: %s, device: %s)",
+            "Brainstorm idea [%s] added in category '%s' (prio: %s, parent: %s, device: %s)",
             idea_id,
             resolved_cat,
             resolved_prio,
+            resolved_parent,
             device,
         )
         return idea
@@ -763,6 +771,8 @@ class BrainstormStore:
         priority: str | None = None,
         status: str | None = None,
         device: str | None = None,
+        parent_id: str | None = None,
+        update_parent: bool = False,
     ) -> dict[str, Any] | None:
         """Update an existing idea."""
         if idea_id not in self._ideas:
@@ -784,18 +794,17 @@ class BrainstormStore:
             idea[ATTR_STATUS] = status
         if device is not None:
             idea[ATTR_DEVICE] = device.strip() if device else None
+        if update_parent:
+            if not parent_id or parent_id.strip() in ("", "none"):
+                idea[ATTR_PARENT_ID] = None
+            else:
+                clean_pid = parent_id.strip()
+                if clean_pid != idea_id and clean_pid in self._ideas:
+                    idea[ATTR_PARENT_ID] = clean_pid
 
         idea[ATTR_UPDATED_AT] = dt_util.now().isoformat()
         await self.async_save()
         self._notify_listeners()
-
-        event_name = (
-            EVENT_IDEA_COMPLETED
-            if status == "completed"
-            else EVENT_IDEA_UPDATED
-        )
-        self.hass.bus.async_fire(event_name, idea)
-        return idea
 
         event_name = (
             EVENT_IDEA_COMPLETED
@@ -811,6 +820,11 @@ class BrainstormStore:
             return False
 
         deleted_idea = self._ideas.pop(idea_id)
+        # Unparent any direct subtasks of the deleted idea
+        for item in self._ideas.values():
+            if item.get(ATTR_PARENT_ID) == idea_id:
+                item[ATTR_PARENT_ID] = None
+
         await self.async_save()
         self._notify_listeners()
         self.hass.bus.async_fire(EVENT_IDEA_DELETED, deleted_idea)

@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.26 - Configurable Option to Hide Empty Categories
+ * Version 1.4.27 - Subtask Indentation & Active Category Quick Capture
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",
@@ -286,7 +286,10 @@ class BrainstormCard extends HTMLElement {
     if (!text) return;
 
     const selectedCat = catSelectEl ? catSelectEl.value : "";
-    const category = selectedCat && selectedCat !== "auto" ? selectedCat : null;
+    let category = selectedCat && selectedCat !== "auto" ? selectedCat : null;
+    if (!category && this._selectedCategory && this._selectedCategory !== "all" && this._selectedCategory !== "__completed__") {
+      category = this._selectedCategory;
+    }
     const priority = prioSelectEl ? prioSelectEl.value : "medium";
 
     inputEl.value = "";
@@ -361,11 +364,13 @@ class BrainstormCard extends HTMLElement {
     this._isDialogOpen = false;
   }
 
-  _editIdea(id, currentText, currentCategory, currentPriority = "medium") {
+  _editIdea(id, currentText, currentCategory, currentPriority = "medium", currentParentId = null) {
     const sensor = this._getSensorEntity();
     const categories = sensor ? (sensor.attributes.categories || ["Inbox"]) : ["Inbox"];
+    const activeIdeas = sensor ? (sensor.attributes.ideas || []) : [];
     let selectedCat = currentCategory || "Inbox";
     let selectedPrio = (currentPriority || "medium").toLowerCase();
+    const candidateParents = activeIdeas.filter((i) => i.id !== id && !i.parent_id);
 
     this._openDialog("✏️ Notiz bearbeiten", (body) => {
       body.innerHTML = `
@@ -396,6 +401,20 @@ class BrainstormCard extends HTMLElement {
             })
             .join("")}
         </div>
+
+        <div class="action-dialog-label" style="margin-top: 6px;">Übergeordnete Aufgabe:</div>
+        <select class="action-dialog-input" id="editParentSelect" style="cursor: pointer; width: 100%;">
+          <option value="">— Keine (Hauptaufgabe) —</option>
+          ${candidateParents
+            .map(
+              (p) => `
+            <option value="${p.id}" ${p.id === currentParentId ? "selected" : ""}>
+              ↳ ${this._escapeHtml(p.text.length > 50 ? p.text.substring(0, 50) + "..." : p.text)}
+            </option>
+          `
+            )
+            .join("")}
+        </select>
 
         <div class="action-dialog-footer">
           <button class="action-dialog-btn action-dialog-btn-cancel" id="cancelEditBtn">Abbrechen</button>
@@ -464,6 +483,13 @@ class BrainstormCard extends HTMLElement {
         const payload = { id: id, text: newText, priority: selectedPrio };
         if (selectedCat && selectedCat !== currentCategory) {
           payload.category = selectedCat;
+        }
+        const parentSelect = body.querySelector("#editParentSelect");
+        if (parentSelect) {
+          const selectedPid = parentSelect.value || "";
+          if (selectedPid !== (currentParentId || "")) {
+            payload.parent_id = selectedPid;
+          }
         }
 
         try {
@@ -1340,6 +1366,20 @@ class BrainstormCard extends HTMLElement {
           select.prio-select {
             font-size: 0.78rem;
           }
+          .idea-item.is-subtask {
+            margin-left: 16px;
+          }
+          .idea-item.is-subtask::before {
+            left: -11px;
+            width: 8px;
+          }
+          .indent-btn,
+          .edit-btn,
+          .delete-btn {
+            opacity: 0.75 !important;
+            min-width: 28px;
+            min-height: 28px;
+          }
         }
         @media (max-width: 380px) {
           .view-toggle-btn .btn-text {
@@ -1543,6 +1583,7 @@ class BrainstormCard extends HTMLElement {
           gap: 2px;
           margin-left: 4px;
         }
+        .indent-btn,
         .edit-btn,
         .delete-btn {
           background: transparent;
@@ -1554,10 +1595,20 @@ class BrainstormCard extends HTMLElement {
           border-radius: 4px;
           opacity: 0.35;
           transition: opacity 0.2s, color 0.2s, background 0.2s;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          line-height: 1;
         }
+        .idea-item:hover .indent-btn,
         .idea-item:hover .edit-btn,
         .idea-item:hover .delete-btn {
           opacity: 0.85;
+        }
+        .indent-btn:hover {
+          color: var(--primary-color, #03a9f4) !important;
+          opacity: 1 !important;
+          background: var(--secondary-background-color, rgba(0,0,0,0.05));
         }
         .edit-btn:hover {
           color: var(--primary-color, #03a9f4) !important;
@@ -1568,6 +1619,42 @@ class BrainstormCard extends HTMLElement {
           color: var(--error-color, #f44336) !important;
           opacity: 1 !important;
           background: rgba(244, 67, 54, 0.1);
+        }
+        /* Subtasks styling */
+        .idea-item.is-subtask {
+          margin-left: 24px;
+          border-left: 3.5px solid color-mix(in srgb, var(--item-cat-color, var(--primary-color)) 75%, transparent);
+          background: color-mix(in srgb, var(--item-cat-color, var(--primary-color)) 4%, var(--card-background-color, #ffffff));
+          position: relative;
+        }
+        .idea-item.is-subtask::before {
+          content: "";
+          position: absolute;
+          left: -15px;
+          top: 18px;
+          width: 11px;
+          height: 2px;
+          background: color-mix(in srgb, var(--item-cat-color, var(--primary-color)) 45%, var(--divider-color, rgba(0,0,0,0.15)));
+          border-radius: 1px;
+        }
+        .subtask-indicator {
+          display: inline-flex;
+          align-items: center;
+          font-weight: 700;
+          color: var(--secondary-text-color, #757575);
+          margin-right: 5px;
+          font-size: 0.95rem;
+          user-select: none;
+        }
+        .subtask-badge {
+          display: inline-flex;
+          align-items: center;
+          font-size: 0.72rem;
+          padding: 1px 6px;
+          border-radius: 6px;
+          background: var(--secondary-background-color, rgba(0, 0, 0, 0.06));
+          color: var(--secondary-text-color, #666);
+          font-weight: 500;
         }
         .add-cat-pill {
           padding: 5px 12px;
@@ -1888,7 +1975,16 @@ class BrainstormCard extends HTMLElement {
       pillsContainer.style.display = this._config.show_categories === true ? "flex" : "none";
     }
 
-    // 2. Update Select Dropdown without resetting user selection or closing
+    // 2. Update Select Dropdown and Input Placeholder
+    const ideaInput = this.shadowRoot.getElementById("ideaInput");
+    if (ideaInput && document.activeElement !== ideaInput) {
+      if (this._selectedCategory && this._selectedCategory !== "all" && this._selectedCategory !== "__completed__") {
+        ideaInput.placeholder = `Notiz in "${this._selectedCategory}" verfassen...`;
+      } else {
+        ideaInput.placeholder = "Blitz-Idee tippen... (z.B. 'Garten: Baum schneiden')";
+      }
+    }
+
     if (catSelectEl && !isSelectActive) {
       const currentVal = catSelectEl.value || "auto";
       const existingOptions = Array.from(catSelectEl.options).map((o) => o.value);
@@ -1901,6 +1997,12 @@ class BrainstormCard extends HTMLElement {
           ${categories.map((c) => `<option value="${c}">${c}</option>`).join("")}
         `;
         catSelectEl.value = currentVal;
+      }
+
+      if (this._selectedCategory && this._selectedCategory !== "all" && this._selectedCategory !== "__completed__") {
+        catSelectEl.value = this._selectedCategory;
+      } else if (catSelectEl.value !== "auto" && (this._selectedCategory === "all" || this._selectedCategory === "__completed__")) {
+        catSelectEl.value = "auto";
       }
     }
 
@@ -1961,6 +2063,14 @@ class BrainstormCard extends HTMLElement {
         pill.addEventListener("click", (e) => {
           if (e.target.closest(".remove-cat-btn")) return;
           this._selectedCategory = String(pill.getAttribute("data-cat") || "").trim();
+          const catSelect = this.shadowRoot.getElementById("catSelect");
+          if (catSelect) {
+            if (this._selectedCategory !== "all" && this._selectedCategory !== "__completed__") {
+              catSelect.value = this._selectedCategory;
+            } else {
+              catSelect.value = "auto";
+            }
+          }
           this._updateContent();
         });
       });
@@ -1979,7 +2089,7 @@ class BrainstormCard extends HTMLElement {
       }
     }
 
-    // 4. Update Filtered Ideas List
+    // 4. Update Filtered Ideas List with Subtask Hierarchy
     let filteredIdeas = isCompletedView
       ? completedIdeas
       : this._selectedCategory === "all"
@@ -1990,9 +2100,50 @@ class BrainstormCard extends HTMLElement {
       filteredIdeas = filteredIdeas.slice(0, this._config.max_items);
     }
 
+    // Build hierarchical tree: parent followed immediately by its subtasks
+    const activeItemMap = new Map();
+    (isCompletedView ? completedIdeas : activeIdeas).forEach((i) => {
+      activeItemMap.set(i.id, i);
+    });
+
+    const parentMap = new Map();
+    const topLevelIdeas = [];
+
+    filteredIdeas.forEach((item) => {
+      if (item.parent_id && activeItemMap.has(item.parent_id)) {
+        if (!parentMap.has(item.parent_id)) {
+          parentMap.set(item.parent_id, []);
+        }
+        parentMap.get(item.parent_id).push(item);
+      } else {
+        topLevelIdeas.push(item);
+      }
+    });
+
+    const orderedIdeas = [];
+    let lastTopLevelId = null;
+
+    topLevelIdeas.forEach((topItem) => {
+      orderedIdeas.push({
+        ...topItem,
+        isSubtask: false,
+        candidateParentId: lastTopLevelId,
+      });
+      lastTopLevelId = topItem.id;
+
+      const children = parentMap.get(topItem.id) || [];
+      children.forEach((child) => {
+        orderedIdeas.push({
+          ...child,
+          isSubtask: true,
+          parentTask: topItem,
+        });
+      });
+    });
+
     const ideasList = this.shadowRoot.getElementById("ideasList");
     if (ideasList) {
-      if (filteredIdeas.length === 0) {
+      if (orderedIdeas.length === 0) {
         ideasList.innerHTML = `
           <div class="empty-state">
             ${
@@ -2010,10 +2161,11 @@ class BrainstormCard extends HTMLElement {
         const showSource = this._config.show_source_icons === true;
         const showTime = this._config.show_timestamps === true;
 
-        ideasList.innerHTML = filteredIdeas
-          .map(
-            (item) => `
-            <div class="idea-item ${isCompletedView ? "completed" : ""}" data-id="${item.id}" style="--item-cat-color: ${this._getCategoryColor(item.category)};">
+        ideasList.innerHTML = orderedIdeas
+          .map((item) => {
+            const isSub = item.isSubtask === true;
+            return `
+            <div class="idea-item ${isSub ? "is-subtask" : ""} ${isCompletedView ? "completed" : ""}" data-id="${item.id}" style="--item-cat-color: ${this._getCategoryColor(item.category)};">
               <button 
                 class="check-btn ${isCompletedView ? "checked" : ""}" 
                 title="${isCompletedView ? "Wieder als aktiv markieren" : "Als erledigt markieren"}" 
@@ -2021,8 +2173,11 @@ class BrainstormCard extends HTMLElement {
                 data-completed="${isCompletedView ? "true" : "false"}"
               >${isCompletedView ? "✓" : ""}</button>
               <div class="idea-content">
-                <div class="idea-text" title="${canEdit ? "Klicken zum Bearbeiten" : ""}" data-id="${item.id}" style="${canEdit ? "" : "cursor: default;"}">${this._escapeHtml(item.text)}</div>
+                <div class="idea-text" title="${canEdit ? "Klicken zum Bearbeiten" : ""}" data-id="${item.id}" style="${canEdit ? "" : "cursor: default;"}">
+                  ${isSub ? `<span class="subtask-indicator" title="Unteraufgabe">↳</span>` : ""}${this._escapeHtml(item.text)}
+                </div>
                 <div class="idea-meta">
+                  ${isSub ? `<span class="subtask-badge" title="Unteraufgabe">Unteraufgabe</span>` : ""}
                   <span class="category-tag ${canEdit ? "clickable" : ""}" title="${canEdit ? "Kategorie ändern" : "Kategorie"}" data-id="${item.id}" data-cat="${item.category}" style="color: ${this._getCategoryColor(item.category)}; background: color-mix(in srgb, ${this._getCategoryColor(item.category)} 12%, var(--secondary-background-color, rgba(0,0,0,0.06))); border: 1px solid color-mix(in srgb, ${this._getCategoryColor(item.category)} 25%, transparent);">${this._escapeHtml(item.category)}</span>
                   ${this._getPriorityBadge(item.priority, item.id)}
                   ${showSource ? `${this._getSourceBadge(item.source, item.device)}` : ""}
@@ -2031,12 +2186,21 @@ class BrainstormCard extends HTMLElement {
                 </div>
               </div>
               <div class="item-actions">
+                ${
+                  canEdit
+                    ? isSub
+                      ? `<button class="indent-btn outdent-btn" title="Ausrücken (zu Hauptaufgabe)" data-id="${item.id}" data-action="outdent">↰</button>`
+                      : item.candidateParentId
+                      ? `<button class="indent-btn do-indent-btn" title="Unter vorherige Aufgabe einrücken" data-id="${item.id}" data-parent-id="${item.candidateParentId}" data-action="indent">↳</button>`
+                      : ""
+                    : ""
+                }
                 ${canEdit ? `<button class="edit-btn" title="Bearbeiten" data-id="${item.id}">✎</button>` : ""}
                 ${canDelete ? `<button class="delete-btn" title="Löschen" data-id="${item.id}">✕</button>` : ""}
               </div>
             </div>
-          `
-          )
+          `;
+          })
           .join("");
 
         // Attach item button listeners
@@ -2052,12 +2216,30 @@ class BrainstormCard extends HTMLElement {
           });
         });
 
+        ideasList.querySelectorAll(".indent-btn").forEach((btn) => {
+          btn.addEventListener("click", async (e) => {
+            e.stopPropagation();
+            if (!canEdit) return;
+            const id = btn.getAttribute("data-id");
+            const action = btn.getAttribute("data-action");
+            const parentId = btn.getAttribute("data-parent-id") || "";
+            try {
+              await this._hass.callService("brainstorm", "update_idea", {
+                id: id,
+                parent_id: action === "indent" ? parentId : "",
+              });
+            } catch (err) {
+              console.error("Failed to indent/outdent idea", err);
+            }
+          });
+        });
+
         ideasList.querySelectorAll(".edit-btn").forEach((btn) => {
           btn.addEventListener("click", () => {
             if (!canEdit) return;
             const id = btn.getAttribute("data-id");
             const item = activeIdeas.find((i) => i.id === id);
-            if (item) this._editIdea(id, item.text, item.category, item.priority);
+            if (item) this._editIdea(id, item.text, item.category, item.priority, item.parent_id);
           });
         });
 
@@ -2067,7 +2249,7 @@ class BrainstormCard extends HTMLElement {
             const id = el.getAttribute("data-id");
             if (isCompletedView) return;
             const item = activeIdeas.find((i) => i.id === id);
-            if (item) this._editIdea(id, item.text, item.category, item.priority);
+            if (item) this._editIdea(id, item.text, item.category, item.priority, item.parent_id);
           });
         });
 
@@ -2498,7 +2680,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.4.26 ",
+  "%c BRAINSTORM-CARD %c v1.4.27 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

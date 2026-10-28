@@ -50,6 +50,13 @@ add_idea:
       required: false
       selector:
         object:
+    parent_id:
+      name: Übergeordnete Idee (Parent-ID)
+      description: ID der übergeordneten Idee für Unteraufgaben/Einrückung (optional).
+      required: false
+      example: "42fdbc8c"
+      selector:
+        text:
 
 update_idea:
   name: Idee bearbeiten
@@ -100,6 +107,13 @@ update_idea:
       name: Erfassungsgerät
       description: Gerät aktualisieren.
       required: false
+      selector:
+        text:
+    parent_id:
+      name: Übergeordnete Idee (Parent-ID)
+      description: ID der übergeordneten Idee für Unteraufgaben/Einrückung (leer = Hauptaufgabe).
+      required: false
+      example: "42fdbc8c"
       selector:
         text:
 

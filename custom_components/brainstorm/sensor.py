@@ -15,6 +15,7 @@ from .const import (
     ATTR_CREATED_AT,
     ATTR_DEVICE,
     ATTR_ID,
+    ATTR_PARENT_ID,
     ATTR_PRIORITY,
     ATTR_SOURCE,
     ATTR_STATUS,
@@ -59,7 +60,7 @@ class BrainstormOverviewSensor(SensorEntity):
             name="Brainstorm Hub",
             manufacturer="nukleuz80",
             model="Brainstorm Hub",
-            sw_version="1.4.26",
+            sw_version="1.4.27",
         )
 
     async def async_added_to_hass(self) -> None:
@@ -138,6 +139,7 @@ class BrainstormOverviewSensor(SensorEntity):
                     "source": i.get(ATTR_SOURCE),
                     "device": i.get(ATTR_DEVICE),
                     "status": i.get(ATTR_STATUS),
+                    "parent_id": i.get(ATTR_PARENT_ID),
                 }
                 for i in active_ideas
             ],
@@ -151,6 +153,7 @@ class BrainstormOverviewSensor(SensorEntity):
                     "source": i.get(ATTR_SOURCE),
                     "device": i.get(ATTR_DEVICE),
                     "status": i.get(ATTR_STATUS),
+                    "parent_id": i.get(ATTR_PARENT_ID),
                 }
                 for i in completed_ideas[:50]
             ],

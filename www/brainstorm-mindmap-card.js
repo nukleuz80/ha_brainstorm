@@ -1,6 +1,6 @@
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.4.26
+ * Version: 1.4.27
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -431,6 +431,14 @@ class BrainstormMindmapCard extends HTMLElement {
         }
         .pills-container::-webkit-scrollbar {
           display: none;
+        }
+        @media (max-width: 600px) {
+          .cat-pill[data-cat="all"] {
+            display: none !important;
+          }
+          .pills-container {
+            max-width: 78%;
+          }
         }
         .cat-pill {
           padding: 6px 14px;
@@ -1453,7 +1461,8 @@ class BrainstormMindmapCard extends HTMLElement {
       const validCats = hideEmptyCategories
         ? allCats.filter((c) => (counts[c] || 0) > 0 || this._selectedCategory === c)
         : allCats;
-      const categories = ["all", ...validCats];
+      const isMobile = window.matchMedia && window.matchMedia("(max-width: 600px)").matches;
+      const categories = isMobile ? validCats : ["all", ...validCats];
       const idx = categories.indexOf(this._selectedCategory);
       const nextIdx = (idx + 1) % categories.length;
       this._selectedCategory = categories[nextIdx];
@@ -1782,6 +1791,11 @@ class BrainstormMindmapCard extends HTMLElement {
           const isActive = String(this._selectedCategory || "").trim() === String(cat || "").trim();
           return count > 0 || isActive;
         });
+
+        const isMobile = window.matchMedia && window.matchMedia("(max-width: 600px)").matches;
+        if (isMobile && this._selectedCategory === "all" && visibleCategories.length > 0) {
+          this._selectedCategory = visibleCategories[0];
+        }
 
         pillsBar.innerHTML = `
           <div class="cat-pill ${this._selectedCategory === "all" ? "active" : ""}" data-cat="all" style="--category-color: var(--primary-color, #a855f7);">
@@ -2806,7 +2820,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.26 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.27 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

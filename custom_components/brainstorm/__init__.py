@@ -16,6 +16,7 @@ from .const import (
     ATTR_CATEGORY,
     ATTR_DEVICE,
     ATTR_ID,
+    ATTR_PARENT_ID,
     ATTR_PRIORITY,
     ATTR_SOURCE,
     ATTR_STATUS,
@@ -51,6 +52,7 @@ SERVICE_ADD_IDEA_SCHEMA = vol.Schema(
         vol.Optional(ATTR_SOURCE, default="manual"): cv.string,
         vol.Optional(ATTR_DEVICE): vol.Any(None, cv.string),
         vol.Optional(ATTR_TAGS): vol.All(cv.ensure_list, [cv.string]),
+        vol.Optional(ATTR_PARENT_ID): vol.Any(None, cv.string),
     },
     extra=vol.ALLOW_EXTRA,
 )
@@ -63,6 +65,7 @@ SERVICE_UPDATE_IDEA_SCHEMA = vol.Schema(
         vol.Optional(ATTR_PRIORITY): vol.Any(None, cv.string),
         vol.Optional(ATTR_STATUS): vol.In(["active", "completed", "archived"]),
         vol.Optional(ATTR_DEVICE): vol.Any(None, cv.string),
+        vol.Optional(ATTR_PARENT_ID): vol.Any(None, cv.string),
     },
     extra=vol.ALLOW_EXTRA,
 )
@@ -126,11 +129,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) -
     """Set up Brainstorm Hub from a config entry."""
     import importlib
     import sys
-    for mod in ["const", "nlp", "store", "sensor", "todo", "llm", "logbook"]:
+    for mod in ["const", "config_flow", "nlp", "store", "sensor", "todo", "llm", "logbook"]:
         full_name = f"custom_components.brainstorm.{mod}"
         if full_name in sys.modules:
             try:
                 importlib.reload(sys.modules[full_name])
+                if mod == "config_flow":
+                    from homeassistant import config_entries
+                    if hasattr(sys.modules[full_name], "BrainstormConfigFlow"):
+                        config_entries.HANDLERS[DOMAIN] = sys.modules[full_name].BrainstormConfigFlow
             except Exception as err:
                 _LOGGER.debug("Could not live-reload %s: %s", full_name, err)
 
@@ -214,6 +221,7 @@ def _register_services(hass: HomeAssistant) -> None:
         source = call.data.get(ATTR_SOURCE, "manual")
         device = call.data.get(ATTR_DEVICE)
         tags = call.data.get(ATTR_TAGS)
+        parent_id = call.data.get(ATTR_PARENT_ID)
 
         idea = await store.async_add_idea(
             text=text,
@@ -222,6 +230,7 @@ def _register_services(hass: HomeAssistant) -> None:
             source=source,
             device=device,
             tags=tags,
+            parent_id=parent_id,
         )
         return {"success": True, "idea": idea}
 
@@ -237,6 +246,8 @@ def _register_services(hass: HomeAssistant) -> None:
         priority = call.data.get(ATTR_PRIORITY)
         status = call.data.get(ATTR_STATUS)
         device = call.data.get(ATTR_DEVICE)
+        update_parent = ATTR_PARENT_ID in call.data
+        parent_id = call.data.get(ATTR_PARENT_ID)
 
         updated = await store.async_update_idea(
             idea_id=idea_id,
@@ -245,6 +256,8 @@ def _register_services(hass: HomeAssistant) -> None:
             priority=priority,
             status=status,
             device=device,
+            parent_id=parent_id,
+            update_parent=update_parent,
         )
         return {"success": updated is not None, "idea": updated}
 
