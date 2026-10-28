@@ -5,6 +5,7 @@
         "title": "Brainstorm Hub einrichten",
         "description": "Erfasse Ideen und Gedanken blitzschnell per Sprache und Text.",
         "data": {
+          "hide_empty_categories": "Kategorien ohne Notizen (0) ausblenden",
           "auto_export_markdown": "Ideen automatisch als Markdown-Dateien exportieren",
           "markdown_path": "Dateipfad für Markdown-Dateien"
         }
@@ -13,6 +14,7 @@
         "title": "Brainstorm Hub neu konfigurieren",
         "description": "Passe die Grundeinstellungen von Brainstorm Hub an.",
         "data": {
+          "hide_empty_categories": "Kategorien ohne Notizen (0) ausblenden",
           "smart_formatting": "Intelligente Text-Optimierung",
           "auto_export_markdown": "Ideen automatisch als Markdown-Dateien exportieren",
           "markdown_path": "Dateipfad für Markdown-Dateien"
@@ -40,7 +42,8 @@
         "data": {
           "add_category": "➕ Neue Kategorie anlegen (optional)",
           "delete_category": "🗑️ Kategorie löschen (optional)",
-          "edit_categories": "✏️ Komplette Liste anpassen (durch Komma getrennt)"
+          "edit_categories": "✏️ Komplette Liste anpassen (durch Komma getrennt)",
+          "hide_empty_categories": "Kategorien ohne Notizen (0) ausblenden"
         }
       },
       "general": {
@@ -48,6 +51,7 @@
         "description": "Passe das Verhalten von Brainstorm Hub und den Markdown-Export an.",
         "data": {
           "default_category": "Standard-Kategorie für neue Ideen",
+          "hide_empty_categories": "Kategorien ohne Notizen (0) ausblenden",
           "smart_formatting": "Intelligente Text-Optimierung (Grammatik, Groß-/Kleinschreibung, Infinitiv)",
           "auto_export_markdown": "Ideen automatisch als Markdown exportieren",
           "markdown_path": "Dateipfad für Markdown-Dateien"

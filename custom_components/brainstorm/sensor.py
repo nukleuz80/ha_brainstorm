@@ -59,7 +59,7 @@ class BrainstormOverviewSensor(SensorEntity):
             name="Brainstorm Hub",
             manufacturer="nukleuz80",
             model="Brainstorm Hub",
-            sw_version="1.4.25",
+            sw_version="1.4.26",
         )
 
     async def async_added_to_hass(self) -> None:
@@ -115,11 +115,15 @@ class BrainstormOverviewSensor(SensorEntity):
             for i in active_ideas[:5]
         ]
 
+        active_cats = [c for c in self._store.categories if counts_by_cat.get(c, 0) > 0]
+
         return {
             "speech_overview": self._store.get_announcement_text(),
             "active_count": len(active_ideas),
             "completed_count": len(completed_ideas),
             "categories": self._store.categories,
+            "active_categories": active_cats,
+            "hide_empty_categories": self._store.hide_empty_categories,
             "category_counts": counts_by_cat,
             "priority_counts": counts_by_prio,
             "latest_idea": latest_info,

@@ -9,6 +9,7 @@ CONF_CATEGORIES = "categories"
 CONF_AUTO_EXPORT_MARKDOWN = "auto_export_markdown"
 CONF_MARKDOWN_PATH = "markdown_path"
 CONF_SMART_FORMATTING = "smart_formatting"
+CONF_HIDE_EMPTY_CATEGORIES = "hide_empty_categories"
 
 DEFAULT_CATEGORIES = [
     "Inbox",
@@ -18,6 +19,7 @@ DEFAULT_CATEGORIES = [
     "Alltag",
 ]
 DEFAULT_MARKDOWN_PATH = "/config/brainstorm"
+DEFAULT_HIDE_EMPTY_CATEGORIES = False
 
 # Event constants
 EVENT_IDEA_ADDED = "brainstorm_idea_added"

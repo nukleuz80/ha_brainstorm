@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.25 - Dynamic Category Dropdown in Card Editors
+ * Version 1.4.26 - Configurable Option to Hide Empty Categories
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",
@@ -11,6 +11,7 @@ const BRAINSTORM_CARD_DEFAULTS = {
   max_items: 0,
   show_quick_input: true,
   show_categories: true,
+  hide_empty_categories: false,
   show_badge: true,
   show_mindmap_button: true,
   show_color_toggle: true,
@@ -1905,12 +1906,23 @@ class BrainstormCard extends HTMLElement {
 
     // 3. Update Category Pills
     if (pillsContainer) {
+      const hideEmptyCategories = this._config.hide_empty_categories !== undefined
+        ? this._config.hide_empty_categories === true
+        : (attributes.hide_empty_categories === true);
+
+      const visibleCategories = categories.filter((cat) => {
+        if (!hideEmptyCategories) return true;
+        const count = counts[cat] || 0;
+        const isActive = String(this._selectedCategory || "").trim() === String(cat || "").trim();
+        return count > 0 || isActive;
+      });
+
       pillsContainer.innerHTML = `
         <div class="pill ${this._selectedCategory === "all" ? "active" : ""}" data-cat="all">
           <span>Alle</span>
           <span class="pill-count">${activeIdeas.length}</span>
         </div>
-        ${categories
+        ${visibleCategories
           .map((cat) => {
             const count = counts[cat] || 0;
             const isActive = String(this._selectedCategory || "").trim() === String(cat || "").trim();
@@ -2234,6 +2246,12 @@ class BrainstormCardEditor extends HTMLElement {
         selector: { boolean: {} },
       },
       {
+        name: "hide_empty_categories",
+        label: "Kategorien ohne Notizen (0) ausblenden",
+        default: false,
+        selector: { boolean: {} },
+      },
+      {
         name: "show_badge",
         label: "Zähler-Badge im Header anzeigen",
         default: true,
@@ -2421,12 +2439,19 @@ class BrainstormCardEditor extends HTMLElement {
             <option value="multicolor" ${this._config.color_mode === 'multicolor' ? 'selected' : ''}>🌈 Bunt (Multicolor)</option>
           </select>
         </div>
+        <div class="fallback-row">
+          <label class="fallback-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <input type="checkbox" id="fbHideEmpty" ${this._config.hide_empty_categories ? 'checked' : ''} />
+            <span>Kategorien ohne Notizen (0) ausblenden</span>
+          </label>
+        </div>
       </div>
     `;
     const fbTitle = container.querySelector("#fbTitle");
     const fbSensor = container.querySelector("#fbSensor");
     const fbDefaultCat = container.querySelector("#fbDefaultCat");
     const fbColorMode = container.querySelector("#fbColorMode");
+    const fbHideEmpty = container.querySelector("#fbHideEmpty");
 
     const emitChange = () => {
       this._config = {
@@ -2435,6 +2460,7 @@ class BrainstormCardEditor extends HTMLElement {
         sensor: fbSensor ? fbSensor.value : this._config.sensor,
         default_category: fbDefaultCat ? fbDefaultCat.value : this._config.default_category,
         color_mode: fbColorMode ? fbColorMode.value : this._config.color_mode,
+        hide_empty_categories: fbHideEmpty ? fbHideEmpty.checked : Boolean(this._config.hide_empty_categories),
       };
       this.dispatchEvent(
         new CustomEvent("config-changed", {
@@ -2449,6 +2475,7 @@ class BrainstormCardEditor extends HTMLElement {
     if (fbSensor) fbSensor.addEventListener("input", emitChange);
     if (fbDefaultCat) fbDefaultCat.addEventListener("change", emitChange);
     if (fbColorMode) fbColorMode.addEventListener("change", emitChange);
+    if (fbHideEmpty) fbHideEmpty.addEventListener("change", emitChange);
   }
 }
 
@@ -2469,3 +2496,9 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
     documentationURL: "https://github.com/nukleuz80/ha_brainstorm",
   });
 }
+
+console.info(
+  "%c BRAINSTORM-CARD %c v1.4.26 ",
+  "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
+  "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
+);

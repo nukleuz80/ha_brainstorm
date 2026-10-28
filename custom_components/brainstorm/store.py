@@ -23,8 +23,10 @@ from .const import (
     ATTR_TAGS,
     ATTR_TEXT,
     ATTR_UPDATED_AT,
+    CONF_HIDE_EMPTY_CATEGORIES,
     CONF_SMART_FORMATTING,
     DEFAULT_CATEGORIES,
+    DEFAULT_HIDE_EMPTY_CATEGORIES,
     DEFAULT_MARKDOWN_PATH,
     DEFAULT_PRIORITY,
     DOMAIN,
@@ -359,6 +361,9 @@ class BrainstormStore:
         self._auto_export = self.options.get("auto_export_markdown", False)
         self._markdown_path = self.options.get("markdown_path", DEFAULT_MARKDOWN_PATH)
         self._smart_formatting = self.options.get(CONF_SMART_FORMATTING, True)
+        self._hide_empty_categories = self.options.get(
+            CONF_HIDE_EMPTY_CATEGORIES, DEFAULT_HIDE_EMPTY_CATEGORIES
+        )
 
     def update_options(self, options: dict[str, Any]) -> None:
         """Update options dynamically."""
@@ -366,6 +371,14 @@ class BrainstormStore:
         self._auto_export = options.get("auto_export_markdown", False)
         self._markdown_path = options.get("markdown_path", DEFAULT_MARKDOWN_PATH)
         self._smart_formatting = options.get(CONF_SMART_FORMATTING, True)
+        self._hide_empty_categories = options.get(
+            CONF_HIDE_EMPTY_CATEGORIES, DEFAULT_HIDE_EMPTY_CATEGORIES
+        )
+
+    @property
+    def hide_empty_categories(self) -> bool:
+        """Return whether empty categories should be hidden."""
+        return self._hide_empty_categories
 
     @property
     def categories(self) -> list[str]:

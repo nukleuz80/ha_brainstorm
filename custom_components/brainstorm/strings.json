@@ -5,6 +5,7 @@
         "title": "Brainstorm Hub",
         "description": "Capture ideas and thoughts quickly via voice and text.",
         "data": {
+          "hide_empty_categories": "Hide categories without notes (0)",
           "auto_export_markdown": "Auto-export ideas to Markdown files",
           "markdown_path": "File path for Markdown files",
           "categories": "Manage categories (comma-separated list)"
@@ -14,6 +15,7 @@
         "title": "Reconfigure Brainstorm Hub",
         "description": "Update Brainstorm Hub core integration settings.",
         "data": {
+          "hide_empty_categories": "Hide categories without notes (0)",
           "smart_formatting": "Smart Text Optimization",
           "auto_export_markdown": "Auto-export ideas to Markdown files",
           "markdown_path": "File path for Markdown files"
@@ -41,7 +43,8 @@
         "data": {
           "add_category": "➕ Add new category (optional)",
           "delete_category": "🗑️ Delete existing category (optional)",
-          "edit_categories": "✏️ Edit full list (comma-separated)"
+          "edit_categories": "✏️ Edit full list (comma-separated)",
+          "hide_empty_categories": "Hide categories without notes (0)"
         }
       },
       "general": {
@@ -49,6 +52,7 @@
         "description": "Configure Brainstorm Hub behavior and Markdown export.",
         "data": {
           "default_category": "Default category for new ideas",
+          "hide_empty_categories": "Hide categories without notes (0)",
           "smart_formatting": "Smart Text Optimization (grammar, capitalization, infinitive formatting)",
           "auto_export_markdown": "Auto-export ideas to Markdown files",
           "markdown_path": "File path for Markdown files"

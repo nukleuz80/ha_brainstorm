@@ -1,6 +1,6 @@
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.4.25
+ * Version: 1.4.26
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -18,6 +18,7 @@ const BRAINSTORM_MINDMAP_DEFAULTS = {
   show_fullscreen_btn: true,
   show_controls: true,
   show_add_btn: true,
+  hide_empty_categories: false,
 };
 
 class BrainstormMindmapCard extends HTMLElement {
@@ -1443,7 +1444,16 @@ class BrainstormMindmapCard extends HTMLElement {
     centerNode.addEventListener("click", () => {
       const sensor = this._getSensorEntity();
       if (!sensor) return;
-      const categories = ["all", ...(sensor.attributes.categories || ["Inbox"])];
+      const attributes = sensor.attributes || {};
+      const hideEmptyCategories = this._config.hide_empty_categories !== undefined
+        ? this._config.hide_empty_categories === true
+        : (attributes.hide_empty_categories === true);
+      const allCats = attributes.categories || ["Inbox"];
+      const counts = attributes.category_counts || {};
+      const validCats = hideEmptyCategories
+        ? allCats.filter((c) => (counts[c] || 0) > 0 || this._selectedCategory === c)
+        : allCats;
+      const categories = ["all", ...validCats];
       const idx = categories.indexOf(this._selectedCategory);
       const nextIdx = (idx + 1) % categories.length;
       this._selectedCategory = categories[nextIdx];
@@ -1762,12 +1772,23 @@ class BrainstormMindmapCard extends HTMLElement {
       const pillsBar = this.shadowRoot.getElementById("pillsBar");
       if (pillsBar) {
         const counts = attributes.category_counts || {};
+        const hideEmptyCategories = this._config.hide_empty_categories !== undefined
+          ? this._config.hide_empty_categories === true
+          : (attributes.hide_empty_categories === true);
+
+        const visibleCategories = categories.filter((cat) => {
+          if (!hideEmptyCategories) return true;
+          const count = counts[cat] || 0;
+          const isActive = String(this._selectedCategory || "").trim() === String(cat || "").trim();
+          return count > 0 || isActive;
+        });
+
         pillsBar.innerHTML = `
           <div class="cat-pill ${this._selectedCategory === "all" ? "active" : ""}" data-cat="all" style="--category-color: var(--primary-color, #a855f7);">
             <span class="pill-dot" style="background: var(--primary-color, #a855f7);"></span>
             <span>Alle (${activeIdeas.length})</span>
           </div>
-          ${categories
+          ${visibleCategories
             .map((cat) => {
               const c = counts[cat] || 0;
               const catColor = this._getCategoryColor(cat);
@@ -2549,6 +2570,12 @@ class BrainstormMindmapCardEditor extends HTMLElement {
         selector: { boolean: {} },
       },
       {
+        name: "hide_empty_categories",
+        label: "Kategorien ohne Notizen (0) ausblenden",
+        default: false,
+        selector: { boolean: {} },
+      },
+      {
         name: "show_color_toggle",
         label: "Farbmodus-Umschalter (🎨/🌈) in Toolbar anzeigen",
         default: true,
@@ -2718,12 +2745,19 @@ class BrainstormMindmapCardEditor extends HTMLElement {
             <option value="multicolor" ${this._config.color_mode === 'multicolor' ? 'selected' : ''}>🌈 Bunt (Multicolor)</option>
           </select>
         </div>
+        <div class="fallback-row">
+          <label class="fallback-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <input type="checkbox" id="fbHideEmpty" ${this._config.hide_empty_categories ? 'checked' : ''} />
+            <span>Kategorien ohne Notizen (0) ausblenden</span>
+          </label>
+        </div>
       </div>
     `;
     const fbTitle = container.querySelector("#fbTitle");
     const fbSensor = container.querySelector("#fbSensor");
     const fbDefaultCat = container.querySelector("#fbDefaultCat");
     const fbColorMode = container.querySelector("#fbColorMode");
+    const fbHideEmpty = container.querySelector("#fbHideEmpty");
 
     const emitChange = () => {
       this._config = {
@@ -2732,6 +2766,7 @@ class BrainstormMindmapCardEditor extends HTMLElement {
         sensor: fbSensor ? fbSensor.value : this._config.sensor,
         default_category: fbDefaultCat ? fbDefaultCat.value : this._config.default_category,
         color_mode: fbColorMode ? fbColorMode.value : this._config.color_mode,
+        hide_empty_categories: fbHideEmpty ? fbHideEmpty.checked : Boolean(this._config.hide_empty_categories),
       };
       this.dispatchEvent(
         new CustomEvent("config-changed", {
@@ -2746,6 +2781,7 @@ class BrainstormMindmapCardEditor extends HTMLElement {
     if (fbSensor) fbSensor.addEventListener("input", emitChange);
     if (fbDefaultCat) fbDefaultCat.addEventListener("change", emitChange);
     if (fbColorMode) fbColorMode.addEventListener("change", emitChange);
+    if (fbHideEmpty) fbHideEmpty.addEventListener("change", emitChange);
   }
 }
 
@@ -2770,7 +2806,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.25 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.26 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

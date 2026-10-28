@@ -13,8 +13,10 @@ from homeassistant.helpers import selector
 
 from .const import (
     CONF_AUTO_EXPORT_MARKDOWN,
+    CONF_HIDE_EMPTY_CATEGORIES,
     CONF_MARKDOWN_PATH,
     CONF_SMART_FORMATTING,
+    DEFAULT_HIDE_EMPTY_CATEGORIES,
     DEFAULT_MARKDOWN_PATH,
     DOMAIN,
 )
@@ -39,6 +41,9 @@ class BrainstormConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         data_schema = vol.Schema(
             {
+                vol.Optional(
+                    CONF_HIDE_EMPTY_CATEGORIES, default=DEFAULT_HIDE_EMPTY_CATEGORIES
+                ): bool,
                 vol.Optional(CONF_AUTO_EXPORT_MARKDOWN, default=False): bool,
                 vol.Optional(CONF_MARKDOWN_PATH, default=DEFAULT_MARKDOWN_PATH): str,
             }
@@ -62,6 +67,12 @@ class BrainstormConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         data_schema = vol.Schema(
             {
+                vol.Optional(
+                    CONF_HIDE_EMPTY_CATEGORIES,
+                    default=current_data.get(
+                        CONF_HIDE_EMPTY_CATEGORIES, DEFAULT_HIDE_EMPTY_CATEGORIES
+                    ),
+                ): bool,
                 vol.Optional(
                     CONF_SMART_FORMATTING,
                     default=current_data.get(CONF_SMART_FORMATTING, True),
@@ -107,6 +118,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Manage categories."""
+        options = dict(self.config_entry.options or self.config_entry.data)
         store = self.hass.data.get(DOMAIN, {}).get("primary_store")
         current_cats = (
             store.categories
@@ -133,7 +145,10 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                     if parsed and parsed != store.categories:
                         await store.async_set_categories(parsed)
 
-            return self.async_create_entry(title="", data={})
+            if CONF_HIDE_EMPTY_CATEGORIES in user_input:
+                options[CONF_HIDE_EMPTY_CATEGORIES] = user_input[CONF_HIDE_EMPTY_CATEGORIES]
+
+            return self.async_create_entry(title="", data=options)
 
         delete_options = [{"value": "none", "label": "Keine löschen"}]
         for c in current_cats:
@@ -162,6 +177,12 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                         type=selector.TextSelectorType.TEXT,
                     )
                 ),
+                vol.Optional(
+                    CONF_HIDE_EMPTY_CATEGORIES,
+                    default=options.get(
+                        CONF_HIDE_EMPTY_CATEGORIES, DEFAULT_HIDE_EMPTY_CATEGORIES
+                    ),
+                ): selector.BooleanSelector(),
             }
         )
 
@@ -200,6 +221,12 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                         mode=selector.SelectSelectorMode.DROPDOWN,
                     )
                 ),
+                vol.Optional(
+                    CONF_HIDE_EMPTY_CATEGORIES,
+                    default=options.get(
+                        CONF_HIDE_EMPTY_CATEGORIES, DEFAULT_HIDE_EMPTY_CATEGORIES
+                    ),
+                ): selector.BooleanSelector(),
                 vol.Optional(
                     CONF_SMART_FORMATTING,
                     default=options.get(CONF_SMART_FORMATTING, True),
