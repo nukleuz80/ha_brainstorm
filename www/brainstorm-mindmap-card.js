@@ -1,6 +1,6 @@
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.4.38
+ * Version: 1.4.39 - 100% Fully Responsive Layouts & Mobile Optimizations
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -374,15 +374,20 @@ class BrainstormMindmapCard extends HTMLElement {
         }
         :host {
           display: block;
+          container-type: inline-size;
+          container-name: brainstorm-mindmap;
           width: 100%;
           height: 100%;
+          box-sizing: border-box;
           font-family: var(--ha-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
         }
         ha-card {
+          container-type: inline-size;
+          container-name: brainstorm-mindmap-card;
           position: relative;
           width: 100%;
           height: 100%;
-          min-height: 480px;
+          min-height: clamp(360px, 60vh, 550px);
           background: var(--ha-card-background, var(--card-background-color, #ffffff));
           border-radius: var(--ha-card-border-radius, 16px);
           border: var(--ha-card-border-width, 1px) solid var(--ha-card-border-color, var(--divider-color, rgba(127, 127, 127, 0.12)));
@@ -391,6 +396,7 @@ class BrainstormMindmapCard extends HTMLElement {
           display: flex;
           flex-direction: column;
           color: var(--primary-text-color, #212121);
+          box-sizing: border-box;
         }
 
         /* Top Bar */
@@ -400,23 +406,29 @@ class BrainstormMindmapCard extends HTMLElement {
           left: 0;
           right: 0;
           z-index: 20;
-          padding: 12px 16px;
+          padding: 10px 14px;
           display: flex;
           align-items: center;
           justify-content: space-between;
+          gap: 8px;
+          flex-wrap: nowrap;
           background: linear-gradient(180deg, var(--ha-card-background, var(--card-background-color, #ffffff)) 0%, color-mix(in srgb, var(--ha-card-background, var(--card-background-color, #ffffff)) 0%, transparent) 100%);
           pointer-events: none;
         }
         .top-left {
           display: flex;
           align-items: center;
-          gap: 10px;
+          gap: 8px;
+          flex: 0 0 auto;
           pointer-events: auto;
         }
         .top-right {
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 6px;
+          flex: 1 1 auto;
+          min-width: 0;
+          justify-content: flex-end;
           pointer-events: auto;
         }
         .brand-logo {
@@ -486,31 +498,133 @@ class BrainstormMindmapCard extends HTMLElement {
           align-items: center;
           gap: 6px;
           overflow-x: auto;
-          max-width: 58%;
-          padding: 4px 6px;
+          -webkit-overflow-scrolling: touch;
+          flex: 1 1 auto;
+          min-width: 0;
+          max-width: none;
+          padding: 2px 4px;
           pointer-events: auto;
           scrollbar-width: none;
         }
         .pills-container::-webkit-scrollbar {
           display: none;
         }
-        @media (max-width: 600px) {
+        @container (max-width: 600px), (max-width: 600px) {
           .cat-pill[data-cat="all"] {
             display: none !important;
           }
-          .pills-container {
-            max-width: 78%;
+          .title {
+            display: none !important;
+          }
+          .cat-pill {
+            padding: 4px 10px !important;
+            min-height: 28px !important;
+            font-size: 0.74rem !important;
+            border-radius: 14px !important;
+          }
+          .pill-dot {
+            width: 7px !important;
+            height: 7px !important;
+          }
+          .top-tool-btn,
+          .fullscreen-btn {
+            width: 32px !important;
+            height: 32px !important;
+            font-size: 0.95rem !important;
           }
           .note-cloud {
-            padding: 8px 10px !important;
-            min-width: 140px !important;
-            max-width: 200px !important;
-            margin-left: -70px !important;
-            margin-top: -35px !important;
+            padding: 7px 10px !important;
+            min-width: 130px !important;
+            max-width: 190px !important;
+            margin-left: -65px !important;
+            margin-top: -32px !important;
+            border-radius: 12px !important;
           }
           .cloud-text {
-            font-size: 0.84rem !important;
-            line-height: 1.25 !important;
+            font-size: 0.82rem !important;
+            line-height: 1.24 !important;
+            margin-bottom: 5px !important;
+          }
+          .cloud-meta {
+            font-size: 0.68rem !important;
+            margin-bottom: 4px !important;
+          }
+          .center-node {
+            width: 115px !important;
+            height: 115px !important;
+            margin-left: -57px !important;
+            margin-top: -57px !important;
+            padding: 6px !important;
+          }
+          .center-bulb-wrapper {
+            width: 38px !important;
+            height: 38px !important;
+          }
+          .center-title {
+            font-size: 0.9rem !important;
+          }
+          .center-badge {
+            font-size: 0.62rem !important;
+            padding: 1px 5px !important;
+          }
+          .add-note-btn {
+            bottom: 10px !important;
+            left: 10px !important;
+            padding: 6px 12px !important;
+            font-size: 0.78rem !important;
+            border-radius: 16px !important;
+          }
+          .controls-panel {
+            bottom: 10px !important;
+            right: 10px !important;
+            gap: 6px !important;
+          }
+          .control-btn {
+            width: 32px !important;
+            height: 32px !important;
+            font-size: 1rem !important;
+          }
+        }
+        @container (max-width: 380px), (max-width: 380px) {
+          .add-note-btn .btn-text {
+            display: none !important;
+          }
+          .add-note-btn {
+            width: 34px !important;
+            height: 34px !important;
+            padding: 0 !important;
+            border-radius: 50% !important;
+            justify-content: center !important;
+          }
+        }
+        @media (max-width: 480px) {
+          .dialog-backdrop {
+            padding: 8px !important;
+          }
+          .dialog-box {
+            max-width: 100% !important;
+            border-radius: 16px !important;
+            max-height: calc(100dvh - 16px) !important;
+          }
+          .dialog-header {
+            padding: 12px 14px !important;
+          }
+          .dialog-body {
+            padding: 12px 14px !important;
+            gap: 10px !important;
+            max-height: calc(80dvh - 60px) !important;
+          }
+          .dialog-prio-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 6px !important;
+          }
+          .dialog-categories-grid {
+            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;
+            gap: 6px !important;
+          }
+          .dialog-input,
+          .dialog-textarea {
+            font-size: 16px !important;
           }
         }
         .cat-pill {
@@ -1015,8 +1129,8 @@ class BrainstormMindmapCard extends HTMLElement {
         }
         .dialog-categories-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(115px, 1fr));
-          gap: 8px;
+          grid-template-columns: repeat(auto-fill, minmax(95px, 1fr));
+          gap: 6px;
         }
         .dialog-cat-chip {
           display: flex;
@@ -1063,9 +1177,9 @@ class BrainstormMindmapCard extends HTMLElement {
         }
         .dialog-prio-grid {
           display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 8px;
-          margin-bottom: 16px;
+          grid-template-columns: repeat(auto-fit, minmax(75px, 1fr));
+          gap: 6px;
+          margin-bottom: 14px;
         }
         .dialog-prio-chip {
           display: flex;
@@ -1242,7 +1356,7 @@ class BrainstormMindmapCard extends HTMLElement {
         <!-- Bottom Left: Add Note -->
         <button class="add-note-btn" id="addNoteBtn" style="display: ${this._config.show_add_btn === true ? 'flex' : 'none'};">
           <span>➕</span>
-          <span>Neue Idee</span>
+          <span class="btn-text">Neue Idee</span>
         </button>
 
         <!-- Bottom Right: Zoom & Reset Controls -->
@@ -1667,11 +1781,16 @@ class BrainstormMindmapCard extends HTMLElement {
       }
     }
 
-    // Concentric elliptical radii
-    const rx0 = count <= 6 ? Math.max(260, Math.min(w * 0.30, 360)) : Math.max(250, Math.min(w * 0.22, 310));
-    const ry0 = count <= 6 ? Math.max(180, Math.min(h * 0.30, 220)) : Math.max(175, Math.min(h * 0.24, 185));
-    const drx = Math.max(210, Math.min(w * 0.16, 250));
-    const dry = Math.max(110, Math.min(h * 0.16, 135));
+    // Concentric elliptical radii (adaptive to screen/card width)
+    const isNarrow = w < 550;
+    const rx0 = count <= 6
+      ? Math.max(isNarrow ? 125 : 260, Math.min(w * (isNarrow ? 0.35 : 0.30), isNarrow ? 220 : 360))
+      : Math.max(isNarrow ? 115 : 250, Math.min(w * (isNarrow ? 0.28 : 0.22), isNarrow ? 190 : 310));
+    const ry0 = count <= 6
+      ? Math.max(isNarrow ? 90 : 180, Math.min(h * (isNarrow ? 0.32 : 0.30), isNarrow ? 160 : 220))
+      : Math.max(isNarrow ? 85 : 175, Math.min(h * (isNarrow ? 0.25 : 0.24), isNarrow ? 140 : 185));
+    const drx = isNarrow ? Math.max(120, Math.min(w * 0.16, 170)) : Math.max(210, Math.min(w * 0.16, 250));
+    const dry = isNarrow ? Math.max(70, Math.min(h * 0.14, 95)) : Math.max(110, Math.min(h * 0.16, 135));
 
     const positionedItems = [];
 
@@ -1699,10 +1818,10 @@ class BrainstormMindmapCard extends HTMLElement {
     });
 
     // Collision relaxation pass: repel from center bulb and avoid card overlaps
-    const cardW = 230;
-    const cardH = 100;
-    const minCenterDistX = 185;
-    const minCenterDistY = 135;
+    const cardW = isNarrow ? 160 : 230;
+    const cardH = isNarrow ? 70 : 100;
+    const minCenterDistX = isNarrow ? 115 : 185;
+    const minCenterDistY = isNarrow ? 85 : 135;
 
     for (let iter = 0; iter < 25; iter++) {
       // 1. Center push-out
@@ -1771,7 +1890,8 @@ class BrainstormMindmapCard extends HTMLElement {
       if (spanW > w || spanH > h) {
         const scaleX = w / spanW;
         const scaleY = h / spanH;
-        const fitScale = Math.max(0.70, Math.min(1.0, Math.min(scaleX, scaleY) * 0.94));
+        const minFitLimit = isNarrow ? 0.35 : 0.65;
+        const fitScale = Math.max(minFitLimit, Math.min(1.0, Math.min(scaleX, scaleY) * 0.92));
         this._scale = fitScale;
         this._panX = (w / 2) * (1 - this._scale);
         this._panY = (h / 2) * (1 - this._scale);
@@ -2963,7 +3083,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.38 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.39 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );
