@@ -190,6 +190,53 @@ add_category:
       example: "Reisen"
       selector:
         text:
+    icon:
+      name: Icon
+      description: Optionales Home Assistant / MDI Icon.
+      required: false
+      example: "mdi:airplane"
+      selector:
+        icon:
+    color:
+      name: Farbe
+      description: Optionale Akzentfarbe (Hexadezimal wie #ff7800).
+      required: false
+      example: "#38bdf8"
+      selector:
+        text:
+
+set_category_style:
+  name: Kategorie-Design anpassen
+  description: Legt ein benutzerdefiniertes Icon und/oder eine Akzentfarbe für eine Kategorie fest.
+  fields:
+    category:
+      name: Kategorie
+      description: Name der zu formatierenden Kategorie.
+      required: true
+      example: "Smarthome"
+      selector:
+        text:
+    icon:
+      name: Icon
+      description: Home Assistant / MDI Icon.
+      required: false
+      example: "mdi:home-automation"
+      selector:
+        icon:
+    color:
+      name: Farbe
+      description: Akzentfarbe für Notizen und Filter (Hexadezimal wie #06b6d4).
+      required: false
+      example: "#06b6d4"
+      selector:
+        text:
+    reset:
+      name: Zurücksetzen
+      description: Falls aktiviert, werden benutzerdefiniertes Icon und Farbe entfernt und auf Standard zurückgesetzt.
+      required: false
+      default: false
+      selector:
+        boolean:
 
 remove_category:
   name: Kategorie entfernen

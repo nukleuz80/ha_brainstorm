@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.34 - Streamlined category options: Deduplicated hide_empty_categories in hub
+ * Version 1.4.35 - Customizable category colors and Home Assistant MDI icons
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",
@@ -129,6 +129,14 @@ class BrainstormCard extends HTMLElement {
       return "var(--primary-color, #a855f7)";
     }
     if (!category) return "#2563eb";
+
+    // 0. Check custom color from sensor attributes first
+    const sensor = this._getSensorEntity();
+    if (sensor && sensor.attributes && sensor.attributes.category_colors) {
+      const customColor = sensor.attributes.category_colors[category];
+      if (customColor) return customColor;
+    }
+
     const catNorm = String(category).trim().toLowerCase();
 
     // 1. Curated, high-contrast, beautiful palette for all standard categories
@@ -160,6 +168,7 @@ class BrainstormCard extends HTMLElement {
       "urlaub": "#38bdf8",        // Ocean Cyan 🏖️
       "reise": "#38bdf8",
       "notizen": "#8b5cf6",
+      "schlaue antworten": "#8b5cf6",
     };
 
     if (categoryPalette[catNorm]) {
@@ -191,6 +200,55 @@ class BrainstormCard extends HTMLElement {
     }
     const idx = Math.abs(hash) % fallbackPalette.length;
     return fallbackPalette[idx];
+  }
+
+  _getCategoryIcon(category) {
+    if (!category) return "mdi:bookmark-outline";
+    if (category === "all") return "mdi:layers-outline";
+    if (category === "__completed__") return "mdi:check-circle-outline";
+
+    // 1. Check custom icon from sensor attributes first
+    const sensor = this._getSensorEntity();
+    if (sensor && sensor.attributes && sensor.attributes.category_icons) {
+      const customIcon = sensor.attributes.category_icons[category];
+      if (customIcon) return customIcon;
+    }
+
+    // 2. Curated default icons
+    const catNorm = String(category).trim().toLowerCase();
+    const defaultIcons = {
+      "inbox": "mdi:inbox",
+      "smarthome": "mdi:home-automation",
+      "smart home": "mdi:home-automation",
+      "haus & garten": "mdi:flower",
+      "haus": "mdi:home-roof",
+      "garten": "mdi:flower",
+      "projekte": "mdi:clipboard-check-outline",
+      "projekt": "mdi:clipboard-check-outline",
+      "alltag": "mdi:calendar-check",
+      "brainstorm": "mdi:brain",
+      "ideen": "mdi:lightbulb-outline",
+      "idee": "mdi:lightbulb-outline",
+      "familie": "mdi:account-group",
+      "kinder": "mdi:account-child",
+      "einkauf": "mdi:cart",
+      "shopping": "mdi:cart",
+      "schlaue antworten": "mdi:comment-question-outline",
+      "finanzen": "mdi:cash-multiple",
+      "finanz": "mdi:cash-multiple",
+      "arbeit": "mdi:briefcase",
+      "beruf": "mdi:briefcase",
+      "work": "mdi:briefcase",
+      "gesundheit": "mdi:heart-pulse",
+      "fitness": "mdi:dumbbell",
+      "sport": "mdi:dumbbell",
+      "auto": "mdi:car",
+      "urlaub": "mdi:beach",
+      "reise": "mdi:airplane",
+      "notizen": "mdi:notebook-outline",
+      "notiz": "mdi:notebook-outline",
+    };
+    return defaultIcons[catNorm] || "mdi:tag-outline";
   }
 
   _getSourceBadge(source, device) {
@@ -716,6 +774,111 @@ class BrainstormCard extends HTMLElement {
           console.error("Failed to remove category", e);
         }
       });
+    });
+  }
+
+  _showStyleCategoryDialog(category) {
+    const currentColor = this._getCategoryColor(category);
+    const currentIcon = this._getCategoryIcon(category);
+
+    this._openDialog(`🎨 Design für „${this._escapeHtml(category)}“`, (body) => {
+      body.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <div>
+            <label class="action-dialog-label" style="display: block; margin-bottom: 6px;">Icon (Home Assistant / MDI):</label>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <span id="styleIconPreview" style="display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 8px; background: rgba(0,0,0,0.06); color: ${currentColor}; font-size: 20px;">
+                <ha-icon icon="${currentIcon}" style="--mdc-icon-size: 22px; width: 22px; height: 22px;"></ha-icon>
+              </span>
+              <input type="text" class="action-dialog-input" id="styleIconInput" value="${currentIcon}" placeholder="z. B. mdi:home-automation" style="flex: 1;" />
+            </div>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px;">
+              ${["mdi:inbox", "mdi:home-automation", "mdi:flower", "mdi:clipboard-check-outline", "mdi:calendar-check", "mdi:brain", "mdi:cart", "mdi:account-group", "mdi:briefcase", "mdi:cash-multiple", "mdi:car", "mdi:beach", "mdi:heart-pulse"]
+                .map((ic) => `<button type="button" class="action-dialog-quick-icon" data-icon="${ic}" style="padding: 2px 6px; font-size: 0.75rem; border-radius: 4px; border: 1px solid var(--divider-color, rgba(0,0,0,0.12)); background: var(--secondary-background-color, transparent); cursor: pointer; color: var(--primary-text-color);"><ha-icon icon="${ic}" style="--mdc-icon-size: 14px; width: 14px; height: 14px;"></ha-icon></button>`)
+                .join("")}
+            </div>
+          </div>
+          <div>
+            <label class="action-dialog-label" style="display: block; margin-bottom: 6px;">Akzentfarbe:</label>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <input type="color" id="styleColorPicker" value="${currentColor.startsWith('#') && currentColor.length === 7 ? currentColor : '#2563eb'}" style="width: 44px; height: 38px; border: none; border-radius: 6px; cursor: pointer; background: transparent;" />
+              <input type="text" class="action-dialog-input" id="styleColorInput" value="${currentColor}" placeholder="#2563eb" style="flex: 1;" />
+            </div>
+          </div>
+        </div>
+        <div class="action-dialog-footer" style="margin-top: 18px; display: flex; justify-content: space-between;">
+          <button class="action-dialog-btn action-dialog-btn-cancel" id="resetCatStyleBtn" style="color: #ef4444;">Zurücksetzen</button>
+          <div style="display: flex; gap: 8px;">
+            <button class="action-dialog-btn action-dialog-btn-cancel" id="cancelStyleCatBtn">Abbrechen</button>
+            <button class="action-dialog-btn action-dialog-btn-primary" id="saveStyleCatBtn">Speichern</button>
+          </div>
+        </div>
+      `;
+
+      const iconInput = body.querySelector("#styleIconInput");
+      const iconPreview = body.querySelector("#styleIconPreview");
+      const colorPicker = body.querySelector("#styleColorPicker");
+      const colorInput = body.querySelector("#styleColorInput");
+      const saveBtn = body.querySelector("#saveStyleCatBtn");
+      const resetBtn = body.querySelector("#resetCatStyleBtn");
+      const cancelBtn = body.querySelector("#cancelStyleCatBtn");
+
+      const updatePreview = () => {
+        const ic = (iconInput.value || "mdi:tag-outline").trim();
+        const col = (colorInput.value || colorPicker.value).trim();
+        if (iconPreview) {
+          iconPreview.innerHTML = `<ha-icon icon="${ic}" style="--mdc-icon-size: 22px; width: 22px; height: 22px;"></ha-icon>`;
+          iconPreview.style.color = col;
+        }
+      };
+
+      iconInput.addEventListener("input", updatePreview);
+      colorPicker.addEventListener("input", (e) => {
+        colorInput.value = e.target.value;
+        updatePreview();
+      });
+      colorInput.addEventListener("input", (e) => {
+        if (e.target.value.startsWith("#") && e.target.value.length === 7) {
+          colorPicker.value = e.target.value;
+        }
+        updatePreview();
+      });
+
+      body.querySelectorAll(".action-dialog-quick-icon").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          iconInput.value = btn.getAttribute("data-icon");
+          updatePreview();
+        });
+      });
+
+      saveBtn.addEventListener("click", async () => {
+        const icon = (iconInput.value || "").trim();
+        const color = (colorInput.value || colorPicker.value).trim();
+        this._closeDialog();
+        try {
+          await this._hass.callService("brainstorm", "set_category_style", {
+            category: category,
+            icon: icon,
+            color: color,
+          });
+        } catch (err) {
+          console.error("Failed to update category style", err);
+        }
+      });
+
+      resetBtn.addEventListener("click", async () => {
+        this._closeDialog();
+        try {
+          await this._hass.callService("brainstorm", "set_category_style", {
+            category: category,
+            reset: true,
+          });
+        } catch (err) {
+          console.error("Failed to reset category style", err);
+        }
+      });
+
+      cancelBtn.addEventListener("click", () => this._closeDialog());
     });
   }
 
@@ -2386,6 +2549,7 @@ class BrainstormCard extends HTMLElement {
 
       pillsContainer.innerHTML = `
         <div class="pill ${this._selectedCategory === "all" ? "active" : ""}" data-cat="all">
+          <ha-icon icon="mdi:layers-outline" style="--mdc-icon-size: 14px; width: 14px; height: 14px; margin-right: 4px; display: inline-flex; align-items: center; vertical-align: middle;"></ha-icon>
           <span>Alle</span>
           <span class="pill-count">${activeIdeas.length}</span>
         </div>
@@ -2395,14 +2559,16 @@ class BrainstormCard extends HTMLElement {
             const isActive = String(this._selectedCategory || "").trim() === String(cat || "").trim();
             const canDelete = cat !== "Inbox" && isActive;
             const catColor = this._getCategoryColor(cat);
+            const catIcon = this._getCategoryIcon(cat);
             const pillStyle = isActive
               ? `background: ${catColor}; border-color: ${catColor}; color: #ffffff;`
               : "";
             return `
               <div class="pill ${isActive ? "active" : ""}" data-cat="${cat}" style="${pillStyle}">
-                <span class="pill-dot" style="display:inline-block; width:7px; height:7px; border-radius:50%; background:${catColor}; margin-right:4px;"></span>
+                <ha-icon icon="${catIcon}" style="--mdc-icon-size: 14px; width: 14px; height: 14px; margin-right: 4px; display: inline-flex; align-items: center; vertical-align: middle; color: ${isActive ? '#ffffff' : catColor};"></ha-icon>
                 <span>${cat}</span>
                 <span class="pill-count">${count}</span>
+                ${isActive ? `<span class="style-cat-btn" title="Design für '${cat}' anpassen" data-stylecat="${cat}" style="margin-left: 4px; font-size: 0.72rem; cursor: pointer; opacity: 0.85;">🎨</span>` : ""}
                 ${canDelete ? `<span class="remove-cat-btn" title="Kategorie '${cat}' löschen" data-delcat="${cat}">✕</span>` : ""}
               </div>
             `;
@@ -2412,7 +2578,8 @@ class BrainstormCard extends HTMLElement {
           completedCount > 0
             ? `
           <div class="pill completed-pill ${isCompletedView ? "active" : ""}" data-cat="__completed__" title="Erledigte Ideen anzeigen">
-            <span>✓ Erledigt</span>
+            <ha-icon icon="mdi:check-circle-outline" style="--mdc-icon-size: 14px; width: 14px; height: 14px; margin-right: 4px; display: inline-flex; align-items: center; vertical-align: middle;"></ha-icon>
+            <span>Erledigt</span>
             <span class="pill-count">${completedCount}</span>
           </div>
         `
@@ -2426,7 +2593,7 @@ class BrainstormCard extends HTMLElement {
       // Re-attach pill click listeners
       pillsContainer.querySelectorAll(".pill[data-cat]").forEach((pill) => {
         pill.addEventListener("click", (e) => {
-          if (e.target.closest(".remove-cat-btn")) return;
+          if (e.target.closest(".remove-cat-btn") || e.target.closest(".style-cat-btn")) return;
           this._selectedCategory = String(pill.getAttribute("data-cat") || "").trim();
           const catSelect = this.shadowRoot.getElementById("catSelect");
           if (catSelect) {
@@ -2437,6 +2604,14 @@ class BrainstormCard extends HTMLElement {
             }
           }
           this._updateContent();
+        });
+      });
+
+      pillsContainer.querySelectorAll(".style-cat-btn").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const cat = btn.getAttribute("data-stylecat");
+          this._showStyleCategoryDialog(cat);
         });
       });
 
@@ -2544,7 +2719,7 @@ class BrainstormCard extends HTMLElement {
                 </div>
                 <div class="idea-meta">
                   ${isSub ? `<span class="subtask-badge" title="Unteraufgabe">Unteraufgabe</span>` : ""}
-                  <span class="category-tag ${canEdit ? "clickable" : ""}" title="${canEdit ? "Kategorie ändern" : "Kategorie"}" data-id="${item.id}" data-cat="${item.category}" style="color: ${this._getCategoryColor(item.category)}; background: color-mix(in srgb, ${this._getCategoryColor(item.category)} 12%, var(--secondary-background-color, rgba(0,0,0,0.06))); border: 1px solid color-mix(in srgb, ${this._getCategoryColor(item.category)} 25%, transparent);">${this._escapeHtml(item.category)}</span>
+                  <span class="category-tag ${canEdit ? "clickable" : ""}" title="${canEdit ? "Kategorie ändern" : "Kategorie"}" data-id="${item.id}" data-cat="${item.category}" style="color: ${this._getCategoryColor(item.category)}; background: color-mix(in srgb, ${this._getCategoryColor(item.category)} 12%, var(--secondary-background-color, rgba(0,0,0,0.06))); border: 1px solid color-mix(in srgb, ${this._getCategoryColor(item.category)} 25%, transparent);"><ha-icon icon="${this._getCategoryIcon(item.category)}" style="--mdc-icon-size: 11px; width: 11px; height: 11px; margin-right: 3px; display: inline-flex; align-items: center; vertical-align: middle;"></ha-icon>${this._escapeHtml(item.category)}</span>
                   ${this._getPriorityBadge(item.priority, item.id)}
                   ${showSource ? `${this._getSourceBadge(item.source, item.device)}` : ""}
                   ${showSource && showTime ? `<span>•</span>` : ""}
@@ -3347,7 +3522,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.4.34 ",
+  "%c BRAINSTORM-CARD %c v1.4.35 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

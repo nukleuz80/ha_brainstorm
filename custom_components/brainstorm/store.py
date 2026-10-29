@@ -359,6 +359,8 @@ class BrainstormStore:
         self._store = Store(hass, STORAGE_VERSION, STORAGE_KEY)
         self._ideas: dict[str, dict[str, Any]] = {}
         self._categories: list[str] = list(DEFAULT_CATEGORIES)
+        self._category_icons: dict[str, str] = {}
+        self._category_colors: dict[str, str] = {}
         self._listeners: list[Callable[[], None]] = []
         self._auto_export = self.options.get("auto_export_markdown", False)
         self._markdown_path = self.options.get("markdown_path", DEFAULT_MARKDOWN_PATH)
@@ -386,6 +388,16 @@ class BrainstormStore:
     def categories(self) -> list[str]:
         """Return the list of categories."""
         return list(self._categories)
+
+    @property
+    def category_icons(self) -> dict[str, str]:
+        """Return the dictionary of category icons."""
+        return dict(self._category_icons)
+
+    @property
+    def category_colors(self) -> dict[str, str]:
+        """Return the dictionary of category color hex values."""
+        return dict(self._category_colors)
 
     @property
     def ideas(self) -> list[dict[str, Any]]:
@@ -428,6 +440,8 @@ class BrainstormStore:
             for cat in loaded_cats:
                 if cat not in self._categories:
                     self._categories.append(cat)
+            self._category_icons = data.get("category_icons", {})
+            self._category_colors = data.get("category_colors", {})
             _LOGGER.debug(
                 "Loaded %d ideas and %d categories from storage",
                 len(self._ideas),
@@ -441,6 +455,8 @@ class BrainstormStore:
         """Save ideas and categories to storage."""
         data = {
             "categories": self._categories,
+            "category_icons": self._category_icons,
+            "category_colors": self._category_colors,
             "ideas": list(self._ideas.values()),
         }
         await self._store.async_save(data)
@@ -850,12 +866,21 @@ class BrainstormStore:
         self.hass.bus.async_fire(EVENT_IDEA_DELETED, deleted_idea)
         return True
 
-    async def async_add_category(self, category_name: str) -> bool:
+    async def async_add_category(
+        self,
+        category_name: str,
+        icon: str | None = None,
+        color: str | None = None,
+    ) -> bool:
         """Add a new category."""
         clean_name = category_name.strip()
         if not clean_name or any(c.lower() == clean_name.lower() for c in self._categories):
             return False
         self._categories.append(clean_name)
+        if icon and icon.strip():
+            self._category_icons[clean_name] = icon.strip()
+        if color and color.strip():
+            self._category_colors[clean_name] = color.strip()
         await self.async_save()
         self._notify_listeners()
         return True
@@ -867,11 +892,47 @@ class BrainstormStore:
             return False
 
         self._categories.remove(clean_name)
+        self._category_icons.pop(clean_name, None)
+        self._category_colors.pop(clean_name, None)
         # Move remaining ideas to Inbox
         for idea in self._ideas.values():
             if idea.get(ATTR_CATEGORY) == clean_name:
                 idea[ATTR_CATEGORY] = "Inbox"
                 idea[ATTR_UPDATED_AT] = dt_util.now().isoformat()
+
+        await self.async_save()
+        self._notify_listeners()
+        return True
+
+    async def async_set_category_style(
+        self,
+        category_name: str,
+        icon: str | None = None,
+        color: str | None = None,
+        reset: bool = False,
+    ) -> bool:
+        """Set custom icon and/or color for a category."""
+        clean_name = category_name.strip()
+        if not clean_name:
+            return False
+
+        if reset:
+            self._category_icons.pop(clean_name, None)
+            self._category_colors.pop(clean_name, None)
+        else:
+            if icon is not None:
+                clean_icon = icon.strip()
+                if clean_icon:
+                    self._category_icons[clean_name] = clean_icon
+                else:
+                    self._category_icons.pop(clean_name, None)
+
+            if color is not None:
+                clean_color = color.strip()
+                if clean_color:
+                    self._category_colors[clean_name] = clean_color
+                else:
+                    self._category_colors.pop(clean_name, None)
 
         await self.async_save()
         self._notify_listeners()

@@ -42,6 +42,10 @@ ATTR_CREATED_AT = "created_at"
 ATTR_UPDATED_AT = "updated_at"
 
 SERVICE_REORDER_IDEAS = "reorder_ideas"
+SERVICE_SET_CATEGORY_STYLE = "set_category_style"
+ATTR_ICON = "icon"
+ATTR_COLOR = "color"
+ATTR_RESET = "reset"
 
 # Priorities
 PRIORITY_LOW = "low"

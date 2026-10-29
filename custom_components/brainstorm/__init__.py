@@ -14,11 +14,14 @@ from homeassistant.helpers.typing import ConfigType
 
 from .const import (
     ATTR_CATEGORY,
+    ATTR_COLOR,
     ATTR_DEVICE,
+    ATTR_ICON,
     ATTR_ID,
     ATTR_ORDER,
     ATTR_PARENT_ID,
     ATTR_PRIORITY,
+    ATTR_RESET,
     ATTR_SOURCE,
     ATTR_STATUS,
     ATTR_TAGS,
@@ -26,6 +29,7 @@ from .const import (
     DOMAIN,
     PLATFORMS,
     SERVICE_REORDER_IDEAS,
+    SERVICE_SET_CATEGORY_STYLE,
 )
 from .store import BrainstormStore
 
@@ -98,6 +102,17 @@ SERVICE_GET_IDEAS_SCHEMA = vol.Schema(
 SERVICE_ADD_CATEGORY_SCHEMA = vol.Schema(
     {
         vol.Required("name"): cv.string,
+        vol.Optional(ATTR_ICON): vol.Any(None, cv.string),
+        vol.Optional(ATTR_COLOR): vol.Any(None, cv.string),
+    }
+)
+
+SERVICE_SET_CATEGORY_STYLE_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_CATEGORY): cv.string,
+        vol.Optional(ATTR_ICON): vol.Any(None, cv.string),
+        vol.Optional(ATTR_COLOR): vol.Any(None, cv.string),
+        vol.Optional(ATTR_RESET, default=False): cv.boolean,
     }
 )
 
@@ -321,12 +336,41 @@ def _register_services(hass: HomeAssistant) -> None:
             raise ServiceValidationError("Brainstorm store is not initialized")
 
         name = call.data.get("name", "").strip()
+        icon = call.data.get(ATTR_ICON)
+        color = call.data.get(ATTR_COLOR)
         if not name:
             raise ServiceValidationError("Der Kategoriename darf nicht leer sein.")
-        success = await store.async_add_category(name)
+        success = await store.async_add_category(name, icon=icon, color=color)
         if not success:
             raise ServiceValidationError(f"Die Kategorie '{name}' existiert bereits.")
         return {"success": success, "categories": store.categories}
+
+    async def handle_set_category_style(call: ServiceCall) -> dict[str, Any]:
+        """Handle setting custom icon and color for a category."""
+        store = _get_active_store(hass)
+        if not store:
+            raise ServiceValidationError("Brainstorm store is not initialized")
+
+        category = call.data.get(ATTR_CATEGORY, "").strip()
+        icon = call.data.get(ATTR_ICON)
+        color = call.data.get(ATTR_COLOR)
+        reset = call.data.get(ATTR_RESET, False)
+
+        if not category:
+            raise ServiceValidationError("Kategoriename ist erforderlich.")
+
+        success = await store.async_set_category_style(
+            category,
+            icon=icon,
+            color=color,
+            reset=reset,
+        )
+        return {
+            "success": success,
+            "category": category,
+            "category_icons": store.category_icons,
+            "category_colors": store.category_colors,
+        }
 
     async def handle_remove_category(call: ServiceCall) -> dict[str, Any]:
         """Handle removing a category."""
@@ -414,6 +458,14 @@ def _register_services(hass: HomeAssistant) -> None:
         SERVICE_ADD_CATEGORY,
         handle_add_category,
         schema=SERVICE_ADD_CATEGORY_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_SET_CATEGORY_STYLE,
+        handle_set_category_style,
+        schema=SERVICE_SET_CATEGORY_STYLE_SCHEMA,
         supports_response=SupportsResponse.OPTIONAL,
     )
 

@@ -33,6 +33,7 @@
         "description": "Wähle einen Bereich zum Konfigurieren:",
         "menu_options": {
           "categories": "Kategorien verwalten",
+          "category_style": "Kategorie-Design (Farbe & Icon)",
           "general": "Allgemeine Einstellungen & Export"
         }
       },
@@ -44,6 +45,30 @@
           "delete_category": "🗑️ Kategorie löschen (optional)",
           "edit_categories": "✏️ Komplette Liste anpassen (durch Komma getrennt)",
           "hide_empty_categories": "Kategorien ohne Notizen (0) ausblenden"
+        }
+      },
+      "category_style": {
+        "title": "Kategorie-Design anpassen",
+        "description": "Wähle eine Kategorie aus, um ihr Icon und ihre Akzentfarbe festzulegen.",
+        "data": {
+          "category": "Kategorie auswählen"
+        }
+      },
+      "category_style_edit": {
+        "title": "Design für „{category}“",
+        "description": "Wähle ein passendes Icon aus der Home Assistant Symbolbibliothek und eine Akzentfarbe für die Kategorie „{category}“.",
+        "data": {
+          "icon": "Kategorie-Icon (Home Assistant / MDI)",
+          "color": "Kategorie-Farbe",
+          "reset_style": "Auf Standard-Icon und -Farbe zurücksetzen"
+        }
+      },
+      "category_style_done": {
+        "title": "Kategorie-Design gespeichert",
+        "description": "Icon und Farbe für „{category}“ wurden erfolgreich aktualisiert.",
+        "menu_options": {
+          "category_style": "Weitere Kategorie anpassen",
+          "init": "Zurück zum Hauptmenü"
         }
       },
       "general": {

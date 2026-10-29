@@ -61,7 +61,7 @@ class BrainstormOverviewSensor(SensorEntity):
             name="Brainstorm Hub",
             manufacturer="nukleuz80",
             model="Brainstorm Hub",
-            sw_version="1.4.34",
+            sw_version="1.4.35",
         )
 
     async def async_added_to_hass(self) -> None:
@@ -124,6 +124,8 @@ class BrainstormOverviewSensor(SensorEntity):
             "active_count": len(active_ideas),
             "completed_count": len(completed_ideas),
             "categories": self._store.categories,
+            "category_icons": self._store.category_icons,
+            "category_colors": self._store.category_colors,
             "active_categories": active_cats,
             "hide_empty_categories": self._store.hide_empty_categories,
             "category_counts": counts_by_cat,

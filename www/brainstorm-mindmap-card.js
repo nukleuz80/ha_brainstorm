@@ -1,6 +1,6 @@
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.4.34
+ * Version: 1.4.35
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -170,6 +170,14 @@ class BrainstormMindmapCard extends HTMLElement {
       return "var(--primary-color, #a855f7)";
     }
     if (!category) return "#2563eb";
+
+    // 0. Check custom color from sensor attributes first
+    const sensor = this._getSensorEntity();
+    if (sensor && sensor.attributes && sensor.attributes.category_colors) {
+      const customColor = sensor.attributes.category_colors[category];
+      if (customColor) return customColor;
+    }
+
     const catNorm = String(category).trim().toLowerCase();
 
     // 1. Curated, high-contrast, beautiful palette for all standard categories
@@ -201,6 +209,7 @@ class BrainstormMindmapCard extends HTMLElement {
       "urlaub": "#38bdf8",        // Ocean Cyan 🏖️
       "reise": "#38bdf8",
       "notizen": "#8b5cf6",
+      "schlaue antworten": "#8b5cf6",
     };
 
     if (categoryPalette[catNorm]) {
@@ -232,6 +241,54 @@ class BrainstormMindmapCard extends HTMLElement {
     }
     const idx = Math.abs(hash) % fallbackPalette.length;
     return fallbackPalette[idx];
+  }
+
+  _getCategoryIcon(category) {
+    if (!category) return "mdi:bookmark-outline";
+    if (category === "all") return "mdi:layers-outline";
+
+    // 1. Check custom icon from sensor attributes first
+    const sensor = this._getSensorEntity();
+    if (sensor && sensor.attributes && sensor.attributes.category_icons) {
+      const customIcon = sensor.attributes.category_icons[category];
+      if (customIcon) return customIcon;
+    }
+
+    // 2. Curated default icons
+    const catNorm = String(category).trim().toLowerCase();
+    const defaultIcons = {
+      "inbox": "mdi:inbox",
+      "smarthome": "mdi:home-automation",
+      "smart home": "mdi:home-automation",
+      "haus & garten": "mdi:flower",
+      "haus": "mdi:home-roof",
+      "garten": "mdi:flower",
+      "projekte": "mdi:clipboard-check-outline",
+      "projekt": "mdi:clipboard-check-outline",
+      "alltag": "mdi:calendar-check",
+      "brainstorm": "mdi:brain",
+      "ideen": "mdi:lightbulb-outline",
+      "idee": "mdi:lightbulb-outline",
+      "familie": "mdi:account-group",
+      "kinder": "mdi:account-child",
+      "einkauf": "mdi:cart",
+      "shopping": "mdi:cart",
+      "schlaue antworten": "mdi:comment-question-outline",
+      "finanzen": "mdi:cash-multiple",
+      "finanz": "mdi:cash-multiple",
+      "arbeit": "mdi:briefcase",
+      "beruf": "mdi:briefcase",
+      "work": "mdi:briefcase",
+      "gesundheit": "mdi:heart-pulse",
+      "fitness": "mdi:dumbbell",
+      "sport": "mdi:dumbbell",
+      "auto": "mdi:car",
+      "urlaub": "mdi:beach",
+      "reise": "mdi:airplane",
+      "notizen": "mdi:notebook-outline",
+      "notiz": "mdi:notebook-outline",
+    };
+    return defaultIcons[catNorm] || "mdi:tag-outline";
   }
 
   _getSourceBadge(source, device) {
@@ -1159,6 +1216,7 @@ class BrainstormMindmapCard extends HTMLElement {
                 <img src="/local/brainstorm-bulb.svg" class="center-bulb-img" alt="Brainstorm" />
               </div>
               <div class="center-content">
+                <div class="center-icon" id="centerIcon" style="display: flex; justify-content: center; margin-bottom: 2px;"></div>
                 <div class="center-title" id="centerTitle">Inbox</div>
                 <div class="center-badge" id="centerBadge">0 Notizen</div>
               </div>
@@ -1846,17 +1904,18 @@ class BrainstormMindmapCard extends HTMLElement {
 
         pillsBar.innerHTML = `
           <div class="cat-pill ${this._selectedCategory === "all" ? "active" : ""}" data-cat="all" style="--category-color: var(--primary-color, #a855f7);">
-            <span class="pill-dot" style="background: var(--primary-color, #a855f7);"></span>
+            <ha-icon icon="mdi:layers-outline" style="--mdc-icon-size: 14px; width: 14px; height: 14px; margin-right: 4px; display: inline-flex; align-items: center; vertical-align: middle; color: ${this._selectedCategory === 'all' ? '#ffffff' : 'var(--primary-color, #a855f7)'};"></ha-icon>
             <span>Alle (${activeIdeas.length})</span>
           </div>
           ${visibleCategories
             .map((cat) => {
               const c = counts[cat] || 0;
               const catColor = this._getCategoryColor(cat);
+              const catIcon = this._getCategoryIcon(cat);
               const isActive = String(this._selectedCategory || "").trim() === String(cat || "").trim();
               return `
                 <div class="cat-pill ${isActive ? "active" : ""}" data-cat="${cat}" style="--category-color: ${catColor};">
-                  <span class="pill-dot" style="background: ${catColor};"></span>
+                  <ha-icon icon="${catIcon}" style="--mdc-icon-size: 14px; width: 14px; height: 14px; margin-right: 4px; display: inline-flex; align-items: center; vertical-align: middle; color: ${isActive ? '#ffffff' : catColor};"></ha-icon>
                   <span>${cat}</span>
                   <span style="opacity: 0.75; font-size: 0.72rem;">(${c})</span>
                 </div>
@@ -1884,6 +1943,7 @@ class BrainstormMindmapCard extends HTMLElement {
       const centerTitle = this.shadowRoot.getElementById("centerTitle");
       const centerBadge = this.shadowRoot.getElementById("centerBadge");
       const centerNode = this.shadowRoot.getElementById("centerNode");
+      const centerIcon = this.shadowRoot.getElementById("centerIcon");
 
       if (centerTitle && centerBadge) {
         const displayCat = this._selectedCategory === "all" ? "Alle" : this._selectedCategory;
@@ -1897,6 +1957,11 @@ class BrainstormMindmapCard extends HTMLElement {
         centerNode.style.setProperty("--cat-color", catColor);
         centerNode.style.borderColor = catColor;
         centerNode.style.boxShadow = `0 4px 20px color-mix(in srgb, ${catColor} 25%, transparent)`;
+
+        if (centerIcon) {
+          const ic = this._getCategoryIcon(this._selectedCategory);
+          centerIcon.innerHTML = `<ha-icon icon="${ic}" style="--mdc-icon-size: 26px; width: 26px; height: 26px; color: ${catColor};"></ha-icon>`;
+        }
       }
 
       // 3. Render Note Clouds
@@ -1927,7 +1992,7 @@ class BrainstormMindmapCard extends HTMLElement {
           <div class="note-cloud ${prioClass}" id="cloud_${idea.id}" data-id="${idea.id}" style="--cat-color: ${color};">
             <div class="cloud-meta">
               <span class="cat-tag" data-cat="${this._escapeHtml(idea.category)}" title="Kategorie ändern">
-                🏷️ ${this._escapeHtml(idea.category)}
+                <ha-icon icon="${this._getCategoryIcon(idea.category)}" style="--mdc-icon-size: 12px; width: 12px; height: 12px; display: inline-flex; align-items: center; vertical-align: middle;"></ha-icon> ${this._escapeHtml(idea.category)}
               </span>
               ${prioBadge}
               <span class="cloud-source" title="Quelle: ${idea.source || 'Dashboard'}${idea.device ? ' • Gerät: ' + this._escapeHtml(idea.device) : ''}">
@@ -2887,7 +2952,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.34 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.35 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

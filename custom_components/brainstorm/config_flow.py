@@ -105,13 +105,121 @@ class BrainstormConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
     """Handle options flow for Brainstorm Hub."""
 
+    def __init__(self) -> None:
+        """Initialize options flow."""
+        self._selected_style_cat: str = "Inbox"
+
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Show options menu."""
         return self.async_show_menu(
             step_id="init",
-            menu_options=["categories", "general"],
+            menu_options=["categories", "category_style", "general"],
+        )
+
+    async def async_step_category_style(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Select a category to customize its icon and color."""
+        store = self.hass.data.get(DOMAIN, {}).get("primary_store")
+        current_cats = (
+            store.categories
+            if store and store.categories
+            else ["Inbox", "Smarthome", "Haus & Garten", "Projekte", "Alltag"]
+        )
+
+        if user_input is not None:
+            self._selected_style_cat = user_input.get("category", current_cats[0])
+            return await self.async_step_category_style_edit()
+
+        cat_options = [{"value": c, "label": c} for c in current_cats]
+        data_schema = vol.Schema(
+            {
+                vol.Required("category", default=current_cats[0]): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=cat_options,
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                )
+            }
+        )
+        return self.async_show_form(
+            step_id="category_style",
+            data_schema=data_schema,
+        )
+
+    async def async_step_category_style_edit(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Edit icon and color for the selected category."""
+        store = self.hass.data.get(DOMAIN, {}).get("primary_store")
+        cat = getattr(self, "_selected_style_cat", "Inbox")
+
+        current_icon = (store.category_icons.get(cat) if store else None) or ""
+        current_color_hex = (store.category_colors.get(cat) if store else None) or ""
+
+        current_rgb = None
+        if current_color_hex and current_color_hex.startswith("#") and len(current_color_hex) == 7:
+            try:
+                current_rgb = [
+                    int(current_color_hex[1:3], 16),
+                    int(current_color_hex[3:5], 16),
+                    int(current_color_hex[5:7], 16),
+                ]
+            except ValueError:
+                current_rgb = None
+
+        if user_input is not None:
+            if store:
+                reset = user_input.get("reset_style", False)
+                if reset:
+                    await store.async_set_category_style(cat, reset=True)
+                else:
+                    icon_val = user_input.get("icon")
+                    color_val = user_input.get("color")
+                    hex_color = None
+                    if isinstance(color_val, (list, tuple)) and len(color_val) == 3:
+                        hex_color = f"#{int(color_val[0]):02x}{int(color_val[1]):02x}{int(color_val[2]):02x}"
+                    elif isinstance(color_val, str) and color_val.strip():
+                        hex_color = color_val.strip()
+
+                    await store.async_set_category_style(
+                        cat,
+                        icon=icon_val,
+                        color=hex_color,
+                    )
+            return await self.async_step_category_style_done()
+
+        schema_dict: dict[Any, Any] = {}
+        icon_config = selector.IconSelectorConfig()
+        if current_icon:
+            schema_dict[vol.Optional("icon", default=current_icon)] = selector.IconSelector(icon_config)
+        else:
+            schema_dict[vol.Optional("icon")] = selector.IconSelector(icon_config)
+
+        color_config = selector.ColorRGBSelectorConfig()
+        if current_rgb:
+            schema_dict[vol.Optional("color", default=current_rgb)] = selector.ColorRGBSelector(color_config)
+        else:
+            schema_dict[vol.Optional("color")] = selector.ColorRGBSelector(color_config)
+
+        schema_dict[vol.Optional("reset_style", default=False)] = selector.BooleanSelector()
+
+        return self.async_show_form(
+            step_id="category_style_edit",
+            data_schema=vol.Schema(schema_dict),
+            description_placeholders={"category": cat},
+        )
+
+    async def async_step_category_style_done(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Show completion options."""
+        return self.async_show_menu(
+            step_id="category_style_done",
+            menu_options=["category_style", "init"],
+            description_placeholders={"category": getattr(self, "_selected_style_cat", "")},
         )
 
     async def async_step_categories(
