@@ -1,6 +1,6 @@
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.4.30
+ * Version: 1.4.31
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -13,6 +13,7 @@ const BRAINSTORM_MINDMAP_DEFAULTS = {
   height: "calc(100vh - 32px)",
   default_category: "all",
   show_bulb_watermark: true,
+  show_grid: true,
   show_toolbar: true,
   show_color_toggle: true,
   show_fullscreen_btn: true,
@@ -93,6 +94,9 @@ class BrainstormMindmapCard extends HTMLElement {
 
     const bulbWrap = this.shadowRoot.querySelector(".center-bulb-wrapper");
     if (bulbWrap) bulbWrap.style.display = this._config.show_bulb_watermark === true ? "block" : "none";
+
+    const gridBg = this.shadowRoot.getElementById("gridBg");
+    if (gridBg) gridBg.style.display = this._config.show_grid !== false ? "block" : "none";
 
     const colorModeBtn = this.shadowRoot.getElementById("colorModeBtn");
     if (colorModeBtn) colorModeBtn.style.display = this._config.show_color_toggle === true ? "inline-flex" : "none";
@@ -343,7 +347,7 @@ class BrainstormMindmapCard extends HTMLElement {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          background: linear-gradient(180deg, var(--ha-card-background, var(--card-background-color, #ffffff)) 0%, transparent 100%);
+          background: linear-gradient(180deg, var(--ha-card-background, var(--card-background-color, #ffffff)) 0%, color-mix(in srgb, var(--ha-card-background, var(--card-background-color, #ffffff)) 0%, transparent) 100%);
           pointer-events: none;
         }
         .top-left {
@@ -487,7 +491,7 @@ class BrainstormMindmapCard extends HTMLElement {
           position: relative;
           cursor: grab;
           overflow: hidden;
-          background: var(--ha-card-background, var(--card-background-color, #ffffff));
+          background: transparent;
         }
         .canvas-area:active {
           cursor: grabbing;
@@ -495,7 +499,7 @@ class BrainstormMindmapCard extends HTMLElement {
         .grid-bg {
           position: absolute;
           inset: 0;
-          background-image: radial-gradient(var(--divider-color, rgba(127, 127, 127, 0.16)) 1px, transparent 1px);
+          background-image: radial-gradient(circle at center, var(--divider-color, rgba(127, 127, 127, 0.22)) 0.75px, transparent 1.6px);
           background-size: 24px 24px;
           pointer-events: none;
         }
@@ -506,7 +510,6 @@ class BrainstormMindmapCard extends HTMLElement {
           width: 100%;
           height: 100%;
           transform-origin: 0 0;
-          will-change: transform;
         }
 
         /* SVG Connectors */
@@ -1148,7 +1151,7 @@ class BrainstormMindmapCard extends HTMLElement {
 
         <!-- Interactive Canvas Area -->
         <div class="canvas-area" id="canvasArea">
-          <div class="grid-bg"></div>
+          <div class="grid-bg" id="gridBg" style="display: ${this._config.show_grid !== false ? 'block' : 'none'};"></div>
           <div class="viewport" id="viewport">
             <svg class="connectors" id="connectorsLayer"></svg>
             <div class="center-node" id="centerNode">
@@ -1496,6 +1499,12 @@ class BrainstormMindmapCard extends HTMLElement {
     if (viewport) {
       viewport.style.transform = `translate(${this._panX}px, ${this._panY}px) scale(${this._scale})`;
     }
+    const gridBg = this.shadowRoot.getElementById("gridBg");
+    if (gridBg) {
+      const size = Math.max(12, Math.min(60, 24 * this._scale));
+      gridBg.style.backgroundPosition = `${this._panX}px ${this._panY}px`;
+      gridBg.style.backgroundSize = `${size}px ${size}px`;
+    }
   }
 
   _centerLayout(recomputeRadial = false) {
@@ -1788,6 +1797,9 @@ class BrainstormMindmapCard extends HTMLElement {
 
       const bulbWrap = this.shadowRoot.querySelector(".center-bulb-wrapper");
       if (bulbWrap) bulbWrap.style.display = this._config.show_bulb_watermark === true ? "block" : "none";
+
+      const gridBg = this.shadowRoot.getElementById("gridBg");
+      if (gridBg) gridBg.style.display = this._config.show_grid !== false ? "block" : "none";
 
       const colorModeBtn = this.shadowRoot.getElementById("colorModeBtn");
       if (colorModeBtn) {
@@ -2627,6 +2639,12 @@ class BrainstormMindmapCardEditor extends HTMLElement {
         selector: { boolean: {} },
       },
       {
+        name: "show_grid",
+        label: "Punktraster im Hintergrund anzeigen",
+        default: true,
+        selector: { boolean: {} },
+      },
+      {
         name: "show_toolbar",
         label: "Obere Werkzeugleiste (Titel & Filter-Pills) anzeigen",
         default: true,
@@ -2869,7 +2887,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.30 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.31 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );
