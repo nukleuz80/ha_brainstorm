@@ -4,4 +4,8 @@ __pycache__/
 .DS_Store
 *.swp
 *.swo
+AGENTS.md
+*AGENT*.md
+.agents/
+
 
