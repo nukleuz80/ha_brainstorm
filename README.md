@@ -1,6 +1,7 @@
 # 🧠 Brainstorm Hub for Home Assistant
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/default)
+[![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Version](https://img.shields.io/badge/version-1.4.31-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver-C0C0C0.svg)](https://developers.home-assistant.io/docs/integration_quality_scale_index/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -71,7 +72,14 @@ Egal ob beim Kochen, im Garten oder unterwegs: Erfasse Geistesblitze sekundensch
 
 ## 📦 Installation
 
-### Methode 1: Über HACS (Empfohlen)
+### Methode 1: Über HACS (Empfohlen – 1 Klick)
+
+Klicke einfach auf diesen Button, um das Repository direkt in deiner Home Assistant Installation im HACS zu öffnen und hinzuzufügen:
+
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
+
+<details>
+<summary><b>Alternativ: Manuell in HACS eintragen</b></summary>
 
 1. Öffne **HACS** in deinem Home Assistant.
 2. Klicke oben rechts auf das Drei-Punkte-Menü ➔ **Benutzerdefinierte Repositories**.
@@ -82,6 +90,7 @@ Egal ob beim Kochen, im Garten oder unterwegs: Erfasse Geistesblitze sekundensch
 4. Wähle als Kategorie: **Integration**.
 5. Klicke auf **Hinzufügen** und installiere die Integration.
 6. Starte Home Assistant neu.
+</details>
 
 ### Methode 2: Manuelle Installation
 
@@ -89,19 +98,27 @@ Egal ob beim Kochen, im Garten oder unterwegs: Erfasse Geistesblitze sekundensch
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js` und `www/brainstorm-mindmap-card.js` in `/config/www/`.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.4.18` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.4.18` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.4.31` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.4.31` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ---
 
 ## 🛠️ Konfiguration
 
+Klicke auf diesen Button, um die Ersteinrichtung von **Brainstorm Hub** direkt in Home Assistant zu starten:
+
+[![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
+
+<details>
+<summary><b>Alternativ: Manuell über die UI einrichten</b></summary>
+
 1. Gehe in Home Assistant auf **Einstellungen ➔ Geräte & Dienste ➔ Integration hinzufügen**.
 2. Suche nach **Brainstorm Hub** und schließe die Ersteinrichtung ab.
 3. Über den Button **Konfigurieren** stehen dir zwei Menübereiche zur Verfügung:
    - **📁 Kategorien verwalten:** Neue Kategorien hinzufügen, ungenutzte löschen oder per Kommaliste anpassen.
    - **⚙️ Allgemeine Einstellungen & Export:** Standard-Kategorie festlegen, automatischen Markdown-Export aktivieren und Zielpfad konfigurieren.
+</details>
 
 ---
 
