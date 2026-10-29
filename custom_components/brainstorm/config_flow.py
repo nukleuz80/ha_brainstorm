@@ -113,9 +113,23 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Show options menu."""
+        is_de = getattr(self.hass.config, "language", "en") == "de"
+        menu_options = {
+            "categories": "Kategorien verwalten" if is_de else "Manage Categories",
+            "category_style": (
+                "Kategorie-Design (Farbe & Icon)"
+                if is_de
+                else "Category Design (Color & Icon)"
+            ),
+            "general": (
+                "Allgemeine Einstellungen & Export"
+                if is_de
+                else "General Settings & Export"
+            ),
+        }
         return self.async_show_menu(
             step_id="init",
-            menu_options=["categories", "category_style", "general"],
+            menu_options=menu_options,
         )
 
     async def async_step_category_style(
@@ -216,9 +230,18 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Show completion options."""
+        is_de = getattr(self.hass.config, "language", "en") == "de"
+        menu_options = {
+            "category_style": (
+                "Weitere Kategorie anpassen"
+                if is_de
+                else "Customize another category"
+            ),
+            "init": "Zurück zum Hauptmenü" if is_de else "Back to main menu",
+        }
         return self.async_show_menu(
             step_id="category_style_done",
-            menu_options=["category_style", "init"],
+            menu_options=menu_options,
             description_placeholders={"category": getattr(self, "_selected_style_cat", "")},
         )
 

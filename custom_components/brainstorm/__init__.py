@@ -165,6 +165,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) -
             except Exception as err:
                 _LOGGER.debug("Could not live-reload %s: %s", full_name, err)
 
+    # Invalidate translations cache so new steps and labels take effect immediately without restart
+    try:
+        from homeassistant.helpers.translation import TRANSLATION_FLATTEN_CACHE
+        if TRANSLATION_FLATTEN_CACHE in hass.data:
+            cache = hass.data[TRANSLATION_FLATTEN_CACHE]
+            if hasattr(cache, "async_invalidate"):
+                cache.async_invalidate({DOMAIN})
+    except Exception as err:
+        _LOGGER.debug("Could not invalidate translation cache: %s", err)
+
     from .store import BrainstormStore
 
     hass.data.setdefault(DOMAIN, {})
