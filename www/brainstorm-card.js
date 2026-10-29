@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.35 - Customizable category colors and Home Assistant MDI icons
+ * Version 1.4.36 - Ultra-compact mobile task rows, iPhone indentation fix & compact density mode
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",
@@ -12,6 +12,7 @@ const BRAINSTORM_CARD_DEFAULTS = {
   show_quick_input: true,
   show_categories: true,
   hide_empty_categories: true,
+  compact_mode: false,
   show_badge: true,
   show_mindmap_button: true,
   show_color_toggle: true,
@@ -1633,62 +1634,110 @@ class BrainstormCard extends HTMLElement {
           padding: 3px 2px;
           box-sizing: border-box;
         }
-        @media (max-width: 520px) {
+        @media (max-width: 600px) {
           ha-card {
-            padding: 12px 12px 14px 12px;
+            padding: 10px 10px 12px 10px;
           }
           .header {
             gap: 8px;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
           }
           .card-title {
-            font-size: 1.05rem;
+            font-size: 1rem;
           }
           .badge {
-            font-size: 0.68rem;
-            padding: 2px 6px;
+            font-size: 0.65rem;
+            padding: 2px 5px;
           }
           .quick-capture-card {
-            padding: 6px 8px;
-            gap: 5px;
+            padding: 5px 7px;
+            gap: 4px;
           }
           button.send-btn {
-            padding: 0 10px;
-            height: 34px;
-            font-size: 0.82rem;
+            padding: 0 8px;
+            height: 32px;
+            font-size: 0.8rem;
           }
           .send-text {
             display: none;
           }
           .send-icon {
-            font-size: 1.05rem;
+            font-size: 1rem;
             margin: 0;
           }
           select.cat-select {
-            max-width: 130px;
-            font-size: 0.78rem;
+            max-width: 120px;
+            font-size: 0.75rem;
           }
           select.prio-select {
-            font-size: 0.78rem;
+            font-size: 0.75rem;
           }
-          .idea-item.is-subtask {
-            margin-left: 16px;
+          /* Optimized compact task rows for smartphones */
+          .ideas-list {
+            gap: 4px !important;
           }
-          .idea-item.is-subtask::before {
-            left: -11px;
-            width: 8px;
+          .idea-item {
+            padding: 6px 8px !important;
+            gap: 8px !important;
+            border-radius: 7px !important;
+            border-left-width: 3px !important;
+          }
+          .idea-content {
+            min-width: 0;
+          }
+          .idea-text {
+            font-size: 0.87rem !important;
+            line-height: 1.25 !important;
+          }
+          .idea-meta {
+            margin-top: 2px !important;
+            gap: 4px !important;
+            font-size: 0.68rem !important;
+            flex-wrap: wrap;
+          }
+          .category-tag {
+            padding: 1px 5px !important;
+            font-size: 0.65rem !important;
+            border-radius: 4px !important;
+          }
+          .prio-tag {
+            padding: 1px 5px !important;
+            font-size: 0.65rem !important;
+            border-radius: 4px !important;
+          }
+          .check-btn {
+            width: 18px !important;
+            height: 18px !important;
+            margin-top: 1px !important;
+          }
+          .drag-handle {
+            opacity: 0.55 !important;
+            padding: 2px !important;
+            font-size: 1.05rem !important;
+          }
+          .item-actions {
+            gap: 1px !important;
+            margin-left: 2px !important;
           }
           .indent-btn,
           .edit-btn,
           .delete-btn {
-            opacity: 0.75 !important;
-            min-width: 28px;
-            min-height: 28px;
+            opacity: 0.7 !important;
+            min-width: 24px !important;
+            min-height: 24px !important;
+            font-size: 0.85rem !important;
+            padding: 2px !important;
           }
-          .drag-handle {
-            opacity: 0.65;
-            padding: 4px;
-            font-size: 1.25rem;
+          .idea-item.is-subtask {
+            margin-left: 10px !important;
+          }
+          .idea-item.is-subtask::before {
+            left: -7px !important;
+            width: 5px !important;
+            top: 13px !important;
+          }
+          .subtask-badge {
+            display: none !important;
           }
         }
         @media (max-width: 380px) {
@@ -1696,10 +1745,20 @@ class BrainstormCard extends HTMLElement {
             display: none;
           }
           .view-toggle-btn {
-            padding: 6px 8px;
+            padding: 5px 7px;
           }
           select.cat-select {
-            max-width: 105px;
+            max-width: 95px;
+          }
+          .idea-item {
+            padding: 5px 6px !important;
+            gap: 6px !important;
+          }
+          .idea-text {
+            font-size: 0.83rem !important;
+          }
+          .idea-meta {
+            font-size: 0.64rem !important;
           }
         }
         /* Filter Pills */
@@ -1770,25 +1829,25 @@ class BrainstormCard extends HTMLElement {
         .ideas-list {
           display: flex;
           flex-direction: column;
-          gap: 8px;
+          gap: 5px;
           max-height: 480px;
           overflow-y: auto;
         }
         .empty-state {
           text-align: center;
-          padding: 28px 12px;
+          padding: 24px 12px;
           color: var(--secondary-text-color, #888);
-          font-size: 0.9rem;
+          font-size: 0.88rem;
         }
         .idea-item {
           display: flex;
           align-items: flex-start;
-          gap: 12px;
+          gap: 10px;
           background: var(--card-background-color, #ffffff);
           border: 1px solid var(--divider-color, rgba(0,0,0,0.06));
           border-left: 3.5px solid var(--item-cat-color, var(--divider-color));
-          border-radius: 10px;
-          padding: 12px;
+          border-radius: 8px;
+          padding: 8px 11px;
           transition: background 0.15s, border-color 0.15s;
         }
         .idea-item:hover {
@@ -1798,11 +1857,11 @@ class BrainstormCard extends HTMLElement {
         .check-btn {
           background: transparent;
           border: 2px solid var(--divider-color, #bdbdbd);
-          width: 20px;
-          height: 20px;
+          width: 19px;
+          height: 19px;
           border-radius: 50%;
           cursor: pointer;
-          margin-top: 2px;
+          margin-top: 1px;
           flex-shrink: 0;
           transition: all 0.2s ease;
         }
@@ -1812,18 +1871,63 @@ class BrainstormCard extends HTMLElement {
         }
         .idea-content {
           flex: 1;
+          min-width: 0;
         }
         .idea-text {
-          font-size: 0.95rem;
-          line-height: 1.4;
+          font-size: 0.91rem;
+          line-height: 1.32;
           word-break: break-word;
           color: var(--primary-text-color, #212121);
         }
         .idea-meta {
           display: flex;
           align-items: center;
-          gap: 8px;
-          margin-top: 6px;
+          gap: 6px;
+          margin-top: 3px;
+          font-size: 0.72rem;
+          color: var(--secondary-text-color, #757575);
+          flex-wrap: wrap;
+        }
+        /* Explicit Compact Mode (Density Setting) */
+        ha-card.compact-mode .ideas-list {
+          gap: 3px;
+        }
+        ha-card.compact-mode .idea-item {
+          padding: 4px 7px;
+          gap: 6px;
+          border-radius: 6px;
+        }
+        ha-card.compact-mode .idea-text {
+          font-size: 0.85rem;
+          line-height: 1.2;
+        }
+        ha-card.compact-mode .idea-meta {
+          margin-top: 1px;
+          gap: 4px;
+          font-size: 0.65rem;
+        }
+        ha-card.compact-mode .check-btn {
+          width: 16px;
+          height: 16px;
+          margin-top: 1px;
+        }
+        ha-card.compact-mode .category-tag,
+        ha-card.compact-mode .prio-tag {
+          padding: 1px 4px;
+          font-size: 0.62rem;
+        }
+        ha-card.compact-mode .drag-handle {
+          font-size: 0.95rem;
+          padding: 1px;
+        }
+        ha-card.compact-mode .indent-btn,
+        ha-card.compact-mode .edit-btn,
+        ha-card.compact-mode .delete-btn {
+          min-width: 22px;
+          min-height: 22px;
+          font-size: 0.8rem;
+          padding: 1px 3px;
+        }
           font-size: 0.75rem;
           color: var(--secondary-text-color, #757575);
         }
@@ -2194,7 +2298,7 @@ class BrainstormCard extends HTMLElement {
         }
       </style>
 
-      <ha-card>
+      <ha-card class="${this._config.compact_mode === true ? 'compact-mode' : ''}">
         <div class="header">
           <div class="header-main">
             <div class="logo-wrap" title="Brainstorm Hub">
@@ -3276,6 +3380,12 @@ class BrainstormCardEditor extends HTMLElement {
         selector: { boolean: {} },
       },
       {
+        name: "compact_mode",
+        label: "Kompakte Zeilenhöhe (mehr Aufgaben auf einen Blick)",
+        default: false,
+        selector: { boolean: {} },
+      },
+      {
         name: "show_badge",
         label: "Zähler-Badge im Header anzeigen",
         default: true,
@@ -3469,6 +3579,12 @@ class BrainstormCardEditor extends HTMLElement {
             <span>Kategorien ohne Notizen (0) ausblenden</span>
           </label>
         </div>
+        <div class="fallback-row">
+          <label class="fallback-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <input type="checkbox" id="fbCompactMode" ${this._config.compact_mode ? 'checked' : ''} />
+            <span>Kompakte Zeilenhöhe (mehr Aufgaben auf einen Blick)</span>
+          </label>
+        </div>
       </div>
     `;
     const fbTitle = container.querySelector("#fbTitle");
@@ -3476,6 +3592,7 @@ class BrainstormCardEditor extends HTMLElement {
     const fbDefaultCat = container.querySelector("#fbDefaultCat");
     const fbColorMode = container.querySelector("#fbColorMode");
     const fbHideEmpty = container.querySelector("#fbHideEmpty");
+    const fbCompactMode = container.querySelector("#fbCompactMode");
 
     const emitChange = () => {
       this._config = {
@@ -3485,6 +3602,7 @@ class BrainstormCardEditor extends HTMLElement {
         default_category: fbDefaultCat ? fbDefaultCat.value : this._config.default_category,
         color_mode: fbColorMode ? fbColorMode.value : this._config.color_mode,
         hide_empty_categories: fbHideEmpty ? fbHideEmpty.checked : Boolean(this._config.hide_empty_categories),
+        compact_mode: fbCompactMode ? fbCompactMode.checked : Boolean(this._config.compact_mode),
       };
       this.dispatchEvent(
         new CustomEvent("config-changed", {
@@ -3500,6 +3618,7 @@ class BrainstormCardEditor extends HTMLElement {
     if (fbDefaultCat) fbDefaultCat.addEventListener("change", emitChange);
     if (fbColorMode) fbColorMode.addEventListener("change", emitChange);
     if (fbHideEmpty) fbHideEmpty.addEventListener("change", emitChange);
+    if (fbCompactMode) fbCompactMode.addEventListener("change", emitChange);
   }
 }
 
@@ -3522,7 +3641,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.4.35 ",
+  "%c BRAINSTORM-CARD %c v1.4.36 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );
