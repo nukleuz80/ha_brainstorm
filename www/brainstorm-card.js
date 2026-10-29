@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.28 - Hide Empty Categories (0) by Default
+ * Version 1.4.29 - Drag & Drop Sorting, Subtask Assignment & Apple Reminders Context Menu
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",
@@ -719,6 +719,147 @@ class BrainstormCard extends HTMLElement {
     });
   }
 
+  _openContextMenu(item, prevTopLevelItem, nextItem, prevItem, activeIdeas) {
+    const backdrop = this.shadowRoot.getElementById("appleContextMenu");
+    const titleEl = this.shadowRoot.getElementById("appleMenuTitle");
+    const actionsEl = this.shadowRoot.getElementById("appleMenuActions");
+    if (!backdrop || !titleEl || !actionsEl) return;
+
+    titleEl.textContent = item.text;
+    actionsEl.innerHTML = "";
+
+    const isSub = item.isSubtask === true;
+    let actionsHtml = "";
+
+    // Subtask Action: Indent under previous item or outdent to main task
+    if (isSub) {
+      actionsHtml += `
+        <button class="apple-menu-btn action-indent" data-act="outdent">
+          <span class="btn-icon">↰</span>
+          <div class="btn-content">
+            <span>Ausrücken</span>
+            <span class="btn-sublabel">Wieder zur Hauptaufgabe machen</span>
+          </div>
+        </button>
+      `;
+    } else if (prevTopLevelItem) {
+      const prevTitle = prevTopLevelItem.text.length > 30 ? prevTopLevelItem.text.slice(0, 30) + "..." : prevTopLevelItem.text;
+      actionsHtml += `
+        <button class="apple-menu-btn action-indent" data-act="indent" data-target="${prevTopLevelItem.id}">
+          <span class="btn-icon">↳</span>
+          <div class="btn-content">
+            <span>Unteraufgabe einrücken</span>
+            <span class="btn-sublabel">Unter: „${this._escapeHtml(prevTitle)}“</span>
+          </div>
+        </button>
+      `;
+    }
+
+    // Move Up / Move Down
+    if (prevItem) {
+      actionsHtml += `
+        <button class="apple-menu-btn" data-act="move-up">
+          <span class="btn-icon">⬆️</span>
+          <div class="btn-content"><span>Nach oben verschieben</span></div>
+        </button>
+      `;
+    }
+    if (nextItem) {
+      actionsHtml += `
+        <button class="apple-menu-btn" data-act="move-down">
+          <span class="btn-icon">⬇️</span>
+          <div class="btn-content"><span>Nach unten verschieben</span></div>
+        </button>
+      `;
+    }
+
+    actionsHtml += `<div class="apple-menu-separator"></div>`;
+
+    // Edit
+    actionsHtml += `
+      <button class="apple-menu-btn" data-act="edit">
+        <span class="btn-icon">✏️</span>
+        <div class="btn-content"><span>Notiz bearbeiten</span></div>
+      </button>
+    `;
+
+    // Delete
+    actionsHtml += `
+      <button class="apple-menu-btn action-danger" data-act="delete">
+        <span class="btn-icon">🗑️</span>
+        <div class="btn-content"><span>Notiz löschen</span></div>
+      </button>
+    `;
+
+    actionsEl.innerHTML = actionsHtml;
+
+    // Attach listeners
+    actionsEl.querySelectorAll(".apple-menu-btn").forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        this._closeContextMenu();
+        const act = btn.getAttribute("data-act");
+
+        if (act === "outdent") {
+          try {
+            await this._hass.callService("brainstorm", "update_idea", {
+              id: item.id,
+              parent_id: "",
+            });
+          } catch (err) {
+            console.error("Failed to outdent", err);
+          }
+        } else if (act === "indent") {
+          const targetId = btn.getAttribute("data-target");
+          try {
+            await this._hass.callService("brainstorm", "update_idea", {
+              id: item.id,
+              parent_id: targetId,
+            });
+          } catch (err) {
+            console.error("Failed to indent", err);
+          }
+        } else if (act === "move-up" && prevItem) {
+          await this._swapIdeasOrder(item.id, prevItem.id);
+        } else if (act === "move-down" && nextItem) {
+          await this._swapIdeasOrder(item.id, nextItem.id);
+        } else if (act === "edit") {
+          this._editIdea(item.id, item.text, item.category, item.priority, item.parent_id);
+        } else if (act === "delete") {
+          await this._deleteIdea(item.id);
+        }
+      });
+    });
+
+    backdrop.style.display = "flex";
+  }
+
+  _closeContextMenu() {
+    const backdrop = this.shadowRoot.getElementById("appleContextMenu");
+    if (backdrop) backdrop.style.display = "none";
+  }
+
+  async _swapIdeasOrder(idA, idB) {
+    const sensor = this._getSensorEntity();
+    if (!sensor || !this._hass) return;
+    const activeIdeas = (sensor.attributes && sensor.attributes.ideas) || [];
+    const ids = activeIdeas.map((i) => i.id);
+    const idxA = ids.indexOf(idA);
+    const idxB = ids.indexOf(idB);
+    if (idxA === -1 || idxB === -1) return;
+
+    ids[idxA] = idB;
+    ids[idxB] = idA;
+
+    try {
+      await this._hass.callService("brainstorm", "reorder_ideas", {
+        idea_ids: ids,
+      });
+    } catch (err) {
+      console.error("Failed to swap ideas order", err);
+    }
+  }
+
   _initDom() {
     if (!this._hass || !this._config) return;
     this._initialized = true;
@@ -1381,6 +1522,11 @@ class BrainstormCard extends HTMLElement {
             min-width: 28px;
             min-height: 28px;
           }
+          .drag-handle {
+            opacity: 0.65;
+            padding: 4px;
+            font-size: 1.25rem;
+          }
         }
         @media (max-width: 380px) {
           .view-toggle-btn .btn-text {
@@ -1657,6 +1803,205 @@ class BrainstormCard extends HTMLElement {
           color: var(--secondary-text-color, #666);
           font-weight: 500;
         }
+        /* Drag & Drop styling */
+        .drag-handle {
+          color: var(--secondary-text-color, #9e9e9e);
+          cursor: grab;
+          font-size: 1.15rem;
+          line-height: 1;
+          padding: 2px 4px;
+          margin-right: -4px;
+          margin-top: 1px;
+          opacity: 0.28;
+          user-select: none;
+          -webkit-user-select: none;
+          touch-action: none;
+          transition: opacity 0.15s, color 0.15s, transform 0.15s;
+          flex-shrink: 0;
+        }
+        .idea-item:hover .drag-handle {
+          opacity: 0.85;
+          color: var(--primary-color, #03a9f4);
+        }
+        .drag-handle:active {
+          cursor: grabbing;
+          transform: scale(1.18);
+        }
+        .idea-item.is-dragging {
+          opacity: 0.42 !important;
+          border-style: dashed !important;
+          background: var(--secondary-background-color, rgba(0, 0, 0, 0.05)) !important;
+          transform: scale(0.99);
+        }
+        .idea-item.drop-target-above {
+          border-top: 3.5px solid var(--primary-color, #03a9f4) !important;
+          transform: translateY(2px);
+        }
+        .idea-item.drop-target-below {
+          border-bottom: 3.5px solid var(--primary-color, #03a9f4) !important;
+          transform: translateY(-2px);
+        }
+        .idea-item.drop-target-subtask {
+          background: color-mix(in srgb, var(--primary-color, #03a9f4) 15%, var(--card-background-color, #ffffff)) !important;
+          border-color: var(--primary-color, #03a9f4) !important;
+          box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-color, #03a9f4) 30%, transparent) !important;
+          transform: translateX(10px);
+        }
+        .idea-item.drop-target-subtask::after {
+          content: "↳ Als Unteraufgabe";
+          position: absolute;
+          right: 12px;
+          top: 10px;
+          font-size: 0.72rem;
+          font-weight: 700;
+          color: var(--primary-color, #03a9f4);
+          background: color-mix(in srgb, var(--primary-color, #03a9f4) 18%, var(--card-background-color, #ffffff));
+          padding: 2px 8px;
+          border-radius: 8px;
+          pointer-events: none;
+        }
+        .touch-drag-ghost {
+          position: fixed;
+          z-index: 99999999;
+          pointer-events: none;
+          background: var(--card-background-color, #ffffff);
+          border: 1.5px solid var(--primary-color, #03a9f4);
+          color: var(--primary-text-color, #212121);
+          padding: 8px 14px;
+          border-radius: 12px;
+          box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+          font-size: 0.88rem;
+          font-weight: 600;
+          white-space: nowrap;
+          max-width: 250px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          opacity: 0.95;
+          transform: rotate(2deg);
+        }
+        /* Apple Reminders Style Context Menu */
+        .apple-menu-backdrop {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          height: 100dvh;
+          background: rgba(0, 0, 0, 0.45);
+          backdrop-filter: blur(5px);
+          -webkit-backdrop-filter: blur(5px);
+          z-index: 9999999;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 16px;
+          box-sizing: border-box;
+          animation: modalFadeIn 0.15s ease-out;
+        }
+        .apple-menu-card {
+          background: var(--ha-card-background, var(--card-background-color, #ffffff));
+          color: var(--primary-text-color, #212121);
+          width: 100%;
+          max-width: 360px;
+          border-radius: 20px;
+          border: 1px solid var(--ha-card-border-color, var(--divider-color, rgba(127, 127, 127, 0.2)));
+          box-shadow: 0 20px 48px rgba(0, 0, 0, 0.32);
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          animation: appleMenuScale 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes appleMenuScale {
+          from { transform: scale(0.92); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
+        }
+        .apple-menu-header {
+          padding: 12px 16px;
+          background: var(--secondary-background-color, rgba(127, 127, 127, 0.06));
+          border-bottom: 1px solid var(--divider-color, rgba(127, 127, 127, 0.15));
+          display: flex;
+          flex-direction: column;
+          gap: 3px;
+        }
+        .apple-menu-headline {
+          font-size: 0.72rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.6px;
+          color: var(--secondary-text-color, #64748b);
+        }
+        .apple-menu-item-text {
+          font-size: 0.88rem;
+          font-weight: 600;
+          color: var(--primary-text-color, #212121);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .apple-menu-actions {
+          display: flex;
+          flex-direction: column;
+          padding: 6px;
+        }
+        .apple-menu-btn {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          width: 100%;
+          padding: 10px 14px;
+          border: none;
+          background: transparent;
+          color: var(--primary-text-color, #212121);
+          font-size: 0.92rem;
+          font-family: inherit;
+          font-weight: 500;
+          border-radius: 12px;
+          cursor: pointer;
+          transition: background 0.12s, transform 0.1s;
+          text-align: left;
+          box-sizing: border-box;
+        }
+        .apple-menu-btn:hover {
+          background: var(--secondary-background-color, rgba(127, 127, 127, 0.1));
+        }
+        .apple-menu-btn:active {
+          background: var(--secondary-background-color, rgba(127, 127, 127, 0.18));
+          transform: scale(0.98);
+        }
+        .apple-menu-btn.action-indent {
+          color: var(--primary-color, #03a9f4);
+          font-weight: 600;
+        }
+        .apple-menu-btn.action-danger {
+          color: var(--error-color, #ef4444);
+        }
+        .apple-menu-btn .btn-icon {
+          font-size: 1.15rem;
+          width: 22px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+        .apple-menu-btn .btn-content {
+          display: flex;
+          flex-direction: column;
+          flex: 1;
+          min-width: 0;
+        }
+        .apple-menu-btn .btn-sublabel {
+          font-size: 0.72rem;
+          color: var(--secondary-text-color, #64748b);
+          font-weight: 400;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .apple-menu-separator {
+          height: 1px;
+          background: var(--divider-color, rgba(127, 127, 127, 0.15));
+          margin: 4px 8px;
+        }
         .add-cat-pill {
           padding: 5px 12px;
           font-weight: 600;
@@ -1794,6 +2139,17 @@ class BrainstormCard extends HTMLElement {
             <div class="action-dialog-body" id="cardDialogBody"></div>
           </div>
         </div>
+
+        <!-- Apple Reminders Style Context Menu Modal -->
+        <div class="apple-menu-backdrop" id="appleContextMenu" style="display: none;">
+          <div class="apple-menu-card" id="appleMenuCard">
+            <div class="apple-menu-header">
+              <span class="apple-menu-headline">Aktionen für Notiz</span>
+              <span class="apple-menu-item-text" id="appleMenuTitle"></span>
+            </div>
+            <div class="apple-menu-actions" id="appleMenuActions"></div>
+          </div>
+        </div>
       </ha-card>
     `;
 
@@ -1807,6 +2163,7 @@ class BrainstormCard extends HTMLElement {
     const popupMindmap = this.shadowRoot.getElementById("popupMindmap");
     const cardDialog = this.shadowRoot.getElementById("cardDialog");
     const cardDialogCloseBtn = this.shadowRoot.getElementById("cardDialogCloseBtn");
+    const appleContextMenu = this.shadowRoot.getElementById("appleContextMenu");
 
     if (cardDialogCloseBtn) {
       cardDialogCloseBtn.addEventListener("click", () => this._closeDialog());
@@ -1814,6 +2171,11 @@ class BrainstormCard extends HTMLElement {
     if (cardDialog) {
       cardDialog.addEventListener("click", (e) => {
         if (e.target === cardDialog) this._closeDialog();
+      });
+    }
+    if (appleContextMenu) {
+      appleContextMenu.addEventListener("click", (e) => {
+        if (e.target === appleContextMenu) this._closeContextMenu();
       });
     }
 
@@ -1876,6 +2238,8 @@ class BrainstormCard extends HTMLElement {
       if (e.key === "Escape") {
         if (this._isDialogOpen) {
           this._closeDialog();
+        } else if (appleContextMenu && appleContextMenu.style.display === "flex") {
+          this._closeContextMenu();
         } else if (mindmapModal && mindmapModal.style.display === "flex") {
           closeMindmapModal();
         }
@@ -2163,10 +2527,11 @@ class BrainstormCard extends HTMLElement {
         const showTime = this._config.show_timestamps === true;
 
         ideasList.innerHTML = orderedIdeas
-          .map((item) => {
+          .map((item, idx) => {
             const isSub = item.isSubtask === true;
             return `
-            <div class="idea-item ${isSub ? "is-subtask" : ""} ${isCompletedView ? "completed" : ""}" data-id="${item.id}" style="--item-cat-color: ${this._getCategoryColor(item.category)};">
+            <div class="idea-item ${isSub ? "is-subtask" : ""} ${isCompletedView ? "completed" : ""}" data-id="${item.id}" data-idx="${idx}" style="--item-cat-color: ${this._getCategoryColor(item.category)};">
+              ${!isCompletedView && canEdit ? `<span class="drag-handle" title="Halten & Ziehen zum Sortieren oder Unteraufgabe zuordnen" data-id="${item.id}">⠿</span>` : ""}
               <button 
                 class="check-btn ${isCompletedView ? "checked" : ""}" 
                 title="${isCompletedView ? "Wieder als aktiv markieren" : "Als erledigt markieren"}" 
@@ -2174,7 +2539,7 @@ class BrainstormCard extends HTMLElement {
                 data-completed="${isCompletedView ? "true" : "false"}"
               >${isCompletedView ? "✓" : ""}</button>
               <div class="idea-content">
-                <div class="idea-text" title="${canEdit ? "Klicken zum Bearbeiten" : ""}" data-id="${item.id}" style="${canEdit ? "" : "cursor: default;"}">
+                <div class="idea-text" title="${canEdit ? "Klicken zum Bearbeiten (Lange drücken für Kontextmenü)" : ""}" data-id="${item.id}" style="${canEdit ? "" : "cursor: default;"}">
                   ${isSub ? `<span class="subtask-indicator" title="Unteraufgabe">↳</span>` : ""}${this._escapeHtml(item.text)}
                 </div>
                 <div class="idea-meta">
@@ -2279,6 +2644,307 @@ class BrainstormCard extends HTMLElement {
             this._deleteIdea(id);
           });
         });
+
+        // 5. Context Menu (Long-press on Touch / Right-click on Desktop)
+        if (canEdit && !isCompletedView) {
+          ideasList.querySelectorAll(".idea-item").forEach((el) => {
+            const id = el.getAttribute("data-id");
+            const idx = parseInt(el.getAttribute("data-idx"), 10);
+            const item = orderedIdeas[idx];
+            if (!item) return;
+
+            let prevTop = null;
+            if (item.candidateParentId) {
+              prevTop = orderedIdeas.find((i) => i.id === item.candidateParentId);
+            } else if (item.isSubtask && item.parentTask) {
+              prevTop = item.parentTask;
+            }
+            const prevItem = idx > 0 ? orderedIdeas[idx - 1] : null;
+            const nextItem = idx < orderedIdeas.length - 1 ? orderedIdeas[idx + 1] : null;
+
+            // Desktop Right-Click
+            el.addEventListener("contextmenu", (e) => {
+              e.preventDefault();
+              this._openContextMenu(item, prevTop, nextItem, prevItem, activeIdeas);
+            });
+
+            // Mobile Long-Press (~420ms)
+            let longPressTimer = null;
+            let touchStartX = 0;
+            let touchStartY = 0;
+            let touchMoved = false;
+
+            el.addEventListener(
+              "touchstart",
+              (e) => {
+                if (e.target.closest("button") || e.target.closest(".drag-handle") || e.target.closest(".category-tag") || e.target.closest(".prio-tag")) return;
+                touchMoved = false;
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+                longPressTimer = setTimeout(() => {
+                  if (!touchMoved) {
+                    if (navigator.vibrate) navigator.vibrate(35);
+                    this._openContextMenu(item, prevTop, nextItem, prevItem, activeIdeas);
+                  }
+                }, 420);
+              },
+              { passive: true }
+            );
+
+            el.addEventListener(
+              "touchmove",
+              (e) => {
+                if (!longPressTimer) return;
+                const dx = Math.abs(e.touches[0].clientX - touchStartX);
+                const dy = Math.abs(e.touches[0].clientY - touchStartY);
+                if (dx > 8 || dy > 8) {
+                  touchMoved = true;
+                  clearTimeout(longPressTimer);
+                }
+              },
+              { passive: true }
+            );
+
+            el.addEventListener("touchend", () => {
+              if (longPressTimer) clearTimeout(longPressTimer);
+            });
+            el.addEventListener("touchcancel", () => {
+              if (longPressTimer) clearTimeout(longPressTimer);
+            });
+          });
+
+          // 6. Desktop HTML5 Drag & Drop
+          ideasList.querySelectorAll(".drag-handle").forEach((handle) => {
+            const itemEl = handle.closest(".idea-item");
+            if (!itemEl) return;
+            handle.addEventListener("mousedown", () => {
+              itemEl.setAttribute("draggable", "true");
+            });
+            handle.addEventListener("mouseup", () => {
+              itemEl.removeAttribute("draggable");
+            });
+          });
+
+          ideasList.querySelectorAll(".idea-item").forEach((itemEl) => {
+            itemEl.addEventListener("dragstart", (e) => {
+              const id = itemEl.getAttribute("data-id");
+              itemEl.classList.add("is-dragging");
+              e.dataTransfer.effectAllowed = "move";
+              e.dataTransfer.setData("text/plain", id);
+            });
+
+            itemEl.addEventListener("dragend", () => {
+              itemEl.removeAttribute("draggable");
+              itemEl.classList.remove("is-dragging");
+              ideasList.querySelectorAll(".idea-item").forEach((el) => {
+                el.classList.remove("drop-target-above", "drop-target-below", "drop-target-subtask");
+              });
+            });
+
+            itemEl.addEventListener("dragover", (e) => {
+              e.preventDefault();
+              const draggingEl = ideasList.querySelector(".idea-item.is-dragging");
+              if (!draggingEl || draggingEl === itemEl) return;
+
+              const rect = itemEl.getBoundingClientRect();
+              const offsetY = e.clientY - rect.top;
+              const offsetX = e.clientX - rect.left;
+
+              itemEl.classList.remove("drop-target-above", "drop-target-below", "drop-target-subtask");
+
+              // Subtask drag: dragged towards the right on a top-level item
+              if (offsetX > rect.width * 0.35 && !itemEl.classList.contains("is-subtask")) {
+                itemEl.classList.add("drop-target-subtask");
+                e.dataTransfer.dropEffect = "copy";
+              } else if (offsetY < rect.height / 2) {
+                itemEl.classList.add("drop-target-above");
+                e.dataTransfer.dropEffect = "move";
+              } else {
+                itemEl.classList.add("drop-target-below");
+                e.dataTransfer.dropEffect = "move";
+              }
+            });
+
+            itemEl.addEventListener("dragleave", () => {
+              itemEl.classList.remove("drop-target-above", "drop-target-below", "drop-target-subtask");
+            });
+
+            itemEl.addEventListener("drop", async (e) => {
+              e.preventDefault();
+              const draggedId = e.dataTransfer.getData("text/plain");
+              const targetId = itemEl.getAttribute("data-id");
+              if (!draggedId || draggedId === targetId) return;
+
+              const isSubtask = itemEl.classList.contains("drop-target-subtask");
+              const isAbove = itemEl.classList.contains("drop-target-above");
+
+              itemEl.classList.remove("drop-target-above", "drop-target-below", "drop-target-subtask");
+
+              if (isSubtask) {
+                try {
+                  await this._hass.callService("brainstorm", "update_idea", {
+                    id: draggedId,
+                    parent_id: targetId,
+                  });
+                } catch (err) {
+                  console.error("Failed to assign subtask via drop", err);
+                }
+              } else {
+                const currentIds = orderedIdeas.map((i) => i.id);
+                const fromIndex = currentIds.indexOf(draggedId);
+                let toIndex = currentIds.indexOf(targetId);
+                if (fromIndex !== -1 && toIndex !== -1) {
+                  if (!isAbove) toIndex += 1;
+                  if (fromIndex < toIndex) toIndex -= 1;
+                  currentIds.splice(fromIndex, 1);
+                  currentIds.splice(toIndex, 0, draggedId);
+                  try {
+                    await this._hass.callService("brainstorm", "reorder_ideas", {
+                      idea_ids: currentIds,
+                    });
+                  } catch (err) {
+                    console.error("Failed to reorder ideas via drop", err);
+                  }
+                }
+              }
+            });
+          });
+
+          // 7. Mobile Touch Drag & Drop on Handle
+          let activeTouch = null;
+          let ghostEl = null;
+          let currentTargetEl = null;
+          let currentMode = null;
+
+          ideasList.querySelectorAll(".drag-handle").forEach((handle) => {
+            handle.addEventListener(
+              "touchstart",
+              (e) => {
+                const touch = e.touches[0];
+                const itemEl = handle.closest(".idea-item");
+                if (!itemEl) return;
+                const id = handle.getAttribute("data-id");
+
+                activeTouch = {
+                  id: id,
+                  itemEl: itemEl,
+                  startX: touch.clientX,
+                  startY: touch.clientY,
+                };
+                itemEl.classList.add("is-dragging");
+                if (navigator.vibrate) navigator.vibrate(25);
+              },
+              { passive: false }
+            );
+          });
+
+          ideasList.addEventListener(
+            "touchmove",
+            (e) => {
+              if (!activeTouch) return;
+              e.preventDefault();
+              const touch = e.touches[0];
+
+              if (!ghostEl) {
+                ghostEl = document.createElement("div");
+                ghostEl.className = "touch-drag-ghost";
+                ghostEl.textContent = `⠿ ${activeTouch.itemEl.querySelector(".idea-text")?.textContent?.trim() || "Notiz"}`;
+                this.shadowRoot.appendChild(ghostEl);
+              }
+              ghostEl.style.left = `${touch.clientX + 10}px`;
+              ghostEl.style.top = `${touch.clientY - 25}px`;
+
+              ghostEl.style.display = "none";
+              const targetNode = this.shadowRoot.elementFromPoint(touch.clientX, touch.clientY);
+              ghostEl.style.display = "flex";
+
+              const hitItem = targetNode ? targetNode.closest(".idea-item") : null;
+
+              ideasList.querySelectorAll(".idea-item").forEach((el) => {
+                el.classList.remove("drop-target-above", "drop-target-below", "drop-target-subtask");
+              });
+
+              if (hitItem && hitItem !== activeTouch.itemEl) {
+                currentTargetEl = hitItem;
+                const rect = hitItem.getBoundingClientRect();
+                const offsetX = touch.clientX - rect.left;
+                const offsetY = touch.clientY - rect.top;
+
+                if (offsetX > rect.width * 0.35 && !hitItem.classList.contains("is-subtask")) {
+                  hitItem.classList.add("drop-target-subtask");
+                  currentMode = "subtask";
+                } else if (offsetY < rect.height / 2) {
+                  hitItem.classList.add("drop-target-above");
+                  currentMode = "above";
+                } else {
+                  hitItem.classList.add("drop-target-below");
+                  currentMode = "below";
+                }
+              } else {
+                currentTargetEl = null;
+                currentMode = null;
+              }
+            },
+            { passive: false }
+          );
+
+          const endTouchDrag = async () => {
+            if (!activeTouch) return;
+
+            if (ghostEl) {
+              ghostEl.remove();
+              ghostEl = null;
+            }
+
+            activeTouch.itemEl.classList.remove("is-dragging");
+
+            if (currentTargetEl && currentMode) {
+              const targetId = currentTargetEl.getAttribute("data-id");
+              const draggedId = activeTouch.id;
+
+              if (currentMode === "subtask" && targetId) {
+                if (navigator.vibrate) navigator.vibrate(35);
+                try {
+                  await this._hass.callService("brainstorm", "update_idea", {
+                    id: draggedId,
+                    parent_id: targetId,
+                  });
+                } catch (err) {
+                  console.error("Touch drop subtask error:", err);
+                }
+              } else if ((currentMode === "above" || currentMode === "below") && targetId) {
+                if (navigator.vibrate) navigator.vibrate(25);
+                const currentIds = orderedIdeas.map((i) => i.id);
+                const fromIndex = currentIds.indexOf(draggedId);
+                let toIndex = currentIds.indexOf(targetId);
+                if (fromIndex !== -1 && toIndex !== -1) {
+                  if (currentMode === "below") toIndex += 1;
+                  if (fromIndex < toIndex) toIndex -= 1;
+                  currentIds.splice(fromIndex, 1);
+                  currentIds.splice(toIndex, 0, draggedId);
+                  try {
+                    await this._hass.callService("brainstorm", "reorder_ideas", {
+                      idea_ids: currentIds,
+                    });
+                  } catch (err) {
+                    console.error("Touch drop reorder error:", err);
+                  }
+                }
+              }
+            }
+
+            ideasList.querySelectorAll(".idea-item").forEach((el) => {
+              el.classList.remove("drop-target-above", "drop-target-below", "drop-target-subtask");
+            });
+
+            activeTouch = null;
+            currentTargetEl = null;
+            currentMode = null;
+          };
+
+          ideasList.addEventListener("touchend", endTouchDrag);
+          ideasList.addEventListener("touchcancel", endTouchDrag);
+        }
       }
     }
   } catch (err) {
@@ -2681,7 +3347,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.4.28 ",
+  "%c BRAINSTORM-CARD %c v1.4.29 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

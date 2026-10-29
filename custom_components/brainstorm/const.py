@@ -36,9 +36,12 @@ ATTR_DEVICE = "device"
 ATTR_TAGS = "tags"
 ATTR_PRIORITY = "priority"
 ATTR_PARENT_ID = "parent_id"
+ATTR_ORDER = "order"
 ATTR_STATUS = "status"
 ATTR_CREATED_AT = "created_at"
 ATTR_UPDATED_AT = "updated_at"
+
+SERVICE_REORDER_IDEAS = "reorder_ideas"
 
 # Priorities
 PRIORITY_LOW = "low"

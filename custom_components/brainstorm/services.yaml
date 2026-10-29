@@ -116,6 +116,13 @@ update_idea:
       example: "42fdbc8c"
       selector:
         text:
+    order:
+      name: Reihenfolge
+      description: Benutzerdefinierter Sortierindex.
+      required: false
+      selector:
+        number:
+          mode: box
 
 delete_idea:
   name: Idee löschen
@@ -205,4 +212,16 @@ export_markdown:
       required: false
       selector:
         text:
+
+reorder_ideas:
+  name: Notizen sortieren (Reorder)
+  description: Aktualisiert die benutzerdefinierte Sortierreihenfolge der Notizen anhand einer Liste von IDs.
+  fields:
+    idea_ids:
+      name: Notiz-IDs
+      description: Geordnete Liste der Notiz-IDs.
+      required: true
+      selector:
+        object:
+
 

@@ -16,6 +16,7 @@ from .const import (
     ATTR_CATEGORY,
     ATTR_DEVICE,
     ATTR_ID,
+    ATTR_ORDER,
     ATTR_PARENT_ID,
     ATTR_PRIORITY,
     ATTR_SOURCE,
@@ -24,6 +25,7 @@ from .const import (
     ATTR_TEXT,
     DOMAIN,
     PLATFORMS,
+    SERVICE_REORDER_IDEAS,
 )
 from .store import BrainstormStore
 
@@ -66,8 +68,15 @@ SERVICE_UPDATE_IDEA_SCHEMA = vol.Schema(
         vol.Optional(ATTR_STATUS): vol.In(["active", "completed", "archived"]),
         vol.Optional(ATTR_DEVICE): vol.Any(None, cv.string),
         vol.Optional(ATTR_PARENT_ID): vol.Any(None, cv.string),
+        vol.Optional(ATTR_ORDER): vol.Coerce(int),
     },
     extra=vol.ALLOW_EXTRA,
+)
+
+SERVICE_REORDER_IDEAS_SCHEMA = vol.Schema(
+    {
+        vol.Required("idea_ids"): vol.All(cv.ensure_list, [cv.string]),
+    }
 )
 
 SERVICE_DELETE_IDEA_SCHEMA = vol.Schema(
@@ -186,6 +195,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) 
                 SERVICE_REMOVE_CATEGORY,
                 SERVICE_EXPORT_MARKDOWN,
                 SERVICE_GET_ANNOUNCEMENT,
+                SERVICE_REORDER_IDEAS,
             ]:
                 hass.services.async_remove(DOMAIN, service)
     return unload_ok
@@ -248,6 +258,7 @@ def _register_services(hass: HomeAssistant) -> None:
         device = call.data.get(ATTR_DEVICE)
         update_parent = ATTR_PARENT_ID in call.data
         parent_id = call.data.get(ATTR_PARENT_ID)
+        order = call.data.get(ATTR_ORDER)
 
         updated = await store.async_update_idea(
             idea_id=idea_id,
@@ -258,8 +269,19 @@ def _register_services(hass: HomeAssistant) -> None:
             device=device,
             parent_id=parent_id,
             update_parent=update_parent,
+            order=order,
         )
         return {"success": updated is not None, "idea": updated}
+
+    async def handle_reorder_ideas(call: ServiceCall) -> dict[str, Any]:
+        """Handle reordering ideas."""
+        store = _get_active_store(hass)
+        if not store:
+            raise HomeAssistantError("Brainstorm store is not initialized")
+
+        idea_ids = call.data.get("idea_ids", [])
+        success = await store.async_reorder_ideas(idea_ids)
+        return {"success": success}
 
     async def handle_delete_idea(call: ServiceCall) -> dict[str, Any]:
         """Handle deleting an idea."""
@@ -400,6 +422,14 @@ def _register_services(hass: HomeAssistant) -> None:
         SERVICE_REMOVE_CATEGORY,
         handle_remove_category,
         schema=SERVICE_REMOVE_CATEGORY_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_REORDER_IDEAS,
+        handle_reorder_ideas,
+        schema=SERVICE_REORDER_IDEAS_SCHEMA,
         supports_response=SupportsResponse.OPTIONAL,
     )
 

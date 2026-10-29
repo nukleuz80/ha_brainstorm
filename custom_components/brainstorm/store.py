@@ -17,6 +17,7 @@ from .const import (
     ATTR_CREATED_AT,
     ATTR_DEVICE,
     ATTR_ID,
+    ATTR_ORDER,
     ATTR_PARENT_ID,
     ATTR_PRIORITY,
     ATTR_SOURCE,
@@ -388,12 +389,13 @@ class BrainstormStore:
 
     @property
     def ideas(self) -> list[dict[str, Any]]:
-        """Return all ideas sorted by creation date descending."""
-        return sorted(
-            self._ideas.values(),
-            key=lambda x: x.get(ATTR_CREATED_AT, ""),
-            reverse=True,
-        )
+        """Return all ideas sorted by custom order or creation date descending."""
+        ordered = [i for i in self._ideas.values() if i.get(ATTR_ORDER) is not None]
+        unordered = [i for i in self._ideas.values() if i.get(ATTR_ORDER) is None]
+
+        ordered.sort(key=lambda x: x.get(ATTR_ORDER, 0))
+        unordered.sort(key=lambda x: x.get(ATTR_CREATED_AT, ""), reverse=True)
+        return ordered + unordered
 
     def register_listener(self, listener: Callable[[], None]) -> Callable[[], None]:
         """Register a callback for updates."""
@@ -733,12 +735,17 @@ class BrainstormStore:
         if parent_id and parent_id.strip() in self._ideas:
             resolved_parent = parent_id.strip()
 
+        ordered_vals = [i.get(ATTR_ORDER) for i in self._ideas.values() if i.get(ATTR_ORDER) is not None]
+        min_order = min(ordered_vals, default=0) if ordered_vals else 0
+        new_order = min_order - 1 if ordered_vals else 0
+
         idea = {
             ATTR_ID: idea_id,
             ATTR_TEXT: clean_text,
             ATTR_CATEGORY: resolved_cat,
             ATTR_PRIORITY: resolved_prio,
             ATTR_PARENT_ID: resolved_parent,
+            ATTR_ORDER: new_order,
             ATTR_SOURCE: source,
             ATTR_DEVICE: (device or "").strip() if device else None,
             ATTR_TAGS: all_tags,
@@ -773,6 +780,7 @@ class BrainstormStore:
         device: str | None = None,
         parent_id: str | None = None,
         update_parent: bool = False,
+        order: int | None = None,
     ) -> dict[str, Any] | None:
         """Update an existing idea."""
         if idea_id not in self._ideas:
@@ -794,6 +802,8 @@ class BrainstormStore:
             idea[ATTR_STATUS] = status
         if device is not None:
             idea[ATTR_DEVICE] = device.strip() if device else None
+        if order is not None:
+            idea[ATTR_ORDER] = int(order)
         if update_parent:
             if not parent_id or parent_id.strip() in ("", "none"):
                 idea[ATTR_PARENT_ID] = None
@@ -813,6 +823,16 @@ class BrainstormStore:
         )
         self.hass.bus.async_fire(event_name, idea)
         return idea
+
+    async def async_reorder_ideas(self, idea_ids: list[str]) -> bool:
+        """Update order of ideas based on the provided list of IDs."""
+        for idx, idea_id in enumerate(idea_ids):
+            if idea_id in self._ideas:
+                self._ideas[idea_id][ATTR_ORDER] = idx
+                self._ideas[idea_id][ATTR_UPDATED_AT] = dt_util.now().isoformat()
+        await self.async_save()
+        self._notify_listeners()
+        return True
 
     async def async_delete_idea(self, idea_id: str) -> bool:
         """Delete an idea by ID."""
