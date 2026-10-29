@@ -57,4 +57,6 @@ DEFAULT_PRIORITY = PRIORITY_MEDIUM
 
 # Platforms
 PLATFORMS = ["todo", "sensor"]
+OVERVIEW_ENTITY_ID = "sensor.brainstorm_ideen_ubersicht"
+
 

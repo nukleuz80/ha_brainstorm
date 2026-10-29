@@ -86,7 +86,7 @@ class BrainstormTodoList(TodoListEntity):
             name="Brainstorm Hub",
             manufacturer="nukleuz80",
             model="Brainstorm Hub",
-            sw_version="1.4.36",
+            sw_version="1.4.37",
         )
 
     async def async_added_to_hass(self) -> None:
@@ -139,6 +139,7 @@ class BrainstormTodoList(TodoListEntity):
             text=item.summary,
             category=self._category,
             source="todo_list",
+            context=self._context,
         )
 
     async def async_update_todo_item(self, item: TodoItem) -> None:
@@ -153,10 +154,11 @@ class BrainstormTodoList(TodoListEntity):
             text=item.summary,
             category=self._category,
             status=new_status,
+            context=self._context,
         )
 
     async def async_delete_todo_items(self, uids: list[str]) -> None:
         """Delete idea items."""
         for uid in uids:
-            await self._store.async_delete_idea(uid)
+            await self._store.async_delete_idea(uid, context=self._context)
 

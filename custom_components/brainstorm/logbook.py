@@ -24,9 +24,8 @@ from .const import (
     EVENT_IDEA_COMPLETED,
     EVENT_IDEA_DELETED,
     EVENT_IDEA_UPDATED,
+    OVERVIEW_ENTITY_ID,
 )
-
-OVERVIEW_ENTITY_ID = "sensor.brainstorm_ideen_ubersicht"
 
 
 @callback
@@ -63,9 +62,12 @@ def async_describe_events(
             origin_info += f", via {source}"
         origin_info += ")"
 
+        cat_prefix = f" ({category})" if category else ""
+        display_text = text if len(text) <= 120 else f"{text[:117]}..."
+
         return {
-            LOGBOOK_ENTRY_NAME: "Brainstorm Hub",
-            LOGBOOK_ENTRY_MESSAGE: f"Idee erfasst: \"{text}\"{prio_tag} {origin_info}",
+            LOGBOOK_ENTRY_NAME: f"Brainstorm{cat_prefix}: {display_text}",
+            LOGBOOK_ENTRY_MESSAGE: f"Idee erfasst{prio_tag} {origin_info}".strip(),
             LOGBOOK_ENTRY_ENTITY_ID: OVERVIEW_ENTITY_ID,
             LOGBOOK_ENTRY_ICON: "mdi:lightbulb-on" if priority != "urgent" else "mdi:alert-circle",
         }
@@ -76,10 +78,12 @@ def async_describe_events(
         data = event.data or {}
         text = data.get(ATTR_TEXT, "Unbekannte Notiz")
         category = data.get(ATTR_CATEGORY, "Inbox")
+        cat_prefix = f" ({category})" if category else ""
+        display_text = text if len(text) <= 120 else f"{text[:117]}..."
 
         return {
-            LOGBOOK_ENTRY_NAME: "Brainstorm Hub",
-            LOGBOOK_ENTRY_MESSAGE: f"Idee erledigt: \"{text}\" ({category})",
+            LOGBOOK_ENTRY_NAME: f"Brainstorm{cat_prefix}: {display_text}",
+            LOGBOOK_ENTRY_MESSAGE: "Idee erledigt",
             LOGBOOK_ENTRY_ENTITY_ID: OVERVIEW_ENTITY_ID,
             LOGBOOK_ENTRY_ICON: "mdi:check-circle-outline",
         }
@@ -90,10 +94,12 @@ def async_describe_events(
         data = event.data or {}
         text = data.get(ATTR_TEXT, "Unbekannte Notiz")
         category = data.get(ATTR_CATEGORY, "Inbox")
+        cat_prefix = f" ({category})" if category else ""
+        display_text = text if len(text) <= 120 else f"{text[:117]}..."
 
         return {
-            LOGBOOK_ENTRY_NAME: "Brainstorm Hub",
-            LOGBOOK_ENTRY_MESSAGE: f"Idee geändert: \"{text}\" ({category})",
+            LOGBOOK_ENTRY_NAME: f"Brainstorm{cat_prefix}: {display_text}",
+            LOGBOOK_ENTRY_MESSAGE: "Idee geändert",
             LOGBOOK_ENTRY_ENTITY_ID: OVERVIEW_ENTITY_ID,
             LOGBOOK_ENTRY_ICON: "mdi:pencil",
         }
@@ -104,10 +110,12 @@ def async_describe_events(
         data = event.data or {}
         text = data.get(ATTR_TEXT, "Unbekannte Notiz")
         category = data.get(ATTR_CATEGORY, "Inbox")
+        cat_prefix = f" ({category})" if category else ""
+        display_text = text if len(text) <= 120 else f"{text[:117]}..."
 
         return {
-            LOGBOOK_ENTRY_NAME: "Brainstorm Hub",
-            LOGBOOK_ENTRY_MESSAGE: f"Idee gelöscht: \"{text}\" ({category})",
+            LOGBOOK_ENTRY_NAME: f"Brainstorm{cat_prefix}: {display_text}",
+            LOGBOOK_ENTRY_MESSAGE: "Idee gelöscht",
             LOGBOOK_ENTRY_ENTITY_ID: OVERVIEW_ENTITY_ID,
             LOGBOOK_ENTRY_ICON: "mdi:delete-outline",
         }

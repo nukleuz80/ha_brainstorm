@@ -256,6 +256,7 @@ def _register_services(hass: HomeAssistant) -> None:
             device=device,
             tags=tags,
             parent_id=parent_id,
+            context=call.context,
         )
         return {"success": True, "idea": idea}
 
@@ -285,6 +286,7 @@ def _register_services(hass: HomeAssistant) -> None:
             parent_id=parent_id,
             update_parent=update_parent,
             order=order,
+            context=call.context,
         )
         return {"success": updated is not None, "idea": updated}
 
@@ -305,7 +307,7 @@ def _register_services(hass: HomeAssistant) -> None:
             raise HomeAssistantError("Brainstorm store is not initialized")
 
         idea_id = call.data[ATTR_ID]
-        deleted = await store.async_delete_idea(idea_id)
+        deleted = await store.async_delete_idea(idea_id, context=call.context)
         return {"success": deleted}
 
     async def handle_get_ideas(call: ServiceCall) -> dict[str, Any]:

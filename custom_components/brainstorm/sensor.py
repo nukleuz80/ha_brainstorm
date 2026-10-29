@@ -6,7 +6,7 @@ from typing import Any
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import Context, HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -61,13 +61,20 @@ class BrainstormOverviewSensor(SensorEntity):
             name="Brainstorm Hub",
             manufacturer="nukleuz80",
             model="Brainstorm Hub",
-            sw_version="1.4.36",
+            sw_version="1.4.37",
         )
 
     async def async_added_to_hass(self) -> None:
         """Register listener when added to hass."""
         await super().async_added_to_hass()
-        self.async_on_remove(self._store.register_listener(self.async_write_ha_state))
+        self.async_on_remove(self._store.register_listener(self._handle_store_update))
+
+    @callback
+    def _handle_store_update(self, context: Context | None = None) -> None:
+        """Handle store update and preserve trigger context."""
+        if context is not None:
+            self.async_set_context(context)
+        self.async_write_ha_state()
 
     @property
     def native_value(self) -> int:
@@ -121,6 +128,7 @@ class BrainstormOverviewSensor(SensorEntity):
 
         return {
             "speech_overview": self._store.get_announcement_text(),
+            "last_action": self._store.last_action,
             "active_count": len(active_ideas),
             "completed_count": len(completed_ideas),
             "categories": self._store.categories,

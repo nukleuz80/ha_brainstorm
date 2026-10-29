@@ -103,6 +103,7 @@ class BrainstormAddIdeaTool(llm.Tool):
             priority=priority,
             source="assist_llm",
             tags=tags,
+            context=getattr(tool_input, "context", None),
         )
 
         return {
@@ -259,7 +260,11 @@ class BrainstormCompleteIdeaTool(llm.Tool):
         if not target_id:
             return {"error": "No matching active idea found to complete"}
 
-        updated = await store.async_update_idea(idea_id=target_id, status="completed")
+        updated = await store.async_update_idea(
+            idea_id=target_id,
+            status="completed",
+            context=getattr(tool_input, "context", None),
+        )
         if not updated:
             return {"error": f"Idea with ID '{target_id}' could not be updated"}
 
@@ -330,7 +335,9 @@ class BrainstormDeleteIdeaTool(llm.Tool):
         if not target_id:
             return {"error": "No matching idea found to delete"}
 
-        deleted = await store.async_delete_idea(target_id)
+        deleted = await store.async_delete_idea(
+            target_id, context=getattr(tool_input, "context", None)
+        )
         return {
             "success": deleted,
             "id": target_id,

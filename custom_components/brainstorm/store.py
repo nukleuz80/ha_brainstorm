@@ -7,7 +7,7 @@ import re
 import uuid
 from typing import Any, Callable
 
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import Context, HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
@@ -36,6 +36,7 @@ from .const import (
     EVENT_IDEA_COMPLETED,
     EVENT_IDEA_DELETED,
     EVENT_IDEA_UPDATED,
+    OVERVIEW_ENTITY_ID,
     PRIORITY_HIGH,
     PRIORITY_LOW,
     PRIORITY_MEDIUM,
@@ -368,6 +369,7 @@ class BrainstormStore:
         self._hide_empty_categories = self.options.get(
             CONF_HIDE_EMPTY_CATEGORIES, DEFAULT_HIDE_EMPTY_CATEGORIES
         )
+        self._last_action: dict[str, Any] | None = None
 
     def update_options(self, options: dict[str, Any]) -> None:
         """Update options dynamically."""
@@ -378,6 +380,11 @@ class BrainstormStore:
         self._hide_empty_categories = options.get(
             CONF_HIDE_EMPTY_CATEGORIES, DEFAULT_HIDE_EMPTY_CATEGORIES
         )
+
+    @property
+    def last_action(self) -> dict[str, Any] | None:
+        """Return the most recent action performed."""
+        return getattr(self, "_last_action", None)
 
     @property
     def hide_empty_categories(self) -> bool:
@@ -409,7 +416,7 @@ class BrainstormStore:
         unordered.sort(key=lambda x: x.get(ATTR_CREATED_AT, ""), reverse=True)
         return ordered + unordered
 
-    def register_listener(self, listener: Callable[[], None]) -> Callable[[], None]:
+    def register_listener(self, listener: Callable[..., Any]) -> Callable[[], None]:
         """Register a callback for updates."""
         self._listeners.append(listener)
 
@@ -419,11 +426,14 @@ class BrainstormStore:
 
         return remove_listener
 
-    def _notify_listeners(self) -> None:
+    def _notify_listeners(self, context: Context | None = None) -> None:
         """Notify all registered listeners of a change."""
         for listener in self._listeners:
             try:
-                listener()
+                try:
+                    listener(context)
+                except TypeError:
+                    listener()
             except Exception as err:
                 _LOGGER.exception("Error notifying brainstorm listener: %s", err)
 
@@ -719,6 +729,7 @@ class BrainstormStore:
         tags: list[str] | None = None,
         device: str | None = None,
         parent_id: str | None = None,
+        context: Context | None = None,
     ) -> dict[str, Any]:
         """Add a new brainstorm idea."""
         raw_check = (text or "").strip().lower()
@@ -770,12 +781,29 @@ class BrainstormStore:
             ATTR_UPDATED_AT: now_iso,
         }
 
+        act_context = context or Context()
+        self._last_action = {
+            "action": "added",
+            "id": idea_id,
+            "text": clean_text,
+            "category": resolved_cat,
+            "priority": resolved_prio,
+            "source": source,
+            "device": (device or "").strip() if device else None,
+            "timestamp": now_iso,
+            "description": f"Idee erfasst: \"{clean_text}\" ({resolved_cat})",
+        }
+
         self._ideas[idea_id] = idea
         await self.async_save()
-        self._notify_listeners()
 
-        # Fire event for automations (e.g. Alexa TTS confirmation or mobile push)
-        self.hass.bus.async_fire(EVENT_IDEA_ADDED, idea)
+        # Fire event for automations and logbook with entity_id and context
+        event_data = {
+            **idea,
+            "entity_id": OVERVIEW_ENTITY_ID,
+        }
+        self.hass.bus.async_fire(EVENT_IDEA_ADDED, event_data, context=act_context)
+        self._notify_listeners(context=act_context)
         _LOGGER.info(
             "Brainstorm idea [%s] added in category '%s' (prio: %s, parent: %s, device: %s)",
             idea_id,
@@ -797,6 +825,7 @@ class BrainstormStore:
         parent_id: str | None = None,
         update_parent: bool = False,
         order: int | None = None,
+        context: Context | None = None,
     ) -> dict[str, Any] | None:
         """Update an existing idea."""
         if idea_id not in self._ideas:
@@ -828,16 +857,40 @@ class BrainstormStore:
                 if clean_pid != idea_id and clean_pid in self._ideas:
                     idea[ATTR_PARENT_ID] = clean_pid
 
-        idea[ATTR_UPDATED_AT] = dt_util.now().isoformat()
+        now_iso = dt_util.now().isoformat()
+        idea[ATTR_UPDATED_AT] = now_iso
+
+        act_context = context or Context()
+        action_type = "completed" if status == "completed" else "updated"
+        action_desc = (
+            f"Idee erledigt: \"{idea.get(ATTR_TEXT)}\" ({idea.get(ATTR_CATEGORY)})"
+            if status == "completed"
+            else f"Idee geändert: \"{idea.get(ATTR_TEXT)}\" ({idea.get(ATTR_CATEGORY)})"
+        )
+        self._last_action = {
+            "action": action_type,
+            "id": idea_id,
+            "text": idea.get(ATTR_TEXT),
+            "category": idea.get(ATTR_CATEGORY),
+            "priority": idea.get(ATTR_PRIORITY),
+            "status": status or idea.get(ATTR_STATUS),
+            "timestamp": now_iso,
+            "description": action_desc,
+        }
+
         await self.async_save()
-        self._notify_listeners()
 
         event_name = (
             EVENT_IDEA_COMPLETED
             if status == "completed"
             else EVENT_IDEA_UPDATED
         )
-        self.hass.bus.async_fire(event_name, idea)
+        event_data = {
+            **idea,
+            "entity_id": OVERVIEW_ENTITY_ID,
+        }
+        self.hass.bus.async_fire(event_name, event_data, context=act_context)
+        self._notify_listeners(context=act_context)
         return idea
 
     async def async_reorder_ideas(self, idea_ids: list[str]) -> bool:
@@ -850,7 +903,9 @@ class BrainstormStore:
         self._notify_listeners()
         return True
 
-    async def async_delete_idea(self, idea_id: str) -> bool:
+    async def async_delete_idea(
+        self, idea_id: str, context: Context | None = None
+    ) -> bool:
         """Delete an idea by ID."""
         if idea_id not in self._ideas:
             return False
@@ -861,9 +916,24 @@ class BrainstormStore:
             if item.get(ATTR_PARENT_ID) == idea_id:
                 item[ATTR_PARENT_ID] = None
 
+        now_iso = dt_util.now().isoformat()
+        act_context = context or Context()
+        self._last_action = {
+            "action": "deleted",
+            "id": idea_id,
+            "text": deleted_idea.get(ATTR_TEXT),
+            "category": deleted_idea.get(ATTR_CATEGORY),
+            "timestamp": now_iso,
+            "description": f"Idee gelöscht: \"{deleted_idea.get(ATTR_TEXT)}\" ({deleted_idea.get(ATTR_CATEGORY)})",
+        }
+
         await self.async_save()
-        self._notify_listeners()
-        self.hass.bus.async_fire(EVENT_IDEA_DELETED, deleted_idea)
+        event_data = {
+            **deleted_idea,
+            "entity_id": OVERVIEW_ENTITY_ID,
+        }
+        self.hass.bus.async_fire(EVENT_IDEA_DELETED, event_data, context=act_context)
+        self._notify_listeners(context=act_context)
         return True
 
     async def async_add_category(
