@@ -1,6 +1,6 @@
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.4.29
+ * Version: 1.4.30
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -1533,8 +1533,17 @@ class BrainstormMindmapCard extends HTMLElement {
 
     const count = ideas.length;
     if (count === 0) {
+      this._nodePositions.clear();
       this._drawConnections();
       return;
+    }
+
+    // Clean up _nodePositions: remove any nodes not in current filtered ideas
+    const activeIds = new Set(ideas.map((i) => i.id));
+    for (const id of this._nodePositions.keys()) {
+      if (!activeIds.has(id)) {
+        this._nodePositions.delete(id);
+      }
     }
 
     // Determine dimensions from canvas
@@ -1700,14 +1709,32 @@ class BrainstormMindmapCard extends HTMLElement {
     if (!svg) return;
 
     const sensor = this._getSensorEntity();
-    const allIdeas = (sensor && sensor.attributes && sensor.attributes.ideas) || [];
-    const ideasMap = new Map();
-    allIdeas.forEach((i) => ideasMap.set(i.id, i));
+    if (!sensor) {
+      svg.innerHTML = "";
+      return;
+    }
+
+    const allIdeas = (sensor.attributes && sensor.attributes.ideas) || [];
+    const activeIdeas = allIdeas.filter((i) => {
+      if (this._selectedCategory === "all") return true;
+      return String(i.category || "").trim() === String(this._selectedCategory || "").trim();
+    });
+
+    if (!this._centerPos) {
+      const canvasArea = this.shadowRoot.getElementById("canvasArea");
+      const w = (canvasArea && canvasArea.clientWidth) || 800;
+      const h = (canvasArea && canvasArea.clientHeight) || 600;
+      this._centerPos = { x: w / 2, y: h / 2 };
+    }
 
     let svgHtml = "";
-    this._nodePositions.forEach((pos, id) => {
-      const idea = ideasMap.get(id);
-      const catColor = idea ? this._getCategoryColor(idea.category) : "var(--primary-color, #03a9f4)";
+    activeIdeas.forEach((idea) => {
+      const el = this.shadowRoot.getElementById(`cloud_${idea.id}`);
+      const pos = this._nodePositions.get(idea.id);
+      // ONLY draw connection if node is currently rendered in the DOM and has coordinates
+      if (!el || !pos) return;
+
+      const catColor = this._getCategoryColor(idea.category);
       const x1 = this._centerPos.x;
       const y1 = this._centerPos.y;
       const x2 = pos.x;
@@ -1723,7 +1750,7 @@ class BrainstormMindmapCard extends HTMLElement {
 
       const pathData = `M ${x1} ${y1} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${x2} ${y2}`;
       svgHtml += `
-        <path id="path_${id}" class="synapse-path" d="${pathData}" style="--path-color: ${catColor};" />
+        <path id="path_${idea.id}" class="synapse-path" d="${pathData}" style="--path-color: ${catColor};" />
       `;
     });
 
@@ -1744,6 +1771,13 @@ class BrainstormMindmapCard extends HTMLElement {
         if (this._selectedCategory === "all") return true;
         return String(i.category || "").trim() === String(this._selectedCategory || "").trim();
       });
+
+      // Reset node positions and layout when selected category changes
+      if (this._lastRenderedCategory !== this._selectedCategory) {
+        this._nodePositions.clear();
+        if (this._userMovedNodes) this._userMovedNodes.clear();
+        this._lastRenderedCategory = this._selectedCategory;
+      }
 
       // Update Card Elements from Config
       const titleEl = this.shadowRoot.getElementById("cardTitle");
@@ -1821,9 +1855,15 @@ class BrainstormMindmapCard extends HTMLElement {
 
         pillsBar.querySelectorAll(".cat-pill").forEach((pill) => {
           pill.addEventListener("click", () => {
-            this._selectedCategory = String(pill.getAttribute("data-cat") || "").trim();
-            this._updateContent();
-            this._arrangeNodesRadially();
+            const newCat = String(pill.getAttribute("data-cat") || "").trim();
+            if (this._selectedCategory !== newCat) {
+              this._selectedCategory = newCat;
+              this._nodePositions.clear();
+              if (this._userMovedNodes) this._userMovedNodes.clear();
+              this._lastDataSignature = "";
+              this._centerLayout(true);
+              this._updateContent();
+            }
           });
         });
       }
@@ -1914,6 +1954,14 @@ class BrainstormMindmapCard extends HTMLElement {
           needsArrangement = true;
         }
       });
+
+      const activeIds = new Set(filteredIdeas.map((i) => i.id));
+      for (const id of this._nodePositions.keys()) {
+        if (!activeIds.has(id)) {
+          this._nodePositions.delete(id);
+          needsArrangement = true;
+        }
+      }
 
       if (needsArrangement || this._nodePositions.size !== filteredIdeas.length) {
         this._arrangeNodesRadially();
@@ -2821,7 +2869,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.29 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.30 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );
