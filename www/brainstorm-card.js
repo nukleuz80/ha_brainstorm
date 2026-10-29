@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.39 - 100% Fully Responsive Layouts & Mobile Optimizations
+ * Version 1.4.40 - Adaptive Theme Logo (Light/Dark), Custom Logo Styling & Toggle
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",
@@ -9,6 +9,7 @@ const BRAINSTORM_CARD_DEFAULTS = {
   color_mode: "multicolor",
   default_category: "all",
   max_items: 0,
+  show_logo: true,
   show_quick_input: true,
   show_categories: true,
   hide_empty_categories: true,
@@ -1024,6 +1025,80 @@ class BrainstormCard extends HTMLElement {
     }
   }
 
+  _renderLogoSvg(uniqueId = "card") {
+    return `
+      <svg viewBox="146 76 220 326" class="brand-logo" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="bsCyan_${uniqueId}" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#00f5ff"/>
+            <stop offset="100%" stop-color="#0284c7"/>
+          </linearGradient>
+          <linearGradient id="bsPurple_${uniqueId}" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#ff2a8d"/>
+            <stop offset="50%" stop-color="#a855f7"/>
+            <stop offset="100%" stop-color="#6366f1"/>
+          </linearGradient>
+          <linearGradient id="bsAmber_${uniqueId}" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#fef08a"/>
+            <stop offset="50%" stop-color="#fbbf24"/>
+            <stop offset="100%" stop-color="#f97316"/>
+          </linearGradient>
+          <linearGradient id="bsMetal_${uniqueId}" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#64748b"/>
+            <stop offset="50%" stop-color="#cbd5e1"/>
+            <stop offset="100%" stop-color="#475569"/>
+          </linearGradient>
+          <filter id="bsGlow_${uniqueId}" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="3" result="blur"/>
+            <feMerge>
+              <feMergeNode in="blur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
+        <!-- Soft Ambient Light Halo (Transparent Background) -->
+        <circle cx="256" cy="210" r="75" fill="#00f5ff" opacity="0.14" filter="url(#bsGlow_${uniqueId})"/>
+        <!-- Outer Bulb Glass Contour -->
+        <path d="M165 210 C165 145, 200 100, 256 100 C312 100, 347 145, 347 210 C347 252, 320 285, 312 320 L200 320 C192 285, 165 252, 165 210 Z" fill="none" stroke="url(#bsCyan_${uniqueId})" stroke-width="12" stroke-linejoin="round" opacity="0.95"/>
+        <!-- Glass Highlight Reflection -->
+        <path d="M185 185 C185 145, 210 118, 245 112" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" opacity="0.8"/>
+        <!-- Digital Circuit Brain Synapses (Left Hemisphere) -->
+        <g filter="url(#bsGlow_${uniqueId})">
+          <path d="M 242 148 C 210 144, 188 168, 190 192 C 191 210, 210 215, 215 230 C 220 245, 205 260, 215 280 C 223 295, 238 298, 244 308" fill="none" stroke="url(#bsCyan_${uniqueId})" stroke-width="11" stroke-linecap="round"/>
+          <path d="M 215 188 Q 235 196 242 196" fill="none" stroke="url(#bsCyan_${uniqueId})" stroke-width="7" stroke-linecap="round"/>
+          <path d="M 215 238 Q 235 242 242 248" fill="none" stroke="url(#bsCyan_${uniqueId})" stroke-width="7" stroke-linecap="round"/>
+          <circle cx="190" cy="192" r="6" fill="#00f5ff"/>
+          <circle cx="215" cy="230" r="6" fill="#00f5ff"/>
+          <circle cx="215" cy="280" r="6" fill="#00f5ff"/>
+        </g>
+        <!-- Creative Folds Brain (Right Hemisphere) -->
+        <g filter="url(#bsGlow_${uniqueId})">
+          <path d="M 270 148 C 302 144, 324 168, 322 192 C 321 210, 302 215, 297 230 C 292 245, 307 260, 297 280 C 289 295, 274 298, 268 308" fill="none" stroke="url(#bsPurple_${uniqueId})" stroke-width="11" stroke-linecap="round"/>
+          <path d="M 297 188 Q 277 196 270 196" fill="none" stroke="url(#bsPurple_${uniqueId})" stroke-width="7" stroke-linecap="round"/>
+          <path d="M 297 238 Q 277 242 270 248" fill="none" stroke="url(#bsPurple_${uniqueId})" stroke-width="7" stroke-linecap="round"/>
+          <circle cx="322" cy="192" r="6" fill="#ff2a8d"/>
+          <circle cx="297" cy="230" r="6" fill="#ff2a8d"/>
+          <circle cx="297" cy="280" r="6" fill="#ff2a8d"/>
+        </g>
+        <!-- Central Idea Lightning Bolt / Spark -->
+        <g filter="url(#bsGlow_${uniqueId})">
+          <path d="M 258 135 L 244 195 L 268 195 L 246 262 L 274 205 L 252 205 Z" fill="url(#bsAmber_${uniqueId})"/>
+        </g>
+        <circle cx="256" cy="198" r="8" fill="#ffffff"/>
+        <!-- Metallic Base Fitting -->
+        <rect x="208" y="326" width="96" height="15" rx="7.5" fill="url(#bsMetal_${uniqueId})" stroke="rgba(0,0,0,0.18)" stroke-width="1.5"/>
+        <rect x="214" y="345" width="84" height="14" rx="7" fill="url(#bsMetal_${uniqueId})" stroke="rgba(0,0,0,0.18)" stroke-width="1.5"/>
+        <rect x="222" y="362" width="68" height="12" rx="6" fill="url(#bsMetal_${uniqueId})" stroke="rgba(0,0,0,0.18)" stroke-width="1.5"/>
+        <path d="M 232 377 C 232 377, 238 392, 256 392 C 274 392, 280 377, 280 377 Z" fill="#334155"/>
+        <circle cx="256" cy="386" r="4.5" fill="#00f5ff"/>
+        <!-- Idea Spark Energy Dots -->
+        <circle cx="172" cy="132" r="3.5" fill="#00f5ff" opacity="0.9"/>
+        <circle cx="340" cy="130" r="3.5" fill="#ff2a8d" opacity="0.9"/>
+        <circle cx="256" cy="85" r="4" fill="#fbbf24" opacity="0.95"/>
+      </svg>
+    `;
+  }
+
   _initDom() {
     if (!this._hass || !this._config) return;
     this._initialized = true;
@@ -1077,14 +1152,23 @@ class BrainstormCard extends HTMLElement {
           height: 34px;
           border-radius: 10px;
           overflow: hidden;
-          box-shadow: 0 2px 8px rgba(0, 245, 255, 0.22);
+          background: color-mix(in srgb, var(--primary-color, #03a9f4) 12%, var(--card-background-color, #ffffff));
+          border: 1px solid color-mix(in srgb, var(--primary-color, #03a9f4) 25%, var(--divider-color, rgba(127, 127, 127, 0.15)));
+          box-shadow: 0 2px 8px color-mix(in srgb, var(--primary-color, #03a9f4) 18%, transparent);
+          padding: 2.5px;
+          box-sizing: border-box;
           flex-shrink: 0;
-          background: #0d1117;
+          transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .logo-wrap:hover {
+          transform: scale(1.06);
+          border-color: var(--primary-color, #03a9f4);
+          box-shadow: 0 4px 12px color-mix(in srgb, var(--primary-color, #03a9f4) 30%, transparent);
         }
         .brand-logo {
           width: 100%;
           height: 100%;
-          object-fit: cover;
+          object-fit: contain;
           display: block;
         }
         .header-titles {
@@ -2393,37 +2477,8 @@ class BrainstormCard extends HTMLElement {
       <ha-card class="${this._config.compact_mode === true ? 'compact-mode' : ''}">
         <div class="header">
           <div class="header-main">
-            <div class="logo-wrap" title="Brainstorm Hub">
-              <svg viewBox="0 0 512 512" class="brand-logo" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <radialGradient id="cardBgGlow" cx="50%" cy="45%" r="65%">
-                    <stop offset="0%" stop-color="#24244a"/>
-                    <stop offset="100%" stop-color="#0a0a14"/>
-                  </radialGradient>
-                  <linearGradient id="cardCyan" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="#00f5ff"/>
-                    <stop offset="100%" stop-color="#0072ff"/>
-                  </linearGradient>
-                  <linearGradient id="cardPurple" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="#ff2a8d"/>
-                    <stop offset="100%" stop-color="#7928ca"/>
-                  </linearGradient>
-                  <linearGradient id="cardAmber" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stop-color="#ffe66d"/>
-                    <stop offset="100%" stop-color="#fb8500"/>
-                  </linearGradient>
-                </defs>
-                <rect width="512" height="512" rx="110" fill="url(#cardBgGlow)"/>
-                <circle cx="256" cy="210" r="80" fill="#00f5ff" opacity="0.25"/>
-                <path d="M165 210 C165 145, 200 100, 256 100 C312 100, 347 145, 347 210 C347 252, 320 285, 312 320 L200 320 C192 285, 165 252, 165 210 Z" fill="none" stroke="url(#cardCyan)" stroke-width="16"/>
-                <path d="M 242 148 C 210 144, 188 168, 190 192 C 191 210, 210 215, 215 230 C 220 245, 205 260, 215 280 C 223 295, 238 298, 244 308" fill="none" stroke="url(#cardCyan)" stroke-width="14" stroke-linecap="round"/>
-                <path d="M 270 148 C 302 144, 324 168, 322 192 C 321 210, 302 215, 297 230 C 292 245, 307 260, 297 280 C 289 295, 274 298, 268 308" fill="none" stroke="url(#cardPurple)" stroke-width="14" stroke-linecap="round"/>
-                <path d="M 258 135 L 246 195 L 268 195 L 248 260 L 274 208 L 253 208 Z" fill="url(#cardAmber)"/>
-                <circle cx="256" cy="198" r="10" fill="#ffffff"/>
-                <rect x="208" y="328" width="96" height="16" rx="8" fill="#718096"/>
-                <rect x="216" y="348" width="80" height="14" rx="7" fill="#718096"/>
-                <path d="M232 366 C232 366, 238 382, 256 382 C274 382, 280 366, 280 366 Z" fill="#4a5568"/>
-              </svg>
+            <div class="logo-wrap" id="logoWrap" title="Brainstorm Hub" style="display: ${this._config.show_logo !== false ? 'flex' : 'none'};">
+              ${this._renderLogoSvg("card")}
             </div>
             <div class="header-titles">
               <span class="card-title" id="cardTitle">${this._config.title !== undefined ? this._config.title : "Brainstorm Hub"}</span>
@@ -3484,6 +3539,12 @@ class BrainstormCardEditor extends HTMLElement {
         selector: { boolean: {} },
       },
       {
+        name: "show_logo",
+        label: "Logo im Header anzeigen",
+        default: true,
+        selector: { boolean: {} },
+      },
+      {
         name: "show_mindmap_button",
         label: "Mindmap-Schaltfläche (🧠) im Header anzeigen",
         default: true,
@@ -3673,6 +3734,12 @@ class BrainstormCardEditor extends HTMLElement {
         </div>
         <div class="fallback-row">
           <label class="fallback-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <input type="checkbox" id="fbShowLogo" ${this._config.show_logo !== false ? 'checked' : ''} />
+            <span>Logo im Header anzeigen</span>
+          </label>
+        </div>
+        <div class="fallback-row">
+          <label class="fallback-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
             <input type="checkbox" id="fbCompactMode" ${this._config.compact_mode ? 'checked' : ''} />
             <span>Kompakte Zeilenhöhe (mehr Aufgaben auf einen Blick)</span>
           </label>
@@ -3684,6 +3751,7 @@ class BrainstormCardEditor extends HTMLElement {
     const fbDefaultCat = container.querySelector("#fbDefaultCat");
     const fbColorMode = container.querySelector("#fbColorMode");
     const fbHideEmpty = container.querySelector("#fbHideEmpty");
+    const fbShowLogo = container.querySelector("#fbShowLogo");
     const fbCompactMode = container.querySelector("#fbCompactMode");
 
     const emitChange = () => {
@@ -3694,6 +3762,7 @@ class BrainstormCardEditor extends HTMLElement {
         default_category: fbDefaultCat ? fbDefaultCat.value : this._config.default_category,
         color_mode: fbColorMode ? fbColorMode.value : this._config.color_mode,
         hide_empty_categories: fbHideEmpty ? fbHideEmpty.checked : Boolean(this._config.hide_empty_categories),
+        show_logo: fbShowLogo ? fbShowLogo.checked : Boolean(this._config.show_logo !== false),
         compact_mode: fbCompactMode ? fbCompactMode.checked : Boolean(this._config.compact_mode),
       };
       this.dispatchEvent(
@@ -3710,6 +3779,7 @@ class BrainstormCardEditor extends HTMLElement {
     if (fbDefaultCat) fbDefaultCat.addEventListener("change", emitChange);
     if (fbColorMode) fbColorMode.addEventListener("change", emitChange);
     if (fbHideEmpty) fbHideEmpty.addEventListener("change", emitChange);
+    if (fbShowLogo) fbShowLogo.addEventListener("change", emitChange);
     if (fbCompactMode) fbCompactMode.addEventListener("change", emitChange);
   }
 }
@@ -3733,7 +3803,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.4.39 ",
+  "%c BRAINSTORM-CARD %c v1.4.40 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

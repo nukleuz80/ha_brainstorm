@@ -113,23 +113,35 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Show options menu."""
-        is_de = getattr(self.hass.config, "language", "en") == "de"
-        menu_options = {
-            "categories": "Kategorien verwalten" if is_de else "Manage Categories",
-            "category_style": (
-                "Kategorie-Design (Farbe & Icon)"
-                if is_de
-                else "Category Design (Color & Icon)"
-            ),
-            "general": (
-                "Allgemeine Einstellungen & Export"
-                if is_de
-                else "General Settings & Export"
-            ),
-        }
+        # Ensure translation cache is updated so all menu items have valid labels
+        try:
+            from homeassistant.helpers.translation import (
+                TRANSLATION_FLATTEN_CACHE,
+                async_get_translations,
+            )
+            if TRANSLATION_FLATTEN_CACHE in self.hass.data:
+                t_cache = self.hass.data[TRANSLATION_FLATTEN_CACHE]
+                if hasattr(t_cache, "cache_data"):
+                    for lang_loaded in t_cache.cache_data.loaded.values():
+                        if isinstance(lang_loaded, set):
+                            lang_loaded.discard(DOMAIN)
+                    for lang_dict in t_cache.cache_data.cache.values():
+                        if isinstance(lang_dict, dict):
+                            for cat_dict in lang_dict.values():
+                                if isinstance(cat_dict, dict) and DOMAIN in cat_dict:
+                                    del cat_dict[DOMAIN]
+                    if hasattr(t_cache, "generations") and isinstance(t_cache.generations, dict):
+                        for lang in list(t_cache.generations.keys()):
+                            t_cache.generations[lang] = t_cache.generations.get(lang, 0) + 1
+            for lang in {getattr(self.hass.config, "language", "en"), "de", "en"}:
+                for cat in ["options", "config"]:
+                    await async_get_translations(self.hass, lang, cat, integrations=[DOMAIN], config_flow=True)
+        except Exception as err:
+            _LOGGER.debug("Could not refresh translation cache in config_flow: %s", err)
+
         return self.async_show_menu(
             step_id="init",
-            menu_options=menu_options,
+            menu_options=["categories", "category_style", "general"],
         )
 
     async def async_step_category_style(
@@ -230,18 +242,9 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Show completion options."""
-        is_de = getattr(self.hass.config, "language", "en") == "de"
-        menu_options = {
-            "category_style": (
-                "Weitere Kategorie anpassen"
-                if is_de
-                else "Customize another category"
-            ),
-            "init": "Zurück zum Hauptmenü" if is_de else "Back to main menu",
-        }
         return self.async_show_menu(
             step_id="category_style_done",
-            menu_options=menu_options,
+            menu_options=["category_style", "init"],
             description_placeholders={"category": getattr(self, "_selected_style_cat", "")},
         )
 

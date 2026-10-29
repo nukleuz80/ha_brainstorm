@@ -167,11 +167,35 @@ async def async_setup_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) -
 
     # Invalidate translations cache so new steps and labels take effect immediately without restart
     try:
-        from homeassistant.helpers.translation import TRANSLATION_FLATTEN_CACHE
+        from homeassistant.helpers.translation import (
+            TRANSLATION_FLATTEN_CACHE,
+            async_get_translations,
+        )
         if TRANSLATION_FLATTEN_CACHE in hass.data:
-            cache = hass.data[TRANSLATION_FLATTEN_CACHE]
-            if hasattr(cache, "async_invalidate"):
-                cache.async_invalidate({DOMAIN})
+            t_cache = hass.data[TRANSLATION_FLATTEN_CACHE]
+            if hasattr(t_cache, "cache_data"):
+                # Discard brainstorm from loaded sets
+                for lang_loaded in t_cache.cache_data.loaded.values():
+                    if isinstance(lang_loaded, set):
+                        lang_loaded.discard(DOMAIN)
+                # Purge brainstorm entries from cache
+                for lang_dict in t_cache.cache_data.cache.values():
+                    if isinstance(lang_dict, dict):
+                        for cat_dict in lang_dict.values():
+                            if isinstance(cat_dict, dict) and DOMAIN in cat_dict:
+                                del cat_dict[DOMAIN]
+                # Increment cache generations so frontend knows to re-fetch
+                if hasattr(t_cache, "generations") and isinstance(t_cache.generations, dict):
+                    for lang in list(t_cache.generations.keys()):
+                        t_cache.generations[lang] = t_cache.generations.get(lang, 0) + 1
+            
+            # Eagerly reload translations for options and config
+            for lang in {getattr(hass.config, "language", "en"), "de", "en"}:
+                for cat in ["options", "config"]:
+                    try:
+                        await async_get_translations(hass, lang, cat, integrations=[DOMAIN], config_flow=True)
+                    except Exception:
+                        pass
     except Exception as err:
         _LOGGER.debug("Could not invalidate translation cache: %s", err)
 
