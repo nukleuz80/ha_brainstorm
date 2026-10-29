@@ -222,12 +222,6 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                     )
                 ),
                 vol.Optional(
-                    CONF_HIDE_EMPTY_CATEGORIES,
-                    default=options.get(
-                        CONF_HIDE_EMPTY_CATEGORIES, DEFAULT_HIDE_EMPTY_CATEGORIES
-                    ),
-                ): selector.BooleanSelector(),
-                vol.Optional(
                     CONF_SMART_FORMATTING,
                     default=options.get(CONF_SMART_FORMATTING, True),
                 ): selector.BooleanSelector(),
