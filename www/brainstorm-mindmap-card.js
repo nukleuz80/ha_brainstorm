@@ -1,6 +1,6 @@
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.4.27
+ * Version: 1.4.28
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -18,7 +18,7 @@ const BRAINSTORM_MINDMAP_DEFAULTS = {
   show_fullscreen_btn: true,
   show_controls: true,
   show_add_btn: true,
-  hide_empty_categories: false,
+  hide_empty_categories: true,
 };
 
 class BrainstormMindmapCard extends HTMLElement {
@@ -59,6 +59,7 @@ class BrainstormMindmapCard extends HTMLElement {
 
   setConfig(config) {
     if (!config) config = {};
+    this._rawConfig = config;
     const parsedConfig = { ...BRAINSTORM_MINDMAP_DEFAULTS };
     for (const key of Object.keys(BRAINSTORM_MINDMAP_DEFAULTS)) {
       if (key in config) {
@@ -1453,9 +1454,9 @@ class BrainstormMindmapCard extends HTMLElement {
       const sensor = this._getSensorEntity();
       if (!sensor) return;
       const attributes = sensor.attributes || {};
-      const hideEmptyCategories = this._config.hide_empty_categories !== undefined
-        ? this._config.hide_empty_categories === true
-        : (attributes.hide_empty_categories === true);
+      const hideEmptyCategories = this._rawConfig && this._rawConfig.hide_empty_categories !== undefined
+        ? (this._rawConfig.hide_empty_categories === true || this._rawConfig.hide_empty_categories === "true")
+        : (attributes.hide_empty_categories !== undefined ? attributes.hide_empty_categories === true : true);
       const allCats = attributes.categories || ["Inbox"];
       const counts = attributes.category_counts || {};
       const validCats = hideEmptyCategories
@@ -1781,9 +1782,9 @@ class BrainstormMindmapCard extends HTMLElement {
       const pillsBar = this.shadowRoot.getElementById("pillsBar");
       if (pillsBar) {
         const counts = attributes.category_counts || {};
-        const hideEmptyCategories = this._config.hide_empty_categories !== undefined
-          ? this._config.hide_empty_categories === true
-          : (attributes.hide_empty_categories === true);
+        const hideEmptyCategories = this._rawConfig && this._rawConfig.hide_empty_categories !== undefined
+          ? (this._rawConfig.hide_empty_categories === true || this._rawConfig.hide_empty_categories === "true")
+          : (attributes.hide_empty_categories !== undefined ? attributes.hide_empty_categories === true : true);
 
         const visibleCategories = categories.filter((cat) => {
           if (!hideEmptyCategories) return true;
@@ -2586,7 +2587,7 @@ class BrainstormMindmapCardEditor extends HTMLElement {
       {
         name: "hide_empty_categories",
         label: "Kategorien ohne Notizen (0) ausblenden",
-        default: false,
+        default: true,
         selector: { boolean: {} },
       },
       {
@@ -2820,7 +2821,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.27 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.28 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

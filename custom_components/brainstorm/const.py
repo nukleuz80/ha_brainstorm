@@ -19,7 +19,7 @@ DEFAULT_CATEGORIES = [
     "Alltag",
 ]
 DEFAULT_MARKDOWN_PATH = "/config/brainstorm"
-DEFAULT_HIDE_EMPTY_CATEGORIES = False
+DEFAULT_HIDE_EMPTY_CATEGORIES = True
 
 # Event constants
 EVENT_IDEA_ADDED = "brainstorm_idea_added"

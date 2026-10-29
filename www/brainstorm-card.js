@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.27 - Subtask Indentation & Active Category Quick Capture
+ * Version 1.4.28 - Hide Empty Categories (0) by Default
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",
@@ -11,7 +11,7 @@ const BRAINSTORM_CARD_DEFAULTS = {
   max_items: 0,
   show_quick_input: true,
   show_categories: true,
-  hide_empty_categories: false,
+  hide_empty_categories: true,
   show_badge: true,
   show_mindmap_button: true,
   show_color_toggle: true,
@@ -50,6 +50,7 @@ class BrainstormCard extends HTMLElement {
 
   setConfig(config) {
     if (!config) config = {};
+    this._rawConfig = config;
     const parsedConfig = { ...BRAINSTORM_CARD_DEFAULTS };
     for (const key of Object.keys(BRAINSTORM_CARD_DEFAULTS)) {
       if (key in config) {
@@ -2008,9 +2009,9 @@ class BrainstormCard extends HTMLElement {
 
     // 3. Update Category Pills
     if (pillsContainer) {
-      const hideEmptyCategories = this._config.hide_empty_categories !== undefined
-        ? this._config.hide_empty_categories === true
-        : (attributes.hide_empty_categories === true);
+      const hideEmptyCategories = this._rawConfig && this._rawConfig.hide_empty_categories !== undefined
+        ? (this._rawConfig.hide_empty_categories === true || this._rawConfig.hide_empty_categories === "true")
+        : (attributes.hide_empty_categories !== undefined ? attributes.hide_empty_categories === true : true);
 
       const visibleCategories = categories.filter((cat) => {
         if (!hideEmptyCategories) return true;
@@ -2430,7 +2431,7 @@ class BrainstormCardEditor extends HTMLElement {
       {
         name: "hide_empty_categories",
         label: "Kategorien ohne Notizen (0) ausblenden",
-        default: false,
+        default: true,
         selector: { boolean: {} },
       },
       {
@@ -2680,7 +2681,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.4.27 ",
+  "%c BRAINSTORM-CARD %c v1.4.28 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );
