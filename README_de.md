@@ -8,7 +8,8 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.4.32-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.4.33-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver-C0C0C0.svg)](https://developers.home-assistant.io/docs/integration_quality_scale_index/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
@@ -246,6 +247,7 @@ Die Integration stellt folgende Services bereit:
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.4.33`** | 29.10.2026 | **Vibe Coding Manifest & Badges:** Offizieller Hinweis und Badges zur leidenschaftlichen KI-gestützten Entwicklung (*„Vibe Coding mit voller Hingabe“*) in Dokumentation und Repositories aufgenommen. |
 | **`v1.4.32`** | 29.10.2026 | **Zweisprachige Dokumentation (EN/DE), Alexa Key-Feature Spotlight & 1-Klick Installation:**<br>• **Vollständige englische Dokumentation:** Umfassendes englisches Handbuch (`README.md`) parallel zur deutschen Version (`README_de.md`) mit intuitivem Länderflaggen-Umschalter (`🇩🇪 Deutsch` ⇄ `🇬🇧 English`).<br>• **Key-Feature Spotlight Amazon Alexa:** Ausführliche Dokumentation der nahtlosen Alexa-Spracherfassung als zentrales Highlight (Hands-Free Notizenerfassung, Zwei-Wege-Dialog, Schutz vor Musik- und Einkaufslisten-Kollisionen, automatische NLP-Grammatikbereinigung und Echo-Geräteherkunft).<br>• **1-Klick My Home Assistant Badges:** Schnelle Installation via HACS-Redirect und nativer Config-Flow-Start mit einem Klick.<br>• **Versions- & Komponenten-Synchronisation:** Einheitlicher Release-Stand für Karten, Sensoren und Plattform. |
 | **`v1.4.31`** | 29.10.2026 | **Hintergrund-Rendering Fix & Synchrones Punktraster:**<br>• **Beseitigung von Farb- und Blockartefakten im Hintergrund:** Behebung eines Darstellungsfehlers in `brainstorm-mindmap-card`, bei dem harte Gradientenstopps (`radial-gradient`) und GPU-Layer-Promotion (`will-change: transform`) auf dem Canvas zu Moiré-Interferenzen, Kachelsäumen und sichtbaren Farbblöcken führten, die sich beim Zoomen oder Scrollen störend verschoben haben.<br>• **Subpixel-Anti-Aliasing & Canvas-Transparenz:** Weiche Anti-Aliasing-Übergänge für das Punktraster sowie vollständige Bereinigung überlagernder Hintergrundfarben (`canvas-area` transparent über `ha-card`).<br>• **Synchrones Pan & Zoom:** Das Hintergrundraster bewegt und skaliert sich nun natürlich mit dem Mindmap-Viewport (`background-position` & `background-size`).<br>• **Konfigurierbares Raster:** Neue Option `show_grid` (im UI-Editor als *„Punktraster im Hintergrund anzeigen“* schaltbar). |
 | **`v1.4.30`** | 29.10.2026 | **Bugfix Mindmap-Synapsen beim Umschalten von Kategorien:**<br>• **Keine Geisterlinien / leere Verbindungslinien mehr:** Behebung eines Fehlers in `brainstorm-mindmap-card`, bei dem beim Wechsel der Kategorie (z. B. von *„Alle“* auf *„Smarthome“*) die synaptischen Bézier-Linien zuvor angezeigter Notizen ohne Ideenkärtchen im Raum stehenblieben. Die Rendering-Logik (`_drawConnections`) validiert nun strikt, dass Verbindungslinien ausschließlich für Notizen der aktuell aktiven Kategorie gezeichnet werden, die auch tatsächlich als DOM-Element existieren.<br>• **Zuverlässige Layout- & Positions-Bereinigung:** Beim Umschalten auf eine andere Kategorie (via Toolbar-Pill oder Klick auf den Zentrums-Node) werden vorherige Knotenpositionen (`_nodePositions`) und Drag-Zustände sofort zurückgesetzt, sodass die verbleibenden Notizen harmonisch und frei von Artefakten neu arrangiert werden. |
@@ -283,6 +285,17 @@ Die Integration stellt folgende Services bereit:
 | **`v1.2.1`** | 20.10.2026 | **Fehlerbehebungen & Stabilität:** Beseitigung von `ResponseNone`-Einträgen, Vermeidung von Musik-Kollisionen bei Alexa-Befehlen, Korrektur des Assist-Wildcard-Parsing-Fehlers, Behebung des Dashboard-Kartenfehlers (`counts is not defined`). |
 | **`v1.1.0`** | 20.10.2026 | **Frontend Redesign & Standards:** 2-stufiges Layout für die Lovelace Card, HACS-Kompatibilität, vollständige `DeviceInfo`-Anbindung und Assist-Sprachunterstützung. |
 | **`v1.0.0`** | 19.10.2026 | **Initiales Release:** Kern-Integration Brainstorm Hub, To-do-Plattform, Markdown-Export und Alexa-Sprachdialog. |
+
+---
+
+## ✨ 🚀 Vibe Coding mit voller Hingabe
+
+> *„Vibe Coding ist die Kunst, reine Ideen durch fließenden Dialog, menschliche Kreativität und KI-Superkräfte in funktionierende Realität zu verwandeln.“*
+
+Dieses Projekt wurde und wird mit voller Hingabe durch **Vibe Coding** erschaffen. Wir verstecken uns nicht hinter KI, sondern stehen mit Stolz und voller Transparenz dazu:
+- **Menschliche Produkt- & UX-Vision:** Jedes Feature, jede Smartphone-Geste, jedes Detail der interaktiven Mindmap und jede Alexa-Routine entstammt echter Alltagserfahrung und der Leidenschaft für ein smarteres Zuhause.
+- **High-Velocity AI Pair-Programming:** Durch den Einsatz moderner agentischer KI-Entwicklung (Google Antigravity & Claude/Gemini) entstehen anspruchsvolle Architekturen, Bugfixes und Feinschliff in Höchstgeschwindigkeit.
+- **100 % Open Source & Community First:** Transparent, erweiterbar und für jeden in der Home Assistant Community frei nutzbar.
 
 ---
 

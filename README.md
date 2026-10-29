@@ -8,7 +8,8 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.4.32-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.4.33-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver-C0C0C0.svg)](https://developers.home-assistant.io/docs/integration_quality_scale_index/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
@@ -147,6 +148,7 @@ hide_empty_categories: true
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.4.33`** | 2026-10-29 | **Vibe Coding Manifesto & Badges:** Official badge and dedicated declaration celebrating passionate AI-assisted software development (*“Crafted with Pure Vibe Coding”*). |
 | **`v1.4.32`** | 2026-10-29 | **Bilingual Documentation (EN/DE), Alexa Voice Capture Spotlight & 1-Click Badges:**<br>• **Full English Documentation:** Comprehensive English documentation (`README.md`) alongside German version (`README_de.md`) with country flag language switcher (`🇬🇧 English` ⇄ `🇩🇪 Deutsch`).<br>• **Alexa Voice Capture Spotlight:** Prominent hero section showcasing hands-free voice capturing, two-way dialogue, anti-music collision protection, NLP text cleaning, and Echo device origin tracking.<br>• **1-Click My Home Assistant Badges:** Direct integration via HACS repository link and Config Flow launch buttons.<br>• **Version Synchronization:** Unified release across manifest, sensor, todo platforms, and Lovelace cards. |
 | **`v1.4.31`** | 2026-10-29 | **Background Rendering Fix & Synchronized Dot Grid:**<br>• **Eliminated Moiré Artifacts & Color Blocks:** Resolved visual banding in `brainstorm-mindmap-card` caused by steep radial-gradient stops and GPU compositor layers.<br>• **Subpixel Anti-Aliasing & Canvas Transparency:** Smooth dot grid transitions and clean canvas layer over `ha-card`.<br>• **Synchronized Pan & Zoom:** Background grid moves and scales naturally with the mindmap viewport.<br>• **Configurable Grid:** Added `show_grid` card toggle in the visual UI editor. |
 | **`v1.4.30`** | 2026-10-29 | **Mindmap Synapses Bugfix on Category Switch:**<br>• **Eliminated Orphaned Ghost Lines:** Resolved an issue where switching categories left residual Bézier curves without node boxes. `_drawConnections` now strictly verifies active category filtering.<br>• **Clean Layout Reset:** Node positions and dragging states reset cleanly on category switch. |
@@ -157,6 +159,17 @@ hide_empty_categories: true
 | **`v1.4.0`** | 2026-10-20 | **NLP Text Optimization:** Automatic conversational filler stripping, verb infinitizing, and spell correction. |
 | **`v1.3.0`** | 2026-10-20 | **Mindmap Card Release:** Interactive radial synapse layout with category hub and idea clouds. |
 | **`v1.0.0`** | 2026-10-19 | **Initial Release:** Core integration, To-do platform, Markdown export, and Alexa dialogue. |
+
+---
+
+## ✨ 🚀 Crafted with Pure Vibe Coding
+
+> *“Vibe coding is the art of turning pure ideas into reality through fluid conversation, human creativity, and AI superpowers.”*
+
+This project was built and continues to grow with pure passion and full devotion to **Vibe Coding**. We don't hide the AI — we celebrate it openly and proudly:
+- **Human Product & UX Vision:** Every feature, every mobile gesture, every mindmap detail, and every voice routine is born from real-life smart home needs and a genuine love for great UX.
+- **High-Velocity AI Pair Programming:** Powered by advanced agentic AI coding assistants (Google Antigravity & Claude/Gemini), turning ambitious architecture, bug fixes, and polish into reality at lightning speed.
+- **100% Open Source & Community First:** Transparent, hackable, and built for everyone in the Home Assistant ecosystem.
 
 ---
 
