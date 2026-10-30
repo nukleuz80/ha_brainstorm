@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.40 - Adaptive Theme Logo (Light/Dark), Custom Logo Styling & Toggle
+ * Version 1.4.41 - Max-Size Adaptive Bulb Logo, Enhanced Visual Presence & Theme Glow
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",
@@ -1027,7 +1027,7 @@ class BrainstormCard extends HTMLElement {
 
   _renderLogoSvg(uniqueId = "card") {
     return `
-      <svg viewBox="146 76 220 326" class="brand-logo" xmlns="http://www.w3.org/2000/svg">
+      <svg viewBox="136 58 240 261" class="brand-logo" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <linearGradient id="bsCyan_${uniqueId}" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stop-color="#00f5ff"/>
@@ -1057,44 +1057,39 @@ class BrainstormCard extends HTMLElement {
           </filter>
         </defs>
         <!-- Soft Ambient Light Halo (Transparent Background) -->
-        <circle cx="256" cy="210" r="75" fill="#00f5ff" opacity="0.14" filter="url(#bsGlow_${uniqueId})"/>
-        <!-- Outer Bulb Glass Contour -->
-        <path d="M165 210 C165 145, 200 100, 256 100 C312 100, 347 145, 347 210 C347 252, 320 285, 312 320 L200 320 C192 285, 165 252, 165 210 Z" fill="none" stroke="url(#bsCyan_${uniqueId})" stroke-width="12" stroke-linejoin="round" opacity="0.95"/>
+        <circle cx="256" cy="178" r="85" fill="#00f5ff" opacity="0.16" filter="url(#bsGlow_${uniqueId})"/>
+        <!-- Outer Bulb Glass Contour (Fuller, bolder, fills 100% of space) -->
+        <path d="M 144 178 C 144 116, 194 66, 256 66 C 318 66, 368 116, 368 178 C 368 222, 326 248, 306 272 L 206 272 C 186 248, 144 222, 144 178 Z" fill="none" stroke="url(#bsCyan_${uniqueId})" stroke-width="12" stroke-linejoin="round" opacity="0.95"/>
         <!-- Glass Highlight Reflection -->
-        <path d="M185 185 C185 145, 210 118, 245 112" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" opacity="0.8"/>
+        <path d="M 166 150 C 166 112, 196 86, 238 78" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" opacity="0.8"/>
         <!-- Digital Circuit Brain Synapses (Left Hemisphere) -->
         <g filter="url(#bsGlow_${uniqueId})">
-          <path d="M 242 148 C 210 144, 188 168, 190 192 C 191 210, 210 215, 215 230 C 220 245, 205 260, 215 280 C 223 295, 238 298, 244 308" fill="none" stroke="url(#bsCyan_${uniqueId})" stroke-width="11" stroke-linecap="round"/>
-          <path d="M 215 188 Q 235 196 242 196" fill="none" stroke="url(#bsCyan_${uniqueId})" stroke-width="7" stroke-linecap="round"/>
-          <path d="M 215 238 Q 235 242 242 248" fill="none" stroke="url(#bsCyan_${uniqueId})" stroke-width="7" stroke-linecap="round"/>
-          <circle cx="190" cy="192" r="6" fill="#00f5ff"/>
-          <circle cx="215" cy="230" r="6" fill="#00f5ff"/>
-          <circle cx="215" cy="280" r="6" fill="#00f5ff"/>
+          <path d="M 240 110 C 206 106, 180 134, 182 165 C 183 186, 202 192, 206 208 C 210 224, 196 236, 206 254 C 214 266, 228 268, 238 270" fill="none" stroke="url(#bsCyan_${uniqueId})" stroke-width="11" stroke-linecap="round"/>
+          <path d="M 195 170 Q 220 178 238 178" fill="none" stroke="url(#bsCyan_${uniqueId})" stroke-width="7" stroke-linecap="round"/>
+          <path d="M 206 215 Q 225 218 238 224" fill="none" stroke="url(#bsCyan_${uniqueId})" stroke-width="7" stroke-linecap="round"/>
+          <circle cx="182" cy="165" r="6" fill="#00f5ff"/>
+          <circle cx="206" cy="208" r="6" fill="#00f5ff"/>
+          <circle cx="206" cy="254" r="6" fill="#00f5ff"/>
         </g>
         <!-- Creative Folds Brain (Right Hemisphere) -->
         <g filter="url(#bsGlow_${uniqueId})">
-          <path d="M 270 148 C 302 144, 324 168, 322 192 C 321 210, 302 215, 297 230 C 292 245, 307 260, 297 280 C 289 295, 274 298, 268 308" fill="none" stroke="url(#bsPurple_${uniqueId})" stroke-width="11" stroke-linecap="round"/>
-          <path d="M 297 188 Q 277 196 270 196" fill="none" stroke="url(#bsPurple_${uniqueId})" stroke-width="7" stroke-linecap="round"/>
-          <path d="M 297 238 Q 277 242 270 248" fill="none" stroke="url(#bsPurple_${uniqueId})" stroke-width="7" stroke-linecap="round"/>
-          <circle cx="322" cy="192" r="6" fill="#ff2a8d"/>
-          <circle cx="297" cy="230" r="6" fill="#ff2a8d"/>
-          <circle cx="297" cy="280" r="6" fill="#ff2a8d"/>
+          <path d="M 272 110 C 306 106, 332 134, 330 165 C 329 186, 310 192, 306 208 C 302 224, 316 236, 306 254 C 298 266, 284 268, 274 270" fill="none" stroke="url(#bsPurple_${uniqueId})" stroke-width="11" stroke-linecap="round"/>
+          <path d="M 317 170 Q 292 178 274 178" fill="none" stroke="url(#bsPurple_${uniqueId})" stroke-width="7" stroke-linecap="round"/>
+          <path d="M 306 215 Q 287 218 274 224" fill="none" stroke="url(#bsPurple_${uniqueId})" stroke-width="7" stroke-linecap="round"/>
+          <circle cx="330" cy="165" r="6" fill="#ff2a8d"/>
+          <circle cx="306" cy="208" r="6" fill="#ff2a8d"/>
+          <circle cx="306" cy="254" r="6" fill="#ff2a8d"/>
         </g>
         <!-- Central Idea Lightning Bolt / Spark -->
         <g filter="url(#bsGlow_${uniqueId})">
-          <path d="M 258 135 L 244 195 L 268 195 L 246 262 L 274 205 L 252 205 Z" fill="url(#bsAmber_${uniqueId})"/>
+          <path d="M 258 100 L 244 158 L 268 158 L 246 226 L 274 168 L 252 168 Z" fill="url(#bsAmber_${uniqueId})"/>
         </g>
-        <circle cx="256" cy="198" r="8" fill="#ffffff"/>
-        <!-- Metallic Base Fitting -->
-        <rect x="208" y="326" width="96" height="15" rx="7.5" fill="url(#bsMetal_${uniqueId})" stroke="rgba(0,0,0,0.18)" stroke-width="1.5"/>
-        <rect x="214" y="345" width="84" height="14" rx="7" fill="url(#bsMetal_${uniqueId})" stroke="rgba(0,0,0,0.18)" stroke-width="1.5"/>
-        <rect x="222" y="362" width="68" height="12" rx="6" fill="url(#bsMetal_${uniqueId})" stroke="rgba(0,0,0,0.18)" stroke-width="1.5"/>
-        <path d="M 232 377 C 232 377, 238 392, 256 392 C 274 392, 280 377, 280 377 Z" fill="#334155"/>
-        <circle cx="256" cy="386" r="4.5" fill="#00f5ff"/>
-        <!-- Idea Spark Energy Dots -->
-        <circle cx="172" cy="132" r="3.5" fill="#00f5ff" opacity="0.9"/>
-        <circle cx="340" cy="130" r="3.5" fill="#ff2a8d" opacity="0.9"/>
-        <circle cx="256" cy="85" r="4" fill="#fbbf24" opacity="0.95"/>
+        <circle cx="256" cy="162" r="8" fill="#ffffff"/>
+        <!-- Compact Metallic Base Fitting -->
+        <rect x="202" y="275" width="108" height="13" rx="6.5" fill="url(#bsMetal_${uniqueId})" stroke="rgba(0,0,0,0.18)" stroke-width="1.5"/>
+        <rect x="212" y="290" width="88" height="12" rx="6" fill="url(#bsMetal_${uniqueId})" stroke="rgba(0,0,0,0.18)" stroke-width="1.5"/>
+        <path d="M 230 304 C 230 304, 238 316, 256 316 C 274 316, 282 304, 282 304 Z" fill="#334155"/>
+        <circle cx="256" cy="310" r="4" fill="#00f5ff"/>
       </svg>
     `;
   }
@@ -1148,14 +1143,14 @@ class BrainstormCard extends HTMLElement {
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 34px;
-          height: 34px;
+          width: 36px;
+          height: 36px;
           border-radius: 10px;
           overflow: hidden;
           background: color-mix(in srgb, var(--primary-color, #03a9f4) 12%, var(--card-background-color, #ffffff));
           border: 1px solid color-mix(in srgb, var(--primary-color, #03a9f4) 25%, var(--divider-color, rgba(127, 127, 127, 0.15)));
           box-shadow: 0 2px 8px color-mix(in srgb, var(--primary-color, #03a9f4) 18%, transparent);
-          padding: 2.5px;
+          padding: 1px;
           box-sizing: border-box;
           flex-shrink: 0;
           transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -3803,7 +3798,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.4.40 ",
+  "%c BRAINSTORM-CARD %c v1.4.41 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );
