@@ -49,15 +49,15 @@
         }
       },
       "category_style": {
-        "title": "Customize Category Design",
-        "description": "Select a category to customize its icon and accent color.",
+        "title": "Category Design (Step 1 of 2)",
+        "description": "Step 1 of 2: Select the category you want to customize. Click 'Next' to choose its Home Assistant icon and accent color in the next step.",
         "data": {
-          "category": "Category"
+          "category": "Select Category"
         }
       },
       "category_style_edit": {
-        "title": "Design for '{category}'",
-        "description": "Choose an icon from Home Assistant and an accent color for category '{category}'.",
+        "title": "Design for '{category}' (Step 2 of 2)",
+        "description": "Step 2 of 2: Choose an icon from the Home Assistant icon library and an accent color for '{category}'. Click Submit to save.",
         "data": {
           "icon": "Category Icon (Home Assistant / MDI)",
           "color": "Category Color",
@@ -69,7 +69,8 @@
         "description": "Successfully updated icon and color for '{category}'.",
         "menu_options": {
           "category_style": "Customize another category",
-          "init": "Back to main menu"
+          "init": "Back to main menu",
+          "close": "Done & Close"
         }
       },
       "general": {

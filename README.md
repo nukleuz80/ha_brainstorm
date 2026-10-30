@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.4.42-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.4.43-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver-C0C0C0.svg)](https://developers.home-assistant.io/docs/integration_quality_scale_index/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -99,9 +99,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.4.42
+  - url: /local/brainstorm-card.js?v=1.4.43
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.4.42
+  - url: /local/brainstorm-mindmap-card.js?v=1.4.43
     type: module
 ```
 
@@ -148,6 +148,7 @@ hide_empty_categories: true
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.4.43`** | 2026-10-30 | **Category Design Flow UX Optimization & Clear Step Progression:**<br>• **Clear Multi-Step Navigation („Next“ instead of „OK“):** Configured `last_step=False` on the category selection screen so the Home Assistant action button renders unambiguously as *“Next”* (*„Weiter“*) instead of a misleading *“OK”*, eliminating the impression of an incomplete dialog.<br>• **Explicit Step Progression Titles & Descriptions:** Step 1 clearly states *“Category Design (Step 1 of 2)”* and instructs users to proceed to icon and color selection; Step 2 explicitly announces *“Design for '{category}' (Step 2 of 2)”* with Home Assistant MDI icon picker, RGB color selector, and reset toggle.<br>• **Category State Preview:** The category dropdown displays the currently configured icon and color in parentheses (or *Standard*) for instant overview.<br>• **New „Done & Close“ Option:** Added a dedicated completion action (*„Fertig & Schließen“*) upon saving styles to cleanly exit the options flow. |
 | **`v1.4.42`** | 2026-10-30 | **Direct Dictionary Mapping for Options Menu Labels (Fix Blank Row):**<br>• **Permanent Menu Label Resolution:** Passed explicit localized label dictionaries (`dict[str, str]`) in `async_show_menu` for `init` and `category_style_done` steps. This completely bypasses the frontend's cached translation lookups, ensuring that *“Kategorie-Design (Farbe & Icon)”* / *“Category Design (Color & Icon)”* is rendered reliably without blank rows regardless of browser or core translation cache status.<br>• **Full Bilingual Support:** Auto-detects active language (`de` vs. `en`) with complete fallback. |
 | **`v1.4.41`** | 2026-10-30 | **Maximum Space-Filling Bulb Logo & Enhanced Visual Presence:**<br>• **Full-Bleed Bulb Geometry:** Redesigned the brain-lightbulb vector graphic with a fuller, wider dome (aspect ratio ~0.92:1) and compact metallic fitting, completely eliminating empty side margins inside square icon containers. The visible bulb area is more than doubled (+132%) in size.<br>• **Tight ViewBox & Minimal Padding:** Set precision-fitted `viewBox="136 58 240 261"` and reduced container padding to 1px (with 36px icon container), allowing the glowing bulb to fully exploit all available card header space edge-to-edge.<br>• **Universal High-Impact Assets:** Synchronized full-bleed graphic across `brainstorm-card`, `brainstorm-mindmap-card`, `brainstorm-logo.svg`, and `brainstorm-bulb.svg` (mindmap central watermark and card config editors). |
 | **`v1.4.40`** | 2026-10-29 | **Adaptive Theme Logo (Light/Dark), Visual Refinements & Logo Toggle:**<br>• **Adaptive Theme Styling (Light & Dark):** Brand logo container across `brainstorm-card` and `brainstorm-mindmap-card` now utilizes dynamic CSS color mixing (`color-mix(in srgb, var(--primary-color) 12%, var(--card-background-color))`) rather than hardcoded dark squares (`#0d1117`), perfectly blending with light dashboards and dark themes alike.<br>• **Crisp Vector Brain-Bulb Graphic:** Re-engineered the central SVG graphic into an ultra-sharp, transparent-background vector icon with glowing synapses, golden filament spark, and metallic base, eliminating illegible micro-text and pixelation at compact card header sizes.<br>• **Show/Hide Logo Option (`show_logo`):** Added `show_logo: true` toggle in YAML configuration and both visual UI card editors (`BrainstormCardEditor` & `BrainstormMindmapCardEditor`) to let users easily display or hide the brand logo.<br>• **Options Flow Label Fix:** Guaranteed menu translation synchronization in `async_step_init` so all Hub options rows display localized titles cleanly without empty lines. |

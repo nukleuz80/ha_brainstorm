@@ -48,15 +48,15 @@
         }
       },
       "category_style": {
-        "title": "Kategorie-Design anpassen",
-        "description": "Wähle eine Kategorie aus, um ihr Icon und ihre Akzentfarbe festzulegen.",
+        "title": "Kategorie-Design (Schritt 1 von 2)",
+        "description": "Schritt 1 von 2: Wähle die gewünschte Kategorie aus. Klicke anschließend auf „Weiter“, um im nächsten Schritt ihr Home Assistant Icon und die Akzentfarbe festzulegen.",
         "data": {
           "category": "Kategorie auswählen"
         }
       },
       "category_style_edit": {
-        "title": "Design für „{category}“",
-        "description": "Wähle ein passendes Icon aus der Home Assistant Symbolbibliothek und eine Akzentfarbe für die Kategorie „{category}“.",
+        "title": "Design für „{category}“ (Schritt 2 von 2)",
+        "description": "Schritt 2 von 2: Wähle ein passendes Icon aus der Home Assistant Symbolbibliothek und eine Akzentfarbe für die Kategorie „{category}“ aus. Klicke auf Absenden, um die Änderungen zu speichern.",
         "data": {
           "icon": "Kategorie-Icon (Home Assistant / MDI)",
           "color": "Kategorie-Farbe",
@@ -68,7 +68,8 @@
         "description": "Icon und Farbe für „{category}“ wurden erfolgreich aktualisiert.",
         "menu_options": {
           "category_style": "Weitere Kategorie anpassen",
-          "init": "Zurück zum Hauptmenü"
+          "init": "Zurück zum Hauptmenü",
+          "close": "Fertig & Schließen"
         }
       },
       "general": {

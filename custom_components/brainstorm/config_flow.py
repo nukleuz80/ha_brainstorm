@@ -121,6 +121,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             "category_style_done": {
                 "category_style": "Weitere Kategorie anpassen",
                 "init": "Zurück zum Hauptmenü",
+                "close": "Fertig & Schließen",
             },
         }
         menus_en = {
@@ -132,6 +133,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             "category_style_done": {
                 "category_style": "Customize another category",
                 "init": "Back to main menu",
+                "close": "Done & Close",
             },
         }
         return (menus_de if is_de else menus_en).get(step_id, {})
@@ -186,7 +188,19 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             self._selected_style_cat = user_input.get("category", current_cats[0])
             return await self.async_step_category_style_edit()
 
-        cat_options = [{"value": c, "label": c} for c in current_cats]
+        current_icons = store.category_icons if store else {}
+        current_colors = store.category_colors if store else {}
+
+        cat_options = []
+        for c in current_cats:
+            details = []
+            if c in current_icons and current_icons[c]:
+                details.append(f"Icon: {current_icons[c]}")
+            if c in current_colors and current_colors[c]:
+                details.append(f"Farbe: {current_colors[c]}")
+            label = f"{c} ({', '.join(details)})" if details else f"{c} (Standard)"
+            cat_options.append({"value": c, "label": label})
+
         data_schema = vol.Schema(
             {
                 vol.Required("category", default=current_cats[0]): selector.SelectSelector(
@@ -200,6 +214,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         return self.async_show_form(
             step_id="category_style",
             data_schema=data_schema,
+            last_step=False,
         )
 
     async def async_step_category_style_edit(
@@ -263,6 +278,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             step_id="category_style_edit",
             data_schema=vol.Schema(schema_dict),
             description_placeholders={"category": cat},
+            last_step=True,
         )
 
     async def async_step_category_style_done(
@@ -274,6 +290,13 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             menu_options=self._get_localized_menu("category_style_done"),
             description_placeholders={"category": getattr(self, "_selected_style_cat", "")},
         )
+
+    async def async_step_close(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Finish and close the options flow."""
+        options = dict(self.config_entry.options or self.config_entry.data)
+        return self.async_create_entry(title="", data=options)
 
     async def async_step_categories(
         self, user_input: dict[str, Any] | None = None
