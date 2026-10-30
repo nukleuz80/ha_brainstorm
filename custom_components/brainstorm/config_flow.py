@@ -109,6 +109,33 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         """Initialize options flow."""
         self._selected_style_cat: str = "Inbox"
 
+    def _get_localized_menu(self, step_id: str) -> dict[str, str]:
+        """Return explicit localized menu options mapping to bypass frontend cache staleness."""
+        is_de = getattr(self.hass.config, "language", "en").startswith("de")
+        menus_de = {
+            "init": {
+                "categories": "Kategorien verwalten",
+                "category_style": "Kategorie-Design (Farbe & Icon)",
+                "general": "Allgemeine Einstellungen & Export",
+            },
+            "category_style_done": {
+                "category_style": "Weitere Kategorie anpassen",
+                "init": "Zurück zum Hauptmenü",
+            },
+        }
+        menus_en = {
+            "init": {
+                "categories": "Manage Categories",
+                "category_style": "Category Design (Color & Icon)",
+                "general": "General Settings & Export",
+            },
+            "category_style_done": {
+                "category_style": "Customize another category",
+                "init": "Back to main menu",
+            },
+        }
+        return (menus_de if is_de else menus_en).get(step_id, {})
+
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
@@ -141,7 +168,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
 
         return self.async_show_menu(
             step_id="init",
-            menu_options=["categories", "category_style", "general"],
+            menu_options=self._get_localized_menu("init"),
         )
 
     async def async_step_category_style(
@@ -244,7 +271,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         """Show completion options."""
         return self.async_show_menu(
             step_id="category_style_done",
-            menu_options=["category_style", "init"],
+            menu_options=self._get_localized_menu("category_style_done"),
             description_placeholders={"category": getattr(self, "_selected_style_cat", "")},
         )
 
