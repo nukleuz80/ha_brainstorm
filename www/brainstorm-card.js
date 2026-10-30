@@ -1,11 +1,13 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.43 - Category Design Flow UX Optimization & Clear Step Progression, Max-Size Bulb
+ * Version 1.4.44 - Last Alexa Display with Entity Selection & Resilient Visual Card Editor
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",
   sensor: "sensor.brainstorm_ideen_ubersicht",
+  show_last_alexa: false,
+  last_alexa_entity: "sensor.last_alexa",
   color_mode: "multicolor",
   default_category: "all",
   max_items: 0,
@@ -36,6 +38,7 @@ class BrainstormCard extends HTMLElement {
     } catch {}
     this._colorMode = savedColorMode; // 'multicolor' | 'theme'
     this._lastColorMode = null;
+    this._lastAlexaKey = null;
     this._initialized = false;
     this._lastUpdated = null;
     this._lastCategory = "all";
@@ -43,11 +46,27 @@ class BrainstormCard extends HTMLElement {
   }
 
   static async getConfigElement() {
+    if (window.loadCardHelpers) {
+      try {
+        const helpers = await window.loadCardHelpers();
+        if (helpers && helpers.createCardElement) {
+          await helpers.createCardElement({ type: "entities", entities: [] });
+        }
+      } catch {}
+    }
     return document.createElement("brainstorm-card-editor");
   }
 
+  getConfigElement() {
+    return BrainstormCard.getConfigElement();
+  }
+
   static getStubConfig(hass) {
-    return { ...BRAINSTORM_CARD_DEFAULTS };
+    return {
+      ...BRAINSTORM_CARD_DEFAULTS,
+      show_last_alexa: false,
+      last_alexa_entity: "sensor.last_alexa",
+    };
   }
 
   setConfig(config) {
@@ -114,6 +133,59 @@ class BrainstormCard extends HTMLElement {
       return this._hass.states["sensor.brainstorm_ideen_ubersicht"];
     }
     return this._hass.states ? this._hass.states[configured] : null;
+  }
+
+  _getLastAlexaInfo() {
+    if (!this._config || this._config.show_last_alexa !== true) return null;
+    const entityId = (this._config && this._config.last_alexa_entity) || "sensor.last_alexa";
+    if (!this._hass || !this._hass.states || !this._hass.states[entityId]) {
+      return null;
+    }
+    const stateObj = this._hass.states[entityId];
+    if (!stateObj || stateObj.state === "unavailable" || stateObj.state === "unknown" || !stateObj.state) {
+      return null;
+    }
+
+    let targetEntityId = stateObj.state;
+    let displayName = "";
+    let mediaState = null;
+
+    if (
+      typeof targetEntityId === "string" &&
+      (targetEntityId.startsWith("media_player.") || targetEntityId.startsWith("sensor."))
+    ) {
+      const targetObj = this._hass.states[targetEntityId];
+      if (targetObj) {
+        displayName = (targetObj.attributes && targetObj.attributes.friendly_name) || targetEntityId;
+        mediaState = targetObj.state;
+      } else {
+        displayName = targetEntityId.replace(/^media_player\./, "").replace(/_/g, " ");
+      }
+    } else if (stateObj.entity_id.startsWith("media_player.")) {
+      displayName = (stateObj.attributes && stateObj.attributes.friendly_name) || stateObj.entity_id;
+      mediaState = stateObj.state;
+      targetEntityId = stateObj.entity_id;
+    } else {
+      displayName = stateObj.state;
+      targetEntityId = stateObj.entity_id;
+    }
+
+    return {
+      entityId: targetEntityId,
+      name: displayName,
+      state: mediaState || stateObj.state,
+    };
+  }
+
+  _openEntityMoreInfo(entityId) {
+    if (!entityId) return;
+    this.dispatchEvent(
+      new CustomEvent("hass-more-info", {
+        detail: { entityId },
+        bubbles: true,
+        composed: true,
+      })
+    );
   }
 
   _escapeHtml(text) {
@@ -1193,6 +1265,52 @@ class BrainstormCard extends HTMLElement {
           line-height: 1.35;
           flex-shrink: 0;
         }
+        .last-alexa-wrap {
+          display: inline-flex;
+          align-items: center;
+        }
+        .last-alexa-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          background: color-mix(in srgb, var(--primary-color, #03a9f4) 14%, var(--card-background-color, #1e1e24));
+          border: 1px solid color-mix(in srgb, var(--primary-color, #03a9f4) 28%, var(--divider-color, rgba(127, 127, 127, 0.2)));
+          border-radius: 10px;
+          padding: 2px 7px;
+          font-size: 0.72rem;
+          font-weight: 500;
+          color: var(--primary-text-color, #ffffff);
+          cursor: pointer;
+          user-select: none;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          max-width: 220px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          line-height: 1.35;
+          flex-shrink: 0;
+        }
+        .last-alexa-badge:hover {
+          background: color-mix(in srgb, var(--primary-color, #03a9f4) 22%, var(--card-background-color, #1e1e24));
+          border-color: var(--primary-color, #03a9f4);
+          transform: translateY(-1px);
+          box-shadow: 0 2px 6px color-mix(in srgb, var(--primary-color, #03a9f4) 25%, transparent);
+        }
+        .alexa-badge-icon {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          color: var(--primary-color, #03a9f4);
+          flex-shrink: 0;
+        }
+        .alexa-badge-icon svg {
+          display: block;
+        }
+        .alexa-badge-name {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
         .header-actions {
           display: flex;
           align-items: center;
@@ -1736,6 +1854,11 @@ class BrainstormCard extends HTMLElement {
           .badge {
             font-size: 0.65rem;
             padding: 2px 5px;
+          }
+          .last-alexa-badge {
+            font-size: 0.65rem;
+            padding: 1px 6px;
+            max-width: 140px;
           }
           .quick-capture-card {
             padding: 5px 7px;
@@ -2478,6 +2601,7 @@ class BrainstormCard extends HTMLElement {
             <div class="header-titles">
               <span class="card-title" id="cardTitle">${this._config.title !== undefined ? this._config.title : "Brainstorm Hub"}</span>
               <div class="badge" id="badgeCount" style="display: ${this._config.show_badge === true ? "inline-flex" : "none"};">0 Ideen</div>
+              <div id="lastAlexaWrap" class="last-alexa-wrap" style="display: none;"></div>
             </div>
           </div>
           <div class="header-actions">
@@ -2683,23 +2807,28 @@ class BrainstormCard extends HTMLElement {
       const catSelectEl = this.shadowRoot.getElementById("catSelect");
       const isSelectActive = catSelectEl && (this.shadowRoot.activeElement === catSelectEl || document.activeElement === catSelectEl);
 
-      // If neither the sensor nor the selected category nor color mode changed, skip DOM re-render entirely
+      const alexaInfo = this._getLastAlexaInfo();
+      const currentAlexaKey = alexaInfo ? `${alexaInfo.entityId}_${alexaInfo.name}_${alexaInfo.state}` : "";
+
+      // If neither the sensor nor the selected category nor color mode nor alexa changed, skip DOM re-render entirely
       if (
         this._lastUpdated === currentSensorUpdated &&
         this._lastCategory === this._selectedCategory &&
-        this._lastColorMode === this._colorMode
+        this._lastColorMode === this._colorMode &&
+        this._lastAlexaKey === currentAlexaKey
       ) {
         return;
       }
 
       // If user is currently picking a category from the dropdown, don't interrupt them
-      if (isSelectActive && this._lastUpdated !== null) {
+      if (isSelectActive && this._lastUpdated !== null && this._lastAlexaKey === currentAlexaKey) {
         return;
       }
 
       this._lastUpdated = currentSensorUpdated;
       this._lastCategory = this._selectedCategory;
       this._lastColorMode = this._colorMode;
+      this._lastAlexaKey = currentAlexaKey;
 
       const attributes = sensorEntity.attributes || {};
       const categories = attributes.categories || ["Inbox", "Smarthome", "Haus & Garten", "Projekte", "Alltag"];
@@ -2709,7 +2838,7 @@ class BrainstormCard extends HTMLElement {
       const completedCount = attributes.completed_count || completedIdeas.length || 0;
       const isCompletedView = this._selectedCategory === "__completed__";
 
-    // 1. Update Title, Badge and Controls
+    // 1. Update Title, Badge, Last Alexa and Controls
     const titleEl = this.shadowRoot.getElementById("cardTitle");
     if (titleEl) {
       titleEl.textContent = this._config.title !== undefined ? this._config.title : "Brainstorm Hub";
@@ -2722,6 +2851,33 @@ class BrainstormCard extends HTMLElement {
         badgeEl.textContent = `${activeIdeas.length} aktiv • ${completedCount} erledigt`;
       } else {
         badgeEl.textContent = `${activeIdeas.length} Ideen`;
+      }
+    }
+
+    const lastAlexaWrap = this.shadowRoot.getElementById("lastAlexaWrap");
+    if (lastAlexaWrap) {
+      if (this._config.show_last_alexa === true && alexaInfo && alexaInfo.name) {
+        lastAlexaWrap.style.display = "inline-flex";
+        lastAlexaWrap.innerHTML = `
+          <div class="last-alexa-badge" title="Zuletzt aktive Alexa: ${this._escapeHtml(alexaInfo.name)} (Klicken für Details)">
+            <span class="alexa-badge-icon">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5-3c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+              </svg>
+            </span>
+            <span class="alexa-badge-name">${this._escapeHtml(alexaInfo.name)}</span>
+          </div>
+        `;
+        const badgeInner = lastAlexaWrap.querySelector(".last-alexa-badge");
+        if (badgeInner) {
+          badgeInner.addEventListener("click", (e) => {
+            e.stopPropagation();
+            this._openEntityMoreInfo(alexaInfo.entityId);
+          });
+        }
+      } else {
+        lastAlexaWrap.style.display = "none";
+        lastAlexaWrap.innerHTML = "";
       }
     }
 
@@ -3391,6 +3547,10 @@ class BrainstormCardEditor extends HTMLElement {
     this._form = null;
   }
 
+  connectedCallback() {
+    this._render();
+  }
+
   setConfig(config) {
     this._config = {
       ...BRAINSTORM_CARD_DEFAULTS,
@@ -3399,8 +3559,10 @@ class BrainstormCardEditor extends HTMLElement {
     if (this._form) {
       this._form.schema = this._getSchema();
       this._form.data = this._config;
+      if (this._hass) this._form.hass = this._hass;
+    } else {
+      this._render();
     }
-    this._render();
   }
 
   set hass(hass) {
@@ -3408,6 +3570,8 @@ class BrainstormCardEditor extends HTMLElement {
     if (this._form) {
       this._form.hass = hass;
       this._form.schema = this._getSchema();
+    } else if (this.shadowRoot && !this._form) {
+      this._render();
     }
   }
 
@@ -3470,6 +3634,18 @@ class BrainstormCardEditor extends HTMLElement {
         label: "Sensor-Entität",
         default: "sensor.brainstorm_ideen_ubersicht",
         selector: { entity: { domain: ["sensor"] } },
+      },
+      {
+        name: "show_last_alexa",
+        label: "Zuletzt aktive Alexa (Last Alexa) anzeigen",
+        default: false,
+        selector: { boolean: {} },
+      },
+      {
+        name: "last_alexa_entity",
+        label: "Last Alexa Entität (Echo / Sensor)",
+        default: "sensor.last_alexa",
+        selector: { entity: { domain: ["sensor", "media_player"] } },
       },
       {
         name: "color_mode",
@@ -3666,22 +3842,10 @@ class BrainstormCardEditor extends HTMLElement {
       form.addEventListener("value-changed", (ev) => {
         ev.stopPropagation();
         if (!ev.detail || !ev.detail.value) return;
-        const val = ev.detail.value;
-        const newConfig = {
-          type: "custom:brainstorm-card",
+        this._config = {
           ...this._config,
-          ...val,
+          ...ev.detail.value,
         };
-        for (const [key, defVal] of Object.entries(BRAINSTORM_CARD_DEFAULTS)) {
-          if (typeof defVal === "boolean") {
-            if (key in val) {
-              newConfig[key] = Boolean(val[key]);
-            } else {
-              newConfig[key] = false;
-            }
-          }
-        }
-        this._config = newConfig;
         this.dispatchEvent(
           new CustomEvent("config-changed", {
             detail: { config: this._config },
@@ -3707,6 +3871,16 @@ class BrainstormCardEditor extends HTMLElement {
         <div class="fallback-row">
           <label class="fallback-label">Sensor-Entität</label>
           <input class="fallback-input" id="fbSensor" type="text" value="${this._config.sensor || 'sensor.brainstorm_ideen_ubersicht'}" />
+        </div>
+        <div class="fallback-row">
+          <label class="fallback-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <input type="checkbox" id="fbShowLastAlexa" ${this._config.show_last_alexa ? 'checked' : ''} />
+            <span>Zuletzt aktive Alexa (Last Alexa) anzeigen</span>
+          </label>
+        </div>
+        <div class="fallback-row">
+          <label class="fallback-label">Last Alexa Entität</label>
+          <input class="fallback-input" id="fbLastAlexaEntity" type="text" value="${this._config.last_alexa_entity || 'sensor.last_alexa'}" />
         </div>
         <div class="fallback-row">
           <label class="fallback-label">Standard-Filterkategorie beim Öffnen</label>
@@ -3743,6 +3917,8 @@ class BrainstormCardEditor extends HTMLElement {
     `;
     const fbTitle = container.querySelector("#fbTitle");
     const fbSensor = container.querySelector("#fbSensor");
+    const fbShowLastAlexa = container.querySelector("#fbShowLastAlexa");
+    const fbLastAlexaEntity = container.querySelector("#fbLastAlexaEntity");
     const fbDefaultCat = container.querySelector("#fbDefaultCat");
     const fbColorMode = container.querySelector("#fbColorMode");
     const fbHideEmpty = container.querySelector("#fbHideEmpty");
@@ -3754,6 +3930,8 @@ class BrainstormCardEditor extends HTMLElement {
         ...this._config,
         title: fbTitle ? fbTitle.value : this._config.title,
         sensor: fbSensor ? fbSensor.value : this._config.sensor,
+        show_last_alexa: fbShowLastAlexa ? fbShowLastAlexa.checked : Boolean(this._config.show_last_alexa),
+        last_alexa_entity: fbLastAlexaEntity ? fbLastAlexaEntity.value : this._config.last_alexa_entity,
         default_category: fbDefaultCat ? fbDefaultCat.value : this._config.default_category,
         color_mode: fbColorMode ? fbColorMode.value : this._config.color_mode,
         hide_empty_categories: fbHideEmpty ? fbHideEmpty.checked : Boolean(this._config.hide_empty_categories),
@@ -3771,6 +3949,8 @@ class BrainstormCardEditor extends HTMLElement {
 
     if (fbTitle) fbTitle.addEventListener("input", emitChange);
     if (fbSensor) fbSensor.addEventListener("input", emitChange);
+    if (fbShowLastAlexa) fbShowLastAlexa.addEventListener("change", emitChange);
+    if (fbLastAlexaEntity) fbLastAlexaEntity.addEventListener("input", emitChange);
     if (fbDefaultCat) fbDefaultCat.addEventListener("change", emitChange);
     if (fbColorMode) fbColorMode.addEventListener("change", emitChange);
     if (fbHideEmpty) fbHideEmpty.addEventListener("change", emitChange);
@@ -3798,7 +3978,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.4.43 ",
+  "%c BRAINSTORM-CARD %c v1.4.44 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );
