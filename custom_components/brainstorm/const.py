@@ -9,6 +9,7 @@ CONF_AUTO_EXPORT_MARKDOWN = "auto_export_markdown"
 CONF_MARKDOWN_PATH = "markdown_path"
 CONF_SMART_FORMATTING = "smart_formatting"
 CONF_HIDE_EMPTY_CATEGORIES = "hide_empty_categories"
+CONF_ALLOWED_ECHOS = "allowed_echos"
 
 DEFAULT_CATEGORIES = [
     "Inbox",

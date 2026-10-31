@@ -26,6 +26,7 @@ from .const import (
     ATTR_TAGS,
     ATTR_TEXT,
     ATTR_UPDATED_AT,
+    CONF_ALLOWED_ECHOS,
     CONF_HIDE_EMPTY_CATEGORIES,
     CONF_SMART_FORMATTING,
     DEFAULT_CATEGORIES,
@@ -381,6 +382,7 @@ class BrainstormStore:
         self._hide_empty_categories = self.options.get(
             CONF_HIDE_EMPTY_CATEGORIES, DEFAULT_HIDE_EMPTY_CATEGORIES
         )
+        self._allowed_echos = list(self.options.get(CONF_ALLOWED_ECHOS) or [])
         self._default_category = self.options.get("default_category", "Inbox")
         self._last_action: dict[str, Any] | None = None
         self.integration_version: str | None = None
@@ -394,6 +396,11 @@ class BrainstormStore:
     def hide_empty_categories(self) -> bool:
         """Return whether empty categories should be hidden."""
         return self._hide_empty_categories
+
+    @property
+    def allowed_echos(self) -> list[str]:
+        """Return the Echos allowed for voice input, empty meaning all."""
+        return list(self._allowed_echos)
 
     @property
     def categories(self) -> list[str]:

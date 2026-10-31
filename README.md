@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.4.45-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.4.46-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver-C0C0C0.svg)](https://developers.home-assistant.io/docs/integration_quality_scale_index/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -93,15 +93,30 @@ Or manually:
 
 ---
 
+## 🎙️ Using Only Selected Echos
+
+By default, every Echo can capture ideas. To limit this, go to **Settings ➔ Devices & Services ➔ Brainstorm Hub ➔ Configure ➔ General Settings & Export** and select the Echos under **Echo devices for voice input**. An empty list means all Echos.
+
+The Alexa voice flows run as automations and scripts in your own Home Assistant configuration, so each entry point needs this condition (`echo_device` holds the calling Echo):
+
+```yaml
+- condition: template
+  value_template: >-
+    {% set allowed = state_attr('sensor.brainstorm_ideen_ubersicht', 'allowed_echos') %}
+    {{ not allowed or echo_device in allowed }}
+```
+
+---
+
 ## 🎴 Lovelace Cards Configuration
 
 Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.4.45
+  - url: /local/brainstorm-card.js?v=1.4.46
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.4.45
+  - url: /local/brainstorm-mindmap-card.js?v=1.4.46
     type: module
 ```
 
@@ -148,6 +163,7 @@ hide_empty_categories: true
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.4.46`** | 2026-10-31 | **Selected Echos for Voice Input:**<br>• **New option:** *General Settings & Export* now has a multi-select for Alexa Media Echos. Only the selected Echos can capture ideas and open Brainstorm by voice; with an empty list, all Echos keep working.<br>• **For automations:** The selection is available as the `allowed_echos` attribute of `sensor.brainstorm_ideen_ubersicht`. |
 | **`v1.4.45`** | 2026-10-31 | **Reliable Categories, Auto-Export, LLM Tools, Text Optimization & Security:**<br>• **Options Flow:** Adding or deleting a category no longer gets reverted by the pre-filled list field; the list is only applied if it was actually edited.<br>• **Persistent Categories:** Deleted default categories stay deleted after a reload or restart, and the custom order is kept.<br>• **Auto-Export:** A failing Markdown export is logged and no longer aborts the action, so events and entity updates still fire. Export data is collected in the event loop instead of the executor.<br>• **LLM Tools:** `brainstorm_list_categories` no longer crashes, the category `all` and case-insensitive names work, and ambiguous delete or complete requests now return the candidates instead of acting on the first match.<br>• **Text Optimization:** A single remaining word keeps its category word (*Haus streichen*), spellings like *WLAN* or *iPhone* are preserved, and capitalization, infinitives and genitive articles are handled correctly.<br>• **Security:** Markdown exports are limited to config subfolders and `allowlist_external_dirs`, category names are escaped in both cards, and icons and colors are validated (colors must be hex values).<br>• **Recorder:** Large sensor attributes are no longer recorded, which avoids the 16 KB limit.<br>• **Reconfigure:** Changes now take effect even if options exist, without the deprecated reload helper.<br>• **Lifecycle:** Removed the runtime module reload and translation cache manipulation, services are now registered in `async_setup`, and the non-functional YAML import is gone. Python changes now need a restart.<br>• **To-do Lists:** Entities of deleted categories are removed, archived ideas are no longer shown as open, and editing a completed idea no longer fires `idea_completed` again.<br>• **Data Integrity:** Parent cycles are rejected, unknown IDs raise an error, and the `default_category` option now works.<br>• **Compatibility:** LLM tools use `ToolResult` and annotations, minimum version is Home Assistant 2026.10.<br>• **Tests:** Added a test suite running against real Home Assistant. |
 | **`v1.4.44`** | 2026-10-30 | **Last Alexa Display with Entity Selection & Resilient Visual Card Editor:**<br>• **Last Alexa Display in Card Headers:** Added an active Alexa badge (`.last-alexa-badge`) with a crisp microphone micro-icon and live device name in the header of `brainstorm-card` and the toolbar of `brainstorm-mindmap-card`. Tapping/clicking the badge opens the native Home Assistant `more-info` dialog for the active Echo device.<br>• **Visual Entity Selector for Last Alexa:** Added `show_last_alexa` toggle and `last_alexa_entity` selector (defaulting to `sensor.last_alexa` or any `media_player` / `sensor` entity) directly inside both visual card editors.<br>• **Resilient Visual Card Editor Architecture:** Resolved lifecycle timing in `BrainstormCardEditor` and `BrainstormMindmapCardEditor`. Both editors now preload Lovelace helpers in `static async getConfigElement()`, implement `connectedCallback()`, and properly merge form updates without inadvertently resetting boolean card settings. |
 | **`v1.4.43`** | 2026-10-30 | **Category Design Flow UX Optimization & Clear Step Progression:**<br>• **Clear Multi-Step Navigation („Next“ instead of „OK“):** Configured `last_step=False` on the category selection screen so the Home Assistant action button renders unambiguously as *“Next”* (*„Weiter“*) instead of a misleading *“OK”*, eliminating the impression of an incomplete dialog.<br>• **Explicit Step Progression Titles & Descriptions:** Step 1 clearly states *“Category Design (Step 1 of 2)”* and instructs users to proceed to icon and color selection; Step 2 explicitly announces *“Design for '{category}' (Step 2 of 2)”* with Home Assistant MDI icon picker, RGB color selector, and reset toggle.<br>• **Category State Preview:** The category dropdown displays the currently configured icon and color in parentheses (or *Standard*) for instant overview.<br>• **New „Done & Close“ Option:** Added a dedicated completion action (*„Fertig & Schließen“*) upon saving styles to cleanly exit the options flow. |

@@ -11,6 +11,7 @@ from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import selector
 
 from .const import (
+    CONF_ALLOWED_ECHOS,
     CONF_AUTO_EXPORT_MARKDOWN,
     CONF_HIDE_EMPTY_CATEGORIES,
     CONF_MARKDOWN_PATH,
@@ -368,6 +369,8 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
 
         if user_input is not None:
             options.update(user_input)
+            # The frontend omits a cleared selector, which has to reset the list
+            options[CONF_ALLOWED_ECHOS] = user_input.get(CONF_ALLOWED_ECHOS, [])
             return self.async_create_entry(title="", data=options)
 
         cat_options = [{"value": c, "label": c} for c in current_cats]
@@ -397,6 +400,18 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 ): selector.TextSelector(
                     selector.TextSelectorConfig(
                         type=selector.TextSelectorType.TEXT,
+                    )
+                ),
+                vol.Optional(
+                    CONF_ALLOWED_ECHOS,
+                    description={
+                        "suggested_value": options.get(CONF_ALLOWED_ECHOS, [])
+                    },
+                ): selector.EntitySelector(
+                    selector.EntitySelectorConfig(
+                        domain="media_player",
+                        integration="alexa_media",
+                        multiple=True,
                     )
                 ),
             }

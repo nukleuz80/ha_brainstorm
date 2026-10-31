@@ -79,7 +79,11 @@
           "default_category": "Default category for new ideas",
           "smart_formatting": "Smart Text Optimization (grammar, capitalization, infinitive formatting)",
           "auto_export_markdown": "Auto-export ideas to Markdown files",
-          "markdown_path": "File path for Markdown files"
+          "markdown_path": "File path for Markdown files",
+          "allowed_echos": "Echo devices for voice input"
+        },
+        "data_description": {
+          "allowed_echos": "Only these Echos can capture ideas and open Brainstorm by voice. Leave empty to use all Echos."
         }
       }
     }

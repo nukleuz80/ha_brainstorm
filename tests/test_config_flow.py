@@ -8,7 +8,7 @@ from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 
-from custom_components.brainstorm.const import DOMAIN
+from custom_components.brainstorm.const import DOMAIN, OVERVIEW_ENTITY_ID
 
 from .conftest import SetupEntry
 
@@ -152,3 +152,37 @@ async def test_options_category_style_flow(
     await hass.async_block_till_done()
     assert entry.runtime_data.category_colors == {"Alltag": "#ff7800"}
     assert entry.runtime_data.category_icons == {"Alltag": "mdi:home"}
+
+
+async def _submit_general(
+    hass: HomeAssistant, entry: Any, **user_input: Any
+) -> None:
+    """Submit the general settings form."""
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "general"}
+    )
+    assert result["step_id"] == "general"
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], user_input
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    await hass.async_block_till_done()
+
+
+async def test_options_allowed_echos(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test selecting Echos, exposing them on the sensor and clearing them."""
+    entry = await setup_entry()
+    assert hass.states.get(OVERVIEW_ENTITY_ID).attributes["allowed_echos"] == []
+
+    echos = ["media_player.echo_show_kuche", "media_player.wohnzimmer_echo_dot"]
+    await _submit_general(hass, entry, allowed_echos=echos)
+    assert entry.runtime_data.allowed_echos == echos
+    assert hass.states.get(OVERVIEW_ENTITY_ID).attributes["allowed_echos"] == echos
+
+    # The frontend omits a cleared selector
+    await _submit_general(hass, entry)
+    assert entry.options["allowed_echos"] == []
+    assert hass.states.get(OVERVIEW_ENTITY_ID).attributes["allowed_echos"] == []

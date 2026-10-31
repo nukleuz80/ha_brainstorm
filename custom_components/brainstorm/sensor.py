@@ -150,6 +150,7 @@ class BrainstormOverviewSensor(SensorEntity):
             "category_colors": self._store.category_colors,
             "active_categories": active_cats,
             "hide_empty_categories": self._store.hide_empty_categories,
+            "allowed_echos": self._store.allowed_echos,
             "category_counts": counts_by_cat,
             "priority_counts": counts_by_prio,
             "latest_idea": latest_info,
