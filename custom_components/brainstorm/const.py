@@ -4,12 +4,15 @@ DOMAIN = "brainstorm"
 
 STORAGE_KEY = "brainstorm.storage"
 STORAGE_VERSION = 1
+SKILL_STORAGE_KEY = "brainstorm.alexa_skill"
+SKILL_STORAGE_VERSION = 1
 
 CONF_AUTO_EXPORT_MARKDOWN = "auto_export_markdown"
 CONF_MARKDOWN_PATH = "markdown_path"
 CONF_SMART_FORMATTING = "smart_formatting"
 CONF_HIDE_EMPTY_CATEGORIES = "hide_empty_categories"
 CONF_ALLOWED_ECHOS = "allowed_echos"
+CONF_VOICE_MODE = "voice_mode"
 
 DEFAULT_CATEGORIES = [
     "Inbox",
@@ -20,6 +23,12 @@ DEFAULT_CATEGORIES = [
 ]
 DEFAULT_MARKDOWN_PATH = "/config/brainstorm"
 DEFAULT_HIDE_EMPTY_CATEGORIES = True
+
+# How Alexa voice input reaches Brainstorm
+VOICE_MODE_NATIVE = "native"
+VOICE_MODE_SKILL = "skill"
+VOICE_MODE_BOTH = "both"
+VOICE_MODES = [VOICE_MODE_NATIVE, VOICE_MODE_SKILL, VOICE_MODE_BOTH]
 
 # Event constants
 EVENT_IDEA_ADDED = "brainstorm_idea_added"

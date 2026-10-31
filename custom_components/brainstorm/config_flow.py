@@ -9,6 +9,7 @@ from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import selector
+from homeassistant.helpers.network import NoURLAvailableError
 
 from .const import (
     CONF_ALLOWED_ECHOS,
@@ -16,9 +17,12 @@ from .const import (
     CONF_HIDE_EMPTY_CATEGORIES,
     CONF_MARKDOWN_PATH,
     CONF_SMART_FORMATTING,
+    CONF_VOICE_MODE,
     DEFAULT_HIDE_EMPTY_CATEGORIES,
     DEFAULT_MARKDOWN_PATH,
     DOMAIN,
+    VOICE_MODE_NATIVE,
+    VOICE_MODES,
 )
 
 
@@ -110,6 +114,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         """Initialize options flow."""
         self._selected_style_cat: str = "Inbox"
         self._shown_categories: str = ""
+        self._voice_mode: str = VOICE_MODE_NATIVE
 
     def _get_localized_menu(self, step_id: str) -> dict[str, str]:
         """Return explicit localized menu options mapping to bypass frontend cache staleness."""
@@ -119,6 +124,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "categories": "Kategorien verwalten",
                 "category_style": "Kategorie-Design (Farbe & Icon)",
                 "general": "Allgemeine Einstellungen & Export",
+                "alexa_skill": "Alexa-Spracheingabe & Skill",
             },
             "category_style_done": {
                 "category_style": "Weitere Kategorie anpassen",
@@ -131,6 +137,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "categories": "Manage Categories",
                 "category_style": "Category Design (Color & Icon)",
                 "general": "General Settings & Export",
+                "alexa_skill": "Alexa Voice Input & Skill",
             },
             "category_style_done": {
                 "category_style": "Customize another category",
@@ -422,3 +429,80 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             data_schema=data_schema,
         )
 
+    async def async_step_alexa_skill(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Choose how Alexa voice input reaches Brainstorm."""
+        options = dict(self.config_entry.options or self.config_entry.data)
+
+        if user_input is not None:
+            self._voice_mode = user_input[CONF_VOICE_MODE]
+            if self._voice_mode == VOICE_MODE_NATIVE:
+                options[CONF_VOICE_MODE] = self._voice_mode
+                return self.async_create_entry(title="", data=options)
+            return await self.async_step_alexa_skill_setup()
+
+        return self.async_show_form(
+            step_id="alexa_skill",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_VOICE_MODE,
+                        default=options.get(CONF_VOICE_MODE, VOICE_MODE_NATIVE),
+                    ): selector.SelectSelector(
+                        selector.SelectSelectorConfig(
+                            options=VOICE_MODES,
+                            mode=selector.SelectSelectorMode.LIST,
+                            translation_key=CONF_VOICE_MODE,
+                        )
+                    ),
+                }
+            ),
+            last_step=False,
+        )
+
+    async def async_step_alexa_skill_setup(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Show what the user needs to build their own skill."""
+        options = dict(self.config_entry.options or self.config_entry.data)
+        skill = self.config_entry.runtime_data.alexa_skill
+
+        if user_input is not None:
+            if user_input.get("reset_skill"):
+                await skill.async_reset()
+            options[CONF_VOICE_MODE] = self._voice_mode
+            return self.async_create_entry(title="", data=options)
+
+        schema: dict[Any, Any] = {}
+        errors: dict[str, str] = {}
+        try:
+            skill_code = skill.get_skill_code()
+        except NoURLAvailableError:
+            errors["base"] = "no_public_url"
+        else:
+            copy_field = selector.TextSelector(
+                selector.TextSelectorConfig(multiline=True)
+            )
+            schema[
+                vol.Optional("skill_code", description={"suggested_value": skill_code})
+            ] = copy_field
+            schema[
+                vol.Optional(
+                    "interaction_model",
+                    description={"suggested_value": skill.get_interaction_model()},
+                )
+            ] = copy_field
+        schema[vol.Optional("reset_skill", default=False)] = selector.BooleanSelector()
+
+        last = skill.last_request
+        return self.async_show_form(
+            step_id="alexa_skill_setup",
+            data_schema=vol.Schema(schema),
+            errors=errors,
+            description_placeholders={
+                "linked": "✅" if skill.is_linked else "❌",
+                "last_request": f"{last['time']}: {last['text']}" if last else "–",
+            },
+            last_step=True,
+        )

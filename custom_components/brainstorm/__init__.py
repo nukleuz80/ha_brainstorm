@@ -13,6 +13,7 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
 
+from .alexa_skill import AlexaSkill
 from .const import (
     ATTR_CATEGORY,
     ATTR_COLOR,
@@ -31,6 +32,7 @@ from .const import (
     PLATFORMS,
     SERVICE_REORDER_IDEAS,
     SERVICE_SET_CATEGORY_STYLE,
+    VOICE_MODE_NATIVE,
 )
 from .llm import async_register_llm_api
 from .store import BrainstormStore
@@ -162,6 +164,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) -
 
     # Register LLM API for Assist & Conversation Agents
     entry.async_on_unload(async_register_llm_api(hass))
+
+    # The skill only gets an open door in the modes that use it
+    skill = AlexaSkill(hass, store)
+    await skill.async_load()
+    store.alexa_skill = skill
+    if store.voice_mode != VOICE_MODE_NATIVE:
+        skill.async_start()
+    entry.async_on_unload(skill.async_stop)
 
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
     return True

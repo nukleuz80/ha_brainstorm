@@ -6,7 +6,7 @@ import os
 import re
 import uuid
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, TYPE_CHECKING
 
 from homeassistant.core import Context, HomeAssistant
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
@@ -27,6 +27,7 @@ from .const import (
     ATTR_TEXT,
     ATTR_UPDATED_AT,
     CONF_ALLOWED_ECHOS,
+    CONF_VOICE_MODE,
     CONF_HIDE_EMPTY_CATEGORIES,
     CONF_SMART_FORMATTING,
     DEFAULT_CATEGORIES,
@@ -44,8 +45,12 @@ from .const import (
     PRIORITY_URGENT,
     STORAGE_KEY,
     STORAGE_VERSION,
+    VOICE_MODE_NATIVE,
 )
 from .nlp import clean_and_format_idea_text
+
+if TYPE_CHECKING:
+    from .alexa_skill import AlexaSkill
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -383,9 +388,11 @@ class BrainstormStore:
             CONF_HIDE_EMPTY_CATEGORIES, DEFAULT_HIDE_EMPTY_CATEGORIES
         )
         self._allowed_echos = list(self.options.get(CONF_ALLOWED_ECHOS) or [])
+        self._voice_mode = self.options.get(CONF_VOICE_MODE, VOICE_MODE_NATIVE)
         self._default_category = self.options.get("default_category", "Inbox")
         self._last_action: dict[str, Any] | None = None
         self.integration_version: str | None = None
+        self.alexa_skill: AlexaSkill | None = None
 
     @property
     def last_action(self) -> dict[str, Any] | None:
@@ -401,6 +408,11 @@ class BrainstormStore:
     def allowed_echos(self) -> list[str]:
         """Return the Echos allowed for voice input, empty meaning all."""
         return list(self._allowed_echos)
+
+    @property
+    def voice_mode(self) -> str:
+        """Return how Alexa voice input reaches Brainstorm."""
+        return self._voice_mode
 
     @property
     def categories(self) -> list[str]:

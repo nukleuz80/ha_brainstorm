@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.4.46-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.4.47-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver-C0C0C0.svg)](https://developers.home-assistant.io/docs/integration_quality_scale_index/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -108,15 +108,39 @@ The Alexa voice flows run as automations and scripts in your own Home Assistant 
 
 ---
 
+## 🎙️ Optional: Your Own Alexa Skill (One Sentence, One Answer)
+
+Without a skill, Alexa often reports an error first when you say *"Alexa, notiere ..."*, because it does not know that command. Your own skill gives a single answer: *"Alexa, sage Brainstorm notiere Kellerlicht dimmen."* ➔ *"Gespeichert unter Smarthome."*
+
+The skill belongs to you and only talks to your own Home Assistant. **Requirements:** a free [Amazon developer account](https://developer.amazon.com/alexa/console/ask) on the same account as your Echos and a Home Assistant reachable over public HTTPS (for example through Home Assistant Cloud). The voice model is currently German only.
+
+1. In Home Assistant, go to **Brainstorm Hub ➔ Configure ➔ Alexa Voice Input & Skill**, choose **Skill** or **Both** and continue. Keep this window open, it shows the two fields to copy.
+2. In the [Alexa developer console](https://developer.amazon.com/alexa/console/ask), click **Create Skill** and choose: name `Brainstorm`, language **German (DE)**, type **Custom**, hosting **Alexa-hosted (Python)**, template **Start from Scratch**.
+3. Open **Build ➔ Interaction Model ➔ JSON Editor**, replace the content with the **Voice model** field, click **Save**, then **Build**, and wait for the success message.
+4. In the **Code** tab, replace `lambda_function.py` with the **Skill code** field and click **Deploy**.
+5. In the **Test** tab, set the stage to **Development**.
+6. Click **Submit** in Home Assistant and say *"Alexa, sage Brainstorm notiere Testidee."* The first request links your skill, other skills are rejected afterwards. **Configure** shows the link and the last request.
+
+**Notes:** Keep the skill code private, it contains your secret address. If it leaks, create a new one there and copy the skill code again. The Echo selection and device display do not apply to the skill path yet. For **Skill** mode to turn off the existing capture, your automation has to check the `voice_mode` attribute:
+
+```yaml
+- condition: template
+  value_template: "{{ state_attr('sensor.brainstorm_ideen_ubersicht', 'voice_mode') != 'skill' }}"
+```
+
+**Troubleshooting:** *"I don't know how to help with that"* usually means the **Build** is missing, the **Test** tab is not set to **Development**, or the console and Echo use different Amazon accounts. Try the sentence in the **Test** tab first. If Alexa says the idea was not saved, check the mode and whether Home Assistant is reachable.
+
+---
+
 ## 🎴 Lovelace Cards Configuration
 
 Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.4.46
+  - url: /local/brainstorm-card.js?v=1.4.47
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.4.46
+  - url: /local/brainstorm-mindmap-card.js?v=1.4.47
     type: module
 ```
 
@@ -163,6 +187,7 @@ hide_empty_categories: true
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.4.47`** | 2026-10-31 | **Optional Alexa Skill for One-Sentence Voice Input:**<br>• **Voice modes:** New *Alexa Voice Input & Skill* options with **Native** (default, unchanged), **Skill** and **Both**.<br>• **Your own skill:** *„Alexa, sage Brainstorm notiere …“* now gives one clean answer. Home Assistant generates the skill code and voice model to copy, links the first skill automatically and rejects others.<br>• **Reliable answers:** Alexa only confirms what was really saved. |
 | **`v1.4.46`** | 2026-10-31 | **Selected Echos for Voice Input:**<br>• **New option:** *General Settings & Export* now has a multi-select for Alexa Media Echos. Only the selected Echos can capture ideas and open Brainstorm by voice; with an empty list, all Echos keep working.<br>• **For automations:** The selection is available as the `allowed_echos` attribute of `sensor.brainstorm_ideen_ubersicht`. |
 | **`v1.4.45`** | 2026-10-31 | **Reliable Categories, Auto-Export, LLM Tools, Text Optimization & Security:**<br>• **Options Flow:** Adding or deleting a category no longer gets reverted by the pre-filled list field; the list is only applied if it was actually edited.<br>• **Persistent Categories:** Deleted default categories stay deleted after a reload or restart, and the custom order is kept.<br>• **Auto-Export:** A failing Markdown export is logged and no longer aborts the action, so events and entity updates still fire. Export data is collected in the event loop instead of the executor.<br>• **LLM Tools:** `brainstorm_list_categories` no longer crashes, the category `all` and case-insensitive names work, and ambiguous delete or complete requests now return the candidates instead of acting on the first match.<br>• **Text Optimization:** A single remaining word keeps its category word (*Haus streichen*), spellings like *WLAN* or *iPhone* are preserved, and capitalization, infinitives and genitive articles are handled correctly.<br>• **Security:** Markdown exports are limited to config subfolders and `allowlist_external_dirs`, category names are escaped in both cards, and icons and colors are validated (colors must be hex values).<br>• **Recorder:** Large sensor attributes are no longer recorded, which avoids the 16 KB limit.<br>• **Reconfigure:** Changes now take effect even if options exist, without the deprecated reload helper.<br>• **Lifecycle:** Removed the runtime module reload and translation cache manipulation, services are now registered in `async_setup`, and the non-functional YAML import is gone. Python changes now need a restart.<br>• **To-do Lists:** Entities of deleted categories are removed, archived ideas are no longer shown as open, and editing a completed idea no longer fires `idea_completed` again.<br>• **Data Integrity:** Parent cycles are rejected, unknown IDs raise an error, and the `default_category` option now works.<br>• **Compatibility:** LLM tools use `ToolResult` and annotations, minimum version is Home Assistant 2026.10.<br>• **Tests:** Added a test suite running against real Home Assistant. |
 | **`v1.4.44`** | 2026-10-30 | **Last Alexa Display with Entity Selection & Resilient Visual Card Editor:**<br>• **Last Alexa Display in Card Headers:** Added an active Alexa badge (`.last-alexa-badge`) with a crisp microphone micro-icon and live device name in the header of `brainstorm-card` and the toolbar of `brainstorm-mindmap-card`. Tapping/clicking the badge opens the native Home Assistant `more-info` dialog for the active Echo device.<br>• **Visual Entity Selector for Last Alexa:** Added `show_last_alexa` toggle and `last_alexa_entity` selector (defaulting to `sensor.last_alexa` or any `media_player` / `sensor` entity) directly inside both visual card editors.<br>• **Resilient Visual Card Editor Architecture:** Resolved lifecycle timing in `BrainstormCardEditor` and `BrainstormMindmapCardEditor`. Both editors now preload Lovelace helpers in `static async getConfigElement()`, implement `connectedCallback()`, and properly merge form updates without inadvertently resetting boolean card settings. |

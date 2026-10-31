@@ -34,7 +34,8 @@
         "menu_options": {
           "categories": "Kategorien verwalten",
           "category_style": "Kategorie-Design (Farbe & Icon)",
-          "general": "Allgemeine Einstellungen & Export"
+          "general": "Allgemeine Einstellungen & Export",
+          "alexa_skill": "Alexa-Spracheingabe & Skill"
         }
       },
       "categories": {
@@ -85,8 +86,38 @@
         "data_description": {
           "allowed_echos": "Nur diese Echos können Ideen per Sprache erfassen und Brainstorm öffnen. Leer lassen, um alle Echos zu nutzen."
         }
+      },
+      "alexa_skill": {
+        "title": "Alexa-Spracheingabe",
+        "description": "**Nativ** funktioniert ohne Einrichtung: Sag \"Alexa, notiere ...\". Alexa meldet eventuell zuerst einen Fehler, danach speichert Brainstorm die Idee.\n\n**Skill** gibt eine einzige saubere Antwort: Sag \"Alexa, sage Brainstorm notiere ...\". Dafür brauchst du deinen eigenen kostenlosen Alexa-Skill und ein aus dem Internet erreichbares Home Assistant.\n\n**Beide** nimmt beide Wege an.",
+        "data": {
+          "voice_mode": "Spracheingabe"
+        }
+      },
+      "alexa_skill_setup": {
+        "title": "Alexa-Skill einrichten",
+        "description": "Folge der Anleitung in der README und kopiere die beiden Felder unten in die Alexa-Entwicklerkonsole. **Halte den Skill-Code geheim:** Er enthält deine geheime Adresse.\n\nSkill gekoppelt: {linked}\nLetzte Skill-Anfrage: {last_request}",
+        "data": {
+          "skill_code": "Skill-Code (lambda_function.py)",
+          "interaction_model": "Sprachmodell (JSON-Editor)",
+          "reset_skill": "Neue geheime Adresse erzeugen und Skill-Kopplung entfernen"
+        },
+        "data_description": {
+          "reset_skill": "Nutze das, wenn die Adresse bekannt wurde oder du einen neuen Skill gebaut hast. Kopiere danach den neuen Skill-Code."
+        }
+      }
+    },
+    "error": {
+      "no_public_url": "Home Assistant hat keine öffentliche HTTPS-Adresse, zum Beispiel über Home Assistant Cloud. Der Skill kann es nicht erreichen, nutze daher den Modus Nativ."
+    }
+  },
+  "selector": {
+    "voice_mode": {
+      "options": {
+        "native": "Nativ (ohne Skill)",
+        "skill": "Skill",
+        "both": "Beide"
       }
     }
   }
 }
-

@@ -34,7 +34,8 @@
         "menu_options": {
           "categories": "Manage Categories",
           "category_style": "Category Design (Color & Icon)",
-          "general": "General Settings & Export"
+          "general": "General Settings & Export",
+          "alexa_skill": "Alexa Voice Input & Skill"
         }
       },
       "categories": {
@@ -85,6 +86,37 @@
         "data_description": {
           "allowed_echos": "Only these Echos can capture ideas and open Brainstorm by voice. Leave empty to use all Echos."
         }
+      },
+      "alexa_skill": {
+        "title": "Alexa Voice Input",
+        "description": "**Native** works without setup: say \"Alexa, note ...\". Alexa may report an error first, then Brainstorm saves the idea.\n\n**Skill** gives one clean answer: say \"Alexa, tell Brainstorm note ...\". It needs your own free Alexa skill and a Home Assistant reachable from the internet.\n\n**Both** accepts both ways.",
+        "data": {
+          "voice_mode": "Voice input"
+        }
+      },
+      "alexa_skill_setup": {
+        "title": "Set up your Alexa skill",
+        "description": "Follow the guide in the README and copy the two fields below into the Alexa developer console. **Keep the skill code private:** it contains your secret address.\n\nSkill linked: {linked}\nLast skill request: {last_request}",
+        "data": {
+          "skill_code": "Skill code (lambda_function.py)",
+          "interaction_model": "Voice model (JSON editor)",
+          "reset_skill": "Create a new secret address and remove the skill link"
+        },
+        "data_description": {
+          "reset_skill": "Use this if the address leaked or you built a new skill. Copy the new skill code afterwards."
+        }
+      }
+    },
+    "error": {
+      "no_public_url": "Home Assistant has no public HTTPS address, for example through Home Assistant Cloud. The skill cannot reach it, so use Native mode."
+    }
+  },
+  "selector": {
+    "voice_mode": {
+      "options": {
+        "native": "Native (without skill)",
+        "skill": "Skill",
+        "both": "Both"
       }
     }
   }

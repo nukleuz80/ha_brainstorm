@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.4.46-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.4.47-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver-C0C0C0.svg)](https://developers.home-assistant.io/docs/integration_quality_scale_index/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -124,8 +124,8 @@ Klicke einfach auf diesen Button, um das Repository direkt in deiner Home Assist
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js` und `www/brainstorm-mindmap-card.js` in `/config/www/`.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.4.46` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.4.46` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.4.47` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.4.47` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ---
@@ -219,6 +219,30 @@ Direkt in einem Satz sprechen (Automation sendet automatisch einen internen Stop
 - 🗣️ *„Alexa, **Brainstorm** Balkonkraftwerk Ertrag auswerten.“* ➔ `Smarthome`
 - 🗣️ *„Alexa, **Neue Idee für Projekte** Smart Mirror bauen.“* ➔ `Projekte`
 
+#### Variante C: Eigener Alexa-Skill (optional, ein Satz, eine Antwort)
+Ohne Skill antwortet Alexa auf *„Alexa, notiere …“* oft zuerst mit einer Fehlermeldung, weil sie den Befehl nicht kennt. Mit deinem eigenen Skill gibt es nur eine einzige Antwort:
+
+> 🗣️ *„Alexa, sage Brainstorm notiere Kellerlicht dimmen.“*  
+> 🤖 **Alexa:** *„Gespeichert unter Smarthome.“*
+
+Der Skill gehört dir allein und spricht nur mit deinem eigenen Home Assistant. **Voraussetzungen:** ein kostenloses [Amazon-Entwicklerkonto](https://developer.amazon.com/alexa/console/ask) mit demselben Konto wie deine Echos und ein aus dem Internet per HTTPS erreichbares Home Assistant (z. B. über Home Assistant Cloud). Das Sprachmodell ist derzeit nur auf Deutsch verfügbar.
+
+1. Gehe in Home Assistant auf **Brainstorm Hub ➔ Konfigurieren ➔ Alexa-Spracheingabe & Skill**, wähle **Skill** oder **Beide** und klicke auf **Weiter**. Lass dieses Fenster offen, es zeigt die beiden Felder zum Kopieren.
+2. Klicke in der [Alexa-Entwicklerkonsole](https://developer.amazon.com/alexa/console/ask) auf **Create Skill** und wähle: Name `Brainstorm`, Sprache **German (DE)**, Typ **Custom**, Hosting **Alexa-hosted (Python)**, Vorlage **Start from Scratch**.
+3. Öffne **Build ➔ Interaction Model ➔ JSON Editor**, ersetze den Inhalt durch das Feld **Sprachmodell**, klicke auf **Save** und danach auf **Build** und warte auf die Erfolgsmeldung.
+4. Ersetze im Tab **Code** den Inhalt von `lambda_function.py` durch das Feld **Skill-Code** und klicke auf **Deploy**.
+5. Stelle im Tab **Test** oben **Development** ein.
+6. Klicke in Home Assistant auf **Absenden** und sprich am Echo: *„Alexa, sage Brainstorm notiere Testidee.“* Die erste Anfrage koppelt deinen Skill, andere Skills werden danach abgewiesen. Unter **Konfigurieren** siehst du die Kopplung und die letzte Anfrage.
+
+**Hinweise:** Halte den Skill-Code geheim, er enthält deine geheime Adresse. Wurde sie bekannt, erzeugst du dort eine neue und kopierst den Skill-Code erneut. Die Echo-Auswahl und die Geräteanzeige gelten im Skill-Weg derzeit nicht. Der Modus **Skill** schaltet die bisherige Erfassung ab, wenn deine Automation das Attribut `voice_mode` von `sensor.brainstorm_ideen_ubersicht` prüft:
+
+```yaml
+- condition: template
+  value_template: "{{ state_attr('sensor.brainstorm_ideen_ubersicht', 'voice_mode') != 'skill' }}"
+```
+
+**Falls es nicht klappt:** *„Ich weiß nicht, wie ich dabei helfen soll“* bedeutet meist, dass der **Build** fehlt, im Tab **Test** nicht **Development** eingestellt ist oder Konsole und Echo verschiedene Amazon-Konten nutzen. Teste den Satz zuerst im Tab **Test**. Sagt Alexa, die Idee wurde nicht gespeichert, prüfe den Modus und die Erreichbarkeit von Home Assistant.
+
 ---
 
 ### 2. Home Assistant Assist
@@ -259,6 +283,7 @@ Die Integration stellt folgende Services bereit:
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.4.47`** | 31.10.2026 | **Optionaler Alexa-Skill für die Spracheingabe in einem Satz:**<br>• **Sprachmodi:** Neue Optionen unter *Alexa-Spracheingabe & Skill* mit **Nativ** (Standard, unverändert), **Skill** und **Beide**.<br>• **Eigener Skill:** *„Alexa, sage Brainstorm notiere …“* gibt jetzt eine einzige saubere Antwort. Home Assistant erzeugt Skill-Code und Sprachmodell zum Kopieren, koppelt den ersten Skill automatisch und weist andere ab.<br>• **Verlässliche Antworten:** Alexa bestätigt nur, was wirklich gespeichert wurde. |
 | **`v1.4.46`** | 31.10.2026 | **Ausgewählte Echos für die Spracheingabe:**<br>• **Neue Option:** Unter *Allgemeine Einstellungen & Export* gibt es jetzt eine Mehrfachauswahl für Alexa-Media-Echos. Nur die ausgewählten Echos können Ideen per Sprache erfassen und Brainstorm öffnen; bei leerer Liste funktionieren weiterhin alle Echos.<br>• **Für Automationen:** Die Auswahl steht als Attribut `allowed_echos` von `sensor.brainstorm_ideen_ubersicht` bereit. |
 | **`v1.4.45`** | 31.10.2026 | **Zuverlässige Kategorien, Auto-Export, LLM-Tools, Text-Optimierung & Sicherheit:**<br>• **Options-Flow:** Hinzufügen und Löschen von Kategorien wird nicht mehr durch das vorausgefüllte Listenfeld rückgängig gemacht; die Liste wird nur noch übernommen, wenn sie tatsächlich bearbeitet wurde.<br>• **Dauerhafte Kategorien:** Gelöschte Standardkategorien bleiben nach Reload oder Neustart gelöscht, die eigene Reihenfolge bleibt erhalten.<br>• **Auto-Export:** Ein fehlgeschlagener Markdown-Export wird protokolliert und bricht die Aktion nicht mehr ab, Events und Entity-Updates laufen weiter. Die Exportdaten werden im Event-Loop statt im Executor zusammengestellt.<br>• **LLM-Tools:** `brainstorm_list_categories` stürzt nicht mehr ab, die Kategorie `all` und Namen in beliebiger Schreibweise funktionieren, und mehrdeutige Lösch- oder Erledigt-Anfragen liefern jetzt die Kandidaten, statt den ersten Treffer zu ändern.<br>• **Text-Optimierung:** Bleibt nur ein Wort übrig, bleibt das Kategoriewort erhalten (*Haus streichen*), Schreibweisen wie *WLAN* oder *iPhone* bleiben bestehen, und Großschreibung, Infinitive und Genitiv-Artikel werden korrekt behandelt.<br>• **Sicherheit:** Markdown-Exporte sind auf Unterordner des Config-Verzeichnisses und `allowlist_external_dirs` beschränkt, Kategorienamen werden in beiden Karten maskiert, Icons und Farben werden geprüft (Farben müssen Hex-Werte sein).<br>• **Recorder:** Große Sensor-Attribute werden nicht mehr aufgezeichnet, das vermeidet das 16-KB-Limit.<br>• **Reconfigure:** Änderungen greifen jetzt auch bei vorhandenen Optionen, ohne den veralteten Reload-Helper.<br>• **Lifecycle:** Modul-Reload zur Laufzeit und Eingriffe in den Übersetzungs-Cache entfernt, Services werden jetzt in `async_setup` registriert, der nicht funktionsfähige YAML-Import ist entfernt. Python-Änderungen brauchen jetzt einen Neustart.<br>• **To-do-Listen:** Entitäten gelöschter Kategorien werden entfernt, archivierte Ideen erscheinen nicht mehr als offen, und das Bearbeiten erledigter Ideen löst `idea_completed` nicht erneut aus.<br>• **Datenintegrität:** Eltern-Zyklen werden abgelehnt, unbekannte IDs lösen einen Fehler aus, und die Option `default_category` funktioniert jetzt.<br>• **Kompatibilität:** LLM-Tools nutzen `ToolResult` und Annotations, Mindestversion ist Home Assistant 2026.10.<br>• **Tests:** Testsuite ergänzt, die gegen echtes Home Assistant läuft. |
 | **`v1.4.44`** | 30.10.2026 | **Anzeige der zuletzt aktiven Alexa (Last Alexa) mit Entitätsauswahl & Robuster visueller Karteneditor:**<br>• **Last-Alexa-Badge in Karten-Kopfzeilen:** Anzeige eines dezenten, interaktiven Badges (`.last-alexa-badge`) mit Mikrofon-Icon und Klarnamen des aktiven Echo-Geräts im Header der `brainstorm-card` und der Toolbar der `brainstorm-mindmap-card`. Ein Klick auf das Badge öffnet direkt den nativen Home Assistant *More-Info*-Dialog des aktiven Geräts.<br>• **Visuelle Entitätsauswahl in den Karteneinstellungen:** Schalter *„Zuletzt aktive Alexa (Last Alexa) anzeigen“* (`show_last_alexa`) sowie Entitäts-Picker für *„Last Alexa Entität“* (`last_alexa_entity`, z. B. `sensor.last_alexa` oder beliebiges `media_player`-Gerät) in beiden visuellen Lovelace-Karteneditoren.<br>• **Robuster visueller Karteneditor:** Grundlegende Absicherung der Editor-Komponenten (`BrainstormCardEditor` & `BrainstormMindmapCardEditor`) mit Vorab-Initialisierung der Lovelace-Form-Helper (`static async getConfigElement()`), `connectedCallback()`-Lifecycle und bereinigtem Event-Merging, wodurch versehentliches Zurücksetzen von Boolean-Einstellungen ausgeschlossen ist. |
