@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.60 - Select Several Ideas, Echos per Person
+ * Version 1.4.61 - Assist Microphone in the Quick Input
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",
@@ -13,6 +13,7 @@ const BRAINSTORM_CARD_DEFAULTS = {
   max_items: 0,
   show_logo: true,
   show_quick_input: true,
+  show_mic: true,
   show_categories: true,
   hide_empty_categories: true,
   compact_mode: false,
@@ -578,6 +579,188 @@ class BrainstormCard extends HTMLElement {
         this._showShareDialog(null, selected, shares);
       });
     }
+  }
+
+  _setupMicButton() {
+    const button = this.shadowRoot.getElementById("micBtn");
+    if (!button) return;
+    // Browsers only allow the microphone over HTTPS
+    const available =
+      this._config.show_mic !== false &&
+      window.isSecureContext &&
+      !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+    button.style.display = available ? "" : "none";
+    if (!button.dataset.bound) {
+      button.dataset.bound = "true";
+      button.addEventListener("click", () => this._toggleMic());
+    }
+  }
+
+  _showMicStatus(text) {
+    const status = this.shadowRoot.getElementById("micStatus");
+    if (!status) return;
+    clearTimeout(this._micStatusTimer);
+    status.textContent = text;
+    status.style.display = text ? "block" : "none";
+    if (text && !this._micSession) {
+      this._micStatusTimer = setTimeout(() => this._showMicStatus(""), 5000);
+    }
+  }
+
+  _setMicState(state) {
+    const button = this.shadowRoot.getElementById("micBtn");
+    if (!button) return;
+    button.classList.toggle("recording", state === "recording");
+    button.classList.toggle("busy", state === "busy");
+    const label = state === "recording" ? "Aufnahme beenden" : "Idee sprechen";
+    button.title = label;
+    button.setAttribute("aria-label", label);
+  }
+
+  _toggleMic() {
+    if (this._micSession) {
+      this._finishMicAudio();
+    } else {
+      this._startMic();
+    }
+  }
+
+  async _startMic() {
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (err) {
+      this._showMicStatus("Das Mikrofon ist nicht erlaubt. Bitte im Browser freigeben.");
+      return;
+    }
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    const audioContext = new AudioContextClass();
+    await audioContext.resume();
+    const session = {
+      stream,
+      audioContext,
+      handlerId: null,
+      queue: [],
+      finished: false,
+      unsubscribe: null,
+    };
+    this._micSession = session;
+    this._setMicState("recording");
+    this._showMicStatus("Ich höre zu … Zum Beenden nochmal tippen.");
+
+    const source = audioContext.createMediaStreamSource(stream);
+    const processor = audioContext.createScriptProcessor(4096, 1, 1);
+    processor.onaudioprocess = (event) => {
+      this._sendMicAudio(session, event.inputBuffer.getChannelData(0));
+    };
+    source.connect(processor);
+    processor.connect(audioContext.destination);
+    session.processor = processor;
+    session.source = source;
+    session.timeout = setTimeout(() => this._finishMicAudio(), 30000);
+
+    try {
+      session.unsubscribe = await this._hass.connection.subscribeMessage(
+        (event) => this._handleMicEvent(session, event),
+        {
+          type: "assist_pipeline/run",
+          start_stage: "stt",
+          end_stage: "stt",
+          input: { sample_rate: audioContext.sampleRate },
+        }
+      );
+    } catch (err) {
+      console.error("[Brainstorm] Could not start speech recognition:", err);
+      this._endMic(session, "Die Spracherkennung konnte nicht starten.");
+    }
+  }
+
+  _sendMicAudio(session, samples) {
+    if (session.finished) return;
+    const pcm = new Int16Array(samples.length);
+    for (let i = 0; i < samples.length; i += 1) {
+      const sample = Math.max(-1, Math.min(1, samples[i]));
+      pcm[i] = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+    }
+    if (session.handlerId === null) {
+      session.queue.push(pcm);
+      return;
+    }
+    this._sendMicChunk(session, pcm);
+  }
+
+  _sendMicChunk(session, pcm) {
+    const data = new Uint8Array(1 + pcm.length * 2);
+    data[0] = session.handlerId;
+    data.set(new Uint8Array(pcm.buffer), 1);
+    this._hass.connection.socket.send(data);
+  }
+
+  // Stops the recording, the result of the recognition still has to come
+  _finishMicAudio() {
+    const session = this._micSession;
+    if (!session || session.finished) return;
+    session.finished = true;
+    clearTimeout(session.timeout);
+    this._releaseMicAudio(session);
+    this._setMicState("busy");
+    this._showMicStatus("Wird erkannt …");
+    if (session.handlerId !== null) {
+      this._hass.connection.socket.send(new Uint8Array([session.handlerId]));
+    } else {
+      this._endMic(session, "");
+    }
+  }
+
+  _releaseMicAudio(session) {
+    if (session.processor) session.processor.disconnect();
+    if (session.source) session.source.disconnect();
+    session.stream.getTracks().forEach((track) => track.stop());
+    if (session.audioContext.state !== "closed") session.audioContext.close();
+  }
+
+  _handleMicEvent(session, event) {
+    if (event.type === "run-start") {
+      session.handlerId = event.data.runner_data.stt_binary_handler_id;
+      session.queue.forEach((pcm) => this._sendMicChunk(session, pcm));
+      session.queue = [];
+      if (session.finished) {
+        this._hass.connection.socket.send(new Uint8Array([session.handlerId]));
+      }
+    } else if (event.type === "stt-vad-end") {
+      this._finishMicAudio();
+    } else if (event.type === "stt-end") {
+      const text = ((event.data.stt_output || {}).text || "").trim();
+      if (text) {
+        const input = this.shadowRoot.getElementById("ideaInput");
+        if (input) {
+          input.value = input.value.trim() ? `${input.value.trim()} ${text}` : text;
+          input.focus();
+        }
+      }
+      this._endMic(session, text ? "" : "Ich habe nichts verstanden.");
+    } else if (event.type === "error") {
+      console.error("[Brainstorm] Speech recognition error:", event.data);
+      const nothing = event.data && event.data.code === "stt-no-text-recognized";
+      this._endMic(session, nothing ? "Ich habe nichts verstanden." : "Die Spracherkennung ist fehlgeschlagen.");
+    } else if (event.type === "run-end" && this._micSession === session) {
+      this._endMic(session, "");
+    }
+  }
+
+  _endMic(session, message) {
+    if (this._micSession !== session) return;
+    this._micSession = null;
+    session.finished = true;
+    clearTimeout(session.timeout);
+    if (session.audioContext.state !== "closed") this._releaseMicAudio(session);
+    if (session.unsubscribe) session.unsubscribe();
+    this._setMicState("idle");
+    this._showMicStatus(message);
+  }
+
+  disconnectedCallback() {
+    if (this._micSession) this._endMic(this._micSession, "");
   }
 
   _selectedIdeas() {
@@ -2255,6 +2438,36 @@ class BrainstormCard extends HTMLElement {
           color: var(--secondary-text-color, #757575);
           opacity: 0.85;
         }
+        button.mic-btn {
+          flex: 0 0 auto;
+          width: 44px;
+          height: 36px;
+          border: 1px solid var(--divider-color);
+          border-radius: 10px;
+          background: transparent;
+          color: var(--primary-text-color);
+          font-size: 1rem;
+          cursor: pointer;
+        }
+        button.mic-btn.recording {
+          background: var(--error-color);
+          border-color: var(--error-color);
+          animation: mic-pulse 1.2s ease-in-out infinite;
+        }
+        button.mic-btn.busy {
+          opacity: 0.55;
+          cursor: progress;
+        }
+        @keyframes mic-pulse {
+          50% {
+            opacity: 0.6;
+          }
+        }
+        .mic-status {
+          margin-top: 6px;
+          font-size: 0.8rem;
+          color: var(--secondary-text-color);
+        }
         button.send-btn {
           flex: 0 0 auto;
           background: var(--primary-color, #03a9f4);
@@ -3190,11 +3403,13 @@ class BrainstormCard extends HTMLElement {
                   placeholder="Blitz-Idee tippen... (z.B. 'Garten: Baum schneiden')" 
                   autocomplete="off"
                 />
+                <button class="mic-btn" id="micBtn" type="button" title="Idee sprechen" aria-label="Idee sprechen" style="display: none;">🎙️</button>
                 <button class="send-btn" id="sendBtn" title="Idee erfassen">
                   <span class="send-icon">➕</span>
                   <span class="send-text">Hinzufügen</span>
                 </button>
               </div>
+              <div class="mic-status" id="micStatus" role="status" style="display: none;"></div>
               <div class="quick-meta-bar">
                 <div class="quick-meta-left">
                   <div class="quick-select-wrap cat-wrap">
@@ -3478,6 +3693,7 @@ class BrainstormCard extends HTMLElement {
     }
 
     // 2. Update Select Dropdown and Input Placeholder
+    this._setupMicButton();
     const ideaInput = this.shadowRoot.getElementById("ideaInput");
     if (ideaInput && document.activeElement !== ideaInput) {
       if (this._selectedCategory && this._selectedCategory !== "all" && this._selectedCategory !== "__completed__") {
@@ -4277,6 +4493,12 @@ class BrainstormCardEditor extends HTMLElement {
         selector: { boolean: {} },
       },
       {
+        name: "show_mic",
+        label: "Mikrofon im Schnelleingabe-Feld anzeigen (nur über HTTPS)",
+        default: true,
+        selector: { boolean: {} },
+      },
+      {
         name: "show_categories",
         label: "Kategorie-Leiste (Filter-Pills) anzeigen",
         default: true,
@@ -4569,7 +4791,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.4.60 ",
+  "%c BRAINSTORM-CARD %c v1.4.61 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );
