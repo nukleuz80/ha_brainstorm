@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.4.58-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.4.59-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver-C0C0C0.svg)](https://developers.home-assistant.io/docs/integration_quality_scale_index/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -124,8 +124,8 @@ Klicke einfach auf diesen Button, um das Repository direkt in deiner Home Assist
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js` und `www/brainstorm-mindmap-card.js` in `/config/www/`.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.4.58` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.4.58` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.4.59` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.4.59` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ---
@@ -322,6 +322,7 @@ Die Integration stellt folgende Services bereit:
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.4.59`** | 01.11.2026 | **Einträge und Kategorien freigeben:** Mit eingeschalteter Privatsphäre lassen sich Einträge und ganze Kategorien für ausgewählte Personen oder alle freigeben, zum Ansehen oder Bearbeiten. Die Listenkarte bekommt einen Freigabe-Dialog, die Filter *Alle*, *Meine* und *Mit mir geteilt* sowie Kennzeichnungen. Die To-do-Listen zeigen, was für alle freigegeben ist, und wer eine Erinnerung bekommt, erhält auch Zugriff. Neuer Dienst `brainstorm.share`. |
 | **`v1.4.58`** | 31.10.2026 | **Private Einträge pro Benutzer (Grundlage):** Neuer Schalter *Privatsphäre & Benutzer*, standardmäßig aus. Eingeschaltet gehören Einträge der Person, die sie angelegt hat: Der Sensor enthält keine Texte mehr, die Karten laden nur die eigenen Einträge, und Dienste, Assist, Logbuch, Sprache, Briefing und Erinnerungen halten sich daran. Vorhandene Einträge gehören dem gewählten Hauptbenutzer. Die To-do-Listen bleiben dabei leer. Freigaben folgen in der nächsten Etappe. |
 | **`v1.4.57`** | 31.10.2026 | **Ausgewählte Kategorie bleibt:** Beide Karten merken sich die gewählte Kategorie nach dem Neuladen der Seite, pro Browser. Bei einer gelöschten Kategorie erscheinen wieder alle. |
 | **`v1.4.56`** | 31.10.2026 | **Einstellungen mit Zurück-Navigation, Live-Status und Kanal-Test:**<br>• **In den Einstellungen bleiben:** Speichern wirkt sofort und führt zurück ins Menü. Jedes Formular kann ohne Speichern zurück, und die Titel zeigen, wo du bist.<br>• **Live-Status:** Das Erinnerungsmenü zeigt, was eingeschaltet ist und welche Erinnerung als Nächstes kommt.<br>• **Kanal-Test:** *Kanäle jetzt testen* sendet eine echte Nachricht und meldet das Ergebnis pro Kanal. |

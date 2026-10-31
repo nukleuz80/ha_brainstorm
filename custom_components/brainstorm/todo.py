@@ -12,6 +12,7 @@ from homeassistant.components.todo import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -20,6 +21,8 @@ from homeassistant.util import dt as dt_util
 from .const import (
     ATTR_DEVICE,
     ATTR_DUE,
+    SHARE_ALL,
+    SHARE_EDIT,
     ATTR_ID,
     ATTR_PRIORITY,
     ATTR_SOURCE,
@@ -134,10 +137,10 @@ class BrainstormTodoList(TodoListEntity):
     @property
     def todo_items(self) -> list[TodoItem] | None:
         """Return the items on this list."""
+        items = self._store.get_ideas_by_category(self._category, status=None)
         # Everyone can read these lists, so private ideas must stay out of them
         if self._store.privacy_enabled:
-            return []
-        items = self._store.get_ideas_by_category(self._category, status=None)
+            items = [item for item in items if self._store.is_shared_with_all(item)]
         todo_items = []
         for item in items:
             if item.get(ATTR_STATUS) == "archived":
@@ -176,6 +179,11 @@ class BrainstormTodoList(TodoListEntity):
             )
         return todo_items
 
+    @property
+    def _user_id(self) -> str | None:
+        """Return the user calling the current action."""
+        return self._context.user_id if self._context else None
+
     async def async_create_todo_item(self, item: TodoItem) -> None:
         """Create a new idea item in this category."""
         await self._store.async_add_idea(
@@ -184,10 +192,15 @@ class BrainstormTodoList(TodoListEntity):
             source="todo_list",
             context=self._context,
             due=_due_from_item(item),
+            # A new entry on a list everyone reads is meant for everyone
+            shares={SHARE_ALL: SHARE_EDIT} if self._store.privacy_enabled else None,
         )
 
     async def async_update_todo_item(self, item: TodoItem) -> None:
         """Update an idea item."""
+        idea = self._store.get_idea(item.uid)
+        if idea is not None and not self._store.can_edit(idea, self._user_id):
+            raise HomeAssistantError("Kein Zugriff auf diesen Eintrag.")
         new_status = (
             "completed"
             if item.status == TodoItemStatus.COMPLETED
@@ -206,5 +219,8 @@ class BrainstormTodoList(TodoListEntity):
     async def async_delete_todo_items(self, uids: list[str]) -> None:
         """Delete idea items."""
         for uid in uids:
+            idea = self._store.get_idea(uid)
+            if idea is not None and not self._store.is_owner(idea, self._user_id):
+                raise HomeAssistantError("Kein Zugriff auf diesen Eintrag.")
             await self._store.async_delete_idea(uid, context=self._context)
 

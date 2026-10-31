@@ -5,7 +5,7 @@ from datetime import timedelta
 from typing import Any
 
 from homeassistant.core import Context, HomeAssistant
-from homeassistant.exceptions import ServiceValidationError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import llm
 from homeassistant.setup import async_setup_component
 from homeassistant.util import dt as dt_util
@@ -238,7 +238,7 @@ async def test_shared_actions_need_an_admin(
         )
 
 
-async def test_todo_lists_stay_empty(
+async def test_todo_lists_hide_private_ideas(
     hass: HomeAssistant, setup_entry: SetupEntry
 ) -> None:
     """Test the lists, which every user can read."""
@@ -468,3 +468,263 @@ async def test_options_require_main_user(
     assert result["step_id"] == "init"
     assert entry.options["privacy_owner"] == hass_admin_user.id
     assert hass.states.get(OVERVIEW_ENTITY_ID).attributes["privacy"] is True
+
+
+async def _share(hass: HomeAssistant, user: str | None, **data: Any) -> Any:
+    """Call the share service as a user."""
+    return await hass.services.async_call(
+        "brainstorm",
+        "share",
+        data,
+        blocking=True,
+        return_response=True,
+        context=Context(user_id=user),
+    )
+
+
+async def test_share_single_idea_with_levels(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test viewing and editing a shared idea, and taking it back."""
+    entry = await _private(setup_entry)
+    store = entry.runtime_data
+    third = "user-sava"
+
+    await _share(hass, OWNER, ids=["oldidea1"], shares={OTHER: "view", third: "edit"})
+    idea = store.get_idea("oldidea1")
+    assert store.access_level(idea, OTHER) == "view"
+    assert store.access_level(idea, third) == "edit"
+    assert "alte geheime idee" in _texts(store.visible_ideas(OTHER))
+
+    with pytest.raises(ServiceValidationError):
+        await hass.services.async_call(
+            "brainstorm",
+            "update_idea",
+            {"id": "oldidea1", "text": "geändert"},
+            blocking=True,
+            context=Context(user_id=OTHER),
+        )
+    await hass.services.async_call(
+        "brainstorm",
+        "update_idea",
+        {"id": "oldidea1", "status": "completed"},
+        blocking=True,
+        context=Context(user_id=third),
+    )
+    assert store.get_idea("oldidea1")["status"] == "completed"
+
+    # Deleting and passing on stay with the owner
+    with pytest.raises(ServiceValidationError):
+        await hass.services.async_call(
+            "brainstorm",
+            "delete_idea",
+            {"id": "oldidea1"},
+            blocking=True,
+            context=Context(user_id=third),
+        )
+    with pytest.raises(ServiceValidationError):
+        await _share(hass, third, ids=["oldidea1"], shares={"all": "view"})
+
+    await _share(hass, OWNER, ids=["oldidea1"], shares={OTHER: None})
+    assert store.access_level(store.get_idea("oldidea1"), OTHER) is None
+
+
+async def test_share_several_ideas_at_once(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test sharing more than one idea in one call."""
+    entry = await _private(setup_entry)
+    store = entry.runtime_data
+    second = await store.async_add_idea("noch eine", context=Context(user_id=OWNER))
+
+    response = await _share(
+        hass, OWNER, ids=["oldidea1", second["id"]], shares={OTHER: "view"}
+    )
+
+    assert response["changed"] == 2
+    assert {"alte geheime idee", second["text"].lower()} <= _texts(
+        store.visible_ideas(OTHER)
+    )
+
+
+async def test_cannot_share_foreign_idea_among_own(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that one foreign idea stops the whole call, changing nothing."""
+    entry = await _private(setup_entry)
+    store = entry.runtime_data
+    mine = await store.async_add_idea("meine", context=Context(user_id=OTHER))
+
+    with pytest.raises(ServiceValidationError):
+        await _share(hass, OTHER, ids=[mine["id"], "oldidea1"], shares={"x": "view"})
+
+    assert not store.get_idea(mine["id"]).get("shares")
+
+
+async def test_share_category_includes_later_ideas_and_survives_reload(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test sharing a whole category of one owner."""
+    entry = await _private(setup_entry)
+    store = entry.runtime_data
+    await store.async_add_idea(
+        "einkaufen", category="Alltag", context=Context(user_id=OWNER)
+    )
+    await store.async_add_idea(
+        "lenjas alltag", category="Alltag", context=Context(user_id=OTHER)
+    )
+
+    await _share(hass, OWNER, category="Alltag", shares={OTHER: "view"})
+    await store.async_add_idea(
+        "später dazu", category="Alltag", context=Context(user_id=OWNER)
+    )
+    assert {"einkaufen", "später dazu"} <= _texts(store.visible_ideas(OTHER))
+    assert "alte geheime idee" not in _texts(store.visible_ideas(OTHER))
+    # Someone else's ideas in the same category are not part of the share
+    assert "lenjas alltag" not in _texts(store.visible_ideas("user-sava"))
+
+    await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert "einkaufen" in _texts(entry.runtime_data.visible_ideas(OTHER))
+
+    await _share(hass, OWNER, category="Alltag", shares={OTHER: None})
+    assert "einkaufen" not in _texts(entry.runtime_data.visible_ideas(OTHER))
+
+
+async def test_share_needs_privacy_and_a_target(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test the errors of the share service."""
+    await setup_entry()
+    with pytest.raises(ServiceValidationError):
+        await _share(hass, OWNER, ids=["a"], shares={OTHER: "view"})
+
+
+async def test_share_needs_exactly_one_target(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that either ideas or a category have to be named."""
+    await _private(setup_entry)
+    with pytest.raises(ServiceValidationError):
+        await _share(hass, OWNER, shares={OTHER: "view"})
+    with pytest.raises(ServiceValidationError):
+        await _share(hass, OWNER, ids=["oldidea1"], category="Alltag", shares={})
+
+
+async def test_todo_lists_show_what_is_shared_with_all(
+    hass: HomeAssistant, setup_entry: SetupEntry, hass_admin_user: Any
+) -> None:
+    """Test the normal lists with sharing."""
+    entry = await _private(setup_entry)
+    entity_id = next(
+        state.entity_id
+        for state in hass.states.async_all("todo")
+        if state.entity_id.endswith("inbox")
+    )
+
+    async def items() -> list[dict[str, Any]]:
+        result = await hass.services.async_call(
+            "todo",
+            "get_items",
+            {},
+            target={"entity_id": entity_id},
+            blocking=True,
+            return_response=True,
+        )
+        return result[entity_id]["items"]
+
+    assert await items() == []
+    await _share(hass, OWNER, ids=["oldidea1"], shares={"all": "view"})
+    assert [i["summary"].lower() for i in await items()] == ["alte geheime idee"]
+
+    # Read-only for others, also through the list
+    with pytest.raises(HomeAssistantError):
+        await hass.services.async_call(
+            "todo",
+            "update_item",
+            {"item": "oldidea1", "rename": "geändert"},
+            target={"entity_id": entity_id},
+            blocking=True,
+            context=Context(user_id=hass_admin_user.id),
+        )
+
+    # A new entry on a list is meant for everyone who reads that list
+    await hass.services.async_call(
+        "todo",
+        "add_item",
+        {"item": "für alle"},
+        target={"entity_id": entity_id},
+        blocking=True,
+        context=Context(user_id=hass_admin_user.id),
+    )
+    assert "für alle" in [i["summary"].lower() for i in await items()]
+    assert "für alle" in _texts(entry.runtime_data.visible_ideas("user-sava"))
+
+
+async def test_reminder_for_person_shares_idea(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that someone who is reminded of an idea can also see it."""
+    hass.states.async_set("person.lenja", "home", {"user_id": OTHER})
+    entry = await _private(setup_entry)
+    store = entry.runtime_data
+
+    idea = await store.async_add_idea(
+        "termin", assignee="person.lenja", context=Context(user_id=OWNER)
+    )
+    assert store.access_level(store.get_idea(idea["id"]), OTHER) == "edit"
+
+    second = await store.async_add_idea("zweiter", context=Context(user_id=OWNER))
+    await hass.services.async_call(
+        "brainstorm",
+        "update_idea",
+        {"id": second["id"], "assignee": "person.lenja"},
+        blocking=True,
+        context=Context(user_id=OWNER),
+    )
+    assert store.access_level(store.get_idea(second["id"]), OTHER) == "edit"
+
+
+async def test_websocket_reports_access_and_people(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_ws_client: WebSocketGenerator,
+    hass_read_only_access_token: str,
+    hass_owner_user: Any,
+) -> None:
+    """Test what the card gets: rights, owner's name and who can be chosen."""
+    assert await async_setup_component(hass, "websocket_api", {})
+    entry = await setup_entry(
+        options={"privacy_enabled": True, "privacy_owner": hass_owner_user.id}
+    )
+    store = entry.runtime_data
+    refresh = hass.auth.async_validate_access_token(hass_read_only_access_token)
+    reader = refresh.user
+    own = await store.async_add_idea("von besitzer", context=Context(user_id=hass_owner_user.id))
+    await store.async_set_idea_shares([own["id"]], {reader.id: "view"}, hass_owner_user.id)
+
+    client = await hass_ws_client(hass, hass_read_only_access_token)
+    await client.send_json_auto_id({"type": "brainstorm/ideas"})
+    result = (await client.receive_json())["result"]
+
+    idea = result["ideas"][0]
+    assert idea["access"] == "view"
+    assert idea["owner_name"] == hass_owner_user.name
+    # Who else can see it stays with the owner
+    assert "shares" not in idea
+    assert result["current_user"] == reader.id
+    assert reader.id not in [u["id"] for u in result["share_users"]]
+    assert hass_owner_user.id in [u["id"] for u in result["share_users"]]
+
+
+async def test_no_extra_fields_without_privacy(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that nothing about owners appears in the public sensor when off."""
+    entry = await setup_entry()
+    await entry.runtime_data.async_add_idea("offen", context=Context(user_id=OTHER))
+
+    idea = hass.states.get(OVERVIEW_ENTITY_ID).attributes["ideas"][0]
+
+    assert "owner" not in idea
+    assert "access" not in idea

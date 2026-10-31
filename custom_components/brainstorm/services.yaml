@@ -318,4 +318,25 @@ reorder_ideas:
       selector:
         object:
 
-
+share:
+  name: Freigeben
+  description: Gibt mehrere Einträge oder eine ganze Kategorie für Personen frei. Braucht eingeschaltete Privatsphäre.
+  fields:
+    ids:
+      name: Einträge
+      description: IDs der freizugebenden Einträge.
+      required: false
+      selector:
+        object:
+    category:
+      name: Kategorie
+      description: Alle eigenen Einträge dieser Kategorie freigeben, auch spätere.
+      required: false
+      selector:
+        text:
+    shares:
+      name: Freigaben
+      description: 'Benutzer-ID (oder "all") und Stufe, z. B. {"all": "view"}. Stufen sind view und edit; null entfernt die Freigabe.'
+      required: true
+      selector:
+        object:

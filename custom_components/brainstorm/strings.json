@@ -262,16 +262,18 @@
       },
       "privacy": {
         "title": "Brainstorm › Privacy & Users",
-        "description": "Off: everyone sees all ideas, as before. On: every idea belongs to its creator, and only they can see it in the cards. Sharing follows in a later version.\n\nNote: To-do lists stay empty while this is on, because everyone can read them. Admins can always read all data.",
+        "description": "Off: everyone sees all ideas, as before. On: every idea belongs to its creator, and only they and the people it is shared with can see it in the cards. Share entries by long-pressing them on the card.\n\nNote: To-do lists only show ideas shared with everyone, because everyone can read them. Admins can always read all data.",
         "data": {
           "privacy_enabled": "Keep ideas private",
           "privacy_owner": "Main user",
           "privacy_export": "Keep exporting to Markdown files",
-          "go_back": "⬅️ Back, without saving"
+          "go_back": "⬅️ Back, without saving",
+          "share_users": "Offer these users for sharing"
         },
         "data_description": {
           "privacy_owner": "Owns all existing ideas, and everything said to an Echo. Voice, briefing and review only mention this person's ideas.",
-          "privacy_export": "These files contain all ideas and can be read by anyone with access to the config folder."
+          "privacy_export": "These files contain all ideas and can be read by anyone with access to the config folder.",
+          "share_users": "Leave empty to offer everyone. Use this to hide technical accounts such as MQTT."
         }
       }
     },

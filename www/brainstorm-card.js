@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.58 - Private Ideas per User, Foundation
+ * Version 1.4.59 - Sharing Ideas and Categories
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",
@@ -523,6 +523,99 @@ class BrainstormCard extends HTMLElement {
     else if (date.toDateString() === tomorrow.toDateString()) label = `Morgen ${clock}`;
     const overdue = date < now;
     return `<span class="due-badge ${overdue ? "overdue" : ""}" title="${overdue ? "Überfällig" : "Erinnerung"}">⏰ ${label}</span>`;
+  }
+
+  _applyShareFilter(ideas) {
+    if (!this._privacyAttributes) return ideas;
+    const filter = this._shareFilter || "all";
+    if (filter === "mine") return ideas.filter((i) => i.access === "owner");
+    if (filter === "shared") return ideas.filter((i) => i.access !== "owner");
+    return ideas;
+  }
+
+  _renderShareFilter(attributes) {
+    const bar = this.shadowRoot.getElementById("shareFilter");
+    if (!bar) return;
+    if (!attributes.privacy) {
+      bar.style.display = "none";
+      return;
+    }
+    const filter = this._shareFilter || "all";
+    const selected = this._selectedCategory;
+    const canShareCategory = selected && selected !== "all" && selected !== "__completed__";
+    const button = (value, label) =>
+      `<button class="share-filter-btn ${filter === value ? "active" : ""}" data-filter="${value}">${label}</button>`;
+    bar.style.display = "flex";
+    bar.innerHTML = `
+      ${button("all", "Alle")}${button("mine", "Meine")}${button("shared", "Mit mir geteilt")}
+      ${canShareCategory ? `<button class="share-filter-btn share-category-btn" id="shareCategoryBtn">👥 ${this._escapeHtml(selected)} freigeben</button>` : ""}
+    `;
+    bar.querySelectorAll("[data-filter]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        this._shareFilter = btn.getAttribute("data-filter");
+        this._lastUpdated = null;
+        this._updateContent();
+      });
+    });
+    const shareCategory = bar.querySelector("#shareCategoryBtn");
+    if (shareCategory) {
+      shareCategory.addEventListener("click", () => {
+        const shares = (attributes.category_shares || {})[selected] || {};
+        this._showShareDialog(null, selected, shares);
+      });
+    }
+  }
+
+  _formatShareBadge(item) {
+    if (!item.access) return "";
+    if (item.access !== "owner") {
+      const level = item.access === "view" ? "ansehen" : "bearbeiten";
+      return `<span class="due-badge" title="Geteilt von ${this._escapeHtml(item.owner_name || "")}, du darfst ${level}">👥 ${this._escapeHtml(item.owner_name || "Geteilt")}${item.access === "view" ? " 👁️" : ""}</span>`;
+    }
+    const count = Object.keys(item.shares || {}).length;
+    return count ? `<span class="due-badge" title="Für andere freigegeben">👥 ${count}</span>` : "";
+  }
+
+  _showShareDialog(ids, category, current) {
+    const attributes = this._privacyAttributes || {};
+    const users = [{ id: "all", name: "Alle Benutzer" }, ...(attributes.share_users || [])];
+    const title = category ? `👥 ${this._escapeHtml(category)} freigeben` : "👥 Freigeben";
+    this._openDialog(title, (body) => {
+      body.innerHTML = `
+        ${users
+          .map(
+            (user) => `
+          <div class="action-dialog-label">${this._escapeHtml(user.name)}:</div>
+          <select class="action-dialog-input share-level" data-user="${this._escapeHtml(user.id)}" style="cursor: pointer; width: 100%;">
+            <option value="" ${!current[user.id] ? "selected" : ""}>Keine Freigabe</option>
+            <option value="view" ${current[user.id] === "view" ? "selected" : ""}>Ansehen</option>
+            <option value="edit" ${current[user.id] === "edit" ? "selected" : ""}>Bearbeiten</option>
+          </select>`
+          )
+          .join("")}
+        <div class="action-dialog-error" id="shareError" style="display: none;"></div>
+        <div class="action-dialog-actions" style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px;">
+          <button class="action-dialog-btn action-dialog-btn-cancel" id="cancelShareBtn">Abbrechen</button>
+          <button class="action-dialog-btn action-dialog-btn-primary" id="saveShareBtn">Speichern</button>
+        </div>
+      `;
+      body.querySelector("#cancelShareBtn").addEventListener("click", () => this._closeDialog());
+      body.querySelector("#saveShareBtn").addEventListener("click", async () => {
+        const shares = {};
+        body.querySelectorAll(".share-level").forEach((select) => {
+          shares[select.getAttribute("data-user")] = select.value || null;
+        });
+        const payload = category ? { category, shares } : { ids, shares };
+        try {
+          await this._hass.callService("brainstorm", "share", payload);
+          this._closeDialog();
+        } catch (err) {
+          const error = body.querySelector("#shareError");
+          error.textContent = err.message || "Freigabe fehlgeschlagen.";
+          error.style.display = "block";
+        }
+      });
+    });
   }
 
   _formatTargetBadges(item) {
@@ -1177,6 +1270,16 @@ class BrainstormCard extends HTMLElement {
 
     actionsHtml += `<div class="apple-menu-separator"></div>`;
 
+    // Share
+    if (item.access === "owner") {
+      actionsHtml += `
+        <button class="apple-menu-btn" data-act="share">
+          <span class="btn-icon">👥</span>
+          <div class="btn-content"><span>Freigeben</span></div>
+        </button>
+      `;
+    }
+
     // Reminder
     actionsHtml += `
       <button class="apple-menu-btn" data-act="due-evening">
@@ -1227,6 +1330,11 @@ class BrainstormCard extends HTMLElement {
         e.stopPropagation();
         this._closeContextMenu();
         const act = btn.getAttribute("data-act");
+
+        if (act === "share") {
+          this._showShareDialog([item.id], null, item.shares || {});
+          return;
+        }
 
         if (act && act.startsWith("due-")) {
           await this._setItemDue(item.id, act);
@@ -2472,6 +2580,28 @@ class BrainstormCard extends HTMLElement {
           background: color-mix(in srgb, #10b981 12%, var(--card-background-color, #ffffff));
           border: 1px solid color-mix(in srgb, #10b981 25%, transparent);
         }
+        .share-filter {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+          margin-bottom: 10px;
+        }
+        .share-filter-btn {
+          min-height: 32px;
+          padding: 4px 10px;
+          border: 1px solid var(--divider-color);
+          border-radius: 16px;
+          background: transparent;
+          color: var(--primary-text-color);
+          font: inherit;
+          font-size: 0.8rem;
+          cursor: pointer;
+        }
+        .share-filter-btn.active {
+          background: var(--primary-color);
+          border-color: var(--primary-color);
+          color: var(--text-primary-color, #fff);
+        }
         .due-badge {
           display: inline-flex;
           align-items: center;
@@ -2857,6 +2987,7 @@ class BrainstormCard extends HTMLElement {
 
           <div class="pills" id="pillsContainer" style="display: ${this._config.show_categories === true ? "flex" : "none"};"></div>
 
+          <div class="share-filter" id="shareFilter" style="display: none;"></div>
           <div class="ideas-list" id="ideasList"></div>
         </div>
 
@@ -3040,8 +3171,10 @@ class BrainstormCard extends HTMLElement {
       const categories = attributes.categories || ["Inbox", "Smarthome", "Haus & Garten", "Projekte", "Alltag"];
       this._checkSavedCategory(categories);
       const counts = attributes.category_counts || {};
-      const activeIdeas = attributes.ideas || [];
-      const completedIdeas = attributes.completed_ideas || [];
+      this._privacyAttributes = attributes.privacy ? attributes : null;
+      const activeIdeas = this._applyShareFilter(attributes.ideas || []);
+      const completedIdeas = this._applyShareFilter(attributes.completed_ideas || []);
+      this._renderShareFilter(attributes);
       const completedCount = attributes.completed_count || completedIdeas.length || 0;
       const isCompletedView = this._selectedCategory === "__completed__";
 
@@ -3315,25 +3448,30 @@ class BrainstormCard extends HTMLElement {
         ideasList.innerHTML = orderedIdeas
           .map((item, idx) => {
             const isSub = item.isSubtask === true;
+            // Without privacy, every idea has full access as before
+            const itemEdit = canEdit && item.access !== "view";
+            const itemDelete = canDelete && (!item.access || item.access === "owner");
             return `
             <div class="idea-item ${isSub ? "is-subtask" : ""} ${isCompletedView ? "completed" : ""}" data-id="${item.id}" data-idx="${idx}" style="--item-cat-color: ${this._getCategoryColor(item.category)};">
-              ${!isCompletedView && canEdit ? `<span class="drag-handle" title="Halten & Ziehen zum Sortieren oder Unteraufgabe zuordnen" data-id="${item.id}">⠿</span>` : ""}
+              ${!isCompletedView && itemEdit ? `<span class="drag-handle" title="Halten & Ziehen zum Sortieren oder Unteraufgabe zuordnen" data-id="${item.id}">⠿</span>` : ""}
               <button 
                 class="check-btn ${isCompletedView ? "checked" : ""}" 
                 title="${isCompletedView ? "Wieder als aktiv markieren" : "Als erledigt markieren"}" 
                 data-id="${item.id}"
                 data-completed="${isCompletedView ? "true" : "false"}"
+                ${item.access === "view" ? "disabled" : ""}
               >${isCompletedView ? "✓" : ""}</button>
               <div class="idea-content">
-                <div class="idea-text" title="${canEdit ? "Klicken zum Bearbeiten (Lange drücken für Kontextmenü)" : ""}" data-id="${item.id}" style="${canEdit ? "" : "cursor: default;"}">
+                <div class="idea-text" title="${itemEdit ? "Klicken zum Bearbeiten (Lange drücken für Kontextmenü)" : ""}" data-id="${item.id}" style="${itemEdit ? "" : "cursor: default;"}">
                   ${isSub ? `<span class="subtask-indicator" title="Unteraufgabe">↳</span>` : ""}${this._escapeHtml(item.text)}
                 </div>
                 <div class="idea-meta">
                   ${isSub ? `<span class="subtask-badge" title="Unteraufgabe">Unteraufgabe</span>` : ""}
-                  <span class="category-tag ${canEdit ? "clickable" : ""}" title="${canEdit ? "Kategorie ändern" : "Kategorie"}" data-id="${item.id}" data-cat="${this._escapeHtml(item.category)}" style="color: ${this._getCategoryColor(item.category)}; background: color-mix(in srgb, ${this._getCategoryColor(item.category)} 12%, var(--secondary-background-color, rgba(0,0,0,0.06))); border: 1px solid color-mix(in srgb, ${this._getCategoryColor(item.category)} 25%, transparent);"><ha-icon icon="${this._getCategoryIcon(item.category)}" style="--mdc-icon-size: 11px; width: 11px; height: 11px; margin-right: 3px; display: inline-flex; align-items: center; vertical-align: middle;"></ha-icon>${this._escapeHtml(item.category)}</span>
+                  <span class="category-tag ${itemEdit ? "clickable" : ""}" title="${itemEdit ? "Kategorie ändern" : "Kategorie"}" data-id="${item.id}" data-cat="${this._escapeHtml(item.category)}" style="color: ${this._getCategoryColor(item.category)}; background: color-mix(in srgb, ${this._getCategoryColor(item.category)} 12%, var(--secondary-background-color, rgba(0,0,0,0.06))); border: 1px solid color-mix(in srgb, ${this._getCategoryColor(item.category)} 25%, transparent);"><ha-icon icon="${this._getCategoryIcon(item.category)}" style="--mdc-icon-size: 11px; width: 11px; height: 11px; margin-right: 3px; display: inline-flex; align-items: center; vertical-align: middle;"></ha-icon>${this._escapeHtml(item.category)}</span>
                   ${this._getPriorityBadge(item.priority, item.id)}
                   ${item.due ? this._formatDueBadge(item.due) : ""}
                   ${this._formatTargetBadges(item)}
+                  ${this._formatShareBadge(item)}
                   ${showSource ? `${this._getSourceBadge(item.source, item.device)}` : ""}
                   ${showSource && showTime ? `<span>•</span>` : ""}
                   ${showTime ? `<span>${this._formatTime(item.created_at)}</span>` : ""}
@@ -3341,7 +3479,7 @@ class BrainstormCard extends HTMLElement {
               </div>
               <div class="item-actions">
                 ${
-                  canEdit
+                  itemEdit
                     ? isSub
                       ? `<button class="indent-btn outdent-btn" title="Ausrücken (zu Hauptaufgabe)" data-id="${item.id}" data-action="outdent">↰</button>`
                       : item.candidateParentId
@@ -3349,8 +3487,8 @@ class BrainstormCard extends HTMLElement {
                       : ""
                     : ""
                 }
-                ${canEdit ? `<button class="edit-btn" title="Bearbeiten" data-id="${item.id}">✎</button>` : ""}
-                ${canDelete ? `<button class="delete-btn" title="Löschen" data-id="${item.id}">✕</button>` : ""}
+                ${itemEdit ? `<button class="edit-btn" title="Bearbeiten" data-id="${item.id}">✎</button>` : ""}
+                ${itemDelete ? `<button class="delete-btn" title="Löschen" data-id="${item.id}">✕</button>` : ""}
               </div>
             </div>
           `;
@@ -3439,7 +3577,7 @@ class BrainstormCard extends HTMLElement {
             const id = el.getAttribute("data-id");
             const idx = parseInt(el.getAttribute("data-idx"), 10);
             const item = orderedIdeas[idx];
-            if (!item) return;
+            if (!item || item.access === "view") return;
 
             let prevTop = null;
             if (item.candidateParentId) {
@@ -4198,7 +4336,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.4.58 ",
+  "%c BRAINSTORM-CARD %c v1.4.59 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

@@ -1,6 +1,6 @@
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.4.58 - Private Ideas per User, Foundation
+ * Version: 1.4.59 - Sharing Ideas and Categories
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -492,6 +492,10 @@ class BrainstormMindmapCard extends HTMLElement {
       parts.push(`📍 ${idea.trigger.zone === "zone.home" ? "Zuhause" : name(idea.trigger.zone)}`);
     }
     if (idea.assignee) parts.push(`👤 ${name(idea.assignee)}`);
+    if (idea.access && idea.access !== "owner") parts.push(`👥 ${idea.owner_name || "Geteilt"}`);
+    if (idea.access === "owner" && Object.keys(idea.shares || {}).length) {
+      parts.push(`👥 ${Object.keys(idea.shares).length}`);
+    }
     return parts.map((part) => `<span class="reminder-tag">${this._escapeHtml(part)}</span>`).join("");
   }
 
@@ -3465,7 +3469,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.58 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.59 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

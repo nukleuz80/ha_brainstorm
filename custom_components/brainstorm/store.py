@@ -21,6 +21,11 @@ from .const import (
     ATTR_ALEXA_NATIVE,
     ATTR_ASSIGNEE,
     ATTR_OWNER,
+    ATTR_SHARES,
+    ACCESS_OWNER,
+    SHARE_ALL,
+    SHARE_EDIT,
+    SHARE_VIEW,
     ATTR_DEVICE,
     ATTR_DUE,
     ATTR_TRIGGER,
@@ -410,6 +415,7 @@ class BrainstormStore:
         self._voice_mode = self.options.get(CONF_VOICE_MODE, VOICE_MODE_NATIVE)
         self._default_category = self.options.get("default_category", "Inbox")
         self._last_action: dict[str, Any] | None = None
+        self._category_shares: dict[str, dict[str, dict[str, str]]] = {}
         self.integration_version: str | None = None
         self.alexa_skill: AlexaSkill | None = None
         self.reminders: ReminderManager | None = None
@@ -443,11 +449,86 @@ class BrainstormStore:
         """Return the owner of an idea, ideas from before belong to the main user."""
         return idea.get(ATTR_OWNER) or self._privacy_owner
 
-    def can_access(self, idea: dict[str, Any], user_id: str | None) -> bool:
-        """Return whether a user may see and change an idea, None being the system."""
+    def access_level(self, idea: dict[str, Any], user_id: str | None) -> str | None:
+        """Return what a user may do with an idea, None being the system."""
         if not self._privacy_enabled or user_id is None:
-            return True
-        return self.owner_of(idea) == user_id
+            return ACCESS_OWNER
+        owner = self.owner_of(idea)
+        if owner == user_id:
+            return ACCESS_OWNER
+        category_shares = self._category_shares.get(owner or "", {}).get(
+            idea.get(ATTR_CATEGORY) or "", {}
+        )
+        levels = {
+            (idea.get(ATTR_SHARES) or {}).get(user_id),
+            (idea.get(ATTR_SHARES) or {}).get(SHARE_ALL),
+            category_shares.get(user_id),
+            category_shares.get(SHARE_ALL),
+        }
+        if SHARE_EDIT in levels:
+            return SHARE_EDIT
+        return SHARE_VIEW if SHARE_VIEW in levels else None
+
+    def can_access(self, idea: dict[str, Any], user_id: str | None) -> bool:
+        """Return whether a user may see an idea."""
+        return self.access_level(idea, user_id) is not None
+
+    def can_edit(self, idea: dict[str, Any], user_id: str | None) -> bool:
+        """Return whether a user may change or complete an idea."""
+        return self.access_level(idea, user_id) in (ACCESS_OWNER, SHARE_EDIT)
+
+    def is_owner(self, idea: dict[str, Any], user_id: str | None) -> bool:
+        """Return whether a user may delete and share an idea."""
+        return self.access_level(idea, user_id) == ACCESS_OWNER
+
+    def is_shared_with_all(self, idea: dict[str, Any]) -> bool:
+        """Return whether every Home Assistant user may see an idea."""
+        category_shares = self._category_shares.get(self.owner_of(idea) or "", {}).get(
+            idea.get(ATTR_CATEGORY) or "", {}
+        )
+        return SHARE_ALL in (idea.get(ATTR_SHARES) or {}) or SHARE_ALL in category_shares
+
+    def _person_user(self, person: str | None) -> str | None:
+        """Return the Home Assistant user of a person."""
+        state = self.hass.states.get(person) if person else None
+        return state.attributes.get("user_id") if state else None
+
+    async def async_set_idea_shares(
+        self,
+        idea_ids: list[str],
+        shares: dict[str, str | None],
+        user_id: str | None,
+    ) -> int:
+        """Change who may see several ideas at once, returning how many changed."""
+        ideas = [self._ideas[idea_id] for idea_id in idea_ids if idea_id in self._ideas]
+        if any(not self.is_owner(idea, user_id) for idea in ideas):
+            raise ServiceValidationError("Nur Besitzer dürfen Einträge freigeben.")
+        for idea in ideas:
+            current = dict(idea.get(ATTR_SHARES) or {})
+            for target, level in shares.items():
+                if level is None:
+                    current.pop(target, None)
+                else:
+                    current[target] = level
+            idea[ATTR_SHARES] = current
+        await self.async_save()
+        self._notify_listeners()
+        return len(ideas)
+
+    async def async_set_category_shares(
+        self, owner: str, category: str, shares: dict[str, str | None]
+    ) -> None:
+        """Change who may see all of one owner's ideas in a category."""
+        owner_shares = self._category_shares.setdefault(owner, {})
+        current = dict(owner_shares.get(category) or {})
+        for target, level in shares.items():
+            if level is None:
+                current.pop(target, None)
+            else:
+                current[target] = level
+        owner_shares[category] = current
+        await self.async_save()
+        self._notify_listeners()
 
     def visible_ideas(self, user_id: str | None = None) -> list[dict[str, Any]]:
         """Return the ideas a user may see."""
@@ -497,13 +578,21 @@ class BrainstormStore:
             }
 
         def details(idea: dict[str, Any]) -> dict[str, Any]:
-            return {
+            result = {
                 **summary(idea),
                 "id": idea.get(ATTR_ID),
                 "status": idea.get(ATTR_STATUS),
                 "parent_id": idea.get(ATTR_PARENT_ID),
                 "order": idea.get(ATTR_ORDER),
             }
+            if self._privacy_enabled:
+                access = self.access_level(idea, user_id)
+                result["access"] = access
+                result["owner"] = self.owner_of(idea)
+                # Only the owner needs to know who else can see an idea
+                if access == ACCESS_OWNER:
+                    result[ATTR_SHARES] = idea.get(ATTR_SHARES) or {}
+            return result
 
         last_action = self.last_action
         if self._privacy_enabled and last_action is not None:
@@ -538,6 +627,7 @@ class BrainstormStore:
                 for i in active_ideas
             ],
             "completed_ideas": [details(i) for i in completed_ideas[:50]],
+            "category_shares": self._category_shares.get(user_id or "", {}),
         }
 
     @property
@@ -628,6 +718,7 @@ class BrainstormStore:
                     self._categories.insert(0, "Inbox")
             self._category_icons = data.get("category_icons", {})
             self._category_colors = data.get("category_colors", {})
+            self._category_shares = data.get("category_shares", {})
             _LOGGER.debug(
                 "Loaded %d ideas and %d categories from storage",
                 len(self._ideas),
@@ -643,6 +734,7 @@ class BrainstormStore:
             "categories": self._categories,
             "category_icons": self._category_icons,
             "category_colors": self._category_colors,
+            "category_shares": self._category_shares,
             "ideas": list(self._ideas.values()),
         }
         await self._store.async_save(data)
@@ -918,6 +1010,7 @@ class BrainstormStore:
         assignee: str | None = None,
         trigger: dict[str, str | None] | None = None,
         owner: str | None = None,
+        shares: dict[str, str] | None = None,
     ) -> dict[str, Any]:
         """Add a new brainstorm idea."""
         raw_check = (text or "").strip().lower()
@@ -967,7 +1060,11 @@ class BrainstormStore:
             ATTR_ASSIGNEE: assignee,
             ATTR_TRIGGER: trigger,
             ATTR_OWNER: owner or (context.user_id if context else None),
+            ATTR_SHARES: shares or {},
         }
+        # Someone who is meant to be reminded also has to see the idea
+        if assignee_user := self._person_user(assignee):
+            idea[ATTR_SHARES].setdefault(assignee_user, SHARE_EDIT)
 
         act_context = context or Context()
         self._last_action = {

@@ -776,7 +776,7 @@ class AlexaSkill:
             if cleaned
             else self._ideas.last_reminded_idea(self._ideas.voice_user_id)
         )
-        if idea is None:
+        if idea is None or not self._ideas.can_edit(idea, self._ideas.voice_user_id):
             return self._speech(
                 "Diesen Eintrag habe ich nicht gefunden.", "I could not find that idea."
             )

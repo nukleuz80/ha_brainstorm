@@ -63,7 +63,7 @@ def _may_access(
 ) -> bool:
     """Return whether the user who is asking may change an idea."""
     idea = store.get_idea(idea_id)
-    return idea is None or store.can_access(idea, _user_id(llm_context))
+    return idea is None or store.can_edit(idea, _user_id(llm_context))
 
 
 def _error(message: str) -> llm.ToolResult:
@@ -435,7 +435,8 @@ class BrainstormDeleteIdeaTool(llm.Tool):
 
         if not target_id:
             return _error("No matching idea found to delete")
-        if not _may_access(store, target_id, llm_context):
+        target = store.get_idea(target_id)
+        if target is not None and not store.is_owner(target, _user_id(llm_context)):
             return _error("No matching idea found to delete")
 
         deleted = await store.async_delete_idea(

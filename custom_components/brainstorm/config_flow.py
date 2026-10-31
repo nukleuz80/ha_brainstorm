@@ -52,6 +52,7 @@ from .const import (
     CONF_REVIEW_ENABLED,
     CONF_REVIEW_TIME,
     CONF_REVIEW_WEEKDAY,
+    CONF_SHARE_USERS,
     CONF_HIDE_EMPTY_CATEGORIES,
     CONF_MARKDOWN_PATH,
     CONF_SMART_FORMATTING,
@@ -663,6 +664,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             if user_input[CONF_PRIVACY_ENABLED] and not user_input.get(CONF_PRIVACY_OWNER):
                 errors[CONF_PRIVACY_OWNER] = "owner_required"
             else:
+                options.pop(CONF_SHARE_USERS, None)
                 options.update(user_input)
                 return await self._async_saved(options, "init")
 
@@ -687,6 +689,16 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                         ): selector.SelectSelector(
                             selector.SelectSelectorConfig(
                                 options=users,
+                                mode=selector.SelectSelectorMode.DROPDOWN,
+                            )
+                        ),
+                        vol.Optional(
+                            CONF_SHARE_USERS,
+                            description=_suggested(options, CONF_SHARE_USERS),
+                        ): selector.SelectSelector(
+                            selector.SelectSelectorConfig(
+                                options=users,
+                                multiple=True,
                                 mode=selector.SelectSelectorMode.DROPDOWN,
                             )
                         ),

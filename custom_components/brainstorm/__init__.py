@@ -39,6 +39,8 @@ from .const import (
     PLATFORMS,
     SERVICE_REORDER_IDEAS,
     SERVICE_SET_CATEGORY_STYLE,
+    SHARE_EDIT,
+    SHARE_VIEW,
     VOICE_MODE_NATIVE,
 )
 from .llm import async_register_llm_api
@@ -54,6 +56,7 @@ SERVICE_ADD_IDEA = "add_idea"
 SERVICE_UPDATE_IDEA = "update_idea"
 SERVICE_DELETE_IDEA = "delete_idea"
 SERVICE_GET_IDEAS = "get_ideas"
+SERVICE_SHARE = "share"
 SERVICE_ADD_CATEGORY = "add_category"
 SERVICE_REMOVE_CATEGORY = "remove_category"
 SERVICE_EXPORT_MARKDOWN = "export_markdown"
@@ -97,6 +100,14 @@ SERVICE_UPDATE_IDEA_SCHEMA = vol.Schema(
         vol.Optional(ATTR_ZONE): vol.Any(None, cv.entity_id),
     },
     extra=vol.ALLOW_EXTRA,
+)
+
+SERVICE_SHARE_SCHEMA = vol.Schema(
+    {
+        vol.Optional("ids"): vol.All(cv.ensure_list, [cv.string]),
+        vol.Optional(ATTR_CATEGORY): cv.string,
+        vol.Required("shares"): {cv.string: vol.In([None, SHARE_VIEW, SHARE_EDIT])},
+    }
 )
 
 SERVICE_REORDER_IDEAS_SCHEMA = vol.Schema(
@@ -223,10 +234,17 @@ def _get_active_store(hass: HomeAssistant) -> BrainstormStore | None:
     return data.get("primary_store")
 
 
-def _check_idea_access(store: BrainstormStore, idea_id: str, call: ServiceCall) -> None:
-    """Refuse changes to someone else's private idea."""
+def _check_idea_edit(store: BrainstormStore, idea_id: str, call: ServiceCall) -> None:
+    """Refuse changes without the right to edit an idea."""
     idea = store.get_idea(idea_id)
-    if idea is not None and not store.can_access(idea, call.context.user_id):
+    if idea is not None and not store.can_edit(idea, call.context.user_id):
+        raise ServiceValidationError(f"Kein Zugriff auf Idee '{idea_id}'.")
+
+
+def _check_idea_owner(store: BrainstormStore, idea_id: str, call: ServiceCall) -> None:
+    """Refuse what only the owner of an idea may do."""
+    idea = store.get_idea(idea_id)
+    if idea is not None and not store.is_owner(idea, call.context.user_id):
         raise ServiceValidationError(f"Kein Zugriff auf Idee '{idea_id}'.")
 
 
@@ -293,7 +311,7 @@ def _register_services(hass: HomeAssistant) -> None:
             raise HomeAssistantError("Brainstorm store is not initialized")
 
         idea_id = call.data[ATTR_ID]
-        _check_idea_access(store, idea_id, call)
+        _check_idea_edit(store, idea_id, call)
         text = call.data.get(ATTR_TEXT)
         category = call.data.get(ATTR_CATEGORY)
         priority = call.data.get(ATTR_PRIORITY)
@@ -323,6 +341,11 @@ def _register_services(hass: HomeAssistant) -> None:
             fields: dict[str, Any] = {}
             if ATTR_ASSIGNEE in call.data:
                 fields[ATTR_ASSIGNEE] = call.data[ATTR_ASSIGNEE]
+                state = hass.states.get(call.data[ATTR_ASSIGNEE] or "")
+                if state is not None and state.attributes.get("user_id"):
+                    await store.async_set_idea_shares(
+                        [idea_id], {state.attributes["user_id"]: SHARE_EDIT}, None
+                    )
             if ATTR_ZONE in call.data:
                 person = fields.get(ATTR_ASSIGNEE, updated.get(ATTR_ASSIGNEE))
                 zone = call.data[ATTR_ZONE]
@@ -333,6 +356,29 @@ def _register_services(hass: HomeAssistant) -> None:
             raise ServiceValidationError(f"Idee '{idea_id}' wurde nicht gefunden.")
         return {"success": True, "idea": updated}
 
+    async def handle_share(call: ServiceCall) -> dict[str, Any]:
+        """Share several ideas or a whole category with people."""
+        store = _get_active_store(hass)
+        if not store:
+            raise HomeAssistantError("Brainstorm store is not initialized")
+        if not store.privacy_enabled:
+            raise ServiceValidationError(
+                "Freigaben gibt es nur mit eingeschalteter Privatsphäre."
+            )
+        idea_ids = call.data.get("ids")
+        category = call.data.get(ATTR_CATEGORY)
+        if bool(idea_ids) == bool(category):
+            raise ServiceValidationError("Bitte Einträge oder eine Kategorie angeben.")
+        shares = call.data["shares"]
+        if category:
+            owner = call.context.user_id or store.voice_user_id
+            await store.async_set_category_shares(owner, category, shares)
+            return {"success": True, "category": category}
+        changed = await store.async_set_idea_shares(
+            idea_ids, shares, call.context.user_id
+        )
+        return {"success": True, "changed": changed}
+
     async def handle_reorder_ideas(call: ServiceCall) -> dict[str, Any]:
         """Handle reordering ideas."""
         store = _get_active_store(hass)
@@ -341,7 +387,7 @@ def _register_services(hass: HomeAssistant) -> None:
 
         idea_ids = call.data.get("idea_ids", [])
         for idea_id in idea_ids:
-            _check_idea_access(store, idea_id, call)
+            _check_idea_edit(store, idea_id, call)
         success = await store.async_reorder_ideas(idea_ids)
         return {"success": success}
 
@@ -352,7 +398,7 @@ def _register_services(hass: HomeAssistant) -> None:
             raise HomeAssistantError("Brainstorm store is not initialized")
 
         idea_id = call.data[ATTR_ID]
-        _check_idea_access(store, idea_id, call)
+        _check_idea_owner(store, idea_id, call)
         if not await store.async_delete_idea(idea_id, context=call.context):
             raise ServiceValidationError(f"Idee '{idea_id}' wurde nicht gefunden.")
         return {"success": True}
@@ -477,6 +523,14 @@ def _register_services(hass: HomeAssistant) -> None:
         handle_get_announcement,
         schema=SERVICE_GET_ANNOUNCEMENT_SCHEMA,
         supports_response=SupportsResponse.ONLY,
+    )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_SHARE,
+        handle_share,
+        schema=SERVICE_SHARE_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
     )
 
     hass.services.async_register(
