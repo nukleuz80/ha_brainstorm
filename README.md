@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.4.63-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.4.64-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver-C0C0C0.svg)](https://developers.home-assistant.io/docs/integration_quality_scale_index/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -145,7 +145,7 @@ The fastest way from an iPhone: trigger, speak, done, without opening an app. It
    ```
 5. Choose a trigger: **Settings ➔ Action Button ➔ Shortcut**, **Settings ➔ Accessibility ➔ Touch ➔ Back Tap ➔ Double Tap**, or *"Hey Siri, Brainstorm"*.
 
-The note appears as **🎙️ Siri (iPhone)**. You can choose any device name in the JSON. If the shortcut reports that the data could not be read, the field is not valid JSON, often because the iPhone typed curly quotes. Paste the text or temporarily turn off **Settings ➔ General ➔ Keyboard ➔ Smart Punctuation**.
+The note appears as **Siri (iPhone)** with an Apple logo. You can choose any device name in the JSON. If the shortcut reports that the data could not be read, the field is not valid JSON, often because the iPhone typed curly quotes. Paste the text or temporarily turn off **Settings ➔ General ➔ Keyboard ➔ Smart Punctuation**.
 
 ## 🎙️ Microphone in the Quick Input
 
@@ -195,9 +195,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.4.63
+  - url: /local/brainstorm-card.js?v=1.4.64
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.4.63
+  - url: /local/brainstorm-mindmap-card.js?v=1.4.64
     type: module
 ```
 
@@ -246,6 +246,7 @@ hide_empty_categories: true
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.4.64`** | 2026-11-01 | **Apple Logo for Siri:** Ideas from an iPhone shortcut show an Apple logo. |
 | **`v1.4.63`** | 2026-11-01 | **Documentation:** Added the iPhone shortcut, the microphone, privacy and sharing, and the new services. |
 | **`v1.4.62`** | 2026-11-01 | **Siri as a Source:** Ideas from an iPhone shortcut with the source `siri` now show Siri and their device on both cards. |
 | **`v1.4.61`** | 2026-11-01 | **Assist Microphone in the Quick Input:** A microphone next to the quick input turns speech into text with your preferred Assist pipeline. You can check the text before adding it. It can be switched off in the card settings and needs HTTPS. |

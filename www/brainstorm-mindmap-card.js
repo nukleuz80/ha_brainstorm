@@ -1,6 +1,6 @@
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.4.63 - Documentation Update
+ * Version: 1.4.64 - Apple Logo for Siri
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -444,7 +444,7 @@ class BrainstormMindmapCard extends HTMLElement {
     if (!source && !device) return "📝";
     const s = String(source || "").toLowerCase();
     let icon = "📝";
-    if (s.includes("siri")) icon = "🎙️";
+    if (s.includes("siri")) icon = '<ha-icon icon="mdi:apple" style="--mdc-icon-size: 14px; width: 14px; height: 14px;"></ha-icon>';
     else if (s.includes("assist")) icon = "✨";
     else if (s.includes("alexa") || s.includes("voice") || s.includes("speech")) icon = "🗣️";
     else if (s.includes("mobile") || s.includes("handy") || s.includes("companion")) icon = "📱";
@@ -3470,7 +3470,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.63 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.64 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

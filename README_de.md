@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.4.63-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.4.64-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver-C0C0C0.svg)](https://developers.home-assistant.io/docs/integration_quality_scale_index/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -124,8 +124,8 @@ Klicke einfach auf diesen Button, um das Repository direkt in deiner Home Assist
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js` und `www/brainstorm-mindmap-card.js` in `/config/www/`.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.4.63` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.4.63` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.4.64` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.4.64` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ---
@@ -315,7 +315,7 @@ Der schnellste Weg vom iPhone: auslösen, sprechen, fertig, ganz ohne eine App z
    - **Rückseite:** **Einstellungen ➔ Bedienungshilfen ➔ Tippen ➔ Auf Rückseite tippen ➔ Doppeltippen ➔ Brainstorm**
    - **Siri:** *„Hey Siri, Brainstorm“*
 
-Die Notiz erscheint als **🎙️ Siri (iPhone)**. Den Gerätenamen kannst du im JSON frei wählen.
+Die Notiz erscheint als **Siri (iPhone)** mit Apfel-Logo. Den Gerätenamen kannst du im JSON frei wählen.
 
 > [!TIP]
 > Meldet der Kurzbefehl *„Die Daten konnten nicht gelesen werden“*, ist das Datenfeld kein gültiges JSON. Oft hat das iPhone beim Tippen typografische Anführungszeichen eingesetzt. Füge den Text deshalb per Kopieren ein oder schalte vorübergehend **Einstellungen ➔ Allgemein ➔ Tastatur ➔ Intelligente Interpunktion** aus.
@@ -363,6 +363,7 @@ Die Integration stellt folgende Services bereit:
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.4.64`** | 01.11.2026 | **Apfel-Logo für Siri:** Einträge aus einem iPhone-Kurzbefehl zeigen ein Apfel-Logo. |
 | **`v1.4.63`** | 01.11.2026 | **Dokumentation:** iPhone-Kurzbefehl, Mikrofon, Privatsphäre und Freigaben sowie die neuen Dienste ergänzt. |
 | **`v1.4.62`** | 01.11.2026 | **Siri als Quelle:** Einträge aus einem iPhone-Kurzbefehl mit der Quelle `siri` zeigen auf beiden Karten jetzt Siri und ihr Gerät. |
 | **`v1.4.61`** | 01.11.2026 | **Assist-Mikrofon in der Schnelleingabe:** Ein Mikrofon neben dem Eingabefeld wandelt Sprache mit deiner bevorzugten Assist-Pipeline in Text um. Du kannst den Text vor dem Hinzufügen prüfen. Es lässt sich in den Karteneinstellungen abschalten und braucht HTTPS. |
