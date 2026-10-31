@@ -23,6 +23,7 @@ from .const import (
     ATTR_TEXT,
     DEFAULT_PRIORITY,
     DOMAIN,
+    OVERVIEW_ENTITY_ID,
 )
 from .store import BrainstormStore
 
@@ -51,17 +52,30 @@ class BrainstormOverviewSensor(SensorEntity):
     _attr_has_entity_name = True
     _attr_name = "Brainstorm Ideen Übersicht"
     _attr_icon = "mdi:brain"
+    # The cards read these live; recording them would exceed the 16 KB recorder limit
+    _unrecorded_attributes = frozenset(
+        {
+            "speech_overview",
+            "last_action",
+            "latest_idea",
+            "recent_ideas",
+            "ideas",
+            "completed_ideas",
+        }
+    )
 
     def __init__(self, store: BrainstormStore, entry_id: str) -> None:
         """Initialize the sensor."""
         self._store = store
+        # Cards and logbook expect this ID regardless of the device name
+        self.entity_id = OVERVIEW_ENTITY_ID
         self._attr_unique_id = f"{entry_id}_sensor_overview"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry_id)},
             name="Brainstorm Hub",
             manufacturer="nukleuz80",
             model="Brainstorm Hub",
-            sw_version="1.4.44",
+            sw_version=store.integration_version,
         )
 
     async def async_added_to_hass(self) -> None:

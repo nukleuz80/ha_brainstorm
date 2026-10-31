@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.44 - Last Alexa Display with Entity Selection & Resilient Visual Card Editor
+ * Version 1.4.45 - Last Alexa Display with Entity Selection & Resilient Visual Card Editor
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",
@@ -208,7 +208,7 @@ class BrainstormCard extends HTMLElement {
     const sensor = this._getSensorEntity();
     if (sensor && sensor.attributes && sensor.attributes.category_colors) {
       const customColor = sensor.attributes.category_colors[category];
-      if (customColor) return customColor;
+      if (customColor && CSS.supports("color", customColor)) return customColor;
     }
 
     const catNorm = String(category).trim().toLowerCase();
@@ -285,7 +285,7 @@ class BrainstormCard extends HTMLElement {
     const sensor = this._getSensorEntity();
     if (sensor && sensor.attributes && sensor.attributes.category_icons) {
       const customIcon = sensor.attributes.category_icons[category];
-      if (customIcon) return customIcon;
+      if (customIcon && /^[\w-]+:[\w-]+$/.test(customIcon)) return customIcon;
     }
 
     // 2. Curated default icons
@@ -2924,7 +2924,7 @@ class BrainstormCard extends HTMLElement {
       if (existingOptions.join(",") !== newValues.join(",")) {
         catSelectEl.innerHTML = `
           <option value="auto">Auto (Erkennen)</option>
-          ${categories.map((c) => `<option value="${c}">${c}</option>`).join("")}
+          ${categories.map((c) => `<option value="${this._escapeHtml(c)}">${this._escapeHtml(c)}</option>`).join("")}
         `;
         catSelectEl.value = currentVal;
       }
@@ -2966,12 +2966,12 @@ class BrainstormCard extends HTMLElement {
               ? `background: ${catColor}; border-color: ${catColor}; color: #ffffff;`
               : "";
             return `
-              <div class="pill ${isActive ? "active" : ""}" data-cat="${cat}" style="${pillStyle}">
+              <div class="pill ${isActive ? "active" : ""}" data-cat="${this._escapeHtml(cat)}" style="${pillStyle}">
                 <ha-icon icon="${catIcon}" style="--mdc-icon-size: 14px; width: 14px; height: 14px; margin-right: 4px; display: inline-flex; align-items: center; vertical-align: middle; color: ${isActive ? '#ffffff' : catColor};"></ha-icon>
-                <span>${cat}</span>
+                <span>${this._escapeHtml(cat)}</span>
                 <span class="pill-count">${count}</span>
-                ${isActive ? `<span class="style-cat-btn" title="Design für '${cat}' anpassen" data-stylecat="${cat}" style="margin-left: 4px; font-size: 0.72rem; cursor: pointer; opacity: 0.85;">🎨</span>` : ""}
-                ${canDelete ? `<span class="remove-cat-btn" title="Kategorie '${cat}' löschen" data-delcat="${cat}">✕</span>` : ""}
+                ${isActive ? `<span class="style-cat-btn" title="Design für '${this._escapeHtml(cat)}' anpassen" data-stylecat="${this._escapeHtml(cat)}" style="margin-left: 4px; font-size: 0.72rem; cursor: pointer; opacity: 0.85;">🎨</span>` : ""}
+                ${canDelete ? `<span class="remove-cat-btn" title="Kategorie '${this._escapeHtml(cat)}' löschen" data-delcat="${this._escapeHtml(cat)}">✕</span>` : ""}
               </div>
             `;
           })
@@ -3121,7 +3121,7 @@ class BrainstormCard extends HTMLElement {
                 </div>
                 <div class="idea-meta">
                   ${isSub ? `<span class="subtask-badge" title="Unteraufgabe">Unteraufgabe</span>` : ""}
-                  <span class="category-tag ${canEdit ? "clickable" : ""}" title="${canEdit ? "Kategorie ändern" : "Kategorie"}" data-id="${item.id}" data-cat="${item.category}" style="color: ${this._getCategoryColor(item.category)}; background: color-mix(in srgb, ${this._getCategoryColor(item.category)} 12%, var(--secondary-background-color, rgba(0,0,0,0.06))); border: 1px solid color-mix(in srgb, ${this._getCategoryColor(item.category)} 25%, transparent);"><ha-icon icon="${this._getCategoryIcon(item.category)}" style="--mdc-icon-size: 11px; width: 11px; height: 11px; margin-right: 3px; display: inline-flex; align-items: center; vertical-align: middle;"></ha-icon>${this._escapeHtml(item.category)}</span>
+                  <span class="category-tag ${canEdit ? "clickable" : ""}" title="${canEdit ? "Kategorie ändern" : "Kategorie"}" data-id="${item.id}" data-cat="${this._escapeHtml(item.category)}" style="color: ${this._getCategoryColor(item.category)}; background: color-mix(in srgb, ${this._getCategoryColor(item.category)} 12%, var(--secondary-background-color, rgba(0,0,0,0.06))); border: 1px solid color-mix(in srgb, ${this._getCategoryColor(item.category)} 25%, transparent);"><ha-icon icon="${this._getCategoryIcon(item.category)}" style="--mdc-icon-size: 11px; width: 11px; height: 11px; margin-right: 3px; display: inline-flex; align-items: center; vertical-align: middle;"></ha-icon>${this._escapeHtml(item.category)}</span>
                   ${this._getPriorityBadge(item.priority, item.id)}
                   ${showSource ? `${this._getSourceBadge(item.source, item.device)}` : ""}
                   ${showSource && showTime ? `<span>•</span>` : ""}
@@ -3575,6 +3575,15 @@ class BrainstormCardEditor extends HTMLElement {
     }
   }
 
+  _escapeHtml(text) {
+    return String(text ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
   _getCategoryOptions() {
     const defaultList = ["Inbox", "Smarthome", "Haus & Garten", "Projekte", "Alltag", "Brainstorm"];
     const categories = [];
@@ -3885,7 +3894,7 @@ class BrainstormCardEditor extends HTMLElement {
         <div class="fallback-row">
           <label class="fallback-label">Standard-Filterkategorie beim Öffnen</label>
           <select class="fallback-select" id="fbDefaultCat">
-            ${this._getCategoryOptions().map(o => `<option value="${o.value}" ${(this._config.default_category || 'all') === o.value ? 'selected' : ''}>${o.label}</option>`).join("")}
+            ${this._getCategoryOptions().map(o => `<option value="${this._escapeHtml(o.value)}" ${(this._config.default_category || 'all') === o.value ? 'selected' : ''}>${this._escapeHtml(o.label)}</option>`).join("")}
           </select>
         </div>
         <div class="fallback-row">
@@ -3978,7 +3987,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.4.44 ",
+  "%c BRAINSTORM-CARD %c v1.4.45 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

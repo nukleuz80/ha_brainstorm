@@ -97,7 +97,7 @@ KNOWN_NOUNS: set[str] = {
     "kinder", "kind", "flughafen", "bahnhof", "schule", "kita", "kindergarten",
     "arzt", "zahnarzt", "termin", "krankenhaus", "apotheke", "tierarzt",
     "garten", "rasen", "rasenmäher", "hecke", "heckenschere", "blume", "blumen",
-    "baum", "bäume", "rose", "rosen", "pflanze", "pflanzen", "beet", "hochbeet",
+    "baum", "bäume", "rose", "rosen", "pflanze", "beet", "hochbeet",
     "unkraut", "laub", "kompost", "dünger", "gewächshaus", "pool",
     "terrasse", "balkon", "keller", "dachboden", "garage", "haus", "wohnung",
     "küche", "bad", "badezimmer", "wohnzimmer", "schlafzimmer", "flur", "fenster", "tür",
@@ -116,9 +116,9 @@ KNOWN_NOUNS: set[str] = {
 
 # Prefixes that denote conversational voice introductions
 CONVERSATIONAL_PREFIXES: list[str] = [
-    r"^(?:in|im|für|auf|zu)\s+(?:dem\s+)?brainstorm(?:\s+hub)?\s*(?::|,|\s+dass|\s+bitte|\s+)\s*",
-    r"^(?:kannst\s+du\s+(?:bitte\s+)?(?:notieren|aufschreiben|merken|eintragen)|notiere\s*(?:bitte)?|schreib\s*(?:bitte)?(?:\s*auf)?|merke\s*(?:dir)?|erinnere\s+mich\s*(?:daran)?|trage\s+ein)\s*(?::|,|\s+dass|\s+)\s*",
-    r"^(?:bitte\s+notieren|bitte\s+aufschreiben|bitte\s+merken)\s*(?::|,|\s+dass|\s+)\s*",
+    r"^(?:in|im|für|auf|zu)\s+(?:dem\s+)?brainstorm(?:\s+hub)?\s*(?::|,|\s+dass(?:\s+(?:ich|wir)\b)?|\s+bitte|\s+)\s*",
+    r"^(?:kannst\s+du\s+(?:bitte\s+)?(?:notieren|aufschreiben|merken|eintragen)|notiere\s*(?:bitte)?|schreib\s*(?:bitte)?(?:\s*auf)?|merke\s*(?:dir)?|erinnere\s+mich\s*(?:daran)?|trage\s+ein)\s*(?::|,|\s+dass(?:\s+(?:ich|wir)\b)?|\s+)\s*",
+    r"^(?:bitte\s+notieren|bitte\s+aufschreiben|bitte\s+merken)\s*(?::|,|\s+dass(?:\s+(?:ich|wir)\b)?|\s+)\s*",
     r"^(?:ich\s+muss\s+(?:noch\s+)?|wir\s+müssen\s+(?:noch\s+)?|man\s+muss\s+(?:noch\s+)?|denk\s+dran\s+dass\s+|denke\s+daran\s+dass\s+)",
     r"^(?:dass\s+ich\s+(?:noch\s+)?|dass\s+wir\s+(?:noch\s+)?|dass\s+)",
     r"^(?:noch\s+)",
@@ -141,7 +141,41 @@ ARTICLES_AND_PRONOUNS: set[str] = {
     "ein", "eine", "einem", "einer", "einen", "eines",
     "sich", "mich", "uns", "dich", "ihm", "ihr", "ihnen",
     "mein", "meine", "dein", "deine", "sein", "seine", "unser", "unsere",
+    "mir", "dir", "euch", "ihn", "sie", "alle", "allem", "allen", "alles",
+    "dies", "diese", "diesem", "diesen", "dieser", "dieses",
+    "jede", "jedem", "jeden", "jeder", "jedes",
 }
+
+# Time words that stay lowercase after a preposition ('für morgen')
+TIME_ADVERBS: set[str] = {
+    "heute", "morgen", "übermorgen", "gestern", "vorgestern",
+    "jetzt", "später", "bald", "nachher", "vorher", "immer",
+}
+
+# Prepositions with a built-in article, always followed by a noun ('am Morgen')
+CONTRACTED_PREPOSITIONS: set[str] = {"am", "im", "vom", "zum", "zur", "beim"}
+
+
+def _capitalize(word: str) -> str:
+    """Uppercase the first letter and keep spellings like 'WLAN' or 'iPhone'."""
+    if any(c.isupper() for c in word):
+        return word
+    return word[:1].upper() + word[1:]
+
+
+def _is_noun_after_preposition(preposition: str, word: str) -> bool:
+    """Return whether a word following a preposition should be capitalized."""
+    if word in ARTICLES_AND_PRONOUNS or len(word) <= 2:
+        return False
+    if word in TIME_ADVERBS:
+        return preposition in CONTRACTED_PREPOSITIONS
+    # 'zu' + infinitive ('zu reparieren')
+    return not (preposition == "zu" and word.endswith("en"))
+
+
+def _participle_stem_to_infinitive(stem: str) -> str:
+    """Build an infinitive from a participle stem ('liefer' -> 'liefern')."""
+    return stem + ("n" if stem.endswith(("e", "er", "el")) else "en")
 
 
 def clean_and_format_idea_text(raw_text: str) -> str:
@@ -185,15 +219,16 @@ def clean_and_format_idea_text(raw_text: str) -> str:
             s = s[:m.start(1)] + inf
         elif partizip.startswith("ge") and partizip.endswith("t") and len(partizip) > 4:
             stem = partizip[2:-1]
-            inf = stem + "en"
+            inf = _participle_stem_to_infinitive(stem)
             s = s[:m.start(1)] + inf
 
     # Strip stray leftover modal verbs at the end
     s = re.sub(r"\s+(?:muss|müssen|soll|sollen)\.?$", "", s, flags=re.IGNORECASE).strip()
 
-    # 3. Strip conversational definite articles, keeping only those part of prepositional phrases
-    # e.g. 'heute die kinder' -> 'heute kinder', 'im garten der rasen' -> 'im garten rasen'
-    # but 'in die werkstatt', 'von der versicherung' are preserved.
+    # 3. Strip conversational definite articles, keeping those of prepositional phrases
+    # and the genitive markers 'der'/'des' inside a sentence.
+    # e.g. 'heute die kinder' -> 'heute kinder'
+    # but 'in die werkstatt', 'tür der garage' are preserved.
     raw_words = s.split()
     filtered_words: list[str] = []
     articles = {"der", "die", "das", "den", "dem", "des"}
@@ -203,7 +238,7 @@ def clean_and_format_idea_text(raw_text: str) -> str:
             if idx == 0:
                 continue
             prev_word = raw_words[idx - 1].lower().strip("\"'([<.,!?:;)]>")
-            if prev_word in PREPOSITION_TRIGGERS:
+            if prev_word in PREPOSITION_TRIGGERS or w_lower in ("der", "des"):
                 filtered_words.append(w)
             else:
                 continue
@@ -229,25 +264,24 @@ def clean_and_format_idea_text(raw_text: str) -> str:
 
         # Capitalization rules
         if idx == 0:
-            word_cap = clean_w.capitalize()
+            word_cap = _capitalize(clean_w)
         elif lower_w in KNOWN_NOUNS:
-            word_cap = clean_w.capitalize()
+            word_cap = _capitalize(clean_w)
         elif lower_w.endswith(NOUN_SUFFIXES) and len(lower_w) > 4:
-            word_cap = clean_w.capitalize()
+            word_cap = _capitalize(clean_w)
         elif (
             idx > 0
             and words[idx - 1].lower() in PREPOSITION_TRIGGERS
-            and lower_w not in ARTICLES_AND_PRONOUNS
-            and len(lower_w) > 2
+            and _is_noun_after_preposition(words[idx - 1].lower(), lower_w)
         ):
-            word_cap = clean_w.capitalize()
+            word_cap = _capitalize(clean_w)
         elif (
             idx > 1
             and words[idx - 2].lower() in PREPOSITION_TRIGGERS
             and words[idx - 1].lower() in ARTICLES_AND_PRONOUNS
             and len(lower_w) > 2
         ):
-            word_cap = clean_w.capitalize()
+            word_cap = _capitalize(clean_w)
         else:
             word_cap = clean_w
 

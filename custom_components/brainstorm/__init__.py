@@ -11,6 +11,7 @@ from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse, cal
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
+from homeassistant.loader import async_get_integration
 
 from .const import (
     ATTR_CATEGORY,
@@ -31,9 +32,12 @@ from .const import (
     SERVICE_REORDER_IDEAS,
     SERVICE_SET_CATEGORY_STYLE,
 )
+from .llm import async_register_llm_api
 from .store import BrainstormStore
 
 _LOGGER = logging.getLogger(__name__)
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 SERVICE_ADD_IDEA = "add_idea"
 SERVICE_UPDATE_IDEA = "update_idea"
@@ -130,19 +134,10 @@ SERVICE_EXPORT_MARKDOWN_SCHEMA = vol.Schema(
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Set up the Brainstorm component from configuration.yaml (optional)."""
+    """Set up the Brainstorm component and register its services."""
     hass.data.setdefault(DOMAIN, {})
 
-    # If domain in configuration.yaml, auto-create a config entry if none exists
-    if DOMAIN in config and not hass.config_entries.async_entries(DOMAIN):
-        hass.async_create_task(
-            hass.config_entries.flow.async_init(
-                DOMAIN,
-                context={"source": "import"},
-                data={},
-            )
-        )
-
+    _register_services(hass)
     return True
 
 
@@ -151,59 +146,11 @@ type BrainstormConfigEntry = ConfigEntry[BrainstormStore]
 
 async def async_setup_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) -> bool:
     """Set up Brainstorm Hub from a config entry."""
-    import importlib
-    import sys
-    for mod in ["const", "config_flow", "nlp", "store", "sensor", "todo", "llm", "logbook"]:
-        full_name = f"custom_components.brainstorm.{mod}"
-        if full_name in sys.modules:
-            try:
-                importlib.reload(sys.modules[full_name])
-                if mod == "config_flow":
-                    from homeassistant import config_entries
-                    if hasattr(sys.modules[full_name], "BrainstormConfigFlow"):
-                        config_entries.HANDLERS[DOMAIN] = sys.modules[full_name].BrainstormConfigFlow
-            except Exception as err:
-                _LOGGER.debug("Could not live-reload %s: %s", full_name, err)
-
-    # Invalidate translations cache so new steps and labels take effect immediately without restart
-    try:
-        from homeassistant.helpers.translation import (
-            TRANSLATION_FLATTEN_CACHE,
-            async_get_translations,
-        )
-        if TRANSLATION_FLATTEN_CACHE in hass.data:
-            t_cache = hass.data[TRANSLATION_FLATTEN_CACHE]
-            if hasattr(t_cache, "cache_data"):
-                # Discard brainstorm from loaded sets
-                for lang_loaded in t_cache.cache_data.loaded.values():
-                    if isinstance(lang_loaded, set):
-                        lang_loaded.discard(DOMAIN)
-                # Purge brainstorm entries from cache
-                for lang_dict in t_cache.cache_data.cache.values():
-                    if isinstance(lang_dict, dict):
-                        for cat_dict in lang_dict.values():
-                            if isinstance(cat_dict, dict) and DOMAIN in cat_dict:
-                                del cat_dict[DOMAIN]
-                # Increment cache generations so frontend knows to re-fetch
-                if hasattr(t_cache, "generations") and isinstance(t_cache.generations, dict):
-                    for lang in list(t_cache.generations.keys()):
-                        t_cache.generations[lang] = t_cache.generations.get(lang, 0) + 1
-            
-            # Eagerly reload translations for options and config
-            for lang in {getattr(hass.config, "language", "en"), "de", "en"}:
-                for cat in ["options", "config"]:
-                    try:
-                        await async_get_translations(hass, lang, cat, integrations=[DOMAIN], config_flow=True)
-                    except Exception:
-                        pass
-    except Exception as err:
-        _LOGGER.debug("Could not invalidate translation cache: %s", err)
-
-    from .store import BrainstormStore
-
     hass.data.setdefault(DOMAIN, {})
 
-    store = BrainstormStore(hass, entry.options or entry.data)
+    store = BrainstormStore(hass, {**entry.data, **entry.options})
+    integration = await async_get_integration(hass, DOMAIN)
+    store.integration_version = str(integration.version)
     await store.async_load()
 
     entry.runtime_data = store
@@ -213,16 +160,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) -
     # Register platforms (todo, sensor)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
-    # Register services
-    _register_services(hass)
-
     # Register LLM API for Assist & Conversation Agents
-    try:
-        from .llm import async_register_llm_api
-        unregister_llm = async_register_llm_api(hass)
-        entry.async_on_unload(unregister_llm)
-    except Exception as err:
-        _LOGGER.warning("Could not register Brainstorm LLM API: %s", err)
+    entry.async_on_unload(async_register_llm_api(hass))
 
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
     return True
@@ -235,18 +174,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) 
         hass.data[DOMAIN].pop(entry.entry_id, None)
         if not hass.config_entries.async_loaded_entries(DOMAIN):
             hass.data[DOMAIN].pop("primary_store", None)
-            for service in [
-                SERVICE_ADD_IDEA,
-                SERVICE_UPDATE_IDEA,
-                SERVICE_DELETE_IDEA,
-                SERVICE_GET_IDEAS,
-                SERVICE_ADD_CATEGORY,
-                SERVICE_REMOVE_CATEGORY,
-                SERVICE_EXPORT_MARKDOWN,
-                SERVICE_GET_ANNOUNCEMENT,
-                SERVICE_REORDER_IDEAS,
-            ]:
-                hass.services.async_remove(DOMAIN, service)
     return unload_ok
 
 
@@ -257,8 +184,8 @@ async def async_reload_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) 
 
 def _get_active_store(hass: HomeAssistant) -> BrainstormStore | None:
     """Get the active store instance."""
-    entries = hass.config_entries.async_entries(DOMAIN)
-    if entries and hasattr(entries[0], "runtime_data") and entries[0].runtime_data is not None:
+    entries = hass.config_entries.async_loaded_entries(DOMAIN)
+    if entries:
         return entries[0].runtime_data
     data = hass.data.get(DOMAIN, {})
     return data.get("primary_store")
@@ -322,7 +249,9 @@ def _register_services(hass: HomeAssistant) -> None:
             order=order,
             context=call.context,
         )
-        return {"success": updated is not None, "idea": updated}
+        if updated is None:
+            raise ServiceValidationError(f"Idee '{idea_id}' wurde nicht gefunden.")
+        return {"success": True, "idea": updated}
 
     async def handle_reorder_ideas(call: ServiceCall) -> dict[str, Any]:
         """Handle reordering ideas."""
@@ -341,8 +270,9 @@ def _register_services(hass: HomeAssistant) -> None:
             raise HomeAssistantError("Brainstorm store is not initialized")
 
         idea_id = call.data[ATTR_ID]
-        deleted = await store.async_delete_idea(idea_id, context=call.context)
-        return {"success": deleted}
+        if not await store.async_delete_idea(idea_id, context=call.context):
+            raise ServiceValidationError(f"Idee '{idea_id}' wurde nicht gefunden.")
+        return {"success": True}
 
     async def handle_get_ideas(call: ServiceCall) -> dict[str, Any]:
         """Handle fetching ideas."""

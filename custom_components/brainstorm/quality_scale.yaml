@@ -8,8 +8,8 @@ rules:
   brands: done
   common-modules: done
   config-flow-test-coverage:
-    status: exempt
-    comment: Custom component with internal unit and service validation tests.
+    status: todo
+    comment: Tests live in tests/ of the repository, coverage is not yet complete.
   config-flow: done
   dependency-transparency: done
   docs-actions: done
@@ -37,5 +37,5 @@ rules:
   logbook: done
   reconfigure-flow: done
   test-coverage:
-    status: exempt
-    comment: Custom component with continuous integration and runtime validation tests.
+    status: todo
+    comment: Tests live in tests/ of the repository, overall coverage is below 95 percent.

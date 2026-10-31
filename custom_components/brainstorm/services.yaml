@@ -199,7 +199,7 @@ add_category:
         icon:
     color:
       name: Farbe
-      description: Optionale Akzentfarbe (Hexadezimal wie #ff7800).
+      description: "Optionale Akzentfarbe (Hexadezimal wie #ff7800)."
       required: false
       example: "#38bdf8"
       selector:
@@ -225,7 +225,7 @@ set_category_style:
         icon:
     color:
       name: Farbe
-      description: Akzentfarbe für Notizen und Filter (Hexadezimal wie #06b6d4).
+      description: "Akzentfarbe für Notizen und Filter (Hexadezimal wie #06b6d4)."
       required: false
       example: "#06b6d4"
       selector:

@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from homeassistant.components.todo import (
     TodoItem,
@@ -12,11 +11,11 @@ from homeassistant.components.todo import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
-    ATTR_CATEGORY,
     ATTR_DEVICE,
     ATTR_ID,
     ATTR_PRIORITY,
@@ -47,20 +46,42 @@ async def async_setup_entry(
     existing_categories: set[str] = set()
 
     @callback
+    def _remove_stale_entities() -> None:
+        """Remove todo list entities of categories that no longer exist."""
+        registry = er.async_get(hass)
+        valid_ids = {_todo_unique_id(entry.entry_id, c) for c in store.categories}
+        for reg_entry in er.async_entries_for_config_entry(registry, entry.entry_id):
+            if reg_entry.domain == "todo" and reg_entry.unique_id not in valid_ids:
+                registry.async_remove(reg_entry.entity_id)
+
+    @callback
     def _sync_entities() -> None:
-        """Add new todo list entities if new categories appeared."""
-        new_entities = []
-        for cat in store.categories:
-            if cat not in existing_categories:
-                existing_categories.add(cat)
-                new_entities.append(BrainstormTodoList(store, cat, entry.entry_id))
+        """Add and remove todo list entities when categories changed."""
+        current = set(store.categories)
+        new_entities = [
+            BrainstormTodoList(store, cat, entry.entry_id)
+            for cat in store.categories
+            if cat not in existing_categories
+        ]
+        removed = existing_categories - current
+        existing_categories.clear()
+        existing_categories.update(current)
         if new_entities:
             async_add_entities(new_entities)
+        if removed:
+            _remove_stale_entities()
 
-    # Initial registration
+    # Initial registration, also cleans up entities left over from older versions
+    _remove_stale_entities()
     _sync_entities()
     # Register listener to catch dynamically added categories
     entry.async_on_unload(store.register_listener(_sync_entities))
+
+
+def _todo_unique_id(entry_id: str, category: str) -> str:
+    """Return the unique ID of a category's todo list."""
+    safe_cat = category.lower().replace(" ", "_").replace("&", "und")
+    return f"{entry_id}_todo_{safe_cat}"
 
 
 class BrainstormTodoList(TodoListEntity):
@@ -77,8 +98,7 @@ class BrainstormTodoList(TodoListEntity):
         """Initialize the todo list."""
         self._store = store
         self._category = category
-        safe_cat = category.lower().replace(" ", "_").replace("&", "und")
-        self._attr_unique_id = f"{entry_id}_todo_{safe_cat}"
+        self._attr_unique_id = _todo_unique_id(entry_id, category)
         self._attr_name = f"Brainstorm: {category}"
         self._attr_icon = "mdi:lightbulb-outline"
         self._attr_device_info = DeviceInfo(
@@ -86,7 +106,7 @@ class BrainstormTodoList(TodoListEntity):
             name="Brainstorm Hub",
             manufacturer="nukleuz80",
             model="Brainstorm Hub",
-            sw_version="1.4.44",
+            sw_version=store.integration_version,
         )
 
     async def async_added_to_hass(self) -> None:
@@ -100,6 +120,8 @@ class BrainstormTodoList(TodoListEntity):
         items = self._store.get_ideas_by_category(self._category, status=None)
         todo_items = []
         for item in items:
+            if item.get(ATTR_STATUS) == "archived":
+                continue
             is_done = item.get(ATTR_STATUS) == "completed"
             status = TodoItemStatus.COMPLETED if is_done else TodoItemStatus.NEEDS_ACTION
             src = item.get(ATTR_SOURCE)

@@ -1,7 +1,6 @@
 """Config flow for Brainstorm Hub integration."""
 from __future__ import annotations
 
-import logging
 from typing import Any
 
 import voluptuous as vol
@@ -20,8 +19,6 @@ from .const import (
     DEFAULT_MARKDOWN_PATH,
     DOMAIN,
 )
-
-_LOGGER = logging.getLogger(__name__)
 
 
 class BrainstormConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -59,11 +56,14 @@ class BrainstormConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         current_data = {**config_entry.data, **config_entry.options}
 
         if user_input is not None:
-            return self.async_update_reload_and_abort(
+            # Options take precedence over data, so update both. The update listener
+            # reloads the entry if something changed.
+            self.hass.config_entries.async_update_entry(
                 config_entry,
                 data={**config_entry.data, **user_input},
-                reason="reconfigure_successful",
+                options={**config_entry.options, **user_input},
             )
+            return self.async_abort(reason="reconfigure_successful")
 
         data_schema = vol.Schema(
             {
@@ -108,6 +108,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
     def __init__(self) -> None:
         """Initialize options flow."""
         self._selected_style_cat: str = "Inbox"
+        self._shown_categories: str = ""
 
     def _get_localized_menu(self, step_id: str) -> dict[str, str]:
         """Return explicit localized menu options mapping to bypass frontend cache staleness."""
@@ -142,32 +143,6 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Show options menu."""
-        # Ensure translation cache is updated so all menu items have valid labels
-        try:
-            from homeassistant.helpers.translation import (
-                TRANSLATION_FLATTEN_CACHE,
-                async_get_translations,
-            )
-            if TRANSLATION_FLATTEN_CACHE in self.hass.data:
-                t_cache = self.hass.data[TRANSLATION_FLATTEN_CACHE]
-                if hasattr(t_cache, "cache_data"):
-                    for lang_loaded in t_cache.cache_data.loaded.values():
-                        if isinstance(lang_loaded, set):
-                            lang_loaded.discard(DOMAIN)
-                    for lang_dict in t_cache.cache_data.cache.values():
-                        if isinstance(lang_dict, dict):
-                            for cat_dict in lang_dict.values():
-                                if isinstance(cat_dict, dict) and DOMAIN in cat_dict:
-                                    del cat_dict[DOMAIN]
-                    if hasattr(t_cache, "generations") and isinstance(t_cache.generations, dict):
-                        for lang in list(t_cache.generations.keys()):
-                            t_cache.generations[lang] = t_cache.generations.get(lang, 0) + 1
-            for lang in {getattr(self.hass.config, "language", "en"), "de", "en"}:
-                for cat in ["options", "config"]:
-                    await async_get_translations(self.hass, lang, cat, integrations=[DOMAIN], config_flow=True)
-        except Exception as err:
-            _LOGGER.debug("Could not refresh translation cache in config_flow: %s", err)
-
         return self.async_show_menu(
             step_id="init",
             menu_options=self._get_localized_menu("init"),
@@ -312,22 +287,23 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
 
         if user_input is not None:
             if store:
-                # 1. Process delete
+                # 1. Process manual comma list edit. The field is pre-filled, so only
+                # apply it if the user changed it, and first, so it cannot revert 2/3.
+                edited_list = user_input.get("edit_categories")
+                if edited_list and edited_list.strip() != self._shown_categories:
+                    parsed = [c.strip() for c in edited_list.split(",") if c.strip()]
+                    if parsed:
+                        await store.async_set_categories(parsed)
+
+                # 2. Process delete
                 cat_to_del = user_input.get("delete_category")
                 if cat_to_del and cat_to_del != "none":
                     await store.async_remove_category(cat_to_del)
 
-                # 2. Process add
+                # 3. Process add
                 cat_to_add = user_input.get("add_category")
                 if cat_to_add and cat_to_add.strip():
                     await store.async_add_category(cat_to_add.strip())
-
-                # 3. Process manual comma list edit (if changed)
-                edited_list = user_input.get("edit_categories")
-                if edited_list:
-                    parsed = [c.strip() for c in edited_list.split(",") if c.strip()]
-                    if parsed and parsed != store.categories:
-                        await store.async_set_categories(parsed)
 
             if CONF_HIDE_EMPTY_CATEGORIES in user_input:
                 options[CONF_HIDE_EMPTY_CATEGORIES] = user_input[CONF_HIDE_EMPTY_CATEGORIES]
@@ -338,6 +314,8 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         for c in current_cats:
             if c != "Inbox":
                 delete_options.append({"value": c, "label": f"{c} löschen"})
+
+        self._shown_categories = ", ".join(current_cats)
 
         data_schema = vol.Schema(
             {
@@ -355,7 +333,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 ),
                 vol.Optional(
                     "edit_categories",
-                    default=", ".join(current_cats),
+                    default=self._shown_categories,
                 ): selector.TextSelector(
                     selector.TextSelectorConfig(
                         type=selector.TextSelectorType.TEXT,
@@ -373,7 +351,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         return self.async_show_form(
             step_id="categories",
             data_schema=data_schema,
-            description_placeholders={"current_cats": ", ".join(current_cats)},
+            description_placeholders={"current_cats": self._shown_categories},
         )
 
     async def async_step_general(

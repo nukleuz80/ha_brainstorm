@@ -7,8 +7,7 @@
         "data": {
           "hide_empty_categories": "Hide categories without notes (0)",
           "auto_export_markdown": "Auto-export ideas to Markdown files",
-          "markdown_path": "File path for Markdown files",
-          "categories": "Manage categories (comma-separated list)"
+          "markdown_path": "File path for Markdown files"
         }
       },
       "reconfigure": {

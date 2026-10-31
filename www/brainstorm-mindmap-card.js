@@ -1,6 +1,6 @@
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.4.44 - Last Alexa Display with Entity Selection & Resilient Visual Card Editor
+ * Version: 1.4.45 - Last Alexa Display with Entity Selection & Resilient Visual Card Editor
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -250,7 +250,7 @@ class BrainstormMindmapCard extends HTMLElement {
     const sensor = this._getSensorEntity();
     if (sensor && sensor.attributes && sensor.attributes.category_colors) {
       const customColor = sensor.attributes.category_colors[category];
-      if (customColor) return customColor;
+      if (customColor && CSS.supports("color", customColor)) return customColor;
     }
 
     const catNorm = String(category).trim().toLowerCase();
@@ -326,7 +326,7 @@ class BrainstormMindmapCard extends HTMLElement {
     const sensor = this._getSensorEntity();
     if (sensor && sensor.attributes && sensor.attributes.category_icons) {
       const customIcon = sensor.attributes.category_icons[category];
-      if (customIcon) return customIcon;
+      if (customIcon && /^[\w-]+:[\w-]+$/.test(customIcon)) return customIcon;
     }
 
     // 2. Curated default icons
@@ -2275,9 +2275,9 @@ class BrainstormMindmapCard extends HTMLElement {
               const catIcon = this._getCategoryIcon(cat);
               const isActive = String(this._selectedCategory || "").trim() === String(cat || "").trim();
               return `
-                <div class="cat-pill ${isActive ? "active" : ""}" data-cat="${cat}" style="--category-color: ${catColor};">
+                <div class="cat-pill ${isActive ? "active" : ""}" data-cat="${this._escapeHtml(cat)}" style="--category-color: ${catColor};">
                   <ha-icon icon="${catIcon}" style="--mdc-icon-size: 14px; width: 14px; height: 14px; margin-right: 4px; display: inline-flex; align-items: center; vertical-align: middle; color: ${isActive ? '#ffffff' : catColor};"></ha-icon>
-                  <span>${cat}</span>
+                  <span>${this._escapeHtml(cat)}</span>
                   <span style="opacity: 0.75; font-size: 0.72rem;">(${c})</span>
                 </div>
               `;
@@ -2356,7 +2356,7 @@ class BrainstormMindmapCard extends HTMLElement {
                 <ha-icon icon="${this._getCategoryIcon(idea.category)}" style="--mdc-icon-size: 12px; width: 12px; height: 12px; display: inline-flex; align-items: center; vertical-align: middle;"></ha-icon> ${this._escapeHtml(idea.category)}
               </span>
               ${prioBadge}
-              <span class="cloud-source" title="Quelle: ${idea.source || 'Dashboard'}${idea.device ? ' • Gerät: ' + this._escapeHtml(idea.device) : ''}">
+              <span class="cloud-source" title="Quelle: ${this._escapeHtml(idea.source || 'Dashboard')}${idea.device ? ' • Gerät: ' + this._escapeHtml(idea.device) : ''}">
                 <span>${sourceBadge}</span>
                 <span>•</span>
                 <span>${timeAgo}</span>
@@ -2974,6 +2974,15 @@ class BrainstormMindmapCardEditor extends HTMLElement {
     }
   }
 
+  _escapeHtml(text) {
+    return String(text ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
   _getCategoryOptions() {
     const defaultList = ["Inbox", "Smarthome", "Haus & Garten", "Projekte", "Alltag", "Brainstorm"];
     const categories = [];
@@ -3266,7 +3275,7 @@ class BrainstormMindmapCardEditor extends HTMLElement {
         <div class="fallback-row">
           <label class="fallback-label">Standard-Kategorie im Fokus</label>
           <select class="fallback-select" id="fbDefaultCat">
-            ${this._getCategoryOptions().map(o => `<option value="${o.value}" ${(this._config.default_category || 'all') === o.value ? 'selected' : ''}>${o.label}</option>`).join("")}
+            ${this._getCategoryOptions().map(o => `<option value="${this._escapeHtml(o.value)}" ${(this._config.default_category || 'all') === o.value ? 'selected' : ''}>${this._escapeHtml(o.label)}</option>`).join("")}
           </select>
         </div>
         <div class="fallback-row">
@@ -3352,7 +3361,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.44 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.45 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

@@ -5,9 +5,10 @@ import logging
 import os
 import re
 import uuid
+from pathlib import Path
 from typing import Any, Callable
 
-from homeassistant.core import Context, HomeAssistant, callback
+from homeassistant.core import Context, HomeAssistant
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
@@ -31,7 +32,6 @@ from .const import (
     DEFAULT_HIDE_EMPTY_CATEGORIES,
     DEFAULT_MARKDOWN_PATH,
     DEFAULT_PRIORITY,
-    DOMAIN,
     EVENT_IDEA_ADDED,
     EVENT_IDEA_COMPLETED,
     EVENT_IDEA_DELETED,
@@ -43,11 +43,23 @@ from .const import (
     PRIORITY_URGENT,
     STORAGE_KEY,
     STORAGE_VERSION,
-    VALID_PRIORITIES,
 )
 from .nlp import clean_and_format_idea_text
 
 _LOGGER = logging.getLogger(__name__)
+
+COLOR_PATTERN = re.compile(r"^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$")
+ICON_PATTERN = re.compile(r"^[a-zA-Z0-9_-]+:[a-zA-Z0-9_-]+$")
+# Config subfolders exports must not write to; 'www' is served without authentication
+EXPORT_BLOCKED_DIRS = {"custom_components", "www"}
+
+
+def _validate_category_style(icon: str | None, color: str | None) -> None:
+    """Raise if a category icon or color is malformed."""
+    if icon and icon.strip() and not ICON_PATTERN.match(icon.strip()):
+        raise ServiceValidationError(f"Ungültiges Icon: {icon}")
+    if color and color.strip() and not COLOR_PATTERN.match(color.strip()):
+        raise ServiceValidationError(f"Ungültige Farbe (Hex erwartet): {color}")
 
 
 CATEGORY_ALIASES: dict[str, list[str]] = {
@@ -369,17 +381,9 @@ class BrainstormStore:
         self._hide_empty_categories = self.options.get(
             CONF_HIDE_EMPTY_CATEGORIES, DEFAULT_HIDE_EMPTY_CATEGORIES
         )
+        self._default_category = self.options.get("default_category", "Inbox")
         self._last_action: dict[str, Any] | None = None
-
-    def update_options(self, options: dict[str, Any]) -> None:
-        """Update options dynamically."""
-        self.options = options
-        self._auto_export = options.get("auto_export_markdown", False)
-        self._markdown_path = options.get("markdown_path", DEFAULT_MARKDOWN_PATH)
-        self._smart_formatting = options.get(CONF_SMART_FORMATTING, True)
-        self._hide_empty_categories = options.get(
-            CONF_HIDE_EMPTY_CATEGORIES, DEFAULT_HIDE_EMPTY_CATEGORIES
-        )
+        self.integration_version: str | None = None
 
     @property
     def last_action(self) -> dict[str, Any] | None:
@@ -407,6 +411,23 @@ class BrainstormStore:
         return dict(self._category_colors)
 
     @property
+    def _fallback_category(self) -> str:
+        """Return the category for ideas without a valid category."""
+        if self._default_category in self._categories:
+            return self._default_category
+        return "Inbox"
+
+    @property
+    def category_counts(self) -> dict[str, int]:
+        """Return the number of active ideas per category."""
+        counts = {cat: 0 for cat in self._categories}
+        for idea in self._ideas.values():
+            cat = idea.get(ATTR_CATEGORY)
+            if idea.get(ATTR_STATUS) == "active" and cat in counts:
+                counts[cat] += 1
+        return counts
+
+    @property
     def ideas(self) -> list[dict[str, Any]]:
         """Return all ideas sorted by custom order or creation date descending."""
         ordered = [i for i in self._ideas.values() if i.get(ATTR_ORDER) is not None]
@@ -428,7 +449,10 @@ class BrainstormStore:
 
     def _notify_listeners(self, context: Context | None = None) -> None:
         """Notify all registered listeners of a change."""
-        for listener in self._listeners:
+        # Iterate over a copy, a listener can remove entities and their listeners
+        for listener in list(self._listeners):
+            if listener not in self._listeners:
+                continue
             try:
                 try:
                     listener(context)
@@ -446,10 +470,12 @@ class BrainstormStore:
                 if ATTR_PRIORITY not in item:
                     item[ATTR_PRIORITY] = DEFAULT_PRIORITY
                 self._ideas[item[ATTR_ID]] = item
-            loaded_cats = data.get("categories", [])
-            for cat in loaded_cats:
-                if cat not in self._categories:
-                    self._categories.append(cat)
+            # The stored list is authoritative, so removed defaults stay removed
+            loaded_cats = data.get("categories")
+            if loaded_cats:
+                self._categories = list(loaded_cats)
+                if "Inbox" not in self._categories:
+                    self._categories.insert(0, "Inbox")
             self._category_icons = data.get("category_icons", {})
             self._category_colors = data.get("category_colors", {})
             _LOGGER.debug(
@@ -471,7 +497,11 @@ class BrainstormStore:
         }
         await self._store.async_save(data)
         if self._auto_export:
-            await self.async_export_to_markdown()
+            # The data is already persisted, so a failed export must not fail the action
+            try:
+                await self.async_export_to_markdown()
+            except (OSError, HomeAssistantError) as err:
+                _LOGGER.error("Brainstorm auto-export to Markdown failed: %s", err)
 
     def parse_priority(
         self, text: str, explicit_priority: str | None = None
@@ -647,12 +677,16 @@ class BrainstormStore:
                     pattern = (
                         rf"^(?:(?:für|fürs|im|in\s+der|in\s+dem|auf\s+der|auf\s+dem|am|beim|zum|zur)\s+"
                         rf"(?:den\s+|das\s+|die\s+|dem\s+)?)?{re.escape(alias)}"
-                        rf"(?::|\s+dass\s+|\s+ich\s+|\s+wir\s+|\s*,\s*|\s+)(.+)$"
+                        rf"(:|\s+dass\s+|\s+ich\s+|\s+wir\s+|\s*,\s*|\s+)(.+)$"
                     )
                     m = re.match(pattern, clean_text, re.IGNORECASE)
                     if m:
                         category = cat_name
-                        clean_text = m.group(1).strip()
+                        remainder = m.group(2).strip()
+                        # After a plain space, a single remaining word usually needs
+                        # the alias to make sense ('Haus streichen'), so keep the text.
+                        if m.group(1).strip() or len(remainder.split()) > 1:
+                            clean_text = remainder
                         break
                 if category:
                     break
@@ -702,9 +736,9 @@ class BrainstormStore:
                 if scores[best_cat] > 0:
                     category = best_cat
 
-        # Fallback to Inbox
+        # Fallback to the configured default category
         if not category or category not in self._categories:
-            category = "Inbox"
+            category = self._fallback_category
 
         # 6. Check priority once more if still medium (in case priority keyword appeared after stripped category prefix)
         if resolved_prio == PRIORITY_MEDIUM and not explicit_priority:
@@ -753,10 +787,6 @@ class BrainstormStore:
         all_tags = list(set((tags or []) + parsed_tags))
         now_iso = dt_util.now().isoformat()
         idea_id = uuid.uuid4().hex[:8]
-
-        # Ensure category is in valid categories (never auto-create rogue categories)
-        if resolved_cat not in self._categories:
-            resolved_cat = "Inbox"
 
         resolved_parent = None
         if parent_id and parent_id.strip() in self._ideas:
@@ -814,6 +844,17 @@ class BrainstormStore:
         )
         return idea
 
+    def _creates_parent_cycle(self, idea_id: str, parent_id: str) -> bool:
+        """Return whether making parent_id the parent of idea_id creates a cycle."""
+        seen: set[str] = set()
+        current: str | None = parent_id
+        while current and current not in seen:
+            if current == idea_id:
+                return True
+            seen.add(current)
+            current = self._ideas.get(current, {}).get(ATTR_PARENT_ID)
+        return False
+
     async def async_update_idea(
         self,
         idea_id: str,
@@ -832,7 +873,15 @@ class BrainstormStore:
             _LOGGER.warning("Brainstorm idea %s not found for update", idea_id)
             return None
 
+        if update_parent and parent_id and self._creates_parent_cycle(
+            idea_id, parent_id.strip()
+        ):
+            raise ServiceValidationError(
+                f"Idee '{parent_id}' kann nicht übergeordnet werden (Zyklus)."
+            )
+
         idea = self._ideas[idea_id]
+        newly_completed = status == "completed" and idea.get(ATTR_STATUS) != "completed"
         if text is not None:
             idea[ATTR_TEXT] = text.strip()
         if category is not None:
@@ -854,17 +903,17 @@ class BrainstormStore:
                 idea[ATTR_PARENT_ID] = None
             else:
                 clean_pid = parent_id.strip()
-                if clean_pid != idea_id and clean_pid in self._ideas:
+                if clean_pid in self._ideas:
                     idea[ATTR_PARENT_ID] = clean_pid
 
         now_iso = dt_util.now().isoformat()
         idea[ATTR_UPDATED_AT] = now_iso
 
         act_context = context or Context()
-        action_type = "completed" if status == "completed" else "updated"
+        action_type = "completed" if newly_completed else "updated"
         action_desc = (
             f"Idee erledigt: \"{idea.get(ATTR_TEXT)}\" ({idea.get(ATTR_CATEGORY)})"
-            if status == "completed"
+            if newly_completed
             else f"Idee geändert: \"{idea.get(ATTR_TEXT)}\" ({idea.get(ATTR_CATEGORY)})"
         )
         self._last_action = {
@@ -880,11 +929,7 @@ class BrainstormStore:
 
         await self.async_save()
 
-        event_name = (
-            EVENT_IDEA_COMPLETED
-            if status == "completed"
-            else EVENT_IDEA_UPDATED
-        )
+        event_name = EVENT_IDEA_COMPLETED if newly_completed else EVENT_IDEA_UPDATED
         event_data = {
             **idea,
             "entity_id": OVERVIEW_ENTITY_ID,
@@ -943,6 +988,7 @@ class BrainstormStore:
         color: str | None = None,
     ) -> bool:
         """Add a new category."""
+        _validate_category_style(icon, color)
         clean_name = category_name.strip()
         if not clean_name or any(c.lower() == clean_name.lower() for c in self._categories):
             return False
@@ -990,6 +1036,7 @@ class BrainstormStore:
             self._category_icons.pop(clean_name, None)
             self._category_colors.pop(clean_name, None)
         else:
+            _validate_category_style(icon, color)
             if icon is not None:
                 clean_icon = icon.strip()
                 if clean_icon:
@@ -1128,19 +1175,41 @@ class BrainstormStore:
 
         return " ".join(parts)
 
+    def _validate_export_dir(self, export_dir: str) -> None:
+        """Allow config subfolders and allowlisted external dirs only (blocking I/O)."""
+        config_dir = Path(self.hass.config.config_dir).resolve()
+        target = Path(export_dir).resolve()
+        if target.is_relative_to(config_dir):
+            parts = target.relative_to(config_dir).parts
+            if (
+                parts
+                and parts[0] not in EXPORT_BLOCKED_DIRS
+                and not parts[0].startswith(".")
+            ):
+                return
+        elif self.hass.config.is_allowed_path(str(target)):
+            return
+        raise ServiceValidationError(
+            f"Export nach '{export_dir}' ist nicht erlaubt. Erlaubt sind Unterordner "
+            "des Config-Verzeichnisses und allowlist_external_dirs."
+        )
+
     async def async_export_to_markdown(self, target_dir: str | None = None) -> None:
         """Export all categories and ideas into readable Markdown files."""
         export_dir = target_dir or self._markdown_path
 
+        # Group ideas by category in the event loop; the executor must not iterate
+        # over store state that the loop can change at the same time.
+        by_cat: dict[str, list[dict[str, Any]]] = {c: [] for c in self._categories}
+        for idea in self.ideas:
+            cat = idea.get(ATTR_CATEGORY, "Inbox")
+            if cat not in by_cat:
+                by_cat[cat] = []
+            by_cat[cat].append(dict(idea))
+
         def _do_export():
+            self._validate_export_dir(export_dir)
             os.makedirs(export_dir, exist_ok=True)
-            # Group active ideas by category
-            by_cat: dict[str, list[dict[str, Any]]] = {c: [] for c in self._categories}
-            for idea in self.ideas:
-                cat = idea.get(ATTR_CATEGORY, "Inbox")
-                if cat not in by_cat:
-                    by_cat[cat] = []
-                by_cat[cat].append(idea)
 
             for cat, items in by_cat.items():
                 safe_name = re.sub(r"[^a-zA-Z0-9_\-]", "_", cat).lower()
@@ -1148,7 +1217,9 @@ class BrainstormStore:
                 with open(filepath, "w", encoding="utf-8") as f:
                     f.write(f"# Brainstorming: {cat}\n\n")
                     active = [i for i in items if i.get(ATTR_STATUS) == "active"]
-                    completed = [i for i in items if i.get(ATTR_STATUS) == "completed"]
+                    completed = [
+                        i for i in items if i.get(ATTR_STATUS) in ("completed", "archived")
+                    ]
 
                     f.write("## Aktive Ideen\n")
                     if not active:
