@@ -45,6 +45,7 @@ from .const import (
     CONF_PRIVACY_ENABLED,
     CONF_PRIVACY_EXPORT,
     CONF_PRIVACY_OWNER,
+    CONF_VOICE_OWNERS,
     CONF_VOICE_MODE,
     CONF_HIDE_EMPTY_CATEGORIES,
     CONF_SMART_FORMATTING,
@@ -444,6 +445,13 @@ class BrainstormStore:
     def voice_user_id(self) -> str | None:
         """Return whose ideas voice and briefings may mention, None meaning all."""
         return self._privacy_owner if self._privacy_enabled else None
+
+    def voice_user_for(self, device: str | None) -> str | None:
+        """Return whose ideas a device may use, as voices cannot be told apart."""
+        if not self._privacy_enabled:
+            return None
+        owners = self.options.get(CONF_VOICE_OWNERS) or {}
+        return owners.get(device or "") or self._privacy_owner
 
     def owner_of(self, idea: dict[str, Any]) -> str | None:
         """Return the owner of an idea, ideas from before belong to the main user."""

@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.4.59-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.4.60-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver-C0C0C0.svg)](https://developers.home-assistant.io/docs/integration_quality_scale_index/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -163,9 +163,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.4.59
+  - url: /local/brainstorm-card.js?v=1.4.60
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.4.59
+  - url: /local/brainstorm-mindmap-card.js?v=1.4.60
     type: module
 ```
 
@@ -212,6 +212,7 @@ hide_empty_categories: true
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.4.60`** | 2026-11-01 | **Select Several Ideas, Echos per Person:**<br>• **Selection mode:** Select several ideas on the list card, then complete, move, share or delete them at once.<br>• **Echos and apps per person:** What is said at an assigned device belongs to that person, and only their ideas are read out. Assist on a satellite without a user sticks to the main user.<br>• **Native announcements:** Use the service `brainstorm.get_announcement`, so they keep working with privacy on. |
 | **`v1.4.59`** | 2026-11-01 | **Sharing Ideas and Categories:** With privacy on, ideas and whole categories can be shared with chosen people or everyone, to view or to edit. The list card gets a share dialog, the filters *Alle*, *Meine* and *Mit mir geteilt* and badges. To-do lists show what is shared with everyone, and a person who gets a reminder also gets access. New service `brainstorm.share`. |
 | **`v1.4.58`** | 2026-10-31 | **Private Ideas per User (Foundation):** New switch *Privacy & Users*, off by default. When on, ideas belong to their creator: the sensor holds no idea texts, the cards load only the user's own ideas, and services, Assist, logbook, voice, briefing and reminders respect this. Existing ideas go to the chosen main user. To-do lists stay empty while it is on. Sharing follows in the next stage. |
 | **`v1.4.57`** | 2026-10-31 | **Selected Category Stays:** Both cards remember the selected category after a page reload, per browser. A deleted category falls back to all. |

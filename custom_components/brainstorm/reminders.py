@@ -480,7 +480,12 @@ class ReminderManager:
         """Return the Echos for an idea, following its list and person."""
         foreign = self._foreign_rule(idea)
         if foreign is not None:
-            return list(foreign.get("echos") or [])
+            echos = list(foreign.get("echos") or [])
+            # The Echo of this person's own room may also speak
+            if not echos and self._options.get(CONF_REMINDER_ALEXA) == REMINDER_ALEXA_ORIGIN:
+                echo = self._echo_entity_from_name(idea.get(ATTR_DEVICE))
+                return [echo] if echo else []
+            return echos
         channel = self._rule(idea.get(ATTR_CATEGORY)).get(
             RULE_CHANNEL, RULE_CHANNEL_DEFAULT
         )

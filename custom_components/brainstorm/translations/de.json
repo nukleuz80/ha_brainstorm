@@ -38,7 +38,8 @@
           "alexa_skill": "Alexa-Spracheingabe & Skill",
           "reminders": "Erinnerungen & Benachrichtigungen",
           "close": "✅ Fertig",
-          "privacy": "Privatsphäre & Benutzer"
+          "privacy": "Privatsphäre & Benutzer",
+          "privacy_voice": "Echos & Apps Personen zuordnen"
         }
       },
       "categories": {
@@ -274,6 +275,18 @@
           "privacy_owner": "Besitzt alle vorhandenen Einträge und alles, was an einem Echo gesagt wird. Sprache, Briefing und Rückblick nennen nur die Einträge dieser Person.",
           "privacy_export": "Diese Dateien enthalten alle Einträge und sind für alle mit Zugriff auf den Config-Ordner lesbar.",
           "share_users": "Leer bedeutet alle. Damit blendest du technische Konten wie MQTT aus."
+        }
+      },
+      "privacy_voice": {
+        "title": "Brainstorm › Echos & Apps zuordnen",
+        "description": "Home Assistant kann Stimmen nicht unterscheiden, deshalb gehört jeder Echo und jede Alexa-App einer Person. Was dort gesagt wird, gehört ihr, und nur ihre Einträge werden vorgelesen. Das hören alle im Raum mit. Geräte ohne Zuordnung gehören dem Hauptbenutzer.\n\n{notice}\n\n{assignments}",
+        "data": {
+          "device": "Echo oder Alexa-App",
+          "voice_user": "Person",
+          "go_back": "⬅️ Zurück, ohne zu speichern"
+        },
+        "data_description": {
+          "voice_user": "Leer lassen, um die Zuordnung zu entfernen."
         }
       }
     },

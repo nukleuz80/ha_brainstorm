@@ -38,7 +38,8 @@
           "alexa_skill": "Alexa Voice Input & Skill",
           "reminders": "Reminders & Notifications",
           "close": "✅ Done",
-          "privacy": "Privacy & Users"
+          "privacy": "Privacy & Users",
+          "privacy_voice": "Assign Echos & Apps to People"
         }
       },
       "categories": {
@@ -274,6 +275,18 @@
           "privacy_owner": "Owns all existing ideas, and everything said to an Echo. Voice, briefing and review only mention this person's ideas.",
           "privacy_export": "These files contain all ideas and can be read by anyone with access to the config folder.",
           "share_users": "Leave empty to offer everyone. Use this to hide technical accounts such as MQTT."
+        }
+      },
+      "privacy_voice": {
+        "title": "Brainstorm › Assign Echos & Apps",
+        "description": "Home Assistant cannot tell voices apart, so each Echo or Alexa app belongs to one person. What is said there is that person's, and only their ideas are read out. Anyone in the room can hear this. Devices without an assignment belong to the main user.\n\n{notice}\n\n{assignments}",
+        "data": {
+          "device": "Echo or Alexa app",
+          "voice_user": "Person",
+          "go_back": "⬅️ Back, without saving"
+        },
+        "data_description": {
+          "voice_user": "Leave empty to remove the assignment."
         }
       }
     },

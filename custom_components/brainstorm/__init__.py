@@ -65,6 +65,7 @@ SERVICE_GET_ANNOUNCEMENT = "get_announcement"
 SERVICE_GET_ANNOUNCEMENT_SCHEMA = vol.Schema(
     {
         vol.Optional(ATTR_CATEGORY): vol.Any(None, cv.string),
+        vol.Optional(ATTR_DEVICE): vol.Any(None, cv.string),
     }
 )
 
@@ -301,6 +302,7 @@ def _register_services(hass: HomeAssistant) -> None:
             due=due,
             assignee=assignee,
             trigger=trigger,
+            owner=call.context.user_id or store.voice_user_for(device),
         )
         return {"success": True, "idea": idea}
 
@@ -500,7 +502,7 @@ def _register_services(hass: HomeAssistant) -> None:
 
         category = call.data.get(ATTR_CATEGORY)
         # Automations have no user, and what they speak can be heard in the room
-        user_id = call.context.user_id or store.voice_user_id
+        user_id = call.context.user_id or store.voice_user_for(call.data.get(ATTR_DEVICE))
         speech_text = store.get_announcement_text(category=category, user_id=user_id)
         active_ideas = [
             i for i in store.visible_ideas(user_id) if i.get(ATTR_STATUS) == "active"

@@ -10,6 +10,7 @@ from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import AbortFlow, FlowResult
 from homeassistant.helpers import selector
+from homeassistant.helpers.entity import entity_sources
 from homeassistant.helpers.network import NoURLAvailableError
 from homeassistant.util import dt as dt_util
 
@@ -53,6 +54,7 @@ from .const import (
     CONF_REVIEW_TIME,
     CONF_REVIEW_WEEKDAY,
     CONF_SHARE_USERS,
+    CONF_VOICE_OWNERS,
     CONF_HIDE_EMPTY_CATEGORIES,
     CONF_MARKDOWN_PATH,
     CONF_SMART_FORMATTING,
@@ -222,6 +224,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "alexa_skill": "Alexa-Spracheingabe & Skill",
                 "reminders": "Erinnerungen & Benachrichtigungen",
                 "privacy": "Privatsphäre & Benutzer",
+                "privacy_voice": "Echos & Apps Personen zuordnen",
                 "close": "✅ Fertig",
             },
             "reminders": {
@@ -249,6 +252,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "alexa_skill": "Alexa Voice Input & Skill",
                 "reminders": "Reminders & Notifications",
                 "privacy": "Privacy & Users",
+                "privacy_voice": "Assign Echos & Apps to People",
                 "close": "✅ Done",
             },
             "reminders": {
@@ -706,6 +710,69 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                             CONF_PRIVACY_EXPORT,
                             default=options.get(CONF_PRIVACY_EXPORT, False),
                         ): selector.BooleanSelector(),
+                    }
+                )
+            ),
+        )
+
+    async def async_step_privacy_voice(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Assign one Echo or Alexa app to a person."""
+        if user_input is not None and user_input.pop(BACK_FIELD, False):
+            return await self.async_step_init()
+        options = dict(self.config_entry.options or self.config_entry.data)
+        owners = dict(options.get(CONF_VOICE_OWNERS) or {})
+        if user_input is not None:
+            device = user_input["device"]
+            if user_input.get("voice_user"):
+                owners[device] = user_input["voice_user"]
+            else:
+                owners.pop(device, None)
+            options[CONF_VOICE_OWNERS] = owners
+            return await self._async_saved(options, "privacy_voice")
+
+        names = {
+            user.id: user.name or user.id
+            for user in await self.hass.auth.async_get_users()
+            if user.is_active and not user.system_generated
+        }
+        store = await self._async_store()
+        devices = store.alexa_skill.known_device_names() | set(owners)
+        sources = entity_sources(self.hass)
+        for state in self.hass.states.async_all("media_player"):
+            source = sources.get(state.entity_id)
+            if source is not None and source["domain"] == "alexa_media":
+                devices.add(state.attributes.get("friendly_name") or state.entity_id)
+        assignments = "\n\n".join(
+            f"• {device}: {names.get(user_id, user_id)}"
+            for device, user_id in sorted(owners.items())
+        ) or self._text("Noch keine Zuordnung", "Nothing assigned yet")
+        return self.async_show_form(
+            step_id="privacy_voice",
+            description_placeholders={
+                "assignments": assignments,
+                "notice": self._take_notice(),
+            },
+            data_schema=vol.Schema(
+                _with_back(
+                    {
+                        vol.Required("device"): selector.SelectSelector(
+                            selector.SelectSelectorConfig(
+                                options=sorted(devices),
+                                custom_value=True,
+                                mode=selector.SelectSelectorMode.DROPDOWN,
+                            )
+                        ),
+                        vol.Optional("voice_user"): selector.SelectSelector(
+                            selector.SelectSelectorConfig(
+                                options=[
+                                    selector.SelectOptionDict(value=uid, label=name)
+                                    for uid, name in names.items()
+                                ],
+                                mode=selector.SelectSelectorMode.DROPDOWN,
+                            )
+                        ),
                     }
                 )
             ),

@@ -7,6 +7,7 @@ from typing import Any
 from homeassistant.core import Context, HomeAssistant
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import llm
+from homeassistant.helpers.entity import DATA_ENTITY_SOURCE
 from homeassistant.setup import async_setup_component
 from homeassistant.util import dt as dt_util
 import pytest
@@ -728,3 +729,176 @@ async def test_no_extra_fields_without_privacy(
 
     assert "owner" not in idea
     assert "access" not in idea
+
+
+async def _voice_setup(
+    hass: HomeAssistant, setup_entry: SetupEntry, hass_client_no_auth: ClientSessionGenerator
+) -> tuple[Any, Any]:
+    """Set up two Echos that are already known, one assigned to Lenja."""
+    hass.config.language = "de"
+    assert await async_setup_component(hass, "http", {})
+    entry = await _private(
+        setup_entry,
+        voice_mode="skill",
+        voice_owners={"Echo Lenja": OTHER},
+    )
+    store = entry.runtime_data
+    store.alexa_skill._devices = {  # noqa: SLF001
+        "d-lenja": {"name": "Echo Lenja", "entity_id": None, "custom": True},
+        "d-kuche": {"name": "Echo Küche", "entity_id": None, "custom": True},
+    }
+    client = await hass_client_no_auth()
+    url = f"/api/webhook/{store.alexa_skill._webhook_id}"  # noqa: SLF001
+
+    async def post(device: str, action: str, text: str = "") -> dict[str, Any]:
+        response = await client.post(
+            url,
+            json={
+                "application_id": "a",
+                "device_id": device,
+                "action": action,
+                "text": text,
+            },
+        )
+        return await response.json()
+
+    return entry, post
+
+
+async def test_skill_uses_person_of_the_echo(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_client_no_auth: ClientSessionGenerator,
+) -> None:
+    """Test ideas and read-outs per Echo."""
+    entry, post = await _voice_setup(hass, setup_entry, hass_client_no_auth)
+    store = entry.runtime_data
+
+    await post("d-lenja", "capture", "hausaufgaben machen")
+    await post("d-kuche", "capture", "steuer abgeben")
+    lenja = next(i for i in store.ideas if "hausaufgaben" in i["text"].lower())
+    jan = next(i for i in store.ideas if "steuer" in i["text"].lower())
+    assert store.owner_of(lenja) == OTHER
+    assert store.owner_of(jan) == OWNER
+
+    speech = (await post("d-lenja", "read_all"))["speech"].lower()
+    assert "hausaufgaben" in speech
+    assert "steuer" not in speech
+    assert "geheim" not in speech
+    speech = (await post("d-kuche", "read_all"))["speech"].lower()
+    assert "steuer" in speech
+    assert "hausaufgaben" not in speech
+
+    assert "gefunden" in (await post("d-lenja", "done", "steuer abgeben"))["speech"]
+    assert store.get_idea(jan["id"])["status"] == "active"
+    assert "Erledigt" in (await post("d-lenja", "done", "hausaufgaben"))["speech"]
+
+
+async def test_native_voice_uses_person_of_the_echo(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test the automation path, which passes the Echo as the device."""
+    entry = await _private(setup_entry, voice_owners={"Echo Lenja": OTHER})
+    store = entry.runtime_data
+
+    response = await hass.services.async_call(
+        "brainstorm",
+        "add_idea",
+        {"text": "hausaufgaben machen", "source": "alexa", "device": "Echo Lenja"},
+        blocking=True,
+        return_response=True,
+    )
+    assert store.owner_of(store.get_idea(response["idea"]["id"])) == OTHER
+
+    response = await hass.services.async_call(
+        "brainstorm",
+        "get_announcement",
+        {"device": "Echo Lenja"},
+        blocking=True,
+        return_response=True,
+    )
+    assert "hausaufgaben" in response["speech"].lower()
+    assert "geheim" not in response["speech"].lower()
+
+
+async def test_assist_without_user_only_gets_main_user(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test a voice satellite, where nobody is logged in."""
+    await _private(setup_entry)
+    context = llm.LLMContext(
+        platform="test",
+        context=Context(),
+        language="de",
+        assistant="conversation",
+        device_id=None,
+    )
+    instance = await BrainstormLlmAPI(hass).async_get_api_instance(context)
+    tool = next(t for t in instance.tools if t.name == "brainstorm_get_ideas")
+
+    result = await tool.async_call(
+        hass, llm.ToolInput(tool_name=tool.name, tool_args={}), context
+    )
+
+    assert "lenja" not in str(result).lower()
+    assert "jan" in str(result).lower()
+
+
+async def test_reminder_of_assigned_echo_speaks_there(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that a person's reminder may use the Echo it came from."""
+    alexa = async_mock_service(hass, "notify", "alexa_media")
+    hass.states.async_set(
+        "media_player.lenja", "idle", {"friendly_name": "Echo Lenja"}
+    )
+    hass.data.setdefault(DATA_ENTITY_SOURCE, {})["media_player.lenja"] = {
+        "domain": "alexa_media",
+        "custom_component": True,
+    }
+    entry = await _private(
+        setup_entry,
+        reminder_alexa="origin",
+        voice_owners={"Echo Lenja": OTHER},
+    )
+    store = entry.runtime_data
+    await store.async_add_idea(
+        "arzt",
+        device="Echo Lenja",
+        owner=OTHER,
+        due=dt_util.now() - timedelta(minutes=1),
+    )
+
+    await store.reminders.async_check(dt_util.now())
+    await hass.async_block_till_done()
+
+    assert alexa[0].data["target"] == ["media_player.lenja"]
+
+
+async def test_options_assign_and_remove_echo(
+    hass: HomeAssistant, setup_entry: SetupEntry, hass_admin_user: Any
+) -> None:
+    """Test assigning a device to a person and removing it again."""
+    entry = await _private(setup_entry)
+
+    async def open_step() -> dict[str, Any]:
+        result = await hass.config_entries.options.async_init(entry.entry_id)
+        return await hass.config_entries.options.async_configure(
+            result["flow_id"], {"next_step_id": "privacy_voice"}
+        )
+
+    result = await open_step()
+    assert result["step_id"] == "privacy_voice"
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"device": "Echo Lenja", "voice_user": hass_admin_user.id}
+    )
+    await hass.async_block_till_done()
+    assert result["step_id"] == "privacy_voice"
+    assert entry.options["voice_owners"] == {"Echo Lenja": hass_admin_user.id}
+    assert "Echo Lenja" in result["description_placeholders"]["assignments"]
+
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"device": "Echo Lenja"}
+    )
+    await hass.async_block_till_done()
+    assert entry.options["voice_owners"] == {}

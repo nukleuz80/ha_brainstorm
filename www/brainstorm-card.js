@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.59 - Sharing Ideas and Categories
+ * Version 1.4.60 - Select Several Ideas, Echos per Person
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",
@@ -536,20 +536,34 @@ class BrainstormCard extends HTMLElement {
   _renderShareFilter(attributes) {
     const bar = this.shadowRoot.getElementById("shareFilter");
     if (!bar) return;
-    if (!attributes.privacy) {
+    const selected = this._selectedCategory;
+    const isCompletedView = selected === "__completed__";
+    const canSelect = this._config.allow_edit === true && !isCompletedView;
+    if (isCompletedView) this._selectionMode = false;
+    if (!attributes.privacy && !canSelect) {
       bar.style.display = "none";
       return;
     }
     const filter = this._shareFilter || "all";
-    const selected = this._selectedCategory;
-    const canShareCategory = selected && selected !== "all" && selected !== "__completed__";
+    const canShareCategory =
+      attributes.privacy && selected && selected !== "all" && !isCompletedView;
     const button = (value, label) =>
       `<button class="share-filter-btn ${filter === value ? "active" : ""}" data-filter="${value}">${label}</button>`;
     bar.style.display = "flex";
     bar.innerHTML = `
-      ${button("all", "Alle")}${button("mine", "Meine")}${button("shared", "Mit mir geteilt")}
+      ${attributes.privacy ? `${button("all", "Alle")}${button("mine", "Meine")}${button("shared", "Mit mir geteilt")}` : ""}
       ${canShareCategory ? `<button class="share-filter-btn share-category-btn" id="shareCategoryBtn">👥 ${this._escapeHtml(selected)} freigeben</button>` : ""}
+      ${canSelect ? `<button class="share-filter-btn ${this._selectionMode ? "active" : ""}" id="selectionToggleBtn">☑️ Auswählen</button>` : ""}
     `;
+    const selectionToggle = bar.querySelector("#selectionToggleBtn");
+    if (selectionToggle) {
+      selectionToggle.addEventListener("click", () => {
+        this._selectionMode = !this._selectionMode;
+        this._selectedIds = new Set();
+        this._lastUpdated = null;
+        this._updateContent();
+      });
+    }
     bar.querySelectorAll("[data-filter]").forEach((btn) => {
       btn.addEventListener("click", () => {
         this._shareFilter = btn.getAttribute("data-filter");
@@ -566,6 +580,178 @@ class BrainstormCard extends HTMLElement {
     }
   }
 
+  _selectedIdeas() {
+    const byId = this._ideasById || {};
+    return [...(this._selectedIds || [])].map((id) => byId[id]).filter(Boolean);
+  }
+
+  _applySelectionMode() {
+    const list = this.shadowRoot.getElementById("ideasList");
+    if (!list) return;
+    list.classList.toggle("selection-mode", !!this._selectionMode);
+    if (this._selectionMode) {
+      this._selectedIds = this._selectedIds || new Set();
+      list.querySelectorAll(".idea-item").forEach((row) => {
+        const id = row.getAttribute("data-id");
+        const item = (this._ideasById || {})[id];
+        if (!item || item.access === "view") {
+          row.classList.add("not-selectable");
+          return;
+        }
+        const check = row.querySelector(".check-btn");
+        const paint = () => {
+          const isSelected = this._selectedIds.has(id);
+          row.classList.toggle("selected", isSelected);
+          if (check) {
+            check.classList.toggle("checked", isSelected);
+            check.textContent = isSelected ? "✓" : "";
+          }
+        };
+        paint();
+        row.addEventListener(
+          "click",
+          (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (this._selectedIds.has(id)) this._selectedIds.delete(id);
+            else this._selectedIds.add(id);
+            paint();
+            this._renderSelectionBar();
+          },
+          true
+        );
+      });
+    }
+    this._renderSelectionBar();
+  }
+
+  _renderSelectionBar() {
+    const bar = this.shadowRoot.getElementById("selectionBar");
+    if (!bar) return;
+    if (!this._selectionMode) {
+      bar.style.display = "none";
+      return;
+    }
+    const items = this._selectedIdeas();
+    const count = items.length;
+    const owned = items.filter((i) => !i.access || i.access === "owner");
+    const canShare = !!this._privacyAttributes && owned.length > 0;
+    bar.style.display = "flex";
+    bar.innerHTML = `
+      <span class="selection-count">${count} ausgewählt</span>
+      <button class="share-filter-btn" data-bulk="all">Alle</button>
+      <button class="share-filter-btn" data-bulk="done" ${count ? "" : "disabled"}>✓ Erledigen</button>
+      <button class="share-filter-btn" data-bulk="move" ${count ? "" : "disabled"}>🏷️ Verschieben</button>
+      ${this._privacyAttributes ? `<button class="share-filter-btn" data-bulk="share" ${canShare ? "" : "disabled"}>👥 Freigeben</button>` : ""}
+      ${this._config.allow_delete === true ? `<button class="share-filter-btn" data-bulk="delete" ${owned.length ? "" : "disabled"}>🗑️ Löschen</button>` : ""}
+    `;
+    bar.querySelectorAll("[data-bulk]").forEach((btn) => {
+      btn.addEventListener("click", () => this._runBulkAction(btn.getAttribute("data-bulk")));
+    });
+  }
+
+  async _runBulkAction(action) {
+    if (action === "all") {
+      Object.values(this._ideasById || {})
+        .filter((item) => item.access !== "view")
+        .forEach((item) => this._selectedIds.add(item.id));
+      this._renderSelectionBar();
+      this.shadowRoot
+        .getElementById("ideasList")
+        .querySelectorAll(".idea-item:not(.not-selectable)")
+        .forEach((row) => {
+          row.classList.add("selected");
+          const check = row.querySelector(".check-btn");
+          if (check) {
+            check.classList.add("checked");
+            check.textContent = "✓";
+          }
+        });
+      return;
+    }
+    const items = this._selectedIdeas();
+    const owned = items.filter((i) => !i.access || i.access === "owner");
+    if (action === "done") {
+      await this._applyToIdeas(items, { status: "completed" });
+    } else if (action === "move") {
+      this._showBulkMoveDialog(items);
+    } else if (action === "share") {
+      const skipped = items.length - owned.length;
+      this._showShareDialog(owned.map((i) => i.id), null, {}, skipped);
+    } else if (action === "delete") {
+      this._showBulkDeleteDialog(owned, items.length - owned.length);
+    }
+  }
+
+  async _applyToIdeas(items, fields) {
+    const failed = [];
+    for (const item of items) {
+      try {
+        await this._hass.callService("brainstorm", "update_idea", { id: item.id, ...fields });
+      } catch (err) {
+        failed.push(item.text);
+      }
+    }
+    this._finishSelection(failed);
+  }
+
+  _finishSelection(failed) {
+    if (failed.length) {
+      window.alert(`Nicht geändert: ${failed.join(", ")}`);
+    }
+    this._selectionMode = false;
+    this._selectedIds = new Set();
+    this._lastUpdated = null;
+    this._updateContent();
+  }
+
+  _showBulkMoveDialog(items) {
+    const sensor = this._getSensorEntity();
+    const categories = (sensor && sensor.attributes.categories) || [];
+    this._openDialog(`🏷️ ${items.length} Einträge verschieben`, (body) => {
+      body.innerHTML = `
+        <select class="action-dialog-input" id="bulkMoveSelect" style="cursor: pointer; width: 100%;">
+          ${categories.map((cat) => `<option value="${this._escapeHtml(cat)}">${this._escapeHtml(cat)}</option>`).join("")}
+        </select>
+        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px;">
+          <button class="action-dialog-btn action-dialog-btn-cancel" id="cancelBulkMove">Abbrechen</button>
+          <button class="action-dialog-btn action-dialog-btn-primary" id="saveBulkMove">Verschieben</button>
+        </div>
+      `;
+      body.querySelector("#cancelBulkMove").addEventListener("click", () => this._closeDialog());
+      body.querySelector("#saveBulkMove").addEventListener("click", async () => {
+        const category = body.querySelector("#bulkMoveSelect").value;
+        this._closeDialog();
+        await this._applyToIdeas(items, { category });
+      });
+    });
+  }
+
+  _showBulkDeleteDialog(items, skipped) {
+    this._openDialog(`🗑️ ${items.length} Einträge löschen?`, (body) => {
+      body.innerHTML = `
+        ${skipped ? `<div class="action-dialog-label">${skipped} fremde Einträge bleiben erhalten.</div>` : ""}
+        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px;">
+          <button class="action-dialog-btn action-dialog-btn-cancel" id="cancelBulkDelete">Abbrechen</button>
+          <button class="action-dialog-btn action-dialog-btn-primary" id="saveBulkDelete">Löschen</button>
+        </div>
+      `;
+      body.querySelector("#cancelBulkDelete").addEventListener("click", () => this._closeDialog());
+      body.querySelector("#saveBulkDelete").addEventListener("click", async () => {
+        this._closeDialog();
+        const failed = [];
+        for (const item of items) {
+          try {
+            await this._hass.callService("brainstorm", "delete_idea", { id: item.id });
+          } catch (err) {
+            failed.push(item.text);
+          }
+        }
+        this._finishSelection(failed);
+      });
+    });
+  }
+
   _formatShareBadge(item) {
     if (!item.access) return "";
     if (item.access !== "owner") {
@@ -576,18 +762,26 @@ class BrainstormCard extends HTMLElement {
     return count ? `<span class="due-badge" title="Für andere freigegeben">👥 ${count}</span>` : "";
   }
 
-  _showShareDialog(ids, category, current) {
+  _showShareDialog(ids, category, current, skipped = 0) {
     const attributes = this._privacyAttributes || {};
     const users = [{ id: "all", name: "Alle Benutzer" }, ...(attributes.share_users || [])];
-    const title = category ? `👥 ${this._escapeHtml(category)} freigeben` : "👥 Freigeben";
+    // Several ideas can differ, so nothing changes unless a level is chosen
+    const isBulk = !category && ids.length > 1;
+    const title = category
+      ? `👥 ${this._escapeHtml(category)} freigeben`
+      : isBulk
+      ? `👥 ${ids.length} Einträge freigeben`
+      : "👥 Freigeben";
     this._openDialog(title, (body) => {
       body.innerHTML = `
+        ${skipped ? `<div class="action-dialog-label">${skipped} fremde Einträge werden ausgelassen.</div>` : ""}
         ${users
           .map(
             (user) => `
           <div class="action-dialog-label">${this._escapeHtml(user.name)}:</div>
           <select class="action-dialog-input share-level" data-user="${this._escapeHtml(user.id)}" style="cursor: pointer; width: 100%;">
-            <option value="" ${!current[user.id] ? "selected" : ""}>Keine Freigabe</option>
+            ${isBulk ? `<option value="__keep__" selected>Nicht ändern</option>` : ""}
+            <option value="" ${!isBulk && !current[user.id] ? "selected" : ""}>Keine Freigabe</option>
             <option value="view" ${current[user.id] === "view" ? "selected" : ""}>Ansehen</option>
             <option value="edit" ${current[user.id] === "edit" ? "selected" : ""}>Bearbeiten</option>
           </select>`
@@ -603,12 +797,14 @@ class BrainstormCard extends HTMLElement {
       body.querySelector("#saveShareBtn").addEventListener("click", async () => {
         const shares = {};
         body.querySelectorAll(".share-level").forEach((select) => {
+          if (select.value === "__keep__") return;
           shares[select.getAttribute("data-user")] = select.value || null;
         });
         const payload = category ? { category, shares } : { ids, shares };
         try {
           await this._hass.callService("brainstorm", "share", payload);
           this._closeDialog();
+          if (isBulk) this._finishSelection([]);
         } catch (err) {
           const error = body.querySelector("#shareError");
           error.textContent = err.message || "Freigabe fehlgeschlagen.";
@@ -1215,6 +1411,7 @@ class BrainstormCard extends HTMLElement {
   }
 
   _openContextMenu(item, prevTopLevelItem, nextItem, prevItem, activeIdeas) {
+    if (this._selectionMode) return;
     const backdrop = this.shadowRoot.getElementById("appleContextMenu");
     const titleEl = this.shadowRoot.getElementById("appleMenuTitle");
     const actionsEl = this.shadowRoot.getElementById("appleMenuActions");
@@ -2580,6 +2777,40 @@ class BrainstormCard extends HTMLElement {
           background: color-mix(in srgb, #10b981 12%, var(--card-background-color, #ffffff));
           border: 1px solid color-mix(in srgb, #10b981 25%, transparent);
         }
+        .selection-bar {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 6px;
+          margin-bottom: 10px;
+          padding: 8px;
+          border-radius: 10px;
+          background: var(--secondary-background-color);
+        }
+        .selection-count {
+          font-size: 0.85rem;
+          font-weight: 500;
+          color: var(--primary-text-color);
+          margin-right: 4px;
+        }
+        .share-filter-btn:disabled {
+          opacity: 0.45;
+          cursor: default;
+        }
+        .ideas-list.selection-mode .drag-handle,
+        .ideas-list.selection-mode .item-actions {
+          display: none;
+        }
+        .ideas-list.selection-mode .idea-item {
+          cursor: pointer;
+        }
+        .ideas-list.selection-mode .idea-item.selected {
+          outline: 2px solid var(--primary-color);
+        }
+        .ideas-list.selection-mode .idea-item.not-selectable {
+          opacity: 0.5;
+          pointer-events: none;
+        }
         .share-filter {
           display: flex;
           flex-wrap: wrap;
@@ -2988,6 +3219,7 @@ class BrainstormCard extends HTMLElement {
           <div class="pills" id="pillsContainer" style="display: ${this._config.show_categories === true ? "flex" : "none"};"></div>
 
           <div class="share-filter" id="shareFilter" style="display: none;"></div>
+          <div class="selection-bar" id="selectionBar" style="display: none;"></div>
           <div class="ideas-list" id="ideasList"></div>
         </div>
 
@@ -3873,6 +4105,7 @@ class BrainstormCard extends HTMLElement {
         }
       }
     }
+    this._applySelectionMode();
   } catch (err) {
     console.error("Brainstorm card _updateContent error:", err);
   }
@@ -4336,7 +4569,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.4.59 ",
+  "%c BRAINSTORM-CARD %c v1.4.60 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

@@ -53,9 +53,10 @@ def _find_matches(ideas: list[dict[str, Any]], query: str) -> list[dict[str, Any
     return exact or [i for i in ideas if clean_query in i.get(ATTR_TEXT, "").lower()]
 
 
-def _user_id(llm_context: llm.LLMContext) -> str | None:
-    """Return the user who is asking."""
-    return llm_context.context.user_id if llm_context.context else None
+def _user_id(store: BrainstormStore, llm_context: llm.LLMContext) -> str | None:
+    """Return the user who is asking, a satellite without a user being the main one."""
+    user_id = llm_context.context.user_id if llm_context.context else None
+    return user_id or store.voice_user_id
 
 
 def _may_access(
@@ -63,7 +64,7 @@ def _may_access(
 ) -> bool:
     """Return whether the user who is asking may change an idea."""
     idea = store.get_idea(idea_id)
-    return idea is None or store.can_edit(idea, _user_id(llm_context))
+    return idea is None or store.can_edit(idea, _user_id(store, llm_context))
 
 
 def _error(message: str) -> llm.ToolResult:
@@ -247,7 +248,7 @@ class BrainstormGetIdeasTool(llm.Tool):
             category=category,
             status=status_filter,
             priority=priority_filter,
-            user_id=_user_id(llm_context),
+            user_id=_user_id(store, llm_context),
         )
 
         if search_term and search_term.strip():
@@ -336,7 +337,7 @@ class BrainstormCompleteIdeaTool(llm.Tool):
         target_id = idea_id
         if not target_id and query:
             active_ideas = store.get_ideas_by_category(
-                category=category, status="active", user_id=_user_id(llm_context)
+                category=category, status="active", user_id=_user_id(store, llm_context)
             )
             matches = _find_matches(active_ideas, query)
             if len(matches) > 1:
@@ -424,7 +425,7 @@ class BrainstormDeleteIdeaTool(llm.Tool):
         target_text = ""
         if not target_id and query:
             all_ideas = store.get_ideas_by_category(
-                category=category, status=None, user_id=_user_id(llm_context)
+                category=category, status=None, user_id=_user_id(store, llm_context)
             )
             matches = _find_matches(all_ideas, query)
             if len(matches) > 1:
@@ -436,7 +437,7 @@ class BrainstormDeleteIdeaTool(llm.Tool):
         if not target_id:
             return _error("No matching idea found to delete")
         target = store.get_idea(target_id)
-        if target is not None and not store.is_owner(target, _user_id(llm_context)):
+        if target is not None and not store.is_owner(target, _user_id(store, llm_context)):
             return _error("No matching idea found to delete")
 
         deleted = await store.async_delete_idea(
@@ -482,7 +483,7 @@ class BrainstormListCategoriesTool(llm.Tool):
         if not store:
             return _error("Brainstorm store is not initialized")
 
-        counts = store.get_overview_attributes(_user_id(llm_context))["category_counts"]
+        counts = store.get_overview_attributes(_user_id(store, llm_context))["category_counts"]
         return llm.ToolResult(
             data={
                 "categories": store.categories,

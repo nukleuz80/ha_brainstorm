@@ -25,6 +25,7 @@ from .const import (
     ATTR_ALEXA_NATIVE,
     ATTR_CATEGORY,
     ATTR_ID,
+    ATTR_OWNER,
     ATTR_TEXT,
     CONF_NATIVE_REMINDERS,
     CONF_REMINDERS_ENABLED,
@@ -509,6 +510,10 @@ class AlexaSkill:
         """Return the voice model for the Alexa developer console."""
         return json.dumps(INTERACTION_MODEL, indent=2, ensure_ascii=False)
 
+    def known_device_names(self) -> set[str]:
+        """Return the names of all devices the skill has seen."""
+        return {str(device["name"]) for device in self._devices.values()}
+
     async def async_name_last_unknown_device(self, name: str) -> None:
         """Name the sender Home Assistant could not identify, like the Alexa app."""
         unknown = self.last_unknown_device
@@ -577,6 +582,13 @@ class AlexaSkill:
             self.hass.async_create_task(
                 self._ideas.async_update_idea(pending.idea_id, device=echo.name)
             )
+            if self._ideas.privacy_enabled:
+                self.hass.async_create_task(
+                    self._ideas.async_mark_fields(
+                        pending.idea_id,
+                        {ATTR_OWNER: self._ideas.voice_user_for(echo.name)},
+                    )
+                )
 
     async def _async_resolve_echo(
         self, device_id: str | None, text: str
@@ -666,6 +678,7 @@ class AlexaSkill:
                 due=request.due if request else None,
                 assignee=request.assignee if request else None,
                 trigger=request.trigger if request else None,
+                owner=self._ideas.voice_user_for(echo.name if echo else None),
             )
         except HomeAssistantError as err:
             _LOGGER.warning("Could not store idea from Alexa skill: %s", err)
@@ -768,15 +781,15 @@ class AlexaSkill:
             request.text, echo, pending, request=request
         )
 
-    async def _async_done(self, text: str) -> web.Response:
+    async def _async_done(self, text: str, user_id: str | None) -> web.Response:
         """Complete the idea a person named, or the last one reminded of."""
         cleaned = text.strip()
         idea = (
-            self._ideas.find_open_idea(cleaned, self._ideas.voice_user_id)
+            self._ideas.find_open_idea(cleaned, user_id)
             if cleaned
-            else self._ideas.last_reminded_idea(self._ideas.voice_user_id)
+            else self._ideas.last_reminded_idea(user_id)
         )
-        if idea is None or not self._ideas.can_edit(idea, self._ideas.voice_user_id):
+        if idea is None or not self._ideas.can_edit(idea, user_id):
             return self._speech(
                 "Diesen Eintrag habe ich nicht gefunden.", "I could not find that idea."
             )
@@ -785,9 +798,9 @@ class AlexaSkill:
             f"Erledigt: {idea.get(ATTR_TEXT)}.", f"Done: {idea.get(ATTR_TEXT)}."
         )
 
-    async def _async_snooze(self) -> web.Response:
+    async def _async_snooze(self, user_id: str | None) -> web.Response:
         """Move the last reminder one hour ahead."""
-        idea = self._ideas.last_reminded_idea(self._ideas.voice_user_id)
+        idea = self._ideas.last_reminded_idea(user_id)
         if idea is None:
             return self._speech(
                 "Es gibt gerade keine Erinnerung zum Verschieben.",
@@ -846,6 +859,8 @@ class AlexaSkill:
                 self._pending.remove(pending)
             return web.json_response({"silent": True})
 
+        voice_user = self._ideas.voice_user_for(echo.name if echo else None)
+
         if action == ACTION_LAUNCH:
             return self._speech(
                 "Brainstorm bereit. Sage notiere und deine Notiz, oder sage Ansage.",
@@ -853,24 +868,20 @@ class AlexaSkill:
                 end_session=False,
             )
         if action == ACTION_READ_ALL:
-            speech = self._ideas.get_announcement_text(
-                user_id=self._ideas.voice_user_id
-            )
+            speech = self._ideas.get_announcement_text(user_id=voice_user)
             return self._speech(speech[:MAX_SPEECH_LENGTH], speech[:MAX_SPEECH_LENGTH])
         if action == ACTION_READ:
             category = self._category_from_speech(text)
             if category is None:
                 # Reading everything is too long, so offer the categories instead
-                speech = self._ideas.get_overview_text(self._ideas.voice_user_id)
+                speech = self._ideas.get_overview_text(voice_user)
                 return self._speech(speech, speech, end_session=False)
-            speech = self._ideas.get_announcement_text(
-                category, self._ideas.voice_user_id
-            )
+            speech = self._ideas.get_announcement_text(category, voice_user)
             return self._speech(speech[:MAX_SPEECH_LENGTH], speech[:MAX_SPEECH_LENGTH])
         if action == ACTION_REMIND:
             return await self._async_remind(text, echo, pending)
         if action == ACTION_DONE:
-            return await self._async_done(text)
+            return await self._async_done(text, voice_user)
         if action == ACTION_SNOOZE:
-            return await self._async_snooze()
+            return await self._async_snooze(voice_user)
         return await self._async_capture(text, echo, pending)
