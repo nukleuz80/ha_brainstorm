@@ -37,7 +37,8 @@
           "general": "Allgemeine Einstellungen & Export",
           "alexa_skill": "Alexa-Spracheingabe & Skill",
           "reminders": "Erinnerungen & Benachrichtigungen",
-          "close": "✅ Fertig"
+          "close": "✅ Fertig",
+          "privacy": "Privatsphäre & Benutzer"
         }
       },
       "categories": {
@@ -258,10 +259,25 @@
       "reminder_test_result": {
         "title": "Brainstorm › Erinnerungen › Testergebnis",
         "description": "{results}\n\nEin grüner Haken heißt, dass Home Assistant die Nachricht abgeschickt hat. Prüfe, ob sie wirklich angekommen ist."
+      },
+      "privacy": {
+        "title": "Brainstorm › Privatsphäre & Benutzer",
+        "description": "Aus: Alle sehen alle Einträge, wie bisher. An: Jeder Eintrag gehört der Person, die ihn angelegt hat, und nur sie sieht ihn in den Karten. Freigaben folgen in einer späteren Version.\n\nHinweis: Die To-do-Listen bleiben dabei leer, weil sie alle lesen können. Administratoren können alle Daten immer lesen.",
+        "data": {
+          "privacy_enabled": "Einträge privat halten",
+          "privacy_owner": "Hauptbenutzer",
+          "privacy_export": "Weiter in Markdown-Dateien exportieren",
+          "go_back": "⬅️ Zurück, ohne zu speichern"
+        },
+        "data_description": {
+          "privacy_owner": "Besitzt alle vorhandenen Einträge und alles, was an einem Echo gesagt wird. Sprache, Briefing und Rückblick nennen nur die Einträge dieser Person.",
+          "privacy_export": "Diese Dateien enthalten alle Einträge und sind für alle mit Zugriff auf den Config-Ordner lesbar."
+        }
       }
     },
     "error": {
-      "no_public_url": "Home Assistant hat keine öffentliche HTTPS-Adresse, zum Beispiel über Home Assistant Cloud. Der Skill kann es nicht erreichen, nutze daher den Modus Nativ."
+      "no_public_url": "Home Assistant hat keine öffentliche HTTPS-Adresse, zum Beispiel über Home Assistant Cloud. Der Skill kann es nicht erreichen, nutze daher den Modus Nativ.",
+      "owner_required": "Bitte wähle den Hauptbenutzer aus."
     },
     "abort": {
       "store_not_ready": "Brainstorm wird gerade neu geladen. Bitte öffne die Einstellungen in ein paar Sekunden noch einmal."

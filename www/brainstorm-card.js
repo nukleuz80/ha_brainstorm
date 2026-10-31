@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.57 - Selected Category Stays After Reload
+ * Version 1.4.58 - Private Ideas per User, Foundation
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",
@@ -143,8 +143,13 @@ class BrainstormCard extends HTMLElement {
     }
   }
 
+  _onPrivateData() {
+    if (this._initialized && !this._isDialogOpen) this._updateContent();
+  }
+
   set hass(hass) {
     this._hass = hass;
+    this._refreshPrivateData();
     if (!this._initialized) {
       this._initDom();
     } else {
@@ -160,6 +165,34 @@ class BrainstormCard extends HTMLElement {
   }
 
   _getSensorEntity() {
+    const state = this._getRawSensorEntity();
+    if (!state || !state.attributes || !state.attributes.privacy) return state;
+    // With private ideas, the sensor holds no ideas and the user's own come separately
+    return {
+      ...state,
+      last_updated: `${state.last_updated}_${this._privateVersion || 0}`,
+      attributes: { ...state.attributes, ...(this._privateData || {}) },
+    };
+  }
+
+  _refreshPrivateData() {
+    const state = this._getRawSensorEntity();
+    if (!state || !state.attributes || !state.attributes.privacy) return;
+    if (this._privateFetchKey === state.last_updated) return;
+    const key = state.last_updated;
+    this._privateFetchKey = key;
+    this._hass
+      .callWS({ type: "brainstorm/ideas" })
+      .then((data) => {
+        if (this._privateFetchKey !== key) return;
+        this._privateData = data;
+        this._privateVersion = (this._privateVersion || 0) + 1;
+        this._onPrivateData();
+      })
+      .catch((err) => console.error("[Brainstorm] Failed to load ideas:", err));
+  }
+
+  _getRawSensorEntity() {
     if (!this._hass) return null;
     const configured = (this._config && this._config.sensor) || "sensor.brainstorm_ideen_ubersicht";
     if (
@@ -4165,7 +4198,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.4.57 ",
+  "%c BRAINSTORM-CARD %c v1.4.58 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

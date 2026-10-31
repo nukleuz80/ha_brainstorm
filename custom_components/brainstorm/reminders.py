@@ -478,6 +478,9 @@ class ReminderManager:
 
     def _idea_echos(self, idea: dict[str, Any]) -> list[str]:
         """Return the Echos for an idea, following its list and person."""
+        foreign = self._foreign_rule(idea)
+        if foreign is not None:
+            return list(foreign.get("echos") or [])
         channel = self._rule(idea.get(ATTR_CATEGORY)).get(
             RULE_CHANNEL, RULE_CHANNEL_DEFAULT
         )
@@ -492,6 +495,9 @@ class ReminderManager:
         """Return the notification services for an idea."""
         if not self._options.get(CONF_NOTIFY_ENABLED, True):
             return []
+        foreign = self._foreign_rule(idea)
+        if foreign is not None:
+            return list(foreign.get("notify") or [])
         rule = self._rule(idea.get(ATTR_CATEGORY))
         channel = rule.get(RULE_CHANNEL, RULE_CHANNEL_DEFAULT)
         if channel in (RULE_CHANNEL_NONE, RULE_CHANNEL_ALEXA):
@@ -669,7 +675,7 @@ class ReminderManager:
         """Return the open ideas of a list as a sentence."""
         texts = [
             str(idea.get(ATTR_TEXT))
-            for idea in self._ideas.ideas
+            for idea in self._spoken_ideas()
             if idea.get("status") == "active" and idea.get(ATTR_CATEGORY) == category
         ]
         if not texts:
@@ -858,10 +864,27 @@ class ReminderManager:
         )
         return planned <= now < planned + limit
 
+    def _spoken_ideas(self) -> list[dict[str, Any]]:
+        """Return the ideas that messages to the shared channels may mention."""
+        return self._ideas.visible_ideas(self._ideas.voice_user_id)
+
+    def _foreign_rule(self, idea: dict[str, Any]) -> dict[str, Any] | None:
+        """Return the channels for someone else's private idea, None for an own one."""
+        if not self._ideas.privacy_enabled:
+            return None
+        owner = self._ideas.owner_of(idea)
+        if owner == self._ideas.voice_user_id:
+            return None
+        for state in self.hass.states.async_all("person"):
+            if state.attributes.get("user_id") == owner:
+                rules = self._options.get(CONF_PERSON_RULES) or {}
+                return rules.get(state.entity_id, {})
+        return {}
+
     def build_digest(self, now: datetime) -> str | None:
         """Return the briefing of what is due today, None if nothing is."""
         due_today = []
-        for idea in self._ideas.ideas:
+        for idea in self._spoken_ideas():
             if idea.get("status") != "active" or not idea.get(ATTR_DUE):
                 continue
             due = dt_util.parse_datetime(idea[ATTR_DUE])
@@ -879,7 +902,7 @@ class ReminderManager:
         days = int(self._options.get(CONF_REVIEW_DAYS, DEFAULT_REVIEW_DAYS))
         limit = now - timedelta(days=days)
         stale = []
-        for idea in self._ideas.ideas:
+        for idea in self._spoken_ideas():
             if idea.get("status") != "active":
                 continue
             created = dt_util.parse_datetime(idea.get(ATTR_CREATED_AT) or "")

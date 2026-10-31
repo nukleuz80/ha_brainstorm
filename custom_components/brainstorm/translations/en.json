@@ -37,7 +37,8 @@
           "general": "General Settings & Export",
           "alexa_skill": "Alexa Voice Input & Skill",
           "reminders": "Reminders & Notifications",
-          "close": "✅ Done"
+          "close": "✅ Done",
+          "privacy": "Privacy & Users"
         }
       },
       "categories": {
@@ -258,10 +259,25 @@
       "reminder_test_result": {
         "title": "Brainstorm › Reminders › Test Result",
         "description": "{results}\n\nA green check means Home Assistant sent the message. Check whether it really arrived."
+      },
+      "privacy": {
+        "title": "Brainstorm › Privacy & Users",
+        "description": "Off: everyone sees all ideas, as before. On: every idea belongs to its creator, and only they can see it in the cards. Sharing follows in a later version.\n\nNote: To-do lists stay empty while this is on, because everyone can read them. Admins can always read all data.",
+        "data": {
+          "privacy_enabled": "Keep ideas private",
+          "privacy_owner": "Main user",
+          "privacy_export": "Keep exporting to Markdown files",
+          "go_back": "⬅️ Back, without saving"
+        },
+        "data_description": {
+          "privacy_owner": "Owns all existing ideas, and everything said to an Echo. Voice, briefing and review only mention this person's ideas.",
+          "privacy_export": "These files contain all ideas and can be read by anyone with access to the config folder."
+        }
       }
     },
     "error": {
-      "no_public_url": "Home Assistant has no public HTTPS address, for example through Home Assistant Cloud. The skill cannot reach it, so use Native mode."
+      "no_public_url": "Home Assistant has no public HTTPS address, for example through Home Assistant Cloud. The skill cannot reach it, so use Native mode.",
+      "owner_required": "Please choose the main user."
     },
     "abort": {
       "store_not_ready": "Brainstorm is reloading. Please open the settings again in a few seconds."

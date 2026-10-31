@@ -1,6 +1,6 @@
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.4.57 - Selected Category Stays After Reload
+ * Version: 1.4.58 - Private Ideas per User, Foundation
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -144,8 +144,13 @@ class BrainstormMindmapCard extends HTMLElement {
     return 6;
   }
 
+  _onPrivateData() {
+    if (this._hass) this.hass = this._hass;
+  }
+
   set hass(hass) {
     this._hass = hass;
+    this._refreshPrivateData();
     if (!this._initialized) {
       this._initDom();
     }
@@ -209,6 +214,34 @@ class BrainstormMindmapCard extends HTMLElement {
   }
 
   _getSensorEntity() {
+    const state = this._getRawSensorEntity();
+    if (!state || !state.attributes || !state.attributes.privacy) return state;
+    // With private ideas, the sensor holds no ideas and the user's own come separately
+    return {
+      ...state,
+      last_updated: `${state.last_updated}_${this._privateVersion || 0}`,
+      attributes: { ...state.attributes, ...(this._privateData || {}) },
+    };
+  }
+
+  _refreshPrivateData() {
+    const state = this._getRawSensorEntity();
+    if (!state || !state.attributes || !state.attributes.privacy) return;
+    if (this._privateFetchKey === state.last_updated) return;
+    const key = state.last_updated;
+    this._privateFetchKey = key;
+    this._hass
+      .callWS({ type: "brainstorm/ideas" })
+      .then((data) => {
+        if (this._privateFetchKey !== key) return;
+        this._privateData = data;
+        this._privateVersion = (this._privateVersion || 0) + 1;
+        this._onPrivateData();
+      })
+      .catch((err) => console.error("[Brainstorm] Failed to load ideas:", err));
+  }
+
+  _getRawSensorEntity() {
     if (!this._hass) return null;
     const conf = this._config.entity || this._config.sensor;
     if (
@@ -3432,7 +3465,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.57 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.58 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

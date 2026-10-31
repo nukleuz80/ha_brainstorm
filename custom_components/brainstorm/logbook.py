@@ -28,6 +28,14 @@ from .const import (
 )
 
 
+def _visible_text(hass: HomeAssistant, data: dict[str, Any]) -> str:
+    """Return an idea's text for the logbook, which every user can read."""
+    store = hass.data.get(DOMAIN, {}).get("primary_store")
+    if store is not None and store.privacy_enabled:
+        return "Privater Eintrag"
+    return data.get(ATTR_TEXT, "Unbekannte Notiz")
+
+
 @callback
 def async_describe_events(
     hass: HomeAssistant,
@@ -41,7 +49,7 @@ def async_describe_events(
     def async_describe_idea_added(event: LazyEventPartialState | Event) -> dict[str, Any]:
         """Describe brainstorm idea added event."""
         data = event.data or {}
-        text = data.get(ATTR_TEXT, "Unbekannte Notiz")
+        text = _visible_text(hass, data)
         category = data.get(ATTR_CATEGORY, "Inbox")
         priority = data.get(ATTR_PRIORITY)
         source = data.get(ATTR_SOURCE, "manual")
@@ -76,7 +84,7 @@ def async_describe_events(
     def async_describe_idea_completed(event: LazyEventPartialState | Event) -> dict[str, Any]:
         """Describe brainstorm idea completed event."""
         data = event.data or {}
-        text = data.get(ATTR_TEXT, "Unbekannte Notiz")
+        text = _visible_text(hass, data)
         category = data.get(ATTR_CATEGORY, "Inbox")
         cat_prefix = f" ({category})" if category else ""
         display_text = text if len(text) <= 120 else f"{text[:117]}..."
@@ -92,7 +100,7 @@ def async_describe_events(
     def async_describe_idea_updated(event: LazyEventPartialState | Event) -> dict[str, Any]:
         """Describe brainstorm idea updated event."""
         data = event.data or {}
-        text = data.get(ATTR_TEXT, "Unbekannte Notiz")
+        text = _visible_text(hass, data)
         category = data.get(ATTR_CATEGORY, "Inbox")
         cat_prefix = f" ({category})" if category else ""
         display_text = text if len(text) <= 120 else f"{text[:117]}..."
@@ -108,7 +116,7 @@ def async_describe_events(
     def async_describe_idea_deleted(event: LazyEventPartialState | Event) -> dict[str, Any]:
         """Describe brainstorm idea deleted event."""
         data = event.data or {}
-        text = data.get(ATTR_TEXT, "Unbekannte Notiz")
+        text = _visible_text(hass, data)
         category = data.get(ATTR_CATEGORY, "Inbox")
         cat_prefix = f" ({category})" if category else ""
         display_text = text if len(text) <= 120 else f"{text[:117]}..."

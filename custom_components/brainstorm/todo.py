@@ -134,6 +134,9 @@ class BrainstormTodoList(TodoListEntity):
     @property
     def todo_items(self) -> list[TodoItem] | None:
         """Return the items on this list."""
+        # Everyone can read these lists, so private ideas must stay out of them
+        if self._store.privacy_enabled:
+            return []
         items = self._store.get_ideas_by_category(self._category, status=None)
         todo_items = []
         for item in items:

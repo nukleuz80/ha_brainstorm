@@ -10,24 +10,7 @@ from homeassistant.core import Context, HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import (
-    ATTR_CATEGORY,
-    ATTR_CREATED_AT,
-    ATTR_ASSIGNEE,
-    ATTR_DEVICE,
-    ATTR_DUE,
-    ATTR_TRIGGER,
-    ATTR_ID,
-    ATTR_ORDER,
-    ATTR_PARENT_ID,
-    ATTR_PRIORITY,
-    ATTR_SOURCE,
-    ATTR_STATUS,
-    ATTR_TEXT,
-    DEFAULT_PRIORITY,
-    DOMAIN,
-    OVERVIEW_ENTITY_ID,
-)
+from .const import ATTR_STATUS, DOMAIN, OVERVIEW_ENTITY_ID
 from .store import BrainstormStore
 
 PARALLEL_UPDATES = 0
@@ -100,97 +83,7 @@ class BrainstormOverviewSensor(SensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """Return detailed statistics and recent ideas."""
-        active_ideas = [i for i in self._store.ideas if i.get(ATTR_STATUS) == "active"]
-        completed_ideas = [i for i in self._store.ideas if i.get(ATTR_STATUS) == "completed"]
-
-        counts_by_cat = {}
-        for cat in self._store.categories:
-            counts_by_cat[cat] = len(
-                [i for i in active_ideas if i.get(ATTR_CATEGORY) == cat]
-            )
-
-        counts_by_prio = {
-            "urgent": len([i for i in active_ideas if i.get(ATTR_PRIORITY) == "urgent"]),
-            "high": len([i for i in active_ideas if i.get(ATTR_PRIORITY) == "high"]),
-            "medium": len([i for i in active_ideas if i.get(ATTR_PRIORITY, DEFAULT_PRIORITY) == "medium"]),
-            "low": len([i for i in active_ideas if i.get(ATTR_PRIORITY) == "low"]),
-        }
-
-        latest = active_ideas[0] if active_ideas else None
-        latest_info = None
-        if latest:
-            latest_info = {
-                "text": latest.get(ATTR_TEXT),
-                "category": latest.get(ATTR_CATEGORY),
-                "priority": latest.get(ATTR_PRIORITY, DEFAULT_PRIORITY),
-                "created_at": latest.get(ATTR_CREATED_AT),
-                "source": latest.get(ATTR_SOURCE),
-                "device": latest.get(ATTR_DEVICE),
-            }
-
-        recent_list = [
-            {
-                "text": i.get(ATTR_TEXT),
-                "category": i.get(ATTR_CATEGORY),
-                "priority": i.get(ATTR_PRIORITY, DEFAULT_PRIORITY),
-                "created_at": i.get(ATTR_CREATED_AT),
-                "source": i.get(ATTR_SOURCE),
-                "device": i.get(ATTR_DEVICE),
-            }
-            for i in active_ideas[:5]
-        ]
-
-        active_cats = [c for c in self._store.categories if counts_by_cat.get(c, 0) > 0]
-
-        return {
-            "speech_overview": self._store.get_announcement_text(),
-            "last_action": self._store.last_action,
-            "active_count": len(active_ideas),
-            "completed_count": len(completed_ideas),
-            "categories": self._store.categories,
-            "category_icons": self._store.category_icons,
-            "category_colors": self._store.category_colors,
-            "active_categories": active_cats,
-            "hide_empty_categories": self._store.hide_empty_categories,
-            "allowed_echos": self._store.allowed_echos,
-            "voice_mode": self._store.voice_mode,
-            "category_counts": counts_by_cat,
-            "priority_counts": counts_by_prio,
-            "latest_idea": latest_info,
-            "recent_ideas": recent_list,
-            "ideas": [
-                {
-                    "id": i.get(ATTR_ID),
-                    "text": i.get(ATTR_TEXT),
-                    "category": i.get(ATTR_CATEGORY),
-                    "priority": i.get(ATTR_PRIORITY, DEFAULT_PRIORITY),
-                    "created_at": i.get(ATTR_CREATED_AT),
-                    "source": i.get(ATTR_SOURCE),
-                    "device": i.get(ATTR_DEVICE),
-                    "status": i.get(ATTR_STATUS),
-                    "parent_id": i.get(ATTR_PARENT_ID),
-                    "order": i.get(ATTR_ORDER),
-                    "due": i.get(ATTR_DUE),
-                    "assignee": i.get(ATTR_ASSIGNEE),
-                    "trigger": i.get(ATTR_TRIGGER),
-                }
-                for i in active_ideas
-            ],
-            "completed_ideas": [
-                {
-                    "id": i.get(ATTR_ID),
-                    "text": i.get(ATTR_TEXT),
-                    "category": i.get(ATTR_CATEGORY),
-                    "priority": i.get(ATTR_PRIORITY, DEFAULT_PRIORITY),
-                    "created_at": i.get(ATTR_CREATED_AT),
-                    "source": i.get(ATTR_SOURCE),
-                    "device": i.get(ATTR_DEVICE),
-                    "status": i.get(ATTR_STATUS),
-                    "parent_id": i.get(ATTR_PARENT_ID),
-                    "order": i.get(ATTR_ORDER),
-                }
-                for i in completed_ideas[:50]
-            ],
-        }
-
+        """Return statistics and ideas, which only the owners see while private."""
+        if self._store.privacy_enabled:
+            return self._store.get_public_attributes()
+        return self._store.get_overview_attributes()

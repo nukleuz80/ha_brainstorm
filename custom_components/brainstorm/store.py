@@ -20,6 +20,7 @@ from .const import (
     ATTR_CREATED_AT,
     ATTR_ALEXA_NATIVE,
     ATTR_ASSIGNEE,
+    ATTR_OWNER,
     ATTR_DEVICE,
     ATTR_DUE,
     ATTR_TRIGGER,
@@ -36,6 +37,9 @@ from .const import (
     ATTR_TEXT,
     ATTR_UPDATED_AT,
     CONF_ALLOWED_ECHOS,
+    CONF_PRIVACY_ENABLED,
+    CONF_PRIVACY_EXPORT,
+    CONF_PRIVACY_OWNER,
     CONF_VOICE_MODE,
     CONF_HIDE_EMPTY_CATEGORIES,
     CONF_SMART_FORMATTING,
@@ -391,7 +395,12 @@ class BrainstormStore:
         self._category_icons: dict[str, str] = {}
         self._category_colors: dict[str, str] = {}
         self._listeners: list[Callable[[], None]] = []
-        self._auto_export = self.options.get("auto_export_markdown", False)
+        self._privacy_enabled = bool(self.options.get(CONF_PRIVACY_ENABLED))
+        self._privacy_owner = self.options.get(CONF_PRIVACY_OWNER)
+        # Export files are readable by everyone with access to the config folder
+        self._auto_export = self.options.get("auto_export_markdown", False) and (
+            not self._privacy_enabled or self.options.get(CONF_PRIVACY_EXPORT, False)
+        )
         self._markdown_path = self.options.get("markdown_path", DEFAULT_MARKDOWN_PATH)
         self._smart_formatting = self.options.get(CONF_SMART_FORMATTING, True)
         self._hide_empty_categories = self.options.get(
@@ -419,6 +428,117 @@ class BrainstormStore:
     def allowed_echos(self) -> list[str]:
         """Return the Echos allowed for voice input, empty meaning all."""
         return list(self._allowed_echos)
+
+    @property
+    def privacy_enabled(self) -> bool:
+        """Return whether ideas are private to their owners."""
+        return self._privacy_enabled
+
+    @property
+    def voice_user_id(self) -> str | None:
+        """Return whose ideas voice and briefings may mention, None meaning all."""
+        return self._privacy_owner if self._privacy_enabled else None
+
+    def owner_of(self, idea: dict[str, Any]) -> str | None:
+        """Return the owner of an idea, ideas from before belong to the main user."""
+        return idea.get(ATTR_OWNER) or self._privacy_owner
+
+    def can_access(self, idea: dict[str, Any], user_id: str | None) -> bool:
+        """Return whether a user may see and change an idea, None being the system."""
+        if not self._privacy_enabled or user_id is None:
+            return True
+        return self.owner_of(idea) == user_id
+
+    def visible_ideas(self, user_id: str | None = None) -> list[dict[str, Any]]:
+        """Return the ideas a user may see."""
+        return [idea for idea in self.ideas if self.can_access(idea, user_id)]
+
+    def get_idea(self, idea_id: str) -> dict[str, Any] | None:
+        """Return an idea by its ID."""
+        return self._ideas.get(idea_id)
+
+    def get_public_attributes(self) -> dict[str, Any]:
+        """Return what every Home Assistant user may read while ideas are private."""
+        return {
+            "privacy": True,
+            "categories": self.categories,
+            "category_icons": self.category_icons,
+            "category_colors": self.category_colors,
+            "hide_empty_categories": self.hide_empty_categories,
+            "allowed_echos": self.allowed_echos,
+            "voice_mode": self.voice_mode,
+        }
+
+    def get_overview_attributes(self, user_id: str | None = None) -> dict[str, Any]:
+        """Return the statistics and ideas a user may see."""
+        visible = self.visible_ideas(user_id)
+        active_ideas = [i for i in visible if i.get(ATTR_STATUS) == "active"]
+        completed_ideas = [i for i in visible if i.get(ATTR_STATUS) == "completed"]
+
+        counts_by_cat = {
+            cat: len([i for i in active_ideas if i.get(ATTR_CATEGORY) == cat])
+            for cat in self.categories
+        }
+        counts_by_prio = {
+            prio: len(
+                [i for i in active_ideas if i.get(ATTR_PRIORITY, DEFAULT_PRIORITY) == prio]
+            )
+            for prio in ("urgent", "high", "medium", "low")
+        }
+
+        def summary(idea: dict[str, Any]) -> dict[str, Any]:
+            return {
+                "text": idea.get(ATTR_TEXT),
+                "category": idea.get(ATTR_CATEGORY),
+                "priority": idea.get(ATTR_PRIORITY, DEFAULT_PRIORITY),
+                "created_at": idea.get(ATTR_CREATED_AT),
+                "source": idea.get(ATTR_SOURCE),
+                "device": idea.get(ATTR_DEVICE),
+            }
+
+        def details(idea: dict[str, Any]) -> dict[str, Any]:
+            return {
+                **summary(idea),
+                "id": idea.get(ATTR_ID),
+                "status": idea.get(ATTR_STATUS),
+                "parent_id": idea.get(ATTR_PARENT_ID),
+                "order": idea.get(ATTR_ORDER),
+            }
+
+        last_action = self.last_action
+        if self._privacy_enabled and last_action is not None:
+            # A deleted idea has no owner any more, so its action stays hidden
+            acted_on = self._ideas.get(str(last_action.get("id")))
+            if acted_on is None or not self.can_access(acted_on, user_id):
+                last_action = None
+
+        return {
+            "speech_overview": self.get_announcement_text(user_id=user_id),
+            "last_action": last_action,
+            "active_count": len(active_ideas),
+            "completed_count": len(completed_ideas),
+            "categories": self.categories,
+            "category_icons": self.category_icons,
+            "category_colors": self.category_colors,
+            "active_categories": [c for c in self.categories if counts_by_cat[c] > 0],
+            "hide_empty_categories": self.hide_empty_categories,
+            "allowed_echos": self.allowed_echos,
+            "voice_mode": self.voice_mode,
+            "category_counts": counts_by_cat,
+            "priority_counts": counts_by_prio,
+            "latest_idea": summary(active_ideas[0]) if active_ideas else None,
+            "recent_ideas": [summary(i) for i in active_ideas[:5]],
+            "ideas": [
+                {
+                    **details(i),
+                    "due": i.get(ATTR_DUE),
+                    "assignee": i.get(ATTR_ASSIGNEE),
+                    "trigger": i.get(ATTR_TRIGGER),
+                }
+                for i in active_ideas
+            ],
+            "completed_ideas": [details(i) for i in completed_ideas[:50]],
+        }
 
     @property
     def voice_mode(self) -> str:
@@ -797,6 +917,7 @@ class BrainstormStore:
         due: datetime | None = None,
         assignee: str | None = None,
         trigger: dict[str, str | None] | None = None,
+        owner: str | None = None,
     ) -> dict[str, Any]:
         """Add a new brainstorm idea."""
         raw_check = (text or "").strip().lower()
@@ -845,6 +966,7 @@ class BrainstormStore:
             ATTR_DUE: due.isoformat() if due else None,
             ATTR_ASSIGNEE: assignee,
             ATTR_TRIGGER: trigger,
+            ATTR_OWNER: owner or (context.user_id if context else None),
         }
 
         act_context = context or Context()
@@ -1012,14 +1134,16 @@ class BrainstormStore:
         await self.async_save()
         self._notify_listeners()
 
-    def find_open_idea(self, spoken: str) -> dict[str, Any] | None:
+    def find_open_idea(
+        self, spoken: str, user_id: str | None = None
+    ) -> dict[str, Any] | None:
         """Find the active idea a person most likely means."""
         wanted = spoken.strip().lower()
         if not wanted:
             return None
         best: dict[str, Any] | None = None
         best_score = 0.0
-        for idea in self.ideas:
+        for idea in self.visible_ideas(user_id):
             if idea.get(ATTR_STATUS) != "active":
                 continue
             text = str(idea.get(ATTR_TEXT, "")).lower()
@@ -1039,16 +1163,16 @@ class BrainstormStore:
         ]
         return min(upcoming, key=lambda idea: idea[ATTR_DUE], default=None)
 
-    def last_reminded_idea(self) -> dict[str, Any] | None:
+    def last_reminded_idea(self, user_id: str | None = None) -> dict[str, Any] | None:
         """Return the active idea that was most recently reminded of."""
         reminded = [
             idea
-            for idea in self.ideas
+            for idea in self.visible_ideas(user_id)
             if idea.get(ATTR_STATUS) == "active" and idea.get(ATTR_REMINDED_AT)
         ]
         return max(reminded, key=lambda idea: idea[ATTR_REMINDED_AT], default=None)
 
-    def get_overview_text(self) -> str:
+    def get_overview_text(self, user_id: str | None = None) -> str:
         """Generate a short spoken overview instead of reading every idea."""
         parts = []
         total = 0
@@ -1056,7 +1180,7 @@ class BrainstormStore:
             count = len(
                 [
                     idea
-                    for idea in self.ideas
+                    for idea in self.visible_ideas(user_id)
                     if idea.get(ATTR_STATUS) == "active"
                     and idea.get(ATTR_CATEGORY) == category
                 ]
@@ -1216,10 +1340,11 @@ class BrainstormStore:
         category: str | None = None,
         status: str | None = "active",
         priority: str | None = None,
+        user_id: str | None = None,
     ) -> list[dict[str, Any]]:
         """Filter ideas by category, status and priority."""
         results = []
-        for idea in self.ideas:
+        for idea in self.visible_ideas(user_id):
             if category and idea.get(ATTR_CATEGORY) != category:
                 continue
             if status and idea.get(ATTR_STATUS) != status:
@@ -1229,9 +1354,13 @@ class BrainstormStore:
             results.append(idea)
         return results
 
-    def get_announcement_text(self, category: str | None = None) -> str:
+    def get_announcement_text(
+        self, category: str | None = None, user_id: str | None = None
+    ) -> str:
         """Generate a concise, natural German TTS speech text of active ideas."""
-        active_ideas = [i for i in self.ideas if i.get(ATTR_STATUS) == "active"]
+        active_ideas = [
+            i for i in self.visible_ideas(user_id) if i.get(ATTR_STATUS) == "active"
+        ]
 
         def _format_count(n: int) -> str:
             words = {

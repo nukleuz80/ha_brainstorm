@@ -1,0 +1,470 @@
+"""Tests for private ideas per Home Assistant user."""
+from __future__ import annotations
+
+from datetime import timedelta
+from typing import Any
+
+from homeassistant.core import Context, HomeAssistant
+from homeassistant.exceptions import ServiceValidationError
+from homeassistant.helpers import llm
+from homeassistant.setup import async_setup_component
+from homeassistant.util import dt as dt_util
+import pytest
+from pytest_homeassistant_custom_component.common import async_mock_service
+from pytest_homeassistant_custom_component.typing import (
+    ClientSessionGenerator,
+    WebSocketGenerator,
+)
+
+from custom_components.brainstorm.const import OVERVIEW_ENTITY_ID
+from custom_components.brainstorm.llm import BrainstormLlmAPI
+
+from .conftest import SetupEntry
+
+TEXT_ATTRIBUTES = (
+    "ideas",
+    "completed_ideas",
+    "recent_ideas",
+    "latest_idea",
+    "speech_overview",
+    "last_action",
+)
+OWNER = "user-jan"
+OTHER = "user-lenja"
+
+
+async def _private(setup_entry: SetupEntry, **extra: Any) -> Any:
+    """Set up with private ideas, one of each user and one from before."""
+    entry = await setup_entry(
+        stored={
+            "ideas": [
+                {
+                    "id": "oldidea1",
+                    "text": "alte geheime idee",
+                    "category": "Inbox",
+                    "status": "active",
+                    "created_at": "2026-01-01T10:00:00+00:00",
+                }
+            ],
+            "categories": ["Inbox", "Alltag"],
+        },
+        options={"privacy_enabled": True, "privacy_owner": OWNER, **extra},
+    )
+    store = entry.runtime_data
+    await store.async_add_idea("idee von jan", context=Context(user_id=OWNER))
+    await store.async_add_idea("idee von lenja", context=Context(user_id=OTHER))
+    return entry
+
+
+def _texts(ideas: list[dict[str, Any]]) -> set[str]:
+    """Return the lower-case texts of ideas."""
+    return {idea["text"].lower() for idea in ideas}
+
+
+async def test_switch_off_changes_nothing(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that without the switch everyone sees everything as before."""
+    entry = await setup_entry()
+    store = entry.runtime_data
+    await store.async_add_idea("idee von lenja", context=Context(user_id=OTHER))
+
+    attributes = hass.states.get(OVERVIEW_ENTITY_ID).attributes
+    assert "privacy" not in attributes
+    assert _texts(attributes["ideas"]) == {"idee von lenja"}
+    assert store.can_access(store.ideas[0], OWNER)
+    assert store.get_ideas_by_category(user_id=OWNER)
+
+
+async def test_sensor_holds_no_private_text(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test the sensor, which every Home Assistant user can read."""
+    await _private(setup_entry)
+
+    state = hass.states.get(OVERVIEW_ENTITY_ID)
+
+    assert state.attributes["privacy"] is True
+    for attribute in TEXT_ATTRIBUTES:
+        assert attribute not in state.attributes
+    assert "geheim" not in str(state.as_dict())
+    assert "idee von" not in str(state.as_dict())
+    assert state.attributes["categories"]
+
+
+async def test_each_user_gets_only_own_ideas(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_ws_client: WebSocketGenerator,
+    hass_read_only_access_token: str,
+) -> None:
+    """Test the WebSocket command with two real users."""
+    assert await async_setup_component(hass, "websocket_api", {})
+    entry = await _private(setup_entry)
+    store = entry.runtime_data
+    refresh = hass.auth.async_validate_access_token(hass_read_only_access_token)
+    reader_id = refresh.user.id
+    await store.async_add_idea("idee vom leser", context=Context(user_id=reader_id))
+
+    client = await hass_ws_client(hass, hass_read_only_access_token)
+    await client.send_json_auto_id({"type": "brainstorm/ideas"})
+    result = (await client.receive_json())["result"]
+
+    assert _texts(result["ideas"]) == {"idee vom leser"}
+    assert result["active_count"] == 1
+    assert "geheim" not in str(result)
+    assert "idee von" not in str(result)
+
+
+async def test_old_ideas_belong_to_main_user(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that ideas from before privacy go to the main user."""
+    entry = await _private(setup_entry)
+    store = entry.runtime_data
+
+    assert _texts(store.visible_ideas(OWNER)) == {"alte geheime idee", "idee von jan"}
+    assert _texts(store.visible_ideas(OTHER)) == {"idee von lenja"}
+    assert len(store.visible_ideas(None)) == 3
+    overview = store.get_overview_attributes(OTHER)
+    assert overview["category_counts"]["Inbox"] <= 1
+    assert "geheim" not in overview["speech_overview"]
+
+
+@pytest.mark.parametrize(
+    ("service", "data"),
+    [
+        ("update_idea", {"id": "oldidea1", "text": "gehackt"}),
+        ("delete_idea", {"id": "oldidea1"}),
+        ("reorder_ideas", {"idea_ids": ["oldidea1"]}),
+    ],
+)
+async def test_services_protect_foreign_ideas(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    service: str,
+    data: dict[str, Any],
+) -> None:
+    """Test that nobody can change someone else's private idea."""
+    entry = await _private(setup_entry)
+
+    with pytest.raises(ServiceValidationError):
+        await hass.services.async_call(
+            "brainstorm", service, data, blocking=True, context=Context(user_id=OTHER)
+        )
+
+    stored = entry.runtime_data.get_idea("oldidea1")
+    assert stored["text"] == "alte geheime idee"
+
+
+async def test_owner_can_change_own_idea(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test the normal case for the owner, and automations without a user."""
+    entry = await _private(setup_entry)
+
+    await hass.services.async_call(
+        "brainstorm",
+        "update_idea",
+        {"id": "oldidea1", "text": "geändert"},
+        blocking=True,
+        context=Context(user_id=OWNER),
+    )
+    assert entry.runtime_data.get_idea("oldidea1")["text"] == "geändert"
+
+    await hass.services.async_call(
+        "brainstorm", "update_idea", {"id": "oldidea1", "text": "automation"}, blocking=True
+    )
+    assert entry.runtime_data.get_idea("oldidea1")["text"] == "automation"
+
+
+async def test_read_services_are_filtered(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test reading ideas and announcements through services."""
+    await _private(setup_entry)
+
+    response = await hass.services.async_call(
+        "brainstorm",
+        "get_ideas",
+        {},
+        blocking=True,
+        return_response=True,
+        context=Context(user_id=OTHER),
+    )
+    assert _texts(response["ideas"]) == {"idee von lenja"}
+
+    response = await hass.services.async_call(
+        "brainstorm",
+        "get_announcement",
+        {},
+        blocking=True,
+        return_response=True,
+        context=Context(user_id=OTHER),
+    )
+    assert "lenja" in response["speech"].lower()
+    assert "geheim" not in response["speech"].lower()
+
+    # Without a user it is spoken in a room, so only the main user's ideas count
+    response = await hass.services.async_call(
+        "brainstorm", "get_announcement", {}, blocking=True, return_response=True
+    )
+    assert "geheim" in response["speech"].lower()
+    assert "lenja" not in response["speech"].lower()
+
+
+@pytest.mark.parametrize(
+    ("service", "data"),
+    [("remove_category", {"name": "Alltag"}), ("export_markdown", {})],
+)
+async def test_shared_actions_need_an_admin(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_read_only_access_token: str,
+    service: str,
+    data: dict[str, Any],
+) -> None:
+    """Test actions that could reveal or move the ideas of others."""
+    await _private(setup_entry)
+    refresh = hass.auth.async_validate_access_token(hass_read_only_access_token)
+
+    with pytest.raises(ServiceValidationError):
+        await hass.services.async_call(
+            "brainstorm",
+            service,
+            data,
+            blocking=True,
+            context=Context(user_id=refresh.user.id),
+        )
+
+
+async def test_todo_lists_stay_empty(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test the lists, which every user can read."""
+    await _private(setup_entry)
+    entity_id = next(
+        state.entity_id
+        for state in hass.states.async_all("todo")
+        if state.entity_id.endswith("inbox")
+    )
+
+    items = await hass.services.async_call(
+        "todo",
+        "get_items",
+        {},
+        target={"entity_id": entity_id},
+        blocking=True,
+        return_response=True,
+    )
+
+    assert items[entity_id]["items"] == []
+
+
+async def test_logbook_hides_text(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test the logbook description, which every user can read."""
+    from custom_components.brainstorm.logbook import _visible_text  # noqa: PLC0415
+
+    await _private(setup_entry)
+    assert _visible_text(hass, {"text": "geheim"}) == "Privater Eintrag"
+
+
+async def test_logbook_keeps_text_without_privacy(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that nothing changes in the logbook with the switch off."""
+    from custom_components.brainstorm.logbook import _visible_text  # noqa: PLC0415
+
+    await setup_entry()
+    assert _visible_text(hass, {"text": "offen"}) == "offen"
+
+
+async def test_auto_export_stops_unless_allowed(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test the files, which everyone with folder access can read."""
+    entry = await setup_entry(
+        options={
+            "privacy_enabled": True,
+            "privacy_owner": OWNER,
+            "auto_export_markdown": True,
+        }
+    )
+    assert not entry.runtime_data._auto_export  # noqa: SLF001
+
+
+async def test_auto_export_can_be_allowed(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that exporting stays possible when someone wants it."""
+    entry = await setup_entry(
+        options={
+            "privacy_enabled": True,
+            "privacy_owner": OWNER,
+            "auto_export_markdown": True,
+            "privacy_export": True,
+        }
+    )
+    assert entry.runtime_data._auto_export  # noqa: SLF001
+
+
+async def _tool(hass: HomeAssistant, name: str, args: dict[str, Any], user: str) -> Any:
+    """Call a Brainstorm tool like Assist does for a user."""
+    context = llm.LLMContext(
+        platform="test",
+        context=Context(user_id=user),
+        language="de",
+        assistant="conversation",
+        device_id=None,
+    )
+    instance = await BrainstormLlmAPI(hass).async_get_api_instance(context)
+    tool = next(t for t in instance.tools if t.name == name)
+    return await tool.async_call(
+        hass, llm.ToolInput(tool_name=name, tool_args=args), context
+    )
+
+
+async def test_assist_tools_are_filtered(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that Assist only works with what the asking user may see."""
+    entry = await _private(setup_entry)
+    instance = await BrainstormLlmAPI(hass).async_get_api_instance(
+        llm.LLMContext(
+            platform="test",
+            context=Context(user_id=OTHER),
+            language="de",
+            assistant="conversation",
+            device_id=None,
+        )
+    )
+    names = {tool.name for tool in instance.tools}
+    query = next(n for n in names if "categor" not in n and ("get" in n or "list" in n))
+    complete = next(n for n in names if "complete" in n)
+    delete = next(n for n in names if "delete" in n)
+
+    result = await _tool(hass, query, {}, OTHER)
+    assert "geheim" not in str(result).lower()
+    assert "lenja" in str(result).lower()
+
+    await _tool(hass, complete, {"id": "oldidea1"}, OTHER)
+    await _tool(hass, complete, {"idea_id": "oldidea1"}, OTHER)
+    await _tool(hass, delete, {"id": "oldidea1"}, OTHER)
+    await _tool(hass, delete, {"idea_id": "oldidea1"}, OTHER)
+    stored = entry.runtime_data.get_idea("oldidea1")
+    assert stored is not None
+    assert stored["status"] == "active"
+
+
+async def test_voice_and_briefing_only_mention_main_user(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_client_no_auth: ClientSessionGenerator,
+) -> None:
+    """Test everything spoken aloud, which others could overhear."""
+    hass.config.language = "de"
+    assert await async_setup_component(hass, "http", {})
+    entry = await _private(setup_entry, voice_mode="skill")
+    store = entry.runtime_data
+    client = await hass_client_no_auth()
+    url = f"/api/webhook/{store.alexa_skill._webhook_id}"  # noqa: SLF001
+
+    response = await client.post(
+        url, json={"application_id": "a", "action": "read_all", "text": ""}
+    )
+    speech = (await response.json())["speech"].lower()
+    assert "jan" in speech
+    assert "lenja" not in speech
+
+    await store.async_add_idea("arztbesuch planen", context=Context(user_id=OTHER))
+    response = await client.post(
+        url, json={"application_id": "a", "action": "done", "text": "arztbesuch"}
+    )
+    assert "gefunden" in (await response.json())["speech"]
+
+    # New ideas by voice go to the main user
+    response = await client.post(
+        url, json={"application_id": "a", "action": "capture", "text": "per stimme"}
+    )
+    assert response.status == 200
+    spoken = next(i for i in store.ideas if "stimme" in i["text"].lower())
+    assert store.owner_of(spoken) == OWNER
+
+
+async def test_foreign_reminder_goes_only_to_its_owner(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that a private reminder does not reach the main user's phone."""
+    jan_phone = async_mock_service(hass, "notify", "mobile_app_jan")
+    lenja_phone = async_mock_service(hass, "notify", "mobile_app_lenja")
+    alexa = async_mock_service(hass, "notify", "alexa_media")
+    hass.states.async_set("person.lenja", "home", {"user_id": OTHER})
+    entry = await _private(
+        setup_entry,
+        reminder_notify=["notify.mobile_app_jan"],
+        reminder_alexa="fixed",
+        reminder_echos=["media_player.kuche"],
+        person_rules={"person.lenja": {"notify": ["notify.mobile_app_lenja"]}},
+    )
+    store = entry.runtime_data
+    past = dt_util.now() - timedelta(minutes=1)
+    await store.async_add_idea(
+        "arzt von lenja", due=past, context=Context(user_id=OTHER)
+    )
+
+    await store.reminders.async_check(dt_util.now())
+    await hass.async_block_till_done()
+
+    assert len(lenja_phone) == 1
+    assert not jan_phone
+    assert not alexa
+
+
+async def test_foreign_reminder_without_channels_stays_silent(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that a person without channels gets nothing, rather than a leak."""
+    jan_phone = async_mock_service(hass, "notify", "mobile_app_jan")
+    entry = await _private(setup_entry, reminder_notify=["notify.mobile_app_jan"])
+    store = entry.runtime_data
+    await store.async_add_idea(
+        "arzt von lenja",
+        due=dt_util.now() - timedelta(minutes=1),
+        context=Context(user_id=OTHER),
+    )
+
+    await store.reminders.async_check(dt_util.now())
+    await hass.async_block_till_done()
+
+    assert not jan_phone
+
+
+async def test_options_require_main_user(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_admin_user: Any,
+) -> None:
+    """Test the switch, which needs someone to own the existing ideas."""
+    entry = await setup_entry()
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "privacy"}
+    )
+    assert result["step_id"] == "privacy"
+
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"privacy_enabled": True}
+    )
+    assert result["errors"] == {"privacy_owner": "owner_required"}
+    assert "privacy_enabled" not in entry.options
+
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {"privacy_enabled": True, "privacy_owner": hass_admin_user.id},
+    )
+    await hass.async_block_till_done()
+    assert result["step_id"] == "init"
+    assert entry.options["privacy_owner"] == hass_admin_user.id
+    assert hass.states.get(OVERVIEW_ENTITY_ID).attributes["privacy"] is True

@@ -772,9 +772,9 @@ class AlexaSkill:
         """Complete the idea a person named, or the last one reminded of."""
         cleaned = text.strip()
         idea = (
-            self._ideas.find_open_idea(cleaned)
+            self._ideas.find_open_idea(cleaned, self._ideas.voice_user_id)
             if cleaned
-            else self._ideas.last_reminded_idea()
+            else self._ideas.last_reminded_idea(self._ideas.voice_user_id)
         )
         if idea is None:
             return self._speech(
@@ -787,7 +787,7 @@ class AlexaSkill:
 
     async def _async_snooze(self) -> web.Response:
         """Move the last reminder one hour ahead."""
-        idea = self._ideas.last_reminded_idea()
+        idea = self._ideas.last_reminded_idea(self._ideas.voice_user_id)
         if idea is None:
             return self._speech(
                 "Es gibt gerade keine Erinnerung zum Verschieben.",
@@ -853,15 +853,19 @@ class AlexaSkill:
                 end_session=False,
             )
         if action == ACTION_READ_ALL:
-            speech = self._ideas.get_announcement_text()
+            speech = self._ideas.get_announcement_text(
+                user_id=self._ideas.voice_user_id
+            )
             return self._speech(speech[:MAX_SPEECH_LENGTH], speech[:MAX_SPEECH_LENGTH])
         if action == ACTION_READ:
             category = self._category_from_speech(text)
             if category is None:
                 # Reading everything is too long, so offer the categories instead
-                speech = self._ideas.get_overview_text()
+                speech = self._ideas.get_overview_text(self._ideas.voice_user_id)
                 return self._speech(speech, speech, end_session=False)
-            speech = self._ideas.get_announcement_text(category)
+            speech = self._ideas.get_announcement_text(
+                category, self._ideas.voice_user_id
+            )
             return self._speech(speech[:MAX_SPEECH_LENGTH], speech[:MAX_SPEECH_LENGTH])
         if action == ACTION_REMIND:
             return await self._async_remind(text, echo, pending)

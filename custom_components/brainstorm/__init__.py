@@ -44,6 +44,7 @@ from .const import (
 from .llm import async_register_llm_api
 from .reminders import ReminderManager, build_reminder_request
 from .store import BrainstormStore
+from .websocket import async_register_commands
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -155,6 +156,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     hass.data.setdefault(DOMAIN, {})
 
     _register_services(hass)
+    async_register_commands(hass)
     return True
 
 
@@ -221,6 +223,25 @@ def _get_active_store(hass: HomeAssistant) -> BrainstormStore | None:
     return data.get("primary_store")
 
 
+def _check_idea_access(store: BrainstormStore, idea_id: str, call: ServiceCall) -> None:
+    """Refuse changes to someone else's private idea."""
+    idea = store.get_idea(idea_id)
+    if idea is not None and not store.can_access(idea, call.context.user_id):
+        raise ServiceValidationError(f"Kein Zugriff auf Idee '{idea_id}'.")
+
+
+async def _check_shared_setting_access(
+    hass: HomeAssistant, store: BrainstormStore, call: ServiceCall
+) -> None:
+    """Only let admins change what affects the private ideas of others."""
+    user_id = call.context.user_id
+    if not store.privacy_enabled or user_id is None:
+        return
+    user = await hass.auth.async_get_user(user_id)
+    if user is None or not user.is_admin:
+        raise ServiceValidationError("Nur Administratoren dürfen das ausführen.")
+
+
 @callback
 def _register_services(hass: HomeAssistant) -> None:
     """Register brainstorm services."""
@@ -272,6 +293,7 @@ def _register_services(hass: HomeAssistant) -> None:
             raise HomeAssistantError("Brainstorm store is not initialized")
 
         idea_id = call.data[ATTR_ID]
+        _check_idea_access(store, idea_id, call)
         text = call.data.get(ATTR_TEXT)
         category = call.data.get(ATTR_CATEGORY)
         priority = call.data.get(ATTR_PRIORITY)
@@ -318,6 +340,8 @@ def _register_services(hass: HomeAssistant) -> None:
             raise HomeAssistantError("Brainstorm store is not initialized")
 
         idea_ids = call.data.get("idea_ids", [])
+        for idea_id in idea_ids:
+            _check_idea_access(store, idea_id, call)
         success = await store.async_reorder_ideas(idea_ids)
         return {"success": success}
 
@@ -328,6 +352,7 @@ def _register_services(hass: HomeAssistant) -> None:
             raise HomeAssistantError("Brainstorm store is not initialized")
 
         idea_id = call.data[ATTR_ID]
+        _check_idea_access(store, idea_id, call)
         if not await store.async_delete_idea(idea_id, context=call.context):
             raise ServiceValidationError(f"Idee '{idea_id}' wurde nicht gefunden.")
         return {"success": True}
@@ -345,7 +370,10 @@ def _register_services(hass: HomeAssistant) -> None:
             status_filter = None
 
         ideas = store.get_ideas_by_category(
-            category=category, status=status_filter, priority=priority
+            category=category,
+            status=status_filter,
+            priority=priority,
+            user_id=call.context.user_id,
         )
         return {
             "count": len(ideas),
@@ -401,6 +429,7 @@ def _register_services(hass: HomeAssistant) -> None:
         store = _get_active_store(hass)
         if not store:
             raise HomeAssistantError("Brainstorm store is not initialized")
+        await _check_shared_setting_access(hass, store, call)
 
         name = call.data["name"]
         success = await store.async_remove_category(name)
@@ -411,6 +440,7 @@ def _register_services(hass: HomeAssistant) -> None:
         store = _get_active_store(hass)
         if not store:
             raise HomeAssistantError("Brainstorm store is not initialized")
+        await _check_shared_setting_access(hass, store, call)
 
         path = call.data.get("path")
         await store.async_export_to_markdown(path)
@@ -423,8 +453,12 @@ def _register_services(hass: HomeAssistant) -> None:
             raise ServiceValidationError("Brainstorm store is not initialized")
 
         category = call.data.get(ATTR_CATEGORY)
-        speech_text = store.get_announcement_text(category=category)
-        active_ideas = [i for i in store.ideas if i.get(ATTR_STATUS) == "active"]
+        # Automations have no user, and what they speak can be heard in the room
+        user_id = call.context.user_id or store.voice_user_id
+        speech_text = store.get_announcement_text(category=category, user_id=user_id)
+        active_ideas = [
+            i for i in store.visible_ideas(user_id) if i.get(ATTR_STATUS) == "active"
+        ]
         if category and str(category).strip().lower() not in ["all", "alle"]:
             active_ideas = [
                 i

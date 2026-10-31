@@ -32,6 +32,9 @@ from .const import (
     CONF_NATIVE_REMINDERS,
     CONF_NOTIFY_ENABLED,
     CONF_PERSON_RULES,
+    CONF_PRIVACY_ENABLED,
+    CONF_PRIVACY_EXPORT,
+    CONF_PRIVACY_OWNER,
     CONF_PERSONS_ENABLED,
     CONF_PLACES_ENABLED,
     CONF_QUIET_ENABLED,
@@ -217,6 +220,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "general": "Allgemeine Einstellungen & Export",
                 "alexa_skill": "Alexa-Spracheingabe & Skill",
                 "reminders": "Erinnerungen & Benachrichtigungen",
+                "privacy": "Privatsphäre & Benutzer",
                 "close": "✅ Fertig",
             },
             "reminders": {
@@ -243,6 +247,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "general": "General Settings & Export",
                 "alexa_skill": "Alexa Voice Input & Skill",
                 "reminders": "Reminders & Notifications",
+                "privacy": "Privacy & Users",
                 "close": "✅ Done",
             },
             "reminders": {
@@ -644,6 +649,54 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 ),
             },
             last_step=True,
+        )
+
+    async def async_step_privacy(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Switch private ideas on and choose the main user."""
+        if user_input is not None and user_input.pop(BACK_FIELD, False):
+            return await self.async_step_init()
+        options = dict(self.config_entry.options or self.config_entry.data)
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            if user_input[CONF_PRIVACY_ENABLED] and not user_input.get(CONF_PRIVACY_OWNER):
+                errors[CONF_PRIVACY_OWNER] = "owner_required"
+            else:
+                options.update(user_input)
+                return await self._async_saved(options, "init")
+
+        users = [
+            selector.SelectOptionDict(value=user.id, label=user.name or user.id)
+            for user in await self.hass.auth.async_get_users()
+            if user.is_active and not user.system_generated
+        ]
+        return self.async_show_form(
+            step_id="privacy",
+            errors=errors,
+            data_schema=vol.Schema(
+                _with_back(
+                    {
+                        vol.Required(
+                            CONF_PRIVACY_ENABLED,
+                            default=options.get(CONF_PRIVACY_ENABLED, False),
+                        ): selector.BooleanSelector(),
+                        vol.Optional(
+                            CONF_PRIVACY_OWNER,
+                            description=_suggested(options, CONF_PRIVACY_OWNER),
+                        ): selector.SelectSelector(
+                            selector.SelectSelectorConfig(
+                                options=users,
+                                mode=selector.SelectSelectorMode.DROPDOWN,
+                            )
+                        ),
+                        vol.Required(
+                            CONF_PRIVACY_EXPORT,
+                            default=options.get(CONF_PRIVACY_EXPORT, False),
+                        ): selector.BooleanSelector(),
+                    }
+                )
+            ),
         )
 
     def _notify_service_options(self) -> list[str]:
