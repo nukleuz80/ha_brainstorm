@@ -413,7 +413,8 @@ class AlexaSkill:
         )
         self._webhook_id = ""
         self._application_id: str | None = None
-        self._devices: dict[str, dict[str, str | None]] = {}
+        self._devices: dict[str, dict[str, Any]] = {}
+        self.last_unknown_device: dict[str, str | None] | None = None
         self._active = False
         self._unsub_events: Any = None
         self._recent_events: deque[tuple[float, str, str]] = deque(maxlen=20)
@@ -431,6 +432,7 @@ class AlexaSkill:
         self._webhook_id = data.get("webhook_id", "")
         self._application_id = data.get("application_id")
         self._devices = data.get("devices", {})
+        self.last_unknown_device = data.get("last_unknown_device")
         if not self._webhook_id:
             await self._async_new_webhook_id()
 
@@ -441,6 +443,7 @@ class AlexaSkill:
                 "webhook_id": self._webhook_id,
                 "application_id": self._application_id,
                 "devices": self._devices,
+                "last_unknown_device": self.last_unknown_device,
             }
         )
 
@@ -449,6 +452,7 @@ class AlexaSkill:
         self._webhook_id = f"brainstorm_{secrets.token_hex(24)}"
         self._application_id = None
         self._devices = {}
+        self.last_unknown_device = None
         await self._async_save()
 
     @callback
@@ -505,6 +509,22 @@ class AlexaSkill:
         """Return the voice model for the Alexa developer console."""
         return json.dumps(INTERACTION_MODEL, indent=2, ensure_ascii=False)
 
+    async def async_name_last_unknown_device(self, name: str) -> None:
+        """Name the sender Home Assistant could not identify, like the Alexa app."""
+        unknown = self.last_unknown_device
+        if unknown is None or not unknown.get("device_id"):
+            return
+        self._devices[str(unknown["device_id"])] = {
+            "name": name,
+            "entity_id": None,
+            "custom": True,
+        }
+        idea_id = unknown.get("idea_id")
+        self.last_unknown_device = None
+        await self._async_save()
+        if idea_id:
+            await self._ideas.async_update_idea(str(idea_id), device=name)
+
     def _echo_from_name(self, name: str) -> EchoDevice:
         """Find the media player of an Echo by its Alexa name."""
         return EchoDevice(name, find_echo_entity(self.hass, name))
@@ -513,7 +533,11 @@ class AlexaSkill:
     def _async_learn_device(self, device_id: str, echo: EchoDevice) -> None:
         """Remember which Echo the skill's device id stands for."""
         known = {"name": echo.name, "entity_id": echo.entity_id}
-        if self._devices.get(device_id) != known:
+        current = self._devices.get(device_id)
+        # A name chosen by the user wins over what Alexa reports
+        if current is not None and current.get("custom"):
+            return
+        if current != known:
             self._devices[device_id] = known
             self.hass.async_create_task(self._async_save())
 
@@ -541,6 +565,9 @@ class AlexaSkill:
         self._pending.remove(pending)
         echo = self._echo_from_name(name)
         self._async_learn_device(pending.device_id, echo)
+        unknown = self.last_unknown_device
+        if unknown is not None and unknown.get("device_id") == pending.device_id:
+            self.last_unknown_device = None
         if not pending.future.done():
             pending.future.set_result(echo)
         # The idea was stored before Alexa reported the Echo, or with an outdated one
@@ -557,6 +584,11 @@ class AlexaSkill:
         """Return the Echo of a request, waiting for it only if it is still unknown."""
         if not device_id:
             return None, None
+
+        # A name chosen by the user needs no confirmation from the Alexa history
+        known = self._devices.get(device_id)
+        if known is not None and known.get("custom"):
+            return EchoDevice(str(known["name"])), None
 
         now = time.monotonic()
         for entry in self._recent_events:
@@ -585,6 +617,12 @@ class AlexaSkill:
                 asyncio.shield(pending.future), DEVICE_WAIT_SECONDS
             )
         except TimeoutError:
+            self.last_unknown_device = {
+                "device_id": device_id,
+                "time": dt_util.now().strftime("%d.%m.%Y %H:%M:%S"),
+                "idea_id": None,
+            }
+            await self._async_save()
             return None, pending
         return echo, None
 
@@ -637,6 +675,13 @@ class AlexaSkill:
 
         if pending is not None:
             pending.idea_id = idea.get("id")
+            if (
+                echo is None
+                and self.last_unknown_device is not None
+                and self.last_unknown_device["device_id"] == pending.device_id
+            ):
+                self.last_unknown_device["idea_id"] = idea.get("id")
+                await self._async_save()
         self.last_request = {
             "time": dt_util.now().strftime("%d.%m.%Y %H:%M:%S"),
             "text": idea.get("text", ""),

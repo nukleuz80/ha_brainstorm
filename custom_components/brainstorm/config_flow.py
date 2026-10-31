@@ -564,6 +564,8 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         if user_input is not None:
             if user_input.get("reset_skill"):
                 await skill.async_reset()
+            elif device_name := (user_input.get("device_name") or "").strip():
+                await skill.async_name_last_unknown_device(device_name)
             options[CONF_VOICE_MODE] = self._voice_mode
             return self.async_create_entry(title="", data=options)
 
@@ -586,6 +588,9 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                     description={"suggested_value": skill.get_interaction_model()},
                 )
             ] = copy_field
+        unknown = skill.last_unknown_device
+        if unknown is not None:
+            schema[vol.Optional("device_name")] = selector.TextSelector()
         schema[vol.Optional("reset_skill", default=False)] = selector.BooleanSelector()
 
         last = skill.last_request
@@ -595,6 +600,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             errors=errors,
             description_placeholders={
                 "linked": "✅" if skill.is_linked else "❌",
+                "unknown_device": unknown["time"] if unknown else "–",
                 "last_request": (
                     f"{last['time']} ({last['device']}): {last['text']}" if last else "–"
                 ),

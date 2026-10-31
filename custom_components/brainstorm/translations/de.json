@@ -97,14 +97,16 @@
       },
       "alexa_skill_setup": {
         "title": "Alexa-Skill einrichten",
-        "description": "Folge der Anleitung in der README und kopiere die beiden Felder unten in die Alexa-Entwicklerkonsole. **Halte den Skill-Code geheim:** Er enthält deine geheime Adresse.\n\nSkill gekoppelt: {linked}\nLetzte Skill-Anfrage: {last_request}",
+        "description": "Folge der Anleitung in der README und kopiere die beiden Felder unten in die Alexa-Entwicklerkonsole. **Halte den Skill-Code geheim:** Er enthält deine geheime Adresse.\n\nSkill gekoppelt: {linked}\nLetzte Skill-Anfrage: {last_request}\nZuletzt unbekanntes Gerät: {unknown_device}",
         "data": {
           "skill_code": "Skill-Code (lambda_function.py)",
           "interaction_model": "Sprachmodell (JSON-Editor)",
-          "reset_skill": "Neue geheime Adresse erzeugen und Skill-Kopplung entfernen"
+          "reset_skill": "Neue geheime Adresse erzeugen und Skill-Kopplung entfernen",
+          "device_name": "Name für dieses unbekannte Gerät"
         },
         "data_description": {
-          "reset_skill": "Nutze das, wenn die Adresse bekannt wurde oder du einen neuen Skill gebaut hast. Kopiere danach den neuen Skill-Code."
+          "reset_skill": "Nutze das, wenn die Adresse bekannt wurde oder du einen neuen Skill gebaut hast. Kopiere danach den neuen Skill-Code.",
+          "device_name": "Zum Beispiel Alexa App iPhone. Home Assistant kann die Alexa-App nicht selbst erkennen. Der Name gilt für den letzten Eintrag und alle späteren von diesem Gerät."
         }
       },
       "reminders": {

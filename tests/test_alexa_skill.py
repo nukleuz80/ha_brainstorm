@@ -499,6 +499,61 @@ async def test_unknown_action_is_rejected(
     assert not entry.runtime_data.alexa_skill.is_linked
 
 
+async def test_alexa_app_can_be_named(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_client_no_auth: ClientSessionGenerator,
+) -> None:
+    """Test giving the Alexa app, which Alexa Media never reports, its own name."""
+    hass.config.external_url = "https://home.example.org"
+    entry = await _setup_skill(hass, setup_entry)
+
+    with patch.object(alexa_skill, "DEVICE_WAIT_SECONDS", 0):
+        await _post(hass_client_no_auth, entry, _capture_payload("erste idee"))
+    assert entry.runtime_data.alexa_skill.last_unknown_device["device_id"] == DEVICE_ID
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "alexa_skill"}
+    )
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"voice_mode": "skill"}
+    )
+    assert "device_name" in {str(k) for k in result["data_schema"].schema}
+    await hass.config_entries.options.async_configure(
+        result["flow_id"], {"device_name": "Alexa App iPhone"}
+    )
+    await hass.async_block_till_done()
+
+    store = entry.runtime_data
+    assert store.ideas[0]["device"] == "Alexa App iPhone"
+    assert store.alexa_skill.last_unknown_device is None
+
+    # Known at once from now on, and a matching history entry cannot replace it
+    await _post(hass_client_no_auth, entry, _capture_payload("zweite idee"))
+    _alexa_event(hass, "sage brainstorm notiere zweite idee", name="Anderer Echo")
+    await hass.async_block_till_done()
+    assert all(i["device"] == "Alexa App iPhone" for i in store.ideas)
+    assert store.alexa_skill.last_request["device"] == "Alexa App iPhone"
+
+
+async def test_late_echo_clears_unknown_device(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_client_no_auth: ClientSessionGenerator,
+) -> None:
+    """Test that an Echo reported late is not offered for naming."""
+    entry = await _setup_skill(hass, setup_entry)
+    _add_echo(hass)
+
+    with patch.object(alexa_skill, "DEVICE_WAIT_SECONDS", 0):
+        await _post(hass_client_no_auth, entry, _capture_payload())
+    _alexa_event(hass, "sage brainstorm notiere kellerlicht dimmen")
+    await hass.async_block_till_done()
+
+    assert entry.runtime_data.alexa_skill.last_unknown_device is None
+
+
 def test_voice_model_matches_skill_code() -> None:
     """Test that the skill handles every custom intent of the voice model."""
     model = alexa_skill.INTERACTION_MODEL["interactionModel"]["languageModel"]

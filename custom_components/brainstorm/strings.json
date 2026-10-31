@@ -97,14 +97,16 @@
       },
       "alexa_skill_setup": {
         "title": "Set up your Alexa skill",
-        "description": "Follow the guide in the README and copy the two fields below into the Alexa developer console. **Keep the skill code private:** it contains your secret address.\n\nSkill linked: {linked}\nLast skill request: {last_request}",
+        "description": "Follow the guide in the README and copy the two fields below into the Alexa developer console. **Keep the skill code private:** it contains your secret address.\n\nSkill linked: {linked}\nLast skill request: {last_request}\nLast unknown device: {unknown_device}",
         "data": {
           "skill_code": "Skill code (lambda_function.py)",
           "interaction_model": "Voice model (JSON editor)",
-          "reset_skill": "Create a new secret address and remove the skill link"
+          "reset_skill": "Create a new secret address and remove the skill link",
+          "device_name": "Name for this unknown device"
         },
         "data_description": {
-          "reset_skill": "Use this if the address leaked or you built a new skill. Copy the new skill code afterwards."
+          "reset_skill": "Use this if the address leaked or you built a new skill. Copy the new skill code afterwards.",
+          "device_name": "For example Alexa App iPhone. Home Assistant cannot detect the Alexa app by itself. The name applies to the last idea and all later ones from this device."
         }
       },
       "reminders": {

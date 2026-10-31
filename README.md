@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.4.54-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.4.55-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver-C0C0C0.svg)](https://developers.home-assistant.io/docs/integration_quality_scale_index/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -163,9 +163,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.4.54
+  - url: /local/brainstorm-card.js?v=1.4.55
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.4.54
+  - url: /local/brainstorm-mindmap-card.js?v=1.4.55
     type: module
 ```
 
@@ -212,6 +212,7 @@ hide_empty_categories: true
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.4.55`** | 2026-10-31 | **Own Name for the Alexa App:** Home Assistant cannot detect the Alexa app by itself, so the skill settings now let you name the last unknown device, for example *Alexa App iPhone*. The name appears at its ideas from then on, without any waiting time. |
 | **`v1.4.54`** | 2026-10-31 | **Reliable Reminder Targets:** With an unknown origin, such as a sentence from the Alexa app, only fixed Echos speak, never the most recently used one. A phone chosen by its notify entity now finds its own service even when renamed, so its buttons appear. |
 | **`v1.4.53`** | 2026-10-31 | **Deleting:** A double tap on delete in the list card no longer shows a wrong error message. |
 | **`v1.4.52`** | 2026-10-31 | **Reminders Reach the Right Echo:** Echos with the same name in another integration, such as Music Assistant, no longer take the announcement. Choosing a phone's notify entity now also shows the buttons. |
