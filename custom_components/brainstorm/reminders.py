@@ -769,6 +769,57 @@ class ReminderManager:
         summary = (result or {}).get("data")
         return summary.strip() if isinstance(summary, str) and summary.strip() else message
 
+    def test_targets(self) -> list[str]:
+        """Return the names of the channels a test would use."""
+        targets = [
+            self._entity_name(echo) for echo in self._alexa_targets(None)
+        ]
+        if self._options.get(CONF_NOTIFY_ENABLED, True):
+            targets.extend(self._options.get(CONF_REMINDER_NOTIFY) or [])
+        return targets
+
+    def _entity_name(self, entity_id: str) -> str:
+        """Return the name of an entity."""
+        state = self.hass.states.get(entity_id)
+        return state.name if state else entity_id
+
+    async def async_send_test(self) -> list[tuple[str, bool]]:
+        """Send a real test message and report how each channel did."""
+        results: list[tuple[str, bool]] = []
+        for echo in self._alexa_targets(None):
+            worked = await self._async_speak([echo], "Das ist ein Test von Brainstorm.")
+            results.append((self._entity_name(echo), worked))
+        if not self._options.get(CONF_NOTIFY_ENABLED, True):
+            return results
+        for configured in self._options.get(CONF_REMINDER_NOTIFY) or []:
+            service = phone_service_for(self.hass, configured)
+            domain, _, name = service.partition(".")
+            try:
+                if self.hass.services.has_service(domain, name):
+                    await self.hass.services.async_call(
+                        domain,
+                        name,
+                        {"title": "Brainstorm", "message": "Das ist ein Test."},
+                        blocking=True,
+                    )
+                    worked = True
+                elif self.hass.states.get(service) is not None:
+                    await self.hass.services.async_call(
+                        "notify",
+                        "send_message",
+                        {"title": "Brainstorm", "message": "Das ist ein Test."},
+                        blocking=True,
+                        target={"entity_id": service},
+                    )
+                    worked = True
+                else:
+                    worked = False
+            except (HomeAssistantError, ValueError) as err:
+                _LOGGER.warning("Test over %s failed: %s", service, err)
+                worked = False
+            results.append((configured, worked))
+        return results
+
     async def _async_broadcast(self, title: str, message: str) -> None:
         """Send a briefing or review over all configured channels."""
         message = await self._async_summarize(message)

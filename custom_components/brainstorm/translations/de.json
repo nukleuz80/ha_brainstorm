@@ -30,39 +30,43 @@
     "step": {
       "init": {
         "title": "Brainstorm Hub Optionen",
-        "description": "Wähle einen Bereich zum Konfigurieren:",
+        "description": "Wähle einen Bereich.\n\n{notice}",
         "menu_options": {
           "categories": "Kategorien verwalten",
           "category_style": "Kategorie-Design (Farbe & Icon)",
           "general": "Allgemeine Einstellungen & Export",
           "alexa_skill": "Alexa-Spracheingabe & Skill",
-          "reminders": "Erinnerungen & Benachrichtigungen"
+          "reminders": "Erinnerungen & Benachrichtigungen",
+          "close": "✅ Fertig"
         }
       },
       "categories": {
-        "title": "Kategorien verwalten",
+        "title": "Brainstorm › Kategorien",
         "description": "Aktuelle Kategorien:\n**{current_cats}**\n\nHier kannst du neue Kategorien hinzufügen, bestehende löschen oder die Liste anpassen.",
         "data": {
           "add_category": "➕ Neue Kategorie anlegen (optional)",
           "delete_category": "🗑️ Kategorie löschen (optional)",
           "edit_categories": "✏️ Komplette Liste anpassen (durch Komma getrennt)",
-          "hide_empty_categories": "Kategorien ohne Notizen (0) ausblenden"
+          "hide_empty_categories": "Kategorien ohne Notizen (0) ausblenden",
+          "go_back": "⬅️ Zurück, ohne zu speichern"
         }
       },
       "category_style": {
-        "title": "Kategorie-Design (Schritt 1 von 2)",
+        "title": "Brainstorm › Kategorie-Design",
         "description": "Schritt 1 von 2: Wähle die gewünschte Kategorie aus. Klicke anschließend auf „Weiter“, um im nächsten Schritt ihr Home Assistant Icon und die Akzentfarbe festzulegen.",
         "data": {
-          "category": "Kategorie auswählen"
+          "category": "Kategorie auswählen",
+          "go_back": "⬅️ Zurück, ohne zu speichern"
         }
       },
       "category_style_edit": {
-        "title": "Design für „{category}“ (Schritt 2 von 2)",
+        "title": "Brainstorm › Kategorie-Design",
         "description": "Schritt 2 von 2: Wähle ein passendes Icon aus der Home Assistant Symbolbibliothek und eine Akzentfarbe für die Kategorie „{category}“ aus. Klicke auf Absenden, um die Änderungen zu speichern.",
         "data": {
           "icon": "Kategorie-Icon (Home Assistant / MDI)",
           "color": "Kategorie-Farbe",
-          "reset_style": "Auf Standard-Icon und -Farbe zurücksetzen"
+          "reset_style": "Auf Standard-Icon und -Farbe zurücksetzen",
+          "go_back": "⬅️ Zurück, ohne zu speichern"
         }
       },
       "category_style_done": {
@@ -75,34 +79,37 @@
         }
       },
       "general": {
-        "title": "Allgemeine Einstellungen",
+        "title": "Brainstorm › Allgemein",
         "description": "Passe das Verhalten von Brainstorm Hub und den Markdown-Export an.",
         "data": {
           "default_category": "Standard-Kategorie für neue Ideen",
           "smart_formatting": "Intelligente Text-Optimierung (Grammatik, Groß-/Kleinschreibung, Infinitiv)",
           "auto_export_markdown": "Ideen automatisch als Markdown exportieren",
           "markdown_path": "Dateipfad für Markdown-Dateien",
-          "allowed_echos": "Echo-Geräte für die Spracheingabe"
+          "allowed_echos": "Echo-Geräte für die Spracheingabe",
+          "go_back": "⬅️ Zurück, ohne zu speichern"
         },
         "data_description": {
           "allowed_echos": "Nur diese Echos können Ideen per Sprache erfassen und Brainstorm öffnen. Leer lassen, um alle Echos zu nutzen."
         }
       },
       "alexa_skill": {
-        "title": "Alexa-Spracheingabe",
+        "title": "Brainstorm › Alexa",
         "description": "**Nativ** funktioniert ohne Einrichtung: Sag \"Alexa, notiere ...\". Alexa meldet eventuell zuerst einen Fehler, danach speichert Brainstorm die Idee.\n\n**Skill** gibt eine einzige saubere Antwort: Sag \"Alexa, sage Brainstorm notiere ...\". Dafür brauchst du deinen eigenen kostenlosen Alexa-Skill und ein aus dem Internet erreichbares Home Assistant.\n\n**Beide** nimmt beide Wege an.",
         "data": {
-          "voice_mode": "Spracheingabe"
+          "voice_mode": "Spracheingabe",
+          "go_back": "⬅️ Zurück, ohne zu speichern"
         }
       },
       "alexa_skill_setup": {
-        "title": "Alexa-Skill einrichten",
+        "title": "Brainstorm › Alexa › Skill",
         "description": "Folge der Anleitung in der README und kopiere die beiden Felder unten in die Alexa-Entwicklerkonsole. **Halte den Skill-Code geheim:** Er enthält deine geheime Adresse.\n\nSkill gekoppelt: {linked}\nLetzte Skill-Anfrage: {last_request}\nZuletzt unbekanntes Gerät: {unknown_device}",
         "data": {
           "skill_code": "Skill-Code (lambda_function.py)",
           "interaction_model": "Sprachmodell (JSON-Editor)",
           "reset_skill": "Neue geheime Adresse erzeugen und Skill-Kopplung entfernen",
-          "device_name": "Name für dieses unbekannte Gerät"
+          "device_name": "Name für dieses unbekannte Gerät",
+          "go_back": "⬅️ Zurück, ohne zu speichern"
         },
         "data_description": {
           "reset_skill": "Nutze das, wenn die Adresse bekannt wurde oder du einen neuen Skill gebaut hast. Kopiere danach den neuen Skill-Code.",
@@ -110,19 +117,22 @@
         }
       },
       "reminders": {
-        "title": "Erinnerungen & Benachrichtigungen",
-        "description": "Wähle einen Bereich. Alles lässt sich einzeln ein- und ausschalten.",
+        "title": "Brainstorm › Erinnerungen",
+        "description": "Wähle einen Bereich. Alles lässt sich einzeln ein- und ausschalten.\n\n{notice}\n\n{status}",
         "menu_options": {
           "reminder_general": "Ein/Aus & Kanäle",
           "reminder_schedule": "Ruhezeit, Briefing & Wochenrückblick",
           "reminder_lists": "Regeln pro Liste",
           "reminder_places": "Orte & Heimkommen",
           "reminder_persons": "Personen",
-          "reminder_extras": "Kalender, KI & Alexa-Erinnerungen"
+          "reminder_extras": "Kalender, KI & Alexa-Erinnerungen",
+          "reminder_test": "🧪 Kanäle jetzt testen",
+          "init": "⬅️ Zurück",
+          "close": "✅ Fertig"
         }
       },
       "reminder_general": {
-        "title": "Ein/Aus & Kanäle",
+        "title": "Brainstorm › Erinnerungen › Ein/Aus & Kanäle",
         "description": "Wähle die Dienste aus, die du in Home Assistant eingerichtet hast. Erinnerungen lösen außerdem das Ereignis brainstorm_reminder_due für eigene Automationen aus.",
         "data": {
           "reminders_enabled": "Erinnerungen nutzen",
@@ -133,7 +143,8 @@
           "reminder_delay": "Wartezeit vor Benachrichtigungen (Minuten)",
           "urgent_enabled": "Wichtige offene Einträge erneut senden",
           "urgent_notify": "Dienste für wichtige Einträge",
-          "urgent_delay": "Erneut senden nach (Minuten)"
+          "urgent_delay": "Erneut senden nach (Minuten)",
+          "go_back": "⬅️ Zurück, ohne zu speichern"
         },
         "data_description": {
           "reminders_enabled": "Aus stoppt alle Erinnerungen, das Briefing, den Rückblick und alles andere in diesem Menü.",
@@ -143,7 +154,7 @@
         }
       },
       "reminder_schedule": {
-        "title": "Ruhezeit, Briefing & Wochenrückblick",
+        "title": "Brainstorm › Erinnerungen › Ruhezeit, Briefing & Rückblick",
         "description": "Lege die Zeiten für jeden Punkt einzeln fest.",
         "data": {
           "quiet_enabled": "Ruhezeit nutzen",
@@ -155,7 +166,8 @@
           "review_enabled": "Wochenrückblick",
           "review_weekday": "Tag des Rückblicks",
           "review_time": "Uhrzeit des Rückblicks",
-          "review_days": "Einträge nennen, die länger offen sind als (Tage)"
+          "review_days": "Einträge nennen, die länger offen sind als (Tage)",
+          "go_back": "⬅️ Zurück, ohne zu speichern"
         },
         "data_description": {
           "quiet_start": "Erinnerungen warten bis zum Ende der Ruhezeit. Dringende Einträge erreichen die Benachrichtigungsdienste trotzdem, aber kein Echo spricht.",
@@ -163,15 +175,16 @@
         }
       },
       "reminder_lists": {
-        "title": "Regeln pro Liste",
+        "title": "Brainstorm › Erinnerungen › Regeln pro Liste",
         "description": "Listen ohne Regel nutzen die normalen Einstellungen. Wähle eine Liste, um ihre Regel zu bearbeiten.",
         "data": {
           "list_rules_enabled": "Regeln pro Liste nutzen",
-          "category": "Liste bearbeiten"
+          "category": "Liste bearbeiten",
+          "go_back": "⬅️ Zurück, ohne zu speichern"
         }
       },
       "reminder_list_edit": {
-        "title": "Regel für '{category}'",
+        "title": "Brainstorm › Erinnerungen › Regeln › {category}",
         "description": "Zum Beispiel private Listen nur aufs Handy, oder eine Liste an bestimmten Tagen oder an einem Ort.",
         "data": {
           "channel": "Erinnerungen dieser Liste gehen an",
@@ -180,59 +193,78 @@
           "schedule_weekdays": "Tage",
           "schedule_time": "Uhrzeit",
           "zone_enabled": "Offene Einträge an einem Ort senden",
-          "zone": "Ort"
+          "zone": "Ort",
+          "go_back": "⬅️ Zurück, ohne zu speichern"
         },
         "data_description": {
           "zone_enabled": "Wird einmal am Tag gesendet, wenn jemand dort ankommt. Braucht den Schalter für Orte."
         }
       },
       "reminder_places": {
-        "title": "Orte & Heimkommen",
+        "title": "Brainstorm › Erinnerungen › Orte & Heimkommen",
         "description": "Sag zum Beispiel: erinnere mich wenn ich heimkomme an den Müll, oder: erinnere mich wenn ich bei Edeka bin an die Milch.",
         "data": {
           "arrival_enabled": "Beim Heimkommen erinnern",
           "places_enabled": "An Orten (Zonen) erinnern",
-          "default_person": "Wer mit \"ich\" gemeint ist"
+          "default_person": "Wer mit \"ich\" gemeint ist",
+          "go_back": "⬅️ Zurück, ohne zu speichern"
         },
         "data_description": {
           "default_person": "Ohne Person löst jeder aus, der dort ankommt."
         }
       },
       "reminder_persons": {
-        "title": "Personen",
+        "title": "Brainstorm › Erinnerungen › Personen",
         "description": "Sag zum Beispiel: erinnere Lenja morgen um 8 an den Elternsprechtag. Wähle eine Person, um ihre Kanäle festzulegen.",
         "data": {
           "persons_enabled": "Erinnerungen für andere Personen nutzen",
-          "person": "Person bearbeiten"
+          "person": "Person bearbeiten",
+          "go_back": "⬅️ Zurück, ohne zu speichern"
         }
       },
       "reminder_person_edit": {
-        "title": "Kanäle für {person}",
+        "title": "Brainstorm › Erinnerungen › Personen › {person}",
         "description": "Diese ersetzen die normalen Kanäle für diese Person.",
         "data": {
           "notify": "Benachrichtigungsdienste",
-          "echos": "Echos"
+          "echos": "Echos",
+          "go_back": "⬅️ Zurück, ohne zu speichern"
         }
       },
       "reminder_extras": {
-        "title": "Kalender, KI & Alexa-Erinnerungen",
+        "title": "Brainstorm › Erinnerungen › Kalender, KI & Alexa",
         "description": "Optionale Extras mit jeweils eigenem Schalter.",
         "data": {
           "calendar_enabled": "Erinnerungen in einen Kalender eintragen",
           "calendar_entity": "Kalender",
           "ai_enabled": "Briefing und Rückblick per KI kürzen",
           "ai_entity": "KI-Aufgaben-Entität",
-          "native_reminders": "Zusätzlich echte Alexa-Erinnerungen anlegen"
+          "native_reminders": "Zusätzlich echte Alexa-Erinnerungen anlegen",
+          "go_back": "⬅️ Zurück, ohne zu speichern"
         },
         "data_description": {
           "calendar_enabled": "Nur in eine Richtung und einmal pro Erinnerung. Spätere Änderungen werden nicht übertragen.",
           "ai_enabled": "Deine Einträge werden an den Anbieter der gewählten KI gesendet.",
           "native_reminders": "Schalte in der Alexa-Konsole zusätzlich Reminders unter Build ➔ Permissions ein. Alexa klingelt dann selbst, und Home Assistant spricht nicht zusätzlich."
         }
+      },
+      "reminder_test": {
+        "title": "Brainstorm › Erinnerungen › Kanäle testen",
+        "description": "Brainstorm sendet jetzt eine echte Testnachricht. Ein Echo spricht dabei laut.\n\n{targets}",
+        "data": {
+          "go_back": "⬅️ Zurück, ohne zu speichern"
+        }
+      },
+      "reminder_test_result": {
+        "title": "Brainstorm › Erinnerungen › Testergebnis",
+        "description": "{results}\n\nEin grüner Haken heißt, dass Home Assistant die Nachricht abgeschickt hat. Prüfe, ob sie wirklich angekommen ist."
       }
     },
     "error": {
       "no_public_url": "Home Assistant hat keine öffentliche HTTPS-Adresse, zum Beispiel über Home Assistant Cloud. Der Skill kann es nicht erreichen, nutze daher den Modus Nativ."
+    },
+    "abort": {
+      "store_not_ready": "Brainstorm wird gerade neu geladen. Bitte öffne die Einstellungen in ein paar Sekunden noch einmal."
     }
   },
   "selector": {

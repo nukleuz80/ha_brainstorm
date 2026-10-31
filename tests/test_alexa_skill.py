@@ -187,7 +187,7 @@ async def test_options_flow_shows_code_and_resets(
     result = await hass.config_entries.options.async_configure(
         result["flow_id"], {"reset_skill": True, "skill_code": code}
     )
-    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["type"] is FlowResultType.MENU
     await hass.async_block_till_done()
 
     assert entry.options["voice_mode"] == "both"

@@ -1,17 +1,21 @@
 """Config flow for Brainstorm Hub integration."""
 from __future__ import annotations
 
+import asyncio
 from typing import Any
 
 import voluptuous as vol
 
 from homeassistant import config_entries
 from homeassistant.core import callback
-from homeassistant.data_entry_flow import FlowResult
+from homeassistant.data_entry_flow import AbortFlow, FlowResult
 from homeassistant.helpers import selector
 from homeassistant.helpers.network import NoURLAvailableError
+from homeassistant.util import dt as dt_util
 
 from .const import (
+    ATTR_DUE,
+    ATTR_TEXT,
     CONF_AI_ENABLED,
     CONF_AI_ENTITY,
     CONF_ALLOWED_ECHOS,
@@ -69,7 +73,17 @@ from .const import (
     VOICE_MODES,
 )
 
-from .reminders import phone_service_for
+from .reminders import format_due, phone_service_for
+from .store import BrainstormStore
+
+BACK_FIELD = "go_back"
+STORE_WAIT_ATTEMPTS = 50
+STORE_WAIT_SECONDS = 0.1
+
+
+def _with_back(schema: dict[Any, Any]) -> dict[Any, Any]:
+    """Add the choice to go back, as forms of Home Assistant have no back button."""
+    return {**schema, vol.Optional(BACK_FIELD, default=False): selector.BooleanSelector()}
 
 
 def _suggested(options: dict[str, Any], key: str) -> dict[str, Any]:
@@ -190,6 +204,8 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         self._rule_enabled: bool = False
         self._rule_category: str = ""
         self._rule_person: str = ""
+        self._notice: str = ""
+        self._test_results: str = ""
 
     def _get_localized_menu(self, step_id: str) -> dict[str, str]:
         """Return explicit localized menu options mapping to bypass frontend cache staleness."""
@@ -201,6 +217,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "general": "Allgemeine Einstellungen & Export",
                 "alexa_skill": "Alexa-Spracheingabe & Skill",
                 "reminders": "Erinnerungen & Benachrichtigungen",
+                "close": "✅ Fertig",
             },
             "reminders": {
                 "reminder_general": "Ein/Aus & Kanäle",
@@ -209,6 +226,9 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "reminder_places": "Orte & Heimkommen",
                 "reminder_persons": "Personen",
                 "reminder_extras": "Kalender, KI & Alexa-Erinnerungen",
+                "reminder_test": "🧪 Kanäle jetzt testen",
+                "init": "⬅️ Zurück",
+                "close": "✅ Fertig",
             },
             "category_style_done": {
                 "category_style": "Weitere Kategorie anpassen",
@@ -223,6 +243,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "general": "General Settings & Export",
                 "alexa_skill": "Alexa Voice Input & Skill",
                 "reminders": "Reminders & Notifications",
+                "close": "✅ Done",
             },
             "reminders": {
                 "reminder_general": "On/Off & Channels",
@@ -231,6 +252,9 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "reminder_places": "Places & Coming Home",
                 "reminder_persons": "People",
                 "reminder_extras": "Calendar, AI & Alexa Reminders",
+                "reminder_test": "🧪 Test channels now",
+                "init": "⬅️ Back",
+                "close": "✅ Done",
             },
             "category_style_done": {
                 "category_style": "Customize another category",
@@ -247,13 +271,16 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         return self.async_show_menu(
             step_id="init",
             menu_options=self._get_localized_menu("init"),
+            description_placeholders={"notice": self._take_notice()},
         )
 
     async def async_step_category_style(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Select a category to customize its icon and color."""
-        store = self.hass.data.get(DOMAIN, {}).get("primary_store")
+        if user_input is not None and user_input.pop(BACK_FIELD, False):
+            return await self.async_step_init()
+        store = await self._async_store()
         current_cats = (
             store.categories
             if store and store.categories
@@ -289,7 +316,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         )
         return self.async_show_form(
             step_id="category_style",
-            data_schema=data_schema,
+            data_schema=vol.Schema(_with_back(data_schema.schema)),
             last_step=False,
         )
 
@@ -297,7 +324,9 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Edit icon and color for the selected category."""
-        store = self.hass.data.get(DOMAIN, {}).get("primary_store")
+        if user_input is not None and user_input.pop(BACK_FIELD, False):
+            return await self.async_step_category_style()
+        store = await self._async_store()
         cat = getattr(self, "_selected_style_cat", "Inbox")
 
         current_icon = (store.category_icons.get(cat) if store else None) or ""
@@ -352,7 +381,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
 
         return self.async_show_form(
             step_id="category_style_edit",
-            data_schema=vol.Schema(schema_dict),
+            data_schema=vol.Schema(_with_back(schema_dict)),
             description_placeholders={"category": cat},
             last_step=True,
         )
@@ -378,8 +407,10 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Manage categories."""
+        if user_input is not None and user_input.pop(BACK_FIELD, False):
+            return await self.async_step_init()
         options = dict(self.config_entry.options or self.config_entry.data)
-        store = self.hass.data.get(DOMAIN, {}).get("primary_store")
+        store = await self._async_store()
         current_cats = (
             store.categories
             if store and store.categories
@@ -409,7 +440,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             if CONF_HIDE_EMPTY_CATEGORIES in user_input:
                 options[CONF_HIDE_EMPTY_CATEGORIES] = user_input[CONF_HIDE_EMPTY_CATEGORIES]
 
-            return self.async_create_entry(title="", data=options)
+            return await self._async_saved(options, "init")
 
         delete_options = [{"value": "none", "label": "Keine löschen"}]
         for c in current_cats:
@@ -451,7 +482,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
 
         return self.async_show_form(
             step_id="categories",
-            data_schema=data_schema,
+            data_schema=vol.Schema(_with_back(data_schema.schema)),
             description_placeholders={"current_cats": self._shown_categories},
         )
 
@@ -459,8 +490,10 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Manage general settings and export."""
+        if user_input is not None and user_input.pop(BACK_FIELD, False):
+            return await self.async_step_init()
         options = dict(self.config_entry.options or self.config_entry.data)
-        store = self.hass.data.get(DOMAIN, {}).get("primary_store")
+        store = await self._async_store()
         current_cats = (
             store.categories
             if store and store.categories
@@ -471,7 +504,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             options.update(user_input)
             # The frontend omits a cleared selector, which has to reset the list
             options[CONF_ALLOWED_ECHOS] = user_input.get(CONF_ALLOWED_ECHOS, [])
-            return self.async_create_entry(title="", data=options)
+            return await self._async_saved(options, "init")
 
         cat_options = [{"value": c, "label": c} for c in current_cats]
 
@@ -519,25 +552,28 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
 
         return self.async_show_form(
             step_id="general",
-            data_schema=data_schema,
+            data_schema=vol.Schema(_with_back(data_schema.schema)),
         )
 
     async def async_step_alexa_skill(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Choose how Alexa voice input reaches Brainstorm."""
+        if user_input is not None and user_input.pop(BACK_FIELD, False):
+            return await self.async_step_init()
         options = dict(self.config_entry.options or self.config_entry.data)
 
         if user_input is not None:
             self._voice_mode = user_input[CONF_VOICE_MODE]
             if self._voice_mode == VOICE_MODE_NATIVE:
                 options[CONF_VOICE_MODE] = self._voice_mode
-                return self.async_create_entry(title="", data=options)
+                return await self._async_saved(options, "init")
             return await self.async_step_alexa_skill_setup()
 
         return self.async_show_form(
             step_id="alexa_skill",
             data_schema=vol.Schema(
+                _with_back(
                 {
                     vol.Required(
                         CONF_VOICE_MODE,
@@ -549,7 +585,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                             translation_key=CONF_VOICE_MODE,
                         )
                     ),
-                }
+                })
             ),
             last_step=False,
         )
@@ -558,8 +594,10 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Show what the user needs to build their own skill."""
+        if user_input is not None and user_input.pop(BACK_FIELD, False):
+            return await self.async_step_alexa_skill()
         options = dict(self.config_entry.options or self.config_entry.data)
-        skill = self.config_entry.runtime_data.alexa_skill
+        skill = (await self._async_store()).alexa_skill
 
         if user_input is not None:
             if user_input.get("reset_skill"):
@@ -567,7 +605,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             elif device_name := (user_input.get("device_name") or "").strip():
                 await skill.async_name_last_unknown_device(device_name)
             options[CONF_VOICE_MODE] = self._voice_mode
-            return self.async_create_entry(title="", data=options)
+            return await self._async_saved(options, "init")
 
         schema: dict[Any, Any] = {}
         errors: dict[str, str] = {}
@@ -596,7 +634,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         last = skill.last_request
         return self.async_show_form(
             step_id="alexa_skill_setup",
-            data_schema=vol.Schema(schema),
+            data_schema=vol.Schema(_with_back(schema)),
             errors=errors,
             description_placeholders={
                 "linked": "✅" if skill.is_linked else "❌",
@@ -645,7 +683,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             )
         )
 
-    def _save_reminder_options(
+    async def _async_save_reminder_options(
         self, clearable: tuple[str, ...], user_input: dict[str, Any]
     ) -> FlowResult:
         """Save a form, where the frontend omits fields that were cleared."""
@@ -653,7 +691,148 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         for key in clearable:
             options.pop(key, None)
         options.update(user_input)
-        return self.async_create_entry(title="", data=options)
+        return await self._async_saved(options, "reminders")
+
+    async def _async_saved(self, options: dict[str, Any], back_to: str) -> FlowResult:
+        """Apply settings at once and go back to the menu instead of closing."""
+        self.hass.config_entries.async_update_entry(self.config_entry, options=options)
+        self._notice = self._text("✅ Gespeichert und aktiv.", "✅ Saved and active.")
+        step = getattr(self, f"async_step_{back_to}")
+        return await step()
+
+    def _take_notice(self) -> str:
+        """Return the message about the last action, shown only once."""
+        notice, self._notice = self._notice, ""
+        return notice
+
+    def _text(self, german: str, english: str) -> str:
+        """Return a text in the language of Home Assistant."""
+        is_german = getattr(self.hass.config, "language", "en").startswith("de")
+        return german if is_german else english
+
+    async def _async_store(self) -> BrainstormStore:
+        """Return the store, which is briefly gone while new settings are applied."""
+        for _ in range(STORE_WAIT_ATTEMPTS):
+            store = self.hass.data.get(DOMAIN, {}).get("primary_store")
+            if store is not None and store.alexa_skill is not None:
+                return store
+            await asyncio.sleep(STORE_WAIT_SECONDS)
+        raise AbortFlow("store_not_ready")
+
+    def _status_lines(self) -> str:
+        """Describe what is switched on, so nobody has to open every section."""
+        options = dict(self.config_entry.options or self.config_entry.data)
+
+        def line(active: bool, german: str, english: str, detail: str = "") -> str:
+            text = self._text(german, english)
+            return f"{'🟢' if active else '⚪'} {text}{f': {detail}' if detail else ''}"
+
+        enabled = options.get(CONF_REMINDERS_ENABLED, True)
+        mode = options.get(CONF_REMINDER_ALEXA, REMINDER_ALEXA_OFF)
+        services = options.get(CONF_REMINDER_NOTIFY) or []
+        notify_on = bool(services) and options.get(CONF_NOTIFY_ENABLED, True)
+        quiet = (
+            f"{str(options[CONF_QUIET_START])[:5]}–{str(options[CONF_QUIET_END])[:5]}"
+            if options.get(CONF_QUIET_START) and options.get(CONF_QUIET_END)
+            else ""
+        )
+        digest = str(options.get(CONF_DIGEST_TIME) or "")[:5]
+        review = str(options.get(CONF_REVIEW_TIME) or "")[:5]
+        lines = [
+            line(enabled, "Erinnerungen", "Reminders"),
+            line(mode != REMINDER_ALEXA_OFF, "Alexa-Ansage", "Alexa announcement"),
+            line(
+                notify_on,
+                "Benachrichtigungen",
+                "Notifications",
+                ", ".join(s.partition(".")[2] for s in services),
+            ),
+            line(
+                bool(quiet) and options.get(CONF_QUIET_ENABLED, True),
+                "Ruhezeit",
+                "Quiet hours",
+                quiet,
+            ),
+            line(bool(options.get(CONF_DIGEST_ENABLED)), "Briefing", "Briefing", digest),
+            line(
+                bool(options.get(CONF_REVIEW_ENABLED)),
+                "Wochenrückblick",
+                "Weekly review",
+                review,
+            ),
+            line(
+                bool(options.get(CONF_LIST_RULES_ENABLED)),
+                "Regeln pro Liste",
+                "Rules per list",
+                str(len(options.get(CONF_LIST_RULES) or {})) or "",
+            ),
+            line(
+                bool(options.get(CONF_ARRIVAL_ENABLED)),
+                "Heimkommen",
+                "Coming home",
+            ),
+            line(bool(options.get(CONF_PLACES_ENABLED)), "Orte", "Places"),
+            line(bool(options.get(CONF_PERSONS_ENABLED)), "Personen", "People"),
+            line(bool(options.get(CONF_CALENDAR_ENABLED)), "Kalender", "Calendar"),
+            line(bool(options.get(CONF_AI_ENABLED)), "KI", "AI"),
+            line(
+                bool(options.get(CONF_NATIVE_REMINDERS)),
+                "Alexa-Erinnerungen",
+                "Alexa reminders",
+            ),
+        ]
+        store = self.hass.data.get(DOMAIN, {}).get("primary_store")
+        upcoming = store.next_due_idea() if store is not None else None
+        if upcoming is not None:
+            due = dt_util.parse_datetime(upcoming[ATTR_DUE])
+            if due is not None:
+                when = format_due(due, dt_util.now())
+                lines.append(
+                    self._text(
+                        f"⏰ Nächste Erinnerung {when}: {upcoming.get(ATTR_TEXT)}",
+                        f"⏰ Next reminder {when}: {upcoming.get(ATTR_TEXT)}",
+                    )
+                )
+        return "\n\n".join(lines)
+
+    async def async_step_reminder_test(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Ask before speaking and sending a test message over the channels."""
+        store = await self._async_store()
+        if user_input is not None:
+            if user_input.pop(BACK_FIELD, False):
+                return await self.async_step_reminders()
+            results = await store.reminders.async_send_test()
+            self._test_results = "\n\n".join(
+                f"{'✅' if worked else '❌'} {name}" for name, worked in results
+            ) or self._text(
+                "⚪ Es ist noch kein Kanal eingestellt.",
+                "⚪ No channel has been set up yet.",
+            )
+            return await self.async_step_reminder_test_result()
+        targets = store.reminders.test_targets()
+        return self.async_show_form(
+            step_id="reminder_test",
+            data_schema=vol.Schema(_with_back({})),
+            description_placeholders={
+                "targets": "\n\n".join(f"• {name}" for name in targets)
+                or self._text("Kein Kanal eingestellt", "No channel set up")
+            },
+            last_step=False,
+        )
+
+    async def async_step_reminder_test_result(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Show how the test went."""
+        if user_input is not None:
+            return await self.async_step_reminders()
+        return self.async_show_form(
+            step_id="reminder_test_result",
+            data_schema=vol.Schema({}),
+            description_placeholders={"results": self._test_results},
+        )
 
     async def async_step_reminders(
         self, user_input: dict[str, Any] | None = None
@@ -662,14 +841,20 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         return self.async_show_menu(
             step_id="reminders",
             menu_options=self._get_localized_menu("reminders"),
+            description_placeholders={
+                "notice": self._take_notice(),
+                "status": self._status_lines(),
+            },
         )
 
     async def async_step_reminder_general(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Choose whether and over which channels Brainstorm reminds."""
+        if user_input is not None and user_input.pop(BACK_FIELD, False):
+            return await self.async_step_reminders()
         if user_input is not None:
-            return self._save_reminder_options(
+            return await self._async_save_reminder_options(
                 (CONF_REMINDER_ECHOS, CONF_REMINDER_NOTIFY, CONF_URGENT_NOTIFY),
                 user_input,
             )
@@ -677,6 +862,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         return self.async_show_form(
             step_id="reminder_general",
             data_schema=vol.Schema(
+                _with_back(
                 {
                     vol.Required(
                         CONF_REMINDERS_ENABLED,
@@ -720,7 +906,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                         CONF_URGENT_DELAY,
                         default=options.get(CONF_URGENT_DELAY, DEFAULT_URGENT_DELAY),
                     ): self._minutes_field(1440),
-                }
+                })
             ),
         )
 
@@ -728,8 +914,10 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Choose quiet hours, briefing and weekly review."""
+        if user_input is not None and user_input.pop(BACK_FIELD, False):
+            return await self.async_step_reminders()
         if user_input is not None:
-            return self._save_reminder_options(
+            return await self._async_save_reminder_options(
                 (
                     CONF_QUIET_START,
                     CONF_QUIET_END,
@@ -744,6 +932,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         return self.async_show_form(
             step_id="reminder_schedule",
             data_schema=vol.Schema(
+                _with_back(
                 {
                     vol.Required(
                         CONF_QUIET_ENABLED,
@@ -797,7 +986,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                             mode=selector.NumberSelectorMode.BOX,
                         )
                     ),
-                }
+                })
             ),
         )
 
@@ -805,6 +994,8 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Switch list rules on and choose the list to edit."""
+        if user_input is not None and user_input.pop(BACK_FIELD, False):
+            return await self.async_step_reminders()
         options = dict(self.config_entry.options or self.config_entry.data)
         if user_input is not None:
             enabled = user_input[CONF_LIST_RULES_ENABLED]
@@ -813,12 +1004,13 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 self._rule_category = user_input["category"]
                 return await self.async_step_reminder_list_edit()
             options[CONF_LIST_RULES_ENABLED] = enabled
-            return self.async_create_entry(title="", data=options)
+            return await self._async_saved(options, "reminders")
 
-        store = self.config_entry.runtime_data
+        store = await self._async_store()
         return self.async_show_form(
             step_id="reminder_lists",
             data_schema=vol.Schema(
+                _with_back(
                 {
                     vol.Required(
                         CONF_LIST_RULES_ENABLED,
@@ -830,7 +1022,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                             mode=selector.SelectSelectorMode.DROPDOWN,
                         )
                     ),
-                }
+                })
             ),
         )
 
@@ -838,6 +1030,8 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Edit the rule of one list."""
+        if user_input is not None and user_input.pop(BACK_FIELD, False):
+            return await self.async_step_reminder_lists()
         options = dict(self.config_entry.options or self.config_entry.data)
         rules = dict(options.get(CONF_LIST_RULES) or {})
         rule = rules.get(self._rule_category, {})
@@ -845,12 +1039,13 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             rules[self._rule_category] = user_input
             options[CONF_LIST_RULES] = rules
             options[CONF_LIST_RULES_ENABLED] = self._rule_enabled
-            return self.async_create_entry(title="", data=options)
+            return await self._async_saved(options, "reminders")
 
         return self.async_show_form(
             step_id="reminder_list_edit",
             description_placeholders={"category": self._rule_category},
             data_schema=vol.Schema(
+                _with_back(
                 {
                     vol.Required(
                         RULE_CHANNEL,
@@ -885,7 +1080,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                     ): selector.EntitySelector(
                         selector.EntitySelectorConfig(domain="zone")
                     ),
-                }
+                })
             ),
         )
 
@@ -893,12 +1088,15 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Switch reminders at places and when arriving home on or off."""
+        if user_input is not None and user_input.pop(BACK_FIELD, False):
+            return await self.async_step_reminders()
         if user_input is not None:
-            return self._save_reminder_options((CONF_DEFAULT_PERSON,), user_input)
+            return await self._async_save_reminder_options((CONF_DEFAULT_PERSON,), user_input)
         options = dict(self.config_entry.options or self.config_entry.data)
         return self.async_show_form(
             step_id="reminder_places",
             data_schema=vol.Schema(
+                _with_back(
                 {
                     vol.Required(
                         CONF_ARRIVAL_ENABLED,
@@ -914,7 +1112,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                     ): selector.EntitySelector(
                         selector.EntitySelectorConfig(domain="person")
                     ),
-                }
+                })
             ),
         )
 
@@ -922,6 +1120,8 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Switch reminders for people on and choose the person to edit."""
+        if user_input is not None and user_input.pop(BACK_FIELD, False):
+            return await self.async_step_reminders()
         options = dict(self.config_entry.options or self.config_entry.data)
         if user_input is not None:
             enabled = user_input[CONF_PERSONS_ENABLED]
@@ -930,11 +1130,12 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 self._rule_person = user_input["person"]
                 return await self.async_step_reminder_person_edit()
             options[CONF_PERSONS_ENABLED] = enabled
-            return self.async_create_entry(title="", data=options)
+            return await self._async_saved(options, "reminders")
 
         return self.async_show_form(
             step_id="reminder_persons",
             data_schema=vol.Schema(
+                _with_back(
                 {
                     vol.Required(
                         CONF_PERSONS_ENABLED,
@@ -943,7 +1144,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                     vol.Optional("person"): selector.EntitySelector(
                         selector.EntitySelectorConfig(domain="person")
                     ),
-                }
+                })
             ),
         )
 
@@ -951,6 +1152,8 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Choose where one person gets their reminders."""
+        if user_input is not None and user_input.pop(BACK_FIELD, False):
+            return await self.async_step_reminder_persons()
         options = dict(self.config_entry.options or self.config_entry.data)
         rules = dict(options.get(CONF_PERSON_RULES) or {})
         rule = rules.get(self._rule_person, {})
@@ -958,12 +1161,13 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             rules[self._rule_person] = user_input
             options[CONF_PERSON_RULES] = rules
             options[CONF_PERSONS_ENABLED] = self._rule_enabled
-            return self.async_create_entry(title="", data=options)
+            return await self._async_saved(options, "reminders")
 
         return self.async_show_form(
             step_id="reminder_person_edit",
             description_placeholders={"person": self._rule_person},
             data_schema=vol.Schema(
+                _with_back(
                 {
                     vol.Optional(
                         "notify", description=_suggested(rule, "notify")
@@ -971,7 +1175,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                     vol.Optional(
                         "echos", description=_suggested(rule, "echos")
                     ): _echo_field(multiple=True),
-                }
+                })
             ),
         )
 
@@ -979,14 +1183,17 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Switch calendar, AI and real Alexa reminders on or off."""
+        if user_input is not None and user_input.pop(BACK_FIELD, False):
+            return await self.async_step_reminders()
         if user_input is not None:
-            return self._save_reminder_options(
+            return await self._async_save_reminder_options(
                 (CONF_CALENDAR_ENTITY, CONF_AI_ENTITY), user_input
             )
         options = dict(self.config_entry.options or self.config_entry.data)
         return self.async_show_form(
             step_id="reminder_extras",
             data_schema=vol.Schema(
+                _with_back(
                 {
                     vol.Required(
                         CONF_CALENDAR_ENABLED,
@@ -1010,6 +1217,6 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                         CONF_NATIVE_REMINDERS,
                         default=options.get(CONF_NATIVE_REMINDERS, False),
                     ): selector.BooleanSelector(),
-                }
+                })
             ),
         )

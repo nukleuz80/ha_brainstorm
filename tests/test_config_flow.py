@@ -1,12 +1,17 @@
 """Tests for the config and options flow."""
 from __future__ import annotations
 
+from datetime import timedelta
+import json
+from pathlib import Path
 from typing import Any
 
 import pytest
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.util import dt as dt_util
+from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.brainstorm.const import DOMAIN, OVERVIEW_ENTITY_ID
 
@@ -79,7 +84,7 @@ async def _submit_categories(
     result = await hass.config_entries.options.async_configure(
         result["flow_id"], payload
     )
-    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["type"] is FlowResultType.MENU
     await hass.async_block_till_done()
     return result
 
@@ -166,7 +171,7 @@ async def _submit_general(
     result = await hass.config_entries.options.async_configure(
         result["flow_id"], user_input
     )
-    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["step_id"] == "init"
     await hass.async_block_till_done()
 
 
@@ -186,3 +191,137 @@ async def test_options_allowed_echos(
     await _submit_general(hass, entry)
     assert entry.options["allowed_echos"] == []
     assert hass.states.get(OVERVIEW_ENTITY_ID).attributes["allowed_echos"] == []
+
+
+async def test_saving_applies_at_once_and_returns_to_menu(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that a form neither closes the settings nor waits for closing them."""
+    entry = await setup_entry()
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "general"}
+    )
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"smart_formatting": False}
+    )
+    assert result["type"] is FlowResultType.MENU
+    assert "✅" in result["description_placeholders"]["notice"]
+    assert entry.options["smart_formatting"] is False
+    await hass.async_block_till_done()
+
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "close"}
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert entry.options["smart_formatting"] is False
+
+
+@pytest.mark.parametrize(
+    ("path", "parent"),
+    [
+        (["general"], "init"),
+        (["categories"], "init"),
+        (["alexa_skill"], "init"),
+        (["category_style"], "init"),
+        (["reminders", "reminder_general"], "reminders"),
+        (["reminders", "reminder_schedule"], "reminders"),
+        (["reminders", "reminder_lists"], "reminders"),
+        (["reminders", "reminder_places"], "reminders"),
+        (["reminders", "reminder_persons"], "reminders"),
+        (["reminders", "reminder_extras"], "reminders"),
+        (["reminders", "reminder_test"], "reminders"),
+    ],
+)
+async def test_every_form_can_go_back_without_saving(
+    hass: HomeAssistant, setup_entry: SetupEntry, path: list[str], parent: str
+) -> None:
+    """Test going back from each form, which must not change anything."""
+    entry = await setup_entry(options={"smart_formatting": True})
+    before = dict(entry.options)
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    for step in path:
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"], {"next_step_id": step}
+        )
+
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"go_back": True}
+    )
+
+    assert result["type"] is FlowResultType.MENU
+    assert result["step_id"] == parent
+    assert dict(entry.options) == before
+
+
+async def test_submenu_goes_back_and_shows_status(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test the back entry and the live status of the reminder menu."""
+    entry = await setup_entry(
+        options={
+            "reminder_notify": ["notify.phone"],
+            "quiet_start": "22:00:00",
+            "quiet_end": "07:00:00",
+        }
+    )
+    await entry.runtime_data.async_add_idea(
+        "tonnen raus", due=dt_util.now() + timedelta(hours=2)
+    )
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "reminders"}
+    )
+    status = result["description_placeholders"]["status"]
+    assert "🟢" in status
+    assert "22:00–07:00" in status
+    assert "phone" in status
+    assert "tonnen raus".lower() in status.lower()
+
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "init"}
+    )
+    assert result["step_id"] == "init"
+
+
+async def test_channel_test_reports_each_channel(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that the test asks first, sends for real and reports the results."""
+    calls = async_mock_service(hass, "notify", "phone")
+    entry = await setup_entry(options={"reminder_notify": ["notify.phone", "notify.gone"]})
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "reminders"}
+    )
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "reminder_test"}
+    )
+    assert result["step_id"] == "reminder_test"
+    assert "notify.phone" in result["description_placeholders"]["targets"]
+    assert not calls
+
+    result = await hass.config_entries.options.async_configure(result["flow_id"], {})
+    assert result["step_id"] == "reminder_test_result"
+    assert len(calls) == 1
+    report = result["description_placeholders"]["results"]
+    assert "✅ notify.phone" in report
+    assert "❌ notify.gone" in report
+
+    result = await hass.config_entries.options.async_configure(result["flow_id"], {})
+    assert result["step_id"] == "reminders"
+
+
+async def test_all_form_fields_have_a_label(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test the back field in the texts of all forms."""
+    root = Path(__file__).parent.parent / "custom_components" / "brainstorm"
+    for name in ("strings.json", "translations/en.json", "translations/de.json"):
+        steps = json.loads((root / name).read_text("utf-8"))["options"]["step"]
+        for step_id, step in steps.items():
+            if "menu_options" not in step and step_id not in (
+                "tools_info",
+                "reminder_test_result",
+            ):
+                assert "go_back" in step["data"], (name, step_id)

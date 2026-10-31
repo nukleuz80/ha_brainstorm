@@ -30,39 +30,43 @@
     "step": {
       "init": {
         "title": "Brainstorm Hub Options",
-        "description": "Choose a configuration section:",
+        "description": "Choose a section.\n\n{notice}",
         "menu_options": {
           "categories": "Manage Categories",
           "category_style": "Category Design (Color & Icon)",
           "general": "General Settings & Export",
           "alexa_skill": "Alexa Voice Input & Skill",
-          "reminders": "Reminders & Notifications"
+          "reminders": "Reminders & Notifications",
+          "close": "✅ Done"
         }
       },
       "categories": {
-        "title": "Manage Categories",
+        "title": "Brainstorm › Categories",
         "description": "Current categories:\n**{current_cats}**\n\nAdd new categories, delete existing ones, or edit the full list.",
         "data": {
           "add_category": "➕ Add new category (optional)",
           "delete_category": "🗑️ Delete existing category (optional)",
           "edit_categories": "✏️ Edit full list (comma-separated)",
-          "hide_empty_categories": "Hide categories without notes (0)"
+          "hide_empty_categories": "Hide categories without notes (0)",
+          "go_back": "⬅️ Back, without saving"
         }
       },
       "category_style": {
-        "title": "Category Design (Step 1 of 2)",
+        "title": "Brainstorm › Category Design",
         "description": "Step 1 of 2: Select the category you want to customize. Click 'Next' to choose its Home Assistant icon and accent color in the next step.",
         "data": {
-          "category": "Select Category"
+          "category": "Select Category",
+          "go_back": "⬅️ Back, without saving"
         }
       },
       "category_style_edit": {
-        "title": "Design for '{category}' (Step 2 of 2)",
+        "title": "Brainstorm › Category Design",
         "description": "Step 2 of 2: Choose an icon from the Home Assistant icon library and an accent color for '{category}'. Click Submit to save.",
         "data": {
           "icon": "Category Icon (Home Assistant / MDI)",
           "color": "Category Color",
-          "reset_style": "Reset to default icon and color"
+          "reset_style": "Reset to default icon and color",
+          "go_back": "⬅️ Back, without saving"
         }
       },
       "category_style_done": {
@@ -75,34 +79,37 @@
         }
       },
       "general": {
-        "title": "General Settings",
+        "title": "Brainstorm › General",
         "description": "Configure Brainstorm Hub behavior and Markdown export.",
         "data": {
           "default_category": "Default category for new ideas",
           "smart_formatting": "Smart Text Optimization (grammar, capitalization, infinitive formatting)",
           "auto_export_markdown": "Auto-export ideas to Markdown files",
           "markdown_path": "File path for Markdown files",
-          "allowed_echos": "Echo devices for voice input"
+          "allowed_echos": "Echo devices for voice input",
+          "go_back": "⬅️ Back, without saving"
         },
         "data_description": {
           "allowed_echos": "Only these Echos can capture ideas and open Brainstorm by voice. Leave empty to use all Echos."
         }
       },
       "alexa_skill": {
-        "title": "Alexa Voice Input",
+        "title": "Brainstorm › Alexa",
         "description": "**Native** works without setup: say \"Alexa, note ...\". Alexa may report an error first, then Brainstorm saves the idea.\n\n**Skill** gives one clean answer: say \"Alexa, tell Brainstorm note ...\". It needs your own free Alexa skill and a Home Assistant reachable from the internet.\n\n**Both** accepts both ways.",
         "data": {
-          "voice_mode": "Voice input"
+          "voice_mode": "Voice input",
+          "go_back": "⬅️ Back, without saving"
         }
       },
       "alexa_skill_setup": {
-        "title": "Set up your Alexa skill",
+        "title": "Brainstorm › Alexa › Skill",
         "description": "Follow the guide in the README and copy the two fields below into the Alexa developer console. **Keep the skill code private:** it contains your secret address.\n\nSkill linked: {linked}\nLast skill request: {last_request}\nLast unknown device: {unknown_device}",
         "data": {
           "skill_code": "Skill code (lambda_function.py)",
           "interaction_model": "Voice model (JSON editor)",
           "reset_skill": "Create a new secret address and remove the skill link",
-          "device_name": "Name for this unknown device"
+          "device_name": "Name for this unknown device",
+          "go_back": "⬅️ Back, without saving"
         },
         "data_description": {
           "reset_skill": "Use this if the address leaked or you built a new skill. Copy the new skill code afterwards.",
@@ -110,19 +117,22 @@
         }
       },
       "reminders": {
-        "title": "Reminders & Notifications",
-        "description": "Choose a section. Everything can be switched on and off separately.",
+        "title": "Brainstorm › Reminders",
+        "description": "Choose a section. Everything can be switched on and off separately.\n\n{notice}\n\n{status}",
         "menu_options": {
           "reminder_general": "On/Off & Channels",
           "reminder_schedule": "Quiet Hours, Briefing & Weekly Review",
           "reminder_lists": "Rules per List",
           "reminder_places": "Places & Coming Home",
           "reminder_persons": "People",
-          "reminder_extras": "Calendar, AI & Alexa Reminders"
+          "reminder_extras": "Calendar, AI & Alexa Reminders",
+          "reminder_test": "🧪 Test channels now",
+          "init": "⬅️ Back",
+          "close": "✅ Done"
         }
       },
       "reminder_general": {
-        "title": "On/Off & Channels",
+        "title": "Brainstorm › Reminders › On/Off & Channels",
         "description": "Choose the services you have set up in Home Assistant. Reminders also fire the event brainstorm_reminder_due for your own automations.",
         "data": {
           "reminders_enabled": "Use reminders",
@@ -133,7 +143,8 @@
           "reminder_delay": "Wait before sending notifications (minutes)",
           "urgent_enabled": "Send important open ideas again",
           "urgent_notify": "Services for important ideas",
-          "urgent_delay": "Send again after (minutes)"
+          "urgent_delay": "Send again after (minutes)",
+          "go_back": "⬅️ Back, without saving"
         },
         "data_description": {
           "reminders_enabled": "Off stops all reminders, the briefing, the review and everything else in this menu.",
@@ -143,7 +154,7 @@
         }
       },
       "reminder_schedule": {
-        "title": "Quiet Hours, Briefing & Weekly Review",
+        "title": "Brainstorm › Reminders › Quiet Hours, Briefing & Review",
         "description": "Set the times for each of these separately.",
         "data": {
           "quiet_enabled": "Use quiet hours",
@@ -155,7 +166,8 @@
           "review_enabled": "Weekly review",
           "review_weekday": "Day of the review",
           "review_time": "Time of the review",
-          "review_days": "Mention ideas open for more than (days)"
+          "review_days": "Mention ideas open for more than (days)",
+          "go_back": "⬅️ Back, without saving"
         },
         "data_description": {
           "quiet_start": "Reminders wait until the quiet hours end. Urgent ideas still reach your notification services, but no Echo speaks.",
@@ -163,15 +175,16 @@
         }
       },
       "reminder_lists": {
-        "title": "Rules per List",
+        "title": "Brainstorm › Reminders › Rules per List",
         "description": "Lists without a rule use the normal settings. Choose a list to edit its rule.",
         "data": {
           "list_rules_enabled": "Use rules per list",
-          "category": "List to edit"
+          "category": "List to edit",
+          "go_back": "⬅️ Back, without saving"
         }
       },
       "reminder_list_edit": {
-        "title": "Rule for '{category}'",
+        "title": "Brainstorm › Reminders › Rules › {category}",
         "description": "For example, private lists only on the phone, or a list on certain days or at a place.",
         "data": {
           "channel": "Reminders of this list go to",
@@ -180,59 +193,78 @@
           "schedule_weekdays": "Days",
           "schedule_time": "Time",
           "zone_enabled": "Send the open ideas at a place",
-          "zone": "Place"
+          "zone": "Place",
+          "go_back": "⬅️ Back, without saving"
         },
         "data_description": {
           "zone_enabled": "Sent once a day when someone arrives there. Needs the switch for places."
         }
       },
       "reminder_places": {
-        "title": "Places & Coming Home",
+        "title": "Brainstorm › Reminders › Places & Coming Home",
         "description": "Say for example: erinnere mich wenn ich heimkomme an den Müll, or: erinnere mich wenn ich bei Edeka bin an die Milch.",
         "data": {
           "arrival_enabled": "Remind when coming home",
           "places_enabled": "Remind at places (zones)",
-          "default_person": "Who is meant by \"ich\""
+          "default_person": "Who is meant by \"ich\"",
+          "go_back": "⬅️ Back, without saving"
         },
         "data_description": {
           "default_person": "Without a person, anyone arriving there triggers the reminder."
         }
       },
       "reminder_persons": {
-        "title": "People",
+        "title": "Brainstorm › Reminders › People",
         "description": "Say for example: erinnere Lenja morgen um 8 an den Elternsprechtag. Choose a person to set their channels.",
         "data": {
           "persons_enabled": "Use reminders for other people",
-          "person": "Person to edit"
+          "person": "Person to edit",
+          "go_back": "⬅️ Back, without saving"
         }
       },
       "reminder_person_edit": {
-        "title": "Channels for {person}",
+        "title": "Brainstorm › Reminders › People › {person}",
         "description": "These replace the normal channels for this person.",
         "data": {
           "notify": "Notification services",
-          "echos": "Echos"
+          "echos": "Echos",
+          "go_back": "⬅️ Back, without saving"
         }
       },
       "reminder_extras": {
-        "title": "Calendar, AI & Alexa Reminders",
+        "title": "Brainstorm › Reminders › Calendar, AI & Alexa",
         "description": "Optional extras, each with its own switch.",
         "data": {
           "calendar_enabled": "Add reminders to a calendar",
           "calendar_entity": "Calendar",
           "ai_enabled": "Shorten the briefing and review with AI",
           "ai_entity": "AI task entity",
-          "native_reminders": "Also create real Alexa reminders"
+          "native_reminders": "Also create real Alexa reminders",
+          "go_back": "⬅️ Back, without saving"
         },
         "data_description": {
           "calendar_enabled": "One way, once per reminder. Later changes are not transferred.",
           "ai_enabled": "Your ideas are sent to the provider of the chosen AI.",
           "native_reminders": "In the Alexa console, also switch on Reminders under Build ➔ Permissions. Alexa then rings itself and Home Assistant does not speak as well."
         }
+      },
+      "reminder_test": {
+        "title": "Brainstorm › Reminders › Test Channels",
+        "description": "Brainstorm will now send a real test message. An Echo speaks out loud.\n\n{targets}",
+        "data": {
+          "go_back": "⬅️ Back, without saving"
+        }
+      },
+      "reminder_test_result": {
+        "title": "Brainstorm › Reminders › Test Result",
+        "description": "{results}\n\nA green check means Home Assistant sent the message. Check whether it really arrived."
       }
     },
     "error": {
       "no_public_url": "Home Assistant has no public HTTPS address, for example through Home Assistant Cloud. The skill cannot reach it, so use Native mode."
+    },
+    "abort": {
+      "store_not_ready": "Brainstorm is reloading. Please open the settings again in a few seconds."
     }
   },
   "selector": {

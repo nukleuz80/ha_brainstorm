@@ -1028,6 +1028,17 @@ class BrainstormStore:
                 best, best_score = idea, score
         return best if best_score >= 0.6 else None
 
+    def next_due_idea(self) -> dict[str, Any] | None:
+        """Return the active idea whose reminder comes next."""
+        upcoming = [
+            idea
+            for idea in self.ideas
+            if idea.get(ATTR_STATUS) == "active"
+            and idea.get(ATTR_DUE)
+            and not idea.get(ATTR_REMINDED_AT)
+        ]
+        return min(upcoming, key=lambda idea: idea[ATTR_DUE], default=None)
+
     def last_reminded_idea(self) -> dict[str, Any] | None:
         """Return the active idea that was most recently reminded of."""
         reminded = [
