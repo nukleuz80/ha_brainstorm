@@ -9,6 +9,7 @@ from typing import Any
 from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.entity import DATA_ENTITY_SOURCE
 from homeassistant.setup import async_setup_component
 from homeassistant.util import dt as dt_util
 import pytest
@@ -110,8 +111,21 @@ async def _setup(
     """Set up reminders with mocked Alexa and phone services."""
     alexa = async_mock_service(hass, "notify", "alexa_media")
     push = async_mock_service(hass, "notify", "mobile_app_phone")
+    # Music Assistant uses the same name for the same Echo
+    hass.states.async_set(
+        "media_player.a_music_assistant", "idle", {"friendly_name": "Echo Küche"}
+    )
     hass.states.async_set(
         "media_player.kuche", "idle", {"friendly_name": "Echo Küche"}
+    )
+    hass.data.setdefault(DATA_ENTITY_SOURCE, {}).update(
+        {
+            "media_player.a_music_assistant": {
+                "domain": "music_assistant",
+                "custom_component": False,
+            },
+            "media_player.kuche": {"domain": "alexa_media", "custom_component": True},
+        }
     )
     entry = await setup_entry(options=options)
     return entry, alexa, push
@@ -150,6 +164,23 @@ async def test_reminder_goes_to_origin_echo_and_phone_once(
     await entry.runtime_data.reminders.async_check(dt_util.now())
     await hass.async_block_till_done()
     assert (len(alexa), len(push), len(events)) == (1, 1, 1)
+
+
+async def test_phone_entity_uses_service_with_buttons(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that choosing a phone's notify entity still gives buttons."""
+    entry, _, push = await _setup(
+        hass, setup_entry, reminder_notify=["notify.phone"]
+    )
+    hass.states.async_set("notify.phone", "unknown")
+    await _due_idea(entry)
+
+    await entry.runtime_data.reminders.async_check(dt_util.now())
+    await hass.async_block_till_done()
+
+    assert len(push) == 1
+    assert push[0].data["data"]["actions"][0]["title"] == "Erledigt"
 
 
 async def test_future_and_completed_ideas_stay_silent(
@@ -1234,6 +1265,7 @@ def test_notify_service_list_skips_alexa() -> None:
                 "notify": {
                     "alexa_media": {},
                     "alexa_media_kuche": {},
+                    "mobile_app_phone": {},
                     "send_message": {},
                     "pushover": {},
                 }
@@ -1241,12 +1273,13 @@ def test_notify_service_list_skips_alexa() -> None:
 
     class _States:
         def async_entity_ids(self, domain: str) -> list[str]:
-            return ["notify.entity_one"]
+            return ["notify.entity_one", "notify.phone"]
 
     handler = BrainstormOptionsFlowHandler()
     handler.hass = type("H", (), {"services": _Services(), "states": _States()})()
 
     assert handler._notify_service_options() == [  # noqa: SLF001
         "notify.entity_one",
+        "notify.mobile_app_phone",
         "notify.pushover",
     ]

@@ -17,7 +17,6 @@ from aiohttp import hdrs, web
 from homeassistant.components import webhook
 from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers.entity import entity_sources
 from homeassistant.helpers.network import get_url
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
@@ -33,7 +32,13 @@ from .const import (
     SKILL_STORAGE_KEY,
     SKILL_STORAGE_VERSION,
 )
-from .reminders import ZONE_HOME, ReminderRequest, build_reminder_request, format_due
+from .reminders import (
+    ZONE_HOME,
+    ReminderRequest,
+    build_reminder_request,
+    find_echo_entity,
+    format_due,
+)
 
 if TYPE_CHECKING:
     from .store import BrainstormStore
@@ -47,7 +52,6 @@ MIN_IDEA_LENGTH = 3
 # The skill code gives up after 6 seconds, so an unknown Echo must not take longer
 DEVICE_WAIT_SECONDS = 3.5
 ALEXA_EVENT_MAX_AGE_SECONDS = 30
-ALEXA_MEDIA_DOMAIN = "alexa_media"
 EVENT_LAST_CALLED = "alexa_media_last_called_event"
 
 ACTION_CAPTURE = "capture"
@@ -503,16 +507,7 @@ class AlexaSkill:
 
     def _echo_from_name(self, name: str) -> EchoDevice:
         """Find the media player of an Echo by its Alexa name."""
-        sources = entity_sources(self.hass)
-        for state in self.hass.states.async_all("media_player"):
-            source = sources.get(state.entity_id)
-            if (
-                source is not None
-                and source["domain"] == ALEXA_MEDIA_DOMAIN
-                and state.attributes.get("friendly_name") == name
-            ):
-                return EchoDevice(name, state.entity_id)
-        return EchoDevice(name)
+        return EchoDevice(name, find_echo_entity(self.hass, name))
 
     @callback
     def _async_learn_device(self, device_id: str, echo: EchoDevice) -> None:

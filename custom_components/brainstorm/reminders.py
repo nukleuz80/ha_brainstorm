@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any
 from homeassistant.const import EVENT_STATE_CHANGED
 from homeassistant.core import CALLBACK_TYPE, Event, HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.entity import entity_sources
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
@@ -101,6 +102,8 @@ ACTION_SNOOZE = "SNOOZE"
 ACTION_TOMORROW = "TOMORROW"
 TOMORROW_TIME = time(9, 0)
 ZONE_HOME = "zone.home"
+ALEXA_MEDIA_DOMAIN = "alexa_media"
+MOBILE_APP_SERVICE_PREFIX = "mobile_app_"
 PRESENT_STATES = ("on", "home", "detected", "occupied")
 
 _HOME_WORDS = (
@@ -147,6 +150,20 @@ def format_due(due: datetime, now: datetime) -> str:
         "Sonntag",
     )[day.weekday()]
     return f"am {weekday}, den {day.day}.{day.month}., um {clock}"
+
+
+def find_echo_entity(hass: HomeAssistant, name: str) -> str | None:
+    """Find an Echo by its name, as other integrations may use the same name."""
+    sources = entity_sources(hass)
+    for state in hass.states.async_all("media_player"):
+        source = sources.get(state.entity_id)
+        if (
+            source is not None
+            and source["domain"] == ALEXA_MEDIA_DOMAIN
+            and state.attributes.get("friendly_name") == name
+        ):
+            return state.entity_id
+    return None
 
 
 @dataclass
@@ -420,12 +437,7 @@ class ReminderManager:
 
     def _echo_entity_from_name(self, name: str | None) -> str | None:
         """Find the Echo of an idea by the name stored with it."""
-        if not name:
-            return None
-        for state in self.hass.states.async_all("media_player"):
-            if state.attributes.get("friendly_name") == name:
-                return state.entity_id
-        return None
+        return find_echo_entity(self.hass, name) if name else None
 
     def _alexa_targets(self, idea: dict[str, Any] | None) -> list[str]:
         """Return the Echos to speak on, following the chosen mode."""
@@ -522,13 +534,22 @@ class ReminderManager:
         except (HomeAssistantError, ValueError) as err:
             _LOGGER.warning("Could not send over %s: %s", service, err)
 
+    def _phone_service(self, service: str) -> str:
+        """Prefer a phone's own service, as its notify entity cannot show buttons."""
+        _, _, name = service.partition(".")
+        phone_service = f"{MOBILE_APP_SERVICE_PREFIX}{name}"
+        if self.hass.services.has_service("notify", phone_service):
+            return f"notify.{phone_service}"
+        return service
+
     async def _async_notify_idea(self, idea: dict[str, Any]) -> None:
         """Send a reminder to the phones and other services."""
         idea_id = idea[ATTR_ID]
-        for service in self._idea_services(idea):
+        for configured in self._idea_services(idea):
+            service = self._phone_service(configured)
             data = None
             # Only the companion app understands buttons
-            if service.startswith("notify.mobile_app_"):
+            if service.startswith(f"notify.{MOBILE_APP_SERVICE_PREFIX}"):
                 data = {
                     "tag": f"brainstorm_{idea_id}",
                     "actions": [

@@ -607,7 +607,11 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             for name in self.hass.services.async_services().get("notify", {})
             if name != "send_message" and not name.startswith("alexa_media")
         }
-        services.update(self.hass.states.async_entity_ids("notify"))
+        # A phone's entity is the same target as its service, which can show buttons
+        for entity_id in self.hass.states.async_entity_ids("notify"):
+            name = entity_id.partition(".")[2]
+            if f"notify.mobile_app_{name}" not in services:
+                services.add(entity_id)
         return sorted(services)
 
     def _notify_field(self) -> selector.SelectSelector:
