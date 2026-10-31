@@ -1,6 +1,6 @@
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.4.56 - Settings with Back Navigation, Live Status and Channel Test
+ * Version: 1.4.57 - Selected Category Stays After Reload
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -96,7 +96,8 @@ class BrainstormMindmapCard extends HTMLElement {
     if (config.color_mode) {
       this._colorMode = config.color_mode;
     }
-    if (this._config.default_category && !this._initialized) {
+    this._restoreSelectedCategory();
+    if (this._config.default_category && !this._hasSavedCategory && !this._initialized) {
       this._selectedCategory = String(this._config.default_category).trim();
     }
     if (this._initialized) {
@@ -153,6 +154,7 @@ class BrainstormMindmapCard extends HTMLElement {
 
     const ideas = sensor.attributes.ideas || [];
     const categories = sensor.attributes.categories || [];
+    this._checkSavedCategory(categories);
     const alexaInfo = this._getLastAlexaInfo();
     const currentAlexaKey = alexaInfo ? `${alexaInfo.entityId}_${alexaInfo.name}_${alexaInfo.state}` : "";
     const sig = `${sensor.last_updated}_${this._selectedCategory}_${ideas.length}_${categories.length}_${currentAlexaKey}`;
@@ -165,6 +167,45 @@ class BrainstormMindmapCard extends HTMLElement {
     }
     this._lastDataSignature = sig;
     this._updateContent();
+  }
+
+  _categoryStorageKey() {
+    const title = (this._config && this._config.title) || "default";
+    return `brainstorm_selected_category_mindmap_${title}`;
+  }
+
+  _restoreSelectedCategory() {
+    if (this._categoryRestored) return;
+    this._categoryRestored = true;
+    try {
+      const saved = localStorage.getItem(this._categoryStorageKey());
+      if (saved) {
+        this._selectedCategory = saved;
+        this._hasSavedCategory = true;
+        this._savedCategoryUnchecked = true;
+      }
+    } catch (e) {
+      // Without browser storage the card simply starts with its default
+    }
+  }
+
+  _saveSelectedCategory() {
+    try {
+      localStorage.setItem(this._categoryStorageKey(), this._selectedCategory);
+    } catch (e) {
+      // Without browser storage the selection only lasts until the next reload
+    }
+  }
+
+  // A saved category may have been deleted in the meantime
+  _checkSavedCategory(categories) {
+    if (!this._savedCategoryUnchecked || !categories.length) return;
+    this._savedCategoryUnchecked = false;
+    const selected = this._selectedCategory;
+    if (selected !== "all" && selected !== "__completed__" && !categories.includes(selected)) {
+      this._selectedCategory = "all";
+      this._saveSelectedCategory();
+    }
   }
 
   _getSensorEntity() {
@@ -1882,6 +1923,7 @@ class BrainstormMindmapCard extends HTMLElement {
       const idx = categories.indexOf(this._selectedCategory);
       const nextIdx = (idx + 1) % categories.length;
       this._selectedCategory = categories[nextIdx];
+      this._saveSelectedCategory();
       this._lastDataSignature = ""; // force re-render
       this._centerLayout(true);
       this._updateContent();
@@ -2317,6 +2359,7 @@ class BrainstormMindmapCard extends HTMLElement {
             const newCat = String(pill.getAttribute("data-cat") || "").trim();
             if (this._selectedCategory !== newCat) {
               this._selectedCategory = newCat;
+              this._saveSelectedCategory();
               this._nodePositions.clear();
               if (this._userMovedNodes) this._userMovedNodes.clear();
               this._lastDataSignature = "";
@@ -3389,7 +3432,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.56 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.57 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

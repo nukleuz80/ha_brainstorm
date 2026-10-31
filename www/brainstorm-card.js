@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.56 - Settings with Back Navigation, Live Status and Channel Test
+ * Version 1.4.57 - Selected Category Stays After Reload
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",
@@ -89,13 +89,57 @@ class BrainstormCard extends HTMLElement {
     if (config.color_mode) {
       this._colorMode = config.color_mode;
     }
-    if (this._config.default_category && (!this._initialized || this._selectedCategory === "all")) {
+    this._restoreSelectedCategory();
+    if (
+      this._config.default_category &&
+      !this._hasSavedCategory &&
+      (!this._initialized || this._selectedCategory === "all")
+    ) {
       this._selectedCategory = String(this._config.default_category).trim();
     }
     this._lastUpdated = null; // Force refresh on config change
     this._lastColorMode = null;
     if (this._initialized) {
       this._updateContent();
+    }
+  }
+
+  _categoryStorageKey() {
+    const title = (this._config && this._config.title) || "default";
+    return `brainstorm_selected_category_list_${title}`;
+  }
+
+  _restoreSelectedCategory() {
+    if (this._categoryRestored) return;
+    this._categoryRestored = true;
+    try {
+      const saved = localStorage.getItem(this._categoryStorageKey());
+      if (saved) {
+        this._selectedCategory = saved;
+        this._hasSavedCategory = true;
+        this._savedCategoryUnchecked = true;
+      }
+    } catch (e) {
+      // Without browser storage the card simply starts with its default
+    }
+  }
+
+  _saveSelectedCategory() {
+    try {
+      localStorage.setItem(this._categoryStorageKey(), this._selectedCategory);
+    } catch (e) {
+      // Without browser storage the selection only lasts until the next reload
+    }
+  }
+
+  // A saved category may have been deleted in the meantime
+  _checkSavedCategory(categories) {
+    if (!this._savedCategoryUnchecked || !categories.length) return;
+    this._savedCategoryUnchecked = false;
+    const selected = this._selectedCategory;
+    if (selected !== "all" && selected !== "__completed__" && !categories.includes(selected)) {
+      this._selectedCategory = "all";
+      this._saveSelectedCategory();
     }
   }
 
@@ -930,6 +974,7 @@ class BrainstormCard extends HTMLElement {
           });
           if (String(this._selectedCategory).trim() === String(categoryName).trim()) {
             this._selectedCategory = "all";
+            this._saveSelectedCategory();
           }
         } catch (e) {
           console.error("Failed to remove category", e);
@@ -2960,6 +3005,7 @@ class BrainstormCard extends HTMLElement {
 
       const attributes = sensorEntity.attributes || {};
       const categories = attributes.categories || ["Inbox", "Smarthome", "Haus & Garten", "Projekte", "Alltag"];
+      this._checkSavedCategory(categories);
       const counts = attributes.category_counts || {};
       const activeIdeas = attributes.ideas || [];
       const completedIdeas = attributes.completed_ideas || [];
@@ -3125,6 +3171,7 @@ class BrainstormCard extends HTMLElement {
         pill.addEventListener("click", (e) => {
           if (e.target.closest(".remove-cat-btn") || e.target.closest(".style-cat-btn")) return;
           this._selectedCategory = String(pill.getAttribute("data-cat") || "").trim();
+          this._saveSelectedCategory();
           const catSelect = this.shadowRoot.getElementById("catSelect");
           if (catSelect) {
             if (this._selectedCategory !== "all" && this._selectedCategory !== "__completed__") {
@@ -4118,7 +4165,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.4.56 ",
+  "%c BRAINSTORM-CARD %c v1.4.57 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );
