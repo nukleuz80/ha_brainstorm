@@ -11,6 +11,7 @@ from aiohttp import hdrs, web
 from homeassistant.components import webhook
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.network import get_url
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
@@ -186,9 +187,11 @@ class AlexaSkill:
 
         Raises NoURLAvailableError if Home Assistant has no public address.
         """
-        url = webhook.async_generate_url(
-            self.hass, self._webhook_id, allow_internal=False, prefer_external=True
+        # webhook.async_generate_url() excludes Home Assistant Cloud addresses
+        base_url = get_url(
+            self.hass, allow_internal=False, allow_ip=False, require_ssl=True
         )
+        url = f"{base_url}{webhook.async_generate_path(self._webhook_id)}"
         return SKILL_CODE_TEMPLATE.replace("__WEBHOOK_URL__", url)
 
     @staticmethod

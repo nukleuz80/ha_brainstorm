@@ -207,6 +207,50 @@ async def test_options_flow_without_public_url(
     assert "skill_code" not in {str(k) for k in result["data_schema"].schema}
 
 
+async def _open_skill_setup(hass: HomeAssistant, entry: Any) -> dict[str, Any]:
+    """Open the setup step of the options flow."""
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "alexa_skill"}
+    )
+    return await hass.config_entries.options.async_configure(
+        result["flow_id"], {"voice_mode": "skill"}
+    )
+
+
+async def test_options_flow_uses_home_assistant_cloud_address(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that a Home Assistant Cloud address is enough for the skill."""
+    assert await async_setup_component(hass, "http", {})
+    entry = await setup_entry()
+
+    with patch(
+        "homeassistant.helpers.network._get_cloud_url",
+        return_value="https://abc.ui.nabu.casa",
+    ):
+        result = await _open_skill_setup(hass, entry)
+
+    assert not result["errors"]
+    secret = entry.runtime_data.alexa_skill._webhook_id  # noqa: SLF001
+    fields = {str(k): k for k in result["data_schema"].schema}
+    code = fields["skill_code"].description["suggested_value"]
+    assert f'"https://abc.ui.nabu.casa/api/webhook/{secret}"' in code
+
+
+async def test_options_flow_rejects_unencrypted_address(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that the secret address is never offered without HTTPS."""
+    hass.config.external_url = "http://home.example.org"
+    assert await async_setup_component(hass, "http", {})
+    entry = await setup_entry()
+
+    result = await _open_skill_setup(hass, entry)
+
+    assert result["errors"] == {"base": "no_public_url"}
+
+
 def _run_skill_code(reply: bytes | Exception) -> tuple[dict[str, Any], list[Any]]:
     """Run the generated skill code like Alexa would, with a fake network."""
     from custom_components.brainstorm.alexa_skill import SKILL_CODE_TEMPLATE  # noqa: PLC0415
