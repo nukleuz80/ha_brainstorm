@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.4.48-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.4.49-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver-C0C0C0.svg)](https://developers.home-assistant.io/docs/integration_quality_scale_index/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -124,8 +124,8 @@ Klicke einfach auf diesen Button, um das Repository direkt in deiner Home Assist
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js` und `www/brainstorm-mindmap-card.js` in `/config/www/`.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.4.48` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.4.48` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.4.49` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.4.49` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ---
@@ -234,7 +234,7 @@ Der Skill gehört dir allein und spricht nur mit deinem eigenen Home Assistant. 
 5. Stelle im Tab **Test** oben **Development** ein.
 6. Klicke in Home Assistant auf **Absenden** und sprich am Echo: *„Alexa, sage Brainstorm notiere Testidee.“* Die erste Anfrage koppelt deinen Skill, andere Skills werden danach abgewiesen. Unter **Konfigurieren** siehst du die Kopplung und die letzte Anfrage.
 
-**Hinweise:** Halte den Skill-Code geheim, er enthält deine geheime Adresse. Wurde sie bekannt, erzeugst du dort eine neue und kopierst den Skill-Code erneut. Die Echo-Auswahl und die Geräteanzeige gelten im Skill-Weg derzeit nicht. Der Modus **Skill** schaltet die bisherige Erfassung ab, wenn deine Automation das Attribut `voice_mode` von `sensor.brainstorm_ideen_ubersicht` prüft:
+**Hinweise:** Halte den Skill-Code geheim, er enthält deine geheime Adresse. Wurde sie bekannt, erzeugst du dort eine neue und kopierst den Skill-Code erneut. Die Echo-Auswahl und die Geräteanzeige gelten auch im Skill. Dafür lernt Home Assistant jeden Echo beim ersten Satz aus dem Alexa-Verlauf (das braucht die Integration Alexa Media); dieser erste Satz kann bis zu 3,5 Sekunden länger dauern. Kommt der Eintrag im Verlauf später, wird die Idee trotzdem gespeichert und der Echo nachgetragen. Im Menü brauchst du ein Befehlswort wie *„notiere …“*, reiner Freitext geht im Skill nicht. Der Modus **Skill** schaltet die bisherige Erfassung ab, wenn deine Automation das Attribut `voice_mode` von `sensor.brainstorm_ideen_ubersicht` prüft:
 
 ```yaml
 - condition: template
@@ -283,6 +283,7 @@ Die Integration stellt folgende Services bereit:
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.4.49`** | 31.10.2026 | **Alexa-Skill mit den nativen Funktionen:**<br>• **Echo-Herkunft:** Ideen aus dem Skill zeigen den Echo, von dem sie stammen. Home Assistant lernt jeden Echo einmal aus dem Alexa-Verlauf und kennt ihn danach sofort.<br>• **Echo-Auswahl:** Echos außerhalb der Auswahl werden auch im Skill still ignoriert.<br>• **Gleiche Sprache:** Der Skill versteht die nativen Befehlswörter und bereinigt den Text genauso.<br>• **Ansage und Menü:** *„Alexa, sage Brainstorm Ansage“* liest deine Ideen vor, auch pro Kategorie, und *„Alexa, starte Brainstorm“* öffnet das Menü. |
 | **`v1.4.48`** | 31.10.2026 | **Alexa-Skill mit Home Assistant Cloud:** Die Skill-Einrichtung meldet keine fehlende öffentliche HTTPS-Adresse mehr, wenn Home Assistant über Home Assistant Cloud (Nabu Casa) erreichbar ist. Unverschlüsselte Adressen werden nie angeboten. |
 | **`v1.4.47`** | 31.10.2026 | **Optionaler Alexa-Skill für die Spracheingabe in einem Satz:**<br>• **Sprachmodi:** Neue Optionen unter *Alexa-Spracheingabe & Skill* mit **Nativ** (Standard, unverändert), **Skill** und **Beide**.<br>• **Eigener Skill:** *„Alexa, sage Brainstorm notiere …“* gibt jetzt eine einzige saubere Antwort. Home Assistant erzeugt Skill-Code und Sprachmodell zum Kopieren, koppelt den ersten Skill automatisch und weist andere ab.<br>• **Verlässliche Antworten:** Alexa bestätigt nur, was wirklich gespeichert wurde. |
 | **`v1.4.46`** | 31.10.2026 | **Ausgewählte Echos für die Spracheingabe:**<br>• **Neue Option:** Unter *Allgemeine Einstellungen & Export* gibt es jetzt eine Mehrfachauswahl für Alexa-Media-Echos. Nur die ausgewählten Echos können Ideen per Sprache erfassen und Brainstorm öffnen; bei leerer Liste funktionieren weiterhin alle Echos.<br>• **Für Automationen:** Die Auswahl steht als Attribut `allowed_echos` von `sensor.brainstorm_ideen_ubersicht` bereit. |

@@ -502,7 +502,9 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             errors=errors,
             description_placeholders={
                 "linked": "✅" if skill.is_linked else "❌",
-                "last_request": f"{last['time']}: {last['text']}" if last else "–",
+                "last_request": (
+                    f"{last['time']} ({last['device']}): {last['text']}" if last else "–"
+                ),
             },
             last_step=True,
         )

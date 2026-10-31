@@ -1,6 +1,7 @@
 """Tests for the connection to the user's own Alexa skill."""
 from __future__ import annotations
 
+import asyncio
 import io
 import json
 from typing import Any
@@ -8,14 +9,21 @@ from unittest.mock import patch
 
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.helpers.entity import DATA_ENTITY_SOURCE
 from homeassistant.setup import async_setup_component
+import pytest
 from pytest_homeassistant_custom_component.typing import ClientSessionGenerator
 
+from custom_components.brainstorm import alexa_skill
+from custom_components.brainstorm.alexa_skill import clean_voice_text
 from custom_components.brainstorm.const import OVERVIEW_ENTITY_ID
 
 from .conftest import SetupEntry
 
 SKILL_ID = "amzn1.ask.skill.mine"
+DEVICE_ID = "amzn1.ask.device.kitchen"
+ECHO_NAME = "Echo Show Küche"
+ECHO_ENTITY = "media_player.echo_show_kuche"
 
 
 async def _setup_skill(
@@ -267,7 +275,12 @@ def _run_skill_code(reply: bytes | Exception) -> tuple[dict[str, Any], list[Any]
         return io.BytesIO(reply)
 
     event = {
-        "context": {"System": {"application": {"applicationId": SKILL_ID}}},
+        "context": {
+            "System": {
+                "application": {"applicationId": SKILL_ID},
+                "device": {"deviceId": DEVICE_ID},
+            }
+        },
         "request": {
             "type": "IntentRequest",
             "intent": {
@@ -285,17 +298,220 @@ def test_skill_code_speaks_answer_from_home_assistant() -> None:
     result, requests = _run_skill_code(b'{"speech": "Gespeichert."}')
 
     assert result["response"]["outputSpeech"]["text"] == "Gespeichert."
-    assert json.loads(requests[0].data) == {
-        "application_id": SKILL_ID,
-        "text": "kellerlicht dimmen",
+    assert json.loads(requests[0].data) == _capture_payload()
+
+
+@pytest.mark.parametrize(
+    ("spoken", "expected"),
+    [
+        ("kellerlicht dimmen", "kellerlicht dimmen"),
+        ("für den garten tomaten düngen", "garten tomaten düngen"),
+        ("testidee zwei auf meine to do liste", "testidee zwei"),
+        ("ein buch auf die liste", "ein buch"),
+        ("erinnere mich an den müll", "den müll"),
+        ("neue idee kaffee kochen", "kaffee kochen"),
+    ],
+)
+def test_clean_voice_text(spoken: str, expected: str) -> None:
+    """Test that spoken text is cleaned like in the native capture."""
+    assert clean_voice_text(spoken) == expected
+
+
+def _add_echo(hass: HomeAssistant, entity_id: str = ECHO_ENTITY, name: str = ECHO_NAME) -> None:
+    """Add a media player that looks like one from Alexa Media."""
+    hass.states.async_set(entity_id, "idle", {"friendly_name": name})
+    hass.data.setdefault(DATA_ENTITY_SOURCE, {})[entity_id] = {
+        "domain": "alexa_media",
+        "custom_component": True,
     }
+
+
+def _alexa_event(hass: HomeAssistant, summary: str, name: str = ECHO_NAME) -> None:
+    """Fire the event Alexa Media sends for a spoken sentence."""
+    hass.bus.async_fire(
+        "alexa_media_last_called_event", {"name": name, "summary": summary}
+    )
+
+
+def _capture_payload(text: str = "kellerlicht dimmen", **extra: Any) -> dict[str, Any]:
+    """Return what the skill sends for a spoken idea."""
+    return {
+        "application_id": SKILL_ID,
+        "device_id": DEVICE_ID,
+        "text": text,
+        "action": "capture",
+    } | extra
+
+
+async def test_echo_known_before_idea_is_stored(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_client_no_auth: ClientSessionGenerator,
+) -> None:
+    """Test that the first request waits for the Echo and later ones do not."""
+    entry = await _setup_skill(hass, setup_entry)
+    _add_echo(hass)
+    client = await hass_client_no_auth()
+    url = f"/api/webhook/{entry.runtime_data.alexa_skill._webhook_id}"  # noqa: SLF001
+
+    request = asyncio.create_task(client.post(url, json=_capture_payload()))
+    await asyncio.sleep(0.05)
+    assert not entry.runtime_data.ideas
+    _alexa_event(hass, "sage brainstorm notiere kellerlicht dimmen")
+    assert (await request).status == 200
+    assert entry.runtime_data.ideas[0]["device"] == ECHO_NAME
+
+    # Now known: answers at once, even though Alexa has not reported anything
+    with patch.object(alexa_skill, "DEVICE_WAIT_SECONDS", 0):
+        await client.post(url, json=_capture_payload("rosen schneiden"))
+    await hass.async_block_till_done()
+    rosen = [i for i in entry.runtime_data.ideas if "rosen" in i["text"].lower()]
+    assert rosen[0]["device"] == ECHO_NAME
+
+
+async def test_alexa_event_before_request_is_used(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_client_no_auth: ClientSessionGenerator,
+) -> None:
+    """Test that the history entry may arrive before the skill's request."""
+    entry = await _setup_skill(hass, setup_entry)
+    _add_echo(hass)
+    _alexa_event(hass, "sage brainstorm notiere kellerlicht dimmen")
+
+    with patch.object(alexa_skill, "DEVICE_WAIT_SECONDS", 0):
+        await _post(hass_client_no_auth, entry, _capture_payload())
+
+    assert entry.runtime_data.ideas[0]["device"] == ECHO_NAME
+
+
+async def test_late_echo_is_added_and_idea_never_lost(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_client_no_auth: ClientSessionGenerator,
+) -> None:
+    """Test that a slow Alexa history saves the idea and fills in the Echo later."""
+    entry = await _setup_skill(hass, setup_entry)
+    _add_echo(hass)
+
+    with patch.object(alexa_skill, "DEVICE_WAIT_SECONDS", 0):
+        response = await _post(hass_client_no_auth, entry, _capture_payload())
+    assert (await response.json())["speech"]
+    assert not entry.runtime_data.ideas[0].get("device")
+
+    _alexa_event(hass, "sage brainstorm notiere kellerlicht dimmen")
+    await hass.async_block_till_done()
+    assert entry.runtime_data.ideas[0]["device"] == ECHO_NAME
+    assert entry.runtime_data.alexa_skill._devices[DEVICE_ID]["entity_id"] == ECHO_ENTITY  # noqa: SLF001
+
+
+async def test_unrelated_sentence_is_not_learned(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_client_no_auth: ClientSessionGenerator,
+) -> None:
+    """Test that another person's sentence cannot set the wrong Echo."""
+    entry = await _setup_skill(hass, setup_entry)
+    _add_echo(hass)
+
+    with patch.object(alexa_skill, "DEVICE_WAIT_SECONDS", 0):
+        await _post(hass_client_no_auth, entry, _capture_payload())
+    _alexa_event(hass, "licht aus", name="Anderer Echo")
+    _alexa_event(hass, "sage brainstorm notiere etwas anderes", name="Anderer Echo")
+    await hass.async_block_till_done()
+
+    assert not entry.runtime_data.ideas[0].get("device")
+    assert not entry.runtime_data.alexa_skill._devices  # noqa: SLF001
+
+
+async def test_echo_selection_applies_to_skill(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_client_no_auth: ClientSessionGenerator,
+) -> None:
+    """Test that an Echo outside the selection is ignored silently."""
+    assert await async_setup_component(hass, "http", {})
+    entry = await setup_entry(
+        options={"voice_mode": "skill", "allowed_echos": ["media_player.other"]}
+    )
+    _add_echo(hass)
+    _alexa_event(hass, "sage brainstorm notiere kellerlicht dimmen")
+
+    response = await _post(hass_client_no_auth, entry, _capture_payload())
+
+    assert await response.json() == {"silent": True}
+    assert not entry.runtime_data.ideas
+
+
+async def test_read_ideas_and_menu(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_client_no_auth: ClientSessionGenerator,
+) -> None:
+    """Test the spoken announcement and the main menu of the native flow."""
+    entry = await _setup_skill(hass, setup_entry)
+    await entry.runtime_data.async_add_idea("rosen schneiden", category="Alltag")
+    await entry.runtime_data.async_add_idea("licht dimmen", category="Projekte")
+
+    response = await _post(
+        hass_client_no_auth,
+        entry,
+        {"application_id": SKILL_ID, "action": "read", "text": "alltag"},
+    )
+    speech = (await response.json())["speech"]
+    assert "Alltag" in speech
+    assert "Projekte" not in speech
+
+    response = await _post(
+        hass_client_no_auth, entry, {"application_id": SKILL_ID, "action": "read"}
+    )
+    assert "Projekte" in (await response.json())["speech"]
+
+    response = await _post(
+        hass_client_no_auth, entry, {"application_id": SKILL_ID, "action": "launch"}
+    )
+    assert (await response.json())["end_session"] is False
+
+
+async def test_unknown_action_is_rejected(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_client_no_auth: ClientSessionGenerator,
+) -> None:
+    """Test that the webhook only does what the skill may ask for."""
+    entry = await _setup_skill(hass, setup_entry)
+
+    response = await _post(
+        hass_client_no_auth,
+        entry,
+        {"application_id": SKILL_ID, "action": "delete", "text": "x"},
+    )
+
+    assert response.status == 400
+    assert not entry.runtime_data.alexa_skill.is_linked
+
+
+def test_voice_model_matches_skill_code() -> None:
+    """Test that the skill handles every custom intent of the voice model."""
+    model = alexa_skill.INTERACTION_MODEL["interactionModel"]["languageModel"]
+    assert model["invocationName"] == "brainstorm"
+    for intent in model["intents"]:
+        if not intent["name"].startswith("AMAZON."):
+            assert intent["name"] in alexa_skill.SKILL_CODE_TEMPLATE
+            for sample in intent["samples"]:
+                # Amazon requires words next to a free text slot
+                assert sample.replace("{text}", "").replace("{category}", "").strip()
 
 
 def test_skill_code_never_claims_success_on_failure() -> None:
     """Test the answers when Home Assistant is down or the mode is off."""
     down, _ = _run_skill_code(TimeoutError())
-    assert "nicht gespeichert" in down["response"]["outputSpeech"]["text"]
+    assert "nichts gespeichert" in down["response"]["outputSpeech"]["text"]
 
     # Home Assistant answers an unknown webhook with an empty 200
     closed, _ = _run_skill_code(b"")
-    assert "nicht gespeichert" in closed["response"]["outputSpeech"]["text"]
+    assert "nichts gespeichert" in closed["response"]["outputSpeech"]["text"]
+
+    # An Echo outside the selection stays silent, like in the native capture
+    silent, _ = _run_skill_code(b'{"silent": true}')
+    assert "outputSpeech" not in silent["response"]

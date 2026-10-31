@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.4.48-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.4.49-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver-C0C0C0.svg)](https://developers.home-assistant.io/docs/integration_quality_scale_index/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -121,7 +121,7 @@ The skill belongs to you and only talks to your own Home Assistant. **Requiremen
 5. In the **Test** tab, set the stage to **Development**.
 6. Click **Submit** in Home Assistant and say *"Alexa, sage Brainstorm notiere Testidee."* The first request links your skill, other skills are rejected afterwards. **Configure** shows the link and the last request.
 
-**Notes:** Keep the skill code private, it contains your secret address. If it leaks, create a new one there and copy the skill code again. The Echo selection and device display do not apply to the skill path yet. For **Skill** mode to turn off the existing capture, your automation has to check the `voice_mode` attribute:
+**Notes:** Keep the skill code private, it contains your secret address. If it leaks, create a new one there and copy the skill code again. The Echo selection and device display apply to the skill too. For this, Home Assistant learns each Echo from the Alexa history on its first sentence (this needs the Alexa Media integration), which can take up to 3.5 seconds longer. If the history entry arrives later, the idea is still saved and the Echo is added afterwards. In the menu you need a command word such as *"notiere ..."*, plain free text is not possible in a skill. For **Skill** mode to turn off the existing capture, your automation has to check the `voice_mode` attribute:
 
 ```yaml
 - condition: template
@@ -138,9 +138,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.4.48
+  - url: /local/brainstorm-card.js?v=1.4.49
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.4.48
+  - url: /local/brainstorm-mindmap-card.js?v=1.4.49
     type: module
 ```
 
@@ -187,6 +187,7 @@ hide_empty_categories: true
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.4.49`** | 2026-10-31 | **Alexa Skill with the Native Features:**<br>• **Echo origin:** Ideas from the skill show the Echo they came from. Home Assistant learns each Echo once from the Alexa history and knows it immediately afterwards.<br>• **Echo selection:** Echos outside the selection are ignored silently, also in the skill.<br>• **Same language:** The skill understands the native command words and cleans the text the same way.<br>• **Announcement and menu:** *„Alexa, sage Brainstorm Ansage“* reads your ideas, also per category, and *„Alexa, starte Brainstorm“* opens the menu. |
 | **`v1.4.48`** | 2026-10-31 | **Alexa Skill with Home Assistant Cloud:** The skill setup no longer reports a missing public HTTPS address when Home Assistant is reachable through Home Assistant Cloud (Nabu Casa). Unencrypted addresses are never offered. |
 | **`v1.4.47`** | 2026-10-31 | **Optional Alexa Skill for One-Sentence Voice Input:**<br>• **Voice modes:** New *Alexa Voice Input & Skill* options with **Native** (default, unchanged), **Skill** and **Both**.<br>• **Your own skill:** *„Alexa, sage Brainstorm notiere …“* now gives one clean answer. Home Assistant generates the skill code and voice model to copy, links the first skill automatically and rejects others.<br>• **Reliable answers:** Alexa only confirms what was really saved. |
 | **`v1.4.46`** | 2026-10-31 | **Selected Echos for Voice Input:**<br>• **New option:** *General Settings & Export* now has a multi-select for Alexa Media Echos. Only the selected Echos can capture ideas and open Brainstorm by voice; with an empty list, all Echos keep working.<br>• **For automations:** The selection is available as the `allowed_echos` attribute of `sensor.brainstorm_ideen_ubersicht`. |
