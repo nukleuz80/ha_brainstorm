@@ -35,7 +35,8 @@
           "categories": "Kategorien verwalten",
           "category_style": "Kategorie-Design (Farbe & Icon)",
           "general": "Allgemeine Einstellungen & Export",
-          "alexa_skill": "Alexa-Spracheingabe & Skill"
+          "alexa_skill": "Alexa-Spracheingabe & Skill",
+          "reminders": "Erinnerungen & Benachrichtigungen"
         }
       },
       "categories": {
@@ -105,6 +106,29 @@
         "data_description": {
           "reset_skill": "Nutze das, wenn die Adresse bekannt wurde oder du einen neuen Skill gebaut hast. Kopiere danach den neuen Skill-Code."
         }
+      },
+      "reminders": {
+        "title": "Erinnerungen & Benachrichtigungen",
+        "description": "Alles ist optional. Wähle die Dienste aus, die du in Home Assistant eingerichtet hast. Erinnerungen lösen außerdem das Ereignis brainstorm_reminder_due für eigene Automationen aus.",
+        "data": {
+          "reminder_alexa": "Alexa-Ansage",
+          "reminder_echos": "Echos für Ansagen",
+          "reminder_notify": "Benachrichtigungsdienste",
+          "reminder_delay": "Wartezeit vor Benachrichtigungen (Minuten)",
+          "quiet_start": "Ruhezeit von",
+          "quiet_end": "Ruhezeit bis",
+          "digest_enabled": "Tägliches Briefing",
+          "digest_time": "Uhrzeit des Briefings",
+          "review_enabled": "Wochenrückblick",
+          "review_weekday": "Tag des Rückblicks",
+          "review_time": "Uhrzeit des Rückblicks",
+          "review_days": "Einträge nennen, die länger offen sind als (Tage)"
+        },
+        "data_description": {
+          "reminder_delay": "Nur mit Alexa: Du hast Zeit, auf die Ansage zu reagieren, bevor das Handy benachrichtigt wird. Bei 0 kommt beides sofort.",
+          "quiet_start": "Erinnerungen warten bis zum Ende der Ruhezeit. Dringende Einträge erreichen deine Benachrichtigungsdienste trotzdem.",
+          "reminder_echos": "Für den Modus Feste Echos, als Ersatz sowie für Briefing und Rückblick."
+        }
       }
     },
     "error": {
@@ -117,6 +141,25 @@
         "native": "Nativ (ohne Skill)",
         "skill": "Skill",
         "both": "Beide"
+      }
+    },
+    "reminder_alexa": {
+      "options": {
+        "off": "Aus",
+        "origin": "Echo, von dem der Eintrag kam",
+        "last": "Zuletzt genutzter Echo",
+        "fixed": "Feste Echos"
+      }
+    },
+    "review_weekday": {
+      "options": {
+        "0": "Montag",
+        "1": "Dienstag",
+        "2": "Mittwoch",
+        "3": "Donnerstag",
+        "4": "Freitag",
+        "5": "Samstag",
+        "6": "Sonntag"
       }
     }
   }

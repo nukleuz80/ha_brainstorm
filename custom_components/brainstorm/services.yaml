@@ -57,6 +57,19 @@ add_idea:
       example: "42fdbc8c"
       selector:
         text:
+    due:
+      name: Fällig am (Optional)
+      description: Wann Brainstorm an diese Idee erinnern soll.
+      required: false
+      selector:
+        datetime:
+    parse_due:
+      name: Termin aus dem Text erkennen
+      description: Erkennt Angaben wie "morgen um 8" im Text und nimmt sie als Termin.
+      required: false
+      default: false
+      selector:
+        boolean:
 
 update_idea:
   name: Idee bearbeiten
@@ -123,6 +136,12 @@ update_idea:
       selector:
         number:
           mode: box
+    due:
+      name: Fällig am (Optional)
+      description: Wann Brainstorm an diese Idee erinnern soll.
+      required: false
+      selector:
+        datetime:
 
 delete_idea:
   name: Idee löschen

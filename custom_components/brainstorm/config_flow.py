@@ -14,13 +14,28 @@ from homeassistant.helpers.network import NoURLAvailableError
 from .const import (
     CONF_ALLOWED_ECHOS,
     CONF_AUTO_EXPORT_MARKDOWN,
+    CONF_DIGEST_ENABLED,
+    CONF_DIGEST_TIME,
+    CONF_QUIET_END,
+    CONF_QUIET_START,
+    CONF_REMINDER_ALEXA,
+    CONF_REMINDER_DELAY,
+    CONF_REMINDER_ECHOS,
+    CONF_REMINDER_NOTIFY,
+    CONF_REVIEW_DAYS,
+    CONF_REVIEW_ENABLED,
+    CONF_REVIEW_TIME,
+    CONF_REVIEW_WEEKDAY,
     CONF_HIDE_EMPTY_CATEGORIES,
     CONF_MARKDOWN_PATH,
     CONF_SMART_FORMATTING,
     CONF_VOICE_MODE,
     DEFAULT_HIDE_EMPTY_CATEGORIES,
     DEFAULT_MARKDOWN_PATH,
+    DEFAULT_REVIEW_DAYS,
     DOMAIN,
+    REMINDER_ALEXA_MODES,
+    REMINDER_ALEXA_OFF,
     VOICE_MODE_NATIVE,
     VOICE_MODES,
 )
@@ -125,6 +140,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "category_style": "Kategorie-Design (Farbe & Icon)",
                 "general": "Allgemeine Einstellungen & Export",
                 "alexa_skill": "Alexa-Spracheingabe & Skill",
+                "reminders": "Erinnerungen & Benachrichtigungen",
             },
             "category_style_done": {
                 "category_style": "Weitere Kategorie anpassen",
@@ -138,6 +154,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "category_style": "Category Design (Color & Icon)",
                 "general": "General Settings & Export",
                 "alexa_skill": "Alexa Voice Input & Skill",
+                "reminders": "Reminders & Notifications",
             },
             "category_style_done": {
                 "category_style": "Customize another category",
@@ -507,4 +524,131 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 ),
             },
             last_step=True,
+        )
+
+    def _notify_service_options(self) -> list[str]:
+        """Return every notify target this installation has set up."""
+        services = {
+            f"notify.{name}"
+            for name in self.hass.services.async_services().get("notify", {})
+            if name != "send_message" and not name.startswith("alexa_media")
+        }
+        services.update(self.hass.states.async_entity_ids("notify"))
+        return sorted(services)
+
+    async def async_step_reminders(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Choose how and when Brainstorm reminds."""
+        options = dict(self.config_entry.options or self.config_entry.data)
+
+        if user_input is not None:
+            # The frontend omits cleared fields, which have to reset the options
+            for key in (
+                CONF_REMINDER_ECHOS,
+                CONF_REMINDER_NOTIFY,
+                CONF_QUIET_START,
+                CONF_QUIET_END,
+                CONF_DIGEST_TIME,
+                CONF_REVIEW_TIME,
+            ):
+                options.pop(key, None)
+            options.update(user_input)
+            return self.async_create_entry(title="", data=options)
+
+        def suggested(key: str) -> dict[str, Any]:
+            return {"suggested_value": options.get(key)}
+
+        time_field = selector.TimeSelector()
+        return self.async_show_form(
+            step_id="reminders",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_REMINDER_ALEXA,
+                        default=options.get(CONF_REMINDER_ALEXA, REMINDER_ALEXA_OFF),
+                    ): selector.SelectSelector(
+                        selector.SelectSelectorConfig(
+                            options=REMINDER_ALEXA_MODES,
+                            mode=selector.SelectSelectorMode.DROPDOWN,
+                            translation_key=CONF_REMINDER_ALEXA,
+                        )
+                    ),
+                    vol.Optional(
+                        CONF_REMINDER_ECHOS,
+                        description=suggested(CONF_REMINDER_ECHOS),
+                    ): selector.EntitySelector(
+                        selector.EntitySelectorConfig(
+                            domain="media_player",
+                            integration="alexa_media",
+                            multiple=True,
+                        )
+                    ),
+                    vol.Optional(
+                        CONF_REMINDER_NOTIFY,
+                        description=suggested(CONF_REMINDER_NOTIFY),
+                    ): selector.SelectSelector(
+                        selector.SelectSelectorConfig(
+                            options=self._notify_service_options(),
+                            multiple=True,
+                            custom_value=True,
+                            mode=selector.SelectSelectorMode.DROPDOWN,
+                        )
+                    ),
+                    vol.Required(
+                        CONF_REMINDER_DELAY,
+                        default=options.get(CONF_REMINDER_DELAY, 0),
+                    ): selector.NumberSelector(
+                        selector.NumberSelectorConfig(
+                            min=0,
+                            max=240,
+                            step=5,
+                            unit_of_measurement="min",
+                            mode=selector.NumberSelectorMode.BOX,
+                        )
+                    ),
+                    vol.Optional(
+                        CONF_QUIET_START, description=suggested(CONF_QUIET_START)
+                    ): time_field,
+                    vol.Optional(
+                        CONF_QUIET_END, description=suggested(CONF_QUIET_END)
+                    ): time_field,
+                    vol.Required(
+                        CONF_DIGEST_ENABLED,
+                        default=options.get(CONF_DIGEST_ENABLED, False),
+                    ): selector.BooleanSelector(),
+                    vol.Optional(
+                        CONF_DIGEST_TIME, description=suggested(CONF_DIGEST_TIME)
+                    ): time_field,
+                    vol.Required(
+                        CONF_REVIEW_ENABLED,
+                        default=options.get(CONF_REVIEW_ENABLED, False),
+                    ): selector.BooleanSelector(),
+                    vol.Required(
+                        CONF_REVIEW_WEEKDAY,
+                        default=options.get(CONF_REVIEW_WEEKDAY, "6"),
+                    ): selector.SelectSelector(
+                        selector.SelectSelectorConfig(
+                            options=[str(day) for day in range(7)],
+                            mode=selector.SelectSelectorMode.DROPDOWN,
+                            translation_key=CONF_REVIEW_WEEKDAY,
+                        )
+                    ),
+                    vol.Optional(
+                        CONF_REVIEW_TIME, description=suggested(CONF_REVIEW_TIME)
+                    ): time_field,
+                    vol.Required(
+                        CONF_REVIEW_DAYS,
+                        default=options.get(CONF_REVIEW_DAYS, DEFAULT_REVIEW_DAYS),
+                    ): selector.NumberSelector(
+                        selector.NumberSelectorConfig(
+                            min=1,
+                            max=365,
+                            step=1,
+                            unit_of_measurement="d",
+                            mode=selector.NumberSelectorMode.BOX,
+                        )
+                    ),
+                }
+            ),
         )

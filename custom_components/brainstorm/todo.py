@@ -1,6 +1,7 @@
 """Todo platform for Brainstorm Hub."""
 from __future__ import annotations
 
+from datetime import datetime, time
 import logging
 
 from homeassistant.components.todo import (
@@ -14,9 +15,11 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.util import dt as dt_util
 
 from .const import (
     ATTR_DEVICE,
+    ATTR_DUE,
     ATTR_ID,
     ATTR_PRIORITY,
     ATTR_SOURCE,
@@ -84,6 +87,18 @@ def _todo_unique_id(entry_id: str, category: str) -> str:
     return f"{entry_id}_todo_{safe_cat}"
 
 
+DUE_DATE_TIME = time(9, 0)
+
+
+def _due_from_item(item: TodoItem) -> datetime | None:
+    """Return when a to-do item is due, a plain date meaning 09:00."""
+    if isinstance(item.due, datetime):
+        return dt_util.as_local(item.due)
+    if item.due is not None:
+        return datetime.combine(item.due, DUE_DATE_TIME, dt_util.DEFAULT_TIME_ZONE)
+    return None
+
+
 class BrainstormTodoList(TodoListEntity):
     """A To-do list representing a Brainstorm category."""
 
@@ -92,6 +107,8 @@ class BrainstormTodoList(TodoListEntity):
         TodoListEntityFeature.CREATE_TODO_ITEM
         | TodoListEntityFeature.UPDATE_TODO_ITEM
         | TodoListEntityFeature.DELETE_TODO_ITEM
+        | TodoListEntityFeature.SET_DUE_DATETIME_ON_ITEM
+        | TodoListEntityFeature.SET_DUE_DATE_ON_ITEM
     )
 
     def __init__(self, store: BrainstormStore, category: str, entry_id: str) -> None:
@@ -151,6 +168,7 @@ class BrainstormTodoList(TodoListEntity):
                     summary=item.get(ATTR_TEXT, ""),
                     status=status,
                     description=desc,
+                    due=dt_util.parse_datetime(item[ATTR_DUE]) if item.get(ATTR_DUE) else None,
                 )
             )
         return todo_items
@@ -162,6 +180,7 @@ class BrainstormTodoList(TodoListEntity):
             category=self._category,
             source="todo_list",
             context=self._context,
+            due=_due_from_item(item),
         )
 
     async def async_update_todo_item(self, item: TodoItem) -> None:
@@ -177,6 +196,8 @@ class BrainstormTodoList(TodoListEntity):
             category=self._category,
             status=new_status,
             context=self._context,
+            due=_due_from_item(item),
+            update_due=True,
         )
 
     async def async_delete_todo_items(self, uids: list[str]) -> None:

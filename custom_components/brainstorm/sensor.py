@@ -14,6 +14,7 @@ from .const import (
     ATTR_CATEGORY,
     ATTR_CREATED_AT,
     ATTR_DEVICE,
+    ATTR_DUE,
     ATTR_ID,
     ATTR_ORDER,
     ATTR_PARENT_ID,
@@ -168,6 +169,7 @@ class BrainstormOverviewSensor(SensorEntity):
                     "status": i.get(ATTR_STATUS),
                     "parent_id": i.get(ATTR_PARENT_ID),
                     "order": i.get(ATTR_ORDER),
+                    "due": i.get(ATTR_DUE),
                 }
                 for i in active_ideas
             ],

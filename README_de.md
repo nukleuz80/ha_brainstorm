@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.4.49-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.4.50-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver-C0C0C0.svg)](https://developers.home-assistant.io/docs/integration_quality_scale_index/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -124,9 +124,36 @@ Klicke einfach auf diesen Button, um das Repository direkt in deiner Home Assist
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js` und `www/brainstorm-mindmap-card.js` in `/config/www/`.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.4.49` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.4.49` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.4.50` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.4.50` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
+
+---
+
+## ⏰ Erinnerungen & Benachrichtigungen
+
+Brainstorm erinnert dich von selbst an fällige Einträge, und zwar über die Dienste, die du in Home Assistant ohnehin eingerichtet hast. Alles ist optional und läuft lokal.
+
+**Termin festlegen**
+- **Per Sprache (Skill):** *„Alexa, sage Brainstorm erinnere mich morgen um 8 an die Mülltonnen“*. Verstanden werden z. B. *heute Abend*, *morgen früh*, *übermorgen*, *am Freitag*, *nächste Woche*, *am 25.11.*, *in zwei Stunden*, *um halb neun*.
+- **Per Sprache (nativ):** *„Alexa, erinnere mich morgen um 8 an …“*. Amazon legt dabei eventuell zusätzlich eine eigene Erinnerung an.
+- **In den Listen:** Fälligkeitsdatum in den To-do-Listen von Home Assistant setzen. Ein reines Datum bedeutet 9:00 Uhr.
+- **Auf der Karte:** Eintrag lange drücken ➔ *Erinnern: heute Abend / morgen früh / nächste Woche / Zeitpunkt wählen*.
+- **In Automationen:** `brainstorm.add_idea` und `brainstorm.update_idea` mit dem Feld `due`.
+
+**Einstellen** unter **Brainstorm Hub ➔ Konfigurieren ➔ Erinnerungen & Benachrichtigungen**:
+- **Alexa-Ansage:** auf dem Echo, von dem der Eintrag kam, dem zuletzt genutzten oder festen Echos (benötigt Alexa Media).
+- **Benachrichtigungsdienste:** beliebige `notify`-Dienste wie Companion-App, Pushover oder Telegram. In der Companion-App gibt es die Knöpfe **Erledigt**, **1 Stunde später** und **Morgen**.
+- **Wartezeit:** Das Handy meldet sich erst, wenn du die Alexa-Ansage nicht erledigt hast. Scheitert die Ansage, kommt die Nachricht sofort.
+- **Ruhezeit:** Erinnerungen warten bis zum Ende der Ruhezeit. Dringende Einträge erreichen die Benachrichtigungsdienste trotzdem, aber kein Echo spricht.
+- **Tägliches Briefing** und **Wochenrückblick** mit lange offenen Einträgen.
+
+**Weitere Sätze im Skill**
+- *„Alexa, sage Brainstorm erledigt Mülltonnen“* oder nur *„… erledigt“* für die letzte Erinnerung
+- *„Alexa, sage Brainstorm später“* verschiebt die letzte Erinnerung um eine Stunde
+- *„Alexa, sage Brainstorm Ansage Alltag“* liest eine Kategorie vor, *„… Ansage“* nennt nur den Überblick, *„… alles vorlesen“* liest alles vor
+
+**Eigene Automationen:** Jede Erinnerung löst das Ereignis `brainstorm_reminder_due` aus, auch ohne eingerichtete Dienste.
 
 ---
 
@@ -283,6 +310,7 @@ Die Integration stellt folgende Services bereit:
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.4.50`** | 31.10.2026 | **Proaktive Erinnerungen, Briefing und Wochenrückblick:**<br>• **Termine** per Sprache, in den To-do-Listen, auf der Karte und über Dienste.<br>• **Deine Kanäle:** Alexa-Ansage und beliebige `notify`-Dienste, Handy-Knöpfe, Wartezeit und das Ereignis `brainstorm_reminder_due`.<br>• **Ruhezeiten, tägliches Briefing und Wochenrückblick.**<br>• **Skill:** neue Sätze *erinnere mich*, *erledigt* und *später*; *Ansage* gibt jetzt einen kurzen Überblick. Der Skill braucht einen neuen Build und neuen Code. |
 | **`v1.4.49`** | 31.10.2026 | **Alexa-Skill mit den nativen Funktionen:**<br>• **Echo-Herkunft:** Ideen aus dem Skill zeigen den Echo, von dem sie stammen. Home Assistant lernt jeden Echo einmal aus dem Alexa-Verlauf und kennt ihn danach sofort.<br>• **Echo-Auswahl:** Echos außerhalb der Auswahl werden auch im Skill still ignoriert.<br>• **Gleiche Sprache:** Der Skill versteht die nativen Befehlswörter und bereinigt den Text genauso.<br>• **Ansage und Menü:** *„Alexa, sage Brainstorm Ansage“* liest deine Ideen vor, auch pro Kategorie, und *„Alexa, starte Brainstorm“* öffnet das Menü. |
 | **`v1.4.48`** | 31.10.2026 | **Alexa-Skill mit Home Assistant Cloud:** Die Skill-Einrichtung meldet keine fehlende öffentliche HTTPS-Adresse mehr, wenn Home Assistant über Home Assistant Cloud (Nabu Casa) erreichbar ist. Unverschlüsselte Adressen werden nie angeboten. |
 | **`v1.4.47`** | 31.10.2026 | **Optionaler Alexa-Skill für die Spracheingabe in einem Satz:**<br>• **Sprachmodi:** Neue Optionen unter *Alexa-Spracheingabe & Skill* mit **Nativ** (Standard, unverändert), **Skill** und **Beide**.<br>• **Eigener Skill:** *„Alexa, sage Brainstorm notiere …“* gibt jetzt eine einzige saubere Antwort. Home Assistant erzeugt Skill-Code und Sprachmodell zum Kopieren, koppelt den ersten Skill automatisch und weist andere ab.<br>• **Verlässliche Antworten:** Alexa bestätigt nur, was wirklich gespeichert wurde. |

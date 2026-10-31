@@ -12,16 +12,19 @@ from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
+from homeassistant.util import dt as dt_util
 
 from .alexa_skill import AlexaSkill
 from .const import (
     ATTR_CATEGORY,
     ATTR_COLOR,
     ATTR_DEVICE,
+    ATTR_DUE,
     ATTR_ICON,
     ATTR_ID,
     ATTR_ORDER,
     ATTR_PARENT_ID,
+    ATTR_PARSE_DUE,
     ATTR_PRIORITY,
     ATTR_RESET,
     ATTR_SOURCE,
@@ -35,6 +38,8 @@ from .const import (
     VOICE_MODE_NATIVE,
 )
 from .llm import async_register_llm_api
+from .nlp import parse_due
+from .reminders import ReminderManager
 from .store import BrainstormStore
 
 _LOGGER = logging.getLogger(__name__)
@@ -65,6 +70,8 @@ SERVICE_ADD_IDEA_SCHEMA = vol.Schema(
         vol.Optional(ATTR_DEVICE): vol.Any(None, cv.string),
         vol.Optional(ATTR_TAGS): vol.All(cv.ensure_list, [cv.string]),
         vol.Optional(ATTR_PARENT_ID): vol.Any(None, cv.string),
+        vol.Optional(ATTR_DUE): vol.Any(None, cv.datetime),
+        vol.Optional(ATTR_PARSE_DUE): cv.boolean,
     },
     extra=vol.ALLOW_EXTRA,
 )
@@ -79,6 +86,7 @@ SERVICE_UPDATE_IDEA_SCHEMA = vol.Schema(
         vol.Optional(ATTR_DEVICE): vol.Any(None, cv.string),
         vol.Optional(ATTR_PARENT_ID): vol.Any(None, cv.string),
         vol.Optional(ATTR_ORDER): vol.Coerce(int),
+        vol.Optional(ATTR_DUE): vol.Any(None, cv.datetime),
     },
     extra=vol.ALLOW_EXTRA,
 )
@@ -173,6 +181,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) -
         skill.async_start()
     entry.async_on_unload(skill.async_stop)
 
+    reminders = ReminderManager(hass, store, {**entry.data, **entry.options})
+    store.reminders = reminders
+    await reminders.async_start()
+    entry.async_on_unload(reminders.async_stop)
+
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
     return True
 
@@ -218,6 +231,13 @@ def _register_services(hass: HomeAssistant) -> None:
         device = call.data.get(ATTR_DEVICE)
         tags = call.data.get(ATTR_TAGS)
         parent_id = call.data.get(ATTR_PARENT_ID)
+        due = call.data.get(ATTR_DUE)
+        if due is not None:
+            due = dt_util.as_local(due)
+        elif call.data.get(ATTR_PARSE_DUE):
+            parsed_due, remaining = parse_due(text, dt_util.now())
+            if parsed_due is not None and remaining:
+                due, text = parsed_due, remaining
 
         idea = await store.async_add_idea(
             text=text,
@@ -228,6 +248,7 @@ def _register_services(hass: HomeAssistant) -> None:
             tags=tags,
             parent_id=parent_id,
             context=call.context,
+            due=due,
         )
         return {"success": True, "idea": idea}
 
@@ -258,6 +279,8 @@ def _register_services(hass: HomeAssistant) -> None:
             update_parent=update_parent,
             order=order,
             context=call.context,
+            due=dt_util.as_local(call.data[ATTR_DUE]) if call.data.get(ATTR_DUE) else None,
+            update_due=ATTR_DUE in call.data,
         )
         if updated is None:
             raise ServiceValidationError(f"Idee '{idea_id}' wurde nicht gefunden.")

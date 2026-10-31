@@ -6,6 +6,8 @@ import os
 import re
 import uuid
 from pathlib import Path
+from datetime import datetime
+from difflib import SequenceMatcher
 from typing import Any, Callable, TYPE_CHECKING
 
 from homeassistant.core import Context, HomeAssistant
@@ -17,6 +19,9 @@ from .const import (
     ATTR_CATEGORY,
     ATTR_CREATED_AT,
     ATTR_DEVICE,
+    ATTR_DUE,
+    ATTR_ESCALATED,
+    ATTR_REMINDED_AT,
     ATTR_ID,
     ATTR_ORDER,
     ATTR_PARENT_ID,
@@ -51,6 +56,7 @@ from .nlp import clean_and_format_idea_text
 
 if TYPE_CHECKING:
     from .alexa_skill import AlexaSkill
+    from .reminders import ReminderManager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -393,6 +399,7 @@ class BrainstormStore:
         self._last_action: dict[str, Any] | None = None
         self.integration_version: str | None = None
         self.alexa_skill: AlexaSkill | None = None
+        self.reminders: ReminderManager | None = None
 
     @property
     def last_action(self) -> dict[str, Any] | None:
@@ -783,6 +790,7 @@ class BrainstormStore:
         device: str | None = None,
         parent_id: str | None = None,
         context: Context | None = None,
+        due: datetime | None = None,
     ) -> dict[str, Any]:
         """Add a new brainstorm idea."""
         raw_check = (text or "").strip().lower()
@@ -828,6 +836,7 @@ class BrainstormStore:
             ATTR_STATUS: "active",
             ATTR_CREATED_AT: now_iso,
             ATTR_UPDATED_AT: now_iso,
+            ATTR_DUE: due.isoformat() if due else None,
         }
 
         act_context = context or Context()
@@ -886,6 +895,8 @@ class BrainstormStore:
         update_parent: bool = False,
         order: int | None = None,
         context: Context | None = None,
+        due: datetime | None = None,
+        update_due: bool = False,
     ) -> dict[str, Any] | None:
         """Update an existing idea."""
         if idea_id not in self._ideas:
@@ -917,6 +928,12 @@ class BrainstormStore:
             idea[ATTR_DEVICE] = device.strip() if device else None
         if order is not None:
             idea[ATTR_ORDER] = int(order)
+        if update_due:
+            new_due = due.isoformat() if due else None
+            if new_due != idea.get(ATTR_DUE):
+                idea[ATTR_DUE] = new_due
+                idea[ATTR_REMINDED_AT] = None
+                idea[ATTR_ESCALATED] = False
         if update_parent:
             if not parent_id or parent_id.strip() in ("", "none"):
                 idea[ATTR_PARENT_ID] = None
@@ -956,6 +973,70 @@ class BrainstormStore:
         self.hass.bus.async_fire(event_name, event_data, context=act_context)
         self._notify_listeners(context=act_context)
         return idea
+
+    async def async_set_due(
+        self, idea_id: str, due: datetime | None, context: Context | None = None
+    ) -> dict[str, Any] | None:
+        """Set or clear when an idea is due."""
+        return await self.async_update_idea(
+            idea_id, due=due, update_due=True, context=context
+        )
+
+    async def async_mark_reminded(self, idea_id: str, escalated: bool) -> None:
+        """Remember that a reminder went out, without a new activity entry."""
+        idea = self._ideas.get(idea_id)
+        if idea is None:
+            return
+        if not idea.get(ATTR_REMINDED_AT):
+            idea[ATTR_REMINDED_AT] = dt_util.now().isoformat()
+        idea[ATTR_ESCALATED] = escalated
+        await self.async_save()
+        self._notify_listeners()
+
+    def find_open_idea(self, spoken: str) -> dict[str, Any] | None:
+        """Find the active idea a person most likely means."""
+        wanted = spoken.strip().lower()
+        if not wanted:
+            return None
+        best: dict[str, Any] | None = None
+        best_score = 0.0
+        for idea in self.ideas:
+            if idea.get(ATTR_STATUS) != "active":
+                continue
+            text = str(idea.get(ATTR_TEXT, "")).lower()
+            score = 1.0 if wanted in text else SequenceMatcher(None, wanted, text).ratio()
+            if score > best_score:
+                best, best_score = idea, score
+        return best if best_score >= 0.6 else None
+
+    def last_reminded_idea(self) -> dict[str, Any] | None:
+        """Return the active idea that was most recently reminded of."""
+        reminded = [
+            idea
+            for idea in self.ideas
+            if idea.get(ATTR_STATUS) == "active" and idea.get(ATTR_REMINDED_AT)
+        ]
+        return max(reminded, key=lambda idea: idea[ATTR_REMINDED_AT], default=None)
+
+    def get_overview_text(self) -> str:
+        """Generate a short spoken overview instead of reading every idea."""
+        parts = []
+        total = 0
+        for category in self._categories:
+            count = len(
+                [
+                    idea
+                    for idea in self.ideas
+                    if idea.get(ATTR_STATUS) == "active"
+                    and idea.get(ATTR_CATEGORY) == category
+                ]
+            )
+            if count:
+                total += count
+                parts.append(f"{count} in {category.replace('&', 'und')}")
+        if not parts:
+            return "Du hast aktuell keine offenen Notizen in Brainstorm."
+        return f"Du hast {total} Einträge: {', '.join(parts)}. Welche Kategorie?"
 
     async def async_reorder_ideas(self, idea_ids: list[str]) -> bool:
         """Update order of ideas based on the provided list of IDs."""

@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 from collections import deque
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta
 import json
 import logging
 import re
@@ -21,7 +22,16 @@ from homeassistant.helpers.network import get_url
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
-from .const import ATTR_CATEGORY, DOMAIN, SKILL_STORAGE_KEY, SKILL_STORAGE_VERSION
+from .const import (
+    ATTR_CATEGORY,
+    ATTR_ID,
+    ATTR_TEXT,
+    DOMAIN,
+    SKILL_STORAGE_KEY,
+    SKILL_STORAGE_VERSION,
+)
+from .nlp import parse_due
+from .reminders import format_due
 
 if TYPE_CHECKING:
     from .store import BrainstormStore
@@ -40,7 +50,21 @@ EVENT_LAST_CALLED = "alexa_media_last_called_event"
 
 ACTION_CAPTURE = "capture"
 ACTION_READ = "read"
+ACTION_READ_ALL = "read_all"
 ACTION_LAUNCH = "launch"
+ACTION_REMIND = "remind"
+ACTION_DONE = "done"
+ACTION_SNOOZE = "snooze"
+ACTIONS = (
+    ACTION_CAPTURE,
+    ACTION_READ,
+    ACTION_READ_ALL,
+    ACTION_LAUNCH,
+    ACTION_REMIND,
+    ACTION_DONE,
+    ACTION_SNOOZE,
+)
+SNOOZE_TIME = timedelta(hours=1)
 
 # Same words as the native voice capture, tried in this order
 _TEXT_PREFIXES = (
@@ -141,9 +165,41 @@ INTERACTION_MODEL: dict[str, Any] = {
                         "schreibe {text}",
                         "schreib {text}",
                         "schreib auf {text}",
+                    ],
+                },
+                {
+                    "name": "ReminderIntent",
+                    "slots": [{"name": "text", "type": "AMAZON.SearchQuery"}],
+                    "samples": [
                         "erinnere mich an {text}",
                         "erinnere mich {text}",
                         "erinnere {text}",
+                        "termin {text}",
+                    ],
+                },
+                {
+                    "name": "DoneIntent",
+                    "slots": [{"name": "text", "type": "AMAZON.SearchQuery"}],
+                    "samples": [
+                        "erledigt",
+                        "ist erledigt",
+                        "fertig",
+                        "erledigt {text}",
+                        "hake ab {text}",
+                        "fertig mit {text}",
+                    ],
+                },
+                {
+                    "name": "SnoozeIntent",
+                    "samples": ["später", "später erinnern", "nochmal später"],
+                },
+                {
+                    "name": "ReadAllIdeasIntent",
+                    "samples": [
+                        "alle einträge",
+                        "alle notizen",
+                        "alles vorlesen",
+                        "notizen vorlesen",
                     ],
                 },
                 {
@@ -154,9 +210,6 @@ INTERACTION_MODEL: dict[str, Any] = {
                         "vorlesen",
                         "abfragen",
                         "abhören",
-                        "alle einträge",
-                        "alle notizen",
-                        "notizen vorlesen",
                         "was steht drin",
                         "ansage für {category}",
                         "ansage {category}",
@@ -184,7 +237,7 @@ import urllib.request
 
 WEBHOOK_URL = "__WEBHOOK_URL__"
 TIMEOUT_SECONDS = 6
-HELP_TEXT = "Sage zum Beispiel: notiere Kellerlicht dimmen. Oder sage: Ansage."
+HELP_TEXT = "Sage zum Beispiel: notiere Kellerlicht dimmen, erinnere mich morgen um 8 an die Tonnen, oder Ansage Alltag."
 
 
 def _response(text, end_session=True):
@@ -238,8 +291,16 @@ def lambda_handler(event, context):
         if text:
             return _call_home_assistant(event, "capture", text)
         return _response("Ich habe keinen Text verstanden.")
+    if intent.get("name") == "ReminderIntent":
+        return _call_home_assistant(event, "remind", slots.get("text", {}).get("value") or "")
+    if intent.get("name") == "DoneIntent":
+        return _call_home_assistant(event, "done", slots.get("text", {}).get("value") or "")
+    if intent.get("name") == "SnoozeIntent":
+        return _call_home_assistant(event, "snooze")
     if intent.get("name") == "ReadIdeasIntent":
         return _call_home_assistant(event, "read", slots.get("category", {}).get("value") or "")
+    if intent.get("name") == "ReadAllIdeasIntent":
+        return _call_home_assistant(event, "read_all")
     if intent.get("name") in ("AMAZON.HelpIntent", "AMAZON.FallbackIntent"):
         return _response(HELP_TEXT, False)
     return _response("Okay.")
@@ -504,7 +565,12 @@ class AlexaSkill:
         return None
 
     async def _async_capture(
-        self, text: str, echo: EchoDevice | None, pending: _PendingRequest | None
+        self,
+        text: str,
+        echo: EchoDevice | None,
+        pending: _PendingRequest | None,
+        due: datetime | None = None,
+        no_time_found: bool = False,
     ) -> web.Response:
         """Store an idea and report where it went."""
         cleaned = clean_voice_text(text)[:MAX_TEXT_LENGTH]
@@ -517,6 +583,7 @@ class AlexaSkill:
                 text=cleaned,
                 source="alexa_skill",
                 device=echo.name if echo else None,
+                due=due,
             )
         except HomeAssistantError as err:
             _LOGGER.warning("Could not store idea from Alexa skill: %s", err)
@@ -531,6 +598,17 @@ class AlexaSkill:
             "text": idea.get("text", ""),
             "device": echo.name if echo else "?",
         }
+        if due is not None:
+            when = format_due(due, dt_util.now())
+            return self._speech(
+                f"Okay, ich erinnere dich {when} an {idea.get(ATTR_TEXT)}.",
+                f"Okay, I will remind you {when} about {idea.get(ATTR_TEXT)}.",
+            )
+        if no_time_found:
+            return self._speech(
+                "Gespeichert, aber ohne Erinnerung. Ich habe keinen Zeitpunkt verstanden.",
+                "Saved, but without a reminder. I did not understand a time.",
+            )
         category = idea.get(ATTR_CATEGORY)
         if category and category != "Inbox":
             return self._speech(
@@ -538,6 +616,52 @@ class AlexaSkill:
                 f"Saved under {category.replace('&', 'and')}.",
             )
         return self._speech("Gespeichert.", "Saved.")
+
+    async def _async_remind(
+        self, text: str, echo: EchoDevice | None, pending: _PendingRequest | None
+    ) -> web.Response:
+        """Store an idea with the spoken time as its reminder."""
+        due, remaining = parse_due(clean_voice_text(text), dt_util.now())
+        if due is None:
+            return await self._async_capture(text, echo, pending, no_time_found=True)
+        if due <= dt_util.now():
+            return self._speech(
+                "Dieser Zeitpunkt liegt in der Vergangenheit.",
+                "That time is in the past.",
+            )
+        return await self._async_capture(remaining, echo, pending, due=due)
+
+    async def _async_done(self, text: str) -> web.Response:
+        """Complete the idea a person named, or the last one reminded of."""
+        cleaned = text.strip()
+        idea = (
+            self._ideas.find_open_idea(cleaned)
+            if cleaned
+            else self._ideas.last_reminded_idea()
+        )
+        if idea is None:
+            return self._speech(
+                "Diesen Eintrag habe ich nicht gefunden.", "I could not find that idea."
+            )
+        await self._ideas.async_update_idea(idea[ATTR_ID], status="completed")
+        return self._speech(
+            f"Erledigt: {idea.get(ATTR_TEXT)}.", f"Done: {idea.get(ATTR_TEXT)}."
+        )
+
+    async def _async_snooze(self) -> web.Response:
+        """Move the last reminder one hour ahead."""
+        idea = self._ideas.last_reminded_idea()
+        if idea is None:
+            return self._speech(
+                "Es gibt gerade keine Erinnerung zum Verschieben.",
+                "There is no reminder to move.",
+            )
+        due = dt_util.now() + SNOOZE_TIME
+        await self._ideas.async_set_due(idea[ATTR_ID], due)
+        when = format_due(due, dt_util.now())
+        return self._speech(
+            f"Okay, ich erinnere dich {when} wieder.", f"Okay, again {when}."
+        )
 
     async def _async_handle_webhook(
         self, hass: HomeAssistant, webhook_id: str, request: web.Request
@@ -552,12 +676,12 @@ class AlexaSkill:
 
         application_id = payload.get("application_id")
         action = payload.get("action", ACTION_CAPTURE)
-        text = payload.get("text", "" if action != ACTION_CAPTURE else None)
+        text = payload.get("text", None if action == ACTION_CAPTURE else "")
         device_id = payload.get("device_id")
         if (
             not isinstance(application_id, str)
             or not application_id
-            or action not in (ACTION_CAPTURE, ACTION_READ, ACTION_LAUNCH)
+            or action not in ACTIONS
             or not isinstance(text, str)
             or not isinstance(device_id, str | None)
         ):
@@ -587,9 +711,21 @@ class AlexaSkill:
                 "Brainstorm is ready. Say notiere and your note, or say Ansage.",
                 end_session=False,
             )
-        if action == ACTION_READ:
-            speech = self._ideas.get_announcement_text(
-                self._category_from_speech(text)
-            )
+        if action == ACTION_READ_ALL:
+            speech = self._ideas.get_announcement_text()
             return self._speech(speech[:MAX_SPEECH_LENGTH], speech[:MAX_SPEECH_LENGTH])
+        if action == ACTION_READ:
+            category = self._category_from_speech(text)
+            if category is None:
+                # Reading everything is too long, so offer the categories instead
+                speech = self._ideas.get_overview_text()
+                return self._speech(speech, speech, end_session=False)
+            speech = self._ideas.get_announcement_text(category)
+            return self._speech(speech[:MAX_SPEECH_LENGTH], speech[:MAX_SPEECH_LENGTH])
+        if action == ACTION_REMIND:
+            return await self._async_remind(text, echo, pending)
+        if action == ACTION_DONE:
+            return await self._async_done(text)
+        if action == ACTION_SNOOZE:
+            return await self._async_snooze()
         return await self._async_capture(text, echo, pending)

@@ -35,7 +35,8 @@
           "categories": "Manage Categories",
           "category_style": "Category Design (Color & Icon)",
           "general": "General Settings & Export",
-          "alexa_skill": "Alexa Voice Input & Skill"
+          "alexa_skill": "Alexa Voice Input & Skill",
+          "reminders": "Reminders & Notifications"
         }
       },
       "categories": {
@@ -105,6 +106,29 @@
         "data_description": {
           "reset_skill": "Use this if the address leaked or you built a new skill. Copy the new skill code afterwards."
         }
+      },
+      "reminders": {
+        "title": "Reminders & Notifications",
+        "description": "Everything is optional. Choose the services you have set up in Home Assistant. Reminders also fire the event brainstorm_reminder_due for your own automations.",
+        "data": {
+          "reminder_alexa": "Alexa announcement",
+          "reminder_echos": "Echos for announcements",
+          "reminder_notify": "Notification services",
+          "reminder_delay": "Wait before sending notifications (minutes)",
+          "quiet_start": "Quiet hours from",
+          "quiet_end": "Quiet hours until",
+          "digest_enabled": "Daily briefing",
+          "digest_time": "Time of the briefing",
+          "review_enabled": "Weekly review",
+          "review_weekday": "Day of the review",
+          "review_time": "Time of the review",
+          "review_days": "Mention ideas open for more than (days)"
+        },
+        "data_description": {
+          "reminder_delay": "Only with Alexa: gives you time to react to the announcement before your phone is notified. 0 sends both at once.",
+          "quiet_start": "Reminders wait until the quiet hours end. Urgent ideas still reach your notification services.",
+          "reminder_echos": "Used for the fixed mode, and as a fallback and for the briefing and review."
+        }
       }
     },
     "error": {
@@ -117,6 +141,25 @@
         "native": "Native (without skill)",
         "skill": "Skill",
         "both": "Both"
+      }
+    },
+    "reminder_alexa": {
+      "options": {
+        "off": "Off",
+        "origin": "Echo where the idea came from",
+        "last": "Most recently used Echo",
+        "fixed": "Fixed Echos"
+      }
+    },
+    "review_weekday": {
+      "options": {
+        "0": "Monday",
+        "1": "Tuesday",
+        "2": "Wednesday",
+        "3": "Thursday",
+        "4": "Friday",
+        "5": "Saturday",
+        "6": "Sunday"
       }
     }
   }

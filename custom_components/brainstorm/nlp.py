@@ -1,6 +1,8 @@
 """Natural language processing and intelligent text normalization for Brainstorm Hub."""
 from __future__ import annotations
 
+from collections.abc import Callable
+from datetime import date, datetime, time, timedelta
 import re
 
 # Mapping of common German Partizip II forms to clean Infinitives
@@ -291,3 +293,230 @@ def clean_and_format_idea_text(raw_text: str) -> str:
     # Strip any trailing punctuation that might look like conversational fragment
     result = re.sub(r"[\.,;:!\?]+$", "", result).strip()
     return result
+
+
+_NUMBER_WORDS: dict[str, int] = {
+    "null": 0,
+    "ein": 1,
+    "eins": 1,
+    "eine": 1,
+    "einem": 1,
+    "einer": 1,
+    "zwei": 2,
+    "drei": 3,
+    "vier": 4,
+    "fünf": 5,
+    "sechs": 6,
+    "sieben": 7,
+    "acht": 8,
+    "neun": 9,
+    "zehn": 10,
+    "elf": 11,
+    "zwölf": 12,
+    "dreizehn": 13,
+    "vierzehn": 14,
+    "fünfzehn": 15,
+    "sechzehn": 16,
+    "siebzehn": 17,
+    "achtzehn": 18,
+    "neunzehn": 19,
+    "zwanzig": 20,
+    "einundzwanzig": 21,
+    "zweiundzwanzig": 22,
+    "dreiundzwanzig": 23,
+    "vierundzwanzig": 24,
+    "dreißig": 30,
+    "fünfundvierzig": 45,
+}
+_NUMBER = r"\d{1,2}|" + "|".join(
+    sorted(_NUMBER_WORDS, key=len, reverse=True)
+)
+_WEEKDAYS = (
+    "montag",
+    "dienstag",
+    "mittwoch",
+    "donnerstag",
+    "freitag",
+    "samstag",
+    "sonntag",
+)
+_MONTHS = (
+    "januar",
+    "februar",
+    "märz",
+    "april",
+    "mai",
+    "juni",
+    "juli",
+    "august",
+    "september",
+    "oktober",
+    "november",
+    "dezember",
+)
+_DAY_PARTS: dict[str, tuple[int, bool]] = {
+    "früh": (8, False),
+    "morgens": (8, False),
+    "vormittag": (10, False),
+    "vormittags": (10, False),
+    "mittag": (12, False),
+    "mittags": (12, False),
+    "nachmittag": (15, True),
+    "nachmittags": (15, True),
+    "abend": (19, True),
+    "abends": (19, True),
+    "nacht": (22, True),
+    "nachts": (22, True),
+}
+_DEFAULT_DUE_TIME = time(9, 0)
+_DAY_PART = "|".join(sorted(_DAY_PARTS, key=len, reverse=True))
+
+_RE_RELATIVE = re.compile(
+    rf"\bin\s+({_NUMBER}|ner)\s+(minuten?|stunden?|tag(?:en)?|wochen?)\b", re.I
+)
+_RE_DAY = re.compile(r"\b(übermorgen|morgen|heute)\b", re.I)
+_RE_NEXT_WEEK = re.compile(r"\b(?:nächste|kommende)\s+woche\b", re.I)
+_RE_WEEKDAY = re.compile(
+    r"\b(?:am\s+|nächsten\s+|kommenden\s+)?(" + "|".join(_WEEKDAYS) + r")\b", re.I
+)
+_RE_DATE = re.compile(r"\b(?:am\s+)?(\d{1,2})\.\s?(\d{1,2})\.(?:\s?(\d{2,4}))?", re.I)
+_RE_MONTH_DATE = re.compile(
+    r"\b(?:am\s+)?(\d{1,2})\.?\s+(" + "|".join(_MONTHS) + r")\b", re.I
+)
+_RE_HALF = re.compile(rf"\b(?:um\s+)?halb\s+({_NUMBER})\b", re.I)
+_RE_QUARTER = re.compile(rf"\b(?:um\s+)?viertel\s+(vor|nach)\s+({_NUMBER})\b", re.I)
+_RE_CLOCK = re.compile(
+    rf"\bum\s+({_NUMBER})(?:[:.](\d{{2}}))?(?:\s*uhr)?(?:\s+({_NUMBER}))?(?=\s|$|[,.])"
+    rf"|\b({_NUMBER})(?:[:.](\d{{2}}))?\s*uhr(?:\s+({_NUMBER}))?(?=\s|$|[,.])",
+    re.I,
+)
+_RE_DAY_PART = re.compile(rf"\b(?:am\s+|in\s+der\s+)?({_DAY_PART})\b", re.I)
+_RE_LEADING_WORDS = re.compile(r"^(?:an|am|um|dass|daran|zu|bitte|mich|ans?)\b\s*", re.I)
+_RE_TRAILING_WORDS = re.compile(r"\s*\b(?:an|erinnern|bitte)$", re.I)
+
+
+def _number(value: str) -> int:
+    """Convert a spoken or written number."""
+    lowered = value.lower()
+    if lowered == "ner":
+        return 1
+    return int(lowered) if lowered.isdigit() else _NUMBER_WORDS[lowered]
+
+
+def parse_due(text: str, now: datetime) -> tuple[datetime | None, str]:
+    """Find a spoken German date and time, returning it and the remaining text.
+
+    Without a date, a time in the past means tomorrow. Without a time, a day
+    means 09:00. The result carries the time zone of now.
+    """
+    spans: list[tuple[int, int]] = []
+
+    def take(pattern: re.Pattern[str]) -> re.Match[str] | None:
+        """Search outside of what was already found and remember the match."""
+        for match in pattern.finditer(text):
+            if not any(s < match.end() and match.start() < e for s, e in spans):
+                spans.append(match.span())
+                return match
+        return None
+
+    due: datetime | None = None
+    if match := take(_RE_RELATIVE):
+        amount = _number(match.group(1))
+        unit = match.group(2).lower()
+        if unit.startswith("minute"):
+            due = now + timedelta(minutes=amount)
+        elif unit.startswith("stunde"):
+            due = now + timedelta(hours=amount)
+        else:
+            days = amount * 7 if unit.startswith("woche") else amount
+            day = now.date() + timedelta(days=days)
+            due = _combine(now, day, take)
+    else:
+        day = None
+        if match := take(_RE_DATE):
+            day = _date_in_future(now, int(match.group(1)), int(match.group(2)), match.group(3))
+        elif match := take(_RE_MONTH_DATE):
+            month = _MONTHS.index(match.group(2).lower()) + 1
+            day = _date_in_future(now, int(match.group(1)), month, None)
+        elif match := take(_RE_DAY):
+            offset = {"heute": 0, "morgen": 1, "übermorgen": 2}[match.group(1).lower()]
+            day = now.date() + timedelta(days=offset)
+        elif take(_RE_NEXT_WEEK):
+            day = now.date() + timedelta(days=7 - now.weekday())
+        elif match := take(_RE_WEEKDAY):
+            ahead = (_WEEKDAYS.index(match.group(1).lower()) - now.weekday()) % 7
+            day = now.date() + timedelta(days=ahead or 7)
+        due = _combine(now, day, take)
+
+    if due is None:
+        return None, text.strip()
+
+    remaining = text
+    for start, end in sorted(spans, reverse=True):
+        remaining = f"{remaining[:start]} {remaining[end:]}"
+    remaining = re.sub(r"\s+", " ", remaining).strip(" ,.")
+    previous = None
+    while previous != remaining:
+        previous = remaining
+        remaining = _RE_LEADING_WORDS.sub("", remaining)
+        remaining = _RE_TRAILING_WORDS.sub("", remaining).strip(" ,.")
+    return due, remaining
+
+
+def _date_in_future(
+    now: datetime, day: int, month: int, year: str | None
+) -> date | None:
+    """Build a date, moving to next year if it has passed and no year was given."""
+    try:
+        if year:
+            full_year = int(year) + 2000 if len(year) == 2 else int(year)
+            return now.date().replace(year=full_year, month=month, day=day)
+        result = now.date().replace(month=month, day=day)
+        if result < now.date():
+            result = result.replace(year=result.year + 1)
+    except ValueError:
+        return None
+    return result
+
+
+def _combine(
+    now: datetime,
+    day: date | None,
+    take: Callable[[re.Pattern[str]], re.Match[str] | None],
+) -> datetime | None:
+    """Add the spoken time of day to a date, which may not be known yet."""
+    hour: int | None = None
+    minute = 0
+    if match := take(_RE_HALF):
+        hour = (_number(match.group(1)) - 1) % 24
+        minute = 30
+    elif match := take(_RE_QUARTER):
+        base = _number(match.group(2))
+        hour, minute = ((base - 1) % 24, 45) if match.group(1).lower() == "vor" else (base, 15)
+    elif match := take(_RE_CLOCK):
+        hour = _number(match.group(1) or match.group(4))
+        minute_text = match.group(2) or match.group(5) or match.group(3) or match.group(6)
+        if minute_text:
+            minute = _number(minute_text)
+    if hour is not None and (hour > 24 or minute > 59):
+        return None
+
+    part = take(_RE_DAY_PART)
+    if part:
+        default_hour, afternoon = _DAY_PARTS[part.group(1).lower()]
+        if hour is None:
+            hour = default_hour
+        elif afternoon and hour < 12:
+            hour += 12
+
+    if day is None and hour is None:
+        return None
+    if hour is None:
+        clock = _DEFAULT_DUE_TIME
+    else:
+        clock = time(hour % 24, minute)
+    if day is None:
+        day = now.date()
+        if datetime.combine(day, clock, now.tzinfo) <= now:
+            day = day + timedelta(days=1)
+    return datetime.combine(day, clock, now.tzinfo)

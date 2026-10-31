@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.49 - Alexa Skill with Native Features and Echo Origin
+ * Version 1.4.50 - Proactive Reminders, Briefing and Weekly Review
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",
@@ -395,6 +395,72 @@ class BrainstormCard extends HTMLElement {
       low: "medium",
     };
     return cycle[currentPrio] || "medium";
+  }
+
+  _dueDateForAction(action, due) {
+    const now = new Date();
+    const result = new Date(now);
+    if (action === "due-evening") {
+      result.setHours(19, 0, 0, 0);
+      if (result <= now) result.setDate(result.getDate() + 1);
+      return result;
+    }
+    if (action === "due-morning") {
+      result.setDate(result.getDate() + 1);
+      result.setHours(8, 0, 0, 0);
+      return result;
+    }
+    if (action === "due-week") {
+      result.setDate(result.getDate() + ((8 - result.getDay()) % 7 || 7));
+      result.setHours(9, 0, 0, 0);
+      return result;
+    }
+    const input = window.prompt(
+      "Wann soll Brainstorm erinnern? (TT.MM.JJJJ HH:MM)",
+      this._formatDueInput(due ? new Date(due) : this._dueDateForAction("due-morning"))
+    );
+    if (input === null) return undefined;
+    const match = input.trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})\s+(\d{1,2}):(\d{2})$/);
+    if (!match) {
+      window.alert("Bitte im Format TT.MM.JJJJ HH:MM eingeben.");
+      return undefined;
+    }
+    return new Date(+match[3], +match[2] - 1, +match[1], +match[4], +match[5]);
+  }
+
+  _formatDueInput(date) {
+    const pad = (value) => String(value).padStart(2, "0");
+    return `${pad(date.getDate())}.${pad(date.getMonth() + 1)}.${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  }
+
+  _formatDueBadge(due) {
+    const date = new Date(due);
+    if (Number.isNaN(date.getTime())) return "";
+    const now = new Date();
+    const pad = (value) => String(value).padStart(2, "0");
+    const clock = `${date.getHours()}:${pad(date.getMinutes())}`;
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    let label = `${pad(date.getDate())}.${pad(date.getMonth() + 1)}. ${clock}`;
+    if (date.toDateString() === now.toDateString()) label = `Heute ${clock}`;
+    else if (date.toDateString() === tomorrow.toDateString()) label = `Morgen ${clock}`;
+    const overdue = date < now;
+    return `<span class="due-badge ${overdue ? "overdue" : ""}" title="${overdue ? "Überfällig" : "Erinnerung"}">⏰ ${label}</span>`;
+  }
+
+  async _setItemDue(id, action) {
+    const idea = (this._ideasById && this._ideasById[id]) || null;
+    let due = null;
+    if (action !== "due-clear") {
+      const date = this._dueDateForAction(action, idea && idea.due);
+      if (!date) return;
+      due = date.toISOString();
+    }
+    try {
+      await this._hass.callService("brainstorm", "update_idea", { id, due });
+    } catch (err) {
+      console.error("Failed to set reminder", err);
+    }
   }
 
   async _toggleItemPriority(id, currentPrio) {
@@ -1012,6 +1078,32 @@ class BrainstormCard extends HTMLElement {
 
     actionsHtml += `<div class="apple-menu-separator"></div>`;
 
+    // Reminder
+    actionsHtml += `
+      <button class="apple-menu-btn" data-act="due-evening">
+        <span class="btn-icon">⏰</span>
+        <div class="btn-content"><span>Erinnern: heute Abend</span></div>
+      </button>
+      <button class="apple-menu-btn" data-act="due-morning">
+        <span class="btn-icon">⏰</span>
+        <div class="btn-content"><span>Erinnern: morgen früh</span></div>
+      </button>
+      <button class="apple-menu-btn" data-act="due-week">
+        <span class="btn-icon">⏰</span>
+        <div class="btn-content"><span>Erinnern: nächste Woche</span></div>
+      </button>
+      <button class="apple-menu-btn" data-act="due-custom">
+        <span class="btn-icon">📅</span>
+        <div class="btn-content"><span>Erinnern: Zeitpunkt wählen</span></div>
+      </button>
+      ${item.due ? `
+      <button class="apple-menu-btn" data-act="due-clear">
+        <span class="btn-icon">🔕</span>
+        <div class="btn-content"><span>Erinnerung entfernen</span></div>
+      </button>` : ""}
+      <div class="apple-menu-separator"></div>
+    `;
+
     // Edit
     actionsHtml += `
       <button class="apple-menu-btn" data-act="edit">
@@ -1036,6 +1128,11 @@ class BrainstormCard extends HTMLElement {
         e.stopPropagation();
         this._closeContextMenu();
         const act = btn.getAttribute("data-act");
+
+        if (act && act.startsWith("due-")) {
+          await this._setItemDue(item.id, act);
+          return;
+        }
 
         if (act === "outdent") {
           try {
@@ -2276,6 +2373,16 @@ class BrainstormCard extends HTMLElement {
           background: color-mix(in srgb, #10b981 12%, var(--card-background-color, #ffffff));
           border: 1px solid color-mix(in srgb, #10b981 25%, transparent);
         }
+        .due-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 3px;
+          color: var(--primary-color);
+          font-weight: 500;
+        }
+        .due-badge.overdue {
+          color: var(--error-color);
+        }
         .source-badge {
           display: inline-flex;
           align-items: center;
@@ -3103,6 +3210,7 @@ class BrainstormCard extends HTMLElement {
         const showSource = this._config.show_source_icons === true;
         const showTime = this._config.show_timestamps === true;
 
+        this._ideasById = Object.fromEntries(orderedIdeas.map((item) => [item.id, item]));
         ideasList.innerHTML = orderedIdeas
           .map((item, idx) => {
             const isSub = item.isSubtask === true;
@@ -3123,6 +3231,7 @@ class BrainstormCard extends HTMLElement {
                   ${isSub ? `<span class="subtask-badge" title="Unteraufgabe">Unteraufgabe</span>` : ""}
                   <span class="category-tag ${canEdit ? "clickable" : ""}" title="${canEdit ? "Kategorie ändern" : "Kategorie"}" data-id="${item.id}" data-cat="${this._escapeHtml(item.category)}" style="color: ${this._getCategoryColor(item.category)}; background: color-mix(in srgb, ${this._getCategoryColor(item.category)} 12%, var(--secondary-background-color, rgba(0,0,0,0.06))); border: 1px solid color-mix(in srgb, ${this._getCategoryColor(item.category)} 25%, transparent);"><ha-icon icon="${this._getCategoryIcon(item.category)}" style="--mdc-icon-size: 11px; width: 11px; height: 11px; margin-right: 3px; display: inline-flex; align-items: center; vertical-align: middle;"></ha-icon>${this._escapeHtml(item.category)}</span>
                   ${this._getPriorityBadge(item.priority, item.id)}
+                  ${item.due ? this._formatDueBadge(item.due) : ""}
                   ${showSource ? `${this._getSourceBadge(item.source, item.device)}` : ""}
                   ${showSource && showTime ? `<span>•</span>` : ""}
                   ${showTime ? `<span>${this._formatTime(item.created_at)}</span>` : ""}
@@ -3987,7 +4096,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.4.49 ",
+  "%c BRAINSTORM-CARD %c v1.4.50 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

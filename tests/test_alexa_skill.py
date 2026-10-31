@@ -465,6 +465,14 @@ async def test_read_ideas_and_menu(
     response = await _post(
         hass_client_no_auth, entry, {"application_id": SKILL_ID, "action": "read"}
     )
+    overview = await response.json()
+    assert overview["speech"].startswith("Du hast 2 Einträge")
+    assert "rosen" not in overview["speech"].lower()
+    assert overview["end_session"] is False
+
+    response = await _post(
+        hass_client_no_auth, entry, {"application_id": SKILL_ID, "action": "read_all"}
+    )
     assert "Projekte" in (await response.json())["speech"]
 
     response = await _post(
