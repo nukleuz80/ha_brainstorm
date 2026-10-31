@@ -69,6 +69,8 @@ from .const import (
     VOICE_MODES,
 )
 
+from .reminders import phone_service_for
+
 
 def _suggested(options: dict[str, Any], key: str) -> dict[str, Any]:
     """Show a stored value in an optional field, which may be cleared."""
@@ -609,8 +611,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         }
         # A phone's entity is the same target as its service, which can show buttons
         for entity_id in self.hass.states.async_entity_ids("notify"):
-            name = entity_id.partition(".")[2]
-            if f"notify.mobile_app_{name}" not in services:
+            if phone_service_for(self.hass, entity_id) == entity_id:
                 services.add(entity_id)
         return sorted(services)
 

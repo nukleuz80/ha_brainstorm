@@ -9,11 +9,15 @@ from typing import Any
 from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity import DATA_ENTITY_SOURCE
 from homeassistant.setup import async_setup_component
 from homeassistant.util import dt as dt_util
 import pytest
-from pytest_homeassistant_custom_component.common import async_mock_service
+from pytest_homeassistant_custom_component.common import (
+    MockConfigEntry,
+    async_mock_service,
+)
 from pytest_homeassistant_custom_component.typing import ClientSessionGenerator
 
 from custom_components.brainstorm.const import OVERVIEW_ENTITY_ID
@@ -22,6 +26,7 @@ from custom_components.brainstorm.reminders import (
     build_reminder_request,
     format_due,
     is_quiet_time,
+    phone_service_for,
 )
 
 from .conftest import SetupEntry
@@ -166,21 +171,82 @@ async def test_reminder_goes_to_origin_echo_and_phone_once(
     assert (len(alexa), len(push), len(events)) == (1, 1, 1)
 
 
-async def test_phone_entity_uses_service_with_buttons(
+def _add_phone_entity(hass: HomeAssistant, device_name: str) -> None:
+    """Add a phone's notify entity, renamed apart from the name set in its app."""
+    phone = MockConfigEntry(domain="mobile_app", data={"device_name": device_name})
+    phone.add_to_hass(hass)
+    er.async_get(hass).async_get_or_create(
+        "notify",
+        "mobile_app",
+        "phone_entity",
+        config_entry=phone,
+        suggested_object_id="iphonejb",
+    )
+    hass.states.async_set("notify.iphonejb", "unknown")
+
+
+async def test_renamed_phone_entity_uses_service_with_buttons(
     hass: HomeAssistant, setup_entry: SetupEntry
 ) -> None:
-    """Test that choosing a phone's notify entity still gives buttons."""
-    entry, _, push = await _setup(
-        hass, setup_entry, reminder_notify=["notify.phone"]
-    )
-    hass.states.async_set("notify.phone", "unknown")
+    """Test that a phone's entity finds the service named after its app setting."""
+    entry, _, _ = await _setup(hass, setup_entry, reminder_notify=["notify.iphonejb"])
+    calls = async_mock_service(hass, "notify", "mobile_app_w")
+    _add_phone_entity(hass, "W ")
     await _due_idea(entry)
 
     await entry.runtime_data.reminders.async_check(dt_util.now())
     await hass.async_block_till_done()
 
+    assert len(calls) == 1
+    assert calls[0].data["data"]["actions"][0]["title"] == "Erledigt"
+
+
+async def test_other_notify_entity_is_kept(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that a notify entity that is no phone stays as it was chosen."""
+    hass.states.async_set("notify.tv", "unknown")
+    assert phone_service_for(hass, "notify.tv") == "notify.tv"
+    assert phone_service_for(hass, "notify.pushover") == "notify.pushover"
+
+
+async def test_unknown_origin_keeps_other_echos_silent(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that no Echo in someone else's room speaks without a known origin."""
+    entry, alexa, push = await _setup(
+        hass, setup_entry, reminder_alexa="origin", reminder_notify=[PUSH]
+    )
+    hass.states.async_set("media_player.jonathan", "idle", {"last_called": True})
+    await entry.runtime_data.async_add_idea(
+        "aus der app", due=dt_util.now() - timedelta(minutes=1)
+    )
+
+    await entry.runtime_data.reminders.async_check(dt_util.now())
+    await hass.async_block_till_done()
+
+    assert not alexa
     assert len(push) == 1
-    assert push[0].data["data"]["actions"][0]["title"] == "Erledigt"
+
+
+async def test_unknown_origin_uses_fixed_echos(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test the chosen fallback for an idea without a known Echo."""
+    entry, alexa, _ = await _setup(
+        hass,
+        setup_entry,
+        reminder_alexa="origin",
+        reminder_echos=["media_player.kuche"],
+    )
+    await entry.runtime_data.async_add_idea(
+        "aus der app", due=dt_util.now() - timedelta(minutes=1)
+    )
+
+    await entry.runtime_data.reminders.async_check(dt_util.now())
+    await hass.async_block_till_done()
+
+    assert alexa[0].data["target"] == ["media_player.kuche"]
 
 
 async def test_future_and_completed_ideas_stay_silent(
@@ -1253,33 +1319,21 @@ async def test_service_assignee_and_zone(
     assert entry.runtime_data._ideas[idea_id]["trigger"] is None  # noqa: SLF001
 
 
-def test_notify_service_list_skips_alexa() -> None:
-    """Test the channel list, which must not offer Alexa twice."""
+async def test_notify_service_list(hass: HomeAssistant) -> None:
+    """Test the channel list, without Alexa and without a phone listed twice."""
     from custom_components.brainstorm.config_flow import (  # noqa: PLC0415
         BrainstormOptionsFlowHandler,
     )
 
-    class _Services:
-        def async_services(self) -> dict[str, dict[str, Any]]:
-            return {
-                "notify": {
-                    "alexa_media": {},
-                    "alexa_media_kuche": {},
-                    "mobile_app_phone": {},
-                    "send_message": {},
-                    "pushover": {},
-                }
-            }
-
-    class _States:
-        def async_entity_ids(self, domain: str) -> list[str]:
-            return ["notify.entity_one", "notify.phone"]
-
+    for name in ("alexa_media", "alexa_media_kuche", "send_message", "pushover", "mobile_app_w"):
+        async_mock_service(hass, "notify", name)
+    hass.states.async_set("notify.entity_one", "unknown")
+    _add_phone_entity(hass, "W ")
     handler = BrainstormOptionsFlowHandler()
-    handler.hass = type("H", (), {"services": _Services(), "states": _States()})()
+    handler.hass = hass
 
     assert handler._notify_service_options() == [  # noqa: SLF001
         "notify.entity_one",
-        "notify.mobile_app_phone",
+        "notify.mobile_app_w",
         "notify.pushover",
     ]

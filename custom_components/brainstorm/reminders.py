@@ -11,10 +11,11 @@ from typing import TYPE_CHECKING, Any
 from homeassistant.const import EVENT_STATE_CHANGED
 from homeassistant.core import CALLBACK_TYPE, Event, HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity import entity_sources
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.storage import Store
-from homeassistant.util import dt as dt_util
+from homeassistant.util import dt as dt_util, slugify
 
 from .const import (
     ATTR_ALEXA_NATIVE,
@@ -164,6 +165,22 @@ def find_echo_entity(hass: HomeAssistant, name: str) -> str | None:
         ):
             return state.entity_id
     return None
+
+
+def phone_service_for(hass: HomeAssistant, service: str) -> str:
+    """Return a phone's own service, as its notify entity cannot show buttons."""
+    entry = er.async_get(hass).async_get(service)
+    if entry is None or entry.platform != "mobile_app" or not entry.config_entry_id:
+        return service
+    config_entry = hass.config_entries.async_get_entry(entry.config_entry_id)
+    if config_entry is None:
+        return service
+    # The service follows the name set in the app, not the name of the entity
+    name = slugify(config_entry.data.get("device_name") or "")
+    phone_service = f"{MOBILE_APP_SERVICE_PREFIX}{name}"
+    if name and hass.services.has_service("notify", phone_service):
+        return f"notify.{phone_service}"
+    return service
 
 
 @dataclass
@@ -447,10 +464,11 @@ class ReminderManager:
         fixed = list(self._options.get(CONF_REMINDER_ECHOS) or [])
         if mode == REMINDER_ALEXA_FIXED:
             return fixed
-        if mode == REMINDER_ALEXA_ORIGIN and idea is not None:
-            echo = self._echo_entity_from_name(idea.get(ATTR_DEVICE))
-            if echo:
-                return [echo]
+        if mode == REMINDER_ALEXA_ORIGIN:
+            if idea is not None:
+                # Without a known origin, no Echo in someone else's room may speak
+                echo = self._echo_entity_from_name(idea.get(ATTR_DEVICE))
+                return [echo] if echo else fixed
             if fixed:
                 return fixed
         for state in self.hass.states.async_all("media_player"):
@@ -534,19 +552,11 @@ class ReminderManager:
         except (HomeAssistantError, ValueError) as err:
             _LOGGER.warning("Could not send over %s: %s", service, err)
 
-    def _phone_service(self, service: str) -> str:
-        """Prefer a phone's own service, as its notify entity cannot show buttons."""
-        _, _, name = service.partition(".")
-        phone_service = f"{MOBILE_APP_SERVICE_PREFIX}{name}"
-        if self.hass.services.has_service("notify", phone_service):
-            return f"notify.{phone_service}"
-        return service
-
     async def _async_notify_idea(self, idea: dict[str, Any]) -> None:
         """Send a reminder to the phones and other services."""
         idea_id = idea[ATTR_ID]
         for configured in self._idea_services(idea):
-            service = self._phone_service(configured)
+            service = phone_service_for(self.hass, configured)
             data = None
             # Only the companion app understands buttons
             if service.startswith(f"notify.{MOBILE_APP_SERVICE_PREFIX}"):
