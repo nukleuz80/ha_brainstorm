@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.4.52-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.4.53-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver-C0C0C0.svg)](https://developers.home-assistant.io/docs/integration_quality_scale_index/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -163,9 +163,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.4.52
+  - url: /local/brainstorm-card.js?v=1.4.53
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.4.52
+  - url: /local/brainstorm-mindmap-card.js?v=1.4.53
     type: module
 ```
 
@@ -212,6 +212,7 @@ hide_empty_categories: true
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.4.53`** | 2026-10-31 | **Deleting:** A double tap on delete in the list card no longer shows a wrong error message. |
 | **`v1.4.52`** | 2026-10-31 | **Reminders Reach the Right Echo:** Echos with the same name in another integration, such as Music Assistant, no longer take the announcement. Choosing a phone's notify entity now also shows the buttons. |
 | **`v1.4.51`** | 2026-10-31 | **Reminder Rules, Places, People, Calendar and AI:**<br>• **Every feature has its own switch** in a new settings menu, including a master switch.<br>• **Rules per list:** private lists only on the phone, lists on certain days or at a place.<br>• **Places and people:** reminders when coming home or at zones, and for other people with their own channels.<br>• **Follow-ups and extras:** important open ideas to further services, a briefing that waits for someone, calendar entries, AI summaries and optional real Alexa reminders. |
 | **`v1.4.50`** | 2026-10-31 | **Proactive Reminders, Briefing and Weekly Review:**<br>• **Due dates** by voice, in the to-do lists, on the card and through services.<br>• **Your channels:** Alexa announcement and any `notify` service, phone buttons, a waiting time and the `brainstorm_reminder_due` event.<br>• **Quiet hours, daily briefing and weekly review.**<br>• **Skill:** new *erinnere mich*, *erledigt* and *später* sentences, and *Ansage* now gives a short overview. The skill needs a new build and code. |

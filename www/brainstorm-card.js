@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.52 - Reminders Reach the Right Echo and Phone Buttons
+ * Version 1.4.53 - No Error Message on Double Tap When Deleting
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",
@@ -551,11 +551,16 @@ class BrainstormCard extends HTMLElement {
   }
 
   async _deleteIdea(id) {
+    // A double tap reaches this twice before the row disappears
+    this._deletingIds = this._deletingIds || new Set();
+    if (this._deletingIds.has(id)) return;
+    this._deletingIds.add(id);
     try {
       await this._hass.callService("brainstorm", "delete_idea", {
         id: id,
       });
     } catch (e) {
+      this._deletingIds.delete(id);
       console.error("Failed to delete idea", e);
     }
   }
@@ -4113,7 +4118,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.4.52 ",
+  "%c BRAINSTORM-CARD %c v1.4.53 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );
