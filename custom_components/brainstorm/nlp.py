@@ -454,13 +454,18 @@ def parse_due(text: str, now: datetime) -> tuple[datetime | None, str]:
     remaining = text
     for start, end in sorted(spans, reverse=True):
         remaining = f"{remaining[:start]} {remaining[end:]}"
-    remaining = re.sub(r"\s+", " ", remaining).strip(" ,.")
+    return due, strip_reminder_words(remaining)
+
+
+def strip_reminder_words(text: str) -> str:
+    """Remove the words that only connect a reminder to its content."""
+    remaining = re.sub(r"\s+", " ", text).strip(" ,.")
     previous = None
     while previous != remaining:
         previous = remaining
         remaining = _RE_LEADING_WORDS.sub("", remaining)
         remaining = _RE_TRAILING_WORDS.sub("", remaining).strip(" ,.")
-    return due, remaining
+    return remaining
 
 
 def _date_in_future(

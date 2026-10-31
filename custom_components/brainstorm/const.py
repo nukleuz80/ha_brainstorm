@@ -15,6 +15,25 @@ CONF_SMART_FORMATTING = "smart_formatting"
 CONF_HIDE_EMPTY_CATEGORIES = "hide_empty_categories"
 CONF_ALLOWED_ECHOS = "allowed_echos"
 CONF_VOICE_MODE = "voice_mode"
+CONF_REMINDERS_ENABLED = "reminders_enabled"
+CONF_NOTIFY_ENABLED = "notify_enabled"
+CONF_QUIET_ENABLED = "quiet_enabled"
+CONF_URGENT_ENABLED = "urgent_enabled"
+CONF_URGENT_NOTIFY = "urgent_notify"
+CONF_URGENT_DELAY = "urgent_delay"
+CONF_DIGEST_PRESENCE = "digest_presence"
+CONF_LIST_RULES_ENABLED = "list_rules_enabled"
+CONF_LIST_RULES = "list_rules"
+CONF_PLACES_ENABLED = "places_enabled"
+CONF_ARRIVAL_ENABLED = "arrival_enabled"
+CONF_DEFAULT_PERSON = "default_person"
+CONF_PERSONS_ENABLED = "persons_enabled"
+CONF_PERSON_RULES = "person_rules"
+CONF_CALENDAR_ENABLED = "calendar_enabled"
+CONF_CALENDAR_ENTITY = "calendar_entity"
+CONF_AI_ENABLED = "ai_enabled"
+CONF_AI_ENTITY = "ai_entity"
+CONF_NATIVE_REMINDERS = "native_reminders"
 CONF_REMINDER_ALEXA = "reminder_alexa"
 CONF_REMINDER_ECHOS = "reminder_echos"
 CONF_REMINDER_NOTIFY = "reminder_notify"
@@ -56,6 +75,26 @@ REMINDER_ALEXA_MODES = [
     REMINDER_ALEXA_FIXED,
 ]
 DEFAULT_REVIEW_DAYS = 21
+DEFAULT_URGENT_DELAY = 60
+
+# What a list rule does
+RULE_CHANNEL = "channel"
+RULE_NOTIFY = "notify"
+RULE_SCHEDULE_ENABLED = "schedule_enabled"
+RULE_SCHEDULE_WEEKDAYS = "schedule_weekdays"
+RULE_SCHEDULE_TIME = "schedule_time"
+RULE_ZONE_ENABLED = "zone_enabled"
+RULE_ZONE = "zone"
+RULE_CHANNEL_DEFAULT = "default"
+RULE_CHANNEL_ALEXA = "alexa"
+RULE_CHANNEL_NOTIFY = "notify"
+RULE_CHANNEL_NONE = "none"
+RULE_CHANNELS = [
+    RULE_CHANNEL_DEFAULT,
+    RULE_CHANNEL_ALEXA,
+    RULE_CHANNEL_NOTIFY,
+    RULE_CHANNEL_NONE,
+]
 
 # Event constants
 EVENT_IDEA_ADDED = "brainstorm_idea_added"
@@ -81,6 +120,12 @@ ATTR_DUE = "due"
 ATTR_REMINDED_AT = "reminded_at"
 ATTR_ESCALATED = "escalated"
 ATTR_PARSE_DUE = "parse_due"
+ATTR_ASSIGNEE = "assignee"
+ATTR_TRIGGER = "trigger"
+ATTR_ZONE = "zone"
+ATTR_URGENT_SENT = "urgent_sent"
+ATTR_ALEXA_NATIVE = "alexa_native"
+ATTR_CALENDAR_SYNCED = "calendar_synced"
 
 SERVICE_REORDER_IDEAS = "reorder_ideas"
 SERVICE_SET_CATEGORY_STYLE = "set_category_style"

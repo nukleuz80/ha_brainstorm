@@ -109,25 +109,123 @@
       },
       "reminders": {
         "title": "Erinnerungen & Benachrichtigungen",
-        "description": "Alles ist optional. Wähle die Dienste aus, die du in Home Assistant eingerichtet hast. Erinnerungen lösen außerdem das Ereignis brainstorm_reminder_due für eigene Automationen aus.",
+        "description": "Wähle einen Bereich. Alles lässt sich einzeln ein- und ausschalten.",
+        "menu_options": {
+          "reminder_general": "Ein/Aus & Kanäle",
+          "reminder_schedule": "Ruhezeit, Briefing & Wochenrückblick",
+          "reminder_lists": "Regeln pro Liste",
+          "reminder_places": "Orte & Heimkommen",
+          "reminder_persons": "Personen",
+          "reminder_extras": "Kalender, KI & Alexa-Erinnerungen"
+        }
+      },
+      "reminder_general": {
+        "title": "Ein/Aus & Kanäle",
+        "description": "Wähle die Dienste aus, die du in Home Assistant eingerichtet hast. Erinnerungen lösen außerdem das Ereignis brainstorm_reminder_due für eigene Automationen aus.",
         "data": {
+          "reminders_enabled": "Erinnerungen nutzen",
           "reminder_alexa": "Alexa-Ansage",
           "reminder_echos": "Echos für Ansagen",
+          "notify_enabled": "Benachrichtigungen senden",
           "reminder_notify": "Benachrichtigungsdienste",
           "reminder_delay": "Wartezeit vor Benachrichtigungen (Minuten)",
+          "urgent_enabled": "Wichtige offene Einträge erneut senden",
+          "urgent_notify": "Dienste für wichtige Einträge",
+          "urgent_delay": "Erneut senden nach (Minuten)"
+        },
+        "data_description": {
+          "reminders_enabled": "Aus stoppt alle Erinnerungen, das Briefing, den Rückblick und alles andere in diesem Menü.",
+          "reminder_echos": "Für feste Echos, als Ersatz sowie für Briefing und Rückblick.",
+          "reminder_delay": "Nur mit Alexa: Du hast Zeit zu reagieren, bevor das Handy benachrichtigt wird. Bei 0 kommt beides sofort.",
+          "urgent_delay": "Gilt für noch offene Einträge mit hoher oder dringender Priorität."
+        }
+      },
+      "reminder_schedule": {
+        "title": "Ruhezeit, Briefing & Wochenrückblick",
+        "description": "Lege die Zeiten für jeden Punkt einzeln fest.",
+        "data": {
+          "quiet_enabled": "Ruhezeit nutzen",
           "quiet_start": "Ruhezeit von",
           "quiet_end": "Ruhezeit bis",
           "digest_enabled": "Tägliches Briefing",
           "digest_time": "Uhrzeit des Briefings",
+          "digest_presence": "Nur wenn hier jemand erkannt wird",
           "review_enabled": "Wochenrückblick",
           "review_weekday": "Tag des Rückblicks",
           "review_time": "Uhrzeit des Rückblicks",
           "review_days": "Einträge nennen, die länger offen sind als (Tage)"
         },
         "data_description": {
-          "reminder_delay": "Nur mit Alexa: Du hast Zeit, auf die Ansage zu reagieren, bevor das Handy benachrichtigt wird. Bei 0 kommt beides sofort.",
-          "quiet_start": "Erinnerungen warten bis zum Ende der Ruhezeit. Dringende Einträge erreichen deine Benachrichtigungsdienste trotzdem.",
-          "reminder_echos": "Für den Modus Feste Echos, als Ersatz sowie für Briefing und Rückblick."
+          "quiet_start": "Erinnerungen warten bis zum Ende der Ruhezeit. Dringende Einträge erreichen die Benachrichtigungsdienste trotzdem, aber kein Echo spricht.",
+          "digest_presence": "Optional: Das Briefing wartet nach seiner Uhrzeit bis zu 6 Stunden, bis ein Sensor oder eine Person hier jemanden meldet."
+        }
+      },
+      "reminder_lists": {
+        "title": "Regeln pro Liste",
+        "description": "Listen ohne Regel nutzen die normalen Einstellungen. Wähle eine Liste, um ihre Regel zu bearbeiten.",
+        "data": {
+          "list_rules_enabled": "Regeln pro Liste nutzen",
+          "category": "Liste bearbeiten"
+        }
+      },
+      "reminder_list_edit": {
+        "title": "Regel für '{category}'",
+        "description": "Zum Beispiel private Listen nur aufs Handy, oder eine Liste an bestimmten Tagen oder an einem Ort.",
+        "data": {
+          "channel": "Erinnerungen dieser Liste gehen an",
+          "notify": "Eigene Benachrichtigungsdienste für diese Liste",
+          "schedule_enabled": "Offene Einträge an bestimmten Tagen senden",
+          "schedule_weekdays": "Tage",
+          "schedule_time": "Uhrzeit",
+          "zone_enabled": "Offene Einträge an einem Ort senden",
+          "zone": "Ort"
+        },
+        "data_description": {
+          "zone_enabled": "Wird einmal am Tag gesendet, wenn jemand dort ankommt. Braucht den Schalter für Orte."
+        }
+      },
+      "reminder_places": {
+        "title": "Orte & Heimkommen",
+        "description": "Sag zum Beispiel: erinnere mich wenn ich heimkomme an den Müll, oder: erinnere mich wenn ich bei Edeka bin an die Milch.",
+        "data": {
+          "arrival_enabled": "Beim Heimkommen erinnern",
+          "places_enabled": "An Orten (Zonen) erinnern",
+          "default_person": "Wer mit \"ich\" gemeint ist"
+        },
+        "data_description": {
+          "default_person": "Ohne Person löst jeder aus, der dort ankommt."
+        }
+      },
+      "reminder_persons": {
+        "title": "Personen",
+        "description": "Sag zum Beispiel: erinnere Lenja morgen um 8 an den Elternsprechtag. Wähle eine Person, um ihre Kanäle festzulegen.",
+        "data": {
+          "persons_enabled": "Erinnerungen für andere Personen nutzen",
+          "person": "Person bearbeiten"
+        }
+      },
+      "reminder_person_edit": {
+        "title": "Kanäle für {person}",
+        "description": "Diese ersetzen die normalen Kanäle für diese Person.",
+        "data": {
+          "notify": "Benachrichtigungsdienste",
+          "echos": "Echos"
+        }
+      },
+      "reminder_extras": {
+        "title": "Kalender, KI & Alexa-Erinnerungen",
+        "description": "Optionale Extras mit jeweils eigenem Schalter.",
+        "data": {
+          "calendar_enabled": "Erinnerungen in einen Kalender eintragen",
+          "calendar_entity": "Kalender",
+          "ai_enabled": "Briefing und Rückblick per KI kürzen",
+          "ai_entity": "KI-Aufgaben-Entität",
+          "native_reminders": "Zusätzlich echte Alexa-Erinnerungen anlegen"
+        },
+        "data_description": {
+          "calendar_enabled": "Nur in eine Richtung und einmal pro Erinnerung. Spätere Änderungen werden nicht übertragen.",
+          "ai_enabled": "Deine Einträge werden an den Anbieter der gewählten KI gesendet.",
+          "native_reminders": "Schalte in der Alexa-Konsole zusätzlich Reminders unter Build ➔ Permissions ein. Alexa klingelt dann selbst, und Home Assistant spricht nicht zusätzlich."
         }
       }
     },
@@ -160,6 +258,14 @@
         "4": "Freitag",
         "5": "Samstag",
         "6": "Sonntag"
+      }
+    },
+    "channel": {
+      "options": {
+        "default": "Normale Kanäle",
+        "alexa": "Nur Alexa",
+        "notify": "Nur Benachrichtigungen (privat)",
+        "none": "Nichts, nur Ereignis"
       }
     }
   }

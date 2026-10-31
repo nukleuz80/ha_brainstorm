@@ -18,8 +18,12 @@ from homeassistant.util import dt as dt_util
 from .const import (
     ATTR_CATEGORY,
     ATTR_CREATED_AT,
+    ATTR_ALEXA_NATIVE,
+    ATTR_ASSIGNEE,
     ATTR_DEVICE,
     ATTR_DUE,
+    ATTR_TRIGGER,
+    ATTR_URGENT_SENT,
     ATTR_ESCALATED,
     ATTR_REMINDED_AT,
     ATTR_ID,
@@ -791,6 +795,8 @@ class BrainstormStore:
         parent_id: str | None = None,
         context: Context | None = None,
         due: datetime | None = None,
+        assignee: str | None = None,
+        trigger: dict[str, str | None] | None = None,
     ) -> dict[str, Any]:
         """Add a new brainstorm idea."""
         raw_check = (text or "").strip().lower()
@@ -837,6 +843,8 @@ class BrainstormStore:
             ATTR_CREATED_AT: now_iso,
             ATTR_UPDATED_AT: now_iso,
             ATTR_DUE: due.isoformat() if due else None,
+            ATTR_ASSIGNEE: assignee,
+            ATTR_TRIGGER: trigger,
         }
 
         act_context = context or Context()
@@ -934,6 +942,8 @@ class BrainstormStore:
                 idea[ATTR_DUE] = new_due
                 idea[ATTR_REMINDED_AT] = None
                 idea[ATTR_ESCALATED] = False
+                idea[ATTR_URGENT_SENT] = False
+                idea[ATTR_ALEXA_NATIVE] = False
         if update_parent:
             if not parent_id or parent_id.strip() in ("", "none"):
                 idea[ATTR_PARENT_ID] = None
@@ -990,6 +1000,15 @@ class BrainstormStore:
         if not idea.get(ATTR_REMINDED_AT):
             idea[ATTR_REMINDED_AT] = dt_util.now().isoformat()
         idea[ATTR_ESCALATED] = escalated
+        await self.async_save()
+        self._notify_listeners()
+
+    async def async_mark_fields(self, idea_id: str, fields: dict[str, Any]) -> None:
+        """Store reminder details of an idea, without a new activity entry."""
+        idea = self._ideas.get(idea_id)
+        if idea is None:
+            return
+        idea.update(fields)
         await self.async_save()
         self._notify_listeners()
 

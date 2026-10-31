@@ -2,9 +2,13 @@
 from __future__ import annotations
 
 from datetime import datetime, time, timedelta
+import json
+from pathlib import Path
 from typing import Any
 
-from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
+from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.setup import async_setup_component
 from homeassistant.util import dt as dt_util
 import pytest
@@ -13,7 +17,11 @@ from pytest_homeassistant_custom_component.typing import ClientSessionGenerator
 
 from custom_components.brainstorm.const import OVERVIEW_ENTITY_ID
 from custom_components.brainstorm.nlp import parse_due
-from custom_components.brainstorm.reminders import format_due, is_quiet_time
+from custom_components.brainstorm.reminders import (
+    build_reminder_request,
+    format_due,
+    is_quiet_time,
+)
 
 from .conftest import SetupEntry
 
@@ -538,39 +546,680 @@ async def test_skill_done_and_snooze(
     assert store._ideas[second["id"]]["status"] == "completed"  # noqa: SLF001
 
 
-async def test_options_flow_saves_reminders(
+async def _options_step(
+    hass: HomeAssistant, entry: Any, step: str, **user_input: Any
+) -> dict[str, Any]:
+    """Open a section of the reminder options and submit it."""
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "reminders"}
+    )
+    assert result["type"] is FlowResultType.MENU
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": step}
+    )
+    assert result["step_id"] == step
+    return await hass.config_entries.options.async_configure(
+        result["flow_id"], user_input
+    )
+
+
+async def test_options_flow_saves_and_clears(
     hass: HomeAssistant, setup_entry: SetupEntry
 ) -> None:
-    """Test the settings, also clearing a chosen service."""
+    """Test the sections, also clearing a chosen service."""
     async_mock_service(hass, "notify", "mobile_app_phone")
     async_mock_service(hass, "notify", "alexa_media")
     entry = await setup_entry()
 
-    async def submit(**user_input: Any) -> dict[str, Any]:
-        result = await hass.config_entries.options.async_init(entry.entry_id)
-        result = await hass.config_entries.options.async_configure(
-            result["flow_id"], {"next_step_id": "reminders"}
-        )
-        assert result["step_id"] == "reminders"
-        return await hass.config_entries.options.async_configure(
-            result["flow_id"], user_input
-        )
-
-    await submit(
+    await _options_step(
+        hass,
+        entry,
+        "reminder_general",
+        reminders_enabled=True,
         reminder_alexa="origin",
+        notify_enabled=True,
         reminder_notify=[PUSH],
-        quiet_start="22:00:00",
-        quiet_end="07:00:00",
-        review_enabled=True,
     )
     await hass.async_block_till_done()
     assert entry.options["reminder_notify"] == [PUSH]
-    assert entry.options["quiet_start"] == "22:00:00"
 
-    await submit(reminder_alexa="off")
+    await _options_step(hass, entry, "reminder_general", reminder_alexa="off")
     await hass.async_block_till_done()
     assert "reminder_notify" not in entry.options
-    assert "quiet_start" not in entry.options
+    assert entry.options["reminders_enabled"] is True
+
+    await _options_step(
+        hass, entry, "reminder_schedule", quiet_start="22:00:00", quiet_end="07:00:00"
+    )
+    await hass.async_block_till_done()
+    assert entry.options["quiet_start"] == "22:00:00"
+    assert entry.options["quiet_enabled"] is True
+
+
+@pytest.mark.parametrize(
+    ("step", "fields", "key"),
+    [
+        ("reminder_general", {"reminders_enabled": False}, "reminders_enabled"),
+        ("reminder_general", {"notify_enabled": False}, "notify_enabled"),
+        ("reminder_general", {"urgent_enabled": True}, "urgent_enabled"),
+        ("reminder_schedule", {"quiet_enabled": False}, "quiet_enabled"),
+        ("reminder_schedule", {"digest_enabled": True}, "digest_enabled"),
+        ("reminder_schedule", {"review_enabled": True}, "review_enabled"),
+        ("reminder_lists", {"list_rules_enabled": True}, "list_rules_enabled"),
+        ("reminder_places", {"arrival_enabled": True}, "arrival_enabled"),
+        ("reminder_places", {"places_enabled": True}, "places_enabled"),
+        ("reminder_persons", {"persons_enabled": True}, "persons_enabled"),
+        ("reminder_extras", {"calendar_enabled": True}, "calendar_enabled"),
+        ("reminder_extras", {"ai_enabled": True}, "ai_enabled"),
+        ("reminder_extras", {"native_reminders": True}, "native_reminders"),
+    ],
+)
+async def test_every_feature_has_a_switch(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    step: str,
+    fields: dict[str, Any],
+    key: str,
+) -> None:
+    """Test that each feature can be switched in the settings."""
+    entry = await setup_entry()
+    await _options_step(hass, entry, step, **fields)
+    await hass.async_block_till_done()
+    assert entry.options[key] == fields[key]
+
+
+async def test_translations_cover_every_option() -> None:
+    """Test that no setting shows up without a label."""
+    root = Path(__file__).parent.parent / "custom_components" / "brainstorm"
+    english = json.loads((root / "translations" / "en.json").read_text("utf-8"))
+    german = json.loads((root / "translations" / "de.json").read_text("utf-8"))
+    strings = json.loads((root / "strings.json").read_text("utf-8"))
+    assert set(english["options"]["step"]) == set(german["options"]["step"])
+    assert english["options"]["step"] == strings["options"]["step"]
+    for name, step in german["options"]["step"].items():
+        assert set(step.get("data", {})) == set(
+            english["options"]["step"][name].get("data", {})
+        )
+
+
+async def test_master_switch_stops_everything(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that nothing happens with reminders switched off."""
+    entry, alexa, push = await _setup(
+        hass,
+        setup_entry,
+        reminders_enabled=False,
+        reminder_alexa="origin",
+        reminder_notify=[PUSH],
+    )
+    events: list[Any] = []
+    hass.bus.async_listen("brainstorm_reminder_due", events.append)
+    await _due_idea(entry)
+
+    await entry.runtime_data.reminders.async_check(dt_util.now())
+    await hass.async_block_till_done()
+
+    assert not alexa
+    assert not push
+    assert not events
+
+
+async def test_notify_switch_keeps_alexa(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test switching off notifications without losing the services."""
+    entry, alexa, push = await _setup(
+        hass,
+        setup_entry,
+        notify_enabled=False,
+        reminder_alexa="origin",
+        reminder_notify=[PUSH],
+    )
+    await _due_idea(entry)
+
+    await entry.runtime_data.reminders.async_check(dt_util.now())
+    await hass.async_block_till_done()
+
+    assert len(alexa) == 1
+    assert not push
+
+
+async def test_quiet_switch_ignores_times(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that switching off quiet hours keeps their times but ignores them."""
+    entry, _, push = await _setup(
+        hass,
+        setup_entry,
+        quiet_enabled=False,
+        reminder_notify=[PUSH],
+        quiet_start="00:00:00",
+        quiet_end="23:59:00",
+    )
+    await _due_idea(entry)
+
+    await entry.runtime_data.reminders.async_check(dt_util.now())
+    await hass.async_block_till_done()
+
+    assert len(push) == 1
+
+
+@pytest.mark.parametrize(
+    ("channel", "alexa_calls", "push_calls"),
+    [("default", 1, 1), ("alexa", 1, 0), ("notify", 0, 1), ("none", 0, 0)],
+)
+async def test_list_rule_chooses_channel(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    channel: str,
+    alexa_calls: int,
+    push_calls: int,
+) -> None:
+    """Test a private list that only goes to the phone, and the other choices."""
+    entry, alexa, push = await _setup(
+        hass,
+        setup_entry,
+        reminder_alexa="origin",
+        reminder_notify=[PUSH],
+        list_rules_enabled=True,
+        list_rules={"Alltag": {"channel": channel}},
+    )
+    await _due_idea(entry, category="Alltag")
+
+    await entry.runtime_data.reminders.async_check(dt_util.now())
+    await hass.async_block_till_done()
+
+    assert (len(alexa), len(push)) == (alexa_calls, push_calls)
+
+
+async def test_list_rules_switch_ignores_rules(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that a rule stops applying when the switch is off."""
+    entry, _, push = await _setup(
+        hass,
+        setup_entry,
+        reminder_notify=[PUSH],
+        list_rules_enabled=False,
+        list_rules={"Alltag": {"channel": "none"}},
+    )
+    await _due_idea(entry, category="Alltag")
+
+    await entry.runtime_data.reminders.async_check(dt_util.now())
+    await hass.async_block_till_done()
+
+    assert len(push) == 1
+
+
+async def test_list_schedule_once_on_its_days(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test sending a list on chosen weekdays."""
+    now = dt_util.now().replace(hour=8, minute=1, second=0, microsecond=0)
+    entry, _, push = await _setup(
+        hass,
+        setup_entry,
+        reminder_notify=[PUSH],
+        list_rules_enabled=True,
+        list_rules={
+            "Alltag": {
+                "channel": "notify",
+                "schedule_enabled": True,
+                "schedule_weekdays": [str(now.weekday())],
+                "schedule_time": "08:00:00",
+            }
+        },
+    )
+    await entry.runtime_data.async_add_idea("milch kaufen", category="Alltag")
+    reminders = entry.runtime_data.reminders
+
+    await reminders.async_check(now + timedelta(days=1))
+    await hass.async_block_till_done()
+    assert not push
+
+    await reminders.async_check(now)
+    await reminders.async_check(now + timedelta(minutes=1))
+    await hass.async_block_till_done()
+    assert len(push) == 1
+    assert "milch" in push[0].data["message"].lower()
+
+
+async def test_urgent_stage(hass: HomeAssistant, setup_entry: SetupEntry) -> None:
+    """Test that important open ideas reach the extra services once."""
+    entry, _, push = await _setup(
+        hass,
+        setup_entry,
+        reminder_notify=[PUSH],
+        urgent_enabled=True,
+        urgent_notify=["notify.pushover"],
+        urgent_delay=30,
+    )
+    urgent_calls = async_mock_service(hass, "notify", "pushover")
+    await _due_idea(entry, priority="high")
+    reminders = entry.runtime_data.reminders
+
+    await reminders.async_check(dt_util.now())
+    await reminders.async_check(dt_util.now() + timedelta(minutes=10))
+    await hass.async_block_till_done()
+    assert not urgent_calls
+
+    await reminders.async_check(dt_util.now() + timedelta(minutes=31))
+    await reminders.async_check(dt_util.now() + timedelta(minutes=32))
+    await hass.async_block_till_done()
+    assert len(urgent_calls) == 1
+    assert len(push) == 1
+
+
+async def test_digest_waits_for_presence(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test a briefing that waits until someone is in the kitchen."""
+    entry, _, push = await _setup(
+        hass,
+        setup_entry,
+        reminder_notify=[PUSH],
+        digest_enabled=True,
+        digest_time="07:00:00",
+        digest_presence=["binary_sensor.kuche"],
+    )
+    hass.states.async_set("binary_sensor.kuche", "off")
+    morning = dt_util.now().replace(hour=7, minute=1, second=0, microsecond=0)
+    store = entry.runtime_data
+    await store.async_add_idea("tonnen", due=morning + timedelta(hours=8))
+
+    await store.reminders.async_check(morning)
+    await hass.async_block_till_done()
+    assert not push
+
+    hass.states.async_set("binary_sensor.kuche", "on")
+    await store.reminders.async_check(morning + timedelta(hours=1))
+    await hass.async_block_till_done()
+    assert len(push) == 1
+
+    await store.reminders.async_check(morning + timedelta(hours=2))
+    await hass.async_block_till_done()
+    assert len(push) == 1
+
+
+def _add_person_and_zones(hass: HomeAssistant) -> None:
+    """Add people and places as they look in Home Assistant."""
+    hass.states.async_set("person.jan", "not_home", {"friendly_name": "Jan"})
+    hass.states.async_set("person.lenja", "not_home", {"friendly_name": "Lenja"})
+    hass.states.async_set("zone.home", "0", {"friendly_name": "Zuhause"})
+    hass.states.async_set("zone.edeka", "0", {"friendly_name": "Edeka in Sorsum"})
+
+
+@pytest.mark.parametrize(
+    ("spoken", "zone", "person", "text"),
+    [
+        ("wenn ich heimkomme an den müll", "zone.home", "person.jan", "den müll"),
+        ("an den müll wenn ich nach hause komme", "zone.home", "person.jan", "den müll"),
+        ("wenn lenja heimkommt an den müll", "zone.home", "person.lenja", "den müll"),
+        ("wenn ich bei edeka bin an die milch", "zone.edeka", "person.jan", "die milch"),
+        ("beim edeka an die milch", "zone.edeka", "person.jan", "die milch"),
+        ("wenn ich im edeka in sorsum bin an brot", "zone.edeka", "person.jan", "brot"),
+    ],
+)
+def test_build_request_places(
+    hass: HomeAssistant, spoken: str, zone: str, person: str, text: str
+) -> None:
+    """Test understanding places and coming home."""
+    _add_person_and_zones(hass)
+    options = {
+        "arrival_enabled": True,
+        "places_enabled": True,
+        "persons_enabled": True,
+        "default_person": "person.jan",
+    }
+
+    request = build_reminder_request(hass, options, spoken, NOW)
+
+    assert request.trigger == {"zone": zone, "person": person}
+    assert request.text == text
+    assert request.due is None
+
+
+def test_build_request_person_and_time(hass: HomeAssistant) -> None:
+    """Test a reminder for someone else."""
+    _add_person_and_zones(hass)
+    request = build_reminder_request(
+        hass, {"persons_enabled": True}, "lenja morgen um 8 an den termin", NOW
+    )
+    assert request.assignee == "person.lenja"
+    assert request.due == _at(1, 8)
+    assert request.text == "den termin"
+
+
+def test_build_request_respects_switches(hass: HomeAssistant) -> None:
+    """Test that nothing is understood for features that are switched off."""
+    _add_person_and_zones(hass)
+    request = build_reminder_request(hass, {}, "wenn ich heimkomme an den müll", NOW)
+    assert request.trigger is None
+    request = build_reminder_request(hass, {}, "lenja morgen um 8 an den termin", NOW)
+    assert request.assignee is None
+    request = build_reminder_request(hass, {}, "beim edeka an die milch", NOW)
+    assert request.trigger is None
+
+
+def test_build_request_with_time_keeps_place_in_text(hass: HomeAssistant) -> None:
+    """Test that a set time wins and a place stays part of the sentence."""
+    _add_person_and_zones(hass)
+    request = build_reminder_request(
+        hass,
+        {"places_enabled": True},
+        "morgen um 9 an den termin beim edeka",
+        NOW,
+    )
+    assert request.trigger is None
+    assert request.due == _at(1, 9)
+    assert "edeka" in request.text
+
+
+async def test_arrival_reminds_right_person_once(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test a reminder when coming home."""
+    _add_person_and_zones(hass)
+    entry, alexa, push = await _setup(
+        hass,
+        setup_entry,
+        arrival_enabled=True,
+        reminder_alexa="fixed",
+        reminder_echos=["media_player.kuche"],
+        reminder_notify=[PUSH],
+    )
+    await entry.runtime_data.async_add_idea(
+        "müll rausbringen", trigger={"zone": "zone.home", "person": "person.jan"}
+    )
+
+    hass.states.async_set("person.lenja", "home", {"friendly_name": "Lenja"})
+    await hass.async_block_till_done()
+    assert not push
+
+    hass.states.async_set("person.jan", "home", {"friendly_name": "Jan"})
+    await hass.async_block_till_done()
+    assert len(push) == 1
+    assert len(alexa) == 1
+
+    hass.states.async_set("person.jan", "not_home", {"friendly_name": "Jan"})
+    hass.states.async_set("person.jan", "home", {"friendly_name": "Jan"})
+    await hass.async_block_till_done()
+    assert len(push) == 1
+
+
+async def test_zone_reminds_on_phone_only(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that no Echo at home speaks for someone at the supermarket."""
+    _add_person_and_zones(hass)
+    entry, alexa, push = await _setup(
+        hass,
+        setup_entry,
+        places_enabled=True,
+        reminder_alexa="fixed",
+        reminder_echos=["media_player.kuche"],
+        reminder_notify=[PUSH],
+    )
+    await entry.runtime_data.async_add_idea(
+        "milch kaufen", trigger={"zone": "zone.edeka", "person": None}
+    )
+
+    hass.states.async_set("person.jan", "Edeka in Sorsum", {"friendly_name": "Jan"})
+    await hass.async_block_till_done()
+
+    assert len(push) == 1
+    assert not alexa
+
+
+async def test_list_at_place_once_a_day(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test the shopping list when arriving at the supermarket."""
+    _add_person_and_zones(hass)
+    entry, _, push = await _setup(
+        hass,
+        setup_entry,
+        places_enabled=True,
+        reminder_notify=[PUSH],
+        list_rules_enabled=True,
+        list_rules={
+            "Alltag": {"channel": "notify", "zone_enabled": True, "zone": "zone.edeka"}
+        },
+    )
+    await entry.runtime_data.async_add_idea("milch", category="Alltag")
+
+    hass.states.async_set("person.jan", "Edeka in Sorsum", {"friendly_name": "Jan"})
+    await hass.async_block_till_done()
+    assert len(push) == 1
+
+    hass.states.async_set("person.jan", "not_home", {"friendly_name": "Jan"})
+    hass.states.async_set("person.jan", "Edeka in Sorsum", {"friendly_name": "Jan"})
+    await hass.async_block_till_done()
+    assert len(push) == 1
+
+
+async def test_arrival_switch_off_stays_silent(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that a stored place does nothing with its switch off."""
+    _add_person_and_zones(hass)
+    entry, _, push = await _setup(
+        hass, setup_entry, arrival_enabled=False, reminder_notify=[PUSH]
+    )
+    await entry.runtime_data.async_add_idea(
+        "müll", trigger={"zone": "zone.home", "person": None}
+    )
+
+    hass.states.async_set("person.jan", "home", {"friendly_name": "Jan"})
+    await hass.async_block_till_done()
+
+    assert not push
+
+
+async def test_person_gets_own_channels(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test a reminder that goes to someone else's phone and Echo."""
+    _add_person_and_zones(hass)
+    entry, alexa, push = await _setup(
+        hass,
+        setup_entry,
+        persons_enabled=True,
+        reminder_notify=[PUSH],
+        reminder_alexa="fixed",
+        reminder_echos=["media_player.kuche"],
+        person_rules={
+            "person.lenja": {
+                "notify": ["notify.mobile_app_lenja"],
+                "echos": ["media_player.lenja"],
+            }
+        },
+    )
+    lenja_calls = async_mock_service(hass, "notify", "mobile_app_lenja")
+    await _due_idea(entry, assignee="person.lenja")
+
+    await entry.runtime_data.reminders.async_check(dt_util.now())
+    await hass.async_block_till_done()
+
+    assert len(lenja_calls) == 1
+    assert not push
+    assert alexa[0].data["target"] == ["media_player.lenja"]
+
+
+async def test_calendar_sync_once(hass: HomeAssistant, setup_entry: SetupEntry) -> None:
+    """Test adding a reminder to a calendar, and the switch."""
+    calls = async_mock_service(hass, "calendar", "create_event")
+    entry = await setup_entry(
+        options={"calendar_enabled": True, "calendar_entity": "calendar.familie"}
+    )
+    store = entry.runtime_data
+    await store.async_add_idea("arzt", due=dt_util.now() + timedelta(days=1))
+
+    await store.reminders.async_check(dt_util.now())
+    await store.reminders.async_check(dt_util.now())
+    await hass.async_block_till_done()
+
+    assert len(calls) == 1
+    assert calls[0].data["summary"].lower() == "arzt"
+    assert calls[0].data["entity_id"] == "calendar.familie"
+
+
+async def test_calendar_switch_off(hass: HomeAssistant, setup_entry: SetupEntry) -> None:
+    """Test that nothing goes to the calendar when switched off."""
+    calls = async_mock_service(hass, "calendar", "create_event")
+    entry = await setup_entry(options={"calendar_entity": "calendar.familie"})
+    store = entry.runtime_data
+    await store.async_add_idea("arzt", due=dt_util.now() + timedelta(days=1))
+
+    await store.reminders.async_check(dt_util.now())
+    await hass.async_block_till_done()
+
+    assert not calls
+
+
+async def test_ai_shortens_briefing_and_falls_back(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test the AI summary and that a failure keeps the normal text."""
+    entry, _, push = await _setup(
+        hass,
+        setup_entry,
+        reminder_notify=[PUSH],
+        digest_enabled=True,
+        digest_time="08:00:00",
+        ai_enabled=True,
+        ai_entity="ai_task.test",
+    )
+    responses = [{"data": "Kurz: Tonnen."}]
+
+    async def generate(call: ServiceCall) -> dict[str, Any]:
+        if not responses:
+            raise HomeAssistantError("down")
+        return responses.pop()
+
+    hass.services.async_register(
+        "ai_task", "generate_data", generate, supports_response=SupportsResponse.ONLY
+    )
+    store = entry.runtime_data
+    morning = dt_util.now().replace(hour=8, minute=1, second=0, microsecond=0)
+    await store.async_add_idea("tonnen raus", due=morning + timedelta(hours=2))
+
+    await store.reminders.async_check(morning)
+    await hass.async_block_till_done()
+    assert push[0].data["message"] == "Kurz: Tonnen."
+
+    store.reminders._last_digest = None  # noqa: SLF001
+    await store.reminders.async_check(morning)
+    await hass.async_block_till_done()
+    assert "tonnen" in push[1].data["message"].lower()
+
+
+async def test_skill_person_place_and_native(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_client_no_auth: ClientSessionGenerator,
+) -> None:
+    """Test the skill's answers for people, places and real Alexa reminders."""
+    _add_person_and_zones(hass)
+    hass.config.language = "de"
+    assert await async_setup_component(hass, "http", {})
+    entry = await setup_entry(
+        options={
+            "voice_mode": "skill",
+            "persons_enabled": True,
+            "arrival_enabled": True,
+            "native_reminders": True,
+        }
+    )
+    client = await hass_client_no_auth()
+    url = f"/api/webhook/{entry.runtime_data.alexa_skill._webhook_id}"  # noqa: SLF001
+
+    async def post(action: str, text: str = "") -> dict[str, Any]:
+        response = await client.post(
+            url, json={"application_id": SKILL_ID, "action": action, "text": text}
+        )
+        return await response.json()
+
+    reply = await post("remind", "lenja morgen um 8 an den termin")
+    assert reply["speech"].startswith("Okay, ich erinnere Lenja morgen um 8 Uhr")
+    assert "alexa_reminder" not in reply
+
+    reply = await post("remind", "wenn ich heimkomme an den müll")
+    assert "beim Heimkommen" in reply["speech"]
+    assert "alexa_reminder" not in reply
+
+    reply = await post("remind", "morgen um 9 an das paket")
+    idea_id = reply["alexa_reminder"]["id"]
+    assert await post("native_confirm", idea_id) == {"ok": True}
+    assert entry.runtime_data._ideas[idea_id]["alexa_native"] is True  # noqa: SLF001
+
+
+async def test_native_reminder_is_not_spoken_twice(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that Home Assistant stays quiet when Alexa rings by itself."""
+    entry, alexa, push = await _setup(
+        hass, setup_entry, reminder_alexa="origin", reminder_notify=[PUSH]
+    )
+    idea = await _due_idea(entry)
+    await entry.runtime_data.async_mark_fields(idea["id"], {"alexa_native": True})
+
+    await entry.runtime_data.reminders.async_check(dt_util.now())
+    await hass.async_block_till_done()
+
+    assert not alexa
+    assert len(push) == 1
+
+
+async def test_skill_says_reminders_are_off(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_client_no_auth: ClientSessionGenerator,
+) -> None:
+    """Test an honest answer with the master switch off."""
+    hass.config.language = "de"
+    assert await async_setup_component(hass, "http", {})
+    entry = await setup_entry(
+        options={"voice_mode": "skill", "reminders_enabled": False}
+    )
+    client = await hass_client_no_auth()
+    url = f"/api/webhook/{entry.runtime_data.alexa_skill._webhook_id}"  # noqa: SLF001
+
+    response = await client.post(
+        url,
+        json={
+            "application_id": SKILL_ID,
+            "action": "remind",
+            "text": "morgen um 8 an die tonnen",
+        },
+    )
+
+    assert "ausgeschaltet" in (await response.json())["speech"]
+    assert entry.runtime_data.ideas[0]["due"] is None
+
+
+async def test_service_assignee_and_zone(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test people and places through the services."""
+    entry = await setup_entry()
+    response = await hass.services.async_call(
+        "brainstorm",
+        "add_idea",
+        {"text": "milch", "assignee": "person.jan", "zone": "zone.edeka"},
+        blocking=True,
+        return_response=True,
+    )
+    idea_id = response["idea"]["id"]
+    stored = entry.runtime_data._ideas[idea_id]  # noqa: SLF001
+    assert stored["trigger"] == {"zone": "zone.edeka", "person": "person.jan"}
+
+    await hass.services.async_call(
+        "brainstorm", "update_idea", {"id": idea_id, "zone": None}, blocking=True
+    )
+    assert entry.runtime_data._ideas[idea_id]["trigger"] is None  # noqa: SLF001
 
 
 def test_notify_service_list_skips_alexa() -> None:

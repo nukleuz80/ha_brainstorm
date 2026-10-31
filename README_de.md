@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.4.50-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.4.51-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver-C0C0C0.svg)](https://developers.home-assistant.io/docs/integration_quality_scale_index/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -124,8 +124,8 @@ Klicke einfach auf diesen Button, um das Repository direkt in deiner Home Assist
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js` und `www/brainstorm-mindmap-card.js` in `/config/www/`.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.4.50` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.4.50` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.4.51` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.4.51` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ---
@@ -141,12 +141,24 @@ Brainstorm erinnert dich von selbst an fällige Einträge, und zwar über die Di
 - **Auf der Karte:** Eintrag lange drücken ➔ *Erinnern: heute Abend / morgen früh / nächste Woche / Zeitpunkt wählen*.
 - **In Automationen:** `brainstorm.add_idea` und `brainstorm.update_idea` mit dem Feld `due`.
 
-**Einstellen** unter **Brainstorm Hub ➔ Konfigurieren ➔ Erinnerungen & Benachrichtigungen**:
-- **Alexa-Ansage:** auf dem Echo, von dem der Eintrag kam, dem zuletzt genutzten oder festen Echos (benötigt Alexa Media).
-- **Benachrichtigungsdienste:** beliebige `notify`-Dienste wie Companion-App, Pushover oder Telegram. In der Companion-App gibt es die Knöpfe **Erledigt**, **1 Stunde später** und **Morgen**.
-- **Wartezeit:** Das Handy meldet sich erst, wenn du die Alexa-Ansage nicht erledigt hast. Scheitert die Ansage, kommt die Nachricht sofort.
-- **Ruhezeit:** Erinnerungen warten bis zum Ende der Ruhezeit. Dringende Einträge erreichen die Benachrichtigungsdienste trotzdem, aber kein Echo spricht.
-- **Tägliches Briefing** und **Wochenrückblick** mit lange offenen Einträgen.
+**Einstellen** unter **Brainstorm Hub ➔ Konfigurieren ➔ Erinnerungen & Benachrichtigungen**. Jede Funktion hat ihren eigenen Schalter:
+
+| Bereich | Schalter | Was es tut |
+| :--- | :--- | :--- |
+| **Ein/Aus & Kanäle** | Erinnerungen nutzen | Hauptschalter für alles in diesem Menü |
+| | Alexa-Ansage | Aus, Echo des Eintrags, zuletzt genutzter Echo oder feste Echos (benötigt Alexa Media) |
+| | Benachrichtigungen senden | Beliebige `notify`-Dienste; die Companion-App bekommt die Knöpfe **Erledigt**, **1 Stunde später** und **Morgen** |
+| | Wichtige offene Einträge erneut senden | Hohe oder dringende Einträge gehen nach einer Wartezeit an weitere Dienste, z. B. Pushover |
+| **Ruhezeit, Briefing & Rückblick** | Ruhezeit nutzen | Erinnerungen warten; Dringendes erreicht das Handy, aber kein Echo spricht |
+| | Tägliches Briefing | Zu einer Uhrzeit, optional erst wenn ein Sensor oder eine Person jemanden meldet |
+| | Wochenrückblick | Nennt lange offene Einträge |
+| **Regeln pro Liste** | Regeln pro Liste nutzen | Pro Liste: normale Kanäle, nur Alexa, nur Benachrichtigungen (privat) oder nichts; eigene Dienste; an bestimmten Tagen senden; an einem Ort senden |
+| **Orte & Heimkommen** | Beim Heimkommen erinnern | *„erinnere mich wenn ich heimkomme an den Müll“* |
+| | An Orten erinnern | *„erinnere mich wenn ich bei Edeka bin an die Milch“* (nutzt deine Zonen) |
+| **Personen** | Erinnerungen für andere nutzen | *„erinnere Lenja morgen um 8 an den Termin“* mit eigenen Kanälen pro Person |
+| **Kalender, KI & Alexa** | Kalender | Trägt Erinnerungen einmalig in einen Kalender ein; spätere Änderungen werden nicht übertragen |
+| | KI | Kürzt Briefing und Rückblick mit einer `ai_task`-Entität; dabei gehen deine Einträge an deren Anbieter |
+| | Echte Alexa-Erinnerungen | Legt im Skill zusätzlich eine Amazon-Erinnerung an, dafür muss in der Alexa-Konsole **Build ➔ Permissions ➔ Reminders** eingeschaltet sein und einmal die Zustimmung in der Alexa-App erteilt werden |
 
 **Weitere Sätze im Skill**
 - *„Alexa, sage Brainstorm erledigt Mülltonnen“* oder nur *„… erledigt“* für die letzte Erinnerung
@@ -310,6 +322,7 @@ Die Integration stellt folgende Services bereit:
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.4.51`** | 31.10.2026 | **Erinnerungsregeln, Orte, Personen, Kalender und KI:**<br>• **Jede Funktion hat einen eigenen Schalter** in einem neuen Einstellungsmenü, dazu ein Hauptschalter.<br>• **Regeln pro Liste:** private Listen nur aufs Handy, Listen an bestimmten Tagen oder an einem Ort.<br>• **Orte und Personen:** Erinnerungen beim Heimkommen oder an Zonen und für andere Personen mit eigenen Kanälen.<br>• **Nachfassen und Extras:** wichtige offene Einträge an weitere Dienste, ein Briefing, das auf jemanden wartet, Kalendereinträge, KI-Zusammenfassungen und optional echte Alexa-Erinnerungen. |
 | **`v1.4.50`** | 31.10.2026 | **Proaktive Erinnerungen, Briefing und Wochenrückblick:**<br>• **Termine** per Sprache, in den To-do-Listen, auf der Karte und über Dienste.<br>• **Deine Kanäle:** Alexa-Ansage und beliebige `notify`-Dienste, Handy-Knöpfe, Wartezeit und das Ereignis `brainstorm_reminder_due`.<br>• **Ruhezeiten, tägliches Briefing und Wochenrückblick.**<br>• **Skill:** neue Sätze *erinnere mich*, *erledigt* und *später*; *Ansage* gibt jetzt einen kurzen Überblick. Der Skill braucht einen neuen Build und neuen Code. |
 | **`v1.4.49`** | 31.10.2026 | **Alexa-Skill mit den nativen Funktionen:**<br>• **Echo-Herkunft:** Ideen aus dem Skill zeigen den Echo, von dem sie stammen. Home Assistant lernt jeden Echo einmal aus dem Alexa-Verlauf und kennt ihn danach sofort.<br>• **Echo-Auswahl:** Echos außerhalb der Auswahl werden auch im Skill still ignoriert.<br>• **Gleiche Sprache:** Der Skill versteht die nativen Befehlswörter und bereinigt den Text genauso.<br>• **Ansage und Menü:** *„Alexa, sage Brainstorm Ansage“* liest deine Ideen vor, auch pro Kategorie, und *„Alexa, starte Brainstorm“* öffnet das Menü. |
 | **`v1.4.48`** | 31.10.2026 | **Alexa-Skill mit Home Assistant Cloud:** Die Skill-Einrichtung meldet keine fehlende öffentliche HTTPS-Adresse mehr, wenn Home Assistant über Home Assistant Cloud (Nabu Casa) erreichbar ist. Unverschlüsselte Adressen werden nie angeboten. |

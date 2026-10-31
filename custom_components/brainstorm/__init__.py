@@ -18,6 +18,7 @@ from .alexa_skill import AlexaSkill
 from .const import (
     ATTR_CATEGORY,
     ATTR_COLOR,
+    ATTR_ASSIGNEE,
     ATTR_DEVICE,
     ATTR_DUE,
     ATTR_ICON,
@@ -26,11 +27,14 @@ from .const import (
     ATTR_PARENT_ID,
     ATTR_PARSE_DUE,
     ATTR_PRIORITY,
+    ATTR_REMINDED_AT,
     ATTR_RESET,
     ATTR_SOURCE,
     ATTR_STATUS,
     ATTR_TAGS,
     ATTR_TEXT,
+    ATTR_TRIGGER,
+    ATTR_ZONE,
     DOMAIN,
     PLATFORMS,
     SERVICE_REORDER_IDEAS,
@@ -38,8 +42,7 @@ from .const import (
     VOICE_MODE_NATIVE,
 )
 from .llm import async_register_llm_api
-from .nlp import parse_due
-from .reminders import ReminderManager
+from .reminders import ReminderManager, build_reminder_request
 from .store import BrainstormStore
 
 _LOGGER = logging.getLogger(__name__)
@@ -72,6 +75,8 @@ SERVICE_ADD_IDEA_SCHEMA = vol.Schema(
         vol.Optional(ATTR_PARENT_ID): vol.Any(None, cv.string),
         vol.Optional(ATTR_DUE): vol.Any(None, cv.datetime),
         vol.Optional(ATTR_PARSE_DUE): cv.boolean,
+        vol.Optional(ATTR_ASSIGNEE): vol.Any(None, cv.entity_id),
+        vol.Optional(ATTR_ZONE): vol.Any(None, cv.entity_id),
     },
     extra=vol.ALLOW_EXTRA,
 )
@@ -87,6 +92,8 @@ SERVICE_UPDATE_IDEA_SCHEMA = vol.Schema(
         vol.Optional(ATTR_PARENT_ID): vol.Any(None, cv.string),
         vol.Optional(ATTR_ORDER): vol.Coerce(int),
         vol.Optional(ATTR_DUE): vol.Any(None, cv.datetime),
+        vol.Optional(ATTR_ASSIGNEE): vol.Any(None, cv.entity_id),
+        vol.Optional(ATTR_ZONE): vol.Any(None, cv.entity_id),
     },
     extra=vol.ALLOW_EXTRA,
 )
@@ -234,10 +241,14 @@ def _register_services(hass: HomeAssistant) -> None:
         due = call.data.get(ATTR_DUE)
         if due is not None:
             due = dt_util.as_local(due)
-        elif call.data.get(ATTR_PARSE_DUE):
-            parsed_due, remaining = parse_due(text, dt_util.now())
-            if parsed_due is not None and remaining:
-                due, text = parsed_due, remaining
+        assignee = call.data.get(ATTR_ASSIGNEE)
+        zone = call.data.get(ATTR_ZONE)
+        trigger = {"zone": zone, "person": assignee} if zone else None
+        if due is None and call.data.get(ATTR_PARSE_DUE):
+            request = build_reminder_request(hass, store.options, text, dt_util.now())
+            if request.text and (request.due or request.trigger):
+                due, trigger, text = request.due, request.trigger, request.text
+                assignee = request.assignee or assignee
 
         idea = await store.async_add_idea(
             text=text,
@@ -249,6 +260,8 @@ def _register_services(hass: HomeAssistant) -> None:
             parent_id=parent_id,
             context=call.context,
             due=due,
+            assignee=assignee,
+            trigger=trigger,
         )
         return {"success": True, "idea": idea}
 
@@ -282,6 +295,18 @@ def _register_services(hass: HomeAssistant) -> None:
             due=dt_util.as_local(call.data[ATTR_DUE]) if call.data.get(ATTR_DUE) else None,
             update_due=ATTR_DUE in call.data,
         )
+        if updated is not None and (
+            ATTR_ASSIGNEE in call.data or ATTR_ZONE in call.data
+        ):
+            fields: dict[str, Any] = {}
+            if ATTR_ASSIGNEE in call.data:
+                fields[ATTR_ASSIGNEE] = call.data[ATTR_ASSIGNEE]
+            if ATTR_ZONE in call.data:
+                person = fields.get(ATTR_ASSIGNEE, updated.get(ATTR_ASSIGNEE))
+                zone = call.data[ATTR_ZONE]
+                fields[ATTR_TRIGGER] = {"zone": zone, "person": person} if zone else None
+                fields[ATTR_REMINDED_AT] = None
+            await store.async_mark_fields(idea_id, fields)
         if updated is None:
             raise ServiceValidationError(f"Idee '{idea_id}' wurde nicht gefunden.")
         return {"success": True, "idea": updated}

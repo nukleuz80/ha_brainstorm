@@ -70,6 +70,20 @@ add_idea:
       default: false
       selector:
         boolean:
+    assignee:
+      name: Für Person (Optional)
+      description: Wer erinnert werden soll.
+      required: false
+      selector:
+        entity:
+          domain: person
+    zone:
+      name: An diesem Ort erinnern (Optional)
+      description: Erinnert beim Betreten dieser Zone.
+      required: false
+      selector:
+        entity:
+          domain: zone
 
 update_idea:
   name: Idee bearbeiten
@@ -142,6 +156,20 @@ update_idea:
       required: false
       selector:
         datetime:
+    assignee:
+      name: Für Person (Optional)
+      description: Wer erinnert werden soll.
+      required: false
+      selector:
+        entity:
+          domain: person
+    zone:
+      name: An diesem Ort erinnern (Optional)
+      description: Erinnert beim Betreten dieser Zone.
+      required: false
+      selector:
+        entity:
+          domain: zone
 
 delete_idea:
   name: Idee löschen

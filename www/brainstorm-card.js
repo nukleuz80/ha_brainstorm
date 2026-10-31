@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.4.50 - Proactive Reminders, Briefing and Weekly Review
+ * Version 1.4.51 - Reminder Rules, Places, People, Calendar and AI
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",
@@ -446,6 +446,22 @@ class BrainstormCard extends HTMLElement {
     else if (date.toDateString() === tomorrow.toDateString()) label = `Morgen ${clock}`;
     const overdue = date < now;
     return `<span class="due-badge ${overdue ? "overdue" : ""}" title="${overdue ? "Überfällig" : "Erinnerung"}">⏰ ${label}</span>`;
+  }
+
+  _formatTargetBadges(item) {
+    const name = (entityId) => {
+      const state = entityId && this._hass && this._hass.states[entityId];
+      return state ? state.attributes.friendly_name || entityId : entityId;
+    };
+    let badges = "";
+    if (item.trigger && item.trigger.zone) {
+      const place = item.trigger.zone === "zone.home" ? "Zuhause" : name(item.trigger.zone);
+      badges += `<span class="due-badge" title="Erinnert an diesem Ort">📍 ${this._escapeHtml(place)}</span>`;
+    }
+    if (item.assignee) {
+      badges += `<span class="due-badge" title="Für diese Person">👤 ${this._escapeHtml(name(item.assignee))}</span>`;
+    }
+    return badges;
   }
 
   async _setItemDue(id, action) {
@@ -3232,6 +3248,7 @@ class BrainstormCard extends HTMLElement {
                   <span class="category-tag ${canEdit ? "clickable" : ""}" title="${canEdit ? "Kategorie ändern" : "Kategorie"}" data-id="${item.id}" data-cat="${this._escapeHtml(item.category)}" style="color: ${this._getCategoryColor(item.category)}; background: color-mix(in srgb, ${this._getCategoryColor(item.category)} 12%, var(--secondary-background-color, rgba(0,0,0,0.06))); border: 1px solid color-mix(in srgb, ${this._getCategoryColor(item.category)} 25%, transparent);"><ha-icon icon="${this._getCategoryIcon(item.category)}" style="--mdc-icon-size: 11px; width: 11px; height: 11px; margin-right: 3px; display: inline-flex; align-items: center; vertical-align: middle;"></ha-icon>${this._escapeHtml(item.category)}</span>
                   ${this._getPriorityBadge(item.priority, item.id)}
                   ${item.due ? this._formatDueBadge(item.due) : ""}
+                  ${this._formatTargetBadges(item)}
                   ${showSource ? `${this._getSourceBadge(item.source, item.device)}` : ""}
                   ${showSource && showTime ? `<span>•</span>` : ""}
                   ${showTime ? `<span>${this._formatTime(item.created_at)}</span>` : ""}
@@ -4096,7 +4113,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.4.50 ",
+  "%c BRAINSTORM-CARD %c v1.4.51 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

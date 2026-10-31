@@ -13,8 +13,10 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import (
     ATTR_CATEGORY,
     ATTR_CREATED_AT,
+    ATTR_ASSIGNEE,
     ATTR_DEVICE,
     ATTR_DUE,
+    ATTR_TRIGGER,
     ATTR_ID,
     ATTR_ORDER,
     ATTR_PARENT_ID,
@@ -170,6 +172,8 @@ class BrainstormOverviewSensor(SensorEntity):
                     "parent_id": i.get(ATTR_PARENT_ID),
                     "order": i.get(ATTR_ORDER),
                     "due": i.get(ATTR_DUE),
+                    "assignee": i.get(ATTR_ASSIGNEE),
+                    "trigger": i.get(ATTR_TRIGGER),
                 }
                 for i in active_ideas
             ],

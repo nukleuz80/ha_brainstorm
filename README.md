@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.4.50-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.4.51-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver-C0C0C0.svg)](https://developers.home-assistant.io/docs/integration_quality_scale_index/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -142,7 +142,14 @@ Brainstorm reminds you of due ideas on its own, over the services you have alrea
 - **On the card:** Long-press an idea ➔ choose a reminder.
 - **In automations:** `brainstorm.add_idea` and `brainstorm.update_idea` with the `due` field.
 
-**Configure** under **Brainstorm Hub ➔ Configure ➔ Reminders & Notifications**: the Alexa announcement (origin, most recent or fixed Echos, needs Alexa Media), any `notify` services (the companion app gets **Erledigt**, **1 Stunde später** and **Morgen** buttons), a waiting time before the phone is notified, quiet hours (urgent ideas still reach your notification services, but no Echo speaks), a daily briefing and a weekly review of long open ideas.
+**Configure** under **Brainstorm Hub ➔ Configure ➔ Reminders & Notifications**. Every feature has its own switch:
+
+- **On/Off & Channels:** a master switch, the Alexa announcement (origin, most recent or fixed Echos, needs Alexa Media), any `notify` services (the companion app gets **Erledigt**, **1 Stunde später** and **Morgen** buttons) and sending important open ideas to further services after a waiting time.
+- **Quiet Hours, Briefing & Weekly Review:** Urgent ideas still reach your notification services during quiet hours, but no Echo speaks. The briefing can wait until a sensor or person detects someone.
+- **Rules per List:** normal channels, Alexa only, notifications only (private) or nothing, own services, sending a list on certain days or at a place.
+- **Places & Coming Home:** *"erinnere mich wenn ich heimkomme an den Müll"*, *"erinnere mich wenn ich bei Edeka bin an die Milch"*, using your zones.
+- **People:** *"erinnere Lenja morgen um 8 an den Termin"*, with own channels per person.
+- **Calendar, AI & Alexa Reminders:** adds reminders once to a calendar (later changes are not transferred), shortens the briefing and review with an `ai_task` entity (your ideas go to its provider), and optionally creates real Amazon reminders in the skill (switch on **Build ➔ Permissions ➔ Reminders** in the Alexa console and grant consent once in the Alexa app).
 
 **More skill sentences:** *"erledigt Mülltonnen"* or just *"erledigt"* for the last reminder, *"später"* moves it one hour, *"Ansage Alltag"* reads a category, *"Ansage"* gives only the overview, *"alles vorlesen"* reads everything.
 
@@ -156,9 +163,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.4.50
+  - url: /local/brainstorm-card.js?v=1.4.51
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.4.50
+  - url: /local/brainstorm-mindmap-card.js?v=1.4.51
     type: module
 ```
 
@@ -205,6 +212,7 @@ hide_empty_categories: true
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.4.51`** | 2026-10-31 | **Reminder Rules, Places, People, Calendar and AI:**<br>• **Every feature has its own switch** in a new settings menu, including a master switch.<br>• **Rules per list:** private lists only on the phone, lists on certain days or at a place.<br>• **Places and people:** reminders when coming home or at zones, and for other people with their own channels.<br>• **Follow-ups and extras:** important open ideas to further services, a briefing that waits for someone, calendar entries, AI summaries and optional real Alexa reminders. |
 | **`v1.4.50`** | 2026-10-31 | **Proactive Reminders, Briefing and Weekly Review:**<br>• **Due dates** by voice, in the to-do lists, on the card and through services.<br>• **Your channels:** Alexa announcement and any `notify` service, phone buttons, a waiting time and the `brainstorm_reminder_due` event.<br>• **Quiet hours, daily briefing and weekly review.**<br>• **Skill:** new *erinnere mich*, *erledigt* and *später* sentences, and *Ansage* now gives a short overview. The skill needs a new build and code. |
 | **`v1.4.49`** | 2026-10-31 | **Alexa Skill with the Native Features:**<br>• **Echo origin:** Ideas from the skill show the Echo they came from. Home Assistant learns each Echo once from the Alexa history and knows it immediately afterwards.<br>• **Echo selection:** Echos outside the selection are ignored silently, also in the skill.<br>• **Same language:** The skill understands the native command words and cleans the text the same way.<br>• **Announcement and menu:** *„Alexa, sage Brainstorm Ansage“* reads your ideas, also per category, and *„Alexa, starte Brainstorm“* opens the menu. |
 | **`v1.4.48`** | 2026-10-31 | **Alexa Skill with Home Assistant Cloud:** The skill setup no longer reports a missing public HTTPS address when Home Assistant is reachable through Home Assistant Cloud (Nabu Casa). Unencrypted addresses are never offered. |

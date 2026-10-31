@@ -109,25 +109,123 @@
       },
       "reminders": {
         "title": "Reminders & Notifications",
-        "description": "Everything is optional. Choose the services you have set up in Home Assistant. Reminders also fire the event brainstorm_reminder_due for your own automations.",
+        "description": "Choose a section. Everything can be switched on and off separately.",
+        "menu_options": {
+          "reminder_general": "On/Off & Channels",
+          "reminder_schedule": "Quiet Hours, Briefing & Weekly Review",
+          "reminder_lists": "Rules per List",
+          "reminder_places": "Places & Coming Home",
+          "reminder_persons": "People",
+          "reminder_extras": "Calendar, AI & Alexa Reminders"
+        }
+      },
+      "reminder_general": {
+        "title": "On/Off & Channels",
+        "description": "Choose the services you have set up in Home Assistant. Reminders also fire the event brainstorm_reminder_due for your own automations.",
         "data": {
+          "reminders_enabled": "Use reminders",
           "reminder_alexa": "Alexa announcement",
           "reminder_echos": "Echos for announcements",
+          "notify_enabled": "Send notifications",
           "reminder_notify": "Notification services",
           "reminder_delay": "Wait before sending notifications (minutes)",
+          "urgent_enabled": "Send important open ideas again",
+          "urgent_notify": "Services for important ideas",
+          "urgent_delay": "Send again after (minutes)"
+        },
+        "data_description": {
+          "reminders_enabled": "Off stops all reminders, the briefing, the review and everything else in this menu.",
+          "reminder_echos": "Used for fixed Echos, as a fallback and for the briefing and review.",
+          "reminder_delay": "Only with Alexa: gives you time to react before your phone is notified. 0 sends both at once.",
+          "urgent_delay": "Applies to ideas with high or urgent priority that are still open."
+        }
+      },
+      "reminder_schedule": {
+        "title": "Quiet Hours, Briefing & Weekly Review",
+        "description": "Set the times for each of these separately.",
+        "data": {
+          "quiet_enabled": "Use quiet hours",
           "quiet_start": "Quiet hours from",
           "quiet_end": "Quiet hours until",
           "digest_enabled": "Daily briefing",
           "digest_time": "Time of the briefing",
+          "digest_presence": "Only when someone is detected here",
           "review_enabled": "Weekly review",
           "review_weekday": "Day of the review",
           "review_time": "Time of the review",
           "review_days": "Mention ideas open for more than (days)"
         },
         "data_description": {
-          "reminder_delay": "Only with Alexa: gives you time to react to the announcement before your phone is notified. 0 sends both at once.",
-          "quiet_start": "Reminders wait until the quiet hours end. Urgent ideas still reach your notification services.",
-          "reminder_echos": "Used for the fixed mode, and as a fallback and for the briefing and review."
+          "quiet_start": "Reminders wait until the quiet hours end. Urgent ideas still reach your notification services, but no Echo speaks.",
+          "digest_presence": "Optional: The briefing then waits up to 6 hours after its time until a sensor or person here reports someone."
+        }
+      },
+      "reminder_lists": {
+        "title": "Rules per List",
+        "description": "Lists without a rule use the normal settings. Choose a list to edit its rule.",
+        "data": {
+          "list_rules_enabled": "Use rules per list",
+          "category": "List to edit"
+        }
+      },
+      "reminder_list_edit": {
+        "title": "Rule for '{category}'",
+        "description": "For example, private lists only on the phone, or a list on certain days or at a place.",
+        "data": {
+          "channel": "Reminders of this list go to",
+          "notify": "Own notification services for this list",
+          "schedule_enabled": "Send the open ideas on certain days",
+          "schedule_weekdays": "Days",
+          "schedule_time": "Time",
+          "zone_enabled": "Send the open ideas at a place",
+          "zone": "Place"
+        },
+        "data_description": {
+          "zone_enabled": "Sent once a day when someone arrives there. Needs the switch for places."
+        }
+      },
+      "reminder_places": {
+        "title": "Places & Coming Home",
+        "description": "Say for example: erinnere mich wenn ich heimkomme an den Müll, or: erinnere mich wenn ich bei Edeka bin an die Milch.",
+        "data": {
+          "arrival_enabled": "Remind when coming home",
+          "places_enabled": "Remind at places (zones)",
+          "default_person": "Who is meant by \"ich\""
+        },
+        "data_description": {
+          "default_person": "Without a person, anyone arriving there triggers the reminder."
+        }
+      },
+      "reminder_persons": {
+        "title": "People",
+        "description": "Say for example: erinnere Lenja morgen um 8 an den Elternsprechtag. Choose a person to set their channels.",
+        "data": {
+          "persons_enabled": "Use reminders for other people",
+          "person": "Person to edit"
+        }
+      },
+      "reminder_person_edit": {
+        "title": "Channels for {person}",
+        "description": "These replace the normal channels for this person.",
+        "data": {
+          "notify": "Notification services",
+          "echos": "Echos"
+        }
+      },
+      "reminder_extras": {
+        "title": "Calendar, AI & Alexa Reminders",
+        "description": "Optional extras, each with its own switch.",
+        "data": {
+          "calendar_enabled": "Add reminders to a calendar",
+          "calendar_entity": "Calendar",
+          "ai_enabled": "Shorten the briefing and review with AI",
+          "ai_entity": "AI task entity",
+          "native_reminders": "Also create real Alexa reminders"
+        },
+        "data_description": {
+          "calendar_enabled": "One way, once per reminder. Later changes are not transferred.",
+          "ai_enabled": "Your ideas are sent to the provider of the chosen AI.",
+          "native_reminders": "In the Alexa console, also switch on Reminders under Build ➔ Permissions. Alexa then rings itself and Home Assistant does not speak as well."
         }
       }
     },
@@ -160,6 +258,14 @@
         "4": "Friday",
         "5": "Saturday",
         "6": "Sunday"
+      }
+    },
+    "channel": {
+      "options": {
+        "default": "Normal channels",
+        "alexa": "Alexa only",
+        "notify": "Notifications only (private)",
+        "none": "Nothing, event only"
       }
     }
   }

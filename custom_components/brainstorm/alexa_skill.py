@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 from collections import deque
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import timedelta
 import json
 import logging
 import re
@@ -23,15 +23,17 @@ from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    ATTR_ALEXA_NATIVE,
     ATTR_CATEGORY,
     ATTR_ID,
     ATTR_TEXT,
+    CONF_NATIVE_REMINDERS,
+    CONF_REMINDERS_ENABLED,
     DOMAIN,
     SKILL_STORAGE_KEY,
     SKILL_STORAGE_VERSION,
 )
-from .nlp import parse_due
-from .reminders import format_due
+from .reminders import ZONE_HOME, ReminderRequest, build_reminder_request, format_due
 
 if TYPE_CHECKING:
     from .store import BrainstormStore
@@ -55,7 +57,9 @@ ACTION_LAUNCH = "launch"
 ACTION_REMIND = "remind"
 ACTION_DONE = "done"
 ACTION_SNOOZE = "snooze"
+ACTION_NATIVE_CONFIRM = "native_confirm"
 ACTIONS = (
+    ACTION_NATIVE_CONFIRM,
     ACTION_CAPTURE,
     ACTION_READ,
     ACTION_READ_ALL,
@@ -237,6 +241,7 @@ import urllib.request
 
 WEBHOOK_URL = "__WEBHOOK_URL__"
 TIMEOUT_SECONDS = 6
+REMINDER_API_TIMEOUT_SECONDS = 2
 HELP_TEXT = "Sage zum Beispiel: notiere Kellerlicht dimmen, erinnere mich morgen um 8 an die Tonnen, oder Ansage Alltag."
 
 
@@ -274,7 +279,49 @@ def _call_home_assistant(event, action, text=""):
         return {"version": "1.0", "response": {"shouldEndSession": True}}
     if not data.get("speech"):
         return _response("Der Skill-Modus ist in Brainstorm nicht aktiv. Es wurde nichts gespeichert.")
-    return _response(data["speech"], data.get("end_session", True))
+    answer = _response(data["speech"], data.get("end_session", True))
+    if data.get("alexa_reminder"):
+        _add_alexa_reminder(event, data["alexa_reminder"], answer)
+    return answer
+
+
+def _add_alexa_reminder(event, reminder, answer):
+    """Also create a real Alexa reminder, keeping the Home Assistant one on any problem."""
+    system = event["context"]["System"]
+    body = {
+        "requestTime": event["request"]["timestamp"],
+        "trigger": {
+            "type": "SCHEDULED_ABSOLUTE",
+            "scheduledTime": reminder["time"],
+            "timeZoneId": reminder["time_zone"],
+        },
+        "alertInfo": {
+            "spokenInfo": {"content": [{"locale": event["request"]["locale"], "text": reminder["text"]}]}
+        },
+        "pushNotification": {"status": "ENABLED"},
+    }
+    request = urllib.request.Request(
+        system["apiEndpoint"] + "/v1/alerts/reminders",
+        data=json.dumps(body).encode(),
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + system.get("apiAccessToken", ""),
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=REMINDER_API_TIMEOUT_SECONDS):
+            pass
+    except urllib.error.HTTPError as err:
+        if err.code in (401, 403):
+            answer["response"]["card"] = {
+                "type": "AskForPermissionsConsent",
+                "permissions": ["alexa::alerts:reminders:skill:readwrite"],
+            }
+        return
+    except (urllib.error.URLError, TimeoutError):
+        return
+    _call_home_assistant(event, "native_confirm", reminder["id"])
 
 
 def lambda_handler(event, context):
@@ -569,7 +616,7 @@ class AlexaSkill:
         text: str,
         echo: EchoDevice | None,
         pending: _PendingRequest | None,
-        due: datetime | None = None,
+        request: ReminderRequest | None = None,
         no_time_found: bool = False,
     ) -> web.Response:
         """Store an idea and report where it went."""
@@ -583,7 +630,9 @@ class AlexaSkill:
                 text=cleaned,
                 source="alexa_skill",
                 device=echo.name if echo else None,
-                due=due,
+                due=request.due if request else None,
+                assignee=request.assignee if request else None,
+                trigger=request.trigger if request else None,
             )
         except HomeAssistantError as err:
             _LOGGER.warning("Could not store idea from Alexa skill: %s", err)
@@ -598,12 +647,8 @@ class AlexaSkill:
             "text": idea.get("text", ""),
             "device": echo.name if echo else "?",
         }
-        if due is not None:
-            when = format_due(due, dt_util.now())
-            return self._speech(
-                f"Okay, ich erinnere dich {when} an {idea.get(ATTR_TEXT)}.",
-                f"Okay, I will remind you {when} about {idea.get(ATTR_TEXT)}.",
-            )
+        if request is not None:
+            return self._reminder_answer(request, idea)
         if no_time_found:
             return self._speech(
                 "Gespeichert, aber ohne Erinnerung. Ich habe keinen Zeitpunkt verstanden.",
@@ -617,19 +662,71 @@ class AlexaSkill:
             )
         return self._speech("Gespeichert.", "Saved.")
 
+    def _reminder_answer(
+        self, request: ReminderRequest, idea: dict[str, Any]
+    ) -> web.Response:
+        """Confirm a reminder, and pass on what a real Alexa reminder would need."""
+        now = dt_util.now()
+        when = format_due(request.due, now) if request.due else self._place_name(request)
+        who = self._person_name(request.assignee) or "dich"
+        text = idea.get(ATTR_TEXT)
+        speech = f"Okay, ich erinnere {who} {when} an {text}."
+        data: dict[str, Any] = {"speech": speech, "end_session": True}
+        # Only the person speaking can get a real reminder, and only for a set time
+        if (
+            self._ideas.options.get(CONF_NATIVE_REMINDERS)
+            and request.due
+            and not request.assignee
+        ):
+            local_due = dt_util.as_local(request.due)
+            data["alexa_reminder"] = {
+                "id": idea[ATTR_ID],
+                "text": text,
+                "time": local_due.strftime("%Y-%m-%dT%H:%M:%S"),
+                "time_zone": self.hass.config.time_zone,
+            }
+        return web.json_response(data)
+
+    def _person_name(self, entity_id: str | None) -> str | None:
+        """Return the name of a person."""
+        state = self.hass.states.get(entity_id) if entity_id else None
+        return state.name if state else None
+
+    def _place_name(self, request: ReminderRequest) -> str:
+        """Say where a reminder is meant for."""
+        zone = (request.trigger or {}).get("zone")
+        if zone == ZONE_HOME:
+            return "beim Heimkommen"
+        state = self.hass.states.get(zone) if zone else None
+        return f"bei {state.name}" if state else "an diesem Ort"
+
     async def _async_remind(
         self, text: str, echo: EchoDevice | None, pending: _PendingRequest | None
     ) -> web.Response:
-        """Store an idea with the spoken time as its reminder."""
-        due, remaining = parse_due(clean_voice_text(text), dt_util.now())
-        if due is None:
+        """Store an idea with the spoken time or place as its reminder."""
+        options = self._ideas.options
+        if not options.get(CONF_REMINDERS_ENABLED, True):
+            response = await self._async_capture(text, echo, pending)
+            if response.status != 200:
+                return response
+            return self._speech(
+                "Gespeichert, aber Erinnerungen sind ausgeschaltet.",
+                "Saved, but reminders are switched off.",
+            )
+        now = dt_util.now()
+        request = build_reminder_request(
+            self.hass, options, clean_voice_text(text), now
+        )
+        if request.due is None and request.trigger is None:
             return await self._async_capture(text, echo, pending, no_time_found=True)
-        if due <= dt_util.now():
+        if request.due is not None and request.due <= now:
             return self._speech(
                 "Dieser Zeitpunkt liegt in der Vergangenheit.",
                 "That time is in the past.",
             )
-        return await self._async_capture(remaining, echo, pending, due=due)
+        return await self._async_capture(
+            request.text, echo, pending, request=request
+        )
 
     async def _async_done(self, text: str) -> web.Response:
         """Complete the idea a person named, or the last one reminded of."""
@@ -694,6 +791,10 @@ class AlexaSkill:
         elif application_id != self._application_id:
             _LOGGER.warning("Rejected a request from an unknown Alexa skill")
             return web.Response(status=403)
+
+        if action == ACTION_NATIVE_CONFIRM:
+            await self._ideas.async_mark_fields(text, {ATTR_ALEXA_NATIVE: True})
+            return web.json_response({"ok": True})
 
         echo, pending = await self._async_resolve_echo(device_id, text)
 

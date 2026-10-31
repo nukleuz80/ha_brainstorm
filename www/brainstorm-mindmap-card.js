@@ -1,6 +1,6 @@
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.4.50 - Proactive Reminders, Briefing and Weekly Review
+ * Version: 1.4.51 - Reminder Rules, Places, People, Calendar and AI
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -400,6 +400,27 @@ class BrainstormMindmapCard extends HTMLElement {
     }
   }
 
+  _getReminderBadges(idea) {
+    const parts = [];
+    if (idea.due) {
+      const date = new Date(idea.due);
+      if (!Number.isNaN(date.getTime())) {
+        const pad = (value) => String(value).padStart(2, "0");
+        const label = `${pad(date.getDate())}.${pad(date.getMonth() + 1)}. ${date.getHours()}:${pad(date.getMinutes())}`;
+        parts.push(`⏰ ${label}`);
+      }
+    }
+    const name = (entityId) => {
+      const state = entityId && this._hass && this._hass.states[entityId];
+      return state ? state.attributes.friendly_name || entityId : entityId;
+    };
+    if (idea.trigger && idea.trigger.zone) {
+      parts.push(`📍 ${idea.trigger.zone === "zone.home" ? "Zuhause" : name(idea.trigger.zone)}`);
+    }
+    if (idea.assignee) parts.push(`👤 ${name(idea.assignee)}`);
+    return parts.map((part) => `<span class="reminder-tag">${this._escapeHtml(part)}</span>`).join("");
+  }
+
   _getPriorityBadge(priority, id = "") {
     const p = (priority || "medium").toLowerCase();
     const idAttr = id ? `data-id="${this._escapeHtml(id)}"` : "";
@@ -606,6 +627,12 @@ class BrainstormMindmapCard extends HTMLElement {
           font-size: 1.05rem;
           font-weight: 700;
           color: var(--primary-text-color, #212121);
+        }
+        .reminder-tag {
+          color: var(--primary-color);
+          font-size: 0.75em;
+          font-weight: 500;
+          white-space: nowrap;
         }
         .last-alexa-wrap {
           display: inline-flex;
@@ -2356,6 +2383,7 @@ class BrainstormMindmapCard extends HTMLElement {
                 <ha-icon icon="${this._getCategoryIcon(idea.category)}" style="--mdc-icon-size: 12px; width: 12px; height: 12px; display: inline-flex; align-items: center; vertical-align: middle;"></ha-icon> ${this._escapeHtml(idea.category)}
               </span>
               ${prioBadge}
+              ${this._getReminderBadges(idea)}
               <span class="cloud-source" title="Quelle: ${this._escapeHtml(idea.source || 'Dashboard')}${idea.device ? ' • Gerät: ' + this._escapeHtml(idea.device) : ''}">
                 <span>${sourceBadge}</span>
                 <span>•</span>
@@ -3361,7 +3389,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.50 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.4.51 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );
