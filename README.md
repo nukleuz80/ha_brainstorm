@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.4.62-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.4.63-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver-C0C0C0.svg)](https://developers.home-assistant.io/docs/integration_quality_scale_index/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -132,6 +132,38 @@ The skill belongs to you and only talks to your own Home Assistant. **Requiremen
 
 ---
 
+## 📱 iPhone: Shortcut with Siri, Action Button or Back Tap
+
+The fastest way from an iPhone: trigger, speak, done, without opening an app. It needs the Home Assistant companion app.
+
+1. In the **Shortcuts** app, create a shortcut named **Brainstorm**. The name is also your Siri phrase.
+2. Add **Dictate Text**, choose your language, and stop listening **After Pause**.
+3. Add the Home Assistant action **Perform Action** and choose `brainstorm.add_idea`.
+4. Paste this JSON into the data field and put the **Dictated Text** variable between the quotes after `"text":`:
+   ```json
+   {"text": "", "source": "siri", "device": "iPhone"}
+   ```
+5. Choose a trigger: **Settings ➔ Action Button ➔ Shortcut**, **Settings ➔ Accessibility ➔ Touch ➔ Back Tap ➔ Double Tap**, or *"Hey Siri, Brainstorm"*.
+
+The note appears as **🎙️ Siri (iPhone)**. You can choose any device name in the JSON. If the shortcut reports that the data could not be read, the field is not valid JSON, often because the iPhone typed curly quotes. Paste the text or temporarily turn off **Settings ➔ General ➔ Keyboard ➔ Smart Punctuation**.
+
+## 🎙️ Microphone in the Quick Input
+
+The list card has a **🎙️** next to the quick input. Tap, speak, and the text appears in the field for checking. Recording ends on a pause, on another tap or after 30 seconds. It uses your preferred Assist pipeline, which needs a speech-to-text engine. The microphone only appears over HTTPS, so in the companion app or through an HTTPS address such as Home Assistant Cloud. Turn it off in the card settings or with `show_mic: false`.
+
+## 👥 Privacy & Sharing
+
+By default, all users of your Home Assistant see all ideas. Change this under **Brainstorm Hub ➔ Configure ➔ Privacy & Users**, and choose a **main user** who owns all existing ideas.
+
+- **When on:** Every idea belongs to its creator, and only they and people it is shared with can see it.
+- **Single ideas:** Long-press an idea ➔ **👥 Freigeben**, for each person to view or edit, or for all users.
+- **Categories:** Select a category ➔ **👥 … freigeben**. This covers your own ideas in it, including later ones.
+- **Several ideas:** **☑️ Auswählen**, then complete, move, share or delete them at once. This also works without privacy.
+- **Rights:** Edit allows changing and completing. Deleting and passing on stay with the owner.
+- **Echos and Alexa apps:** Under **Assign Echos & Apps to People**, each device belongs to one person. What is said there is theirs, and only their ideas are read out. Home Assistant cannot recognize voices, and everyone in the room can hear it.
+
+Admins and anyone with file access can still read everything. Home Assistant's to-do lists only show what is shared with everyone, because all users can read them. Existing Markdown exports stay in place when you switch this on, and new ones are only created if you allow it.
+
 ## ⏰ Reminders & Notifications
 
 Brainstorm reminds you of due ideas on its own, over the services you have already set up in Home Assistant. Everything is optional and runs locally.
@@ -163,9 +195,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.4.62
+  - url: /local/brainstorm-card.js?v=1.4.63
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.4.62
+  - url: /local/brainstorm-mindmap-card.js?v=1.4.63
     type: module
 ```
 
@@ -205,6 +237,8 @@ hide_empty_categories: true
 | `brainstorm.add_category` | Creates a new category | `name` (required) |
 | `brainstorm.remove_category` | Removes category (ideas move to Inbox) | `name` (required) |
 | `brainstorm.export_markdown` | Triggers immediate markdown export | `path` (optional) |
+| `brainstorm.share` | Shares ideas or a category (needs privacy) | `shares` (required, e.g. `{"all": "view"}`), `ids` or `category` |
+| `brainstorm.get_announcement` | Creates the announcement text | `category`, `device` (optional) |
 
 ---
 
@@ -212,6 +246,7 @@ hide_empty_categories: true
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.4.63`** | 2026-11-01 | **Documentation:** Added the iPhone shortcut, the microphone, privacy and sharing, and the new services. |
 | **`v1.4.62`** | 2026-11-01 | **Siri as a Source:** Ideas from an iPhone shortcut with the source `siri` now show Siri and their device on both cards. |
 | **`v1.4.61`** | 2026-11-01 | **Assist Microphone in the Quick Input:** A microphone next to the quick input turns speech into text with your preferred Assist pipeline. You can check the text before adding it. It can be switched off in the card settings and needs HTTPS. |
 | **`v1.4.60`** | 2026-11-01 | **Select Several Ideas, Echos per Person:**<br>• **Selection mode:** Select several ideas on the list card, then complete, move, share or delete them at once.<br>• **Echos and apps per person:** What is said at an assigned device belongs to that person, and only their ideas are read out. Assist on a satellite without a user sticks to the main user.<br>• **Native announcements:** Use the service `brainstorm.get_announcement`, so they keep working with privacy on. |

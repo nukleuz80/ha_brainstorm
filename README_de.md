@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.4.62-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.4.63-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver-C0C0C0.svg)](https://developers.home-assistant.io/docs/integration_quality_scale_index/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -124,8 +124,8 @@ Klicke einfach auf diesen Button, um das Repository direkt in deiner Home Assist
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js` und `www/brainstorm-mindmap-card.js` in `/config/www/`.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.4.62` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.4.62` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.4.63` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.4.63` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ---
@@ -300,6 +300,45 @@ Assist versteht deine Notizen sowohl über dedizierte Sprachmuster als auch übe
 * 🗣️ *„Füge Milch zu Brainstorm Inbox hinzu“*
 * 🗣️ *„Hake Rasenmähen auf Brainstorm Haus und Garten ab“*
 
+### 3. iPhone: Kurzbefehl mit Siri, Action-Taste oder Rückseite
+Der schnellste Weg vom iPhone: auslösen, sprechen, fertig, ganz ohne eine App zu öffnen. Voraussetzung ist die Home Assistant Companion-App.
+
+1. Lege in der App **Kurzbefehle** einen neuen Kurzbefehl namens **Brainstorm** an. Der Name ist auch dein Siri-Satz.
+2. Füge **Text diktieren** hinzu, Sprache **Deutsch**, Hören stoppen **Nach einer Pause**.
+3. Füge von **Home Assistant** die Aktion **Aktion ausführen** hinzu und wähle **Idee hinzufügen** (`brainstorm.add_idea`).
+4. Füge in das Datenfeld dieses JSON ein und setze zwischen die Anführungszeichen hinter `"text":` die Variable **Diktierter Text**:
+   ```json
+   {"text": "", "source": "siri", "device": "iPhone"}
+   ```
+5. Lege den Auslöser fest:
+   - **Action-Taste:** **Einstellungen ➔ Action-Taste ➔ Kurzbefehl ➔ Brainstorm**
+   - **Rückseite:** **Einstellungen ➔ Bedienungshilfen ➔ Tippen ➔ Auf Rückseite tippen ➔ Doppeltippen ➔ Brainstorm**
+   - **Siri:** *„Hey Siri, Brainstorm“*
+
+Die Notiz erscheint als **🎙️ Siri (iPhone)**. Den Gerätenamen kannst du im JSON frei wählen.
+
+> [!TIP]
+> Meldet der Kurzbefehl *„Die Daten konnten nicht gelesen werden“*, ist das Datenfeld kein gültiges JSON. Oft hat das iPhone beim Tippen typografische Anführungszeichen eingesetzt. Füge den Text deshalb per Kopieren ein oder schalte vorübergehend **Einstellungen ➔ Allgemein ➔ Tastatur ➔ Intelligente Interpunktion** aus.
+
+### 4. Mikrofon in der Schnelleingabe
+Neben dem Feld *Blitz-Idee* der Listenkarte gibt es ein **🎙️**. Tippen, sprechen, und der Text steht zum Prüfen im Feld. Die Aufnahme endet bei einer Sprechpause, durch erneutes Tippen oder nach 30 Sekunden. Genutzt wird deine bevorzugte Assist-Pipeline, die dafür eine Spracherkennung braucht. Das Mikrofon erscheint nur über HTTPS, also in der Companion-App oder über eine HTTPS-Adresse wie Home Assistant Cloud. Abschalten kannst du es in den Karteneinstellungen oder mit `show_mic: false`.
+
+---
+
+## 👥 Privatsphäre & Freigaben
+
+Standardmäßig sehen alle Benutzer deines Home Assistant alle Einträge. Unter **Brainstorm Hub ➔ Konfigurieren ➔ Privatsphäre & Benutzer** kannst du das ändern. Wähle dabei einen **Hauptbenutzer**, dem alle vorhandenen Einträge gehören.
+
+- **Eingeschaltet:** Jeder Eintrag gehört der Person, die ihn angelegt hat, und nur sie sowie Personen mit Freigabe sehen ihn.
+- **Einzelne Einträge:** Eintrag lange drücken ➔ **👥 Freigeben**, pro Person *Ansehen* oder *Bearbeiten*, oder für *Alle Benutzer*.
+- **Kategorien:** Kategorie auswählen ➔ **👥 … freigeben**. Das gilt für deine eigenen Einträge darin, auch für spätere.
+- **Mehrere Einträge:** **☑️ Auswählen**, dann auf einmal erledigen, verschieben, freigeben oder löschen. Das geht auch ohne Privatsphäre.
+- **Rechte:** *Bearbeiten* erlaubt Ändern und Abhaken. Löschen und Weitergeben bleiben beim Besitzer.
+- **Echos und Alexa-Apps:** Unter **Echos & Apps Personen zuordnen** gehört jedes Gerät einer Person. Was dort gesagt wird, gehört ihr, und nur ihre Einträge werden vorgelesen. Home Assistant erkennt keine Stimmen, und im Raum hören alle mit.
+
+> [!IMPORTANT]
+> Administratoren und alle mit Zugriff auf die Dateien können weiterhin alles lesen. Die To-do-Listen von Home Assistant zeigen nur, was für alle freigegeben ist, weil sie alle Benutzer lesen können. Bestehende Markdown-Exporte bleiben beim Einschalten liegen; neue entstehen nur, wenn du das erlaubst.
+
 ---
 
 ## 🛠️ Dienste (Services)
@@ -315,6 +354,8 @@ Die Integration stellt folgende Services bereit:
 | `brainstorm.remove_category` | Entfernt eine Kategorie (Ideen wandern in `Inbox`) | `name` (erforderlich) |
 | `brainstorm.reorder_ideas` | Aktualisiert die benutzerdefinierte Sortierreihenfolge der Notizen | `idea_ids` (erforderlich) |
 | `brainstorm.export_markdown` | Triggert sofortigen Markdown-Export | `path` (optional) |
+| `brainstorm.share` | Gibt Einträge oder eine Kategorie frei (braucht Privatsphäre) | `shares` (erforderlich, z. B. `{"all": "view"}`), `ids` oder `category` |
+| `brainstorm.get_announcement` | Erzeugt den Ansagetext | `category`, `device` (optional) |
 
 ---
 
@@ -322,6 +363,7 @@ Die Integration stellt folgende Services bereit:
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.4.63`** | 01.11.2026 | **Dokumentation:** iPhone-Kurzbefehl, Mikrofon, Privatsphäre und Freigaben sowie die neuen Dienste ergänzt. |
 | **`v1.4.62`** | 01.11.2026 | **Siri als Quelle:** Einträge aus einem iPhone-Kurzbefehl mit der Quelle `siri` zeigen auf beiden Karten jetzt Siri und ihr Gerät. |
 | **`v1.4.61`** | 01.11.2026 | **Assist-Mikrofon in der Schnelleingabe:** Ein Mikrofon neben dem Eingabefeld wandelt Sprache mit deiner bevorzugten Assist-Pipeline in Text um. Du kannst den Text vor dem Hinzufügen prüfen. Es lässt sich in den Karteneinstellungen abschalten und braucht HTTPS. |
 | **`v1.4.60`** | 01.11.2026 | **Mehrere Einträge auswählen, Echos pro Person:**<br>• **Auswahlmodus:** Mehrere Einträge auf der Listenkarte auswählen und auf einmal erledigen, verschieben, freigeben oder löschen.<br>• **Echos und Apps pro Person:** Was an einem zugeordneten Gerät gesagt wird, gehört dieser Person, und nur ihre Einträge werden vorgelesen. Assist auf einem Satelliten ohne Benutzer bleibt beim Hauptbenutzer.<br>• **Native Ansagen:** Sie nutzen den Dienst `brainstorm.get_announcement` und funktionieren dadurch auch mit Privatsphäre. |
