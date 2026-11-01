@@ -660,7 +660,7 @@ SHOW_REQUEST = {
 def _pages(answer: dict[str, Any]) -> dict[str, Any]:
     """Return the data of the screen in a webhook answer."""
     assert answer["directives"][0]["type"] == "Alexa.Presentation.APL.RenderDocument"
-    return answer["directives"][0]["datasources"]["payload"]
+    return answer["directives"][0]["datasources"][alexa_display.DATA_NAME]
 
 
 async def test_lists_are_only_sent_to_a_screen(
@@ -823,6 +823,30 @@ async def test_screen_and_touch_respect_private_ideas(
     assert store.get_idea(mine["id"])["status"] == "active"
 
 
+def test_document_receives_its_data() -> None:
+    """Test what a real Echo Show showed empty: no page data and a wrong page count."""
+    directive = alexa_display.build_directive(
+        [
+            {"id": "a", "text": "eins", "category": "Alltag"},
+            {"id": "b", "text": "zwei", "category": "Projekte"},
+        ],
+        ["Alltag", "Projekte"],
+        {},
+        None,
+        True,
+    )
+    parameters = directive["document"]["mainTemplate"]["parameters"]
+    document = json.dumps(directive["document"])
+
+    assert "payload" not in parameters
+    assert set(parameters) == set(directive["datasources"])
+    # These count the neighbours of a nested component, not the pages
+    assert "${index" not in document
+    assert "${length" not in document
+    pages = directive["datasources"][alexa_display.DATA_NAME]["pages"]
+    assert [page["position"] for page in pages] == ["1 / 2", "2 / 2"]
+
+
 def test_screen_limits_keep_the_answer_small() -> None:
     """Test that many long ideas stay well below Alexa's limit of 120 KB."""
     ideas = [
@@ -831,7 +855,7 @@ def test_screen_limits_keep_the_answer_small() -> None:
     ]
     directive = alexa_display.build_directive(ideas, ["Alltag"], {}, None, True)
 
-    page = directive["datasources"]["payload"]["pages"][0]
+    page = directive["datasources"][alexa_display.DATA_NAME]["pages"][0]
     assert len(page["items"]) == alexa_display.MAX_DISPLAY_ITEMS
     assert page["hint"] == "+ 350 weitere"
     assert len(json.dumps(directive).encode()) < 60_000
@@ -847,7 +871,7 @@ def test_screen_ignores_a_broken_color() -> None:
         directive = alexa_display.build_directive(
             ideas, ["Alltag"], {"Alltag": color}, None, True
         )
-        assert directive["datasources"]["payload"]["pages"][0]["color"] == expected
+        assert directive["datasources"][alexa_display.DATA_NAME]["pages"][0]["color"] == expected
 
 
 def test_skill_code_passes_the_screen_on() -> None:

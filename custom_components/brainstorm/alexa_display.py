@@ -16,6 +16,11 @@ EVENT_DONE = "done"
 MAX_DISPLAY_ITEMS = 150
 MAX_DISPLAY_TEXT_LENGTH = 120
 
+# Only "payload" gets all data sources instead of the one with its name
+DATA_NAME = "brainstorm"
+
+BACKGROUND_COLOR = "#14121f"
+TEXT_COLOR = "#ffffff"
 DEFAULT_COLOR = "#7c3aed"
 PRIORITY_COLORS = {"urgent": "#ef4444", "high": "#f97316", "low": "#94a3b8"}
 _HEX_COLOR = re.compile(r"#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})")
@@ -25,7 +30,7 @@ DOCUMENT: dict[str, Any] = {
     "type": "APL",
     "version": "1.8",
     "theme": "dark",
-    "background": "#14121f",
+    "background": BACKGROUND_COLOR,
     "settings": {"idleTimeout": 120000},
     "resources": [
         {
@@ -49,117 +54,127 @@ DOCUMENT: dict[str, Any] = {
         },
     ],
     "mainTemplate": {
-        "parameters": ["payload"],
+        "parameters": [DATA_NAME],
         "items": [
             {
-                "type": "Pager",
+                "type": "Frame",
                 "width": "100vw",
                 "height": "100vh",
-                "navigation": "wrap",
-                "initialPage": "${payload.start}",
-                "data": "${payload.pages}",
+                "backgroundColor": BACKGROUND_COLOR,
                 "items": [
                     {
-                        "type": "Container",
-                        "width": "100%",
-                        "height": "100%",
-                        "paddingLeft": "${viewport.shape == 'round' ? '12vw' : '4vw'}",
-                        "paddingRight": "${viewport.shape == 'round' ? '12vw' : '4vw'}",
-                        "paddingTop": "${viewport.shape == 'round' ? '10vh' : '4vh'}",
-                        "paddingBottom": "${viewport.shape == 'round' ? '10vh' : '3vh'}",
-                        "bind": [{"name": "page", "value": "${data}"}],
+                        "type": "Pager",
+                        "width": "100vw",
+                        "height": "100vh",
+                        "navigation": "wrap",
+                        "initialPage": f"${{{DATA_NAME}.start}}",
+                        "data": f"${{{DATA_NAME}.pages}}",
                         "items": [
                             {
                                 "type": "Container",
-                                "direction": "row",
-                                "alignItems": "center",
-                                "paddingBottom": "2vh",
-                                "items": [
-                                    {
-                                        "type": "Frame",
-                                        "width": "10dp",
-                                        "height": "@titleSize",
-                                        "borderRadius": "5dp",
-                                        "backgroundColor": "${page.color}",
-                                    },
-                                    {
-                                        "type": "Text",
-                                        "grow": 1,
-                                        "shrink": 1,
-                                        "paddingLeft": "16dp",
-                                        "text": "${page.title}",
-                                        "fontSize": "@titleSize",
-                                        "fontWeight": "bold",
-                                        "maxLines": 1,
-                                    },
-                                    {
-                                        "type": "Text",
-                                        "paddingLeft": "16dp",
-                                        "text": "‹ ${index + 1} / ${length} ›",
-                                        "fontSize": "@smallSize",
-                                        "color": "#b8b5c9",
-                                    },
-                                ],
-                            },
-                            {
-                                "type": "Sequence",
-                                "grow": 1,
-                                "shrink": 1,
                                 "width": "100%",
-                                "data": "${page.items}",
+                                "height": "100%",
+                                "paddingLeft": "${viewport.shape == 'round' ? '12vw' : '4vw'}",
+                                "paddingRight": "${viewport.shape == 'round' ? '12vw' : '4vw'}",
+                                "paddingTop": "${viewport.shape == 'round' ? '10vh' : '4vh'}",
+                                "paddingBottom": "${viewport.shape == 'round' ? '10vh' : '3vh'}",
+                                "bind": [{"name": "page", "value": "${data}"}],
                                 "items": [
                                     {
                                         "type": "Container",
                                         "direction": "row",
                                         "alignItems": "center",
-                                        "width": "100%",
-                                        "paddingBottom": "1.5vh",
-                                        "paddingLeft": "${data.subtask ? @subtaskIndent : 0}",
+                                        "paddingBottom": "2vh",
                                         "items": [
                                             {
-                                                "type": "TouchWrapper",
-                                                "description": "${page.done_label}",
-                                                "onPress": [
-                                                    {
-                                                        "type": "SendEvent",
-                                                        "arguments": [
-                                                            EVENT_DONE,
-                                                            "${data.id}",
-                                                        ],
-                                                    }
-                                                ],
-                                                "items": [
-                                                    {
-                                                        "type": "Frame",
-                                                        "width": "@checkSize",
-                                                        "height": "@checkSize",
-                                                        "borderRadius": "@checkSize",
-                                                        "borderWidth": "3dp",
-                                                        "borderColor": "${data.color}",
-                                                    }
-                                                ],
+                                                "type": "Frame",
+                                                "width": "10dp",
+                                                "height": "@titleSize",
+                                                "borderRadius": "5dp",
+                                                "backgroundColor": "${page.color}",
                                             },
                                             {
                                                 "type": "Text",
                                                 "grow": 1,
                                                 "shrink": 1,
-                                                "paddingLeft": "18dp",
-                                                "text": "${data.text}",
-                                                "fontSize": "@rowSize",
-                                                "maxLines": 3,
+                                                "paddingLeft": "16dp",
+                                                "text": "${page.title}",
+                                                "fontSize": "@titleSize",
+                                                "color": TEXT_COLOR,
+                                                "fontWeight": "bold",
+                                                "maxLines": 1,
+                                            },
+                                            {
+                                                "type": "Text",
+                                                "paddingLeft": "16dp",
+                                                "text": "‹ ${page.position} ›",
+                                                "fontSize": "@smallSize",
+                                                "color": "#b8b5c9",
                                             },
                                         ],
-                                    }
+                                    },
+                                    {
+                                        "type": "Sequence",
+                                        "grow": 1,
+                                        "shrink": 1,
+                                        "width": "100%",
+                                        "data": "${page.items}",
+                                        "items": [
+                                            {
+                                                "type": "Container",
+                                                "direction": "row",
+                                                "alignItems": "center",
+                                                "width": "100%",
+                                                "paddingBottom": "1.5vh",
+                                                "paddingLeft": "${data.subtask ? @subtaskIndent : 0}",
+                                                "items": [
+                                                    {
+                                                        "type": "TouchWrapper",
+                                                        "description": "${page.done_label}",
+                                                        "onPress": [
+                                                            {
+                                                                "type": "SendEvent",
+                                                                "arguments": [
+                                                                    EVENT_DONE,
+                                                                    "${data.id}",
+                                                                ],
+                                                            }
+                                                        ],
+                                                        "items": [
+                                                            {
+                                                                "type": "Frame",
+                                                                "width": "@checkSize",
+                                                                "height": "@checkSize",
+                                                                "borderRadius": "@checkSize",
+                                                                "borderWidth": "3dp",
+                                                                "borderColor": "${data.color}",
+                                                            }
+                                                        ],
+                                                    },
+                                                    {
+                                                        "type": "Text",
+                                                        "grow": 1,
+                                                        "shrink": 1,
+                                                        "paddingLeft": "18dp",
+                                                        "text": "${data.text}",
+                                                        "fontSize": "@rowSize",
+                                                        "color": TEXT_COLOR,
+                                                        "maxLines": 3,
+                                                    },
+                                                ],
+                                            }
+                                        ],
+                                    },
+                                    {
+                                        "type": "Text",
+                                        "when": "${page.hint != ''}",
+                                        "paddingTop": "1vh",
+                                        "text": "${page.hint}",
+                                        "fontSize": "@smallSize",
+                                        "color": "#b8b5c9",
+                                    },
                                 ],
-                            },
-                            {
-                                "type": "Text",
-                                "when": "${page.hint != ''}",
-                                "paddingTop": "1vh",
-                                "text": "${page.hint}",
-                                "fontSize": "@smallSize",
-                                "color": "#b8b5c9",
-                            },
+                            }
                         ],
                     }
                 ],
@@ -263,6 +278,9 @@ def build_directive(
             }
         )
 
+    for number, page in enumerate(pages, start=1):
+        page["position"] = f"{number} / {len(pages)}"
+
     # A finished category is gone, so continue with the one that followed it
     start = 0
     if category in grouped:
@@ -281,5 +299,5 @@ def build_directive(
         "type": DIRECTIVE_TYPE,
         "token": DOCUMENT_TOKEN,
         "document": DOCUMENT,
-        "datasources": {"payload": {"start": start, "pages": pages}},
+        "datasources": {DATA_NAME: {"start": start, "pages": pages}},
     }
