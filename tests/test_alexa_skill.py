@@ -5,6 +5,7 @@ import asyncio
 from datetime import timedelta
 import io
 import json
+from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
@@ -894,6 +895,15 @@ def test_short_colors_can_be_tinted() -> None:
         page = directive["datasources"][alexa_display.DATA_NAME]["pages"][0]
         assert page["color"] == "#aabbcc"
         assert page["tint"] == "#aabbcc33"
+
+
+def test_logo_address_points_to_a_file_of_this_repository() -> None:
+    """Test that moving the logo cannot leave the screen without it."""
+    prefix = "https://raw.githubusercontent.com/nukleuz80/ha_brainstorm/main/"
+    assert alexa_display.LOGO_URL.startswith(prefix)
+    path = alexa_display.LOGO_URL.removeprefix(prefix)
+    assert (Path(__file__).parent.parent / path).is_file()
+    assert alexa_display.LOGO_URL in json.dumps(alexa_display.DOCUMENT)
 
 
 def test_screen_limits_keep_the_answer_small() -> None:

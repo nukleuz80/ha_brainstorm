@@ -22,6 +22,12 @@ DIRECTIVE_TYPE = "Alexa.Presentation.APL.RenderDocument"
 DOCUMENT_TOKEN = "brainstorm-lists"
 EVENT_DONE = "done"
 
+# An Echo loads images itself, so it needs an address it can reach from anywhere
+LOGO_URL = (
+    "https://raw.githubusercontent.com/nukleuz80/ha_brainstorm/main/"
+    "custom_components/brainstorm/brand/icon.png"
+)
+
 # Only "payload" gets all data sources instead of the one with its name
 DATA_NAME = "brainstorm"
 
@@ -73,11 +79,11 @@ _HEADER: dict[str, Any] = {
             "paddingBottom": "@headerPaddingY",
             "items": [
                 {
-                    "type": "Frame",
-                    "width": "8dp",
-                    "height": "@titleSize",
-                    "borderRadius": "4dp",
-                    "backgroundColor": "${page.color}",
+                    "type": "Image",
+                    "source": LOGO_URL,
+                    "width": "@logoSize",
+                    "height": "@logoSize",
+                    "scale": "best-fit",
                 },
                 {
                     "type": "Container",
@@ -233,6 +239,7 @@ DOCUMENT: dict[str, Any] = {
         {
             "dimensions": {
                 "titleSize": "28dp",
+                "logoSize": "54dp",
                 "rowSize": "22dp",
                 "smallSize": "16dp",
                 "chipSize": "14dp",
@@ -251,6 +258,7 @@ DOCUMENT: dict[str, Any] = {
             "when": "${viewport.height >= 700}",
             "dimensions": {
                 "titleSize": "42dp",
+                "logoSize": "80dp",
                 "rowSize": "30dp",
                 "smallSize": "22dp",
                 "chipSize": "20dp",
