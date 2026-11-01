@@ -844,7 +844,56 @@ def test_document_receives_its_data() -> None:
     assert "${index" not in document
     assert "${length" not in document
     pages = directive["datasources"][alexa_display.DATA_NAME]["pages"]
-    assert [page["position"] for page in pages] == ["1 / 2", "2 / 2"]
+    on, off = alexa_display.TEXT_COLOR, alexa_display.INACTIVE_DOT_COLOR
+    assert [page["dots"] for page in pages] == [[on, off], [off, on]]
+    # Two categories without a chosen color do not look the same
+    assert pages[0]["color"] != pages[1]["color"]
+
+
+def test_tile_labels_priority_due_date_and_parent() -> None:
+    """Test the labels below an idea, and an overdue date in red."""
+    now = dt_util.now()
+    ideas = [
+        {
+            "id": "a",
+            "text": "eltern",
+            "category": "Alltag",
+            "priority": "urgent",
+            "due": (now - timedelta(hours=3)).isoformat(),
+        },
+        {
+            "id": "b",
+            "text": "kind",
+            "category": "Alltag",
+            "priority": "medium",
+            "parent_id": "a",
+            "due": (now + timedelta(days=1)).isoformat(),
+        },
+        {"id": "c", "text": "ohne", "category": "Alltag", "due": "kein datum"},
+    ]
+    directive = alexa_display.build_directive(ideas, ["Alltag"], {}, None, True)
+    page = directive["datasources"][alexa_display.DATA_NAME]["pages"][0]
+    parent, child, plain = page["items"]
+
+    assert page["subtitle"] == "3 offen · 1 dringend"
+    assert parent["chips"][0]["color"] == alexa_display.OVERDUE_COLOR
+    assert parent["chips"][1]["text"] == "Dringend"
+    assert parent["accent"] == alexa_display.PRIORITY_COLORS["urgent"]
+    assert child["chips"][0]["text"].startswith("Morgen")
+    assert child["chips"][-1]["text"] == "↳ eltern"
+    assert plain["chips"] == []
+
+
+def test_short_colors_can_be_tinted() -> None:
+    """Test that every color from the settings still gives a valid tint."""
+    ideas = [{"id": "a", "text": "b", "category": "Alltag"}]
+    for color in ("#abc", "#aabbcc", "#aabbccdd"):
+        directive = alexa_display.build_directive(
+            ideas, ["Alltag"], {"Alltag": color}, None, True
+        )
+        page = directive["datasources"][alexa_display.DATA_NAME]["pages"][0]
+        assert page["color"] == "#aabbcc"
+        assert page["tint"] == "#aabbcc33"
 
 
 def test_screen_limits_keep_the_answer_small() -> None:

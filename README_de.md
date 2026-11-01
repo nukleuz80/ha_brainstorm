@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.5.5-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.5.6-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver%20Selbsteinsch%C3%A4tzung-C0C0C0.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -133,8 +133,8 @@ Klicke einfach auf diesen Button, um das Repository direkt in deiner Home Assist
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js` und `www/brainstorm-mindmap-card.js` in `/config/www/`.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.5.5` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.5.5` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.5.6` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.5.6` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ### Integration entfernen
@@ -183,7 +183,7 @@ Brainstorm erinnert dich von selbst an fällige Einträge, und zwar über die Di
 
 **Listen auf dem Echo Show**
 
-Mit dem Skill zeigt ein Echo mit Bildschirm deine offenen Ideen parallel zur Sprachantwort: eine Seite je Kategorie, nach links oder rechts wischen wechselt sie, innerhalb einer Liste wird gescrollt. Tippe auf den Kreis vor einer Idee, um sie zu erledigen; auf der Karte lässt sie sich wiederherstellen. *„Alexa, sage Brainstorm zeige Alltag“* oder *„… zeige Listen“* zeigt die Listen mit nur einer kurzen Antwort, *„… Ansage“* und *„… alles vorlesen“* zeigen sie beim Vorlesen.
+Mit dem Skill zeigt ein Echo mit Bildschirm deine offenen Ideen parallel zur Sprachantwort: eine Seite je Kategorie mit Kacheln, nach links oder rechts wischen wechselt sie, innerhalb einer Seite wird gescrollt. Tippe auf den Kreis vor einer Idee, um sie zu erledigen; auf der Karte lässt sie sich wiederherstellen. *„Alexa, sage Brainstorm zeige Alltag“* oder *„… zeige Listen“* zeigt die Listen mit nur einer kurzen Antwort, *„… Ansage“* und *„… alles vorlesen“* zeigen sie beim Vorlesen.
 
 Zur Einrichtung öffnest du in der Alexa-Entwicklerkonsole **Build ➔ Interfaces**, schaltest **Alexa Presentation Language** mit den Echo-Show-Profilen ein und klickst auf **Save**. Kopiere danach die Felder **Sprachmodell** und **Skill-Code** erneut und klicke auf **Build** und **Deploy**. Ohne diese Schritte antwortet der Skill weiter nur per Sprache. Wie lange ein Bildschirm stehen bleibt, entscheidet Amazon; er kann früher als die gewünschten zwei Minuten zum Startbildschirm zurückkehren.
 
@@ -664,6 +664,7 @@ Gibt mehrere Einträge oder eine ganze Kategorie für Personen frei. Braucht ein
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.5.6`** | 01.11.2026 | **Neues Aussehen auf dem Echo Show:** Kacheln in zwei Spalten statt einer einfachen Liste, eine farbige Kopfzeile je Kategorie mit offenen und dringenden Einträgen, Seitenpunkte und Hinweise zu Priorität, Termin und übergeordneter Aufgabe. Überfällige Termine sind rot. Es ist kein neuer Skill-Code nötig. |
 | **`v1.5.5`** | 01.11.2026 | **Listen erscheinen auf dem Echo Show:** Auf einem echten Echo Show blieb der Bildschirm leer, weil das Dokument seine Daten nicht bekam, und die Seitenzahl stimmte nicht. Es ist kein neuer Skill-Code nötig. |
 | **`v1.5.4`** | 01.11.2026 | **Listen auf dem Echo Show:**<br>• **Bildschirm parallel zur Sprachantwort:** Eine Seite je Kategorie zum Wischen, mit Unteraufgaben und Prioritätsfarben.<br>• **Erledigen per Touch:** Antippen des Kreises erledigt eine Idee und beachtet private Ideen.<br>• **Neuer Satz:** *„zeige Alltag“* zeigt die Listen mit kurzer Antwort.<br>• **Einrichtung:** Braucht die Alexa Presentation Language in der Entwicklerkonsole sowie das neue Sprachmodell und den neuen Skill-Code. Älterer Skill-Code funktioniert weiter per Sprache. |
 | **`v1.5.3`** | 01.11.2026 | **Karten bleiben bei privaten Ideen aktuell:**<br>• **Einrücken funktioniert wieder:** Mit aktiver Privatsphäre änderte sich der Sensor nicht, wenn eine Idee eingerückt, bearbeitet oder verschoben wurde, und die Karten zeigten weiter die alte Liste. Das konnte beim Einrücken auch zu einer falschen Zyklus-Meldung führen. Der Sensor hat jetzt ein Attribut `revision` ohne Ideeninhalte, das die Karten neu laden lässt. |
