@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.4.64-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.5.0-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver-C0C0C0.svg)](https://developers.home-assistant.io/docs/integration_quality_scale_index/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -195,9 +195,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.4.64
+  - url: /local/brainstorm-card.js?v=1.5.0
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.4.64
+  - url: /local/brainstorm-mindmap-card.js?v=1.5.0
     type: module
 ```
 
@@ -246,6 +246,7 @@ hide_empty_categories: true
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.5.0`** | 2026-11-01 | **Big Update: Skill, Reminders, Privacy & Sharing** (summary of v1.4.46 to v1.4.64):<br>• **Voice in one sentence:** Your own optional Alexa skill with one clean answer, Echo origin, Echo selection, an iPhone shortcut and a microphone in the quick input.<br>• **Proactive reminders:** Due dates by voice, list, card or service, over Alexa and any `notify` service, with phone buttons, quiet hours, briefing, weekly review, rules per list, places, people, calendar and AI.<br>• **Privacy & sharing:** Private ideas per user, sharing of ideas and categories with view or edit rights, multi-select, Echos and apps per person.<br>• **Settings:** Back navigation, live status, channel test and a switch for every feature. |
 | **`v1.4.64`** | 2026-11-01 | **Apple Logo for Siri:** Ideas from an iPhone shortcut show an Apple logo. |
 | **`v1.4.63`** | 2026-11-01 | **Documentation:** Added the iPhone shortcut, the microphone, privacy and sharing, and the new services. |
 | **`v1.4.62`** | 2026-11-01 | **Siri as a Source:** Ideas from an iPhone shortcut with the source `siri` now show Siri and their device on both cards. |
