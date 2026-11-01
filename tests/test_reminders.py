@@ -16,6 +16,7 @@ from homeassistant.util import dt as dt_util
 import pytest
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
+    async_fire_time_changed,
     async_mock_service,
 )
 from pytest_homeassistant_custom_component.typing import ClientSessionGenerator
@@ -24,6 +25,7 @@ from custom_components.brainstorm.const import OVERVIEW_ENTITY_ID
 from custom_components.brainstorm.nlp import parse_due
 from custom_components.brainstorm.reminders import (
     build_reminder_request,
+    find_echo_entity,
     format_due,
     is_quiet_time,
     phone_service_for,
@@ -1337,3 +1339,199 @@ async def test_notify_service_list(hass: HomeAssistant) -> None:
         "notify.mobile_app_w",
         "notify.pushover",
     ]
+
+
+def test_quiet_time_on_the_same_day() -> None:
+    """Test quiet hours that do not span midnight."""
+    now = dt_util.now().replace(hour=13, minute=0)
+    assert is_quiet_time(now, time(12, 0), time(14, 0))
+    assert not is_quiet_time(now, time(14, 0), time(15, 0))
+
+
+def test_format_due_in_two_days() -> None:
+    """Test the word for the day after tomorrow."""
+    now = dt_util.now().replace(hour=9, minute=0, second=0, microsecond=0)
+    assert format_due(now + timedelta(days=2), now) == "übermorgen um 9 Uhr"
+
+
+async def test_echo_is_not_found_without_alexa_media(hass: HomeAssistant) -> None:
+    """Test a name that only another integration uses."""
+    hass.states.async_set("media_player.tv", "idle", {"friendly_name": "Fernseher"})
+    assert find_echo_entity(hass, "Fernseher") is None
+
+
+async def test_phone_service_of_entities_that_cannot_be_resolved(
+    hass: HomeAssistant, entity_registry: er.EntityRegistry
+) -> None:
+    """Test that anything but a known phone keeps its own service."""
+    assert phone_service_for(hass, "notify.niemand") == "notify.niemand"
+    entity_registry.async_get_or_create(
+        "notify", "mobile_app", "abc", suggested_object_id="phone"
+    )
+    assert phone_service_for(hass, "notify.phone") == "notify.phone"
+
+
+async def test_tick_delivers_what_is_due(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that the timer of the integration checks for due ideas."""
+    entry, alexa, _ = await _setup(hass, setup_entry, reminder_alexa="origin")
+    await _due_idea(entry)
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=31))
+    await hass.async_block_till_done()
+    assert len(alexa) == 1
+
+
+async def test_last_called_echo_is_used_for_broadcasts(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test the Echo for messages that do not belong to one idea."""
+    entry, alexa, _ = await _setup(
+        hass, setup_entry, reminder_alexa="last", reminder_echos=["media_player.fest"]
+    )
+    reminders = entry.runtime_data.reminders
+    assert reminders._alexa_targets(None) == ["media_player.fest"]  # noqa: SLF001
+    hass.states.async_set("media_player.kuche", "idle", {"last_called": True})
+    assert reminders._alexa_targets(None) == ["media_player.kuche"]  # noqa: SLF001
+
+
+async def test_origin_mode_uses_fixed_echos_for_broadcasts(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that a message without an origin goes to the fixed Echos."""
+    entry, _, _ = await _setup(
+        hass, setup_entry, reminder_alexa="origin", reminder_echos=["media_player.fest"]
+    )
+    reminders = entry.runtime_data.reminders
+    assert reminders._alexa_targets(None) == ["media_player.fest"]  # noqa: SLF001
+
+
+async def test_failing_channels_are_reported_by_the_test(
+    hass: HomeAssistant, setup_entry: SetupEntry, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Test the channel test with failures on Alexa and a phone."""
+
+    def _fail(call: ServiceCall) -> None:
+        raise HomeAssistantError("kaputt")
+
+    hass.services.async_register("notify", "alexa_media", _fail)
+    hass.services.async_register("notify", "defekt", _fail)
+    hass.states.async_set("media_player.fest", "idle", {"friendly_name": "Echo Fest"})
+    sent = async_mock_service(hass, "notify", "send_message")
+    hass.states.async_set("notify.tablet", "unknown")
+    entry = await setup_entry(
+        options={
+            "reminder_alexa": "fixed",
+            "reminder_echos": ["media_player.fest", "media_player.weg"],
+            "reminder_notify": ["notify.defekt", "notify.tablet"],
+        }
+    )
+    results = await entry.runtime_data.reminders.async_send_test()
+    assert results == [
+        ("Echo Fest", False),
+        ("media_player.weg", False),
+        ("notify.defekt", False),
+        ("notify.tablet", True),
+    ]
+    assert len(sent) == 1
+    assert "Could not speak" in caplog.text
+    assert "Test over notify.defekt failed" in caplog.text
+
+
+async def test_test_without_notifications_only_uses_echos(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that switched off notifications are left out of the test."""
+    entry, alexa, push = await _setup(
+        hass,
+        setup_entry,
+        reminder_alexa="fixed",
+        reminder_echos=["media_player.kuche"],
+        notify_enabled=False,
+        reminder_notify=["notify.mobile_app_phone"],
+    )
+    results = await entry.runtime_data.reminders.async_send_test()
+    assert results == [("Echo Küche", True)]
+    assert len(alexa) == 1
+    assert not push
+
+
+async def test_failing_notification_keeps_the_reminder_running(
+    hass: HomeAssistant, setup_entry: SetupEntry, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Test sending over an entity, a missing service and a broken one."""
+
+    def _fail(call: ServiceCall) -> None:
+        raise HomeAssistantError("kaputt")
+
+    hass.services.async_register("notify", "defekt", _fail)
+    sent = async_mock_service(hass, "notify", "send_message")
+    hass.states.async_set("notify.tablet", "unknown")
+    entry = await setup_entry(
+        options={"reminder_notify": ["notify.defekt", "notify.tablet", "notify.weg"]}
+    )
+    await _due_idea(entry)
+    await entry.runtime_data.reminders.async_check(dt_util.now())
+    assert len(sent) == 1
+    assert "Could not send over notify.defekt" in caplog.text
+    assert "notify.weg does not exist" in caplog.text
+
+
+async def test_tomorrow_button_moves_the_reminder(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test the button of a notification that moves an idea to tomorrow."""
+    entry, _, _ = await _setup(hass, setup_entry)
+    idea = await _due_idea(entry)
+    hass.bus.async_fire(
+        "mobile_app_notification_action", {"action": "ignoriert"}
+    )
+    hass.bus.async_fire(
+        "mobile_app_notification_action",
+        {"action": f"BRAINSTORM_TOMORROW_{idea['id']}"},
+    )
+    await hass.async_block_till_done()
+    due = dt_util.parse_datetime(entry.runtime_data.get_idea(idea["id"])["due"])
+    assert dt_util.as_local(due).date() == dt_util.now().date() + timedelta(days=1)
+
+
+async def test_digest_names_several_ideas_and_empty_texts(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test the sentences of the briefing and the review."""
+    entry, _, _ = await _setup(hass, setup_entry)
+    reminders = entry.runtime_data.reminders
+    now = dt_util.now()
+    assert reminders.build_digest(now) is None
+    assert reminders.build_review(now) is None
+
+    store = entry.runtime_data
+    for text in ("Milch kaufen", "Regal bauen"):
+        await store.async_add_idea(text, due=now - timedelta(minutes=1))
+    assert reminders.build_digest(now).startswith("Heute stehen 2 Dinge an:")
+
+
+async def test_rule_message_of_an_empty_list_is_not_sent(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that a list without open entries has nothing to say."""
+    entry, _, _ = await _setup(hass, setup_entry)
+    reminders = entry.runtime_data.reminders
+    assert reminders._list_message("Alltag") is None  # noqa: SLF001
+
+
+async def test_person_arriving_from_the_same_or_unknown_state_is_ignored(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test state changes that are no arrival."""
+    entry, alexa, _ = await _setup(
+        hass, setup_entry, reminder_alexa="origin", arrival_enabled=True
+    )
+    hass.states.async_set("person.alex", "unknown")
+    await hass.async_block_till_done()
+    hass.states.async_set("person.alex", "home")
+    await hass.async_block_till_done()
+    hass.states.async_set("person.alex", "home", {"neu": True})
+    await hass.async_block_till_done()
+    assert not alexa
+    assert entry.runtime_data.ideas == []

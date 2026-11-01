@@ -50,31 +50,23 @@ rules:
     comment: Only one config entry is possible through single_config_entry in the manifest.
 
   # Silver
-  action-exceptions:
-    status: todo
-    comment: Not reviewed against the rule yet.
-  config-entry-unloading:
-    status: todo
-    comment: Not reviewed against the rule yet.
+  action-exceptions: done
+  config-entry-unloading: done
   docs-configuration-parameters:
-    status: todo
-    comment: Not reviewed against the rule yet.
+    status: done
+    comment: Documented in the README, as custom integrations have no page on home-assistant.io.
   docs-installation-parameters:
-    status: todo
-    comment: Not reviewed against the rule yet.
+    status: done
+    comment: Documented in the README, as custom integrations have no page on home-assistant.io.
   entity-unavailable:
-    status: todo
-    comment: Not reviewed against the rule yet.
-  integration-owner:
-    status: todo
-    comment: Not reviewed against the rule yet.
+    status: exempt
+    comment: The entities show local data in memory, there is no device or service that can be gone.
+  integration-owner: done
   log-when-unavailable:
-    status: todo
-    comment: Not reviewed against the rule yet.
+    status: exempt
+    comment: The entities show local data in memory, there is no device or service that can be gone.
   parallel-updates: done
   reauthentication-flow:
-    status: todo
-    comment: Not reviewed against the rule yet.
-  test-coverage:
-    status: todo
-    comment: Overall coverage is 91 percent, the rule asks for more than 95 percent.
+    status: exempt
+    comment: The integration needs no authentication.
+  test-coverage: done

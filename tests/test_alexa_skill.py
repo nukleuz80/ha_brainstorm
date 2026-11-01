@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import timedelta
 import io
 import json
 from typing import Any
@@ -9,14 +10,17 @@ from unittest.mock import patch
 
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import DATA_ENTITY_SOURCE
 from homeassistant.setup import async_setup_component
+from homeassistant.util import dt as dt_util
 import pytest
 from pytest_homeassistant_custom_component.typing import ClientSessionGenerator
 
 from custom_components.brainstorm import alexa_skill
 from custom_components.brainstorm.alexa_skill import clean_voice_text
 from custom_components.brainstorm.const import OVERVIEW_ENTITY_ID
+from custom_components.brainstorm.reminders import ReminderRequest
 
 from .conftest import SetupEntry
 
@@ -578,3 +582,61 @@ def test_skill_code_never_claims_success_on_failure() -> None:
     # An Echo outside the selection stays silent, like in the native capture
     silent, _ = _run_skill_code(b'{"silent": true}')
     assert "outputSpeech" not in silent["response"]
+
+
+async def test_skill_refuses_a_broken_request(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_client_no_auth: ClientSessionGenerator,
+) -> None:
+    """Test a request whose body is no JSON at all."""
+    entry = await _setup_skill(hass, setup_entry)
+    client = await hass_client_no_auth()
+    skill = entry.runtime_data.alexa_skill
+    response = await client.post(
+        f"/api/webhook/{skill._webhook_id}",  # noqa: SLF001
+        data="kein json",
+    )
+    assert response.status == 400
+
+
+async def test_skill_says_when_an_idea_cannot_be_stored(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_client_no_auth: ClientSessionGenerator,
+) -> None:
+    """Test that a failed save is spoken, so that nobody relies on the idea."""
+    entry = await _setup_skill(hass, setup_entry)
+    with patch.object(
+        type(entry.runtime_data),
+        "async_add_idea",
+        side_effect=HomeAssistantError("voll"),
+    ):
+        response = await _post(
+            hass_client_no_auth,
+            entry,
+            {"application_id": SKILL_ID, "text": "wir brauchen neue blumenerde"},
+        )
+    assert (await response.json())["speech"] == "I could not save that."
+
+
+async def test_skill_refuses_a_reminder_in_the_past(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_client_no_auth: ClientSessionGenerator,
+) -> None:
+    """Test a spoken time that has already passed."""
+    entry = await _setup_skill(hass, setup_entry)
+    past = dt_util.now() - timedelta(hours=1)
+    request = ReminderRequest(text="Regal bauen", due=past)
+    with patch(
+        "custom_components.brainstorm.alexa_skill.build_reminder_request",
+        return_value=request,
+    ):
+        response = await _post(
+            hass_client_no_auth,
+            entry,
+            {"application_id": SKILL_ID, "action": "remind", "text": "regal bauen"},
+        )
+    assert (await response.json())["speech"] == "That time is in the past."
+    assert entry.runtime_data.ideas == []

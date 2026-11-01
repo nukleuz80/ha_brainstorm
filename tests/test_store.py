@@ -233,3 +233,153 @@ async def test_archived_ideas_are_exported_as_done(
     await store.async_update_idea(idea["id"], status="archived")
     await store.async_export_to_markdown(str(tmp_path / "out"))
     assert "~~Alte Notiz hier~~" in (tmp_path / "out/inbox.md").read_text("utf-8")
+
+
+@pytest.mark.parametrize(
+    ("text", "explicit", "clean", "priority"),
+    [
+        ("Regal", "später", "Regal", "low"),
+        ("Regal", "irgendwas", "Regal", "medium"),
+        ("Regal bauen !dringend", None, "Regal bauen", "urgent"),
+        ("Regal bauen !wichtig", None, "Regal bauen", "high"),
+        ("Regal bauen !niedrig", None, "Regal bauen", "low"),
+        ("Dringend: Regal bauen", None, "Regal bauen", "urgent"),
+        ("Wichtig: Regal bauen", None, "Regal bauen", "high"),
+        ("Niedrige Priorität: Regal bauen", None, "Regal bauen", "low"),
+        ("Normale Priorität: Regal bauen", None, "Regal bauen", "medium"),
+        ("Regal bauen", None, "Regal bauen", "medium"),
+    ],
+)
+def test_parse_priority(
+    store: BrainstormStore, text: str, explicit: str | None, clean: str, priority: str
+) -> None:
+    """Test each way to state a priority."""
+    assert store.parse_priority(text, explicit) == (clean, priority)
+
+
+@pytest.mark.parametrize(
+    ("text", "explicit", "category", "words"),
+    [
+        ("Regal bauen", "garten", "Haus & Garten", "regal"),
+        ("Regal bauen", "Gibtsnicht", "Inbox", "regal"),
+        ("Garten: Beet umgraben", None, "Haus & Garten", "beet"),
+        ("Projekt Smarthome neu aufsetzen", None, "Smarthome", "smarthome"),
+        ("Projekt Gartenhaus neu aufsetzen", None, "Projekte", "gartenhaus"),
+        ("Etwas ganz anderes #alltag", None, "Alltag", "anderes"),
+        ("Etwas ganz anderes #garten", None, "Haus & Garten", "anderes"),
+        ("Bald den Garten umgraben", None, "Haus & Garten", "umgraben"),
+    ],
+)
+def test_parse_text_and_category_ways(
+    store: BrainstormStore, text: str, explicit: str | None, category: str, words: str
+) -> None:
+    """Test each way to state a category."""
+    clean, found, _, _ = store.parse_text_and_category(text, explicit)
+    assert found == category
+    assert words in clean.lower()
+
+
+def test_priority_after_a_category_prefix(store: BrainstormStore) -> None:
+    """Test that a priority behind the category is found too."""
+    clean, category, _, priority = store.parse_text_and_category(
+        "Alltag: Dringend: Milch kaufen"
+    )
+    assert category == "Alltag"
+    assert priority == "urgent"
+    assert "milch" in clean.lower()
+
+
+async def test_own_category_is_recognized(store: BrainstormStore) -> None:
+    """Test that a category without predefined words is found by its name."""
+    await store.async_add_category("Reisen")
+    assert store.parse_text_and_category("Reisen: Koffer packen")[1] == "Reisen"
+
+
+async def test_invalid_text_is_refused(store: BrainstormStore) -> None:
+    """Test that a canceled sentence does not become an idea."""
+    with pytest.raises(ServiceValidationError, match="abbrechen"):
+        await store.async_add_idea("abbrechen")
+
+
+async def test_broken_listener_does_not_stop_the_others(
+    store: BrainstormStore, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Test that one failing listener leaves the others running."""
+    called: list[bool] = []
+
+    def _broken(context: Any = None) -> None:
+        raise ValueError("kaputt")
+
+    store.register_listener(_broken)
+    store.register_listener(lambda context=None: called.append(True))
+    await store.async_add_category("Reisen")
+    assert called == [True]
+    assert "Error notifying brainstorm listener" in caplog.text
+
+
+async def test_stored_categories_get_an_inbox(
+    hass: HomeAssistant, hass_storage: dict[str, Any]
+) -> None:
+    """Test that the Inbox comes back if it is missing in the storage."""
+    hass_storage["brainstorm.storage"] = {
+        "version": 1,
+        "minor_version": 1,
+        "key": "brainstorm.storage",
+        "data": {"categories": ["Alltag"], "ideas": []},
+    }
+    instance = BrainstormStore(hass, {})
+    await instance.async_load()
+    assert instance.categories == ["Inbox", "Alltag"]
+
+
+async def test_set_categories_keeps_inbox_first_and_moves_ideas(
+    store: BrainstormStore,
+) -> None:
+    """Test editing the whole list of categories."""
+    idea = await store.async_add_idea("Regal bauen", category="Projekte")
+    await store.async_set_categories(["Alltag", "Inbox"])
+    assert store.categories == ["Inbox", "Alltag"]
+    assert store.get_idea(idea["id"])["category"] == "Inbox"
+    await store.async_set_categories(["Alltag"])
+    assert store.categories == ["Inbox", "Alltag"]
+
+
+async def test_updates_of_unknown_ideas_change_nothing(store: BrainstormStore) -> None:
+    """Test the quiet way out of reminder bookkeeping for a deleted idea."""
+    await store.async_mark_reminded("gibtsnicht", escalated=False)
+    await store.async_mark_fields("gibtsnicht", {"a": 1})
+    assert store.ideas == []
+    assert store.find_open_idea("  ") is None
+    assert not await store.async_set_category_style(" ")
+
+
+async def test_find_open_idea_ignores_completed_ones(store: BrainstormStore) -> None:
+    """Test that a finished idea cannot be finished again by voice."""
+    idea = await store.async_add_idea("Regal bauen")
+    await store.async_update_idea(idea["id"], status="completed")
+    assert store.find_open_idea("Regal bauen") is None
+
+
+async def test_overview_without_ideas(store: BrainstormStore) -> None:
+    """Test what is said when there is nothing to say."""
+    assert "keine offenen" in store.get_overview_text()
+    assert "keine offenen" in store.get_announcement_text()
+
+
+async def test_announcement_finds_category_with_and(store: BrainstormStore) -> None:
+    """Test a spoken category name, where the sign became a word."""
+    await store.async_add_idea("Beet umgraben", category="Haus & Garten")
+    assert "Beet" in store.get_announcement_text("haus und garten")
+    assert store.get_ideas_by_category("Haus & Garten", priority="urgent") == []
+    assert store.get_ideas_by_category("Alltag") == []
+
+
+async def test_parent_chain_without_cycle_is_allowed(store: BrainstormStore) -> None:
+    """Test moving an idea below another one that has its own parent."""
+    top = await store.async_add_idea("Garage aufräumen")
+    middle = await store.async_add_idea("Regal bauen", parent_id=top["id"])
+    other = await store.async_add_idea("Licht reparieren")
+    updated = await store.async_update_idea(
+        other["id"], parent_id=middle["id"], update_parent=True
+    )
+    assert updated["parent_id"] == middle["id"]

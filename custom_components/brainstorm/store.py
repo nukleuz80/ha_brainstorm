@@ -1043,7 +1043,6 @@ class BrainstormStore:
             "stop",
             "stopp",
         }:
-            _LOGGER.warning("Ignored empty or invalid idea text: %s", text)
             raise ServiceValidationError(f"Ungültiger oder leerer Notiz-Text: {text}")
 
         clean_text, resolved_cat, parsed_tags, resolved_prio = self.parse_text_and_category(
@@ -1149,6 +1148,16 @@ class BrainstormStore:
             _LOGGER.warning("Brainstorm idea %s not found for update", idea_id)
             return None
 
+        if (
+            update_parent
+            and parent_id
+            and parent_id.strip() not in ("", "none")
+            and parent_id.strip() not in self._ideas
+        ):
+            raise ServiceValidationError(
+                f"Die übergeordnete Idee '{parent_id}' wurde nicht gefunden."
+            )
+
         if update_parent and parent_id and self._creates_parent_cycle(
             idea_id, parent_id.strip()
         ):
@@ -1186,9 +1195,7 @@ class BrainstormStore:
             if not parent_id or parent_id.strip() in ("", "none"):
                 idea[ATTR_PARENT_ID] = None
             else:
-                clean_pid = parent_id.strip()
-                if clean_pid in self._ideas:
-                    idea[ATTR_PARENT_ID] = clean_pid
+                idea[ATTR_PARENT_ID] = parent_id.strip()
 
         now_iso = dt_util.now().isoformat()
         idea[ATTR_UPDATED_AT] = now_iso

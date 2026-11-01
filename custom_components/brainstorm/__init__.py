@@ -366,6 +366,8 @@ def _register_services(hass: HomeAssistant) -> None:
         changed = await store.async_set_idea_shares(
             idea_ids, shares, call.context.user_id
         )
+        if not changed:
+            raise ServiceValidationError("Keiner dieser Einträge wurde gefunden.")
         return {"success": True, "changed": changed}
 
     async def handle_reorder_ideas(call: ServiceCall) -> dict[str, Any]:
@@ -374,6 +376,8 @@ def _register_services(hass: HomeAssistant) -> None:
 
         idea_ids = call.data.get("idea_ids", [])
         for idea_id in idea_ids:
+            if store.get_idea(idea_id) is None:
+                raise ServiceValidationError(f"Idee '{idea_id}' wurde nicht gefunden.")
             _check_idea_edit(store, idea_id, call)
         success = await store.async_reorder_ideas(idea_ids)
         return {"success": success}
@@ -455,8 +459,11 @@ def _register_services(hass: HomeAssistant) -> None:
         await _check_shared_setting_access(hass, store, call)
 
         name = call.data["name"]
-        success = await store.async_remove_category(name)
-        return {"success": success, "categories": store.categories}
+        if not await store.async_remove_category(name):
+            raise ServiceValidationError(
+                f"Die Kategorie '{name}' gibt es nicht oder sie kann nicht entfernt werden."
+            )
+        return {"success": True, "categories": store.categories}
 
     async def handle_export_markdown(call: ServiceCall) -> dict[str, Any]:
         """Handle exporting ideas to markdown files."""
@@ -464,7 +471,10 @@ def _register_services(hass: HomeAssistant) -> None:
         await _check_shared_setting_access(hass, store, call)
 
         path = call.data.get("path")
-        await store.async_export_to_markdown(path)
+        try:
+            await store.async_export_to_markdown(path)
+        except OSError as err:
+            raise HomeAssistantError(f"Der Markdown-Export ist fehlgeschlagen: {err}") from err
         return {"success": True}
 
     async def handle_get_announcement(call: ServiceCall) -> dict[str, Any]:

@@ -11,7 +11,7 @@ from homeassistant.components.todo import (
     TodoListEntityFeature,
 )
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -202,7 +202,7 @@ class BrainstormTodoList(TodoListEntity):
             if item.status == TodoItemStatus.COMPLETED
             else "active"
         )
-        await self._store.async_update_idea(
+        updated = await self._store.async_update_idea(
             idea_id=item.uid,
             text=item.summary,
             category=self._category,
@@ -211,6 +211,8 @@ class BrainstormTodoList(TodoListEntity):
             due=_due_from_item(item),
             update_due=True,
         )
+        if updated is None:
+            raise ServiceValidationError(f"Eintrag '{item.uid}' wurde nicht gefunden.")
 
     async def async_delete_todo_items(self, uids: list[str]) -> None:
         """Delete idea items."""
@@ -218,5 +220,6 @@ class BrainstormTodoList(TodoListEntity):
             idea = self._store.get_idea(uid)
             if idea is not None and not self._store.is_owner(idea, self._user_id):
                 raise HomeAssistantError("Kein Zugriff auf diesen Eintrag.")
-            await self._store.async_delete_idea(uid, context=self._context)
+            if not await self._store.async_delete_idea(uid, context=self._context):
+                raise ServiceValidationError(f"Eintrag '{uid}' wurde nicht gefunden.")
 

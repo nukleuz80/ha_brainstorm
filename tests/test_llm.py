@@ -2,14 +2,19 @@
 from __future__ import annotations
 
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 from homeassistant.core import Context, Event, HomeAssistant, callback
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import llm
 from voluptuous_openapi import convert
 
 from custom_components.brainstorm.const import EVENT_IDEA_DELETED
-from custom_components.brainstorm.llm import BRAINSTORM_LLM_API_ID
+from custom_components.brainstorm.llm import (
+    BRAINSTORM_LLM_API_ID,
+    async_register_llm_api,
+)
 
 from .conftest import SetupEntry
 
@@ -126,3 +131,55 @@ async def test_tools_meet_core_requirements(
 
     assert "without an integration" not in caplog.text
     assert "deprecated" not in caplog.text
+
+
+async def test_add_idea_tool(call_tool: Any) -> None:
+    """Test adding an idea, and that empty text is refused."""
+    result = await call_tool(
+        "brainstorm_add_idea", text="Regal bauen", category="Projekte", priority="low"
+    )
+    assert result["success"] is True
+    stored = next(i for i in call_tool.store.ideas if "egal" in i["text"])
+    assert stored["category"] == "Projekte"
+    assert stored["priority"] == "low"
+
+    assert "error" in await call_tool("brainstorm_add_idea", text="  ")
+
+
+async def test_get_ideas_tool_searches_and_shows_all_statuses(call_tool: Any) -> None:
+    """Test the text search and the status all."""
+    result = await call_tool("brainstorm_get_ideas", search="milch")
+    assert result["count"] == 1
+    idea = next(i for i in call_tool.store.ideas if "ilch" in i["text"])
+    await call_tool.store.async_update_idea(idea["id"], status="completed")
+    assert (await call_tool("brainstorm_get_ideas", status="active"))["count"] == 2
+    assert (await call_tool("brainstorm_get_ideas", status="all"))["count"] == 3
+
+
+@pytest.mark.parametrize(
+    ("tool", "args"),
+    [
+        ("brainstorm_add_idea", {"text": "Regal bauen"}),
+        ("brainstorm_get_ideas", {}),
+        ("brainstorm_complete_idea", {"id": "x"}),
+        ("brainstorm_delete_idea", {"id": "x"}),
+        ("brainstorm_list_categories", {}),
+    ],
+)
+async def test_tools_report_that_the_entry_is_not_loaded(
+    hass: HomeAssistant, call_tool: Any, tool: str, args: dict[str, Any]
+) -> None:
+    """Test each tool without a loaded entry."""
+    entry = hass.config_entries.async_entries("brainstorm")[0]
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    assert "error" in await call_tool(tool, **args)
+
+
+async def test_failed_registration_does_not_block_setup(hass: HomeAssistant) -> None:
+    """Test that a failing LLM registration is not fatal."""
+    with patch(
+        "custom_components.brainstorm.llm.llm.async_register_api",
+        side_effect=HomeAssistantError("schon da"),
+    ):
+        unregister = async_register_llm_api(hass)
+    unregister()

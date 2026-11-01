@@ -8,9 +8,9 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.5.1-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.5.2-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
-[![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Bronze%20self--assessed-CD7F32.svg)](https://contributors.home-assistant.io/core/quality-scale/)
+[![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver%20self--assessed-C0C0C0.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/nukleuz80/ha_brainstorm)
@@ -216,9 +216,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.5.1
+  - url: /local/brainstorm-card.js?v=1.5.2
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.5.1
+  - url: /local/brainstorm-mindmap-card.js?v=1.5.2
     type: module
 ```
 
@@ -244,6 +244,174 @@ show_grid: true
 show_bulb_watermark: true
 hide_empty_categories: true
 ```
+
+---
+
+## 🎛️ All Settings
+
+### During Setup
+
+These can be changed later under **Reconfigure**. None of them is required, the defaults work for everyone.
+
+| Field | What it does |
+| :--- | :--- |
+| Hide categories without notes (0) | Hides categories that have no notes from the cards. |
+| Auto-export ideas to Markdown files | Writes one Markdown file per category to the folder below whenever ideas change. |
+| File path for Markdown files | Folder for the Markdown files, for example /config/brainstorm. |
+
+Reconfigure also offers:
+
+| Field | What it does |
+| :--- | :--- |
+| Smart Text Optimization | Corrects capitalization and grammar of new ideas and removes filler words. |
+
+### After Setup
+
+Find these under **Settings ➔ Devices & Services ➔ Brainstorm Hub ➔ Configure**.
+
+#### Brainstorm › Categories
+
+| Field | What it does |
+| :--- | :--- |
+| ➕ Add new category (optional) | Name of a category to add. Leave empty to add none. |
+| 🗑️ Delete existing category (optional) | The ideas of a deleted category move to Inbox. |
+| ✏️ Edit full list (comma-separated) | All categories, separated by commas. Change this list to rename, reorder or remove several at once. |
+| Hide categories without notes (0) | Hides categories that have no notes from the cards. |
+
+#### Brainstorm › Category Design
+
+| Field | What it does |
+| :--- | :--- |
+| Select Category | The category whose icon and color you want to change. |
+
+#### Brainstorm › Category Design
+
+| Field | What it does |
+| :--- | :--- |
+| Category Icon (Home Assistant / MDI) | Shown for this category on the cards. |
+| Category Color | Color of this category on the cards. |
+| Reset to default icon and color | Removes the icon and color of this category and ignores the two fields above. |
+
+#### Brainstorm › General
+
+| Field | What it does |
+| :--- | :--- |
+| Default category for new ideas | Used when an idea cannot be assigned to a category. |
+| Smart Text Optimization (grammar, capitalization, infinitive formatting) | Corrects capitalization and grammar of new ideas and removes filler words. |
+| Auto-export ideas to Markdown files | Writes one Markdown file per category to the folder below whenever ideas change. |
+| File path for Markdown files | Folder for the Markdown files, for example /config/brainstorm. |
+| Echo devices for voice input | Only these Echos can capture ideas and open Brainstorm by voice. Leave empty to use all Echos. |
+
+#### Brainstorm › Alexa
+
+| Field | What it does |
+| :--- | :--- |
+| Voice input | Native uses the Alexa Media sentence without a skill. Skill and Both use your own Alexa skill. |
+
+#### Brainstorm › Alexa › Skill
+
+| Field | What it does |
+| :--- | :--- |
+| Skill code (lambda_function.py) | Copy this into lambda_function.py of your skill. Keep it private, it contains your secret address. |
+| Voice model (JSON editor) | Paste this into the JSON editor of the Alexa developer console. |
+| Create a new secret address and remove the skill link | Use this if the address leaked or you built a new skill. Copy the new skill code afterwards. |
+| Name for this unknown device | For example Alexa App iPhone. Home Assistant cannot detect the Alexa app by itself. The name applies to the last idea and all later ones from this device. |
+
+#### Brainstorm › Reminders › On/Off & Channels
+
+| Field | What it does |
+| :--- | :--- |
+| Use reminders | Off stops all reminders, the briefing, the review and everything else in this menu. |
+| Alexa announcement | Which Echo speaks a reminder. Off means no announcement. |
+| Echos for announcements | Used for fixed Echos, as a fallback and for the briefing and review. |
+| Send notifications | Off stops notifications but keeps the chosen services. |
+| Notification services | These services receive reminders, for example your phone. |
+| Wait before sending notifications (minutes) | Only with Alexa: gives you time to react before your phone is notified. 0 sends both at once. |
+| Send important open ideas again | Sends entries with high or urgent priority again while they stay open. |
+| Services for important ideas | These services receive the repeated message. |
+| Send again after (minutes) | Applies to ideas with high or urgent priority that are still open. |
+
+#### Brainstorm › Reminders › Quiet Hours, Briefing & Review
+
+| Field | What it does |
+| :--- | :--- |
+| Use quiet hours | Off ignores the times below but keeps them. |
+| Quiet hours from | Reminders wait until the quiet hours end. Urgent ideas still reach your notification services, but no Echo speaks. |
+| Quiet hours until | Reminders that had to wait are sent at this time. |
+| Daily briefing | Sends an overview of the day once a day. |
+| Time of the briefing | When the briefing is sent. |
+| Only when someone is detected here | Optional: The briefing then waits up to 6 hours after its time until a sensor or person here reports someone. |
+| Weekly review | Sends an overview of older open entries once a week. |
+| Day of the review | The day of the week for the review. |
+| Time of the review | When the review is sent. |
+| Mention ideas open for more than (days) | Entries that have been open for longer than this appear in the review. |
+
+#### Brainstorm › Reminders › Rules per List
+
+| Field | What it does |
+| :--- | :--- |
+| Use rules per list | Off makes all lists use the normal settings and keeps the rules. |
+| List to edit | Choose a list to edit its rule on the next page. |
+
+#### Brainstorm › Reminders › Rules › …
+
+| Field | What it does |
+| :--- | :--- |
+| Reminders of this list go to | Normal channels follow the general settings of the reminders. |
+| Own notification services for this list | Replace the normal services for this list. Empty uses the normal ones. |
+| Send the open ideas on certain days | Sends the open entries of this list on the days and at the time below. |
+| Days | The days on which the list is sent. |
+| Time | When the list is sent on these days. |
+| Send the open ideas at a place | Sent once a day when someone arrives there. Needs the switch for places. |
+| Place | The zone in which the open entries of this list are sent. |
+
+#### Brainstorm › Reminders › Places & Coming Home
+
+| Field | What it does |
+| :--- | :--- |
+| Remind when coming home | Lets you say that a reminder should come when you get home. |
+| Remind at places (zones) | Lets you name a zone for a reminder, for example a supermarket. |
+| Who is meant by "ich" | Without a person, anyone arriving there triggers the reminder. |
+
+#### Brainstorm › Reminders › People
+
+| Field | What it does |
+| :--- | :--- |
+| Use reminders for other people | Lets a reminder be meant for someone else, such as: remind Alex. |
+| Person to edit | Choose a person to set their channels on the next page. |
+
+#### Brainstorm › Reminders › People › …
+
+| Field | What it does |
+| :--- | :--- |
+| Notification services | This person's notification services. |
+| Echos | The Echos that speak this person's reminders. |
+
+#### Brainstorm › Reminders › Calendar, AI & Alexa
+
+| Field | What it does |
+| :--- | :--- |
+| Add reminders to a calendar | One way, once per reminder. Later changes are not transferred. |
+| Calendar | The calendar that receives the reminders. |
+| Shorten the briefing and review with AI | Your ideas are sent to the provider of the chosen AI. |
+| AI task entity | The AI task entity that shortens the texts. |
+| Also create real Alexa reminders | In the Alexa console, also switch on Reminders under Build ➔ Permissions. Alexa then rings itself and Home Assistant does not speak as well. |
+
+#### Brainstorm › Privacy & Users
+
+| Field | What it does |
+| :--- | :--- |
+| Keep ideas private | Each person then sees only their own entries and what is shared with them. |
+| Main user | Owns all existing ideas, and everything said to an Echo. Voice, briefing and review only mention this person's ideas. |
+| Keep exporting to Markdown files | These files contain all ideas and can be read by anyone with access to the config folder. |
+| Offer these users for sharing | Leave empty to offer everyone. Use this to hide technical accounts such as MQTT. |
+
+#### Brainstorm › Assign Echos & Apps
+
+| Field | What it does |
+| :--- | :--- |
+| Echo or Alexa app | The Echo or Alexa app you want to assign. You can also type a name. |
+| Person | Leave empty to remove the assignment. |
 
 ---
 
@@ -375,6 +543,7 @@ Shares several ideas or a whole category. Needs privacy to be switched on.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.5.2`** | 2026-11-01 | **Home Assistant Quality Scale: Silver:**<br>• **Silver checked rule by rule:** Still a self-assessment.<br>• **Actions report failures:** Removing a category that does not exist, unknown ideas when sorting or sharing, an unknown parent, and failed Markdown exports now raise a clear error instead of returning `success: false` or being ignored. To-do lists do the same for items that are gone.<br>• **Tests:** Every module is covered above 95 percent, including cleaning up when the integration is unloaded.<br>• **Docs:** All setup fields and settings are described. |
 | **`v1.5.1`** | 2026-11-01 | **Home Assistant Quality Scale: Bronze:**<br>• **Bronze checked rule by rule:** The README and manifest claimed Silver, which was not correct. The status is now a self-assessment of Bronze, as Home Assistant did not review this custom integration.<br>• **Shorter names:** Lists are now called *Alltag* instead of *Brainstorm: Alltag*, and the sensor *Ideas overview*. Existing entity IDs stay the same; new lists get `todo.brainstorm_hub_*`.<br>• **No more polling:** Entities only update when something changes.<br>• **Clear errors:** If stored data cannot be read, Home Assistant tries the setup again. Actions explain when the integration is not loaded.<br>• **Settings:** New setups keep their settings in the options, and every field now has an explanation.<br>• **Tests and docs:** The config flow is fully tested. All actions and fields, the prerequisites, and removal are documented.<br>• **Brand images:** Now real PNG files in the correct sizes. |
 | **`v1.5.0`** | 2026-11-01 | **Big Update: Skill, Reminders, Privacy & Sharing** (summary of v1.4.46 to v1.4.64):<br>• **Voice in one sentence:** Your own optional Alexa skill with one clean answer, Echo origin, Echo selection, an iPhone shortcut and a microphone in the quick input.<br>• **Proactive reminders:** Due dates by voice, list, card or service, over Alexa and any `notify` service, with phone buttons, quiet hours, briefing, weekly review, rules per list, places, people, calendar and AI.<br>• **Privacy & sharing:** Private ideas per user, sharing of ideas and categories with view or edit rights, multi-select, Echos and apps per person.<br>• **Settings:** Back navigation, live status, channel test and a switch for every feature. |
 | **`v1.4.64`** | 2026-11-01 | **Apple Logo for Siri:** Ideas from an iPhone shortcut show an Apple logo. |

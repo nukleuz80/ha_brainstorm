@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -258,3 +259,19 @@ async def test_entities_are_named_relative_to_the_device_and_are_not_polled(
             if entity.platform.platform_name == DOMAIN:
                 assert entity.should_poll is False
                 assert entity.has_entity_name is True
+
+
+async def test_cards_get_an_error_without_a_loaded_entry(
+    hass: HomeAssistant, setup_entry: SetupEntry, hass_ws_client: Any
+) -> None:
+    """Test the answer of the WebSocket command while nothing is loaded."""
+    entry = await setup_entry()
+    client = await hass_ws_client(hass)
+    await client.send_json_auto_id({"type": "brainstorm/ideas"})
+    assert (await client.receive_json())["success"] is True
+
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await client.send_json_auto_id({"type": "brainstorm/ideas"})
+    reply = await client.receive_json()
+    assert reply["success"] is False
+    assert reply["error"]["code"] == "not_found"
