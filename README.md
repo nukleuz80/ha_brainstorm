@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.5.3-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.5.4-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver%20self--assessed-C0C0C0.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -204,6 +204,10 @@ Brainstorm reminds you of due ideas on its own, over the services you have alrea
 - **People:** *"erinnere Lenja morgen um 8 an den Termin"*, with own channels per person.
 - **Calendar, AI & Alexa Reminders:** adds reminders once to a calendar (later changes are not transferred), shortens the briefing and review with an `ai_task` entity (your ideas go to its provider), and optionally creates real Amazon reminders in the skill (switch on **Build ➔ Permissions ➔ Reminders** in the Alexa console and grant consent once in the Alexa app).
 
+**Lists on an Echo Show:** With the skill, an Echo with a screen shows your open ideas next to the voice answer: one page per category, swipe left or right to change it and scroll within a list. Touch the circle in front of an idea to complete it; a completed idea can be restored on the card. *"zeige Alltag"* or *"zeige Listen"* shows the lists with only a short answer, while *"Ansage"* and *"alles vorlesen"* show them while reading aloud.
+
+To set this up, open **Build ➔ Interfaces** in the Alexa developer console, switch on **Alexa Presentation Language** with the Echo Show profiles, and click **Save**. Then copy the **Voice model** and **Skill code** fields again, click **Build** and **Deploy**. Without these steps, the skill keeps answering by voice only. Amazon decides how long a screen stays visible, and it can return to the home screen earlier than the requested two minutes.
+
 **More skill sentences:** *"erledigt Mülltonnen"* or just *"erledigt"* for the last reminder, *"später"* moves it one hour, *"Ansage Alltag"* reads a category, *"Ansage"* gives only the overview, *"alles vorlesen"* reads everything.
 
 **Your own automations:** Every reminder fires the `brainstorm_reminder_due` event, also without any services.
@@ -216,9 +220,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.5.3
+  - url: /local/brainstorm-card.js?v=1.5.4
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.5.3
+  - url: /local/brainstorm-mindmap-card.js?v=1.5.4
     type: module
 ```
 
@@ -543,6 +547,7 @@ Shares several ideas or a whole category. Needs privacy to be switched on.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.5.4`** | 2026-11-01 | **Lists on the Echo Show:**<br>• **Screen next to the voice answer:** One swipeable page per category, with subtasks and priority colors.<br>• **Complete by touch:** Touching the circle completes an idea, respecting private ideas.<br>• **New sentence:** *"zeige Alltag"* shows the lists with a short answer.<br>• **Setup:** Needs Alexa Presentation Language in the developer console and the new voice model and skill code. Older skill code keeps working by voice. |
 | **`v1.5.3`** | 2026-11-01 | **Cards stay current with private ideas:**<br>• **Indenting works again:** With privacy on, the sensor did not change when an idea was indented, edited or moved, so the cards kept showing the old list. That could also lead to a false cycle error when indenting. The sensor now has a `revision` attribute without any idea content, which tells the cards to reload. |
 | **`v1.5.2`** | 2026-11-01 | **Home Assistant Quality Scale: Silver:**<br>• **Silver checked rule by rule:** Still a self-assessment.<br>• **Actions report failures:** Removing a category that does not exist, unknown ideas when sorting or sharing, an unknown parent, and failed Markdown exports now raise a clear error instead of returning `success: false` or being ignored. To-do lists do the same for items that are gone.<br>• **Tests:** Every module is covered above 95 percent, including cleaning up when the integration is unloaded.<br>• **Docs:** All setup fields and settings are described. |
 | **`v1.5.1`** | 2026-11-01 | **Home Assistant Quality Scale: Bronze:**<br>• **Bronze checked rule by rule:** The README and manifest claimed Silver, which was not correct. The status is now a self-assessment of Bronze, as Home Assistant did not review this custom integration.<br>• **Shorter names:** Lists are now called *Alltag* instead of *Brainstorm: Alltag*, and the sensor *Ideas overview*. Existing entity IDs stay the same; new lists get `todo.brainstorm_hub_*`.<br>• **No more polling:** Entities only update when something changes.<br>• **Clear errors:** If stored data cannot be read, Home Assistant tries the setup again. Actions explain when the integration is not loaded.<br>• **Settings:** New setups keep their settings in the options, and every field now has an explanation.<br>• **Tests and docs:** The config flow is fully tested. All actions and fields, the prerequisites, and removal are documented.<br>• **Brand images:** Now real PNG files in the correct sizes. |

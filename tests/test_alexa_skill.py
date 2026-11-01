@@ -17,7 +17,7 @@ from homeassistant.util import dt as dt_util
 import pytest
 from pytest_homeassistant_custom_component.typing import ClientSessionGenerator
 
-from custom_components.brainstorm import alexa_skill
+from custom_components.brainstorm import alexa_display, alexa_skill
 from custom_components.brainstorm.alexa_skill import clean_voice_text
 from custom_components.brainstorm.const import OVERVIEW_ENTITY_ID
 from custom_components.brainstorm.reminders import ReminderRequest
@@ -263,7 +263,11 @@ async def test_options_flow_rejects_unencrypted_address(
     assert result["errors"] == {"base": "no_public_url"}
 
 
-def _run_skill_code(reply: bytes | Exception) -> tuple[dict[str, Any], list[Any]]:
+def _run_skill_code(
+    reply: bytes | Exception,
+    request_data: dict[str, Any] | None = None,
+    interfaces: dict[str, Any] | None = None,
+) -> tuple[dict[str, Any], list[Any]]:
     """Run the generated skill code like Alexa would, with a fake network."""
     from custom_components.brainstorm.alexa_skill import SKILL_CODE_TEMPLATE  # noqa: PLC0415
 
@@ -282,10 +286,14 @@ def _run_skill_code(reply: bytes | Exception) -> tuple[dict[str, Any], list[Any]
         "context": {
             "System": {
                 "application": {"applicationId": SKILL_ID},
-                "device": {"deviceId": DEVICE_ID},
+                "device": {
+                    "deviceId": DEVICE_ID,
+                    "supportedInterfaces": interfaces or {},
+                },
             }
         },
-        "request": {
+        "request": request_data
+        or {
             "type": "IntentRequest",
             "intent": {
                 "name": "CaptureIdeaIntent",
@@ -302,7 +310,7 @@ def test_skill_code_speaks_answer_from_home_assistant() -> None:
     result, requests = _run_skill_code(b'{"speech": "Gespeichert."}')
 
     assert result["response"]["outputSpeech"]["text"] == "Gespeichert."
-    assert json.loads(requests[0].data) == _capture_payload()
+    assert json.loads(requests[0].data) == _capture_payload(display=False)
 
 
 @pytest.mark.parametrize(
@@ -640,3 +648,251 @@ async def test_skill_refuses_a_reminder_in_the_past(
         )
     assert (await response.json())["speech"] == "That time is in the past."
     assert entry.runtime_data.ideas == []
+
+
+APL = {"Alexa.Presentation.APL": {"runtime": {"maxVersion": "2024.3"}}}
+SHOW_REQUEST = {
+    "type": "IntentRequest",
+    "intent": {"name": "ShowIdeasIntent", "slots": {"category": {"value": "alltag"}}},
+}
+
+
+def _pages(answer: dict[str, Any]) -> dict[str, Any]:
+    """Return the data of the screen in a webhook answer."""
+    assert answer["directives"][0]["type"] == "Alexa.Presentation.APL.RenderDocument"
+    return answer["directives"][0]["datasources"]["payload"]
+
+
+async def test_lists_are_only_sent_to_a_screen(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_client_no_auth: ClientSessionGenerator,
+) -> None:
+    """Test that older skill code and Echos without a screen get voice only."""
+    entry = await _setup_skill(hass, setup_entry)
+    await entry.runtime_data.async_add_idea("rosen schneiden", category="Alltag")
+
+    for action in ("read", "read_all", "show", "launch"):
+        response = await _post(
+            hass_client_no_auth,
+            entry,
+            {"application_id": SKILL_ID, "action": action, "text": "alltag"},
+        )
+        answer = await response.json()
+        assert "directives" not in answer
+        assert answer["speech"]
+
+        response = await _post(
+            hass_client_no_auth,
+            entry,
+            {
+                "application_id": SKILL_ID,
+                "action": action,
+                "text": "alltag",
+                "display": True,
+            },
+        )
+        assert _pages(await response.json())["pages"][0]["category"] == "Alltag"
+
+
+async def test_lists_have_a_page_per_category_and_start_on_the_spoken_one(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_client_no_auth: ClientSessionGenerator,
+) -> None:
+    """Test the pages, subtasks, and text that would break the screen's markup."""
+    hass.config.language = "de"
+    entry = await _setup_skill(hass, setup_entry)
+    store = entry.runtime_data
+    parent = await store.async_add_idea("garage <aufräumen> & mehr", category="Alltag")
+    await store.async_add_idea("regal bauen", category="Alltag", parent_id=parent["id"])
+    await store.async_add_idea("licht dimmen", category="Projekte")
+
+    response = await _post(
+        hass_client_no_auth,
+        entry,
+        {
+            "application_id": SKILL_ID,
+            "action": "show",
+            "text": "projekte",
+            "display": True,
+        },
+    )
+    answer = await response.json()
+    payload = _pages(answer)
+
+    assert answer["speech"] == "Hier ist Projekte."
+    names = [page["category"] for page in payload["pages"]]
+    assert sorted(names) == ["Alltag", "Projekte"]
+    assert payload["start"] == names.index("Projekte")
+    rows = payload["pages"][names.index("Alltag")]["items"]
+    assert [row["subtask"] for row in rows] == [False, True]
+    assert rows[0]["text"] == "Garage &lt;aufräumen&gt; &amp; mehr"
+
+
+async def test_touch_completes_an_idea_and_keeps_the_page(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_client_no_auth: ClientSessionGenerator,
+) -> None:
+    """Test touching an idea, also twice, and an idea that is gone."""
+    hass.config.language = "de"
+    entry = await _setup_skill(hass, setup_entry)
+    store = entry.runtime_data
+    idea = await store.async_add_idea("rosen schneiden", category="Alltag")
+    await store.async_add_idea("kompost", category="Alltag")
+    await store.async_add_idea("licht dimmen", category="Projekte")
+
+    payload = {
+        "application_id": SKILL_ID,
+        "action": "display_done",
+        "text": idea["id"],
+        "display": True,
+    }
+    for _ in range(2):
+        answer = await (await _post(hass_client_no_auth, entry, payload)).json()
+        assert answer["speech"].startswith("Erledigt")
+        pages = _pages(answer)
+        assert pages["pages"][pages["start"]]["category"] == "Alltag"
+        assert "rosen" not in str(pages)
+    assert store.get_idea(idea["id"])["status"] == "completed"
+
+    payload["text"] = "gibtsnicht"
+    answer = await (await _post(hass_client_no_auth, entry, payload)).json()
+    assert "nicht gefunden" in answer["speech"]
+
+
+async def test_screen_says_when_everything_is_done(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_client_no_auth: ClientSessionGenerator,
+) -> None:
+    """Test the screen without any open ideas."""
+    entry = await _setup_skill(hass, setup_entry)
+    response = await _post(
+        hass_client_no_auth,
+        entry,
+        {"application_id": SKILL_ID, "action": "show", "display": True},
+    )
+    payload = _pages(await response.json())
+    assert payload["start"] == 0
+    assert payload["pages"][0]["items"] == []
+    assert payload["pages"][0]["hint"]
+
+
+async def test_screen_and_touch_respect_private_ideas(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_client_no_auth: ClientSessionGenerator,
+) -> None:
+    """Test that an Echo shows and completes only the ideas of its person."""
+    hass.config.language = "de"
+    assert await async_setup_component(hass, "http", {})
+    entry = await setup_entry(
+        options={
+            "voice_mode": "skill",
+            "privacy_enabled": True,
+            "privacy_owner": "owner-id",
+        }
+    )
+    store = entry.runtime_data
+    mine = await store.async_add_idea("meine idee", owner="owner-id")
+    foreign = await store.async_add_idea("fremde idee", owner="other-id")
+
+    response = await _post(
+        hass_client_no_auth,
+        entry,
+        {"application_id": SKILL_ID, "action": "show", "display": True},
+    )
+    shown = str(_pages(await response.json())).lower()
+    assert "meine idee" in shown
+    assert "fremde idee" not in shown
+
+    response = await _post(
+        hass_client_no_auth,
+        entry,
+        {
+            "application_id": SKILL_ID,
+            "action": "display_done",
+            "text": foreign["id"],
+            "display": True,
+        },
+    )
+    assert "nicht gefunden" in (await response.json())["speech"]
+    assert store.get_idea(foreign["id"])["status"] == "active"
+    assert store.get_idea(mine["id"])["status"] == "active"
+
+
+def test_screen_limits_keep_the_answer_small() -> None:
+    """Test that many long ideas stay well below Alexa's limit of 120 KB."""
+    ideas = [
+        {"id": f"{index:08x}", "text": "x" * 500, "category": "Alltag"}
+        for index in range(500)
+    ]
+    directive = alexa_display.build_directive(ideas, ["Alltag"], {}, None, True)
+
+    page = directive["datasources"]["payload"]["pages"][0]
+    assert len(page["items"]) == alexa_display.MAX_DISPLAY_ITEMS
+    assert page["hint"] == "+ 350 weitere"
+    assert len(json.dumps(directive).encode()) < 60_000
+
+
+def test_screen_ignores_a_broken_color() -> None:
+    """Test that a color from the settings cannot break the document."""
+    ideas = [{"id": "a", "text": "b", "category": "Alltag"}]
+    for color, expected in (
+        ("#123456", "#123456"),
+        ("${viewport}", alexa_display.DEFAULT_COLOR),
+    ):
+        directive = alexa_display.build_directive(
+            ideas, ["Alltag"], {"Alltag": color}, None, True
+        )
+        assert directive["datasources"]["payload"]["pages"][0]["color"] == expected
+
+
+def test_skill_code_passes_the_screen_on() -> None:
+    """Test that the session stays open with a closed microphone below the lists."""
+    directive = {"type": "Alexa.Presentation.APL.RenderDocument"}
+    reply = json.dumps(
+        {"speech": "Hier.", "end_session": True, "directives": [directive]}
+    ).encode()
+
+    answer, requests = _run_skill_code(reply, SHOW_REQUEST, APL)
+
+    assert answer["response"]["directives"] == [directive]
+    assert "shouldEndSession" not in answer["response"]
+    sent = json.loads(requests[0].data)
+    assert (sent["action"], sent["text"], sent["display"]) == ("show", "alltag", True)
+
+    reply = json.dumps(
+        {"speech": "Welche?", "end_session": False, "directives": [directive]}
+    ).encode()
+    answer, _ = _run_skill_code(reply, SHOW_REQUEST, APL)
+    assert answer["response"]["shouldEndSession"] is False
+
+
+def test_skill_code_reports_no_screen_without_the_interface() -> None:
+    """Test Echos without a screen, and skills without APL switched on."""
+    answer, requests = _run_skill_code(b'{"speech": "Hier."}', SHOW_REQUEST)
+
+    assert json.loads(requests[0].data)["display"] is False
+    assert answer["response"]["shouldEndSession"] is True
+
+
+def test_skill_code_handles_touch_and_screen_errors() -> None:
+    """Test touch events, and that a broken screen stays silent."""
+    touch = {
+        "type": "Alexa.Presentation.APL.UserEvent",
+        "arguments": ["done", "abc12345"],
+    }
+    _, requests = _run_skill_code(b'{"speech": "Erledigt."}', touch, APL)
+    sent = json.loads(requests[0].data)
+    assert (sent["action"], sent["text"]) == ("display_done", "abc12345")
+
+    for request_data in (
+        {"type": "Alexa.Presentation.APL.UserEvent", "arguments": ["other"]},
+        {"type": "Alexa.Presentation.APL.RuntimeError", "errors": [{"type": "x"}]},
+    ):
+        answer, requests = _run_skill_code(b"{}", request_data, APL)
+        assert requests == []
+        assert answer["response"] == {}

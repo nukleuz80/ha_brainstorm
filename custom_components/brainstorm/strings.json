@@ -142,7 +142,7 @@
       },
       "alexa_skill_setup": {
         "title": "Brainstorm › Alexa › Skill",
-        "description": "Follow the guide in the README and copy the two fields below into the Alexa developer console. **Keep the skill code private:** it contains your secret address.\n\nSkill linked: {linked}\nLast skill request: {last_request}\nLast unknown device: {unknown_device}",
+        "description": "Follow the guide in the README and copy the two fields below into the Alexa developer console. **Keep the skill code private:** it contains your secret address. To show lists on an Echo Show, also switch on **Alexa Presentation Language** under **Build ➔ Interfaces**.\n\nSkill linked: {linked}\nLast skill request: {last_request}\nLast unknown device: {unknown_device}",
         "data": {
           "skill_code": "Skill code (lambda_function.py)",
           "interaction_model": "Voice model (JSON editor)",

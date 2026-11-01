@@ -21,11 +21,13 @@ from homeassistant.helpers.network import get_url
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
+from .alexa_display import build_directive
 from .const import (
     ATTR_ALEXA_NATIVE,
     ATTR_CATEGORY,
     ATTR_ID,
     ATTR_OWNER,
+    ATTR_STATUS,
     ATTR_TEXT,
     CONF_NATIVE_REMINDERS,
     CONF_REMINDERS_ENABLED,
@@ -58,6 +60,8 @@ EVENT_LAST_CALLED = "alexa_media_last_called_event"
 ACTION_CAPTURE = "capture"
 ACTION_READ = "read"
 ACTION_READ_ALL = "read_all"
+ACTION_SHOW = "show"
+ACTION_DISPLAY_DONE = "display_done"
 ACTION_LAUNCH = "launch"
 ACTION_REMIND = "remind"
 ACTION_DONE = "done"
@@ -68,6 +72,8 @@ ACTIONS = (
     ACTION_CAPTURE,
     ACTION_READ,
     ACTION_READ_ALL,
+    ACTION_SHOW,
+    ACTION_DISPLAY_DONE,
     ACTION_LAUNCH,
     ACTION_REMIND,
     ACTION_DONE,
@@ -203,6 +209,20 @@ INTERACTION_MODEL: dict[str, Any] = {
                     "samples": ["später", "später erinnern", "nochmal später"],
                 },
                 {
+                    "name": "ShowIdeasIntent",
+                    "slots": [{"name": "category", "type": "AMAZON.SearchQuery"}],
+                    "samples": [
+                        "anzeigen",
+                        "liste anzeigen",
+                        "listen anzeigen",
+                        "zeige liste",
+                        "zeige listen",
+                        "zeige meine listen",
+                        "zeige {category}",
+                        "zeig {category}",
+                    ],
+                },
+                {
                     "name": "ReadAllIdeasIntent",
                     "samples": [
                         "alle einträge",
@@ -260,6 +280,11 @@ def _response(text, end_session=True):
     }
 
 
+def _has_screen(event):
+    device = event["context"]["System"].get("device", {})
+    return "Alexa.Presentation.APL" in device.get("supportedInterfaces", {})
+
+
 def _call_home_assistant(event, action, text=""):
     system = event["context"]["System"]
     payload = {
@@ -267,6 +292,7 @@ def _call_home_assistant(event, action, text=""):
         "device_id": system.get("device", {}).get("deviceId"),
         "action": action,
         "text": text,
+        "display": _has_screen(event),
     }
     request = urllib.request.Request(
         WEBHOOK_URL,
@@ -285,6 +311,11 @@ def _call_home_assistant(event, action, text=""):
     if not data.get("speech"):
         return _response("Der Skill-Modus ist in Brainstorm nicht aktiv. Es wurde nichts gespeichert.")
     answer = _response(data["speech"], data.get("end_session", True))
+    if data.get("directives"):
+        answer["response"]["directives"] = data["directives"]
+        # Not set, the screen stays and can be touched without an open microphone
+        if data.get("end_session", True):
+            del answer["response"]["shouldEndSession"]
     if data.get("alexa_reminder"):
         _add_alexa_reminder(event, data["alexa_reminder"], answer)
     return answer
@@ -333,7 +364,14 @@ def lambda_handler(event, context):
     request = event["request"]
     if request["type"] == "LaunchRequest":
         return _call_home_assistant(event, "launch")
-    if request["type"] == "SessionEndedRequest":
+    if request["type"] == "Alexa.Presentation.APL.UserEvent":
+        arguments = request.get("arguments") or []
+        if len(arguments) == 2 and arguments[0] == "done":
+            return _call_home_assistant(event, "display_done", str(arguments[1]))
+        return {"version": "1.0", "response": {}}
+    if request["type"] != "IntentRequest":
+        if request.get("errors"):
+            print(json.dumps(request["errors"]))
         return {"version": "1.0", "response": {}}
 
     intent = request.get("intent", {})
@@ -351,6 +389,8 @@ def lambda_handler(event, context):
         return _call_home_assistant(event, "snooze")
     if intent.get("name") == "ReadIdeasIntent":
         return _call_home_assistant(event, "read", slots.get("category", {}).get("value") or "")
+    if intent.get("name") == "ShowIdeasIntent":
+        return _call_home_assistant(event, "show", slots.get("category", {}).get("value") or "")
     if intent.get("name") == "ReadAllIdeasIntent":
         return _call_home_assistant(event, "read_all")
     if intent.get("name") in ("AMAZON.HelpIntent", "AMAZON.FallbackIntent"):
@@ -638,14 +678,51 @@ class AlexaSkill:
             return None, pending
         return echo, None
 
+    def _known_echo(self, device_id: str | None) -> EchoDevice | None:
+        """Return an Echo already known, as touching one leaves no Alexa history."""
+        known = self._devices.get(device_id or "")
+        if known is None:
+            return None
+        if known.get("custom"):
+            return EchoDevice(str(known["name"]))
+        return self._echo_from_name(str(known["name"]))
+
+    @property
+    def _is_german(self) -> bool:
+        """Return whether Home Assistant runs in German."""
+        return self.hass.config.language.startswith("de")
+
     def _speech(
-        self, german: str, english: str, end_session: bool = True
+        self,
+        german: str,
+        english: str,
+        end_session: bool = True,
+        directives: list[dict[str, Any]] | None = None,
     ) -> web.Response:
-        """Return text for Alexa to speak."""
-        is_german = self.hass.config.language.startswith("de")
-        return web.json_response(
-            {"speech": german if is_german else english, "end_session": end_session}
-        )
+        """Return text for Alexa to speak, and what a screen should show with it."""
+        data: dict[str, Any] = {
+            "speech": german if self._is_german else english,
+            "end_session": end_session,
+        }
+        if directives:
+            data["directives"] = directives
+        return web.json_response(data)
+
+    def _display(
+        self, wanted: bool, user_id: str | None, category: str | None = None
+    ) -> list[dict[str, Any]] | None:
+        """Return the lists for an Echo with a screen."""
+        if not wanted:
+            return None
+        return [
+            build_directive(
+                self._ideas.get_ideas_by_category(user_id=user_id),
+                self._ideas.categories,
+                self._ideas.category_colors,
+                category,
+                self._is_german,
+            )
+        ]
 
     def _category_from_speech(self, spoken: str) -> str | None:
         """Find the category a spoken request is about, None meaning all."""
@@ -798,6 +875,60 @@ class AlexaSkill:
             f"Erledigt: {idea.get(ATTR_TEXT)}.", f"Done: {idea.get(ATTR_TEXT)}."
         )
 
+    async def _async_display_done(
+        self, idea_id: str, user_id: str | None
+    ) -> web.Response:
+        """Complete the idea touched on the screen and show the lists again."""
+        idea = self._ideas.get_idea(idea_id)
+        if idea is None or not self._ideas.can_edit(idea, user_id):
+            return self._speech(
+                "Diesen Eintrag habe ich nicht gefunden.",
+                "I could not find that idea.",
+                directives=self._display(True, user_id),
+            )
+        # A second touch can arrive before the screen has changed
+        if idea.get(ATTR_STATUS) == "active":
+            await self._ideas.async_update_idea(idea_id, status="completed")
+        return self._speech(
+            f"Erledigt: {idea.get(ATTR_TEXT)}.",
+            f"Done: {idea.get(ATTR_TEXT)}.",
+            directives=self._display(True, user_id, idea.get(ATTR_CATEGORY)),
+        )
+
+    def _read(
+        self, category: str | None, wants_display: bool, user_id: str | None
+    ) -> web.Response:
+        """Read a category aloud, or offer the categories as reading all is too long."""
+        if category is None:
+            speech = self._ideas.get_overview_text(user_id)
+            return self._speech(
+                speech,
+                speech,
+                end_session=False,
+                directives=self._display(wants_display, user_id),
+            )
+        speech = self._ideas.get_announcement_text(category, user_id)
+        return self._speech(
+            speech[:MAX_SPEECH_LENGTH],
+            speech[:MAX_SPEECH_LENGTH],
+            directives=self._display(wants_display, user_id, category),
+        )
+
+    def _show(
+        self, category: str | None, wants_display: bool, user_id: str | None
+    ) -> web.Response:
+        """Show the lists, and read them aloud if there is no screen or nothing to show."""
+        if not wants_display or not self._ideas.get_ideas_by_category(
+            category, user_id=user_id
+        ):
+            return self._read(category, wants_display, user_id)
+        spoken = category.replace("&", "und") if category else None
+        return self._speech(
+            f"Hier ist {spoken}." if spoken else "Hier sind deine Listen.",
+            f"Here is {category}." if category else "Here are your lists.",
+            directives=self._display(True, user_id, category),
+        )
+
     async def _async_snooze(self, user_id: str | None) -> web.Response:
         """Move the last reminder one hour ahead."""
         idea = self._ideas.last_reminded_idea(user_id)
@@ -828,6 +959,8 @@ class AlexaSkill:
         action = payload.get("action", ACTION_CAPTURE)
         text = payload.get("text", None if action == ACTION_CAPTURE else "")
         device_id = payload.get("device_id")
+        # Older skill code does not send this and keeps answering by voice only
+        wants_display = payload.get("display") is True
         if (
             not isinstance(application_id, str)
             or not application_id
@@ -849,7 +982,10 @@ class AlexaSkill:
             await self._ideas.async_mark_fields(text, {ATTR_ALEXA_NATIVE: True})
             return web.json_response({"ok": True})
 
-        echo, pending = await self._async_resolve_echo(device_id, text)
+        if action == ACTION_DISPLAY_DONE:
+            echo, pending = self._known_echo(device_id), None
+        else:
+            echo, pending = await self._async_resolve_echo(device_id, text)
 
         # An unknown Echo is let through, so that an idea never gets lost
         allowed = self._ideas.allowed_echos
@@ -866,18 +1002,25 @@ class AlexaSkill:
                 "Brainstorm bereit. Sage notiere und deine Notiz, oder sage Ansage.",
                 "Brainstorm is ready. Say notiere and your note, or say Ansage.",
                 end_session=False,
+                directives=self._display(wants_display, voice_user),
             )
+        if action == ACTION_SHOW:
+            return self._show(
+                self._category_from_speech(text), wants_display, voice_user
+            )
+        if action == ACTION_DISPLAY_DONE:
+            return await self._async_display_done(text, voice_user)
         if action == ACTION_READ_ALL:
             speech = self._ideas.get_announcement_text(user_id=voice_user)
-            return self._speech(speech[:MAX_SPEECH_LENGTH], speech[:MAX_SPEECH_LENGTH])
+            return self._speech(
+                speech[:MAX_SPEECH_LENGTH],
+                speech[:MAX_SPEECH_LENGTH],
+                directives=self._display(wants_display, voice_user),
+            )
         if action == ACTION_READ:
-            category = self._category_from_speech(text)
-            if category is None:
-                # Reading everything is too long, so offer the categories instead
-                speech = self._ideas.get_overview_text(voice_user)
-                return self._speech(speech, speech, end_session=False)
-            speech = self._ideas.get_announcement_text(category, voice_user)
-            return self._speech(speech[:MAX_SPEECH_LENGTH], speech[:MAX_SPEECH_LENGTH])
+            return self._read(
+                self._category_from_speech(text), wants_display, voice_user
+            )
         if action == ACTION_REMIND:
             return await self._async_remind(text, echo, pending)
         if action == ACTION_DONE:
