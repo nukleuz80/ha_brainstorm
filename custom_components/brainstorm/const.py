@@ -113,6 +113,8 @@ ATTR_ID = "id"
 ATTR_TEXT = "text"
 ATTR_CATEGORY = "category"
 ATTR_SOURCE = "source"
+# Sources whose text was typed by hand, everything else is treated as spoken
+TYPED_SOURCES = frozenset({"dashboard", "todo_list"})
 ATTR_DEVICE = "device"
 ATTR_TAGS = "tags"
 ATTR_PRIORITY = "priority"

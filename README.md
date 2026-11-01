@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.5.7-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.5.8-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver%20self--assessed-C0C0C0.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -220,9 +220,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.5.7
+  - url: /local/brainstorm-card.js?v=1.5.8
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.5.7
+  - url: /local/brainstorm-mindmap-card.js?v=1.5.8
     type: module
 ```
 
@@ -547,6 +547,7 @@ Shares several ideas or a whole category. Needs privacy to be switched on.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.5.8`** | 2026-11-01 | **Better shortening of spoken entries:**<br>• **Whole sentences are rebuilt:** *"der Rasen muss gemäht werden"* becomes *"Rasen mähen"* instead of *"Rasen muss mähen"*. This now also covers "sollte", "will", "möchte" and separable verbs like *"rausgestellt"*.<br>• **New openers and filler words:** "äh", "ich glaube", "mir ist eingefallen", "vergiss nicht", "mal", "halt" and similar are removed.<br>• **All or nothing:** Negations, questions and sentences that cannot be rebuilt completely keep their wording.<br>• **Typed text stays:** Entries from the dashboard and to-do lists only get their typos fixed. |
 | **`v1.5.7`** | 2026-11-01 | **Logo on the Echo Show:** The header of each page shows the Brainstorm logo. The Echo loads it from this GitHub repository. No new skill code is needed. |
 | **`v1.5.6`** | 2026-11-01 | **New look on the Echo Show:** Tiles in two columns instead of a plain list, a colored header per category with open and urgent counts, page dots, and labels for priority, due date and parent task. Overdue dates are red. No new skill code is needed. |
 | **`v1.5.5`** | 2026-11-01 | **Echo Show lists appear:** The screen stayed empty on a real Echo Show because the document did not receive its data, and it showed a wrong page count. No new skill code is needed. |

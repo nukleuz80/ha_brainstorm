@@ -383,3 +383,21 @@ async def test_parent_chain_without_cycle_is_allowed(store: BrainstormStore) -> 
         other["id"], parent_id=middle["id"], update_parent=True
     )
     assert updated["parent_id"] == middle["id"]
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        ("dashboard", "Die Hecke muss geschnitten werden"),
+        ("todo_list", "Die Hecke muss geschnitten werden"),
+        ("alexa_dialog", "Hecke schneiden"),
+        ("assist", "Hecke schneiden"),
+        ("manual", "Hecke schneiden"),
+    ],
+)
+async def test_only_spoken_text_is_reduced(
+    store: BrainstormStore, source: str, expected: str
+) -> None:
+    """Test that a typed text keeps its wording."""
+    idea = await store.async_add_idea("Die Hecke muss geschnitten werden", source=source)
+    assert idea["text"] == expected

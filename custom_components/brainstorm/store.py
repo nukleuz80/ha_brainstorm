@@ -66,9 +66,10 @@ from .const import (
     PRIORITY_URGENT,
     STORAGE_KEY,
     STORAGE_VERSION,
+    TYPED_SOURCES,
     VOICE_MODE_NATIVE,
 )
-from .nlp import clean_and_format_idea_text
+from .nlp import clean_and_format_idea_text, format_typed_text
 
 if TYPE_CHECKING:
     from .alexa_skill import AlexaSkill
@@ -844,6 +845,7 @@ class BrainstormStore:
         text: str,
         explicit_category: str | None = None,
         explicit_priority: str | None = None,
+        spoken: bool = True,
     ) -> tuple[str, str, list[str], str]:
         """Parse raw text to extract category, clean text, hashtags and priority."""
         clean_text, resolved_prio = self.parse_priority(text, explicit_priority)
@@ -1011,9 +1013,13 @@ class BrainstormStore:
             if detected_prio != PRIORITY_MEDIUM:
                 resolved_prio = detected_prio
 
-        # 7. Smart NLP Text Normalization
+        # 7. Smart NLP Text Normalization, a typed text only gets its typos fixed
         if self._smart_formatting:
-            formatted = clean_and_format_idea_text(clean_text)
+            formatted = (
+                clean_and_format_idea_text(clean_text)
+                if spoken
+                else format_typed_text(clean_text)
+            )
             if formatted:
                 clean_text = formatted
 
@@ -1050,7 +1056,7 @@ class BrainstormStore:
             raise ServiceValidationError(f"Ungültiger oder leerer Notiz-Text: {text}")
 
         clean_text, resolved_cat, parsed_tags, resolved_prio = self.parse_text_and_category(
-            text, category, priority
+            text, category, priority, spoken=source not in TYPED_SOURCES
         )
 
         all_tags = list(set((tags or []) + parsed_tags))

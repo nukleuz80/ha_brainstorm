@@ -64,6 +64,40 @@ PARTIZIP_TO_INFINITIVE: dict[str, str] = {
     "gefahren": "fahren",
     "gelaufen": "laufen",
     "gegangen": "gehen",
+    "gefeiert": "feiern",
+    "geschlossen": "schließen",
+    "gehangen": "hängen",
+    "gestrichen": "streichen",
+    "geworfen": "werfen",
+    "getragen": "tragen",
+    "gezogen": "ziehen",
+    "genommen": "nehmen",
+    "gegeben": "geben",
+    "gesehen": "sehen",
+    "gesprochen": "sprechen",
+    "geladen": "laden",
+    "gelegen": "liegen",
+    "geholfen": "helfen",
+    "gestanden": "stehen",
+    "geschoben": "schieben",
+    "gegraben": "graben",
+    "gesungen": "singen",
+    "gestochen": "stechen",
+    "gemessen": "messen",
+    "gegessen": "essen",
+    "getrunken": "trinken",
+    "gebunden": "binden",
+    "gerissen": "reißen",
+    "beschnitten": "beschneiden",
+    "beschrieben": "beschreiben",
+    "besprochen": "besprechen",
+    "bestiegen": "besteigen",
+    "bezogen": "beziehen",
+    "verschoben": "verschieben",
+    "verbunden": "verbinden",
+    "vergraben": "vergraben",
+    "übertragen": "übertragen",
+    "unterschrieben": "unterschreiben",
 }
 
 # Frequent speech-to-text and typing misspellings in German
@@ -119,12 +153,21 @@ KNOWN_NOUNS: set[str] = {
 # Prefixes that denote conversational voice introductions
 CONVERSATIONAL_PREFIXES: list[str] = [
     r"^(?:in|im|für|auf|zu)\s+(?:dem\s+)?brainstorm(?:\s+hub)?\s*(?::|,|\s+dass(?:\s+(?:ich|wir)\b)?|\s+bitte|\s+)\s*",
-    r"^(?:kannst\s+du\s+(?:bitte\s+)?(?:notieren|aufschreiben|merken|eintragen)|notiere\s*(?:bitte)?|schreib\s*(?:bitte)?(?:\s*auf)?|merke\s*(?:dir)?|erinnere\s+mich\s*(?:daran)?|trage\s+ein)\s*(?::|,|\s+dass(?:\s+(?:ich|wir)\b)?|\s+)\s*",
+    r"^(?:äh+m?|öh+m?|hm+|mhm|also|ja|naja|na\s+ja|okay|ok|so|gut|und|ach\s+ja|übrigens)\b[,.]?\s+",
+    r"^(?:ich\s+(?:glaube|denke)|mir\s+(?:ist\s+)?(?:gerade\s+)?eingefallen|mir\s+fällt\s+(?:gerade\s+)?ein|(?:ich\s+)?wollte\s+(?:noch\s+)?sagen)(?:\s*,)?\s+",
+    r"^(?:(?:kannst|könntest)\s+du\s+(?:dir\s+)?(?:bitte\s+)?(?:notieren|aufschreiben|merken|eintragen)|notiere\s*(?:bitte)?|schreib\s*(?:bitte)?(?:\s*auf)?|merke?\s*(?:dir)?|trage\s+ein)\s*(?::|,|\s+dass(?:\s+(?:ich|wir)\b)?|\s+)\s*",
     r"^(?:bitte\s+notieren|bitte\s+aufschreiben|bitte\s+merken)\s*(?::|,|\s+dass(?:\s+(?:ich|wir)\b)?|\s+)\s*",
-    r"^(?:ich\s+muss\s+(?:noch\s+)?|wir\s+müssen\s+(?:noch\s+)?|man\s+muss\s+(?:noch\s+)?|denk\s+dran\s+dass\s+|denke\s+daran\s+dass\s+)",
+    r"^(?:neue\s+)?(?:idee|notiz)\s*(?::|,)?\s+(?!(?:von|vom|für|zu|zur|zum|an|am|über|mit|aus|im|in)\b)",
     r"^(?:dass\s+ich\s+(?:noch\s+)?|dass\s+wir\s+(?:noch\s+)?|dass\s+)",
     r"^(?:noch\s+)",
 ]
+
+# Openers after which an infinitive with 'zu' is the actual task
+REMINDER_OPENER = re.compile(
+    r"^(?:bitte\s+)?(?:vergiss\s+nicht|nicht\s+vergessen|denke?\s+(?:dran|daran)|"
+    r"erinnere\s+mich(?:\s+daran)?)(?:\s*,)?\s+",
+    re.IGNORECASE,
+)
 
 # Prepositions that strongly suggest the following word is a noun
 PREPOSITION_TRIGGERS: set[str] = {
@@ -158,6 +201,96 @@ TIME_ADVERBS: set[str] = {
 CONTRACTED_PREPOSITIONS: set[str] = {"am", "im", "vom", "zum", "zur", "beim"}
 
 
+# Prefixes of separable verbs ('raus-ge-stellt' -> 'rausstellen'), longest first
+SEPARABLE_PREFIXES: tuple[str, ...] = (
+    "zurück", "weiter", "heraus", "herein", "hinaus", "hinein", "runter", "rüber",
+    "durch", "fest", "raus", "rein", "weg", "vor", "nach", "mit", "auf", "aus",
+    "ein", "her", "hin", "los", "ab", "an", "um", "zu",
+)
+
+# Prefixes of verbs whose participle has no 'ge' ('bezahlt' -> 'bezahlen')
+INSEPARABLE_PREFIXES: tuple[str, ...] = (
+    "be", "ent", "er", "ver", "zer", "über", "unter", "miss", "wider", "hinter",
+)
+
+SUBJECT_PRONOUNS: set[str] = {
+    "ich", "du", "er", "sie", "es", "wir", "ihr", "man", "das", "dies", "der", "die",
+}
+
+# Words of a task that may only be reduced when they are the main verb
+_MODAL_NEED = (
+    r"(?:muss|musst|müssen|müsste|müssten|soll|sollen|sollte|sollten)"
+)
+_MODAL_FINAL = (
+    r"(?:muss|müssen|müsste|müssten|soll|sollen|sollte|sollten|kann|können|"
+    r"könnte|könnten)"
+)
+_WORD = r"[a-zA-ZäöüÄÖÜß-]+"
+_STATE_WORD = r"(?:kaputt|defekt|leer|alle|undicht|verstopft|locker|lose|nass)"
+
+# A negation, a fact about the past or a real question must keep its meaning
+_RE_KEEP_SENTENCE = re.compile(
+    r"\b(?:nicht|nie|niemals|nichts|kein|keine|keinen|keinem|keiner|keines|darf|"
+    r"dürfen|wurde|wurden|worden|war|waren|hat|haben|hatte|hatten)\b",
+    re.IGNORECASE,
+)
+_RE_QUESTION_START = re.compile(
+    r"^(?:ob|wenn|falls|weil|warum|wieso|weshalb|wie|wann|wo|wer|was|welche[rs]?|"
+    r"obwohl)\b",
+    re.IGNORECASE,
+)
+_RE_SUBJECT_MODAL_START = re.compile(
+    r"^(?:ich|wir|man)\s+(?:noch\s+)?(?:muss|müssen|müsste|müssten|soll|sollen|sollte|"
+    r"sollten|will|wollen|wollte|wollten|möchte|möchten|brauche|brauchen|"
+    r"würde\s+gerne?|würden\s+gerne?)\s+(?:noch\s+)?",
+    re.IGNORECASE,
+)
+_RE_INVERTED_MODAL = re.compile(
+    rf"^(.+?)\s+{_MODAL_NEED}\s+(?:wir|ich|man)\s+(.+)$", re.IGNORECASE
+)
+_RE_PASSIVE_MODAL = re.compile(
+    rf"^(.+?)\s+{_MODAL_NEED}\s+(.*?)\b({_WORD})\s+werden$", re.IGNORECASE
+)
+_RE_FINAL_PASSIVE = re.compile(
+    rf"^(.*?\b)?({_WORD})\s+werden(?:\s+{_MODAL_FINAL})?$",
+    re.IGNORECASE,
+)
+_RE_FINAL_MODAL = re.compile(rf"^(.*?\b)?({_WORD})\s+{_MODAL_FINAL}$", re.IGNORECASE)
+_RE_LEADING_MODAL = re.compile(rf"^{_MODAL_FINAL}\b", re.IGNORECASE)
+_RE_ACTIVE_MODAL = re.compile(rf"^(.+?)\s+({_MODAL_NEED})\s+(.+)$", re.IGNORECASE)
+_RE_CLAUSE_WORD = re.compile(
+    r"\b(?:werden|wird|sein|ist|sind|und|oder|aber|dass|weil|wenn)\b", re.IGNORECASE
+)
+_RE_STATE = re.compile(
+    rf"^(?P<subject>.+?)\s+(?:ist|sind)\s+(?:(?:gerade|jetzt|schon|wieder|leider)\s+)*"
+    rf"(?P<state>{_STATE_WORD})$",
+    re.IGNORECASE,
+)
+_RE_FINAL_STATE = re.compile(
+    rf"^(?P<subject>.+?)\s+(?P<state>{_STATE_WORD})\s+(?:ist|sind)$", re.IGNORECASE
+)
+_RE_ZU_COMPOUND = re.compile(
+    r"\b(zurück|weiter|raus|rein|weg|vor|nach|mit|auf|aus|ein|ab|an|um)zu"
+    r"([a-zäöüß]+en)$",
+    re.IGNORECASE,
+)
+_RE_ZU_INFINITIVE = re.compile(rf"\bzu\s+({_WORD}e?n)$", re.IGNORECASE)
+_RE_NOT_FORGET_SUFFIX = re.compile(r"\s*,?\s+nicht\s+vergessen[.!]?$", re.IGNORECASE)
+_RE_NOCH_MAL = re.compile(r"\bnoch\s+mal\b", re.IGNORECASE)
+_RE_FILLERS = re.compile(
+    r"\b(?:mal\s+wieder|auf\s+jeden\s+fall|auf\s+alle\s+fälle|mal|halt|eben|"
+    r"eigentlich|irgendwie|bitte|ja|doch|wohl|noch(?!\s+(?:einmal|ein|eine|einen|mehr)\b))\b",
+    re.IGNORECASE,
+)
+# A sentence with one of these words is still a sentence, not a short task
+_RE_SENTENCE_WORD = re.compile(
+    rf"\b(?:ich|du|er|es|wir|ihr|man|dass|ob|wenn|weil|ist|sind|wird|werden|braucht|"
+    rf"brauchen|brauche|will|wollen|möchte|möchten|kann|können|{_MODAL_NEED}|"
+    r"nicht|nie|kein|keine|keinen|wurde|wurden|war|waren|hat|haben)\b",
+    re.IGNORECASE,
+)
+
+
 def _capitalize(word: str) -> str:
     """Uppercase the first letter and keep spellings like 'WLAN' or 'iPhone'."""
     if any(c.isupper() for c in word):
@@ -177,61 +310,92 @@ def _is_noun_after_preposition(preposition: str, word: str) -> bool:
 
 def _participle_stem_to_infinitive(stem: str) -> str:
     """Build an infinitive from a participle stem ('liefer' -> 'liefern')."""
+    if stem.endswith(("iel", "eer", "eel")):
+        return stem + "en"
     return stem + ("n" if stem.endswith(("e", "er", "el")) else "en")
 
 
-def clean_and_format_idea_text(raw_text: str) -> str:
-    """Intelligently clean conversational fillers and format German task notes.
-    
-    Transforms sentences like:
-    'im brainstorm dass heute die kinder vom flughafen abgeholt werden müssen'
-    into:
-    'Heute Kinder vom Flughafen abholen'
+def participle_to_infinitive(word: str) -> str | None:
+    """Return the infinitive of a German participle, None if it cannot be derived."""
+    lowered = word.lower()
+    if lowered in PARTIZIP_TO_INFINITIVE:
+        return PARTIZIP_TO_INFINITIVE[lowered]
+    if lowered.endswith("iert"):
+        return lowered[:-1] + "en"
+    if lowered.startswith("ge") and lowered.endswith("t") and len(lowered) > 4:
+        return _participle_stem_to_infinitive(lowered[2:-1])
+    for prefix in SEPARABLE_PREFIXES:
+        if lowered.startswith(prefix) and len(lowered) > len(prefix) + 2:
+            rest = lowered[len(prefix) :]
+            if rest.startswith("ge") and (core := participle_to_infinitive(rest)):
+                return prefix + core
+    if lowered.startswith(INSEPARABLE_PREFIXES) and lowered.endswith("t"):
+        return _participle_stem_to_infinitive(lowered[:-1])
+    return None
+
+
+def _rewrite_as_task(text: str, after_reminder_opener: bool) -> str:
+    """Reduce a whole sentence to its task, or leave it exactly as it was."""
+    if (
+        _RE_KEEP_SENTENCE.search(text)
+        or _RE_QUESTION_START.match(text)
+        or _RE_LEADING_MODAL.match(text)
+        or "?" in text
+    ):
+        return text
+    s = text.rstrip(" .!")
+
+    if match := _RE_SUBJECT_MODAL_START.match(s):
+        s = s[match.end() :]
+    elif match := _RE_INVERTED_MODAL.match(s):
+        s = f"{match.group(1)} {match.group(2)}"
+
+    if match := _RE_PASSIVE_MODAL.match(s):
+        subject, rest, participle = match.group(1, 2, 3)
+        infinitive = participle_to_infinitive(participle)
+        if infinitive is None or _RE_CLAUSE_WORD.search(rest):
+            return text
+        return " ".join(part for part in (subject, rest.strip(), infinitive) if part)
+
+    if match := _RE_FINAL_PASSIVE.match(s):
+        before, participle = match.group(1, 2)
+        infinitive = participle_to_infinitive(participle)
+        if infinitive is None:
+            return text
+        return f"{before or ''}{infinitive}"
+
+    if match := _RE_FINAL_MODAL.match(s):
+        before, last_word = match.group(1, 2)
+        return f"{before or ''}{participle_to_infinitive(last_word) or last_word}"
+
+    if (match := _RE_ACTIVE_MODAL.match(s)) and not _RE_CLAUSE_WORD.search(match.group(3)):
+        if match.group(1).lower() in SUBJECT_PRONOUNS:
+            return text
+        return f"{match.group(1)} {match.group(3)}"
+
+    if match := _RE_STATE.match(s) or _RE_FINAL_STATE.match(s):
+        return f"{match.group('subject')} {match.group('state')}"
+
+    if after_reminder_opener:
+        s = _RE_ZU_COMPOUND.sub(r"\1\2", s)
+        s = _RE_ZU_INFINITIVE.sub(r"\1", s)
+    return s
+
+
+def _drop_fillers(text: str) -> str:
+    """Remove words that carry no information in a short task."""
+    s = _RE_NOCH_MAL.sub("nochmal", text)
+    s = _RE_FILLERS.sub(" ", s)
+    return re.sub(r"\s+", " ", s).strip(" ,")
+
+
+def _drop_articles(text: str) -> str:
+    """Drop articles, keeping those of prepositional phrases and genitives.
+
+    'heute die kinder' -> 'heute kinder', but 'in die werkstatt' and 'tür der
+    garage' are preserved.
     """
-    if not raw_text or not raw_text.strip():
-        return ""
-
-    s = raw_text.strip()
-
-    # 1. Strip conversational prefixes repeatedly
-    changed = True
-    while changed:
-        changed = False
-        for pat in CONVERSATIONAL_PREFIXES:
-            new_s = re.sub(pat, "", s, flags=re.IGNORECASE).strip()
-            if new_s != s:
-                s = new_s
-                changed = True
-
-    # 2. Passive modal verb transformation to infinitive
-    # e.g., '... abgeholt werden müssen' -> '... abholen'
-    passive_pat = (
-        r"\b([a-zA-ZäöüÄÖÜß]+)\s+"
-        r"(?:werden\s+(?:müssen|muss|soll|sollen|kann|können)|"
-        r"werden|müssen|muss|soll|sollen)\.?$"
-    )
-    m = re.search(passive_pat, s, flags=re.IGNORECASE)
-    if m:
-        partizip = m.group(1).lower()
-        if partizip in PARTIZIP_TO_INFINITIVE:
-            inf = PARTIZIP_TO_INFINITIVE[partizip]
-            s = s[:m.start(1)] + inf
-        elif partizip.endswith("iert"):
-            inf = partizip[:-1] + "en"
-            s = s[:m.start(1)] + inf
-        elif partizip.startswith("ge") and partizip.endswith("t") and len(partizip) > 4:
-            stem = partizip[2:-1]
-            inf = _participle_stem_to_infinitive(stem)
-            s = s[:m.start(1)] + inf
-
-    # Strip stray leftover modal verbs at the end
-    s = re.sub(r"\s+(?:muss|müssen|soll|sollen)\.?$", "", s, flags=re.IGNORECASE).strip()
-
-    # 3. Strip conversational definite articles, keeping those of prepositional phrases
-    # and the genitive markers 'der'/'des' inside a sentence.
-    # e.g. 'heute die kinder' -> 'heute kinder'
-    # but 'in die werkstatt', 'tür der garage' are preserved.
-    raw_words = s.split()
+    raw_words = text.split()
     filtered_words: list[str] = []
     articles = {"der", "die", "das", "den", "dem", "des"}
     for idx, w in enumerate(raw_words):
@@ -242,15 +406,14 @@ def clean_and_format_idea_text(raw_text: str) -> str:
             prev_word = raw_words[idx - 1].lower().strip("\"'([<.,!?:;)]>")
             if prev_word in PREPOSITION_TRIGGERS or w_lower in ("der", "des"):
                 filtered_words.append(w)
-            else:
-                continue
         else:
             filtered_words.append(w)
+    return " ".join(filtered_words).strip()
 
-    s = " ".join(filtered_words).strip()
 
-    # 4. Token-by-token spell checking and German capitalization
-    words = s.split()
+def _format_words(text: str) -> str:
+    """Correct spelling and apply German capitalization, word by word."""
+    words = text.split()
     formatted_words: list[str] = []
 
     for idx, w in enumerate(words):
@@ -272,8 +435,7 @@ def clean_and_format_idea_text(raw_text: str) -> str:
         elif lower_w.endswith(NOUN_SUFFIXES) and len(lower_w) > 4:
             word_cap = _capitalize(clean_w)
         elif (
-            idx > 0
-            and words[idx - 1].lower() in PREPOSITION_TRIGGERS
+            words[idx - 1].lower() in PREPOSITION_TRIGGERS
             and _is_noun_after_preposition(words[idx - 1].lower(), lower_w)
         ):
             word_cap = _capitalize(clean_w)
@@ -289,9 +451,64 @@ def clean_and_format_idea_text(raw_text: str) -> str:
 
         formatted_words.append(f"{prefix_punct}{word_cap}{suffix_punct}")
 
-    result = " ".join(formatted_words)
+    return " ".join(formatted_words)
+
+
+def format_typed_text(raw_text: str) -> str:
+    """Correct typos of a typed text and otherwise keep what the person wrote."""
+    words = raw_text.strip().split()
+    corrected: list[str] = []
+    for word in words:
+        core = word.strip("\"'([<>)]>.,!?:;")
+        replacement = SPELL_CORRECTIONS.get(core.lower())
+        corrected.append(word.replace(core, replacement) if core and replacement else word)
+    if corrected:
+        corrected[0] = _capitalize(corrected[0])
+    return " ".join(corrected)
+
+
+def clean_and_format_idea_text(raw_text: str) -> str:
+    """Reduce a spoken German sentence to a short task note.
+
+    Transforms 'im brainstorm dass heute die kinder vom flughafen abgeholt werden
+    müssen' into 'Heute Kinder vom Flughafen abholen'. A sentence that cannot be
+    reduced completely keeps its articles and only gets its spelling corrected.
+    """
+    if not raw_text or not raw_text.strip():
+        return ""
+
+    s = raw_text.strip()
+
+    # 1. Strip conversational prefixes repeatedly
+    after_reminder_opener = False
+    changed = True
+    while changed:
+        changed = False
+        if match := REMINDER_OPENER.match(s):
+            s = s[match.end() :].strip()
+            after_reminder_opener = True
+            changed = True
+        for pat in CONVERSATIONAL_PREFIXES:
+            new_s = re.sub(pat, "", s, flags=re.IGNORECASE).strip()
+            if new_s != s:
+                s = new_s
+                changed = True
+    s = _RE_NOT_FORGET_SUFFIX.sub("", s).strip()
+
+    # 2. Reduce the sentence to a task, all or nothing
+    s = _rewrite_as_task(s, after_reminder_opener)
+
+    # 3. Only a real short task loses its fillers and articles
+    if not (
+        _RE_SENTENCE_WORD.search(s) or _RE_QUESTION_START.match(s) or "?" in s
+    ):
+        s = _drop_articles(_drop_fillers(s))
+
+    # 4. Spelling and capitalization
+    result = _format_words(s)
     # Strip any trailing punctuation that might look like conversational fragment
-    result = re.sub(r"[\.,;:!\?]+$", "", result).strip()
+    if not result.endswith("?"):
+        result = re.sub(r"[\.,;:!\?]+$", "", result).strip()
     return result
 
 
