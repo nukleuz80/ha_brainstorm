@@ -19,6 +19,7 @@ from .const import (
     ATTR_TEXT,
     CONF_AI_ENABLED,
     CONF_AI_ENTITY,
+    CONF_AI_TEXT_CLEANUP,
     CONF_ALLOWED_ECHOS,
     CONF_ARRIVAL_ENABLED,
     CONF_AUTO_EXPORT_MARKDOWN,
@@ -59,6 +60,7 @@ from .const import (
     CONF_MARKDOWN_PATH,
     CONF_SMART_FORMATTING,
     CONF_VOICE_DUE,
+    CONF_GLOSSARY,
     CONF_VOICE_MODE,
     DEFAULT_HIDE_EMPTY_CATEGORIES,
     DEFAULT_MARKDOWN_PATH,
@@ -513,6 +515,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             options.update(user_input)
             # The frontend omits a cleared selector, which has to reset the list
             options[CONF_ALLOWED_ECHOS] = user_input.get(CONF_ALLOWED_ECHOS, [])
+            options[CONF_GLOSSARY] = user_input.get(CONF_GLOSSARY, "")
             return await self._async_saved(options, "init")
 
         cat_options = [{"value": c, "label": c} for c in current_cats]
@@ -536,6 +539,9 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                     CONF_VOICE_DUE,
                     default=options.get(CONF_VOICE_DUE, True),
                 ): selector.BooleanSelector(),
+                vol.Optional(
+                    CONF_GLOSSARY, description=_suggested(options, CONF_GLOSSARY)
+                ): selector.TextSelector(selector.TextSelectorConfig(multiline=True)),
                 vol.Optional(
                     CONF_AUTO_EXPORT_MARKDOWN,
                     default=options.get(CONF_AUTO_EXPORT_MARKDOWN, False),
@@ -1342,6 +1348,10 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                     ),
                     vol.Required(
                         CONF_AI_ENABLED, default=options.get(CONF_AI_ENABLED, False)
+                    ): selector.BooleanSelector(),
+                    vol.Required(
+                        CONF_AI_TEXT_CLEANUP,
+                        default=options.get(CONF_AI_TEXT_CLEANUP, False),
                     ): selector.BooleanSelector(),
                     vol.Optional(
                         CONF_AI_ENTITY, description=_suggested(options, CONF_AI_ENTITY)

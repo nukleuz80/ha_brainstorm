@@ -6,11 +6,13 @@ from datetime import datetime, timezone
 import pytest
 
 from custom_components.brainstorm.nlp import (
+    build_glossary,
     clean_and_format_idea_text,
     extract_spoken_due,
     extract_spoken_priority,
     format_typed_text,
     participle_to_infinitive,
+    validate_ai_rewrite,
 )
 
 
@@ -67,13 +69,13 @@ def test_clean_and_format(raw: str, expected: str) -> None:
         ("ich will die reifen wechseln", "Reifen wechseln"),
         ("ich müsste mal wieder oma anrufen", "Oma anrufen"),
         ("ich möchte den keller aufräumen", "Keller aufräumen"),
-        ("wir brauchen neue batterien", "Neue batterien"),
+        ("wir brauchen neue batterien", "Neue Batterien"),
         # Openers
         ("äh ich wollte noch sagen dass die lampe in der küche kaputt ist", "Lampe in der Küche kaputt"),
         ("also ich glaube wir müssen mal die fenster putzen", "Fenster putzen"),
         ("könntest du dir merken dass ich die rechnung bezahlen muss", "Rechnung bezahlen"),
         ("mir ist eingefallen dass wir das dach prüfen sollten", "Dach prüfen"),
-        ("idee eine app für die kinder bauen", "Eine app für die Kinder bauen"),
+        ("idee eine app für die kinder bauen", "Eine App für die Kinder bauen"),
         ("vergiss nicht die milch zu kaufen", "Milch kaufen"),
         ("nicht vergessen den müll rauszubringen", "Müll rausbringen"),
         ("rechnung bezahlen nicht vergessen", "Rechnung bezahlen"),
@@ -98,15 +100,15 @@ def test_spoken_sentences_become_tasks(raw: str, expected: str) -> None:
         ("ich muss nicht zum arzt", "Ich muss nicht zum Arzt"),
         ("wir brauchen keine neue heizung", "Wir brauchen keine neue Heizung"),
         # Questions and subordinate clauses stay as they are
-        ("ob schlaue antworten auch einen skill braucht", "Ob schlaue antworten auch einen skill braucht"),
+        ("ob schlaue antworten auch einen skill braucht", "Ob schlaue antworten auch einen Skill braucht"),
         ("was macht die heizung?", "Was macht die Heizung?"),
         # Sentences that cannot be reduced completely keep their articles
-        ("die spülmaschine muss repariert werden und die pumpe auch", "Die spülmaschine muss repariert werden und die Pumpe auch"),
+        ("die spülmaschine muss repariert werden und die pumpe auch", "Die Spülmaschine muss repariert werden und die Pumpe auch"),
         ("das muss weg", "Das muss weg"),
         ("sie muss zum arzt", "Sie muss zum Arzt"),
-        ("der hund braucht futter", "Der Hund braucht futter"),
+        ("der hund braucht futter", "Der Hund braucht Futter"),
         ("muss auf jeden fall überarbeitet werden", "Muss auf jeden Fall überarbeitet werden"),
-        ("das wetter sollte besser werden", "Das wetter sollte besser werden"),
+        ("das wetter sollte besser werden", "Das Wetter sollte besser werden"),
         ("die lieferung muss gefxzbarn werden", "Die Lieferung muss gefxzbarn werden"),
     ],
 )
@@ -226,3 +228,78 @@ def test_spoken_due_stays_in_the_text(raw: str) -> None:
 def test_spoken_priority(raw: str, priority: str | None, text: str) -> None:
     """Test that a priority is found anywhere, but not in a different meaning."""
     assert extract_spoken_priority(raw) == (text, priority)
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("für die kinder einen sportverein finden", "Für die Kinder einen Sportverein finden"),
+        ("hund braucht futter", "Hund braucht Futter"),
+        ("ich brauche kaffee", "Kaffee"),
+        ("wir brauchen multilinguale möglichkeiten im skill", "Multilinguale möglichkeiten im Skill"),
+        ("grafana muss pdf report erhalten", "Grafana PDF Report erhalten"),
+        ("automationen müssen in home assistant überarbeitet werden", "Automationen in Home Assistant überarbeiten"),
+        ("mit neuen batterien testen", "Mit neuen Batterien testen"),
+        # Verbs and adjectives stay lowercase
+        ("blumen pflanzen", "Blumen pflanzen"),
+        ("reifen wechseln", "Reifen wechseln"),
+        ("wand streichen", "Wand streichen"),
+        ("akku begreifen", "Akku begreifen"),
+    ],
+)
+def test_nouns_and_spellings(raw: str, expected: str) -> None:
+    """Test capitalizing from the word list, compounds and built-in spellings."""
+    assert clean_and_format_idea_text(raw) == expected
+
+
+def test_glossary_from_names_and_own_terms() -> None:
+    """Test that names and own terms are spelled right and own terms win."""
+    glossary = build_glossary(
+        "Hape Kerkeling\nkürbissen = Kürbisse\npdf = Pdf",
+        ["Lenia Müller", "Schlaue Antworten", "ist", "Al"],
+    )
+    text = clean_and_format_idea_text(
+        "ein buch von hape kerkeling für lenia und lenia müller zu schlaue antworten als pdf",
+        glossary,
+    )
+    assert "Hape Kerkeling" in text
+    assert "für Lenia und Lenia Müller" in text
+    assert "Schlaue Antworten" in text
+    assert text.endswith("Pdf")
+    assert glossary["kürbissen"] == "Kürbisse"
+    assert "ist" not in glossary
+    assert "al" not in glossary
+
+
+def test_glossary_only_replaces_whole_words() -> None:
+    """Test that a term inside a longer word stays alone."""
+    assert clean_and_format_idea_text("ki kiste holen") == "KI Kiste holen"
+    assert clean_and_format_idea_text("kiwi holen") == "Kiwi holen"
+
+
+@pytest.mark.parametrize(
+    ("spoken", "rule_text", "candidate", "expected"),
+    [
+        # Accepted: only shorter, better spelling, also a joined compound
+        ("ein buch auf die bücher liste", "Ein Buch auf die Bücher Liste", "Buch auf Bücherliste", "Buch auf Bücherliste"),
+        ("die hecke muss geschnitten werden", "Hecke schneiden", "Hecke schneiden.", "Hecke schneiden"),
+        ("die hecke muss geschnitten werden", "Hecke schneiden", '"Die Hecke schneiden"', "Die Hecke schneiden"),
+        # An invented word, number or person
+        ("arzt anrufen", "Arzt anrufen", "Zahnarzt anrufen", None),
+        ("milch kaufen", "Milch kaufen", "2 Milch kaufen", None),
+        ("milch kaufen", "Milch kaufen", "Milch und Eier kaufen", None),
+        # A changed negation in either direction
+        ("rechnung wurde nicht bezahlt", "Rechnung wurde nicht bezahlt", "Rechnung bezahlen", None),
+        ("rechnung bezahlen", "Rechnung bezahlen", "Rechnung nicht bezahlen", None),
+        # Too long, several lines, or most of the note gone
+        ("hecke schneiden", "Hecke schneiden", "Die Hecke schneiden sollte man heute", None),
+        ("hecke schneiden", "Hecke schneiden", "Hecke\nschneiden", None),
+        ("garage aufräumen und keller putzen", "Garage aufräumen und Keller putzen", "Garage", None),
+        ("hecke schneiden", "Hecke schneiden", "", None),
+    ],
+)
+def test_validate_ai_rewrite(
+    spoken: str, rule_text: str, candidate: str, expected: str | None
+) -> None:
+    """Test that an AI text is only accepted if it adds and changes nothing."""
+    assert validate_ai_rewrite(spoken, rule_text, candidate) == expected

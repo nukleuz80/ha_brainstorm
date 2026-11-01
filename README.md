@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.5.9-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.5.10-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver%20self--assessed-C0C0C0.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -34,6 +34,10 @@ Brainstorm Hub turns every **Amazon Echo** device in your home into an instant, 
 - 🗣️ **Interactive Two-Way Dialogue Mode:** Simply say *“Alexa, Brainstorm”* or *“Alexa, New Idea”*. Alexa listens, parses your input, and instantly responds with spoken confirmation of the assigned category and urgency level.
 - ⚡ **One-Shot Direct Voice Commands:** When seconds count: *“Alexa, note in Smarthome dim basement light”* or *“Alexa, idea urgent Garden: Clean patio”*.
 - 🧠 **Smart NLP Text Cleaning & Grammar Transformation:** Strips out conversational filler words (*“please write down that we need to…”* ➔ *“Clean patio”*), fixes speech typos, and transforms passive verb constructions into clear actionable tasks.
+  - **Whole sentences instead of fragments (v1.5.8):** *"der Rasen muss gemäht werden"* ➔ *"Rasen mähen"*. Negations, questions and sentences that cannot be rebuilt completely keep their wording. Typed text only gets its typos fixed.
+  - **Due date and priority from the sentence (v1.5.10):** *"ich muss morgen unbedingt den Arzt anrufen"* ➔ *"Arzt anrufen"*, due tomorrow at 09:00, high priority. The due date leads to a reminder and can be switched off. The spoken sentence stays stored and can be restored in the card.
+  - **Own terms (v1.5.10):** Names of people and categories are spelled right automatically, own terms and corrections are set under *General settings*.
+  - **Optional AI step (v1.5.10):** An AI task entity improves the entry in the background. If it adds words or numbers or changes a negation, the version of the rules stays.
 - 🏷️ **Contextual Priority & Category Extraction:** Detects priority triggers (*“urgent”*, *“important”*, *“priority 1”*, *“whenever possible”*) and category prefixes (*“in Smarthome”*, *“for the garden”*) regardless of word order in the sentence.
 - 📍 **Echo Origin Tracking:** Automatically records which Echo device received the idea (e.g., `🗣️ Alexa (Echo Show Kitchen)` vs. `🗣️ Alexa (Workshop Echo Dot)`).
 
@@ -220,9 +224,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.5.9
+  - url: /local/brainstorm-card.js?v=1.5.10
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.5.9
+  - url: /local/brainstorm-mindmap-card.js?v=1.5.10
     type: module
 ```
 
@@ -303,6 +307,7 @@ Find these under **Settings ➔ Devices & Services ➔ Brainstorm Hub ➔ Config
 | Default category for new ideas | Used when an idea cannot be assigned to a category. |
 | Smart Text Optimization (grammar, capitalization, infinitive formatting) | Corrects capitalization and grammar of new ideas and removes filler words. |
 | Take dates from spoken text as a due date | A spoken "tomorrow" or "on 25.11." moves out of the text and becomes a due date. A due date leads to a reminder at that time, without a time of day at 09:00. |
+| Own terms for spoken text | One term per line, for example Lenia, or a correction, for example fehler = Richtig. Names of people and categories are known automatically. |
 | Auto-export ideas to Markdown files | Writes one Markdown file per category to the folder below whenever ideas change. |
 | File path for Markdown files | Folder for the Markdown files, for example /config/brainstorm. |
 | Echo devices for voice input | Only these Echos can capture ideas and open Brainstorm by voice. Leave empty to use all Echos. |
@@ -399,6 +404,7 @@ Find these under **Settings ➔ Devices & Services ➔ Brainstorm Hub ➔ Config
 | Add reminders to a calendar | One way, once per reminder. Later changes are not transferred. |
 | Calendar | The calendar that receives the reminders. |
 | Shorten the briefing and review with AI | Your ideas are sent to the provider of the chosen AI. |
+| Improve spoken entries with AI | Each spoken entry is stored first and improved a few seconds later. The result is dropped if it adds words or changes a negation. The text is sent to the provider of the chosen AI. |
 | AI task entity | The AI task entity that shortens the texts. |
 | Also create real Alexa reminders | In the Alexa console, also switch on Reminders under Build ➔ Permissions. Alexa then rings itself and Home Assistant does not speak as well. |
 
@@ -548,6 +554,7 @@ Shares several ideas or a whole category. Needs privacy to be switched on.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.5.10`** | 2026-11-01 | **Glossary and optional AI for spoken entries:**<br>• **Right spellings:** Names of people and categories and fixed terms like *PDF* or *Home Assistant* are spelled right automatically. Own terms and corrections are set under *General settings*.<br>• **More nouns:** A word list and compounds like *Sportverein* improve capitalization.<br>• **Optional AI step:** Under *Calendar, AI & Alexa Reminders*, an AI task entity improves the entry in the background. If it adds words or numbers or changes a negation, the version of the rules stays. The text goes to the provider of the chosen AI, and the step is off by default. |
 | **`v1.5.9`** | 2026-11-01 | **Date, priority and original text:**<br>• **Date from the sentence:** *"morgen Arzt anrufen"* becomes *"Arzt anrufen"* with a due date and therefore a reminder, without a time of day at 09:00. The skill announces it. A new switch under *General settings* turns this off, and without reminders the date stays in the text.<br>• **Priority from the sentence:** "ganz wichtig", "unbedingt", "dringend" and "irgendwann" are found anywhere in the sentence.<br>• **Original text:** The spoken sentence stays stored and can be restored in the edit dialog of the card.<br>• **Category as subject:** *"Garten muss gegossen werden"* becomes *"Garten gießen"* instead of *"Muss gegossen werden"*. |
 | **`v1.5.8`** | 2026-11-01 | **Better shortening of spoken entries:**<br>• **Whole sentences are rebuilt:** *"der Rasen muss gemäht werden"* becomes *"Rasen mähen"* instead of *"Rasen muss mähen"*. This now also covers "sollte", "will", "möchte" and separable verbs like *"rausgestellt"*.<br>• **New openers and filler words:** "äh", "ich glaube", "mir ist eingefallen", "vergiss nicht", "mal", "halt" and similar are removed.<br>• **All or nothing:** Negations, questions and sentences that cannot be rebuilt completely keep their wording.<br>• **Typed text stays:** Entries from the dashboard and to-do lists only get their typos fixed. |
 | **`v1.5.7`** | 2026-11-01 | **Logo on the Echo Show:** The header of each page shows the Brainstorm logo. The Echo loads it from this GitHub repository. No new skill code is needed. |

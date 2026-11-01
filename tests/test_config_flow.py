@@ -604,3 +604,17 @@ async def test_every_setting_is_documented(readme: str) -> None:
             for field, label in step.get("data", {}).items():
                 if field != "go_back":
                     assert f"| {label} |" in document, (readme, field)
+
+
+async def test_glossary_can_be_cleared(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that an emptied list of own terms is really removed."""
+    entry = await setup_entry(options={"glossary": "Lenia"})
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "general"}
+    )
+    await hass.config_entries.options.async_configure(result["flow_id"], {})
+    await hass.async_block_till_done()
+    assert entry.options["glossary"] == ""

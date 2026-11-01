@@ -1,6 +1,7 @@
 """Data management and storage for Brainstorm Hub."""
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 import re
@@ -50,6 +51,9 @@ from .const import (
     CONF_VOICE_OWNERS,
     CONF_VOICE_MODE,
     CONF_HIDE_EMPTY_CATEGORIES,
+    CONF_AI_ENTITY,
+    CONF_AI_TEXT_CLEANUP,
+    CONF_GLOSSARY,
     CONF_REMINDERS_ENABLED,
     CONF_SMART_FORMATTING,
     CONF_VOICE_DUE,
@@ -68,16 +72,20 @@ from .const import (
     PRIORITY_MEDIUM,
     PRIORITY_URGENT,
     STORAGE_KEY,
+    SOURCE_ASSIST_LLM,
     STORAGE_VERSION,
     TYPED_SOURCES,
     VOICE_MODE_NATIVE,
 )
+from .ai import async_generate_text
 from .nlp import (
+    build_glossary,
     clean_and_format_idea_text,
     extract_spoken_due,
     extract_spoken_priority,
     format_typed_text,
     starts_with_verb,
+    validate_ai_rewrite,
 )
 
 if TYPE_CHECKING:
@@ -442,6 +450,7 @@ class BrainstormStore:
         self._voice_mode = self.options.get(CONF_VOICE_MODE, VOICE_MODE_NATIVE)
         self._default_category = self.options.get("default_category", "Inbox")
         self._last_action: dict[str, Any] | None = None
+        self._ai_tasks: set[asyncio.Task[None]] = set()
         self._category_shares: dict[str, dict[str, dict[str, str]]] = {}
         self.integration_version: str | None = None
         self.alexa_skill: AlexaSkill | None = None
@@ -854,6 +863,57 @@ class BrainstormStore:
 
         return clean, PRIORITY_MEDIUM
 
+    def _glossary(self) -> dict[str, str]:
+        """Return the spellings for spoken text, including people and categories."""
+        names = [state.name for state in self.hass.states.async_all("person")]
+        return build_glossary(
+            self.options.get(CONF_GLOSSARY), [*names, *self._categories]
+        )
+
+    def _schedule_ai_cleanup(
+        self, idea_id: str, spoken_text: str, rule_text: str
+    ) -> None:
+        """Let an AI improve a stored note, without making anyone wait for it."""
+        entity = self.options.get(CONF_AI_ENTITY)
+        if not self.options.get(CONF_AI_TEXT_CLEANUP) or not entity:
+            return
+        task = self.hass.async_create_background_task(
+            self._async_ai_cleanup(entity, idea_id, spoken_text, rule_text),
+            f"brainstorm_ai_cleanup_{idea_id}",
+        )
+        self._ai_tasks.add(task)
+        task.add_done_callback(self._ai_tasks.discard)
+
+    async def _async_ai_cleanup(
+        self, entity: str, idea_id: str, spoken_text: str, rule_text: str
+    ) -> None:
+        """Replace the text of a note if the AI's version passes all checks."""
+        instructions = (
+            "Forme diese gesprochene Notiz in einen kurzen deutschen Stichpunkt für "
+            "eine Aufgabenliste um, mit richtiger Rechtschreibung und Großschreibung. "
+            "Antworte nur mit dem Stichpunkt. Erfinde keine Inhalte, Namen oder Zahlen "
+            "und ändere nie eine Verneinung. Lasse Füllwörter und Wörter wie 'wichtig' "
+            "oder 'dringend' weg. Eine Aufgabe endet mit dem Verb im Infinitiv.\n"
+            f"Gesprochen: {spoken_text}\n"
+            f"Bisheriger Stichpunkt: {rule_text}"
+        )
+        candidate = await async_generate_text(self.hass, entity, instructions)
+        idea = self._ideas.get(idea_id)
+        # The person may have changed the note in the meantime
+        if candidate is None or idea is None or idea.get(ATTR_TEXT) != rule_text:
+            return
+        improved = validate_ai_rewrite(spoken_text, rule_text, candidate)
+        if improved is None:
+            _LOGGER.debug("Ignoring the AI text for %s: %s", idea_id, candidate)
+            return
+        if improved != rule_text:
+            await self.async_mark_fields(idea_id, {ATTR_TEXT: improved})
+
+    def async_cancel_ai_tasks(self) -> None:
+        """Stop AI work that is still running when the integration unloads."""
+        for task in self._ai_tasks:
+            task.cancel()
+
     def parse_text_and_category(
         self,
         text: str,
@@ -1045,7 +1105,7 @@ class BrainstormStore:
         # 7. Smart NLP Text Normalization, a typed text only gets its typos fixed
         if self._smart_formatting:
             formatted = (
-                clean_and_format_idea_text(clean_text)
+                clean_and_format_idea_text(clean_text, self._glossary())
                 if spoken
                 else format_typed_text(clean_text)
             )
@@ -1158,6 +1218,9 @@ class BrainstormStore:
 
         self._ideas[idea_id] = idea
         await self.async_save()
+
+        if spoken and self._smart_formatting and source != SOURCE_ASSIST_LLM:
+            self._schedule_ai_cleanup(idea_id, text.strip(), clean_text)
 
         # Fire event for automations and logbook with entity_id and context
         event_data = {

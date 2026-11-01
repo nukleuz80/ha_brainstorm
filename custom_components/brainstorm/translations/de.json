@@ -115,6 +115,7 @@
           "default_category": "Standard-Kategorie für neue Ideen",
           "smart_formatting": "Intelligente Text-Optimierung (Grammatik, Groß-/Kleinschreibung, Infinitiv)",
           "voice_due": "Datum aus gesprochenem Text als Termin übernehmen",
+          "glossary": "Eigene Begriffe für gesprochenen Text",
           "auto_export_markdown": "Ideen automatisch als Markdown exportieren",
           "markdown_path": "Dateipfad für Markdown-Dateien",
           "allowed_echos": "Echo-Geräte für die Spracheingabe",
@@ -125,6 +126,7 @@
           "default_category": "Wird genutzt, wenn eine Idee keiner Kategorie zugeordnet werden kann.",
           "smart_formatting": "Korrigiert Groß-/Kleinschreibung und Grammatik neuer Ideen und entfernt Füllwörter.",
           "voice_due": "Ein gesprochenes „morgen“ oder „am 25.11.“ wandert aus dem Text in den Termin. Ein Termin löst zu dieser Zeit eine Erinnerung aus, ohne Uhrzeit um 9 Uhr.",
+          "glossary": "Ein Begriff pro Zeile, zum Beispiel Lenia, oder eine Korrektur, zum Beispiel fehler = Richtig. Namen von Personen und Kategorien sind automatisch bekannt.",
           "auto_export_markdown": "Schreibt bei jeder Änderung pro Kategorie eine Markdown-Datei in den unten genannten Ordner.",
           "markdown_path": "Ordner für die Markdown-Dateien, zum Beispiel /config/brainstorm.",
           "go_back": "Kehrt zur vorigen Seite zurück, ohne dieses Formular zu speichern."
@@ -322,6 +324,7 @@
           "calendar_enabled": "Erinnerungen in einen Kalender eintragen",
           "calendar_entity": "Kalender",
           "ai_enabled": "Briefing und Rückblick per KI kürzen",
+          "ai_text_cleanup": "Gesprochene Einträge per KI verbessern",
           "ai_entity": "KI-Aufgaben-Entität",
           "native_reminders": "Zusätzlich echte Alexa-Erinnerungen anlegen",
           "go_back": "⬅️ Zurück, ohne zu speichern"
@@ -329,9 +332,10 @@
         "data_description": {
           "calendar_enabled": "Nur in eine Richtung und einmal pro Erinnerung. Spätere Änderungen werden nicht übertragen.",
           "ai_enabled": "Deine Einträge werden an den Anbieter der gewählten KI gesendet.",
+          "ai_text_cleanup": "Jeder gesprochene Eintrag wird zuerst gespeichert und wenige Sekunden später verbessert. Das Ergebnis wird verworfen, wenn es Wörter hinzufügt oder eine Verneinung ändert. Der Text geht an den Anbieter der gewählten KI.",
           "native_reminders": "Schalte in der Alexa-Konsole zusätzlich Reminders unter Build ➔ Permissions ein. Alexa klingelt dann selbst, und Home Assistant spricht nicht zusätzlich.",
           "calendar_entity": "Der Kalender, der die Erinnerungen erhält.",
-          "ai_entity": "Die KI-Aufgaben-Entität, die die Texte kürzt.",
+          "ai_entity": "Die KI-Aufgaben-Entität, die die Texte kürzt und verbessert.",
           "go_back": "Kehrt zur vorigen Seite zurück, ohne dieses Formular zu speichern."
         }
       },

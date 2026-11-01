@@ -1,11 +1,19 @@
 """Tests for the Brainstorm store."""
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 from typing import Any
 
 import pytest
-from homeassistant.core import Event, HomeAssistant, callback
+from homeassistant.core import (
+    Event,
+    HomeAssistant,
+    ServiceCall,
+    ServiceResponse,
+    SupportsResponse,
+    callback,
+)
 from homeassistant.exceptions import ServiceValidationError
 
 from custom_components.brainstorm.const import (
@@ -471,3 +479,131 @@ async def test_date_stays_in_text_without_reminders(
     idea = await instance.async_add_idea("morgen arzt anrufen", source="alexa_dialog")
     assert idea["due"] is None
     assert "morgen" in idea["text"].lower()
+
+
+async def test_glossary_uses_people_categories_and_own_terms(
+    hass: HomeAssistant, hass_storage: dict[str, Any]
+) -> None:
+    """Test that names of people and categories and own terms are spelled right."""
+    hass.states.async_set("person.lenia", "home", {"friendly_name": "Lenia Muster"})
+    instance = BrainstormStore(hass, {"glossary": "Hape Kerkeling"})
+    await instance.async_load()
+    await instance.async_add_category("Schlaue Antworten")
+    idea = await instance.async_add_idea(
+        "buch von hape kerkeling für lenia zu schlaue antworten", source="assist"
+    )
+    assert idea["text"] == "Buch von Hape Kerkeling für Lenia zu Schlaue Antworten"
+
+
+AI_OPTIONS = {"ai_text_cleanup": True, "ai_entity": "ai_task.test"}
+
+
+async def _ai_store(
+    hass: HomeAssistant,
+    answer: Any,
+    options: dict[str, Any] | None = None,
+    gate: asyncio.Event | None = None,
+) -> tuple[BrainstormStore, list[ServiceCall]]:
+    """Return a store whose AI gives a fixed answer, and the calls it got."""
+    calls: list[ServiceCall] = []
+
+    async def generate(call: ServiceCall) -> ServiceResponse:
+        calls.append(call)
+        if gate is not None:
+            await gate.wait()
+        return {"data": answer}
+
+    hass.services.async_register(
+        "ai_task", "generate_data", generate, supports_response=SupportsResponse.ONLY
+    )
+    instance = BrainstormStore(hass, AI_OPTIONS if options is None else options)
+    await instance.async_load()
+    return instance, calls
+
+
+async def test_ai_improves_a_spoken_note_later(
+    hass: HomeAssistant, hass_storage: dict[str, Any]
+) -> None:
+    """Test that the rules answer at once and the AI text replaces them later."""
+    gate = asyncio.Event()
+    instance, calls = await _ai_store(hass, "Buch auf Bücherliste", gate=gate)
+    idea = await instance.async_add_idea(
+        "ein buch auf die bücher liste", source="alexa_dialog"
+    )
+    assert idea["text"] == "Ein Buch auf die Bücher Liste"
+    gate.set()
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert len(calls) == 1
+    assert "ein buch auf die bücher liste" in calls[0].data["instructions"]
+    assert instance.get_idea(idea["id"])["text"] == "Buch auf Bücherliste"
+    assert instance.get_idea(idea["id"])["raw_text"] == "ein buch auf die bücher liste"
+
+
+async def test_ai_cannot_invent_anything(
+    hass: HomeAssistant, hass_storage: dict[str, Any]
+) -> None:
+    """Test that the rule text stays when the AI adds something."""
+    instance, _ = await _ai_store(hass, "Zahnarzt anrufen und Milch kaufen")
+    idea = await instance.async_add_idea("arzt anrufen", source="assist")
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert instance.get_idea(idea["id"])["text"] == "Arzt anrufen"
+
+
+async def test_ai_does_not_overwrite_an_edit(
+    hass: HomeAssistant, hass_storage: dict[str, Any]
+) -> None:
+    """Test that a change made while the AI was working is kept."""
+    gate = asyncio.Event()
+    instance, _ = await _ai_store(hass, "Den Arzt anrufen", gate=gate)
+    idea = await instance.async_add_idea("den arzt anrufen", source="assist")
+    await instance.async_update_idea(idea["id"], text="Doktor anrufen")
+    gate.set()
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert instance.get_idea(idea["id"])["text"] == "Doktor anrufen"
+
+
+@pytest.mark.parametrize(
+    ("options", "source"),
+    [
+        ({}, "alexa_dialog"),
+        ({"ai_text_cleanup": True}, "alexa_dialog"),
+        ({**AI_OPTIONS, "smart_formatting": False}, "alexa_dialog"),
+        (AI_OPTIONS, "dashboard"),
+        (AI_OPTIONS, "assist_llm"),
+    ],
+)
+async def test_ai_is_not_asked(
+    hass: HomeAssistant,
+    hass_storage: dict[str, Any],
+    options: dict[str, Any],
+    source: str,
+) -> None:
+    """Test that the AI only sees spoken text and only when it was switched on."""
+    instance, calls = await _ai_store(hass, "Anders", options)
+    await instance.async_add_idea("arzt anrufen", source=source)
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert calls == []
+
+
+async def test_ai_failure_keeps_the_note(
+    hass: HomeAssistant, hass_storage: dict[str, Any]
+) -> None:
+    """Test that a missing AI service changes nothing."""
+    instance = BrainstormStore(hass, AI_OPTIONS)
+    await instance.async_load()
+    idea = await instance.async_add_idea("arzt anrufen", source="assist")
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert instance.get_idea(idea["id"])["text"] == "Arzt anrufen"
+
+
+async def test_ai_work_stops_with_the_integration(
+    hass: HomeAssistant, hass_storage: dict[str, Any]
+) -> None:
+    """Test that AI work still running is cancelled when unloading."""
+    instance, _ = await _ai_store(hass, "Arzt anrufen", gate=asyncio.Event())
+    await instance.async_add_idea("den arzt anrufen", source="assist")
+    tasks = list(instance._ai_tasks)  # noqa: SLF001
+    assert len(tasks) == 1
+    instance.async_cancel_ai_tasks()
+    await asyncio.wait(tasks)
+    assert tasks[0].cancelled()

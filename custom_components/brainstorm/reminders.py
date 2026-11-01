@@ -84,6 +84,7 @@ from .const import (
     RULE_ZONE,
     RULE_ZONE_ENABLED,
 )
+from .ai import async_generate_text
 from .nlp import parse_due, strip_reminder_words
 
 if TYPE_CHECKING:
@@ -94,7 +95,6 @@ _LOGGER = logging.getLogger(__name__)
 CHECK_INTERVAL = timedelta(seconds=30)
 LATE_SCHEDULE_LIMIT = timedelta(hours=2)
 PRESENCE_SCHEDULE_LIMIT = timedelta(hours=6)
-AI_TIMEOUT_SECONDS = 20
 CALENDAR_EVENT_LENGTH = timedelta(minutes=30)
 REVIEW_MAX_ITEMS = 5
 ACTION_PREFIX = "BRAINSTORM_"
@@ -761,24 +761,7 @@ class ReminderManager:
             "Vorlesen zusammen. Erfinde nichts dazu und lasse keinen Eintrag weg: "
             f"{message}"
         )
-        try:
-            async with asyncio.timeout(AI_TIMEOUT_SECONDS):
-                result = await self.hass.services.async_call(
-                    "ai_task",
-                    "generate_data",
-                    {
-                        "task_name": "Brainstorm",
-                        "instructions": instructions,
-                        "entity_id": entity,
-                    },
-                    blocking=True,
-                    return_response=True,
-                )
-        except (HomeAssistantError, ValueError, TimeoutError) as err:
-            _LOGGER.warning("Could not summarize with %s: %s", entity, err)
-            return message
-        summary = (result or {}).get("data")
-        return summary.strip() if isinstance(summary, str) and summary.strip() else message
+        return await async_generate_text(self.hass, entity, instructions) or message
 
     def test_targets(self) -> list[str]:
         """Return the names of the channels a test would use."""

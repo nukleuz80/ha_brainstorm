@@ -3,9 +3,11 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import date, datetime, time, timedelta
+from difflib import SequenceMatcher
 import re
 
 from .const import PRIORITY_HIGH, PRIORITY_LOW, PRIORITY_URGENT
+from .german_nouns import AMBIGUOUS_PLURALS, GERMAN_NOUNS
 
 # Mapping of common German Partizip II forms to clean Infinitives
 PARTIZIP_TO_INFINITIVE: dict[str, str] = {
@@ -219,6 +221,19 @@ SUBJECT_PRONOUNS: set[str] = {
     "ich", "du", "er", "sie", "es", "wir", "ihr", "man", "das", "dies", "der", "die",
 }
 
+# Word endings that make a compound noun, long enough not to hit other words
+_COMPOUND_PARTS: tuple[str, ...] = tuple(
+    sorted(
+        (
+            word
+            for word in GERMAN_NOUNS
+            if len(word) >= 5 and not word.endswith(("en", "e"))
+        ),
+        key=len,
+        reverse=True,
+    )
+) + ("haus", "liste", "lampe", "tonne", "karte", "kiste", "tasche", "farbe", "zeit", "wand", "raum")
+
 # Words of a task that may only be reduced when they are the main verb
 _MODAL_NEED = (
     r"(?:muss|musst|müssen|müsste|müssten|soll|sollen|sollte|sollten)"
@@ -293,6 +308,52 @@ _RE_SENTENCE_WORD = re.compile(
 )
 
 
+# Spellings a sentence from speech recognition never has by itself
+BUILTIN_GLOSSARY: dict[str, str] = {
+    "alexa": "Alexa",
+    "e-mail": "E-Mail",
+    "echo show": "Echo Show",
+    "email": "E-Mail",
+    "grafana": "Grafana",
+    "hdmi": "HDMI",
+    "home assistant": "Home Assistant",
+    "homeassistant": "Home Assistant",
+    "ipad": "iPad",
+    "iphone": "iPhone",
+    "ki": "KI",
+    "led": "LED",
+    "nas": "NAS",
+    "pdf": "PDF",
+    "siri": "Siri",
+    "tv": "TV",
+    "usb": "USB",
+    "wlan": "WLAN",
+}
+
+
+def _is_noun(word: str) -> bool:
+    """Return whether a lowercase word is a known noun or a compound ending in one."""
+    if word in KNOWN_NOUNS or word in GERMAN_NOUNS:
+        return True
+    if len(word) > 4 and word.endswith(NOUN_SUFFIXES):
+        return True
+    if (
+        word.endswith("n")
+        and word not in AMBIGUOUS_PLURALS
+        and word[:-1].endswith("e")
+        and word[:-1] in GERMAN_NOUNS
+    ):
+        return True
+    if word.endswith("s") and word[:-1] in GERMAN_NOUNS:
+        return True
+    # 'sportverein' ends in 'verein'; an '-en' ending could also be a verb ('greifen')
+    return not word.endswith("en") and any(
+        word.endswith(word_part)
+        for word_part in _COMPOUND_PARTS
+        if len(word) >= len(word_part) + 3
+    )
+
+
 def _capitalize(word: str) -> str:
     """Uppercase the first letter and keep spellings like 'WLAN' or 'iPhone'."""
     if any(c.isupper() for c in word):
@@ -300,9 +361,19 @@ def _capitalize(word: str) -> str:
     return word[:1].upper() + word[1:]
 
 
-def _is_noun_after_preposition(preposition: str, word: str) -> bool:
+def _is_noun_after_preposition(
+    preposition: str, word: str, next_word: str | None = None
+) -> bool:
     """Return whether a word following a preposition should be capitalized."""
     if word in ARTICLES_AND_PRONOUNS or len(word) <= 2:
+        return False
+    # An adjective in front of its noun ('mit neuen batterien')
+    if (
+        next_word
+        and word.endswith(("e", "en", "em", "er", "es"))
+        and not _is_noun(word)
+        and _is_noun(next_word)
+    ):
         return False
     if word in TIME_ADVERBS:
         return preposition in CONTRACTED_PREPOSITIONS
@@ -432,13 +503,15 @@ def _format_words(text: str) -> str:
         # Capitalization rules
         if idx == 0:
             word_cap = _capitalize(clean_w)
-        elif lower_w in KNOWN_NOUNS:
-            word_cap = _capitalize(clean_w)
-        elif lower_w.endswith(NOUN_SUFFIXES) and len(lower_w) > 4:
+        elif _is_noun(lower_w):
             word_cap = _capitalize(clean_w)
         elif (
             words[idx - 1].lower() in PREPOSITION_TRIGGERS
-            and _is_noun_after_preposition(words[idx - 1].lower(), lower_w)
+            and _is_noun_after_preposition(
+                words[idx - 1].lower(),
+                lower_w,
+                words[idx + 1].lower().strip(".,!?:;") if idx + 1 < len(words) else None,
+            )
         ):
             word_cap = _capitalize(clean_w)
         elif (
@@ -469,7 +542,45 @@ def format_typed_text(raw_text: str) -> str:
     return " ".join(corrected)
 
 
-def clean_and_format_idea_text(raw_text: str) -> str:
+def build_glossary(custom_terms: str | None, names: list[str]) -> dict[str, str]:
+    """Build the spellings to enforce from names and the person's own list.
+
+    A line of the list is a term ('Lenia') or a correction ('fehler = Richtig').
+    The person's own entries win over everything else.
+    """
+    glossary = dict(BUILTIN_GLOSSARY)
+    for name in names:
+        clean_name = name.strip()
+        if len(clean_name) < 3 or _RE_SENTENCE_WORD.fullmatch(clean_name):
+            continue
+        glossary.setdefault(clean_name.lower(), clean_name)
+        first_name = clean_name.split()[0]
+        if len(first_name) >= 3 and not _RE_SENTENCE_WORD.fullmatch(first_name):
+            glossary.setdefault(first_name.lower(), first_name)
+    for line in re.split(r"[\n;]", custom_terms or ""):
+        wrong, separator, right = line.partition("=")
+        if not wrong.strip():
+            continue
+        glossary[wrong.strip().lower()] = right.strip() if separator else wrong.strip()
+    return {wrong: right for wrong, right in glossary.items() if right}
+
+
+def _apply_glossary(text: str, glossary: dict[str, str]) -> str:
+    """Put each known term into its proper spelling, longest terms first."""
+    pattern = "|".join(
+        re.escape(term) for term in sorted(glossary, key=len, reverse=True)
+    )
+    return re.sub(
+        rf"(?<![\w-])(?:{pattern})(?![\w-])",
+        lambda match: glossary[match.group(0).lower()],
+        text,
+        flags=re.IGNORECASE,
+    )
+
+
+def clean_and_format_idea_text(
+    raw_text: str, glossary: dict[str, str] | None = None
+) -> str:
     """Reduce a spoken German sentence to a short task note.
 
     Transforms 'im brainstorm dass heute die kinder vom flughafen abgeholt werden
@@ -508,6 +619,7 @@ def clean_and_format_idea_text(raw_text: str) -> str:
 
     # 4. Spelling and capitalization
     result = _format_words(s)
+    result = _apply_glossary(result, BUILTIN_GLOSSARY if glossary is None else glossary)
     # Strip any trailing punctuation that might look like conversational fragment
     if not result.endswith("?"):
         result = re.sub(r"[\.,;:!\?]+$", "", result).strip()
@@ -828,3 +940,60 @@ def extract_spoken_priority(text: str) -> tuple[str, str | None]:
         if remaining != text.strip(" ,.") and remaining:
             return remaining, priority
     return text, None
+
+
+_RE_NEGATION = re.compile(r"\b(?:nicht|nie|niemals|nichts|kein\w*)\b", re.IGNORECASE)
+_AI_ALLOWED_WORDS: frozenset[str] = frozenset(
+    {
+        "der", "die", "das", "den", "dem", "des", "ein", "eine", "einen", "einem",
+        "einer", "und", "für", "fürs", "von", "vom", "zum", "zur", "mit", "auf", "aufs",
+        "aus", "bei", "beim", "nach", "ans", "ins", "als", "wegen",
+    }
+)
+
+
+def _letter_words(text: str) -> list[str]:
+    """Return the lowercase words of a text."""
+    return re.findall(r"[a-zäöüß]+", text.lower())
+
+
+def _has_similar_word(word: str, others: set[str], threshold: float) -> bool:
+    """Return whether a word or a close spelling of it is among other words."""
+    return word in others or any(
+        SequenceMatcher(None, word, other).ratio() >= threshold for other in others
+    )
+
+
+def validate_ai_rewrite(spoken: str, rule_text: str, candidate: str) -> str | None:
+    """Return the AI's text if it only shortens what was said, otherwise None.
+
+    It may not be longer than the spoken text, add a word or number, change a
+    negation, or lose most of what the rules kept.
+    """
+    text = candidate.strip().strip("\"'„“”‚‘’").rstrip(".!").strip()
+    if not text or "\n" in text or len(text) > max(len(spoken), len(rule_text)):
+        return None
+
+    source = f"{spoken} {rule_text}"
+    source_words = set(_letter_words(source))
+    joined = "".join(_letter_words(spoken))
+    for word in _letter_words(text):
+        if (
+            len(word) >= 3
+            and word not in _AI_ALLOWED_WORDS
+            and word not in joined
+            and not _has_similar_word(word, source_words, 0.7)
+        ):
+            return None
+
+    if not set(re.findall(r"\d+", text)) <= set(re.findall(r"\d+", source)):
+        return None
+    if bool(_RE_NEGATION.search(spoken)) != bool(_RE_NEGATION.search(text)):
+        return None
+
+    kept_words = {word for word in _letter_words(rule_text) if len(word) >= 4}
+    answer_words = set(_letter_words(text))
+    found = sum(_has_similar_word(word, answer_words, 0.7) for word in kept_words)
+    if kept_words and found / len(kept_words) < 0.6:
+        return None
+    return text

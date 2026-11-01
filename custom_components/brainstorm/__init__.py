@@ -210,6 +210,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) -
 
 async def async_unload_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) -> bool:
     """Unload a config entry."""
+    entry.runtime_data.async_cancel_ai_tasks()
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
 
