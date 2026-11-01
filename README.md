@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.5.2-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.5.3-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver%20self--assessed-C0C0C0.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -216,9 +216,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.5.2
+  - url: /local/brainstorm-card.js?v=1.5.3
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.5.2
+  - url: /local/brainstorm-mindmap-card.js?v=1.5.3
     type: module
 ```
 
@@ -543,6 +543,7 @@ Shares several ideas or a whole category. Needs privacy to be switched on.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.5.3`** | 2026-11-01 | **Cards stay current with private ideas:**<br>• **Indenting works again:** With privacy on, the sensor did not change when an idea was indented, edited or moved, so the cards kept showing the old list. That could also lead to a false cycle error when indenting. The sensor now has a `revision` attribute without any idea content, which tells the cards to reload. |
 | **`v1.5.2`** | 2026-11-01 | **Home Assistant Quality Scale: Silver:**<br>• **Silver checked rule by rule:** Still a self-assessment.<br>• **Actions report failures:** Removing a category that does not exist, unknown ideas when sorting or sharing, an unknown parent, and failed Markdown exports now raise a clear error instead of returning `success: false` or being ignored. To-do lists do the same for items that are gone.<br>• **Tests:** Every module is covered above 95 percent, including cleaning up when the integration is unloaded.<br>• **Docs:** All setup fields and settings are described. |
 | **`v1.5.1`** | 2026-11-01 | **Home Assistant Quality Scale: Bronze:**<br>• **Bronze checked rule by rule:** The README and manifest claimed Silver, which was not correct. The status is now a self-assessment of Bronze, as Home Assistant did not review this custom integration.<br>• **Shorter names:** Lists are now called *Alltag* instead of *Brainstorm: Alltag*, and the sensor *Ideas overview*. Existing entity IDs stay the same; new lists get `todo.brainstorm_hub_*`.<br>• **No more polling:** Entities only update when something changes.<br>• **Clear errors:** If stored data cannot be read, Home Assistant tries the setup again. Actions explain when the integration is not loaded.<br>• **Settings:** New setups keep their settings in the options, and every field now has an explanation.<br>• **Tests and docs:** The config flow is fully tested. All actions and fields, the prerequisites, and removal are documented.<br>• **Brand images:** Now real PNG files in the correct sizes. |
 | **`v1.5.0`** | 2026-11-01 | **Big Update: Skill, Reminders, Privacy & Sharing** (summary of v1.4.46 to v1.4.64):<br>• **Voice in one sentence:** Your own optional Alexa skill with one clean answer, Echo origin, Echo selection, an iPhone shortcut and a microphone in the quick input.<br>• **Proactive reminders:** Due dates by voice, list, card or service, over Alexa and any `notify` service, with phone buttons, quiet hours, briefing, weekly review, rules per list, places, people, calendar and AI.<br>• **Privacy & sharing:** Private ideas per user, sharing of ideas and categories with view or edit rights, multi-select, Echos and apps per person.<br>• **Settings:** Back navigation, live status, channel test and a switch for every feature. |

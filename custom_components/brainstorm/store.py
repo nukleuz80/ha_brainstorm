@@ -412,6 +412,7 @@ class BrainstormStore:
         self._category_icons: dict[str, str] = {}
         self._category_colors: dict[str, str] = {}
         self._listeners: list[Callable[[], None]] = []
+        self._revision = 0
         self._privacy_enabled = bool(self.options.get(CONF_PRIVACY_ENABLED))
         self._privacy_owner = self.options.get(CONF_PRIVACY_OWNER)
         # Export files are readable by everyone with access to the config folder
@@ -561,6 +562,8 @@ class BrainstormStore:
         """Return what every Home Assistant user may read while ideas are private."""
         return {
             "privacy": True,
+            # Without it the sensor would stay the same and the cards would not reload
+            "revision": self._revision,
             "categories": self.categories,
             "category_icons": self.category_icons,
             "category_colors": self.category_colors,
@@ -708,6 +711,7 @@ class BrainstormStore:
 
     def _notify_listeners(self, context: Context | None = None) -> None:
         """Notify all registered listeners of a change."""
+        self._revision += 1
         # Iterate over a copy, a listener can remove entities and their listeners
         for listener in list(self._listeners):
             if listener not in self._listeners:

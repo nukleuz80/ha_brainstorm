@@ -43,6 +43,7 @@ class BrainstormOverviewSensor(SensorEntity):
             "recent_ideas",
             "ideas",
             "completed_ideas",
+            "revision",
         }
     )
 

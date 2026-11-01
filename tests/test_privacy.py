@@ -93,6 +93,26 @@ async def test_sensor_holds_no_private_text(
     assert state.attributes["categories"]
 
 
+async def test_sensor_changes_with_every_private_change(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that the cards reload ideas after changes that keep the idea count."""
+    entry = await _private(setup_entry)
+    store = entry.runtime_data
+    parent, child = store.ideas[-2:]
+    before = hass.states.get(OVERVIEW_ENTITY_ID)
+
+    await store.async_update_idea(
+        child["id"], parent_id=parent["id"], update_parent=True
+    )
+    await hass.async_block_till_done()
+
+    after = hass.states.get(OVERVIEW_ENTITY_ID)
+    assert after.state == before.state
+    assert after.last_updated > before.last_updated
+    assert parent["id"] not in str(after.as_dict())
+
+
 async def test_each_user_gets_only_own_ideas(
     hass: HomeAssistant,
     setup_entry: SetupEntry,
