@@ -6,9 +6,12 @@ from typing import Any
 
 import voluptuous as vol
 
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse, callback
-from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
+from homeassistant.exceptions import (
+    ConfigEntryNotReady,
+    HomeAssistantError,
+    ServiceValidationError,
+)
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
@@ -45,7 +48,7 @@ from .const import (
 )
 from .llm import async_register_llm_api
 from .reminders import ReminderManager, build_reminder_request
-from .store import BrainstormStore
+from .store import BrainstormConfigEntry, BrainstormStore, get_loaded_store
 from .websocket import async_register_commands
 
 _LOGGER = logging.getLogger(__name__)
@@ -165,28 +168,25 @@ SERVICE_EXPORT_MARKDOWN_SCHEMA = vol.Schema(
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up the Brainstorm component and register its services."""
-    hass.data.setdefault(DOMAIN, {})
-
     _register_services(hass)
     async_register_commands(hass)
     return True
 
 
-type BrainstormConfigEntry = ConfigEntry[BrainstormStore]
-
-
 async def async_setup_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) -> bool:
     """Set up Brainstorm Hub from a config entry."""
-    hass.data.setdefault(DOMAIN, {})
-
     store = BrainstormStore(hass, {**entry.data, **entry.options})
     integration = await async_get_integration(hass, DOMAIN)
     store.integration_version = str(integration.version)
-    await store.async_load()
+    skill = AlexaSkill(hass, store)
+    try:
+        await store.async_load()
+        await skill.async_load()
+    except HomeAssistantError as err:
+        raise ConfigEntryNotReady(f"Could not read the stored data: {err}") from err
+    store.alexa_skill = skill
 
     entry.runtime_data = store
-    hass.data[DOMAIN][entry.entry_id] = store
-    hass.data[DOMAIN]["primary_store"] = store
 
     # Register platforms (todo, sensor)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
@@ -195,9 +195,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) -
     entry.async_on_unload(async_register_llm_api(hass))
 
     # The skill only gets an open door in the modes that use it
-    skill = AlexaSkill(hass, store)
-    await skill.async_load()
-    store.alexa_skill = skill
     if store.voice_mode != VOICE_MODE_NATIVE:
         skill.async_start()
     entry.async_on_unload(skill.async_stop)
@@ -213,12 +210,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) -
 
 async def async_unload_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) -> bool:
     """Unload a config entry."""
-    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-    if unload_ok:
-        hass.data[DOMAIN].pop(entry.entry_id, None)
-        if not hass.config_entries.async_loaded_entries(DOMAIN):
-            hass.data[DOMAIN].pop("primary_store", None)
-    return unload_ok
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
 
 async def async_reload_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) -> None:
@@ -226,13 +218,14 @@ async def async_reload_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) 
     await hass.config_entries.async_reload(entry.entry_id)
 
 
-def _get_active_store(hass: HomeAssistant) -> BrainstormStore | None:
-    """Get the active store instance."""
-    entries = hass.config_entries.async_loaded_entries(DOMAIN)
-    if entries:
-        return entries[0].runtime_data
-    data = hass.data.get(DOMAIN, {})
-    return data.get("primary_store")
+def _require_store(hass: HomeAssistant) -> BrainstormStore:
+    """Return the store, or explain that the action cannot run without it."""
+    store = get_loaded_store(hass)
+    if store is None:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN, translation_key="not_loaded"
+        )
+    return store
 
 
 def _check_idea_edit(store: BrainstormStore, idea_id: str, call: ServiceCall) -> None:
@@ -267,9 +260,7 @@ def _register_services(hass: HomeAssistant) -> None:
 
     async def handle_add_idea(call: ServiceCall) -> dict[str, Any]:
         """Handle adding a new idea."""
-        store = _get_active_store(hass)
-        if not store:
-            raise HomeAssistantError("Brainstorm store is not initialized")
+        store = _require_store(hass)
 
         text = call.data[ATTR_TEXT]
         category = call.data.get(ATTR_CATEGORY)
@@ -308,9 +299,7 @@ def _register_services(hass: HomeAssistant) -> None:
 
     async def handle_update_idea(call: ServiceCall) -> dict[str, Any]:
         """Handle updating an existing idea."""
-        store = _get_active_store(hass)
-        if not store:
-            raise HomeAssistantError("Brainstorm store is not initialized")
+        store = _require_store(hass)
 
         idea_id = call.data[ATTR_ID]
         _check_idea_edit(store, idea_id, call)
@@ -360,9 +349,7 @@ def _register_services(hass: HomeAssistant) -> None:
 
     async def handle_share(call: ServiceCall) -> dict[str, Any]:
         """Share several ideas or a whole category with people."""
-        store = _get_active_store(hass)
-        if not store:
-            raise HomeAssistantError("Brainstorm store is not initialized")
+        store = _require_store(hass)
         if not store.privacy_enabled:
             raise ServiceValidationError(
                 "Freigaben gibt es nur mit eingeschalteter Privatsphäre."
@@ -383,9 +370,7 @@ def _register_services(hass: HomeAssistant) -> None:
 
     async def handle_reorder_ideas(call: ServiceCall) -> dict[str, Any]:
         """Handle reordering ideas."""
-        store = _get_active_store(hass)
-        if not store:
-            raise HomeAssistantError("Brainstorm store is not initialized")
+        store = _require_store(hass)
 
         idea_ids = call.data.get("idea_ids", [])
         for idea_id in idea_ids:
@@ -395,9 +380,7 @@ def _register_services(hass: HomeAssistant) -> None:
 
     async def handle_delete_idea(call: ServiceCall) -> dict[str, Any]:
         """Handle deleting an idea."""
-        store = _get_active_store(hass)
-        if not store:
-            raise HomeAssistantError("Brainstorm store is not initialized")
+        store = _require_store(hass)
 
         idea_id = call.data[ATTR_ID]
         _check_idea_owner(store, idea_id, call)
@@ -407,9 +390,7 @@ def _register_services(hass: HomeAssistant) -> None:
 
     async def handle_get_ideas(call: ServiceCall) -> dict[str, Any]:
         """Handle fetching ideas."""
-        store = _get_active_store(hass)
-        if not store:
-            raise HomeAssistantError("Brainstorm store is not initialized")
+        store = _require_store(hass)
 
         category = call.data.get(ATTR_CATEGORY)
         priority = call.data.get(ATTR_PRIORITY)
@@ -431,9 +412,7 @@ def _register_services(hass: HomeAssistant) -> None:
 
     async def handle_add_category(call: ServiceCall) -> dict[str, Any]:
         """Handle adding a category."""
-        store = _get_active_store(hass)
-        if not store:
-            raise ServiceValidationError("Brainstorm store is not initialized")
+        store = _require_store(hass)
 
         name = call.data.get("name", "").strip()
         icon = call.data.get(ATTR_ICON)
@@ -447,9 +426,7 @@ def _register_services(hass: HomeAssistant) -> None:
 
     async def handle_set_category_style(call: ServiceCall) -> dict[str, Any]:
         """Handle setting custom icon and color for a category."""
-        store = _get_active_store(hass)
-        if not store:
-            raise ServiceValidationError("Brainstorm store is not initialized")
+        store = _require_store(hass)
 
         category = call.data.get(ATTR_CATEGORY, "").strip()
         icon = call.data.get(ATTR_ICON)
@@ -474,9 +451,7 @@ def _register_services(hass: HomeAssistant) -> None:
 
     async def handle_remove_category(call: ServiceCall) -> dict[str, Any]:
         """Handle removing a category."""
-        store = _get_active_store(hass)
-        if not store:
-            raise HomeAssistantError("Brainstorm store is not initialized")
+        store = _require_store(hass)
         await _check_shared_setting_access(hass, store, call)
 
         name = call.data["name"]
@@ -485,9 +460,7 @@ def _register_services(hass: HomeAssistant) -> None:
 
     async def handle_export_markdown(call: ServiceCall) -> dict[str, Any]:
         """Handle exporting ideas to markdown files."""
-        store = _get_active_store(hass)
-        if not store:
-            raise HomeAssistantError("Brainstorm store is not initialized")
+        store = _require_store(hass)
         await _check_shared_setting_access(hass, store, call)
 
         path = call.data.get("path")
@@ -496,9 +469,7 @@ def _register_services(hass: HomeAssistant) -> None:
 
     async def handle_get_announcement(call: ServiceCall) -> dict[str, Any]:
         """Handle generating spoken announcement text."""
-        store = _get_active_store(hass)
-        if not store:
-            raise ServiceValidationError("Brainstorm store is not initialized")
+        store = _require_store(hass)
 
         category = call.data.get(ATTR_CATEGORY)
         # Automations have no user, and what they speak can be heard in the room

@@ -10,6 +10,7 @@ from datetime import datetime
 from difflib import SequenceMatcher
 from typing import Any, Callable, TYPE_CHECKING
 
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Context, HomeAssistant
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers.storage import Store
@@ -53,6 +54,7 @@ from .const import (
     DEFAULT_HIDE_EMPTY_CATEGORIES,
     DEFAULT_MARKDOWN_PATH,
     DEFAULT_PRIORITY,
+    DOMAIN,
     EVENT_IDEA_ADDED,
     EVENT_IDEA_COMPLETED,
     EVENT_IDEA_DELETED,
@@ -386,6 +388,15 @@ CATEGORY_KEYWORDS: dict[str, list[str]] = {
         "abendessen",
     ],
 }
+
+
+type BrainstormConfigEntry = ConfigEntry[BrainstormStore]
+
+
+def get_loaded_store(hass: HomeAssistant) -> BrainstormStore | None:
+    """Return the store of the loaded config entry, if there is one."""
+    entries = hass.config_entries.async_loaded_entries(DOMAIN)
+    return entries[0].runtime_data if entries else None
 
 
 class BrainstormStore:

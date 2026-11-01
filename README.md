@@ -8,9 +8,9 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.5.0-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.5.1-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
-[![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver-C0C0C0.svg)](https://developers.home-assistant.io/docs/integration_quality_scale_index/)
+[![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Bronze%20self--assessed-CD7F32.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/nukleuz80/ha_brainstorm)
@@ -65,11 +65,20 @@ Brainstorm Hub turns every **Amazon Echo** device in your home into an instant, 
   - Auto-export to structured markdown files with YAML frontmatter, timestamps, and priority tags.
   - Plug-and-play with **Obsidian**, **Logseq**, or **Nextcloud Notes**.
 - 🛠️ **Home Assistant To-do Platform:**
-  - Synchronizes all active categories as native Home Assistant To-do entities (`todo.brainstorm_*`).
+  - Synchronizes all active categories as native Home Assistant To-do entities (`todo.brainstorm_hub_*`).
 
 ---
 
 ## 🚀 Installation
+
+### Prerequisites
+
+1. Home Assistant 2026.10 or newer.
+2. [HACS](https://hacs.xyz), if you want to install through it.
+3. Optional, for voice input with Alexa: the [Alexa Media Player](https://github.com/alandtse/alexa_media_player) integration.
+4. Optional, for your own Alexa skill: an Amazon developer account and a public HTTPS address for your Home Assistant.
+
+Brainstorm Hub connects to no external service by itself, so setup needs no account or password.
 
 ### Option 1: HACS (Recommended - 1-Click)
 
@@ -90,6 +99,18 @@ Or manually:
 
 1. Go to **Settings ➔ Devices & Services ➔ Add Integration**.
 2. Search for **Brainstorm Hub** and follow the on-screen setup guide.
+
+### Removing the Integration
+
+1. Go to **Settings ➔ Devices & Services ➔ Brainstorm Hub**, open the three dots and choose **Delete**.
+2. Installed through HACS: open Brainstorm Hub in HACS and choose **Remove**. Installed manually: delete `/config/custom_components/brainstorm` and the two card files in `/config/www/`.
+3. Remove the two card resources under **Settings ➔ Dashboards ➔ Resources**, and any Brainstorm cards from your dashboards.
+4. Restart Home Assistant.
+
+Depending on what you used, also remove:
+- **Your Alexa skill:** Delete it in the Alexa developer console and its code in AWS Lambda. Real Alexa reminders stay in the Alexa app until you delete them there.
+- **Automations and sentences:** Your own automations, scripts, and custom sentences that call Brainstorm, as well as an iPhone shortcut.
+- **Your data:** Home Assistant keeps your ideas in `/config/.storage/brainstorm.storage`, the skill link in `brainstorm.alexa_skill` and the reminder state in `brainstorm.reminders` in the same folder. Delete these files and the Markdown folder (default `/config/brainstorm`) if you do not plan to come back.
 
 ---
 
@@ -195,9 +216,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.5.0
+  - url: /local/brainstorm-card.js?v=1.5.1
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.5.0
+  - url: /local/brainstorm-mindmap-card.js?v=1.5.1
     type: module
 ```
 
@@ -228,17 +249,125 @@ hide_empty_categories: true
 
 ## ⚙️ Services
 
-| Service | Description | Parameters |
+Every action stays available while the integration is not loaded and then explains why it cannot run.
+
+### `brainstorm.add_idea`
+
+Adds a new idea and detects the category in the text, such as `Garten: Blumen pflanzen` or `#smarthome`.
+
+| Field | Required | Meaning |
 | :--- | :--- | :--- |
-| `brainstorm.add_idea` | Adds a new thought with auto or manual category | `text` (required), `category`, `source`, `priority`, `tags` |
-| `brainstorm.update_idea` | Updates note text, category, priority, or status | `id` (required), `text`, `category`, `priority`, `status` |
-| `brainstorm.delete_idea` | Permanently removes an idea | `id` (required) |
-| `brainstorm.reorder_ideas` | Updates the persistent custom order of notes | `idea_ids` (required) |
-| `brainstorm.add_category` | Creates a new category | `name` (required) |
-| `brainstorm.remove_category` | Removes category (ideas move to Inbox) | `name` (required) |
-| `brainstorm.export_markdown` | Triggers immediate markdown export | `path` (optional) |
-| `brainstorm.share` | Shares ideas or a category (needs privacy) | `shares` (required, e.g. `{"all": "view"}`), `ids` or `category` |
-| `brainstorm.get_announcement` | Creates the announcement text | `category`, `device` (optional) |
+| `text` | Yes | The content of the idea. |
+| `category` | No | Category. If empty, it is detected from the text or set to `Inbox`. |
+| `priority` | No | Urgency (`low`, `medium`, `high`, `urgent`). Detected automatically if empty. |
+| `source` | No | Where the idea comes from, such as `alexa` or `dashboard`. |
+| `device` | No | The device that triggered it, such as `Echo Show Küche`. |
+| `tags` | No | Additional keywords. |
+| `parent_id` | No | ID of the parent idea, to create a subtask. |
+| `due` | No | When Brainstorm should remind you of this idea. |
+| `parse_due` | No | Detects phrases like `morgen um 8` in the text and uses them as the time. |
+| `assignee` | No | The person to remind. |
+| `zone` | No | Reminds when entering this zone. |
+
+### `brainstorm.update_idea`
+
+Changes an existing idea.
+
+| Field | Required | Meaning |
+| :--- | :--- | :--- |
+| `id` | Yes | Unique ID of the idea. |
+| `text` | No | New text. |
+| `category` | No | New category. |
+| `priority` | No | New priority (`low`, `medium`, `high`, `urgent`). |
+| `status` | No | New status (`active`, `completed`, `archived`). |
+| `device` | No | New device. |
+| `parent_id` | No | ID of the parent idea. Empty makes it a main task. |
+| `order` | No | Custom sort index. |
+| `due` | No | When Brainstorm should remind you of this idea. |
+| `assignee` | No | The person to remind. |
+| `zone` | No | Reminds when entering this zone. |
+
+### `brainstorm.delete_idea`
+
+Permanently removes an idea.
+
+| Field | Required | Meaning |
+| :--- | :--- | :--- |
+| `id` | Yes | ID of the idea to delete. |
+
+### `brainstorm.get_ideas`
+
+Returns stored ideas as a response, for templates and automations.
+
+| Field | Required | Meaning |
+| :--- | :--- | :--- |
+| `category` | No | Only this category. |
+| `priority` | No | Only this priority (`low`, `medium`, `high`, `urgent`). |
+| `status` | No | Status filter (`active`, `completed` or `all`). |
+
+### `brainstorm.get_announcement`
+
+Returns a spoken text about all categories or one of them as a response, for Alexa or Assist.
+
+| Field | Required | Meaning |
+| :--- | :--- | :--- |
+| `category` | No | Only this category, such as `Smarthome`. Empty means all. |
+| `device` | No | The device that asked. With privacy on, it decides whose entries are named. |
+
+### `brainstorm.add_category`
+
+Creates a new category and its to-do list.
+
+| Field | Required | Meaning |
+| :--- | :--- | :--- |
+| `name` | Yes | Name of the new category. |
+| `icon` | No | Optional Home Assistant / MDI icon. |
+| `color` | No | Optional accent color as hexadecimal, such as `#ff7800`. |
+
+### `brainstorm.set_category_style`
+
+Sets a custom icon and accent color for a category.
+
+| Field | Required | Meaning |
+| :--- | :--- | :--- |
+| `category` | Yes | Name of the category. |
+| `icon` | No | Home Assistant / MDI icon. |
+| `color` | No | Accent color as hexadecimal, such as `#06b6d4`. |
+| `reset` | No | Removes the custom icon and color. |
+
+### `brainstorm.remove_category`
+
+Removes a category. Its ideas move to `Inbox`.
+
+| Field | Required | Meaning |
+| :--- | :--- | :--- |
+| `name` | Yes | Name of the category. |
+
+### `brainstorm.export_markdown`
+
+Writes all categories and ideas as Markdown files.
+
+| Field | Required | Meaning |
+| :--- | :--- | :--- |
+| `path` | No | Target folder. Default: `/config/brainstorm`. |
+
+### `brainstorm.reorder_ideas`
+
+Saves the custom order of the ideas.
+
+| Field | Required | Meaning |
+| :--- | :--- | :--- |
+| `idea_ids` | Yes | Ordered list of idea IDs. |
+
+### `brainstorm.share`
+
+Shares several ideas or a whole category. Needs privacy to be switched on.
+
+| Field | Required | Meaning |
+| :--- | :--- | :--- |
+| `ids` | No | IDs of the ideas to share. |
+| `category` | No | Shares all your ideas in this category, including later ones. |
+| `shares` | Yes | User ID (or `all`) and level, such as `{"all": "view"}`. Levels are `view` and `edit`; `null` removes a share. |
 
 ---
 
@@ -246,6 +375,7 @@ hide_empty_categories: true
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.5.1`** | 2026-11-01 | **Home Assistant Quality Scale: Bronze:**<br>• **Bronze checked rule by rule:** The README and manifest claimed Silver, which was not correct. The status is now a self-assessment of Bronze, as Home Assistant did not review this custom integration.<br>• **Shorter names:** Lists are now called *Alltag* instead of *Brainstorm: Alltag*, and the sensor *Ideas overview*. Existing entity IDs stay the same; new lists get `todo.brainstorm_hub_*`.<br>• **No more polling:** Entities only update when something changes.<br>• **Clear errors:** If stored data cannot be read, Home Assistant tries the setup again. Actions explain when the integration is not loaded.<br>• **Settings:** New setups keep their settings in the options, and every field now has an explanation.<br>• **Tests and docs:** The config flow is fully tested. All actions and fields, the prerequisites, and removal are documented.<br>• **Brand images:** Now real PNG files in the correct sizes. |
 | **`v1.5.0`** | 2026-11-01 | **Big Update: Skill, Reminders, Privacy & Sharing** (summary of v1.4.46 to v1.4.64):<br>• **Voice in one sentence:** Your own optional Alexa skill with one clean answer, Echo origin, Echo selection, an iPhone shortcut and a microphone in the quick input.<br>• **Proactive reminders:** Due dates by voice, list, card or service, over Alexa and any `notify` service, with phone buttons, quiet hours, briefing, weekly review, rules per list, places, people, calendar and AI.<br>• **Privacy & sharing:** Private ideas per user, sharing of ideas and categories with view or edit rights, multi-select, Echos and apps per person.<br>• **Settings:** Back navigation, live status, channel test and a switch for every feature. |
 | **`v1.4.64`** | 2026-11-01 | **Apple Logo for Siri:** Ideas from an iPhone shortcut show an Apple logo. |
 | **`v1.4.63`** | 2026-11-01 | **Documentation:** Added the iPhone shortcut, the microphone, privacy and sharing, and the new services. |

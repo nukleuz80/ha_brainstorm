@@ -5,13 +5,12 @@ import logging
 from typing import Any
 
 from homeassistant.components.sensor import SensorEntity
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Context, HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import ATTR_STATUS, DOMAIN, OVERVIEW_ENTITY_ID
-from .store import BrainstormStore
+from .store import BrainstormConfigEntry, BrainstormStore
 
 PARALLEL_UPDATES = 0
 
@@ -20,15 +19,11 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: BrainstormConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the Brainstorm sensor platform."""
-    store: BrainstormStore = (
-        entry.runtime_data
-        if hasattr(entry, "runtime_data") and entry.runtime_data is not None
-        else hass.data[DOMAIN][entry.entry_id]
-    )
+    store = entry.runtime_data
     async_add_entities([BrainstormOverviewSensor(store, entry.entry_id)])
 
 
@@ -36,7 +31,8 @@ class BrainstormOverviewSensor(SensorEntity):
     """Overview sensor for Brainstorm statistics."""
 
     _attr_has_entity_name = True
-    _attr_name = "Brainstorm Ideen Übersicht"
+    _attr_should_poll = False
+    _attr_translation_key = "overview"
     _attr_icon = "mdi:brain"
     # The cards read these live; recording them would exceed the 16 KB recorder limit
     _unrecorded_attributes = frozenset(

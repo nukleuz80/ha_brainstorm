@@ -26,11 +26,12 @@ from .const import (
     EVENT_IDEA_UPDATED,
     OVERVIEW_ENTITY_ID,
 )
+from .store import get_loaded_store
 
 
 def _visible_text(hass: HomeAssistant, data: dict[str, Any]) -> str:
     """Return an idea's text for the logbook, which every user can read."""
-    store = hass.data.get(DOMAIN, {}).get("primary_store")
+    store = get_loaded_store(hass)
     if store is not None and store.privacy_enabled:
         return "Privater Eintrag"
     return data.get(ATTR_TEXT, "Unbekannte Notiz")

@@ -8,6 +8,11 @@
           "hide_empty_categories": "Kategorien ohne Notizen (0) ausblenden",
           "auto_export_markdown": "Ideen automatisch als Markdown-Dateien exportieren",
           "markdown_path": "Dateipfad für Markdown-Dateien"
+        },
+        "data_description": {
+          "hide_empty_categories": "Blendet Kategorien ohne Notizen auf den Karten aus.",
+          "auto_export_markdown": "Schreibt bei jeder Änderung pro Kategorie eine Markdown-Datei in den unten genannten Ordner.",
+          "markdown_path": "Ordner für die Markdown-Dateien, zum Beispiel /config/brainstorm."
         }
       },
       "reconfigure": {
@@ -18,6 +23,12 @@
           "smart_formatting": "Intelligente Text-Optimierung",
           "auto_export_markdown": "Ideen automatisch als Markdown-Dateien exportieren",
           "markdown_path": "Dateipfad für Markdown-Dateien"
+        },
+        "data_description": {
+          "hide_empty_categories": "Blendet Kategorien ohne Notizen auf den Karten aus.",
+          "smart_formatting": "Korrigiert Groß-/Kleinschreibung und Grammatik neuer Ideen und entfernt Füllwörter.",
+          "auto_export_markdown": "Schreibt bei jeder Änderung pro Kategorie eine Markdown-Datei in den unten genannten Ordner.",
+          "markdown_path": "Ordner für die Markdown-Dateien, zum Beispiel /config/brainstorm."
         }
       }
     },
@@ -51,6 +62,13 @@
           "edit_categories": "✏️ Komplette Liste anpassen (durch Komma getrennt)",
           "hide_empty_categories": "Kategorien ohne Notizen (0) ausblenden",
           "go_back": "⬅️ Zurück, ohne zu speichern"
+        },
+        "data_description": {
+          "add_category": "Name einer neuen Kategorie. Leer lassen, um keine anzulegen.",
+          "delete_category": "Die Ideen einer gelöschten Kategorie wandern in die Inbox.",
+          "edit_categories": "Alle Kategorien, durch Komma getrennt. Ändere die Liste, um mehrere auf einmal umzubenennen, umzusortieren oder zu entfernen.",
+          "hide_empty_categories": "Blendet Kategorien ohne Notizen auf den Karten aus.",
+          "go_back": "Kehrt zur vorigen Seite zurück, ohne dieses Formular zu speichern."
         }
       },
       "category_style": {
@@ -59,6 +77,10 @@
         "data": {
           "category": "Kategorie auswählen",
           "go_back": "⬅️ Zurück, ohne zu speichern"
+        },
+        "data_description": {
+          "category": "Die Kategorie, deren Icon und Farbe du ändern möchtest.",
+          "go_back": "Kehrt zur vorigen Seite zurück, ohne dieses Formular zu speichern."
         }
       },
       "category_style_edit": {
@@ -69,6 +91,12 @@
           "color": "Kategorie-Farbe",
           "reset_style": "Auf Standard-Icon und -Farbe zurücksetzen",
           "go_back": "⬅️ Zurück, ohne zu speichern"
+        },
+        "data_description": {
+          "icon": "Wird für diese Kategorie auf den Karten angezeigt.",
+          "color": "Farbe dieser Kategorie auf den Karten.",
+          "reset_style": "Entfernt Icon und Farbe dieser Kategorie und ignoriert die beiden Felder darüber.",
+          "go_back": "Kehrt zur vorigen Seite zurück, ohne dieses Formular zu speichern."
         }
       },
       "category_style_done": {
@@ -92,7 +120,12 @@
           "go_back": "⬅️ Zurück, ohne zu speichern"
         },
         "data_description": {
-          "allowed_echos": "Nur diese Echos können Ideen per Sprache erfassen und Brainstorm öffnen. Leer lassen, um alle Echos zu nutzen."
+          "allowed_echos": "Nur diese Echos können Ideen per Sprache erfassen und Brainstorm öffnen. Leer lassen, um alle Echos zu nutzen.",
+          "default_category": "Wird genutzt, wenn eine Idee keiner Kategorie zugeordnet werden kann.",
+          "smart_formatting": "Korrigiert Groß-/Kleinschreibung und Grammatik neuer Ideen und entfernt Füllwörter.",
+          "auto_export_markdown": "Schreibt bei jeder Änderung pro Kategorie eine Markdown-Datei in den unten genannten Ordner.",
+          "markdown_path": "Ordner für die Markdown-Dateien, zum Beispiel /config/brainstorm.",
+          "go_back": "Kehrt zur vorigen Seite zurück, ohne dieses Formular zu speichern."
         }
       },
       "alexa_skill": {
@@ -101,6 +134,10 @@
         "data": {
           "voice_mode": "Spracheingabe",
           "go_back": "⬅️ Zurück, ohne zu speichern"
+        },
+        "data_description": {
+          "voice_mode": "Nativ nutzt den Satz über Alexa Media ohne Skill. Skill und Beide nutzen deinen eigenen Alexa-Skill.",
+          "go_back": "Kehrt zur vorigen Seite zurück, ohne dieses Formular zu speichern."
         }
       },
       "alexa_skill_setup": {
@@ -115,7 +152,10 @@
         },
         "data_description": {
           "reset_skill": "Nutze das, wenn die Adresse bekannt wurde oder du einen neuen Skill gebaut hast. Kopiere danach den neuen Skill-Code.",
-          "device_name": "Zum Beispiel Alexa App iPhone. Home Assistant kann die Alexa-App nicht selbst erkennen. Der Name gilt für den letzten Eintrag und alle späteren von diesem Gerät."
+          "device_name": "Zum Beispiel Alexa App iPhone. Home Assistant kann die Alexa-App nicht selbst erkennen. Der Name gilt für den letzten Eintrag und alle späteren von diesem Gerät.",
+          "skill_code": "Kopiere das in die lambda_function.py deines Skills. Halte es geheim, es enthält deine geheime Adresse.",
+          "interaction_model": "Füge das im JSON-Editor der Alexa Developer Console ein.",
+          "go_back": "Kehrt zur vorigen Seite zurück, ohne dieses Formular zu speichern."
         }
       },
       "reminders": {
@@ -152,7 +192,13 @@
           "reminders_enabled": "Aus stoppt alle Erinnerungen, das Briefing, den Rückblick und alles andere in diesem Menü.",
           "reminder_echos": "Für feste Echos, als Ersatz sowie für Briefing und Rückblick.",
           "reminder_delay": "Nur mit Alexa: Du hast Zeit zu reagieren, bevor das Handy benachrichtigt wird. Bei 0 kommt beides sofort.",
-          "urgent_delay": "Gilt für noch offene Einträge mit hoher oder dringender Priorität."
+          "urgent_delay": "Gilt für noch offene Einträge mit hoher oder dringender Priorität.",
+          "reminder_alexa": "Welcher Echo eine Erinnerung ansagt. Aus bedeutet keine Ansage.",
+          "notify_enabled": "Aus stoppt die Benachrichtigungen, die gewählten Dienste bleiben erhalten.",
+          "reminder_notify": "Diese Dienste erhalten Erinnerungen, zum Beispiel dein Handy.",
+          "urgent_enabled": "Sendet Einträge mit hoher oder dringender Priorität erneut, solange sie offen sind.",
+          "urgent_notify": "Diese Dienste erhalten die wiederholte Nachricht.",
+          "go_back": "Kehrt zur vorigen Seite zurück, ohne dieses Formular zu speichern."
         }
       },
       "reminder_schedule": {
@@ -173,7 +219,16 @@
         },
         "data_description": {
           "quiet_start": "Erinnerungen warten bis zum Ende der Ruhezeit. Dringende Einträge erreichen die Benachrichtigungsdienste trotzdem, aber kein Echo spricht.",
-          "digest_presence": "Optional: Das Briefing wartet nach seiner Uhrzeit bis zu 6 Stunden, bis ein Sensor oder eine Person hier jemanden meldet."
+          "digest_presence": "Optional: Das Briefing wartet nach seiner Uhrzeit bis zu 6 Stunden, bis ein Sensor oder eine Person hier jemanden meldet.",
+          "quiet_enabled": "Aus ignoriert die Zeiten darunter, sie bleiben aber erhalten.",
+          "quiet_end": "Zu dieser Zeit werden wartende Erinnerungen gesendet.",
+          "digest_enabled": "Sendet einmal täglich eine Übersicht des Tages.",
+          "digest_time": "Wann das Briefing gesendet wird.",
+          "review_enabled": "Sendet einmal pro Woche eine Übersicht älterer offener Einträge.",
+          "review_weekday": "Der Wochentag des Rückblicks.",
+          "review_time": "Wann der Rückblick gesendet wird.",
+          "review_days": "Einträge, die länger offen sind, erscheinen im Rückblick.",
+          "go_back": "Kehrt zur vorigen Seite zurück, ohne dieses Formular zu speichern."
         }
       },
       "reminder_lists": {
@@ -183,6 +238,11 @@
           "list_rules_enabled": "Regeln pro Liste nutzen",
           "category": "Liste bearbeiten",
           "go_back": "⬅️ Zurück, ohne zu speichern"
+        },
+        "data_description": {
+          "list_rules_enabled": "Aus lässt alle Listen die normalen Einstellungen nutzen, die Regeln bleiben erhalten.",
+          "category": "Wähle eine Liste, um ihre Regel auf der nächsten Seite zu bearbeiten.",
+          "go_back": "Kehrt zur vorigen Seite zurück, ohne dieses Formular zu speichern."
         }
       },
       "reminder_list_edit": {
@@ -199,7 +259,14 @@
           "go_back": "⬅️ Zurück, ohne zu speichern"
         },
         "data_description": {
-          "zone_enabled": "Wird einmal am Tag gesendet, wenn jemand dort ankommt. Braucht den Schalter für Orte."
+          "zone_enabled": "Wird einmal am Tag gesendet, wenn jemand dort ankommt. Braucht den Schalter für Orte.",
+          "channel": "Normale Kanäle folgen den allgemeinen Einstellungen der Erinnerungen.",
+          "notify": "Ersetzen die normalen Dienste für diese Liste. Leer nutzt die normalen.",
+          "schedule_enabled": "Sendet die offenen Einträge dieser Liste an den Tagen und zur Uhrzeit darunter.",
+          "schedule_weekdays": "Die Tage, an denen die Liste gesendet wird.",
+          "schedule_time": "Wann die Liste an diesen Tagen gesendet wird.",
+          "zone": "Die Zone, in der die offenen Einträge dieser Liste gesendet werden.",
+          "go_back": "Kehrt zur vorigen Seite zurück, ohne dieses Formular zu speichern."
         }
       },
       "reminder_places": {
@@ -212,7 +279,10 @@
           "go_back": "⬅️ Zurück, ohne zu speichern"
         },
         "data_description": {
-          "default_person": "Ohne Person löst jeder aus, der dort ankommt."
+          "default_person": "Ohne Person löst jeder aus, der dort ankommt.",
+          "arrival_enabled": "Damit kannst du sagen, dass eine Erinnerung beim Heimkommen kommen soll.",
+          "places_enabled": "Damit kannst du für eine Erinnerung eine Zone nennen, zum Beispiel einen Supermarkt.",
+          "go_back": "Kehrt zur vorigen Seite zurück, ohne dieses Formular zu speichern."
         }
       },
       "reminder_persons": {
@@ -222,6 +292,11 @@
           "persons_enabled": "Erinnerungen für andere Personen nutzen",
           "person": "Person bearbeiten",
           "go_back": "⬅️ Zurück, ohne zu speichern"
+        },
+        "data_description": {
+          "persons_enabled": "Damit kann eine Erinnerung für jemand anderen sein, zum Beispiel: erinnere Alex.",
+          "person": "Wähle eine Person, um ihre Kanäle auf der nächsten Seite einzustellen.",
+          "go_back": "Kehrt zur vorigen Seite zurück, ohne dieses Formular zu speichern."
         }
       },
       "reminder_person_edit": {
@@ -231,6 +306,11 @@
           "notify": "Benachrichtigungsdienste",
           "echos": "Echos",
           "go_back": "⬅️ Zurück, ohne zu speichern"
+        },
+        "data_description": {
+          "notify": "Die Benachrichtigungsdienste dieser Person.",
+          "echos": "Die Echos, die die Erinnerungen dieser Person ansagen.",
+          "go_back": "Kehrt zur vorigen Seite zurück, ohne dieses Formular zu speichern."
         }
       },
       "reminder_extras": {
@@ -247,7 +327,10 @@
         "data_description": {
           "calendar_enabled": "Nur in eine Richtung und einmal pro Erinnerung. Spätere Änderungen werden nicht übertragen.",
           "ai_enabled": "Deine Einträge werden an den Anbieter der gewählten KI gesendet.",
-          "native_reminders": "Schalte in der Alexa-Konsole zusätzlich Reminders unter Build ➔ Permissions ein. Alexa klingelt dann selbst, und Home Assistant spricht nicht zusätzlich."
+          "native_reminders": "Schalte in der Alexa-Konsole zusätzlich Reminders unter Build ➔ Permissions ein. Alexa klingelt dann selbst, und Home Assistant spricht nicht zusätzlich.",
+          "calendar_entity": "Der Kalender, der die Erinnerungen erhält.",
+          "ai_entity": "Die KI-Aufgaben-Entität, die die Texte kürzt.",
+          "go_back": "Kehrt zur vorigen Seite zurück, ohne dieses Formular zu speichern."
         }
       },
       "reminder_test": {
@@ -255,6 +338,9 @@
         "description": "Brainstorm sendet jetzt eine echte Testnachricht. Ein Echo spricht dabei laut.\n\n{targets}",
         "data": {
           "go_back": "⬅️ Zurück, ohne zu speichern"
+        },
+        "data_description": {
+          "go_back": "Kehrt zur vorigen Seite zurück, ohne dieses Formular zu speichern."
         }
       },
       "reminder_test_result": {
@@ -274,7 +360,9 @@
         "data_description": {
           "privacy_owner": "Besitzt alle vorhandenen Einträge und alles, was an einem Echo gesagt wird. Sprache, Briefing und Rückblick nennen nur die Einträge dieser Person.",
           "privacy_export": "Diese Dateien enthalten alle Einträge und sind für alle mit Zugriff auf den Config-Ordner lesbar.",
-          "share_users": "Leer bedeutet alle. Damit blendest du technische Konten wie MQTT aus."
+          "share_users": "Leer bedeutet alle. Damit blendest du technische Konten wie MQTT aus.",
+          "privacy_enabled": "Dann sieht jede Person nur ihre eigenen Einträge und was mit ihr geteilt wurde.",
+          "go_back": "Kehrt zur vorigen Seite zurück, ohne dieses Formular zu speichern."
         }
       },
       "privacy_voice": {
@@ -286,7 +374,9 @@
           "go_back": "⬅️ Zurück, ohne zu speichern"
         },
         "data_description": {
-          "voice_user": "Leer lassen, um die Zuordnung zu entfernen."
+          "voice_user": "Leer lassen, um die Zuordnung zu entfernen.",
+          "device": "Der Echo oder die Alexa-App, die du zuordnen möchtest. Du kannst auch einen Namen eintippen.",
+          "go_back": "Kehrt zur vorigen Seite zurück, ohne dieses Formular zu speichern."
         }
       }
     },
@@ -332,6 +422,18 @@
         "notify": "Nur Benachrichtigungen (privat)",
         "none": "Nichts, nur Ereignis"
       }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "overview": {
+        "name": "Ideen Übersicht"
+      }
+    }
+  },
+  "exceptions": {
+    "not_loaded": {
+      "message": "Brainstorm Hub ist nicht geladen. Prüfe die Integration unter Einstellungen > Geräte & Dienste."
     }
   }
 }

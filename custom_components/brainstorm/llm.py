@@ -18,19 +18,11 @@ from .const import (
     ATTR_TEXT,
     DOMAIN,
 )
-from .store import BrainstormStore
+from .store import BrainstormStore, get_loaded_store
 
 _LOGGER = logging.getLogger(__name__)
 
 BRAINSTORM_LLM_API_ID = "brainstorm"
-
-
-def _get_active_store(hass: HomeAssistant) -> BrainstormStore | None:
-    """Retrieve the active Brainstorm store instance."""
-    entries = hass.config_entries.async_loaded_entries(DOMAIN)
-    if entries:
-        return entries[0].runtime_data
-    return hass.data.get(DOMAIN, {}).get("primary_store")
 
 
 def _resolve_category(store: BrainstormStore, category: str | None) -> str | None:
@@ -148,7 +140,7 @@ class BrainstormAddIdeaTool(llm.Tool):
         llm_context: llm.LLMContext,
     ) -> llm.ToolResult:
         """Execute the tool."""
-        store = _get_active_store(hass)
+        store = get_loaded_store(hass)
         if not store:
             return _error("Brainstorm store is not initialized")
 
@@ -231,7 +223,7 @@ class BrainstormGetIdeasTool(llm.Tool):
         llm_context: llm.LLMContext,
     ) -> llm.ToolResult:
         """Execute the tool."""
-        store = _get_active_store(hass)
+        store = get_loaded_store(hass)
         if not store:
             return _error("Brainstorm store is not initialized")
 
@@ -325,7 +317,7 @@ class BrainstormCompleteIdeaTool(llm.Tool):
         llm_context: llm.LLMContext,
     ) -> llm.ToolResult:
         """Execute the tool."""
-        store = _get_active_store(hass)
+        store = get_loaded_store(hass)
         if not store:
             return _error("Brainstorm store is not initialized")
 
@@ -412,7 +404,7 @@ class BrainstormDeleteIdeaTool(llm.Tool):
         llm_context: llm.LLMContext,
     ) -> llm.ToolResult:
         """Execute the tool."""
-        store = _get_active_store(hass)
+        store = get_loaded_store(hass)
         if not store:
             return _error("Brainstorm store is not initialized")
 
@@ -479,7 +471,7 @@ class BrainstormListCategoriesTool(llm.Tool):
         llm_context: llm.LLMContext,
     ) -> llm.ToolResult:
         """Execute the tool."""
-        store = _get_active_store(hass)
+        store = get_loaded_store(hass)
         if not store:
             return _error("Brainstorm store is not initialized")
 
@@ -508,7 +500,7 @@ class BrainstormLlmAPI(llm.API):
         self, llm_context: llm.LLMContext
     ) -> llm.APIInstance:
         """Return the API instance with fresh tools and context."""
-        store = _get_active_store(self.hass)
+        store = get_loaded_store(self.hass)
         cats = ", ".join(store.categories) if store else "Inbox, Smarthome, Haus & Garten, Projekte, Alltag"
         api_prompt = (
             "Brainstorm Hub is the central idea, thought, and note management system in Home Assistant. "

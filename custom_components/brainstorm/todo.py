@@ -10,7 +10,6 @@ from homeassistant.components.todo import (
     TodoListEntity,
     TodoListEntityFeature,
 )
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
@@ -30,7 +29,7 @@ from .const import (
     ATTR_TEXT,
     DOMAIN,
 )
-from .store import BrainstormStore
+from .store import BrainstormConfigEntry, BrainstormStore
 
 PARALLEL_UPDATES = 0
 
@@ -39,15 +38,11 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: BrainstormConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the Brainstorm todo platform from a config entry."""
-    store: BrainstormStore = (
-        entry.runtime_data
-        if hasattr(entry, "runtime_data") and entry.runtime_data is not None
-        else hass.data[DOMAIN][entry.entry_id]
-    )
+    store = entry.runtime_data
 
     existing_categories: set[str] = set()
 
@@ -106,6 +101,7 @@ class BrainstormTodoList(TodoListEntity):
     """A To-do list representing a Brainstorm category."""
 
     _attr_has_entity_name = True
+    _attr_should_poll = False
     _attr_supported_features = (
         TodoListEntityFeature.CREATE_TODO_ITEM
         | TodoListEntityFeature.UPDATE_TODO_ITEM
@@ -119,7 +115,7 @@ class BrainstormTodoList(TodoListEntity):
         self._store = store
         self._category = category
         self._attr_unique_id = _todo_unique_id(entry_id, category)
-        self._attr_name = f"Brainstorm: {category}"
+        self._attr_name = category
         self._attr_icon = "mdi:lightbulb-outline"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry_id)},

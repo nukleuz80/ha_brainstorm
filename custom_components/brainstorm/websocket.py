@@ -8,7 +8,8 @@ import voluptuous as vol
 from homeassistant.components import websocket_api
 from homeassistant.core import HomeAssistant, callback
 
-from .const import CONF_SHARE_USERS, DOMAIN
+from .const import CONF_SHARE_USERS
+from .store import get_loaded_store
 
 
 @callback
@@ -25,7 +26,7 @@ async def websocket_get_ideas(
     msg: dict[str, Any],
 ) -> None:
     """Return the ideas of the connected user."""
-    store = hass.data.get(DOMAIN, {}).get("primary_store")
+    store = get_loaded_store(hass)
     if store is None:
         connection.send_error(
             msg["id"], websocket_api.ERR_NOT_FOUND, "Brainstorm is not loaded"

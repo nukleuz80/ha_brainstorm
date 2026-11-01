@@ -8,9 +8,9 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.5.0-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.5.1-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
-[![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver-C0C0C0.svg)](https://developers.home-assistant.io/docs/integration_quality_scale_index/)
+[![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Bronze%20Selbsteinsch%C3%A4tzung-CD7F32.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/nukleuz80/ha_brainstorm)
@@ -47,7 +47,7 @@ Brainstorm Hub verwandelt alle deine **Amazon Echo**-Geräte im Haus in sekunden
   - **1-Klick Prioritätswechsel im Dashboard:** Direktes Weiterschalten der Priorität (`Mittel` ➔ `Hoch` ➔ `Dringend` ➔ `Niedrig`) per Klick auf das Prioritäts-Badge in der Notizenliste (`brainstorm-card`) oder der Mindmap (`brainstorm-mindmap-card`).
   - **Prioritätsauswahl in Toolbar & Dialogen:** Schnellauswahl in der Erfassungszeile sowie farbige Chip-Auswahl in Neu- und Bearbeiten-Dialogen.
   - **Visuelle Effekte in der Mindmap:** Dringende Gedankenwolken (`urgent`) pulsieren mit einem sanften Feuereffekt (`cloud-urgent`), während hohe Prioritäten (`high`) durch einen dezenten Warm-Glow hervorgehoben werden.
-  - **Vollständige Plattform-Integration:** Prioritäten werden im Sensor (`priority_counts`), in To-do-Listen (`todo.brainstorm_*`), im Logbook, in den LLM-Tools und beim Markdown-Export (`[🔥 Dringend]`, `[🔴 Hoch]`) lückenlos gepflegt.
+  - **Vollständige Plattform-Integration:** Prioritäten werden im Sensor (`priority_counts`), in To-do-Listen (`todo.brainstorm_hub_*`), im Logbook, in den LLM-Tools und beim Markdown-Export (`[🔥 Dringend]`, `[🔴 Hoch]`) lückenlos gepflegt.
 - 🤖 **Assist LLM Tools & Function-Calling API (v1.4.20):**
   - **Freie natürliche Sprache statt starren Befehlen:** Vollständige Integration in das native Home Assistant LLM API (`homeassistant.helpers.llm`). Sprachmodelle (wie OpenAI, Google Gemini, Ollama oder lokale LLMs) erhalten direkten Zugriff auf Brainstorm als Werkzeugsatz.
   - **5 mächtige KI-Werkzeuge:**
@@ -90,13 +90,22 @@ Brainstorm Hub verwandelt alle deine **Amazon Echo**-Geräte im Haus in sekunden
   - Exportiert Ideen strukturiert nach Kategorien in Markdown-Dateien (z. B. `/config/brainstorm/`).
   - Ideal für Personal Knowledge Management (Obsidian, Logseq, Foam, SilverBullet).
 - 📋 **Native Home Assistant To-do Plattform:**
-  - Jede Brainstorm-Kategorie wird als echte Home Assistant To-do-Liste bereitgestellt (`todo.brainstorm_haus_garten`, `todo.brainstorm_inbox`, usw.).
+  - Jede Brainstorm-Kategorie wird als echte Home Assistant To-do-Liste bereitgestellt (`todo.brainstorm_hub_haus_garten`, `todo.brainstorm_hub_inbox`, usw.).
 - 🏛️ **100% Home Assistant Standard-konform:**
   - Entwickelt nach den offiziellen Richtlinien von [contributors.home-assistant.io](https://contributors.home-assistant.io/) (strikte Typisierung, non-blocking Event-Loop, `DeviceInfo`, saubere Translation-Keys).
 
 ---
 
 ## 📦 Installation
+
+### Voraussetzungen
+
+1. Home Assistant 2026.10 oder neuer.
+2. [HACS](https://hacs.xyz), wenn du darüber installieren möchtest.
+3. Optional für die Spracheingabe mit Alexa: die Integration [Alexa Media Player](https://github.com/alandtse/alexa_media_player).
+4. Optional für einen eigenen Alexa-Skill: ein Amazon-Entwicklerkonto und eine öffentliche HTTPS-Adresse deines Home Assistant.
+
+Brainstorm Hub verbindet sich von selbst mit keinem externen Dienst. Die Einrichtung braucht also weder Konto noch Passwort.
 
 ### Methode 1: Über HACS (Empfohlen – 1 Klick)
 
@@ -124,9 +133,21 @@ Klicke einfach auf diesen Button, um das Repository direkt in deiner Home Assist
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js` und `www/brainstorm-mindmap-card.js` in `/config/www/`.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.5.0` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.5.0` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.5.1` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.5.1` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
+
+### Integration entfernen
+
+1. Öffne **Einstellungen ➔ Geräte & Dienste ➔ Brainstorm Hub**, klicke auf die drei Punkte und wähle **Löschen**.
+2. Über HACS installiert: Öffne Brainstorm Hub in HACS und wähle **Entfernen**. Manuell installiert: Lösche `/config/custom_components/brainstorm` und die beiden Karten-Dateien in `/config/www/`.
+3. Entferne die beiden Karten-Ressourcen unter **Einstellungen ➔ Dashboards ➔ Ressourcen** und alle Brainstorm-Karten aus deinen Dashboards.
+4. Starte Home Assistant neu.
+
+Je nachdem, was du genutzt hast, entferne auch:
+- **Deinen Alexa-Skill:** Lösche ihn in der Alexa Developer Console und seinen Code in AWS Lambda. Echte Alexa-Erinnerungen bleiben in der Alexa-App, bis du sie dort löschst.
+- **Automationen und Sätze:** Eigene Automationen, Skripte und Custom Sentences, die Brainstorm aufrufen, sowie einen iPhone-Kurzbefehl.
+- **Deine Daten:** Home Assistant behält deine Ideen in `/config/.storage/brainstorm.storage`, die Skill-Kopplung in `brainstorm.alexa_skill` und den Stand der Erinnerungen in `brainstorm.reminders` im selben Ordner. Lösche diese Dateien und den Markdown-Ordner (Standard `/config/brainstorm`), wenn du nicht zurückkehren möchtest.
 
 ---
 
@@ -343,19 +364,125 @@ Standardmäßig sehen alle Benutzer deines Home Assistant alle Einträge. Unter 
 
 ## 🛠️ Dienste (Services)
 
-Die Integration stellt folgende Services bereit:
+Jede Aktion bleibt verfügbar, solange die Integration nicht geladen ist, und erklärt dann, warum sie nicht ausgeführt werden kann.
 
-| Service | Beschreibung | Parameter |
+### `brainstorm.add_idea`
+
+Fügt blitzschnell eine neue Brainstorm-Idee hinzu. Erkennt automatisch Kategorien im Text (z.B. 'Garten: Blumen pflanzen' oder '#smarthome').
+
+| Feld | Pflicht | Bedeutung |
 | :--- | :--- | :--- |
-| `brainstorm.add_idea` | Erstellt eine neue Idee mit automatischer oder manueller Kategorie | `text` (erforderlich), `category` (optional), `source` (optional), `tags` (optional) |
-| `brainstorm.update_idea` | Aktualisiert Text, Kategorie oder Status (`active` / `completed`) | `id` (erforderlich), `text`, `category`, `status` |
-| `brainstorm.delete_idea` | Löscht eine Idee unwiderruflich | `id` (erforderlich) |
-| `brainstorm.add_category` | Erstellt eine neue Kategorie | `name` (erforderlich) |
-| `brainstorm.remove_category` | Entfernt eine Kategorie (Ideen wandern in `Inbox`) | `name` (erforderlich) |
-| `brainstorm.reorder_ideas` | Aktualisiert die benutzerdefinierte Sortierreihenfolge der Notizen | `idea_ids` (erforderlich) |
-| `brainstorm.export_markdown` | Triggert sofortigen Markdown-Export | `path` (optional) |
-| `brainstorm.share` | Gibt Einträge oder eine Kategorie frei (braucht Privatsphäre) | `shares` (erforderlich, z. B. `{"all": "view"}`), `ids` oder `category` |
-| `brainstorm.get_announcement` | Erzeugt den Ansagetext | `category`, `device` (optional) |
+| `text` | Ja | Der Inhalt des Gedankens oder der Idee. |
+| `category` | Nein | Thema/Kategorie. Bleibt dies leer, wird sie aus dem Text ermittelt oder 'Inbox' zugewiesen. |
+| `priority` | Nein | Dringlichkeit der Idee (low, medium, high, urgent). Wird andernfalls automatisch erkannt. |
+| `source` | Nein | Woher die Idee stammt (z.B. alexa, companion, dashboard, etc.). |
+| `device` | Nein | Das auslösende Gerät (z.B. "Echo Show Küche", "Wohnzimmer Echo Dot", "Jan (Handy)"). |
+| `tags` | Nein | Zusätzliche Schlagworte. |
+| `parent_id` | Nein | ID der übergeordneten Idee für Unteraufgaben/Einrückung (optional). |
+| `due` | Nein | Wann Brainstorm an diese Idee erinnern soll. |
+| `parse_due` | Nein | Erkennt Angaben wie "morgen um 8" im Text und nimmt sie als Termin. |
+| `assignee` | Nein | Wer erinnert werden soll. |
+| `zone` | Nein | Erinnert beim Betreten dieser Zone. |
+
+### `brainstorm.update_idea`
+
+Aktualisiert Text, Kategorie oder Status einer bestehenden Idee.
+
+| Feld | Pflicht | Bedeutung |
+| :--- | :--- | :--- |
+| `id` | Ja | Eindeutige ID der Idee. |
+| `text` | Nein | Geänderter Text. |
+| `category` | Nein | Neue Kategorie. |
+| `priority` | Nein | Neue Priorität (low, medium, high, urgent). |
+| `status` | Nein | Neuer Status (active, completed, archived). |
+| `device` | Nein | Gerät aktualisieren. |
+| `parent_id` | Nein | ID der übergeordneten Idee für Unteraufgaben/Einrückung (leer = Hauptaufgabe). |
+| `order` | Nein | Benutzerdefinierter Sortierindex. |
+| `due` | Nein | Wann Brainstorm an diese Idee erinnern soll. |
+| `assignee` | Nein | Wer erinnert werden soll. |
+| `zone` | Nein | Erinnert beim Betreten dieser Zone. |
+
+### `brainstorm.delete_idea`
+
+Entfernt eine Idee dauerhaft.
+
+| Feld | Pflicht | Bedeutung |
+| :--- | :--- | :--- |
+| `id` | Ja | ID der zu löschenden Idee. |
+
+### `brainstorm.get_ideas`
+
+Gibt eine Liste gespeicherter Ideen zurück (für Templates oder Automationen).
+
+| Feld | Pflicht | Bedeutung |
+| :--- | :--- | :--- |
+| `category` | Nein | Optional nach Kategorie filtern. |
+| `priority` | Nein | Optional nach Priorität filtern (low, medium, high, urgent). |
+| `status` | Nein | Status-Filter (active, completed oder all). |
+
+### `brainstorm.get_announcement`
+
+Erzeugt einen flüssigen, gesprochenen Ansagetext für Alexa oder Assist über alle oder eine bestimmte Kategorie.
+
+| Feld | Pflicht | Bedeutung |
+| :--- | :--- | :--- |
+| `category` | Nein | Optional nach einer bestimmten Kategorie filtern (z.B. Smarthome). Ohne Angabe werden alle aktiven Kategorien vorgelesen. |
+| `device` | Nein | Das Gerät, das gefragt hat. Bei eingeschalteter Privatsphäre bestimmt es, wessen Einträge genannt werden. |
+
+### `brainstorm.add_category`
+
+Erstellt eine neue Brainstorm-Kategorie und die dazugehörige To-do-Liste.
+
+| Feld | Pflicht | Bedeutung |
+| :--- | :--- | :--- |
+| `name` | Ja | Name der neuen Kategorie. |
+| `icon` | Nein | Optionales Home Assistant / MDI Icon. |
+| `color` | Nein | Optionale Akzentfarbe (Hexadezimal wie #ff7800). |
+
+### `brainstorm.set_category_style`
+
+Legt ein benutzerdefiniertes Icon und/oder eine Akzentfarbe für eine Kategorie fest.
+
+| Feld | Pflicht | Bedeutung |
+| :--- | :--- | :--- |
+| `category` | Ja | Name der zu formatierenden Kategorie. |
+| `icon` | Nein | Home Assistant / MDI Icon. |
+| `color` | Nein | Akzentfarbe für Notizen und Filter (Hexadezimal wie #06b6d4). |
+| `reset` | Nein | Falls aktiviert, werden benutzerdefiniertes Icon und Farbe entfernt und auf Standard zurückgesetzt. |
+
+### `brainstorm.remove_category`
+
+Entfernt eine Kategorie (verbleibende Ideen werden nach 'Inbox' verschoben).
+
+| Feld | Pflicht | Bedeutung |
+| :--- | :--- | :--- |
+| `name` | Ja | Name der Kategorie. |
+
+### `brainstorm.export_markdown`
+
+Schreibt alle Kategorien und Ideen als Markdown-Dateien ins Dateisystem.
+
+| Feld | Pflicht | Bedeutung |
+| :--- | :--- | :--- |
+| `path` | Nein | Zielordner (Standard: /config/brainstorm). |
+
+### `brainstorm.reorder_ideas`
+
+Aktualisiert die benutzerdefinierte Sortierreihenfolge der Notizen anhand einer Liste von IDs.
+
+| Feld | Pflicht | Bedeutung |
+| :--- | :--- | :--- |
+| `idea_ids` | Ja | Geordnete Liste der Notiz-IDs. |
+
+### `brainstorm.share`
+
+Gibt mehrere Einträge oder eine ganze Kategorie für Personen frei. Braucht eingeschaltete Privatsphäre.
+
+| Feld | Pflicht | Bedeutung |
+| :--- | :--- | :--- |
+| `ids` | Nein | IDs der freizugebenden Einträge. |
+| `category` | Nein | Alle eigenen Einträge dieser Kategorie freigeben, auch spätere. |
+| `shares` | Ja | Benutzer-ID (oder "all") und Stufe, z. B. {"all": "view"}. Stufen sind view und edit; null entfernt die Freigabe. |
 
 ---
 
@@ -363,6 +490,7 @@ Die Integration stellt folgende Services bereit:
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.5.1`** | 01.11.2026 | **Home Assistant Quality Scale: Bronze:**<br>• **Bronze Regel für Regel geprüft:** README und Manifest nannten Silber, das stimmte nicht. Der Stand ist jetzt Bronze als Selbsteinschätzung, denn Home Assistant hat diese Custom-Integration nicht geprüft.<br>• **Kürzere Namen:** Listen heißen jetzt *Alltag* statt *Brainstorm: Alltag*, der Sensor *Ideen Übersicht*. Vorhandene Entitäts-IDs bleiben gleich, neue Listen erhalten `todo.brainstorm_hub_*`.<br>• **Kein Polling mehr:** Entitäten aktualisieren sich nur noch, wenn sich etwas ändert.<br>• **Klare Fehler:** Lassen sich gespeicherte Daten nicht lesen, versucht Home Assistant die Einrichtung erneut. Aktionen erklären, wenn die Integration nicht geladen ist.<br>• **Einstellungen:** Neue Einrichtungen speichern ihre Einstellungen in den Optionen, und jedes Feld hat jetzt eine Erklärung.<br>• **Tests und Doku:** Der Einrichtungsablauf ist vollständig getestet. Alle Aktionen und Felder, die Voraussetzungen und das Entfernen sind dokumentiert.<br>• **Markenbilder:** Jetzt echte PNG-Dateien in den richtigen Größen. |
 | **`v1.5.0`** | 01.11.2026 | **Großes Update: Skill, Erinnerungen, Privatsphäre & Freigaben** (Zusammenfassung von v1.4.46 bis v1.4.64):<br>• **Sprache in einem Satz:** Optionaler eigener Alexa-Skill mit einer einzigen sauberen Antwort, Echo-Herkunft, Echo-Auswahl, iPhone-Kurzbefehl und Mikrofon in der Schnelleingabe.<br>• **Proaktive Erinnerungen:** Termine per Sprache, Liste, Karte oder Dienst, über Alexa und beliebige `notify`-Dienste, mit Handy-Knöpfen, Ruhezeiten, Briefing, Wochenrückblick, Regeln pro Liste, Orten, Personen, Kalender und KI.<br>• **Privatsphäre & Freigaben:** Private Einträge pro Benutzer, Freigabe von Einträgen und Kategorien mit Ansehen- oder Bearbeiten-Recht, Auswahlmodus, Echos und Apps pro Person.<br>• **Einstellungen:** Zurück-Navigation, Live-Status, Kanal-Test und ein Schalter für jede Funktion. |
 | **`v1.4.64`** | 01.11.2026 | **Apfel-Logo für Siri:** Einträge aus einem iPhone-Kurzbefehl zeigen ein Apfel-Logo. |
 | **`v1.4.63`** | 01.11.2026 | **Dokumentation:** iPhone-Kurzbefehl, Mikrofon, Privatsphäre und Freigaben sowie die neuen Dienste ergänzt. |
@@ -409,8 +537,8 @@ Die Integration stellt folgende Services bereit:
 | **`v1.4.22`** | 25.10.2026 | **Prioritäten-Management & Visuelle Dringlichkeit:** Einführung von vier Prioritätsstufen (`low` 🟢, `medium` 🟡, `high` 🔴, `urgent` 🔥) mit automatischer Signalwort- und Tag-Erkennung (`dringend`, `wichtig`, `sofort`, `eilig`, `prio 1`, `wenn zeit`, `!urgent`, `!high` etc.) bei Spracheingaben via Alexa und Assist. 2-Pass-Parsing filtert Signalwörter unabhängig von der Reihenfolge der Kategoriepräfixe sauber heraus. 1-Klick-Prioritätswechsel direkt auf den Badges beider Lovelace-Cards (`brainstorm-card` und `brainstorm-mindmap-card`). Feuer- und Puls-Effekte für dringende Gedankenwolken in der Mindmap. Vollständige Integration in Sensoren (`priority_counts`), To-do-Listen, Logbook, Markdown-Export und Assist LLM Function-Calling API. |
 | **`v1.4.21`** | 25.10.2026 | **Dynamische Kategorie-Erkennung & Semantisches Routing:** Vollständige dynamische Synthese von Aliassen und Schlagwörtern für alle aktiven Kategorien (inkl. *„Brainstorm“* und frei erstellten Kategorien) zur Laufzeit. Direkte Erkennung zusammengesetzter Projekt- und Themenpräfixe (*„Projekt Brainstorm erweitern“* ➔ ordnet *„Brainstorm erweitern“* zielsicher der Kategorie *„Projekte“* bzw. *„Brainstorm“* zu, statt in der Inbox zu landen). Behebung einer Fehlleitung im Alexa-Hauptmenü-Workflow (`brainstorm_alexa_main_menu_response`), bei der gesprochene Notizen mit Projektbezug versehentlich als Abfragebefehl abgefangen wurden. |
 | **`v1.4.20`** | 24.10.2026 | **Assist LLM Tools & Function-Calling Integration:** Vollständige Bereitstellung des offiziellen Home Assistant LLM API (`homeassistant.helpers.llm`) für Sprachmodelle (OpenAI, Google Gemini, Ollama, Groq, lokale LLMs). Implementierung von 5 nativen Werkzeugen (`brainstorm_add_idea`, `brainstorm_get_ideas`, `brainstorm_complete_idea`, `brainstorm_delete_idea`, `brainstorm_list_categories`). Ermöglicht völlig freie, kontextsensitive Konversationen (z. B. *„Was steht im Smarthome noch an?“*, *„Markiere Hecke schneiden als erledigt“* oder *„Wir brauchen neue Blumentöpfe, merk dir das mal“* mit automatischer Kategorisierung). Sauberes Unload-Lifecycle-Management via `async_on_unload`. |
-| **`v1.4.19`** | 24.10.2026 | **Erreichen des offiziellen Silver Quality Scale Status & Home Assistant Logbook / Aktivität Integration:** Vollständige Umsetzung und Erfüllung sämtlicher Kriterien der Home Assistant Integration Quality Scale für den **Silber-Status** (u. a. native `logbook.py`-Plattform mit `async_describe_events` zur lückenlosen Formatierung aller Brainstorm-Ereignisse – Idee erfasst, aktualisiert, erledigt, gelöscht – inklusive Icon und direkter Verknüpfung mit dem Geräte-Logbuch/Aktivitäts-Panel von Home Assistant; nativer Reconfigure-Flow (`async_step_reconfigure`) zur Live-Anpassung der Konfiguration direkt aus der HA-Oberfläche ohne Neuinstallation; standardkonforme Dienst-Fehlerbehandlung mittels `ServiceValidationError` und `HomeAssistantError` (`action-exceptions`); saubere Deregistrierung aller Dienste und Entitäten beim Entladen (`config-entry-unregistered`); offizielle Silver-Klassifizierung in `quality_scale.yaml` und `manifest.json`). |
-| **`v1.4.18`** | 24.10.2026 | **Erreichen des offiziellen Bronze Quality Scale Status & Alexa-Speedup:** Vollständige Zertifizierung und Erfüllung aller Kriterien der Home Assistant Integration Quality Scale für den **Bronze-Status** (u. a. `runtime-data` nach modernstem HA 2024.4+ Standard mit `entry.runtime_data = store`, Parallelitäts-Steuerung `PARALLEL_UPDATES = 0` auf den Plattformen `sensor` und `todo`, Ergänzung von `"quality_scale": "bronze"` in `manifest.json` sowie Bereitstellung der offiziellen `quality_scale.yaml`). Zudem umfassende Performance-Optimierung der Alexa-Sprachsteuerung: Wegfall von künstlichen Delays und redundanten Cloud-Stopps sowie Einführung der direkten Ein-Schritt-Spracherfassung (*„Brainstorm bereit. Sprich deine Notiz oder sage Ansage.“*) für 4x schnellere Dialoge. |
+| **`v1.4.19`** | 24.10.2026 | **Silver Quality Scale als Selbsteinschätzung (in v1.5.1 auf Bronze korrigiert) & Home Assistant Logbook / Aktivität Integration:** Umsetzung von Kriterien der Home Assistant Integration Quality Scale für den **Silber-Status** (u. a. native `logbook.py`-Plattform mit `async_describe_events` zur lückenlosen Formatierung aller Brainstorm-Ereignisse – Idee erfasst, aktualisiert, erledigt, gelöscht – inklusive Icon und direkter Verknüpfung mit dem Geräte-Logbuch/Aktivitäts-Panel von Home Assistant; nativer Reconfigure-Flow (`async_step_reconfigure`) zur Live-Anpassung der Konfiguration direkt aus der HA-Oberfläche ohne Neuinstallation; standardkonforme Dienst-Fehlerbehandlung mittels `ServiceValidationError` und `HomeAssistantError` (`action-exceptions`); saubere Deregistrierung aller Dienste und Entitäten beim Entladen (`config-entry-unregistered`); offizielle Silver-Klassifizierung in `quality_scale.yaml` und `manifest.json`). |
+| **`v1.4.18`** | 24.10.2026 | **Bronze Quality Scale als Selbsteinschätzung (in v1.5.1 nachgeprüft) & Alexa-Speedup:** Umsetzung von Kriterien der Home Assistant Integration Quality Scale für den **Bronze-Status** (u. a. `runtime-data` nach modernstem HA 2024.4+ Standard mit `entry.runtime_data = store`, Parallelitäts-Steuerung `PARALLEL_UPDATES = 0` auf den Plattformen `sensor` und `todo`, Ergänzung von `"quality_scale": "bronze"` in `manifest.json` sowie Bereitstellung der offiziellen `quality_scale.yaml`). Zudem umfassende Performance-Optimierung der Alexa-Sprachsteuerung: Wegfall von künstlichen Delays und redundanten Cloud-Stopps sowie Einführung der direkten Ein-Schritt-Spracherfassung (*„Brainstorm bereit. Sprich deine Notiz oder sage Ansage.“*) für 4x schnellere Dialoge. |
 | **`v1.4.17`** | 23.10.2026 | **Individuelle Kategoriefarben & Pill-Dots:** Vollständige Neuausrichtung des Farbsystems. Jede Kategorie erhält nun eine unverwechselbare, harmonische und kontraststarke Einzelfarbe (z. B. Inbox = Royal Blue `#2563eb`, Smarthome = Aqua/Cyan `#06b6d4`, Haus & Garten = Emerald Green `#10b981`, Projekte = Indigo `#6366f1`, Alltag = Warm Amber `#f59e0b`, Brainstorm = Electric Purple `#a855f7`, Ideen = Pink `#ec4899`, Einkauf = Orange `#ea580c`, Finanzen = Teal `#14b8a6`, Familie = Rose `#f43f5e`, Gesundheit = Lime `#84cc16`). Automatische, deterministische Zuweisung einzigartiger Farbtöne für alle benutzerdefinierten Kategorien via Hash-Algorithmus. Kartenkanten, synaptische Verbindungslinien und Kategorie-Tags in Mindmap und Notizenliste spiegeln die Kategoriefarbe unmittelbar wider. Ergänzung von farbigen Indikatorpunkten (`pill-dot`) in der oberen Kategorie-Leiste zur sofortigen optischen Orientierung. |
 | **`v1.4.16`** | 23.10.2026 | **Organische Multi-Ring Mindmap & Antikollisions-Layout:** Vollständige Neukonzeption der visuellen Mindmap-Knotenanordnung. Statt aller Notizen auf einem engen Kreisradius nutzt Brainstorm Mindmap nun ein intelligentes, mehrstufiges konzentrisches Ellipsen-Layout (1 Ring bei bis zu 6 Notizen, 2 Ringe bei 7–12 Notizen, 3 gestaffelte Ringe bei 13–20+ Notizen) unter optimaler Ausnutzung der Bildschirmbreite. Ein nativer Physik-Entspannungsdurchlauf (25 Iterationen) verhindert jegliche Überlappungen zwischen Ideenkarten und stellt sicher, dass das zentrale Glühbirnen-Symbol stets vollständig frei und sichtbar bleibt. Farbkodierte synaptische Bézier-Verbindungslinien passend zur jeweiligen Notizkategorie mit interaktivem Hover-Leuchten. Automatisches Zoom-to-Fit bei vielen Notizen und Beibehaltung manuell verschobener Karten. |
 | **`v1.4.15`** | 23.10.2026 | **Bugfix Visueller Karteneditor & Seitenleisten-Dashboard:** Behebung eines Problems, bei dem Schalter im visuellen Lovelace-Karteneditor (`ha-form`) beim Ein- oder Ausschalten keine Wirkung zeigten und stets alle Elemente angezeigt blieben. Implementierung robuster Standardwerte (`default: true` in Schema & Initialisierung), vollständige Synchronisation deaktivierter Schalter (`show_quick_input`, `show_categories`, `show_badge`, `show_mindmap_button`, `show_color_toggle`, `show_source_icons`, `show_timestamps`, `allow_edit`, `allow_delete` bzw. `show_bulb_watermark`, `show_toolbar`, `show_fullscreen_btn`, `show_controls`, `show_add_btn`) und Beseitigung von Event-Bubbling-Kollisionen. Sofortige Live-Reaktivität in der Kartenvorschau und auf Dashboards. Optimierung der Dashboard-Einbindung für die Seitenleiste (Mindmap oben im Großformat, Notizenliste darunter). |

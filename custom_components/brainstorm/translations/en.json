@@ -8,6 +8,11 @@
           "hide_empty_categories": "Hide categories without notes (0)",
           "auto_export_markdown": "Auto-export ideas to Markdown files",
           "markdown_path": "File path for Markdown files"
+        },
+        "data_description": {
+          "hide_empty_categories": "Hides categories that have no notes from the cards.",
+          "auto_export_markdown": "Writes one Markdown file per category to the folder below whenever ideas change.",
+          "markdown_path": "Folder for the Markdown files, for example /config/brainstorm."
         }
       },
       "reconfigure": {
@@ -18,6 +23,12 @@
           "smart_formatting": "Smart Text Optimization",
           "auto_export_markdown": "Auto-export ideas to Markdown files",
           "markdown_path": "File path for Markdown files"
+        },
+        "data_description": {
+          "hide_empty_categories": "Hides categories that have no notes from the cards.",
+          "smart_formatting": "Corrects capitalization and grammar of new ideas and removes filler words.",
+          "auto_export_markdown": "Writes one Markdown file per category to the folder below whenever ideas change.",
+          "markdown_path": "Folder for the Markdown files, for example /config/brainstorm."
         }
       }
     },
@@ -51,6 +62,13 @@
           "edit_categories": "✏️ Edit full list (comma-separated)",
           "hide_empty_categories": "Hide categories without notes (0)",
           "go_back": "⬅️ Back, without saving"
+        },
+        "data_description": {
+          "add_category": "Name of a category to add. Leave empty to add none.",
+          "delete_category": "The ideas of a deleted category move to Inbox.",
+          "edit_categories": "All categories, separated by commas. Change this list to rename, reorder or remove several at once.",
+          "hide_empty_categories": "Hides categories that have no notes from the cards.",
+          "go_back": "Returns to the previous page without saving this form."
         }
       },
       "category_style": {
@@ -59,21 +77,31 @@
         "data": {
           "category": "Select Category",
           "go_back": "⬅️ Back, without saving"
+        },
+        "data_description": {
+          "category": "The category whose icon and color you want to change.",
+          "go_back": "Returns to the previous page without saving this form."
         }
       },
       "category_style_edit": {
         "title": "Brainstorm › Category Design",
-        "description": "Step 2 of 2: Choose an icon from the Home Assistant icon library and an accent color for '{category}'. Click Submit to save.",
+        "description": "Step 2 of 2: Choose an icon from the Home Assistant icon library and an accent color for {category}. Click Submit to save.",
         "data": {
           "icon": "Category Icon (Home Assistant / MDI)",
           "color": "Category Color",
           "reset_style": "Reset to default icon and color",
           "go_back": "⬅️ Back, without saving"
+        },
+        "data_description": {
+          "icon": "Shown for this category on the cards.",
+          "color": "Color of this category on the cards.",
+          "reset_style": "Removes the icon and color of this category and ignores the two fields above.",
+          "go_back": "Returns to the previous page without saving this form."
         }
       },
       "category_style_done": {
         "title": "Category Style Saved",
-        "description": "Successfully updated icon and color for '{category}'.",
+        "description": "Successfully updated icon and color for {category}.",
         "menu_options": {
           "category_style": "Customize another category",
           "init": "Back to main menu",
@@ -92,7 +120,12 @@
           "go_back": "⬅️ Back, without saving"
         },
         "data_description": {
-          "allowed_echos": "Only these Echos can capture ideas and open Brainstorm by voice. Leave empty to use all Echos."
+          "allowed_echos": "Only these Echos can capture ideas and open Brainstorm by voice. Leave empty to use all Echos.",
+          "default_category": "Used when an idea cannot be assigned to a category.",
+          "smart_formatting": "Corrects capitalization and grammar of new ideas and removes filler words.",
+          "auto_export_markdown": "Writes one Markdown file per category to the folder below whenever ideas change.",
+          "markdown_path": "Folder for the Markdown files, for example /config/brainstorm.",
+          "go_back": "Returns to the previous page without saving this form."
         }
       },
       "alexa_skill": {
@@ -101,6 +134,10 @@
         "data": {
           "voice_mode": "Voice input",
           "go_back": "⬅️ Back, without saving"
+        },
+        "data_description": {
+          "voice_mode": "Native uses the Alexa Media sentence without a skill. Skill and Both use your own Alexa skill.",
+          "go_back": "Returns to the previous page without saving this form."
         }
       },
       "alexa_skill_setup": {
@@ -115,7 +152,10 @@
         },
         "data_description": {
           "reset_skill": "Use this if the address leaked or you built a new skill. Copy the new skill code afterwards.",
-          "device_name": "For example Alexa App iPhone. Home Assistant cannot detect the Alexa app by itself. The name applies to the last idea and all later ones from this device."
+          "device_name": "For example Alexa App iPhone. Home Assistant cannot detect the Alexa app by itself. The name applies to the last idea and all later ones from this device.",
+          "skill_code": "Copy this into lambda_function.py of your skill. Keep it private, it contains your secret address.",
+          "interaction_model": "Paste this into the JSON editor of the Alexa developer console.",
+          "go_back": "Returns to the previous page without saving this form."
         }
       },
       "reminders": {
@@ -152,7 +192,13 @@
           "reminders_enabled": "Off stops all reminders, the briefing, the review and everything else in this menu.",
           "reminder_echos": "Used for fixed Echos, as a fallback and for the briefing and review.",
           "reminder_delay": "Only with Alexa: gives you time to react before your phone is notified. 0 sends both at once.",
-          "urgent_delay": "Applies to ideas with high or urgent priority that are still open."
+          "urgent_delay": "Applies to ideas with high or urgent priority that are still open.",
+          "reminder_alexa": "Which Echo speaks a reminder. Off means no announcement.",
+          "notify_enabled": "Off stops notifications but keeps the chosen services.",
+          "reminder_notify": "These services receive reminders, for example your phone.",
+          "urgent_enabled": "Sends entries with high or urgent priority again while they stay open.",
+          "urgent_notify": "These services receive the repeated message.",
+          "go_back": "Returns to the previous page without saving this form."
         }
       },
       "reminder_schedule": {
@@ -173,7 +219,16 @@
         },
         "data_description": {
           "quiet_start": "Reminders wait until the quiet hours end. Urgent ideas still reach your notification services, but no Echo speaks.",
-          "digest_presence": "Optional: The briefing then waits up to 6 hours after its time until a sensor or person here reports someone."
+          "digest_presence": "Optional: The briefing then waits up to 6 hours after its time until a sensor or person here reports someone.",
+          "quiet_enabled": "Off ignores the times below but keeps them.",
+          "quiet_end": "Reminders that had to wait are sent at this time.",
+          "digest_enabled": "Sends an overview of the day once a day.",
+          "digest_time": "When the briefing is sent.",
+          "review_enabled": "Sends an overview of older open entries once a week.",
+          "review_weekday": "The day of the week for the review.",
+          "review_time": "When the review is sent.",
+          "review_days": "Entries that have been open for longer than this appear in the review.",
+          "go_back": "Returns to the previous page without saving this form."
         }
       },
       "reminder_lists": {
@@ -183,6 +238,11 @@
           "list_rules_enabled": "Use rules per list",
           "category": "List to edit",
           "go_back": "⬅️ Back, without saving"
+        },
+        "data_description": {
+          "list_rules_enabled": "Off makes all lists use the normal settings and keeps the rules.",
+          "category": "Choose a list to edit its rule on the next page.",
+          "go_back": "Returns to the previous page without saving this form."
         }
       },
       "reminder_list_edit": {
@@ -199,7 +259,14 @@
           "go_back": "⬅️ Back, without saving"
         },
         "data_description": {
-          "zone_enabled": "Sent once a day when someone arrives there. Needs the switch for places."
+          "zone_enabled": "Sent once a day when someone arrives there. Needs the switch for places.",
+          "channel": "Normal channels follow the general settings of the reminders.",
+          "notify": "Replace the normal services for this list. Empty uses the normal ones.",
+          "schedule_enabled": "Sends the open entries of this list on the days and at the time below.",
+          "schedule_weekdays": "The days on which the list is sent.",
+          "schedule_time": "When the list is sent on these days.",
+          "zone": "The zone in which the open entries of this list are sent.",
+          "go_back": "Returns to the previous page without saving this form."
         }
       },
       "reminder_places": {
@@ -212,7 +279,10 @@
           "go_back": "⬅️ Back, without saving"
         },
         "data_description": {
-          "default_person": "Without a person, anyone arriving there triggers the reminder."
+          "default_person": "Without a person, anyone arriving there triggers the reminder.",
+          "arrival_enabled": "Lets you say that a reminder should come when you get home.",
+          "places_enabled": "Lets you name a zone for a reminder, for example a supermarket.",
+          "go_back": "Returns to the previous page without saving this form."
         }
       },
       "reminder_persons": {
@@ -222,6 +292,11 @@
           "persons_enabled": "Use reminders for other people",
           "person": "Person to edit",
           "go_back": "⬅️ Back, without saving"
+        },
+        "data_description": {
+          "persons_enabled": "Lets a reminder be meant for someone else, such as: remind Alex.",
+          "person": "Choose a person to set their channels on the next page.",
+          "go_back": "Returns to the previous page without saving this form."
         }
       },
       "reminder_person_edit": {
@@ -231,6 +306,11 @@
           "notify": "Notification services",
           "echos": "Echos",
           "go_back": "⬅️ Back, without saving"
+        },
+        "data_description": {
+          "notify": "This person's notification services.",
+          "echos": "The Echos that speak this person's reminders.",
+          "go_back": "Returns to the previous page without saving this form."
         }
       },
       "reminder_extras": {
@@ -247,7 +327,10 @@
         "data_description": {
           "calendar_enabled": "One way, once per reminder. Later changes are not transferred.",
           "ai_enabled": "Your ideas are sent to the provider of the chosen AI.",
-          "native_reminders": "In the Alexa console, also switch on Reminders under Build ➔ Permissions. Alexa then rings itself and Home Assistant does not speak as well."
+          "native_reminders": "In the Alexa console, also switch on Reminders under Build ➔ Permissions. Alexa then rings itself and Home Assistant does not speak as well.",
+          "calendar_entity": "The calendar that receives the reminders.",
+          "ai_entity": "The AI task entity that shortens the texts.",
+          "go_back": "Returns to the previous page without saving this form."
         }
       },
       "reminder_test": {
@@ -255,6 +338,9 @@
         "description": "Brainstorm will now send a real test message. An Echo speaks out loud.\n\n{targets}",
         "data": {
           "go_back": "⬅️ Back, without saving"
+        },
+        "data_description": {
+          "go_back": "Returns to the previous page without saving this form."
         }
       },
       "reminder_test_result": {
@@ -274,7 +360,9 @@
         "data_description": {
           "privacy_owner": "Owns all existing ideas, and everything said to an Echo. Voice, briefing and review only mention this person's ideas.",
           "privacy_export": "These files contain all ideas and can be read by anyone with access to the config folder.",
-          "share_users": "Leave empty to offer everyone. Use this to hide technical accounts such as MQTT."
+          "share_users": "Leave empty to offer everyone. Use this to hide technical accounts such as MQTT.",
+          "privacy_enabled": "Each person then sees only their own entries and what is shared with them.",
+          "go_back": "Returns to the previous page without saving this form."
         }
       },
       "privacy_voice": {
@@ -286,7 +374,9 @@
           "go_back": "⬅️ Back, without saving"
         },
         "data_description": {
-          "voice_user": "Leave empty to remove the assignment."
+          "voice_user": "Leave empty to remove the assignment.",
+          "device": "The Echo or Alexa app you want to assign. You can also type a name.",
+          "go_back": "Returns to the previous page without saving this form."
         }
       }
     },
@@ -332,6 +422,18 @@
         "notify": "Notifications only (private)",
         "none": "Nothing, event only"
       }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "overview": {
+        "name": "Ideas overview"
+      }
+    }
+  },
+  "exceptions": {
+    "not_loaded": {
+      "message": "Brainstorm Hub is not loaded. Check the integration under Settings > Devices & services."
     }
   }
 }

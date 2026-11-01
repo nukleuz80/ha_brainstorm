@@ -80,7 +80,7 @@ from .const import (
 )
 
 from .reminders import format_due, phone_service_for
-from .store import BrainstormStore
+from .store import BrainstormStore, get_loaded_store
 
 BACK_FIELD = "go_back"
 STORE_WAIT_ATTEMPTS = 50
@@ -127,19 +127,22 @@ class BrainstormConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Handle the initial step."""
-        if self._async_current_entries():
-            return self.async_abort(reason="single_instance_allowed")
-
         if user_input is not None:
-            return self.async_create_entry(title="Brainstorm Hub", data=user_input)
+            return self.async_create_entry(
+                title="Brainstorm Hub", data={}, options=user_input
+            )
 
         data_schema = vol.Schema(
             {
                 vol.Optional(
                     CONF_HIDE_EMPTY_CATEGORIES, default=DEFAULT_HIDE_EMPTY_CATEGORIES
-                ): bool,
-                vol.Optional(CONF_AUTO_EXPORT_MARKDOWN, default=False): bool,
-                vol.Optional(CONF_MARKDOWN_PATH, default=DEFAULT_MARKDOWN_PATH): str,
+                ): selector.BooleanSelector(),
+                vol.Optional(
+                    CONF_AUTO_EXPORT_MARKDOWN, default=False
+                ): selector.BooleanSelector(),
+                vol.Optional(
+                    CONF_MARKDOWN_PATH, default=DEFAULT_MARKDOWN_PATH
+                ): selector.TextSelector(),
             }
         )
 
@@ -153,12 +156,9 @@ class BrainstormConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         current_data = {**config_entry.data, **config_entry.options}
 
         if user_input is not None:
-            # Options take precedence over data, so update both. The update listener
-            # reloads the entry if something changed.
+            # The update listener reloads the entry if something changed
             self.hass.config_entries.async_update_entry(
-                config_entry,
-                data={**config_entry.data, **user_input},
-                options={**config_entry.options, **user_input},
+                config_entry, options={**config_entry.options, **user_input}
             )
             return self.async_abort(reason="reconfigure_successful")
 
@@ -169,19 +169,19 @@ class BrainstormConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     default=current_data.get(
                         CONF_HIDE_EMPTY_CATEGORIES, DEFAULT_HIDE_EMPTY_CATEGORIES
                     ),
-                ): bool,
+                ): selector.BooleanSelector(),
                 vol.Optional(
                     CONF_SMART_FORMATTING,
                     default=current_data.get(CONF_SMART_FORMATTING, True),
-                ): bool,
+                ): selector.BooleanSelector(),
                 vol.Optional(
                     CONF_AUTO_EXPORT_MARKDOWN,
                     default=current_data.get(CONF_AUTO_EXPORT_MARKDOWN, False),
-                ): bool,
+                ): selector.BooleanSelector(),
                 vol.Optional(
                     CONF_MARKDOWN_PATH,
                     default=current_data.get(CONF_MARKDOWN_PATH, DEFAULT_MARKDOWN_PATH),
-                ): str,
+                ): selector.TextSelector(),
             }
         )
 
@@ -362,10 +362,8 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                     icon_val = user_input.get("icon")
                     color_val = user_input.get("color")
                     hex_color = None
-                    if isinstance(color_val, (list, tuple)) and len(color_val) == 3:
+                    if color_val:
                         hex_color = f"#{int(color_val[0]):02x}{int(color_val[1]):02x}{int(color_val[2]):02x}"
-                    elif isinstance(color_val, str) and color_val.strip():
-                        hex_color = color_val.strip()
 
                     await store.async_set_category_style(
                         cat,
@@ -845,8 +843,8 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
     async def _async_store(self) -> BrainstormStore:
         """Return the store, which is briefly gone while new settings are applied."""
         for _ in range(STORE_WAIT_ATTEMPTS):
-            store = self.hass.data.get(DOMAIN, {}).get("primary_store")
-            if store is not None and store.alexa_skill is not None:
+            store = get_loaded_store(self.hass)
+            if store is not None:
                 return store
             await asyncio.sleep(STORE_WAIT_SECONDS)
         raise AbortFlow("store_not_ready")
@@ -913,7 +911,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "Alexa reminders",
             ),
         ]
-        store = self.hass.data.get(DOMAIN, {}).get("primary_store")
+        store = get_loaded_store(self.hass)
         upcoming = store.next_due_idea() if store is not None else None
         if upcoming is not None:
             due = dt_util.parse_datetime(upcoming[ATTR_DUE])

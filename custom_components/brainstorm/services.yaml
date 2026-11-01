@@ -225,6 +225,12 @@ get_announcement:
       example: "Smarthome"
       selector:
         text:
+    device:
+      name: Gerät
+      description: Das Gerät, das gefragt hat. Bei eingeschalteter Privatsphäre bestimmt es, wessen Einträge genannt werden.
+      required: false
+      selector:
+        text:
 
 add_category:
   name: Kategorie hinzufügen

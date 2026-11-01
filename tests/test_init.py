@@ -1,7 +1,9 @@
 """Tests for setup, services and entities of Brainstorm Hub."""
 from __future__ import annotations
 
+import json
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 import yaml
@@ -12,7 +14,10 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.loader import async_get_integration
 
+from pytest_homeassistant_custom_component.common import MockConfigEntry
+
 from custom_components.brainstorm.const import DOMAIN, OVERVIEW_ENTITY_ID
+from custom_components.brainstorm.store import get_loaded_store
 
 from .conftest import SetupEntry
 
@@ -191,3 +196,65 @@ def test_services_yaml_descriptions_are_complete() -> None:
     services = yaml.safe_load(path.read_text("utf-8"))
     assert "#" in services["add_category"]["fields"]["color"]["description"]
     assert "#" in services["set_category_style"]["fields"]["color"]["description"]
+
+
+async def test_setup_retries_when_stored_data_cannot_be_read(
+    hass: HomeAssistant,
+) -> None:
+    """Test that a failing read of the storage makes Home Assistant try again."""
+    entry = MockConfigEntry(domain=DOMAIN, title="Brainstorm Hub")
+    entry.add_to_hass(hass)
+    with patch(
+        "custom_components.brainstorm.BrainstormStore.async_load",
+        side_effect=HomeAssistantError("disk error"),
+    ):
+        assert not await hass.config_entries.async_setup(entry.entry_id)
+    assert entry.state is ConfigEntryState.SETUP_RETRY
+    assert not hass.states.async_entity_ids("todo")
+
+
+async def test_actions_explain_that_the_entry_is_not_loaded(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test the translated error of an action without a loaded entry."""
+    entry = await setup_entry()
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    with pytest.raises(ServiceValidationError) as err:
+        await hass.services.async_call(
+            DOMAIN, "add_idea", {"text": "Licht reparieren"}, blocking=True
+        )
+    assert err.value.translation_domain == DOMAIN
+    assert err.value.translation_key == "not_loaded"
+    root = Path(__file__).parent.parent / "custom_components" / "brainstorm"
+    for name in ("strings.json", "translations/en.json", "translations/de.json"):
+        texts = json.loads((root / name).read_text("utf-8"))
+        assert texts["exceptions"]["not_loaded"]["message"]
+
+
+async def test_runtime_data_is_the_only_place_of_the_store(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that nothing of a loaded entry is kept in hass.data."""
+    entry = await setup_entry()
+    assert DOMAIN not in hass.data
+    assert get_loaded_store(hass) is entry.runtime_data
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    assert get_loaded_store(hass) is None
+
+
+async def test_entities_are_named_relative_to_the_device_and_are_not_polled(
+    hass: HomeAssistant, setup_entry: SetupEntry, entity_registry: er.EntityRegistry
+) -> None:
+    """Test the names of the entities and that they only update when pushed."""
+    entry = await setup_entry()
+    entries = er.async_entries_for_config_entry(entity_registry, entry.entry_id)
+    names = {reg.domain: reg.original_name for reg in entries if reg.domain == "sensor"}
+    assert names == {"sensor": "Ideas overview"}
+    assert hass.states.get(OVERVIEW_ENTITY_ID).name == "Brainstorm Hub Ideas overview"
+    assert "Alltag" in {reg.original_name for reg in entries if reg.domain == "todo"}
+    component = hass.data["entity_components"]
+    for domain in ("sensor", "todo"):
+        for entity in component[domain].entities:
+            if entity.platform.platform_name == DOMAIN:
+                assert entity.should_poll is False
+                assert entity.has_entity_name is True

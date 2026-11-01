@@ -4,12 +4,15 @@ from __future__ import annotations
 from datetime import timedelta
 import json
 from pathlib import Path
+import re
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.helpers.entity import DATA_ENTITY_SOURCE
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import async_mock_service
 
@@ -28,12 +31,18 @@ async def test_user_flow_and_single_instance(
     assert result["type"] is FlowResultType.FORM
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
     assert result["type"] is FlowResultType.CREATE_ENTRY
+    # Only one entry can exist, so nothing needs a unique ID
+    assert result["result"].unique_id is None
+    # None of these settings is a connection detail
+    assert result["result"].data == {}
+    assert result["result"].options["markdown_path"] == "/config/brainstorm"
     await hass.async_block_till_done()
 
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
     assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "single_instance_allowed"
 
 
 async def test_yaml_is_not_supported(hass: HomeAssistant) -> None:
@@ -66,6 +75,8 @@ async def test_reconfigure_takes_effect_with_options(
     assert entry.runtime_data is not old_store
     assert entry.runtime_data._smart_formatting is False  # noqa: SLF001
     assert entry.options["default_category"] == "Projekte"
+    assert entry.options["smart_formatting"] is False
+    assert entry.data == {"smart_formatting": True}
     assert "update listener" not in caplog.text
 
 
@@ -325,3 +336,256 @@ async def test_all_form_fields_have_a_label(
                 "reminder_test_result",
             ):
                 assert "go_back" in step["data"], (name, step_id)
+
+
+async def test_all_fields_are_explained_in_every_language() -> None:
+    """Test that every field of every flow has a label and a description."""
+    root = Path(__file__).parent.parent / "custom_components" / "brainstorm"
+    for name in ("strings.json", "translations/en.json", "translations/de.json"):
+        texts = json.loads((root / name).read_text("utf-8"))
+        for flow in ("config", "options"):
+            for step_id, step in texts[flow]["step"].items():
+                assert set(step.get("data", {})) == set(
+                    step.get("data_description", {})
+                ), (name, flow, step_id)
+
+
+async def test_all_errors_and_aborts_have_a_text() -> None:
+    """Test that each error and abort the flow can show has a translation."""
+    root = Path(__file__).parent.parent / "custom_components" / "brainstorm"
+    source = (root / "config_flow.py").read_text("utf-8")
+    errors = set(re.findall(r'errors\[[^\]]+\] = "(\w+)"', source))
+    aborts = set(re.findall(r'reason="(\w+)"|AbortFlow\("(\w+)"\)', source))
+    aborts = {reason for pair in aborts for reason in pair if reason}
+    assert errors == {"no_public_url", "owner_required"}
+    assert aborts == {"reconfigure_successful", "store_not_ready"}
+    for name in ("strings.json", "translations/en.json", "translations/de.json"):
+        texts = json.loads((root / name).read_text("utf-8"))
+        assert errors <= set(texts["options"]["error"])
+        assert "store_not_ready" in texts["options"]["abort"]
+        assert "reconfigure_successful" in texts["config"]["abort"]
+        assert "single_instance_allowed" in texts["config"]["abort"]
+
+
+async def _open_options(hass: HomeAssistant, entry: Any, *path: str) -> dict[str, Any]:
+    """Open the settings and follow menu entries."""
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    for step in path:
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"], {"next_step_id": step}
+        )
+    return result
+
+
+async def test_category_style_shows_and_resets_stored_design(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that a stored design is shown, kept in the form and can be reset."""
+    entry = await setup_entry()
+    store = entry.runtime_data
+    await store.async_set_category_style("Alltag", icon="mdi:home", color="#ff7800")
+
+    result = await _open_options(hass, entry, "category_style")
+    labels = {
+        option["label"]
+        for option in result["data_schema"].schema["category"].config["options"]
+    }
+    assert "Alltag (Icon: mdi:home, Farbe: #ff7800)" in labels
+    assert "Inbox (Standard)" in labels
+
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"category": "Alltag"}
+    )
+    defaults = {str(key): key.default() for key in result["data_schema"].schema}
+    assert defaults["icon"] == "mdi:home"
+    assert defaults["color"] == [255, 120, 0]
+
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"go_back": True}
+    )
+    assert result["step_id"] == "category_style"
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"category": "Alltag"}
+    )
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"reset_style": True}
+    )
+    assert result["step_id"] == "category_style_done"
+    assert "Alltag" not in store.category_icons
+    assert "Alltag" not in store.category_colors
+
+
+async def test_category_style_tolerates_an_invalid_stored_color(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that a broken color in the storage does not block the form."""
+    entry = await setup_entry(stored={"category_colors": {"Alltag": "#zzzzzz"}})
+
+    result = await _open_options(hass, entry, "category_style")
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"category": "Alltag"}
+    )
+    assert result["step_id"] == "category_style_edit"
+    color = next(key for key in result["data_schema"].schema if str(key) == "color")
+    assert not callable(color.default)
+
+
+async def test_voice_mode_native_is_saved_without_the_setup_page(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that the native mode skips everything about the skill."""
+    entry = await setup_entry(options={"voice_mode": "skill"})
+    result = await _open_options(hass, entry, "alexa_skill")
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"voice_mode": "native"}
+    )
+    assert result["step_id"] == "init"
+    assert entry.options["voice_mode"] == "native"
+
+
+async def test_skill_setup_recovers_from_a_missing_public_address(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test the error without a public address and finishing after fixing it."""
+    entry = await setup_entry()
+    result = await _open_options(hass, entry, "alexa_skill")
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"voice_mode": "skill"}
+    )
+    assert result["step_id"] == "alexa_skill_setup"
+    assert result["errors"] == {"base": "no_public_url"}
+    assert "voice_mode" not in entry.options
+
+    hass.config.external_url = "https://home.example.org"
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"go_back": True}
+    )
+    assert result["step_id"] == "alexa_skill"
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"voice_mode": "skill"}
+    )
+    assert result["errors"] == {}
+    result = await hass.config_entries.options.async_configure(result["flow_id"], {})
+    assert result["step_id"] == "init"
+    assert entry.options["voice_mode"] == "skill"
+
+
+@pytest.mark.parametrize("step", ["privacy", "privacy_voice"])
+async def test_privacy_forms_can_go_back(
+    hass: HomeAssistant, setup_entry: SetupEntry, step: str
+) -> None:
+    """Test leaving the privacy forms, which need the list of users to open."""
+    entry = await setup_entry(options={"smart_formatting": True})
+    before = dict(entry.options)
+    result = await _open_options(hass, entry, step)
+    assert result["step_id"] == step
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"go_back": True, "device": "x"}
+        if step == "privacy_voice"
+        else {"go_back": True, "privacy_enabled": False, "privacy_export": False}
+    )
+    assert result["step_id"] == "init"
+    assert dict(entry.options) == before
+
+
+async def test_privacy_voice_offers_alexa_media_devices(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that only media players of Alexa Media are offered as Echos."""
+    entry = await setup_entry()
+    hass.states.async_set("media_player.kueche", "idle", {"friendly_name": "Echo Küche"})
+    hass.states.async_set("media_player.tv", "idle", {"friendly_name": "Fernseher"})
+    hass.data.setdefault(DATA_ENTITY_SOURCE, {})["media_player.kueche"] = {
+        "domain": "alexa_media",
+        "custom_component": True,
+    }
+
+    result = await _open_options(hass, entry, "privacy_voice")
+    assert result["data_schema"].schema["device"].config["options"] == ["Echo Küche"]
+
+
+async def test_store_is_awaited_while_settings_are_applied(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that a form waits for a reload and explains if that takes too long."""
+    entry = await setup_entry()
+    result = await _open_options(hass, entry, "reminders")
+    assert await hass.config_entries.async_unload(entry.entry_id)
+
+    with patch("custom_components.brainstorm.config_flow.STORE_WAIT_SECONDS", 0):
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"], {"next_step_id": "reminder_lists"}
+        )
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "store_not_ready"
+
+    # Trying again works as soon as Brainstorm is back
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    result = await _open_options(hass, entry, "reminders", "reminder_lists")
+    assert result["step_id"] == "reminder_lists"
+
+
+async def test_list_rule_is_saved_and_shown_again(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test editing the rule of one list, including going back from it."""
+    entry = await setup_entry()
+    result = await _open_options(hass, entry, "reminders", "reminder_lists")
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"list_rules_enabled": True, "category": "Alltag"}
+    )
+    assert result["step_id"] == "reminder_list_edit"
+    assert result["description_placeholders"]["category"] == "Alltag"
+
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {
+            "go_back": True,
+            "channel": "default",
+            "schedule_enabled": False,
+            "zone_enabled": False,
+        },
+    )
+    assert result["step_id"] == "reminder_lists"
+    assert "list_rules" not in entry.options
+
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"list_rules_enabled": True, "category": "Alltag"}
+    )
+    rule = {"channel": "alexa", "schedule_enabled": False, "zone_enabled": False}
+    result = await hass.config_entries.options.async_configure(result["flow_id"], rule)
+    assert result["step_id"] == "reminders"
+    assert entry.options["list_rules_enabled"] is True
+    assert entry.options["list_rules"] == {"Alltag": rule}
+    await hass.async_block_till_done()
+
+
+async def test_person_rule_is_saved(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test choosing the channels of one person, including going back from it."""
+    hass.states.async_set("person.alex", "home", {"friendly_name": "Alex"})
+    entry = await setup_entry()
+    result = await _open_options(hass, entry, "reminders", "reminder_persons")
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"persons_enabled": True, "person": "person.alex"}
+    )
+    assert result["step_id"] == "reminder_person_edit"
+    assert result["description_placeholders"]["person"] == "person.alex"
+
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"go_back": True}
+    )
+    assert result["step_id"] == "reminder_persons"
+    assert "person_rules" not in entry.options
+
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"persons_enabled": True, "person": "person.alex"}
+    )
+    rule = {"notify": ["notify.alex"]}
+    result = await hass.config_entries.options.async_configure(result["flow_id"], rule)
+    assert result["step_id"] == "reminders"
+    assert entry.options["persons_enabled"] is True
+    assert entry.options["person_rules"] == {"person.alex": rule}
+    await hass.async_block_till_done()

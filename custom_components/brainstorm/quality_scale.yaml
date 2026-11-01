@@ -1,24 +1,39 @@
 # Home Assistant Integration Quality Scale - Brainstorm Hub
-# Reference: https://developers.home-assistant.io/docs/integration_quality_scale_index/
+# Reference: https://contributors.home-assistant.io/core/quality-scale/rules/
+# This is a self-assessment. Home Assistant did not review this custom integration.
 
 rules:
   # Bronze
   action-setup: done
-  appropriate-polling: done
-  brands: done
-  common-modules: done
-  config-flow-test-coverage:
-    status: todo
-    comment: Tests live in tests/ of the repository, coverage is not yet complete.
+  appropriate-polling:
+    status: exempt
+    comment: The integration does not poll, the store pushes every change to the entities.
+  brands:
+    status: done
+    comment: Custom integrations ship their images in the brand folder of the integration.
+  common-modules:
+    status: done
+    comment: There is no coordinator and no base entity that would belong into these modules.
+  config-flow-test-coverage: done
   config-flow: done
-  dependency-transparency: done
-  docs-actions: done
+  dependency-transparency:
+    status: done
+    comment: The integration has no requirements.
+  docs-actions:
+    status: done
+    comment: Documented in the README, as custom integrations have no page on home-assistant.io.
   docs-conditions:
     status: exempt
     comment: This integration does not provide custom automation conditions.
-  docs-high-level-description: done
-  docs-installation-instructions: done
-  docs-removal-instructions: done
+  docs-high-level-description:
+    status: done
+    comment: Documented in the README, as custom integrations have no page on home-assistant.io.
+  docs-installation-instructions:
+    status: done
+    comment: Documented in the README, as custom integrations have no page on home-assistant.io.
+  docs-removal-instructions:
+    status: done
+    comment: Documented in the README, as custom integrations have no page on home-assistant.io.
   docs-triggers:
     status: exempt
     comment: This integration does not provide custom automation triggers.
@@ -26,16 +41,40 @@ rules:
   entity-unique-id: done
   has-entity-name: done
   runtime-data: done
-  parallel-updates: done
-  test-before-configure: done
+  test-before-configure:
+    status: exempt
+    comment: The integration does not connect to a device or service, it stores local data.
   test-before-setup: done
-  unique-config-entry: done
+  unique-config-entry:
+    status: exempt
+    comment: Only one config entry is possible through single_config_entry in the manifest.
 
   # Silver
-  action-exceptions: done
-  config-entry-unregistered: done
-  logbook: done
-  reconfigure-flow: done
+  action-exceptions:
+    status: todo
+    comment: Not reviewed against the rule yet.
+  config-entry-unloading:
+    status: todo
+    comment: Not reviewed against the rule yet.
+  docs-configuration-parameters:
+    status: todo
+    comment: Not reviewed against the rule yet.
+  docs-installation-parameters:
+    status: todo
+    comment: Not reviewed against the rule yet.
+  entity-unavailable:
+    status: todo
+    comment: Not reviewed against the rule yet.
+  integration-owner:
+    status: todo
+    comment: Not reviewed against the rule yet.
+  log-when-unavailable:
+    status: todo
+    comment: Not reviewed against the rule yet.
+  parallel-updates: done
+  reauthentication-flow:
+    status: todo
+    comment: Not reviewed against the rule yet.
   test-coverage:
     status: todo
-    comment: Tests live in tests/ of the repository, overall coverage is below 95 percent.
+    comment: Overall coverage is 91 percent, the rule asks for more than 95 percent.
