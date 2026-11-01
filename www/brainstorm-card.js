@@ -1,7 +1,7 @@
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.5.8 - Skill, Reminders, Privacy and Sharing
+ * Version 1.5.9 - Skill, Reminders, Privacy and Sharing
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",
@@ -1143,12 +1143,20 @@ class BrainstormCard extends HTMLElement {
     let selectedCat = currentCategory || "Inbox";
     let selectedPrio = (currentPriority || "medium").toLowerCase();
     const candidateParents = activeIdeas.filter((i) => i.id !== id && !i.parent_id);
+    const rawText = (activeIdeas.find((i) => i.id === id) || {}).raw_text;
 
     this._openDialog("✏️ Notiz bearbeiten", (body) => {
       body.innerHTML = `
         <div class="action-dialog-label">Notiztext:</div>
         <textarea class="action-dialog-textarea" id="editTextarea" rows="3">${this._escapeHtml(currentText)}</textarea>
         <div class="action-dialog-error" id="editTextError" style="display: none;"></div>
+        ${rawText && rawText !== currentText ? `
+          <div class="action-dialog-label">Original gesprochen:</div>
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+            <span id="editOriginalText" style="flex: 1 1 180px; color: var(--secondary-text-color);">${this._escapeHtml(rawText)}</span>
+            <button class="action-dialog-btn action-dialog-btn-cancel" id="editUseOriginal" style="min-height: 44px;">Übernehmen</button>
+          </div>
+        ` : ""}
 
         <div class="action-dialog-label">Priorität:</div>
         <div class="action-dialog-prio-grid" id="editPrioGrid">
@@ -1195,6 +1203,13 @@ class BrainstormCard extends HTMLElement {
       `;
 
       const textarea = body.querySelector("#editTextarea");
+      const useOriginal = body.querySelector("#editUseOriginal");
+      if (useOriginal) {
+        useOriginal.addEventListener("click", () => {
+          textarea.value = rawText;
+          textarea.focus();
+        });
+      }
       const textError = body.querySelector("#editTextError");
       const saveBtn = body.querySelector("#saveEditBtn");
       const cancelBtn = body.querySelector("#cancelEditBtn");
@@ -4794,7 +4809,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.5.8 ",
+  "%c BRAINSTORM-CARD %c v1.5.9 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

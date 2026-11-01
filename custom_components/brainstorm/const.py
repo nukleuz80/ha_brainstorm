@@ -12,6 +12,7 @@ REMINDERS_STORAGE_VERSION = 1
 CONF_AUTO_EXPORT_MARKDOWN = "auto_export_markdown"
 CONF_MARKDOWN_PATH = "markdown_path"
 CONF_SMART_FORMATTING = "smart_formatting"
+CONF_VOICE_DUE = "voice_due"
 CONF_HIDE_EMPTY_CATEGORIES = "hide_empty_categories"
 CONF_ALLOWED_ECHOS = "allowed_echos"
 CONF_VOICE_MODE = "voice_mode"
@@ -111,6 +112,7 @@ EVENT_REMINDER_DUE = "brainstorm_reminder_due"
 # Attributes
 ATTR_ID = "id"
 ATTR_TEXT = "text"
+ATTR_RAW_TEXT = "raw_text"
 ATTR_CATEGORY = "category"
 ATTR_SOURCE = "source"
 # Sources whose text was typed by hand, everything else is treated as spoken

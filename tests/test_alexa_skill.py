@@ -979,3 +979,24 @@ def test_skill_code_handles_touch_and_screen_errors() -> None:
         answer, requests = _run_skill_code(b"{}", request_data, APL)
         assert requests == []
         assert answer["response"] == {}
+
+
+async def test_skill_says_a_date_it_found(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_client_no_auth: ClientSessionGenerator,
+) -> None:
+    """Test that a date from the sentence is announced, since it leads to a reminder."""
+    hass.config.language = "de"
+    entry = await _setup_skill(hass, setup_entry)
+
+    response = await _post(
+        hass_client_no_auth,
+        entry,
+        {"application_id": SKILL_ID, "text": "morgen um 10 uhr den arzt anrufen"},
+    )
+
+    assert "Termin morgen um 10 Uhr" in (await response.json())["speech"]
+    idea = entry.runtime_data.ideas[0]
+    assert idea["text"] == "Arzt anrufen"
+    assert idea["due"] is not None

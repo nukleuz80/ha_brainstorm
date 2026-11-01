@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.5.8-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.5.9-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver%20Selbsteinsch%C3%A4tzung-C0C0C0.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -133,8 +133,8 @@ Klicke einfach auf diesen Button, um das Repository direkt in deiner Home Assist
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js` und `www/brainstorm-mindmap-card.js` in `/config/www/`.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.5.8` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.5.8` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.5.9` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.5.9` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ### Integration entfernen
@@ -419,6 +419,7 @@ Du findest sie unter **Einstellungen ➔ Geräte & Dienste ➔ Brainstorm Hub �
 | :--- | :--- |
 | Standard-Kategorie für neue Ideen | Wird genutzt, wenn eine Idee keiner Kategorie zugeordnet werden kann. |
 | Intelligente Text-Optimierung (Grammatik, Groß-/Kleinschreibung, Infinitiv) | Korrigiert Groß-/Kleinschreibung und Grammatik neuer Ideen und entfernt Füllwörter. |
+| Datum aus gesprochenem Text als Termin übernehmen | Ein gesprochenes „morgen“ oder „am 25.11.“ wandert aus dem Text in den Termin. Ein Termin löst zu dieser Zeit eine Erinnerung aus, ohne Uhrzeit um 9 Uhr. |
 | Ideen automatisch als Markdown exportieren | Schreibt bei jeder Änderung pro Kategorie eine Markdown-Datei in den unten genannten Ordner. |
 | Dateipfad für Markdown-Dateien | Ordner für die Markdown-Dateien, zum Beispiel /config/brainstorm. |
 | Echo-Geräte für die Spracheingabe | Nur diese Echos können Ideen per Sprache erfassen und Brainstorm öffnen. Leer lassen, um alle Echos zu nutzen. |
@@ -664,6 +665,7 @@ Gibt mehrere Einträge oder eine ganze Kategorie für Personen frei. Braucht ein
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.5.9`** | 01.11.2026 | **Datum, Priorität und Originaltext:**<br>• **Datum aus dem Satz:** *„morgen Arzt anrufen“* wird zu *„Arzt anrufen“* mit Termin und damit einer Erinnerung, ohne Uhrzeit um 9 Uhr. Der Skill sagt den Termin an. Der neue Schalter unter *Allgemeine Einstellungen* schaltet das ab, und ohne Erinnerungen bleibt das Datum im Text.<br>• **Priorität aus dem Satz:** „ganz wichtig“, „unbedingt“, „dringend“ und „irgendwann“ werden überall im Satz erkannt.<br>• **Originaltext:** Der gesprochene Satz bleibt gespeichert und lässt sich im Bearbeiten-Dialog der Karte übernehmen.<br>• **Kategorie als Subjekt:** *„Garten muss gegossen werden“* wird zu *„Garten gießen“* statt *„Muss gegossen werden“*. |
 | **`v1.5.8`** | 01.11.2026 | **Bessere Kürzung gesprochener Einträge:**<br>• **Ganze Sätze werden umgebaut:** *„der Rasen muss gemäht werden“* wird zu *„Rasen mähen“* statt *„Rasen muss mähen“*. Das erkennt jetzt auch „sollte“, „will“, „möchte“ und trennbare Verben wie *„rausgestellt“*.<br>• **Neue Einstiege und Füllwörter:** „äh“, „ich glaube“, „mir ist eingefallen“, „vergiss nicht“, „mal“, „halt“ und ähnliche fallen weg.<br>• **Ganz oder gar nicht:** Verneinungen, Fragen und nicht vollständig umbaubare Sätze behalten ihren Wortlaut.<br>• **Getippter Text bleibt:** Eingaben im Dashboard und in To-do-Listen bekommen nur noch eine Rechtschreibkorrektur. |
 | **`v1.5.7`** | 01.11.2026 | **Logo auf dem Echo Show:** Die Kopfzeile jeder Seite zeigt das Brainstorm-Logo. Der Echo lädt es aus diesem GitHub-Repository. Es ist kein neuer Skill-Code nötig. |
 | **`v1.5.6`** | 01.11.2026 | **Neues Aussehen auf dem Echo Show:** Kacheln in zwei Spalten statt einer einfachen Liste, eine farbige Kopfzeile je Kategorie mit offenen und dringenden Einträgen, Seitenpunkte und Hinweise zu Priorität, Termin und übergeordneter Aufgabe. Überfällige Termine sind rot. Es ist kein neuer Skill-Code nötig. |

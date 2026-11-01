@@ -1,10 +1,14 @@
 """Tests for the text normalization."""
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 import pytest
 
 from custom_components.brainstorm.nlp import (
     clean_and_format_idea_text,
+    extract_spoken_due,
+    extract_spoken_priority,
     format_typed_text,
     participle_to_infinitive,
 )
@@ -152,3 +156,73 @@ def test_participle_to_infinitive(participle: str, infinitive: str | None) -> No
 def test_typed_text_is_kept(raw: str, expected: str) -> None:
     """Test that a typed text only loses its typos."""
     assert format_typed_text(raw) == expected
+
+
+# A Sunday evening
+NOW = datetime(2026, 11, 1, 20, 0, tzinfo=timezone.utc)
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected_due", "expected_text"),
+    [
+        ("morgen arzt anrufen", (2026, 11, 2, 9, 0), "arzt anrufen"),
+        ("ich muss morgen früh den arzt anrufen", (2026, 11, 2, 8, 0), "ich muss den arzt anrufen"),
+        ("am 25.11. elternsprechtag", (2026, 11, 25, 9, 0), "elternsprechtag"),
+        ("wäsche bis freitag waschen", (2026, 11, 6, 9, 0), "wäsche waschen"),
+        ("termin für übermorgen um 14 uhr machen", (2026, 11, 3, 14, 0), "termin machen"),
+        ("hecke schneiden in zwei wochen", (2026, 11, 15, 9, 0), "hecke schneiden"),
+        ("heute abend um 22 uhr müll raus", (2026, 11, 1, 22, 0), "müll raus"),
+    ],
+)
+def test_spoken_due_is_found(
+    raw: str, expected_due: tuple[int, ...], expected_text: str
+) -> None:
+    """Test that a spoken date moves out of the text."""
+    due, text = extract_spoken_due(raw, NOW)
+    assert due == datetime(*expected_due, tzinfo=timezone.utc)
+    assert text == expected_text
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        # Already over, it would remind at once
+        "heute arzt anrufen",
+        # Describe the task and not the day
+        "am morgen brötchen holen",
+        "früh aufstehen",
+        "um 5 kisten bestellen",
+        "abends licht aus",
+        # In the past, recurring or a question
+        "seit montag kaputt",
+        "letzten freitag war der arzt da",
+        "jeden montag müll raus",
+        "kommt der arzt morgen?",
+        # A version number is not a date
+        "brainstorm 1.5.8 testen",
+        # Nothing would be left of the note
+        "morgen",
+    ],
+)
+def test_spoken_due_stays_in_the_text(raw: str) -> None:
+    """Test that the text is kept when no clear date in the future is meant."""
+    assert extract_spoken_due(raw, NOW) == (None, raw)
+
+
+@pytest.mark.parametrize(
+    ("raw", "priority", "text"),
+    [
+        ("elternsprechtag ganz wichtig frei nehmen", "high", "elternsprechtag frei nehmen"),
+        ("arzt unbedingt anrufen", "high", "arzt anrufen"),
+        ("rechnung dringend bezahlen", "urgent", "rechnung bezahlen"),
+        ("irgendwann mal garage streichen", "low", "garage streichen"),
+        ("wichtige unterlagen holen", None, "wichtige unterlagen holen"),
+        ("nicht so wichtig garage streichen", None, "nicht so wichtig garage streichen"),
+        ("das ist wichtig", None, "das ist wichtig"),
+        ("ist das dringend?", None, "ist das dringend?"),
+        ("wichtig", None, "wichtig"),
+    ],
+)
+def test_spoken_priority(raw: str, priority: str | None, text: str) -> None:
+    """Test that a priority is found anywhere, but not in a different meaning."""
+    assert extract_spoken_priority(raw) == (text, priority)

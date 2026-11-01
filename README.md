@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.5.8-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.5.9-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver%20self--assessed-C0C0C0.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -220,9 +220,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.5.8
+  - url: /local/brainstorm-card.js?v=1.5.9
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.5.8
+  - url: /local/brainstorm-mindmap-card.js?v=1.5.9
     type: module
 ```
 
@@ -302,6 +302,7 @@ Find these under **Settings ➔ Devices & Services ➔ Brainstorm Hub ➔ Config
 | :--- | :--- |
 | Default category for new ideas | Used when an idea cannot be assigned to a category. |
 | Smart Text Optimization (grammar, capitalization, infinitive formatting) | Corrects capitalization and grammar of new ideas and removes filler words. |
+| Take dates from spoken text as a due date | A spoken "tomorrow" or "on 25.11." moves out of the text and becomes a due date. A due date leads to a reminder at that time, without a time of day at 09:00. |
 | Auto-export ideas to Markdown files | Writes one Markdown file per category to the folder below whenever ideas change. |
 | File path for Markdown files | Folder for the Markdown files, for example /config/brainstorm. |
 | Echo devices for voice input | Only these Echos can capture ideas and open Brainstorm by voice. Leave empty to use all Echos. |
@@ -547,6 +548,7 @@ Shares several ideas or a whole category. Needs privacy to be switched on.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.5.9`** | 2026-11-01 | **Date, priority and original text:**<br>• **Date from the sentence:** *"morgen Arzt anrufen"* becomes *"Arzt anrufen"* with a due date and therefore a reminder, without a time of day at 09:00. The skill announces it. A new switch under *General settings* turns this off, and without reminders the date stays in the text.<br>• **Priority from the sentence:** "ganz wichtig", "unbedingt", "dringend" and "irgendwann" are found anywhere in the sentence.<br>• **Original text:** The spoken sentence stays stored and can be restored in the edit dialog of the card.<br>• **Category as subject:** *"Garten muss gegossen werden"* becomes *"Garten gießen"* instead of *"Muss gegossen werden"*. |
 | **`v1.5.8`** | 2026-11-01 | **Better shortening of spoken entries:**<br>• **Whole sentences are rebuilt:** *"der Rasen muss gemäht werden"* becomes *"Rasen mähen"* instead of *"Rasen muss mähen"*. This now also covers "sollte", "will", "möchte" and separable verbs like *"rausgestellt"*.<br>• **New openers and filler words:** "äh", "ich glaube", "mir ist eingefallen", "vergiss nicht", "mal", "halt" and similar are removed.<br>• **All or nothing:** Negations, questions and sentences that cannot be rebuilt completely keep their wording.<br>• **Typed text stays:** Entries from the dashboard and to-do lists only get their typos fixed. |
 | **`v1.5.7`** | 2026-11-01 | **Logo on the Echo Show:** The header of each page shows the Brainstorm logo. The Echo loads it from this GitHub repository. No new skill code is needed. |
 | **`v1.5.6`** | 2026-11-01 | **New look on the Echo Show:** Tiles in two columns instead of a plain list, a colored header per category with open and urgent counts, page dots, and labels for priority, due date and parent task. Overdue dates are red. No new skill code is needed. |

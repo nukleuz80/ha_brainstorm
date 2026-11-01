@@ -40,6 +40,7 @@ from .const import (
     ATTR_SOURCE,
     ATTR_STATUS,
     ATTR_TAGS,
+    ATTR_RAW_TEXT,
     ATTR_TEXT,
     ATTR_UPDATED_AT,
     CONF_ALLOWED_ECHOS,
@@ -49,7 +50,9 @@ from .const import (
     CONF_VOICE_OWNERS,
     CONF_VOICE_MODE,
     CONF_HIDE_EMPTY_CATEGORIES,
+    CONF_REMINDERS_ENABLED,
     CONF_SMART_FORMATTING,
+    CONF_VOICE_DUE,
     DEFAULT_CATEGORIES,
     DEFAULT_HIDE_EMPTY_CATEGORIES,
     DEFAULT_MARKDOWN_PATH,
@@ -69,7 +72,13 @@ from .const import (
     TYPED_SOURCES,
     VOICE_MODE_NATIVE,
 )
-from .nlp import clean_and_format_idea_text, format_typed_text
+from .nlp import (
+    clean_and_format_idea_text,
+    extract_spoken_due,
+    extract_spoken_priority,
+    format_typed_text,
+    starts_with_verb,
+)
 
 if TYPE_CHECKING:
     from .alexa_skill import AlexaSkill
@@ -422,6 +431,10 @@ class BrainstormStore:
         )
         self._markdown_path = self.options.get("markdown_path", DEFAULT_MARKDOWN_PATH)
         self._smart_formatting = self.options.get(CONF_SMART_FORMATTING, True)
+        # A date only moves out of the text if it can lead to a reminder
+        self._voice_due = self.options.get(CONF_VOICE_DUE, True) and self.options.get(
+            CONF_REMINDERS_ENABLED, True
+        )
         self._hide_empty_categories = self.options.get(
             CONF_HIDE_EMPTY_CATEGORIES, DEFAULT_HIDE_EMPTY_CATEGORIES
         )
@@ -646,6 +659,7 @@ class BrainstormStore:
                     "due": i.get(ATTR_DUE),
                     "assignee": i.get(ATTR_ASSIGNEE),
                     "trigger": i.get(ATTR_TRIGGER),
+                    "raw_text": i.get(ATTR_RAW_TEXT),
                 }
                 for i in active_ideas
             ],
@@ -951,8 +965,14 @@ class BrainstormStore:
                         category = cat_name
                         remainder = m.group(2).strip()
                         # After a plain space, a single remaining word usually needs
-                        # the alias to make sense ('Haus streichen'), so keep the text.
-                        if m.group(1).strip() or len(remainder.split()) > 1:
+                        # the alias to make sense ('Haus streichen'), and a verb
+                        # shows the alias is the subject ('Garten muss gemäht werden').
+                        is_subject = not m.group(1).strip() and starts_with_verb(
+                            remainder
+                        )
+                        if not is_subject and (
+                            m.group(1).strip() or len(remainder.split()) > 1
+                        ):
                             clean_text = remainder
                         break
                 if category:
@@ -1013,6 +1033,15 @@ class BrainstormStore:
             if detected_prio != PRIORITY_MEDIUM:
                 resolved_prio = detected_prio
 
+        if (
+            spoken
+            and self._smart_formatting
+            and resolved_prio == PRIORITY_MEDIUM
+            and not explicit_priority
+        ):
+            clean_text, spoken_prio = extract_spoken_priority(clean_text)
+            resolved_prio = spoken_prio or resolved_prio
+
         # 7. Smart NLP Text Normalization, a typed text only gets its typos fixed
         if self._smart_formatting:
             formatted = (
@@ -1055,8 +1084,25 @@ class BrainstormStore:
         }:
             raise ServiceValidationError(f"Ungültiger oder leerer Notiz-Text: {text}")
 
+        spoken = source not in TYPED_SOURCES
+        if (
+            spoken
+            and self._smart_formatting
+            and self._voice_due
+            and due is None
+            and trigger is None
+        ):
+            spoken_due, remaining = extract_spoken_due(text.strip(), dt_util.now())
+            if spoken_due is not None:
+                due = spoken_due
+                raw_text, text = text.strip(), remaining
+            else:
+                raw_text = text.strip()
+        else:
+            raw_text = text.strip()
+
         clean_text, resolved_cat, parsed_tags, resolved_prio = self.parse_text_and_category(
-            text, category, priority, spoken=source not in TYPED_SOURCES
+            text, category, priority, spoken=spoken
         )
 
         all_tags = list(set((tags or []) + parsed_tags))
@@ -1090,6 +1136,9 @@ class BrainstormStore:
             ATTR_OWNER: owner or (context.user_id if context else None),
             ATTR_SHARES: shares or {},
         }
+        # Keeps what was really said, so a bad shortening can be undone
+        if raw_text != clean_text:
+            idea[ATTR_RAW_TEXT] = raw_text
         # Someone who is meant to be reminded also has to see the idea
         if assignee_user := self._person_user(assignee):
             idea[ATTR_SHARES].setdefault(assignee_user, SHARE_EDIT)

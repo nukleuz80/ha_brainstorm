@@ -114,6 +114,7 @@
         "data": {
           "default_category": "Default category for new ideas",
           "smart_formatting": "Smart Text Optimization (grammar, capitalization, infinitive formatting)",
+          "voice_due": "Take dates from spoken text as a due date",
           "auto_export_markdown": "Auto-export ideas to Markdown files",
           "markdown_path": "File path for Markdown files",
           "allowed_echos": "Echo devices for voice input",
@@ -123,6 +124,7 @@
           "allowed_echos": "Only these Echos can capture ideas and open Brainstorm by voice. Leave empty to use all Echos.",
           "default_category": "Used when an idea cannot be assigned to a category.",
           "smart_formatting": "Corrects capitalization and grammar of new ideas and removes filler words.",
+          "voice_due": "A spoken \"tomorrow\" or \"on 25.11.\" moves out of the text and becomes a due date. A due date leads to a reminder at that time, without a time of day at 09:00.",
           "auto_export_markdown": "Writes one Markdown file per category to the folder below whenever ideas change.",
           "markdown_path": "Folder for the Markdown files, for example /config/brainstorm.",
           "go_back": "Returns to the previous page without saving this form."

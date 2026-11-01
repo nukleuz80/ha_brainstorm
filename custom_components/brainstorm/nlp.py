@@ -5,6 +5,8 @@ from collections.abc import Callable
 from datetime import date, datetime, time, timedelta
 import re
 
+from .const import PRIORITY_HIGH, PRIORITY_LOW, PRIORITY_URGENT
+
 # Mapping of common German Partizip II forms to clean Infinitives
 PARTIZIP_TO_INFINITIVE: dict[str, str] = {
     "abgeholt": "abholen",
@@ -742,3 +744,87 @@ def _combine(
         if datetime.combine(day, clock, now.tzinfo) <= now:
             day = day + timedelta(days=1)
     return datetime.combine(day, clock, now.tzinfo)
+
+
+# A spoken date only counts when it clearly means a day; 'am morgen' or a lone
+# 'abends' describes the task, and a past or recurring day is not a due date
+_RE_SPOKEN_DATE = re.compile(
+    r"\b(?:übermorgen|heute)\b"
+    r"|(?<!am )(?<!jeden )(?<!guten )(?<!den )\bmorgen\b"
+    rf"|{_RE_RELATIVE.pattern}"
+    rf"|{_RE_NEXT_WEEK.pattern}"
+    rf"|\b(?:{'|'.join(_WEEKDAYS)})\b"
+    r"|\b\d{1,2}\.\s?\d{1,2}\.(?:\s?\d{2,4})?(?![\d.])"
+    rf"|{_RE_MONTH_DATE.pattern}",
+    re.IGNORECASE,
+)
+_RE_NO_DUE_DATE = re.compile(
+    r"\b(?:seit|letzte[nrs]?|vorige[nrs]?|jede[nrs]?|gestern|vorgestern|war|waren|"
+    r"wurde|wurden)\b|\?",
+    re.IGNORECASE,
+)
+_RE_DATE_CONNECTOR = re.compile(
+    r"\b(?:bis\s+(?:spätestens\s+)?|spätestens\s+|für\s+|ab\s+)"
+    rf"(?=(?:übermorgen|heute|morgen|nächste|kommende|am\s|\d|{'|'.join(_WEEKDAYS)})\b)",
+    re.IGNORECASE,
+)
+
+_SPOKEN_PRIORITIES: tuple[tuple[re.Pattern[str], str], ...] = (
+    (
+        re.compile(r"\b(?:ganz\s+|sehr\s+)?(?:dringend|eilig|sofort)\b", re.IGNORECASE),
+        PRIORITY_URGENT,
+    ),
+    (
+        re.compile(
+            r"\b(?:ganz\s+|sehr\s+|total\s+|super\s+|extrem\s+)?wichtig\b|\bunbedingt\b",
+            re.IGNORECASE,
+        ),
+        PRIORITY_HIGH,
+    ),
+    (
+        re.compile(r"\birgendwann(?:\s+mal)?\b|\bwenn\s+zeit\s+ist\b", re.IGNORECASE),
+        PRIORITY_LOW,
+    ),
+)
+_RE_NO_SPOKEN_PRIORITY = re.compile(
+    r"\b(?:nicht|kein\w*|wie|so)\s+(?:so\s+|ganz\s+|sehr\s+)?(?:dringend|eilig|wichtig)\b"
+    r"|\b(?:ist|sind|wird|war)\s+(?:\w+\s+)?(?:dringend|eilig|wichtig)\b|\?",
+    re.IGNORECASE,
+)
+# The verb directly after a category name shows that it is the subject of the sentence
+_RE_VERB_AFTER_SUBJECT = re.compile(
+    r"^(?:muss|müssen|müsste|müssten|soll|sollen|sollte|sollten|braucht|brauchen|ist|"
+    r"sind|war|waren|hat|haben|kann|können|könnte|könnten|wird|werden|fehlt|fehlen|"
+    r"läuft|laufen|geht|gehen|funktioniert|funktionieren|klemmt|spinnt|hängt)\b",
+    re.IGNORECASE,
+)
+
+
+def starts_with_verb(text: str) -> bool:
+    """Return whether a text begins with a verb, so what stood before it was the subject."""
+    return bool(_RE_VERB_AFTER_SUBJECT.match(text))
+
+
+def extract_spoken_due(text: str, now: datetime) -> tuple[datetime | None, str]:
+    """Find a date in a spoken note, returning it and the text without it.
+
+    The text stays as it is if nothing is left of it or the time has passed, which
+    keeps 'heute' in the text in the evening instead of reminding at once.
+    """
+    if _RE_NO_DUE_DATE.search(text) or not _RE_SPOKEN_DATE.search(text):
+        return None, text
+    due, remaining = parse_due(_RE_DATE_CONNECTOR.sub("", text), now)
+    if due is None or due <= now or not remaining:
+        return None, text
+    return due, remaining
+
+
+def extract_spoken_priority(text: str) -> tuple[str, str | None]:
+    """Find a priority anywhere in a spoken note, returning the text without it."""
+    if _RE_NO_SPOKEN_PRIORITY.search(text):
+        return text, None
+    for pattern, priority in _SPOKEN_PRIORITIES:
+        remaining = re.sub(r"\s+", " ", pattern.sub(" ", text, count=1)).strip(" ,.")
+        if remaining != text.strip(" ,.") and remaining:
+            return remaining, priority
+    return text, None

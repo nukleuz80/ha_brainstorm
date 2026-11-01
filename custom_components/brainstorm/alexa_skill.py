@@ -25,6 +25,7 @@ from .alexa_display import build_directive
 from .const import (
     ATTR_ALEXA_NATIVE,
     ATTR_CATEGORY,
+    ATTR_DUE,
     ATTR_ID,
     ATTR_OWNER,
     ATTR_STATUS,
@@ -784,13 +785,16 @@ class AlexaSkill:
                 "Gespeichert, aber ohne Erinnerung. Ich habe keinen Zeitpunkt verstanden.",
                 "Saved, but without a reminder. I did not understand a time.",
             )
+        # A date found in the sentence leads to a reminder, so it has to be said
+        due = dt_util.parse_datetime(idea.get(ATTR_DUE) or "")
+        when = f", Termin {format_due(due, dt_util.now())}" if due else ""
         category = idea.get(ATTR_CATEGORY)
         if category and category != "Inbox":
             return self._speech(
-                f"Gespeichert unter {category.replace('&', 'und')}.",
-                f"Saved under {category.replace('&', 'and')}.",
+                f"Gespeichert unter {category.replace('&', 'und')}{when}.",
+                f"Saved under {category.replace('&', 'and')}{when}.",
             )
-        return self._speech("Gespeichert.", "Saved.")
+        return self._speech(f"Gespeichert{when}.", f"Saved{when}.")
 
     def _reminder_answer(
         self, request: ReminderRequest, idea: dict[str, Any]

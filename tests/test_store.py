@@ -401,3 +401,73 @@ async def test_only_spoken_text_is_reduced(
     """Test that a typed text keeps its wording."""
     idea = await store.async_add_idea("Die Hecke muss geschnitten werden", source=source)
     assert idea["text"] == expected
+
+
+@pytest.mark.parametrize(
+    ("text", "expected_text", "expected_category"),
+    [
+        ("Garten muss gegossen werden", "Garten gießen", "Haus & Garten"),
+        ("Smarthome braucht einen neuen Server", "Smarthome braucht einen neuen Server", "Smarthome"),
+        ("im Garten muss die Hecke geschnitten werden", "Im Garten Hecke schneiden", "Haus & Garten"),
+        ("Garten: muss gegossen werden", "Muss gegossen werden", "Haus & Garten"),
+    ],
+)
+def test_category_stays_when_it_is_the_subject(
+    store: BrainstormStore, text: str, expected_text: str, expected_category: str
+) -> None:
+    """Test that a category name is only removed when the rest makes sense."""
+    assert store.parse_text_and_category(text)[:2] == (expected_text, expected_category)
+
+
+async def test_raw_text_is_kept_when_shortened(store: BrainstormStore) -> None:
+    """Test that the spoken sentence stays available and is shown to the card."""
+    spoken = "die hecke muss geschnitten werden"
+    idea = await store.async_add_idea(spoken, source="alexa_dialog")
+    assert idea["text"] == "Hecke schneiden"
+    assert idea["raw_text"] == spoken
+    assert store.get_overview_attributes(None)["ideas"][0]["raw_text"] == spoken
+
+
+async def test_no_raw_text_when_nothing_changed(store: BrainstormStore) -> None:
+    """Test that an unchanged text is not stored twice."""
+    idea = await store.async_add_idea("Hecke schneiden", source="dashboard")
+    assert "raw_text" not in idea
+
+
+async def test_spoken_date_and_priority_leave_the_text(store: BrainstormStore) -> None:
+    """Test that a spoken note gets a due date and priority from its words."""
+    spoken = "ich muss morgen unbedingt den arzt anrufen"
+    idea = await store.async_add_idea(spoken, source="alexa_dialog")
+    assert idea["text"] == "Arzt anrufen"
+    assert idea["priority"] == "high"
+    assert idea["due"] is not None
+    assert idea["raw_text"] == spoken
+
+
+async def test_typed_text_keeps_its_date(store: BrainstormStore) -> None:
+    """Test that a typed date does not lead to a reminder."""
+    idea = await store.async_add_idea("Morgen Arzt anrufen", source="dashboard")
+    assert idea["text"] == "Morgen Arzt anrufen"
+    assert idea["due"] is None
+
+
+async def test_spoken_due_can_be_switched_off(
+    hass: HomeAssistant, hass_storage: dict[str, Any]
+) -> None:
+    """Test that the date stays in the text without the option."""
+    instance = BrainstormStore(hass, {"voice_due": False})
+    await instance.async_load()
+    idea = await instance.async_add_idea("morgen arzt anrufen", source="alexa_dialog")
+    assert idea["due"] is None
+    assert "morgen" in idea["text"].lower()
+
+
+async def test_date_stays_in_text_without_reminders(
+    hass: HomeAssistant, hass_storage: dict[str, Any]
+) -> None:
+    """Test that the master switch for reminders also keeps the date in the text."""
+    instance = BrainstormStore(hass, {"reminders_enabled": False})
+    await instance.async_load()
+    idea = await instance.async_add_idea("morgen arzt anrufen", source="alexa_dialog")
+    assert idea["due"] is None
+    assert "morgen" in idea["text"].lower()

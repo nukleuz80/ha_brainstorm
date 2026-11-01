@@ -58,6 +58,7 @@ from .const import (
     CONF_HIDE_EMPTY_CATEGORIES,
     CONF_MARKDOWN_PATH,
     CONF_SMART_FORMATTING,
+    CONF_VOICE_DUE,
     CONF_VOICE_MODE,
     DEFAULT_HIDE_EMPTY_CATEGORIES,
     DEFAULT_MARKDOWN_PATH,
@@ -530,6 +531,10 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 vol.Optional(
                     CONF_SMART_FORMATTING,
                     default=options.get(CONF_SMART_FORMATTING, True),
+                ): selector.BooleanSelector(),
+                vol.Optional(
+                    CONF_VOICE_DUE,
+                    default=options.get(CONF_VOICE_DUE, True),
                 ): selector.BooleanSelector(),
                 vol.Optional(
                     CONF_AUTO_EXPORT_MARKDOWN,

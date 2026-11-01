@@ -114,6 +114,7 @@
         "data": {
           "default_category": "Standard-Kategorie für neue Ideen",
           "smart_formatting": "Intelligente Text-Optimierung (Grammatik, Groß-/Kleinschreibung, Infinitiv)",
+          "voice_due": "Datum aus gesprochenem Text als Termin übernehmen",
           "auto_export_markdown": "Ideen automatisch als Markdown exportieren",
           "markdown_path": "Dateipfad für Markdown-Dateien",
           "allowed_echos": "Echo-Geräte für die Spracheingabe",
@@ -123,6 +124,7 @@
           "allowed_echos": "Nur diese Echos können Ideen per Sprache erfassen und Brainstorm öffnen. Leer lassen, um alle Echos zu nutzen.",
           "default_category": "Wird genutzt, wenn eine Idee keiner Kategorie zugeordnet werden kann.",
           "smart_formatting": "Korrigiert Groß-/Kleinschreibung und Grammatik neuer Ideen und entfernt Füllwörter.",
+          "voice_due": "Ein gesprochenes „morgen“ oder „am 25.11.“ wandert aus dem Text in den Termin. Ein Termin löst zu dieser Zeit eine Erinnerung aus, ohne Uhrzeit um 9 Uhr.",
           "auto_export_markdown": "Schreibt bei jeder Änderung pro Kategorie eine Markdown-Datei in den unten genannten Ordner.",
           "markdown_path": "Ordner für die Markdown-Dateien, zum Beispiel /config/brainstorm.",
           "go_back": "Kehrt zur vorigen Seite zurück, ohne dieses Formular zu speichern."
