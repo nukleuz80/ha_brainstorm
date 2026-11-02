@@ -1,0 +1,64 @@
+# The two-way dialog. It needs Alexa Media Player and the Alexa Actionable Notifications
+# skill with its script, and an input_text helper named brainstorm_active_echo.
+#
+# Part 1, for scripts.yaml. In the Alexa app, create a routine with this script as its
+# scene, for example with the voice trigger "Alexa, brainstorm".
+brainstorm_alexa_dialog:
+  alias: Brainstorm main menu
+  description: Asks for a note on the Echo that was used last.
+  sequence:
+    - variables:
+        target_device: "{{ states('sensor.last_alexa') }}"
+    - condition: template
+      value_template: >-
+        {% set allowed = state_attr('sensor.brainstorm_ideen_ubersicht', 'allowed_echos') %}
+        {{ not allowed or target_device in allowed }}
+    - action: input_text.set_value
+      target:
+        entity_id: input_text.brainstorm_active_echo
+      data:
+        value: "{{ target_device }}"
+    - action: script.activate_alexa_actionable_notification
+      data:
+        text: "Brainstorm is ready. Speak your note."
+        event_id: brainstorm_voice_dialog
+        alexa_device: "{{ target_device }}"
+        suppress_confirmation: "true"
+  mode: restart
+  icon: mdi:brain
+
+# Part 2, for automations.yaml, without the comment signs.
+#
+# - id: brainstorm_alexa_dialog_answer
+#   alias: Brainstorm - Alexa dialog answer
+#   trigger:
+#     - trigger: event
+#       event_type: alexa_actionable_notification
+#       event_data:
+#         event_id: brainstorm_voice_dialog
+#   variables:
+#     answer: "{{ trigger.event.data.event_response | default('') | trim }}"
+#     reply_device: "{{ states('input_text.brainstorm_active_echo') }}"
+#   condition:
+#     - condition: template
+#       value_template: >-
+#         {{ answer | length > 1 and answer | lower not in
+#            ['none', 'responsenone', 'responseno', 'null', 'undefined', 'cancel', 'stop'] }}
+#   action:
+#     - action: brainstorm.add_idea
+#       data:
+#         text: "{{ answer }}"
+#         source: alexa_dialog
+#         language: en
+#         device: "{{ state_attr(reply_device, 'friendly_name') or reply_device }}"
+#       response_variable: added_idea
+#     - action: notify.alexa_media
+#       data:
+#         target:
+#           - "{{ reply_device }}"
+#         data:
+#           type: tts
+#         message: >-
+#           {% set category = added_idea.idea.category | default('Inbox') %}
+#           {{ 'Saved under ' ~ category ~ '.' if category != 'Inbox' else 'Saved.' }}
+#   mode: single

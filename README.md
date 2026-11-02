@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.5.15-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.5.16-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver%20self--assessed-C0C0C0.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -31,35 +31,33 @@ Brainstorm Hub was built in German, and English support is being added step by s
 | Settings of the integration | ✅ | ✅ |
 | Documentation | ✅ | ✅ |
 | Spoken answers of the Alexa skill | ✅ | ✅ |
-| Voice commands of the Alexa skill | ✅ | ❌ planned |
-| Assist sentences | ✅ | ❌ planned |
+| Voice commands of the Alexa skill | ✅ | ✅ |
+| Assist sentences | ✅ | ✅ (`examples/`) |
 | Shortening sentences, due dates and priorities from speech | ✅ | ✅ |
 | Dashboard cards | ✅ | ✅ |
 | Reminder texts, logbook and error messages | ✅ | ✅ |
 
-Voice commands in this document are in German because those are the commands that work today, with a translation next to them where it helps. Text in other languages stays as you say or type it, with a capital first letter. Home Assistant's language decides which rules apply, and `brainstorm.add_idea` also accepts a `language` field.
+The English voice commands are listed under [Voice Commands](#-voice-commands), with the German ones next to them. Text in other languages stays as you say or type it, with a capital first letter. Home Assistant's language decides which rules apply, and `brainstorm.add_idea` also accepts a `language` field.
 
 ---
 
 ## 🌟 🗣️ Key Feature: Seamless Amazon Alexa Hands-Free Voice Capture
 
-> *Currently available in German only, see [Language Support](#-language-support).*
->
-> 🗣️ *“Alexa, Brainstorm”* ➔ 🤖 *“Brainstorm bereit. Sprich deine Notiz oder sage Ansage.”* (Brainstorm ready. Speak your note or say announcement.)  
-> 🗣️ *“Dringend Garten: Rasenmäher reparieren”* (urgent, garden: repair lawnmower) ➔ 🤖 *“Gespeichert unter Haus & Garten [🔥 Dringend].”* (Saved under House & Garden, urgent.)
+> 🗣️ *“Alexa, ask Brainstorm to note the lawn has to be mowed”* ➔ 🤖 *“Saved under House and Garden.”*  
+> 🗣️ *“Alexa, ask Brainstorm to remind me tomorrow at 8 to take out the bins”* ➔ 🤖 *“Okay, I will remind you tomorrow at 8 am about Take out bins.”*
 
 Brainstorm Hub turns every **Amazon Echo** device in your home into an instant, friction-free thought catcher — ideal when your hands are wet, dirty, or occupied.
 
 ### ⚡ Why Alexa Voice Capture is the Premier Feature:
 - 🚫 **Zero Music & Shopping List Collisions:** Out of the box, Alexa frequently misinterprets open-ended notes by dumping them into chaotic Amazon shopping lists or launching songs by the rock band *“Brainstorm”* on Spotify. Brainstorm Hub eliminates this friction with optimized routine triggers and automatic background stop commands for a whisper-quiet, 100% reliable dialogue.
-- 🗣️ **Interactive Two-Way Dialogue Mode:** Simply say *“Alexa, Brainstorm”* or *“Alexa, Neue Idee”* (new idea). Alexa listens, parses your input, and instantly responds with spoken confirmation of the assigned category and urgency level.
-- ⚡ **One-Shot Direct Voice Commands:** When seconds count: *“Alexa, notiere in Smarthome Kellerlicht dimmen”* (note in Smarthome: dim basement light) or *“Alexa, Idee dringend Garten: Terrasse reinigen”* (urgent idea, garden: clean patio).
-- 🧠 **Smart NLP Text Cleaning & Grammar Transformation:** Strips out conversational filler words (*“schreib bitte auf dass wir…”* ➔ *“Terrasse reinigen”*), fixes speech typos, and transforms passive verb constructions into clear actionable tasks.
-  - **Whole sentences instead of fragments (v1.5.8):** *"der Rasen muss gemäht werden"* ➔ *"Rasen mähen"*. Negations, questions and sentences that cannot be rebuilt completely keep their wording. Typed text only gets its typos fixed.
-  - **Due date and priority from the sentence (v1.5.10):** *"ich muss morgen unbedingt den Arzt anrufen"* ➔ *"Arzt anrufen"*, due tomorrow at 09:00, high priority. The due date leads to a reminder and can be switched off. The spoken sentence stays stored and can be restored in the card.
+- 🗣️ **Interactive Two-Way Dialogue Mode:** Simply say *“Alexa, Brainstorm”*. Alexa listens, parses your input, and instantly responds with spoken confirmation of the assigned category and urgency level.
+- ⚡ **One-Shot Direct Voice Commands:** When seconds count: *“Alexa, note for smart home dim the basement light”* or *“Alexa, idea urgent garden: clean the patio”*.
+- 🧠 **Smart NLP Text Cleaning & Grammar Transformation:** Strips out conversational filler words (*“please write down that we need to clean the patio”* ➔ *“Clean patio”*), fixes speech typos, and transforms passive verb constructions into clear actionable tasks.
+  - **Whole sentences instead of fragments (v1.5.8):** *"the lawn has to be mowed"* ➔ *"Mow lawn"*. Negations, questions and sentences that cannot be rebuilt completely keep their wording. Typed text only gets its typos fixed.
+  - **Due date and priority from the sentence (v1.5.10):** *"I need to call the doctor tomorrow asap"* ➔ *"Call doctor"*, due tomorrow at 09:00, urgent. The due date leads to a reminder and can be switched off. The spoken sentence stays stored and can be restored in the card.
   - **Own terms (v1.5.10):** Names of people and categories are spelled right automatically, own terms and corrections are set under *General settings*.
   - **Optional AI step (v1.5.10):** An AI task entity improves the entry in the background. If it adds words or numbers or changes a negation, the version of the rules stays.
-- 🏷️ **Contextual Priority & Category Extraction:** Detects German priority triggers (*“dringend”*, *“wichtig”*, *“prio 1”*, *“wenn Zeit ist”*) and category prefixes (*“im Smarthome”*, *“für den Garten”*) regardless of word order in the sentence.
+- 🏷️ **Contextual Priority & Category Extraction:** Detects priority triggers (*“urgent”*, *“important”*, *“priority 1”*, *“no rush”*) and category prefixes (*“for smart home”*, *“in the garden”*) regardless of word order in the sentence.
 - 📍 **Echo Origin Tracking:** Automatically records which Echo device received the idea (e.g., `🗣️ Alexa (Echo Show Kitchen)` vs. `🗣️ Alexa (Workshop Echo Dot)`).
 
 ---
@@ -68,7 +66,7 @@ Brainstorm Hub turns every **Amazon Echo** device in your home into an instant, 
 
 - 🎯 **Intelligent Priority Management & Visual Urgency Levels:**
   - **4 Priority Levels:** `low` (🟢 Low), `medium` (🟡 Medium / Default), `high` (🔴 High), and `urgent` (🔥 Urgent).
-  - **Natural Language Urgency Detection:** Recognizes German priority words in spoken or typed notes (e.g. *“Dringend Garten: Rasenmäher reparieren”*, *“Prio 1…”*) and the tags *“!urgent”*, *“!high”* and *“!low”*, cleans the text, and sets the priority automatically.
+  - **Natural Language Urgency Detection:** Recognizes priority words in spoken or typed notes (e.g. *“Urgent garden: repair lawnmower”*, *“Priority 1…”*) and the tags *“!urgent”*, *“!high”* and *“!low”*, cleans the text, and sets the priority automatically.
   - **1-Click Priority Cycling:** Cycle priorities directly (`Medium` ➔ `High` ➔ `Urgent` ➔ `Low`) by clicking the priority badge in either the list or mindmap view.
   - **Visual Mindmap Pulse Effects:** Urgent idea nodes pulse with an animated flame effect (`cloud-urgent`), while high-priority notes glow with a warm highlight.
 - 🤖 **Assist LLM Tools & Function-Calling API:**
@@ -138,8 +136,8 @@ HACS only installs the integration, so continue with [Install the cards](#instal
 
 1. Copy `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` and `www/brainstorm-i18n.js` from the release to `/config/www/`. The third file holds the texts and needs no resource entry.
 2. Add both under **Settings ➔ Dashboards ➔ Resources** as **JavaScript module**:
-   - `/local/brainstorm-card.js?v=1.5.15`
-   - `/local/brainstorm-mindmap-card.js?v=1.5.15`
+   - `/local/brainstorm-card.js?v=1.5.16`
+   - `/local/brainstorm-mindmap-card.js?v=1.5.16`
 3. Reload the page in your browser.
 
 ### Removing the Integration
@@ -158,47 +156,44 @@ Depending on what you used, also remove:
 
 ## 🗣️ Voice Commands
 
-All voice commands below are currently German, see [Language Support](#-language-support).
+Which language applies depends on where you speak: the skill follows the language of your Echo, everything else the language of Home Assistant. The German commands are in the [German documentation](README_de.md).
 
-### Alexa Dialog (Recommended)
+### Alexa Skill (Recommended)
 
-Start the dialog with a routine, scene or voice command:
+Your own skill is the most reliable way. The setup is in the chapter *Optional: Your Own Alexa Skill* below. Start each sentence with *"Alexa, ask Brainstorm to"*:
 
-> 🗣️ *“Alexa, Neue Idee”* or *“Alexa, Brainstorm”*  
-> 🤖 **Alexa:** *“Brainstorm bereit. Sprich deine Notiz oder sage Ansage.”*  
-> 🗣️ **You:** *“Im Garten müssen die Rosen geschnitten werden.”* (The roses in the garden have to be cut.)  
-> 🤖 **Alexa:** *“Gespeichert unter Haus & Garten.”*
+| You say | What happens |
+| :--- | :--- |
+| *"note dim the basement light"* | Saves a note. Also: *idea*, *remember*, *add*, *write down* |
+| *"remind me tomorrow at 8 to take out the bins"* | Saves a note with a reminder |
+| *"done take out the bins"* or *"done"* | Completes a note, or the last reminder |
+| *"later"* | Moves the last reminder by one hour |
+| *"read"* or *"read daily life"* | Gives the overview, or reads a category |
+| *"read everything"* | Reads all notes |
+| *"show my lists"* or *"show daily life"* | Shows the lists on an Echo with a screen |
 
-Because **Brainstorm** is also the name of a band, Alexa tries to play music when it hears the single word. Create two separate routines in the Alexa app, because Amazon allows one voice trigger per routine, and routines take priority over music search:
+### Alexa Dialog
 
-1. **When:** voice ➔ `Alexa, öffne brainstorm`. **Action:** Smart Home ➔ Scenes ➔ **Brainstorm Hauptmenü** (Alexa offers Home Assistant scripts as scenes).
-2. **When:** voice ➔ `Alexa, brainstorm`. **Action:** the same scene.
+Say *"Alexa, brainstorm"*, Alexa asks for your note and confirms the category. It needs the Alexa Actionable Notifications skill. Copy the script and automation from [`examples/alexa_dialog.en.yaml`](examples/alexa_dialog.en.yaml) and create a routine in the Alexa app with the script as its scene, because **Brainstorm** is also the name of a band and Alexa would otherwise try to play music. Routines take priority over music search.
 
 ### Alexa Direct Commands
 
-Say everything in one sentence. An automation stops any skill or music that started and confirms the entry:
-
-- 🗣️ *“Alexa, **Idee** Rasensprenger reparieren.”* (repair sprinkler) ➔ `Haus & Garten`
-- 🗣️ *“Alexa, **Notiere** Kellerlicht dimmen.”* (dim basement light) ➔ `Smarthome`
-- 🗣️ *“Alexa, **Merke dir für den Garten** Tomaten düngen.”* (fertilize tomatoes) ➔ `Haus & Garten`
-- 🗣️ *“Alexa, **Brainstorm** Balkonkraftwerk Ertrag auswerten.”* (check balcony solar yield) ➔ `Smarthome`
-- 🗣️ *“Alexa, **Neue Idee für Projekte** Smart Mirror bauen.”* (build a smart mirror) ➔ `Projekte`
+Say everything in one sentence: *"Alexa, note dim the basement light"*, *"Alexa, idea repair the sprinkler"*, *"Alexa, remember to fertilize the tomatoes"*. An automation stops any skill or music that started and confirms the entry. Copy it from [`examples/alexa_direct_commands.en.yaml`](examples/alexa_direct_commands.en.yaml). Alexa does not know these commands, so it may answer with an error first.
 
 ### Home Assistant Assist
 
-**Brainstorm sentences**, which need your own custom sentences:
+**Brainstorm sentences** need your own custom sentences. Copy [`examples/custom_sentences/en/brainstorm.yaml`](examples/custom_sentences/en/brainstorm.yaml) to `/config/custom_sentences/en/`, add [`examples/intent_script.en.yaml`](examples/intent_script.en.yaml) to your `intent_script`, and restart Home Assistant:
 
-- 🗣️ *“Setze Rasenmähen auf Brainstorm”*
-- 🗣️ *“Neue Idee Blumen gießen”*
-- 🗣️ *“Notiere Backup der Datenbank erstellen”*
-- 🗣️ *“Merke dir Reifen wechseln”*
-- 🗣️ *“Brainstorm Zigbee Bewegungsmelder testen”*
+- 🗣️ *"Add mow the lawn to Brainstorm"*
+- 🗣️ *"New idea water the flowers"*
+- 🗣️ *"Note create a database backup"*
+- 🗣️ *"Remember to change the tires"*
+- 🗣️ *"What is in daily life in Brainstorm?"*
 
-**To-do list sentences**, which use Home Assistant's built-in commands:
+**To-do list sentences** use Home Assistant's built-in commands:
 
-- 🗣️ *“Setze Rasenmähen auf die Liste Brainstorm Haus und Garten”*
-- 🗣️ *“Füge Milch zu Brainstorm Inbox hinzu”*
-- 🗣️ *“Hake Rasenmähen auf Brainstorm Haus und Garten ab”*
+- 🗣️ *"Add milk to the Brainstorm Hub Inbox list"*
+- 🗣️ *"Check off milk on the Brainstorm Hub Inbox list"*
 
 ---
 
@@ -219,18 +214,18 @@ The Alexa voice flows run as automations and scripts in your own Home Assistant 
 
 ## 🎙️ Optional: Your Own Alexa Skill (One Sentence, One Answer)
 
-Without a skill, Alexa often reports an error first when you say *"Alexa, notiere ..."*, because it does not know that command. Your own skill gives a single answer: *"Alexa, sage Brainstorm notiere Kellerlicht dimmen."* ➔ *"Gespeichert unter Smarthome."*
+Without a skill, Alexa often reports an error first when you say *"Alexa, note ..."*, because it does not know that command. Your own skill gives a single answer: *"Alexa, ask Brainstorm to note dim the basement light."* ➔ *"Saved under Smart Home."*
 
-The skill belongs to you and only talks to your own Home Assistant. **Requirements:** a free [Amazon developer account](https://developer.amazon.com/alexa/console/ask) on the same account as your Echos and a Home Assistant reachable over public HTTPS (for example through Home Assistant Cloud). The voice model is currently German only.
+The skill belongs to you and only talks to your own Home Assistant. **Requirements:** a free [Amazon developer account](https://developer.amazon.com/alexa/console/ask) on the same account as your Echos and a Home Assistant reachable over public HTTPS (for example through Home Assistant Cloud). Home Assistant offers the voice model in its own language. German and English exist, and other languages get the English one. The skill answers in the language of the request.
 
 1. In Home Assistant, go to **Brainstorm Hub ➔ Configure ➔ Alexa Voice Input & Skill**, choose **Skill** or **Both** and continue. Keep this window open, it shows the two fields to copy.
-2. In the [Alexa developer console](https://developer.amazon.com/alexa/console/ask), click **Create Skill** and choose: name `Brainstorm`, language **German (DE)**, type **Custom**, hosting **Alexa-hosted (Python)**, template **Start from Scratch**.
+2. In the [Alexa developer console](https://developer.amazon.com/alexa/console/ask), click **Create Skill** and choose: name `Brainstorm`, the language of your Echo, such as **English (US)**, type **Custom**, hosting **Alexa-hosted (Python)**, template **Start from Scratch**.
 3. Open **Build ➔ Interaction Model ➔ JSON Editor**, replace the content with the **Voice model** field, click **Save**, then **Build**, and wait for the success message.
 4. In the **Code** tab, replace `lambda_function.py` with the **Skill code** field and click **Deploy**.
 5. In the **Test** tab, set the stage to **Development**.
-6. Click **Submit** in Home Assistant and say *"Alexa, sage Brainstorm notiere Testidee."* The first request links your skill, other skills are rejected afterwards. **Configure** shows the link and the last request.
+6. Click **Submit** in Home Assistant and say *"Alexa, ask Brainstorm to note test idea."* The first request links your skill, other skills are rejected afterwards. **Configure** shows the link and the last request.
 
-**Notes:** Keep the skill code private, it contains your secret address. If it leaks, create a new one there and copy the skill code again. The Echo selection and device display apply to the skill too. For this, Home Assistant learns each Echo from the Alexa history on its first sentence (this needs the Alexa Media integration), which can take up to 3.5 seconds longer. If the history entry arrives later, the idea is still saved and the Echo is added afterwards. In the menu you need a command word such as *"notiere ..."*, plain free text is not possible in a skill. For **Skill** mode to turn off the existing capture, your automation has to check the `voice_mode` attribute:
+**Notes:** Keep the skill code private, it contains your secret address. If it leaks, create a new one there and copy the skill code again. The Echo selection and device display apply to the skill too. For this, Home Assistant learns each Echo from the Alexa history on its first sentence (this needs the Alexa Media integration), which can take up to 3.5 seconds longer. If the history entry arrives later, the idea is still saved and the Echo is added afterwards. In the menu you need a command word such as *"note ..."*, plain free text is not possible in a skill. For **Skill** mode to turn off the existing capture, your automation has to check the `voice_mode` attribute:
 
 ```yaml
 - condition: template
@@ -265,9 +260,9 @@ The list card has a **🎙️** next to the quick input. Tap, speak, and the tex
 By default, all users of your Home Assistant see all ideas. Change this under **Brainstorm Hub ➔ Configure ➔ Privacy & Users**, and choose a **main user** who owns all existing ideas.
 
 - **When on:** Every idea belongs to its creator, and only they and people it is shared with can see it.
-- **Single ideas:** Long-press an idea ➔ **👥 Freigeben**, for each person to view or edit, or for all users.
-- **Categories:** Select a category ➔ **👥 … freigeben**. This covers your own ideas in it, including later ones.
-- **Several ideas:** **☑️ Auswählen**, then complete, move, share or delete them at once. This also works without privacy.
+- **Single ideas:** Long-press an idea ➔ **Share**, for each person to view or edit, or for all users.
+- **Categories:** Select a category ➔ **👥 Share …**. This covers your own ideas in it, including later ones.
+- **Several ideas:** **☑️ Select**, then complete, move, share or delete them at once. This also works without privacy.
 - **Rights:** Edit allows changing and completing. Deleting and passing on stay with the owner.
 - **Echos and Alexa apps:** Under **Assign Echos & Apps to People**, each device belongs to one person. What is said there is theirs, and only their ideas are read out. Home Assistant cannot recognize voices, and everyone in the room can hear it.
 
@@ -278,25 +273,25 @@ Admins and anyone with file access can still read everything. Home Assistant's t
 Brainstorm reminds you of due ideas on its own, over the services you have already set up in Home Assistant. Everything is optional and runs locally.
 
 **Setting a time**
-- **By voice (skill):** *"Alexa, sage Brainstorm erinnere mich morgen um 8 an die Mülltonnen"*. German phrases like *heute Abend*, *morgen früh*, *am Freitag*, *nächste Woche*, *am 25.11.*, *in zwei Stunden* are understood.
+- **By voice (skill):** *"Alexa, ask Brainstorm to remind me tomorrow at 8 to take out the bins"*. Phrases like *tonight*, *tomorrow morning*, *on Friday*, *next week*, *March 15th*, *in two hours* are understood. Numeric dates like 3/4 are not, because countries read them differently, and *at 5* without am or pm means the next time it comes up.
 - **In the lists:** Set a due date in the Home Assistant to-do lists. A plain date means 09:00.
 - **On the card:** Long-press an idea ➔ choose a reminder.
 - **In automations:** `brainstorm.add_idea` and `brainstorm.update_idea` with the `due` field.
 
 **Configure** under **Brainstorm Hub ➔ Configure ➔ Reminders & Notifications**. Every feature has its own switch:
 
-- **On/Off & Channels:** a master switch, the Alexa announcement (origin, most recent or fixed Echos, needs Alexa Media), any `notify` services (the companion app gets **Erledigt**, **1 Stunde später** and **Morgen** buttons) and sending important open ideas to further services after a waiting time.
+- **On/Off & Channels:** a master switch, the Alexa announcement (origin, most recent or fixed Echos, needs Alexa Media), any `notify` services (the companion app gets **Done**, **1 hour later** and **Tomorrow** buttons) and sending important open ideas to further services after a waiting time.
 - **Quiet Hours, Briefing & Weekly Review:** Urgent ideas still reach your notification services during quiet hours, but no Echo speaks. The briefing can wait until a sensor or person detects someone.
 - **Rules per List:** normal channels, Alexa only, notifications only (private) or nothing, own services, sending a list on certain days or at a place.
-- **Places & Coming Home:** *"erinnere mich wenn ich heimkomme an den Müll"*, *"erinnere mich wenn ich bei Edeka bin an die Milch"*, using your zones.
-- **People:** *"erinnere Lenja morgen um 8 an den Termin"*, with own channels per person.
+- **Places & Coming Home:** *"remind me to take out the trash when I get home"*, *"remind me of the milk when I get to the market"*, using your zones.
+- **People:** *"remind Alex tomorrow at 8 to call the dentist"*, with own channels per person.
 - **Calendar, AI & Alexa Reminders:** adds reminders once to a calendar (later changes are not transferred), shortens the briefing and review with an `ai_task` entity (your ideas go to its provider), and optionally creates real Amazon reminders in the skill (switch on **Build ➔ Permissions ➔ Reminders** in the Alexa console and grant consent once in the Alexa app).
 
-**Lists on an Echo Show:** With the skill, an Echo with a screen shows your open ideas next to the voice answer: one page per category with tiles, swipe left or right to change it and scroll within a page. Touch the circle in front of an idea to complete it; a completed idea can be restored on the card. *"zeige Alltag"* or *"zeige Listen"* shows the lists with only a short answer, while *"Ansage"* and *"alles vorlesen"* show them while reading aloud.
+**Lists on an Echo Show:** With the skill, an Echo with a screen shows your open ideas next to the voice answer: one page per category with tiles, swipe left or right to change it and scroll within a page. Touch the circle in front of an idea to complete it; a completed idea can be restored on the card. *"show daily life"* or *"show my lists"* shows the lists with only a short answer, while *"read"* and *"read everything"* show them while reading aloud.
 
 To set this up, open **Build ➔ Interfaces** in the Alexa developer console, switch on **Alexa Presentation Language** with the Echo Show profiles, and click **Save**. Then copy the **Voice model** and **Skill code** fields again, click **Build** and **Deploy**. Without these steps, the skill keeps answering by voice only. Amazon decides how long a screen stays visible, and it can return to the home screen earlier than the requested two minutes.
 
-**More skill sentences:** *"erledigt Mülltonnen"* or just *"erledigt"* for the last reminder, *"später"* moves it one hour, *"Ansage Alltag"* reads a category, *"Ansage"* gives only the overview, *"alles vorlesen"* reads everything.
+**More skill sentences:** *"done bins"* or just *"done"* for the last reminder, *"later"* moves it one hour, *"read daily life"* reads a category, *"read"* gives only the overview, *"read everything"* reads everything.
 
 **Your own automations:** Every reminder fires the `brainstorm_reminder_due` event, also without any services.
 
@@ -308,9 +303,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.5.15
+  - url: /local/brainstorm-card.js?v=1.5.16
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.5.15
+  - url: /local/brainstorm-mindmap-card.js?v=1.5.16
     type: module
 ```
 
@@ -524,7 +519,7 @@ Every action stays available while the integration is not loaded and then explai
 
 ### `brainstorm.add_idea`
 
-Adds a new idea and detects the category in the text, such as `Garten: Blumen pflanzen` or `#smarthome`.
+Adds a new idea and detects the category in the text, such as `Garden: plant flowers` or `#smarthome`.
 
 | Field | Required | Meaning |
 | :--- | :--- | :--- |
@@ -536,7 +531,7 @@ Adds a new idea and detects the category in the text, such as `Garten: Blumen pf
 | `tags` | No | Additional keywords. |
 | `parent_id` | No | ID of the parent idea, to create a subtask. |
 | `due` | No | When Brainstorm should remind you of this idea. |
-| `parse_due` | No | Detects phrases like `morgen um 8` in the text and uses them as the time. |
+| `parse_due` | No | Detects phrases like `tomorrow at 8` in the text and uses them as the time. |
 | `assignee` | No | The person to remind. |
 | `zone` | No | Reminds when entering this zone. |
 | `language` | No | Language of the text, such as `de` or `en`. Without it, the language of Home Assistant applies. |
@@ -647,6 +642,7 @@ Shares several ideas or a whole category. Needs privacy to be switched on.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.5.16`** | 2026-11-02 | **Speak English with your own skill:**<br>• **Voice model:** Home Assistant offers an English voice model when it runs in English: *"Alexa, ask Brainstorm to note dim the basement light"*, *"remind me tomorrow at 8 to …"*, *"done"*, *"later"*, *"read"*, *"show my lists"*.<br>• **Language of the request:** With the new skill code, the skill follows the language of the Echo. Existing skills keep working without any change and use the language of Home Assistant.<br>• **Without Home Assistant:** The skill code holds its messages in all languages for when Home Assistant cannot be reached.<br>• **Examples:** `examples/` has Assist sentences and intent scripts in both languages, and an English Alexa dialog and direct command automation. |
 | **`v1.5.15`** | 2026-11-02 | **The cards in English:**<br>• **All texts:** Both cards and their editors show their texts in the language of your Home Assistant profile, with dates to match. Languages without their own texts show English.<br>• **New file to copy:** `www/brainstorm-i18n.js` holds the texts. Copy it next to the two card files when you update by hand. It needs no resource entry.<br>• **Card editor:** The category choice only offers categories that exist. |
 | **`v1.5.14`** | 2026-11-02 | **English texts in the backend:**<br>• **Reminders:** Spoken reminders, notifications with their buttons, the briefing, the weekly review and the AI summary follow the language of Home Assistant.<br>• **Also in English:** Logbook, to-do descriptions, Markdown export, read-aloud texts, AI tool answers and the Echo Show lists.<br>• **Reminder phrases:** *"when I get home"*, *"when I get to the market"* and *"remind Alex tomorrow at 8"* work in English.<br>• **Error messages and actions:** They now use Home Assistant's translations, which also shows them in the language of each user.<br>• **German stays:** All German texts keep their wording. |
 | **`v1.5.13`** | 2026-11-02 | **English notes:**<br>• **Short tasks:** *"the lawn has to be mowed"* ➔ *"Mow lawn"*, *"I need to call the doctor"* ➔ *"Call doctor"*. Negations, questions and sentences that cannot be rebuilt completely keep their wording.<br>• **Due dates and priorities from the sentence:** *tomorrow at 8*, *next Monday at 5 pm*, *in two hours*, *March 15th*, *asap*, *important*, *someday*.<br>• **English categories:** A new installation in English starts with English categories. Existing categories keep their names and also understand English words.<br>• **New field:** `brainstorm.add_idea` accepts `language`, for example for a shortcut in another language. |

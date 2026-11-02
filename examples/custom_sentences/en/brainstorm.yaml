@@ -1,0 +1,48 @@
+language: "en"
+intents:
+  BrainstormAddIdea:
+    data:
+      - sentences:
+          - "[a] [new] idea {text}"
+          - "note [down] {text}"
+          - "remember {text}"
+          - "brainstorm {text}"
+          - "add {text} to brainstorm"
+          - "put {text} on [my] brainstorm [list]"
+          - "new brainstorm idea {text}"
+  BrainstormGetIdeas:
+    data:
+      - sentences:
+          - "[read] [show] [me] [all] [my] brainstorm [notes | ideas | entries]"
+          - "what is [currently] in brainstorm"
+          - "what is [currently] on [my] brainstorm [list]"
+          - "brainstorm (read | announcement)"
+          - "[read] [me] [the] brainstorm [notes | ideas | entries] [in | from] [category] {brainstorm_category}"
+          - "what is in [category] {brainstorm_category} [in brainstorm]"
+          - "what did i note in [category] {brainstorm_category}"
+lists:
+  text:
+    wildcard: true
+  # Adjust "out" to the names of your categories
+  brainstorm_category:
+    values:
+      - in: "smart home"
+        out: "Smart Home"
+      - in: "smarthome"
+        out: "Smart Home"
+      - in: "house and garden"
+        out: "House & Garden"
+      - in: "house & garden"
+        out: "House & Garden"
+      - in: "garden"
+        out: "House & Garden"
+      - in: "projects"
+        out: "Projects"
+      - in: "project"
+        out: "Projects"
+      - in: "daily life"
+        out: "Daily Life"
+      - in: "brainstorm"
+        out: "Brainstorm"
+      - in: "inbox"
+        out: "Inbox"

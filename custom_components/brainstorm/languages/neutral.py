@@ -71,6 +71,9 @@ PACK = LanguagePack(
         place_lead=NEVER_MATCHES.pattern,
         place_end="",
     ),
+    skill_model=en.INTERACTION_MODEL,
+    voice_prefixes=(),
+    voice_suffixes=(),
     garden_words=(),
     garden_match="",
 )

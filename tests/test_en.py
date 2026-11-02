@@ -7,7 +7,12 @@ from typing import Any
 import pytest
 from homeassistant.core import HomeAssistant
 
+from custom_components.brainstorm.alexa_skill import (
+    SKILL_CODE_TEMPLATE,
+    clean_voice_text,
+)
 from custom_components.brainstorm.const import STORAGE_KEY
+from custom_components.brainstorm.languages import PACKS
 from custom_components.brainstorm.languages.en import (
     PACK,
     clean_text,
@@ -370,3 +375,107 @@ async def test_english_texts_of_a_store(store: BrainstormStore) -> None:
     assert store.get_announcement_text("Daily Life", language="de").startswith(
         "Daily Life hat zwei Einträge: "
     )
+
+
+def _alexa_model(pack: Any) -> dict[str, Any]:
+    """Return the language model of a pack."""
+    return pack.skill_model["interactionModel"]["languageModel"]
+
+
+@pytest.mark.parametrize("pack", PACKS.values(), ids=lambda pack: pack.code)
+def test_every_voice_model_fits_the_skill_code(pack: Any) -> None:
+    """Every language has the same intents, and Amazon's rules for free text hold."""
+    model = _alexa_model(pack)
+    german = _alexa_model(PACKS["de"])
+    assert model["invocationName"] == "brainstorm"
+    assert [intent["name"] for intent in model["intents"]] == [
+        intent["name"] for intent in german["intents"]
+    ]
+    samples = [sample for intent in model["intents"] for sample in intent["samples"]]
+    assert len(samples) == len(set(samples))
+    for intent in model["intents"]:
+        if not intent["name"].startswith("AMAZON."):
+            assert intent["name"] in SKILL_CODE_TEMPLATE
+        for sample in intent["samples"]:
+            assert sample.replace("{text}", "").replace("{category}", "").strip()
+            assert sample == sample.lower()
+
+
+@pytest.mark.parametrize(
+    ("spoken", "expected"),
+    [
+        ("dim the basement light", "dim the basement light"),
+        ("add milk to my list", "milk"),
+        ("note buy tires", "buy tires"),
+        ("for the garden fertilize tomatoes", "garden fertilize tomatoes"),
+        ("remind me to call mom", "call mom"),
+    ],
+)
+def test_clean_voice_text_in_english(spoken: str, expected: str) -> None:
+    """Command words are not part of a note."""
+    assert clean_voice_text(spoken, PACK) == expected
+
+
+def _skill_payload(action: str, text: str, locale: str | None = "en-US") -> dict[str, Any]:
+    """Return what the skill sends."""
+    payload = {"application_id": "skill", "action": action, "text": text}
+    return payload | ({"locale": locale} if locale else {})
+
+
+async def _post_skill(client: Any, entry: Any, payload: dict[str, Any]) -> Any:
+    """Call the secret webhook of the skill."""
+    webhook_id = entry.runtime_data.alexa_skill._webhook_id  # noqa: SLF001
+    response = await client.post(f"/api/webhook/{webhook_id}", json=payload)
+    return await response.json()
+
+
+async def test_skill_follows_the_language_of_the_request(
+    hass: HomeAssistant, setup_entry: Any, hass_client_no_auth: Any
+) -> None:
+    """An English Echo works on a German Home Assistant, a German one stays German."""
+    hass.config.language = "de"
+    entry = await setup_entry(options={"voice_mode": "skill"})
+    client = await hass_client_no_auth()
+
+    english = await _post_skill(
+        client, entry, _skill_payload("capture", "the lawn has to be mowed")
+    )
+    assert english["speech"] == "Saved under Haus and Garten."
+    german = await _post_skill(
+        client,
+        entry,
+        _skill_payload("capture", "der rasen muss gemäht werden", "de-DE"),
+    )
+    assert german["speech"] == "Gespeichert unter Haus und Garten."
+    older_skill = await _post_skill(
+        client, entry, _skill_payload("launch", "", None)
+    )
+    assert older_skill["speech"].startswith("Brainstorm bereit.")
+    texts = [idea["text"] for idea in entry.runtime_data.ideas]
+    assert sorted(texts) == ["Mow lawn", "Rasen mähen"]
+
+
+async def test_skill_reminder_in_english(
+    hass: HomeAssistant, setup_entry: Any, hass_client_no_auth: Any
+) -> None:
+    """A reminder is understood and confirmed in English."""
+    hass.config.language = "en"
+    entry = await setup_entry(options={"voice_mode": "skill"})
+    client = await hass_client_no_auth()
+    answer = await _post_skill(
+        client, entry, _skill_payload("remind", "tomorrow at 8 to take out the bins")
+    )
+    assert answer["speech"].startswith("Okay, I will remind you tomorrow at 8 am about")
+    assert "bins" in answer["speech"]
+
+
+def test_skill_code_has_its_own_texts_in_every_language() -> None:
+    """When Home Assistant is down, nobody else can provide the words."""
+    namespace: dict[str, Any] = {}
+    exec(SKILL_CODE_TEMPLATE.replace("__WEBHOOK_URL__", "https://x"), namespace)  # noqa: S102
+    event = {"request": {"locale": "en-GB"}}
+    assert "Nothing was saved" in namespace["_text"](event, "skill_unreachable")
+    event = {"request": {"locale": "de-DE"}}
+    assert "nichts gespeichert" in namespace["_text"](event, "skill_unreachable")
+    event = {"request": {"locale": "fr-FR"}}
+    assert "Nothing was saved" in namespace["_text"](event, "skill_unreachable")

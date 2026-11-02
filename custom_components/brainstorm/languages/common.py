@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime
 from difflib import SequenceMatcher
 import re
+from typing import Any
 
 # Neutral names of the standard categories, so stored names need no translating
 CATEGORY_HOME_GARDEN = "home_garden"
@@ -72,6 +73,10 @@ class LanguagePack:
     format_due: Callable[[datetime, date], str]
     count_entries: Callable[[int], str]
     reminder_words: ReminderWords
+    # Alexa: the voice model and the command words that are not part of a note
+    skill_model: dict[str, Any]
+    voice_prefixes: tuple[str, ...]
+    voice_suffixes: tuple[str, ...]
     # Words for the house and garden list, and the word that shows a category is one
     garden_words: tuple[str, ...]
     garden_match: str

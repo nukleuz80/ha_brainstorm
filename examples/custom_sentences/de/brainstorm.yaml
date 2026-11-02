@@ -1,0 +1,48 @@
+language: "de"
+intents:
+  BrainstormAddIdea:
+    data:
+      - sentences:
+          - "[eine] [neue] idee {text}"
+          - "notiere [mir] {text}"
+          - "merke [dir] {text}"
+          - "brainstorm {text}"
+          - "setze {text} auf brainstorm"
+          - "setze {text} auf [meine] brainstorm liste"
+          - "neue brainstorm idee {text}"
+  BrainstormGetIdeas:
+    data:
+      - sentences:
+          - "[lies] [sage] [zeige] [mir] [alle] [meine] brainstorm [notizen | ideen | einträge] [vor]"
+          - "was steht [aktuell] in brainstorm"
+          - "was steht [aktuell] auf [meiner] brainstorm [liste]"
+          - "brainstorm (vorlesen | abfragen | ansage)"
+          - "[lies] [sage] [mir] [die] brainstorm [notizen | ideen | einträge] [in | aus | von] [kategorie] {brainstorm_category} [vor]"
+          - "was steht in [kategorie] {brainstorm_category} [in brainstorm]"
+          - "was habe ich in [kategorie] {brainstorm_category} [notiert]"
+          - "was habe ich in [kategorie] {brainstorm_category} auf brainstorm"
+lists:
+  text:
+    wildcard: true
+  brainstorm_category:
+    values:
+      - in: "smarthome"
+        out: "Smarthome"
+      - in: "smart home"
+        out: "Smarthome"
+      - in: "haus und garten"
+        out: "Haus & Garten"
+      - in: "haus & garten"
+        out: "Haus & Garten"
+      - in: "garten"
+        out: "Haus & Garten"
+      - in: "projekte"
+        out: "Projekte"
+      - in: "projekt"
+        out: "Projekte"
+      - in: "alltag"
+        out: "Alltag"
+      - in: "brainstorm"
+        out: "Brainstorm"
+      - in: "inbox"
+        out: "Inbox"

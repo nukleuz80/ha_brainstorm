@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.5.15-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.5.16-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver%20Selbsteinsch%C3%A4tzung-C0C0C0.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -31,8 +31,8 @@ Brainstorm Hub ist auf Deutsch entstanden, Englisch kommt schrittweise dazu. Die
 | Einstellungen der Integration | ✅ | ✅ |
 | Dokumentation | ✅ | ✅ |
 | Antworten des Alexa-Skills | ✅ | ✅ |
-| Sprachbefehle des Alexa-Skills | ✅ | ❌ geplant |
-| Assist-Sätze | ✅ | ❌ geplant |
+| Sprachbefehle des Alexa-Skills | ✅ | ✅ |
+| Assist-Sätze | ✅ | ✅ (`examples/`) |
 | Satzkürzung, Termin und Priorität aus der Sprache | ✅ | ✅ |
 | Dashboard-Karten | ✅ | ✅ |
 | Erinnerungstexte, Logbuch und Fehlermeldungen | ✅ | ✅ |
@@ -156,8 +156,8 @@ HACS installiert nur die Integration. Die Karten kopierst du anschließend wie u
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` und `www/brainstorm-i18n.js` in `/config/www/`. Die dritte Datei enthält die Texte und braucht keinen Ressourcen-Eintrag.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.5.15` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.5.15` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.5.16` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.5.16` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ### Integration entfernen
@@ -314,7 +314,7 @@ Ohne Skill antwortet Alexa auf *„Alexa, notiere …“* oft zuerst mit einer F
 > 🗣️ *„Alexa, sage Brainstorm notiere Kellerlicht dimmen.“*  
 > 🤖 **Alexa:** *„Gespeichert unter Smarthome.“*
 
-Der Skill gehört dir allein und spricht nur mit deinem eigenen Home Assistant. **Voraussetzungen:** ein kostenloses [Amazon-Entwicklerkonto](https://developer.amazon.com/alexa/console/ask) mit demselben Konto wie deine Echos und ein aus dem Internet per HTTPS erreichbares Home Assistant (z. B. über Home Assistant Cloud). Das Sprachmodell ist derzeit nur auf Deutsch verfügbar.
+Der Skill gehört dir allein und spricht nur mit deinem eigenen Home Assistant. **Voraussetzungen:** ein kostenloses [Amazon-Entwicklerkonto](https://developer.amazon.com/alexa/console/ask) mit demselben Konto wie deine Echos und ein aus dem Internet per HTTPS erreichbares Home Assistant (z. B. über Home Assistant Cloud). Home Assistant zeigt das Sprachmodell in seiner eigenen Sprache an. Es gibt Deutsch und Englisch, andere Sprachen bekommen das englische. Der Skill antwortet in der Sprache der Anfrage.
 
 1. Gehe in Home Assistant auf **Brainstorm Hub ➔ Konfigurieren ➔ Alexa-Spracheingabe & Skill**, wähle **Skill** oder **Beide** und klicke auf **Weiter**. Lass dieses Fenster offen, es zeigt die beiden Felder zum Kopieren.
 2. Klicke in der [Alexa-Entwicklerkonsole](https://developer.amazon.com/alexa/console/ask) auf **Create Skill** und wähle: Name `Brainstorm`, Sprache **German (DE)**, Typ **Custom**, Hosting **Alexa-hosted (Python)**, Vorlage **Start from Scratch**.
@@ -344,6 +344,8 @@ Assist versteht deine Notizen sowohl über dedizierte Sprachmuster als auch übe
 * 🗣️ *„Notiere Backup der Datenbank erstellen“*
 * 🗣️ *„Merke dir Reifen wechseln“*
 * 🗣️ *„Brainstorm Zigbee Bewegungsmelder testen“*
+
+Die Vorlagen liegen unter [`examples/custom_sentences/de/brainstorm.yaml`](examples/custom_sentences/de/brainstorm.yaml) und [`examples/intent_script.de.yaml`](examples/intent_script.de.yaml). Kopiere die erste nach `/config/custom_sentences/de/`, ergänze die zweite in deinem `intent_script` und starte Home Assistant neu.
 
 #### Native Listenbefehle:
 * 🗣️ *„Setze Rasenmähen auf die Liste Brainstorm Haus und Garten“*
@@ -691,6 +693,7 @@ Gibt mehrere Einträge oder eine ganze Kategorie für Personen frei. Braucht ein
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.5.16`** | 02.11.2026 | **Englisch sprechen mit dem eigenen Skill:**<br>• **Sprachmodell:** Home Assistant zeigt ein englisches Sprachmodell an, wenn es auf Englisch läuft: *„Alexa, ask Brainstorm to note dim the basement light“*, *„remind me tomorrow at 8 to …“*, *„done“*, *„later“*, *„read“*, *„show my lists“*.<br>• **Sprache der Anfrage:** Mit dem neuen Skill-Code folgt der Skill der Sprache des Echos. Vorhandene Skills laufen ohne Änderung weiter und nutzen die Sprache von Home Assistant.<br>• **Ohne Home Assistant:** Der Skill-Code enthält seine Meldungen in allen Sprachen für den Fall, dass Home Assistant nicht erreichbar ist.<br>• **Vorlagen:** `examples/` enthält Assist-Sätze und Intent-Skripte in beiden Sprachen sowie eine englische Alexa-Dialog- und Direktbefehl-Automation. |
 | **`v1.5.15`** | 02.11.2026 | **Die Karten auf Englisch:**<br>• **Alle Texte:** Beide Karten und ihre Editoren zeigen ihre Texte in der Sprache deines Home-Assistant-Profils, die Daten passend dazu. Sprachen ohne eigene Texte zeigen Englisch.<br>• **Neue Datei zum Kopieren:** `www/brainstorm-i18n.js` enthält die Texte. Kopiere sie bei einem Update von Hand neben die beiden Karten-Dateien. Sie braucht keinen Ressourcen-Eintrag.<br>• **Karteneditor:** Die Kategorieauswahl bietet nur noch vorhandene Kategorien an. |
 | **`v1.5.14`** | 02.11.2026 | **Englische Texte im Backend:**<br>• **Erinnerungen:** Gesprochene Erinnerungen, Benachrichtigungen mit ihren Knöpfen, das Briefing, der Wochenrückblick und die KI-Zusammenfassung folgen der Sprache von Home Assistant.<br>• **Auch auf Englisch:** Logbuch, To-do-Beschreibungen, Markdown-Export, Ansagen, Antworten der KI-Werkzeuge und die Listen auf dem Echo Show.<br>• **Erinnerungssätze:** *„when I get home“*, *„when I get to the market“* und *„remind Alex tomorrow at 8“* gehen auf Englisch.<br>• **Fehlermeldungen und Aktionen:** Sie nutzen jetzt die Übersetzungen von Home Assistant und erscheinen damit in der Sprache des jeweiligen Benutzers.<br>• **Deutsch bleibt:** Alle deutschen Texte behalten ihren Wortlaut. |
 | **`v1.5.13`** | 02.11.2026 | **Englische Notizen:**<br>• **Kurze Aufgaben:** *„the lawn has to be mowed“* ➔ *„Mow lawn“*, *„I need to call the doctor“* ➔ *„Call doctor“*. Verneinungen, Fragen und nicht vollständig umbaubare Sätze behalten ihren Wortlaut.<br>• **Termin und Priorität aus dem Satz:** *tomorrow at 8*, *next Monday at 5 pm*, *in two hours*, *March 15th*, *asap*, *important*, *someday*.<br>• **Englische Kategorien:** Eine neue englische Installation beginnt mit englischen Kategorien. Vorhandene Kategorien behalten ihre Namen und verstehen zusätzlich englische Wörter.<br>• **Neues Feld:** `brainstorm.add_idea` nimmt `language` an, zum Beispiel für einen Kurzbefehl in einer anderen Sprache. |

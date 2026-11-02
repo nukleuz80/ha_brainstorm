@@ -36,7 +36,8 @@ from .const import (
     SKILL_STORAGE_KEY,
     SKILL_STORAGE_VERSION,
 )
-from .languages import get_pack
+from .languages import PACKS, get_pack
+from .languages.common import LanguagePack
 from .reminders import (
     ZONE_HOME,
     ReminderRequest,
@@ -82,186 +83,11 @@ ACTIONS = (
     ACTION_SNOOZE,
 )
 SNOOZE_TIME = timedelta(hours=1)
-
-# Same words as the native voice capture, tried in this order
-_TEXT_PREFIXES = (
-    "setze auf meine einkaufsliste ",
-    "setz auf meine einkaufsliste ",
-    "setze auf die einkaufsliste ",
-    "setz auf die einkaufsliste ",
-    "setze auf meine to-do-liste ",
-    "setz auf meine to-do-liste ",
-    "setze auf die to-do-liste ",
-    "setz auf die to-do-liste ",
-    "setze auf meine todoliste ",
-    "setz auf meine todoliste ",
-    "setze auf meine liste ",
-    "setz auf meine liste ",
-    "setze auf die liste ",
-    "setz auf die liste ",
-    "packe auf meine liste ",
-    "pack auf meine liste ",
-    "schreibe auf meine liste ",
-    "schreib auf meine liste ",
-    "setze ",
-    "setz ",
-    "packe ",
-    "pack ",
-    "schreibe ",
-    "schreib ",
-    "erinnere mich an ",
-    "erinnere mich ",
-    "erinnere ",
-    "neue idee für den ",
-    "neue idee für das ",
-    "neue idee für die ",
-    "neue idee für ",
-    "neue idee ",
-    "idee für den ",
-    "idee für das ",
-    "idee für die ",
-    "idee für ",
-    "idee ",
-    "notiz für den ",
-    "notiz für das ",
-    "notiz für die ",
-    "notiz für ",
-    "notiz ",
-    "notiere für den ",
-    "notiere für das ",
-    "notiere für die ",
-    "notiere für ",
-    "notiere ",
-    "merke dir für den ",
-    "merke dir für ",
-    "merke dir ",
-    "merke ",
-    "brainstorm ",
-    # Alexa has already removed the command word from the skill's text
-    "für den ",
-    "für das ",
-    "für die ",
-    "für ",
-)
-_TEXT_SUFFIXES = (
-    " auf meine einkaufsliste",
-    " auf die einkaufsliste",
-    " auf meine to do liste",
-    " auf die to do liste",
-    " auf meine liste",
-    " auf die liste",
-    " auf meine to-do-liste",
-    " auf die to-do-liste",
-    " auf meine todoliste",
-    " auf die todoliste",
-)
-
-INTERACTION_MODEL: dict[str, Any] = {
-    "interactionModel": {
-        "languageModel": {
-            "invocationName": "brainstorm",
-            "intents": [
-                {
-                    "name": "CaptureIdeaIntent",
-                    "slots": [{"name": "text", "type": "AMAZON.SearchQuery"}],
-                    "samples": [
-                        "notiere {text}",
-                        "notier {text}",
-                        "notiz {text}",
-                        "neue notiz {text}",
-                        "idee {text}",
-                        "neue idee {text}",
-                        "eintrag {text}",
-                        "neuer eintrag {text}",
-                        "merke dir {text}",
-                        "merke {text}",
-                        "setze {text}",
-                        "setz {text}",
-                        "packe {text}",
-                        "pack {text}",
-                        "schreibe {text}",
-                        "schreib {text}",
-                        "schreib auf {text}",
-                    ],
-                },
-                {
-                    "name": "ReminderIntent",
-                    "slots": [{"name": "text", "type": "AMAZON.SearchQuery"}],
-                    "samples": [
-                        "erinnere mich an {text}",
-                        "erinnere mich {text}",
-                        "erinnere {text}",
-                        "termin {text}",
-                    ],
-                },
-                {
-                    "name": "DoneIntent",
-                    "slots": [{"name": "text", "type": "AMAZON.SearchQuery"}],
-                    "samples": [
-                        "erledigt",
-                        "ist erledigt",
-                        "fertig",
-                        "erledigt {text}",
-                        "hake ab {text}",
-                        "fertig mit {text}",
-                    ],
-                },
-                {
-                    "name": "SnoozeIntent",
-                    "samples": ["später", "später erinnern", "nochmal später"],
-                },
-                {
-                    "name": "ShowIdeasIntent",
-                    "slots": [{"name": "category", "type": "AMAZON.SearchQuery"}],
-                    "samples": [
-                        "anzeigen",
-                        "liste anzeigen",
-                        "listen anzeigen",
-                        "zeige liste",
-                        "zeige listen",
-                        "zeige meine listen",
-                        "zeige {category}",
-                        "zeig {category}",
-                    ],
-                },
-                {
-                    "name": "ReadAllIdeasIntent",
-                    "samples": [
-                        "alle einträge",
-                        "alle notizen",
-                        "alles vorlesen",
-                        "notizen vorlesen",
-                    ],
-                },
-                {
-                    "name": "ReadIdeasIntent",
-                    "slots": [{"name": "category", "type": "AMAZON.SearchQuery"}],
-                    "samples": [
-                        "ansage",
-                        "vorlesen",
-                        "abfragen",
-                        "abhören",
-                        "was steht drin",
-                        "ansage für {category}",
-                        "ansage {category}",
-                        "lies {category}",
-                        "lies vor {category}",
-                        "kategorie {category}",
-                    ],
-                },
-                {"name": "AMAZON.CancelIntent", "samples": []},
-                {"name": "AMAZON.HelpIntent", "samples": []},
-                {"name": "AMAZON.StopIntent", "samples": []},
-                {"name": "AMAZON.NavigateHomeIntent", "samples": []},
-                {"name": "AMAZON.FallbackIntent", "samples": []},
-            ],
-            "types": [],
-        }
-    }
-}
+# What the skill has to be able to say without Home Assistant
+SKILL_CODE_TEXTS = ("skill_unreachable", "skill_inactive", "skill_no_text", "skill_help")
 
 # Kept small on purpose, so that improvements reach users through the integration
-SKILL_CODE_TEMPLATE = '''"""Brainstorm Hub Alexa skill. Keep this code private, it contains your secret address."""
+_SKILL_CODE = '''"""Brainstorm Hub Alexa skill. Keep this code private, it contains your secret address."""
 import json
 import urllib.error
 import urllib.request
@@ -269,7 +95,13 @@ import urllib.request
 WEBHOOK_URL = "__WEBHOOK_URL__"
 TIMEOUT_SECONDS = 6
 REMINDER_API_TIMEOUT_SECONDS = 2
-HELP_TEXT = "Sage zum Beispiel: notiere Kellerlicht dimmen, erinnere mich morgen um 8 an die Tonnen, oder Ansage Alltag."
+TEXTS = __TEXTS__
+
+
+def _text(event, key):
+    """Return a text in the language of the request, as Home Assistant may be down."""
+    language = str(event["request"].get("locale") or "").split("-")[0]
+    return TEXTS.get(language, TEXTS["en"])[key]
 
 
 def _response(text, end_session=True):
@@ -295,6 +127,7 @@ def _call_home_assistant(event, action, text=""):
         "action": action,
         "text": text,
         "display": _has_screen(event),
+        "locale": event["request"].get("locale"),
     }
     request = urllib.request.Request(
         WEBHOOK_URL,
@@ -307,11 +140,11 @@ def _call_home_assistant(event, action, text=""):
             body = reply.read().decode()
             data = json.loads(body) if body else {}
     except (urllib.error.URLError, TimeoutError, ValueError):
-        return _response("Home Assistant ist nicht erreichbar. Es wurde nichts gespeichert.")
+        return _response(_text(event, "skill_unreachable"))
     if data.get("silent"):
         return {"version": "1.0", "response": {"shouldEndSession": True}}
     if not data.get("speech"):
-        return _response("Der Skill-Modus ist in Brainstorm nicht aktiv. Es wurde nichts gespeichert.")
+        return _response(_text(event, "skill_inactive"))
     answer = _response(data["speech"], data.get("end_session", True))
     if data.get("directives"):
         answer["response"]["directives"] = data["directives"]
@@ -382,7 +215,7 @@ def lambda_handler(event, context):
         text = slots.get("text", {}).get("value")
         if text:
             return _call_home_assistant(event, "capture", text)
-        return _response("Ich habe keinen Text verstanden.")
+        return _response(_text(event, "skill_no_text"))
     if intent.get("name") == "ReminderIntent":
         return _call_home_assistant(event, "remind", slots.get("text", {}).get("value") or "")
     if intent.get("name") == "DoneIntent":
@@ -396,18 +229,27 @@ def lambda_handler(event, context):
     if intent.get("name") == "ReadAllIdeasIntent":
         return _call_home_assistant(event, "read_all")
     if intent.get("name") in ("AMAZON.HelpIntent", "AMAZON.FallbackIntent"):
-        return _response(HELP_TEXT, False)
+        return _response(_text(event, "skill_help"), False)
     return _response("Okay.")
 '''
+SKILL_CODE_TEMPLATE = _SKILL_CODE.replace(
+    "__TEXTS__",
+    repr(
+        {
+            code: {key: pack.messages[key] for key in SKILL_CODE_TEXTS}
+            for code, pack in PACKS.items()
+        }
+    ),
+)
 
 
-def clean_voice_text(text: str) -> str:
+def clean_voice_text(text: str, pack: LanguagePack) -> str:
     """Remove command words and list names, like the native voice capture."""
     cleaned = text.strip()
-    for prefix in _TEXT_PREFIXES:
+    for prefix in pack.voice_prefixes:
         if cleaned.lower().startswith(prefix):
             cleaned = cleaned[len(prefix) :]
-    for suffix in _TEXT_SUFFIXES:
+    for suffix in pack.voice_suffixes:
         if cleaned.lower().endswith(suffix):
             cleaned = cleaned[: -len(suffix)]
     return cleaned.strip()
@@ -547,10 +389,10 @@ class AlexaSkill:
         url = f"{base_url}{webhook.async_generate_path(self._webhook_id)}"
         return SKILL_CODE_TEMPLATE.replace("__WEBHOOK_URL__", url)
 
-    @staticmethod
-    def get_interaction_model() -> str:
+    def get_interaction_model(self, language: str | None = None) -> str:
         """Return the voice model for the Alexa developer console."""
-        return json.dumps(INTERACTION_MODEL, indent=2, ensure_ascii=False)
+        pack = get_pack(language or self.hass.config.language)
+        return json.dumps(pack.skill_model, indent=2, ensure_ascii=False)
 
     def known_device_names(self) -> set[str]:
         """Return the names of all devices the skill has seen."""
@@ -689,29 +531,24 @@ class AlexaSkill:
             return EchoDevice(str(known["name"]))
         return self._echo_from_name(str(known["name"]))
 
-    @property
-    def _is_german(self) -> bool:
-        """Return whether Home Assistant runs in German."""
-        return self.hass.config.language.startswith("de")
-
     def _speech(
         self,
-        german: str,
-        english: str,
+        text: str,
         end_session: bool = True,
         directives: list[dict[str, Any]] | None = None,
     ) -> web.Response:
         """Return text for Alexa to speak, and what a screen should show with it."""
-        data: dict[str, Any] = {
-            "speech": german if self._is_german else english,
-            "end_session": end_session,
-        }
+        data: dict[str, Any] = {"speech": text, "end_session": end_session}
         if directives:
             data["directives"] = directives
         return web.json_response(data)
 
     def _display(
-        self, wanted: bool, user_id: str | None, category: str | None = None
+        self,
+        wanted: bool,
+        user_id: str | None,
+        pack: LanguagePack,
+        category: str | None = None,
     ) -> list[dict[str, Any]] | None:
         """Return the lists for an Echo with a screen."""
         if not wanted:
@@ -722,7 +559,7 @@ class AlexaSkill:
                 self._ideas.categories,
                 self._ideas.category_colors,
                 category,
-                get_pack(self.hass.config.language),
+                pack,
             )
         ]
 
@@ -740,15 +577,14 @@ class AlexaSkill:
         text: str,
         echo: EchoDevice | None,
         pending: _PendingRequest | None,
+        pack: LanguagePack,
         request: ReminderRequest | None = None,
         no_time_found: bool = False,
     ) -> web.Response:
         """Store an idea and report where it went."""
-        cleaned = clean_voice_text(text)[:MAX_TEXT_LENGTH]
+        cleaned = clean_voice_text(text, pack)[:MAX_TEXT_LENGTH]
         if len(cleaned) < MIN_IDEA_LENGTH:
-            return self._speech(
-                "Ich habe keinen Text verstanden.", "I did not understand any text."
-            )
+            return self._speech(pack.msg("skill_no_text"))
         try:
             idea = await self._ideas.async_add_idea(
                 text=cleaned,
@@ -758,12 +594,11 @@ class AlexaSkill:
                 assignee=request.assignee if request else None,
                 trigger=request.trigger if request else None,
                 owner=self._ideas.voice_user_for(echo.name if echo else None),
+                language=pack.code,
             )
         except HomeAssistantError as err:
             _LOGGER.warning("Could not store idea from Alexa skill: %s", err)
-            return self._speech(
-                "Das konnte ich nicht speichern.", "I could not save that."
-            )
+            return self._speech(pack.msg("skill_save_failed"))
 
         if pending is not None:
             pending.idea_id = idea.get("id")
@@ -780,32 +615,40 @@ class AlexaSkill:
             "device": echo.name if echo else "?",
         }
         if request is not None:
-            return self._reminder_answer(request, idea)
+            return self._reminder_answer(request, idea, pack)
         if no_time_found:
-            return self._speech(
-                "Gespeichert, aber ohne Erinnerung. Ich habe keinen Zeitpunkt verstanden.",
-                "Saved, but without a reminder. I did not understand a time.",
-            )
+            return self._speech(pack.msg("skill_saved_no_time"))
         # A date found in the sentence leads to a reminder, so it has to be said
         due = dt_util.parse_datetime(idea.get(ATTR_DUE) or "")
-        when = f", Termin {format_due(due, dt_util.now(), self.hass.config.language)}" if due else ""
+        when = (
+            pack.msg("skill_due", when=format_due(due, dt_util.now(), pack.code))
+            if due
+            else ""
+        )
         category = idea.get(ATTR_CATEGORY)
         if category and category != "Inbox":
             return self._speech(
-                f"Gespeichert unter {category.replace('&', 'und')}{when}.",
-                f"Saved under {category.replace('&', 'and')}{when}.",
+                pack.msg(
+                    "skill_saved_in",
+                    category=pack.spoken_category(category),
+                    when=when,
+                )
             )
-        return self._speech(f"Gespeichert{when}.", f"Saved{when}.")
+        return self._speech(pack.msg("skill_saved", when=when))
 
     def _reminder_answer(
-        self, request: ReminderRequest, idea: dict[str, Any]
+        self, request: ReminderRequest, idea: dict[str, Any], pack: LanguagePack
     ) -> web.Response:
         """Confirm a reminder, and pass on what a real Alexa reminder would need."""
         now = dt_util.now()
-        when = format_due(request.due, now, self.hass.config.language) if request.due else self._place_name(request)
-        who = self._person_name(request.assignee) or "dich"
+        when = (
+            format_due(request.due, now, pack.code)
+            if request.due
+            else self._place_name(request, pack)
+        )
+        who = self._person_name(request.assignee) or pack.msg("skill_you")
         text = idea.get(ATTR_TEXT)
-        speech = f"Okay, ich erinnere {who} {when} an {text}."
+        speech = pack.msg("skill_remind", who=who, when=when, text=text)
         data: dict[str, Any] = {"speech": speech, "end_session": True}
         # Only the person speaking can get a real reminder, and only for a set time
         if (
@@ -827,43 +670,45 @@ class AlexaSkill:
         state = self.hass.states.get(entity_id) if entity_id else None
         return state.name if state else None
 
-    def _place_name(self, request: ReminderRequest) -> str:
+    def _place_name(self, request: ReminderRequest, pack: LanguagePack) -> str:
         """Say where a reminder is meant for."""
         zone = (request.trigger or {}).get("zone")
         if zone == ZONE_HOME:
-            return "beim Heimkommen"
+            return pack.msg("skill_at_home")
         state = self.hass.states.get(zone) if zone else None
-        return f"bei {state.name}" if state else "an diesem Ort"
+        return pack.msg("skill_at", name=state.name) if state else pack.msg("skill_here")
 
     async def _async_remind(
-        self, text: str, echo: EchoDevice | None, pending: _PendingRequest | None
+        self,
+        text: str,
+        echo: EchoDevice | None,
+        pending: _PendingRequest | None,
+        pack: LanguagePack,
     ) -> web.Response:
         """Store an idea with the spoken time or place as its reminder."""
         options = self._ideas.options
         if not options.get(CONF_REMINDERS_ENABLED, True):
-            response = await self._async_capture(text, echo, pending)
+            response = await self._async_capture(text, echo, pending, pack)
             if response.status != 200:
                 return response
-            return self._speech(
-                "Gespeichert, aber Erinnerungen sind ausgeschaltet.",
-                "Saved, but reminders are switched off.",
-            )
+            return self._speech(pack.msg("skill_reminders_off"))
         now = dt_util.now()
         request = build_reminder_request(
-            self.hass, options, clean_voice_text(text), now
+            self.hass, options, clean_voice_text(text, pack), now, pack.code
         )
         if request.due is None and request.trigger is None:
-            return await self._async_capture(text, echo, pending, no_time_found=True)
-        if request.due is not None and request.due <= now:
-            return self._speech(
-                "Dieser Zeitpunkt liegt in der Vergangenheit.",
-                "That time is in the past.",
+            return await self._async_capture(
+                text, echo, pending, pack, no_time_found=True
             )
+        if request.due is not None and request.due <= now:
+            return self._speech(pack.msg("skill_in_past"))
         return await self._async_capture(
-            request.text, echo, pending, request=request
+            request.text, echo, pending, pack, request=request
         )
 
-    async def _async_done(self, text: str, user_id: str | None) -> web.Response:
+    async def _async_done(
+        self, text: str, user_id: str | None, pack: LanguagePack
+    ) -> web.Response:
         """Complete the idea a person named, or the last one reminded of."""
         cleaned = text.strip()
         idea = (
@@ -872,82 +717,78 @@ class AlexaSkill:
             else self._ideas.last_reminded_idea(user_id)
         )
         if idea is None or not self._ideas.can_edit(idea, user_id):
-            return self._speech(
-                "Diesen Eintrag habe ich nicht gefunden.", "I could not find that idea."
-            )
+            return self._speech(pack.msg("skill_not_found"))
         await self._ideas.async_update_idea(idea[ATTR_ID], status="completed")
-        return self._speech(
-            f"Erledigt: {idea.get(ATTR_TEXT)}.", f"Done: {idea.get(ATTR_TEXT)}."
-        )
+        return self._speech(pack.msg("skill_done", text=idea.get(ATTR_TEXT)))
 
     async def _async_display_done(
-        self, idea_id: str, user_id: str | None
+        self, idea_id: str, user_id: str | None, pack: LanguagePack
     ) -> web.Response:
         """Complete the idea touched on the screen and show the lists again."""
         idea = self._ideas.get_idea(idea_id)
         if idea is None or not self._ideas.can_edit(idea, user_id):
             return self._speech(
-                "Diesen Eintrag habe ich nicht gefunden.",
-                "I could not find that idea.",
-                directives=self._display(True, user_id),
+                pack.msg("skill_not_found"),
+                directives=self._display(True, user_id, pack),
             )
         # A second touch can arrive before the screen has changed
         if idea.get(ATTR_STATUS) == "active":
             await self._ideas.async_update_idea(idea_id, status="completed")
         return self._speech(
-            f"Erledigt: {idea.get(ATTR_TEXT)}.",
-            f"Done: {idea.get(ATTR_TEXT)}.",
-            directives=self._display(True, user_id, idea.get(ATTR_CATEGORY)),
+            pack.msg("skill_done", text=idea.get(ATTR_TEXT)),
+            directives=self._display(True, user_id, pack, idea.get(ATTR_CATEGORY)),
         )
 
     def _read(
-        self, category: str | None, wants_display: bool, user_id: str | None
+        self,
+        category: str | None,
+        wants_display: bool,
+        user_id: str | None,
+        pack: LanguagePack,
     ) -> web.Response:
         """Read a category aloud, or offer the categories as reading all is too long."""
         if category is None:
-            speech = self._ideas.get_overview_text(user_id)
             return self._speech(
-                speech,
-                speech,
+                self._ideas.get_overview_text(user_id, pack.code),
                 end_session=False,
-                directives=self._display(wants_display, user_id),
+                directives=self._display(wants_display, user_id, pack),
             )
-        speech = self._ideas.get_announcement_text(category, user_id)
+        speech = self._ideas.get_announcement_text(category, user_id, pack.code)
         return self._speech(
             speech[:MAX_SPEECH_LENGTH],
-            speech[:MAX_SPEECH_LENGTH],
-            directives=self._display(wants_display, user_id, category),
+            directives=self._display(wants_display, user_id, pack, category),
         )
 
     def _show(
-        self, category: str | None, wants_display: bool, user_id: str | None
+        self,
+        category: str | None,
+        wants_display: bool,
+        user_id: str | None,
+        pack: LanguagePack,
     ) -> web.Response:
         """Show the lists, and read them aloud if there is no screen or nothing to show."""
         if not wants_display or not self._ideas.get_ideas_by_category(
             category, user_id=user_id
         ):
-            return self._read(category, wants_display, user_id)
-        spoken = category.replace("&", "und") if category else None
+            return self._read(category, wants_display, user_id, pack)
         return self._speech(
-            f"Hier ist {spoken}." if spoken else "Hier sind deine Listen.",
-            f"Here is {category}." if category else "Here are your lists.",
-            directives=self._display(True, user_id, category),
+            pack.msg("skill_here_is", category=pack.spoken_category(category))
+            if category
+            else pack.msg("skill_here_are"),
+            directives=self._display(True, user_id, pack, category),
         )
 
-    async def _async_snooze(self, user_id: str | None) -> web.Response:
+    async def _async_snooze(
+        self, user_id: str | None, pack: LanguagePack
+    ) -> web.Response:
         """Move the last reminder one hour ahead."""
         idea = self._ideas.last_reminded_idea(user_id)
         if idea is None:
-            return self._speech(
-                "Es gibt gerade keine Erinnerung zum Verschieben.",
-                "There is no reminder to move.",
-            )
+            return self._speech(pack.msg("skill_no_reminder"))
         due = dt_util.now() + SNOOZE_TIME
         await self._ideas.async_set_due(idea[ATTR_ID], due)
-        when = format_due(due, dt_util.now(), self.hass.config.language)
-        return self._speech(
-            f"Okay, ich erinnere dich {when} wieder.", f"Okay, again {when}."
-        )
+        when = format_due(due, dt_util.now(), pack.code)
+        return self._speech(pack.msg("skill_snoozed", when=when))
 
     async def _async_handle_webhook(
         self, hass: HomeAssistant, webhook_id: str, request: web.Request
@@ -966,6 +807,11 @@ class AlexaSkill:
         device_id = payload.get("device_id")
         # Older skill code does not send this and keeps answering by voice only
         wants_display = payload.get("display") is True
+        # Older skill code does not send this and keeps the language of Home Assistant
+        locale = payload.get("locale")
+        pack = get_pack(
+            locale if isinstance(locale, str) and locale else self.hass.config.language
+        )
         if (
             not isinstance(application_id, str)
             or not application_id
@@ -1004,32 +850,32 @@ class AlexaSkill:
 
         if action == ACTION_LAUNCH:
             return self._speech(
-                "Brainstorm bereit. Sage notiere und deine Notiz, oder sage Ansage.",
-                "Brainstorm is ready. Say notiere and your note, or say Ansage.",
+                pack.msg("skill_launch"),
                 end_session=False,
-                directives=self._display(wants_display, voice_user),
+                directives=self._display(wants_display, voice_user, pack),
             )
         if action == ACTION_SHOW:
             return self._show(
-                self._category_from_speech(text), wants_display, voice_user
+                self._category_from_speech(text), wants_display, voice_user, pack
             )
         if action == ACTION_DISPLAY_DONE:
-            return await self._async_display_done(text, voice_user)
+            return await self._async_display_done(text, voice_user, pack)
         if action == ACTION_READ_ALL:
-            speech = self._ideas.get_announcement_text(user_id=voice_user)
+            speech = self._ideas.get_announcement_text(
+                user_id=voice_user, language=pack.code
+            )
             return self._speech(
                 speech[:MAX_SPEECH_LENGTH],
-                speech[:MAX_SPEECH_LENGTH],
-                directives=self._display(wants_display, voice_user),
+                directives=self._display(wants_display, voice_user, pack),
             )
         if action == ACTION_READ:
             return self._read(
-                self._category_from_speech(text), wants_display, voice_user
+                self._category_from_speech(text), wants_display, voice_user, pack
             )
         if action == ACTION_REMIND:
-            return await self._async_remind(text, echo, pending)
+            return await self._async_remind(text, echo, pending, pack)
         if action == ACTION_DONE:
-            return await self._async_done(text, voice_user)
+            return await self._async_done(text, voice_user, pack)
         if action == ACTION_SNOOZE:
-            return await self._async_snooze(voice_user)
-        return await self._async_capture(text, echo, pending)
+            return await self._async_snooze(voice_user, pack)
+        return await self._async_capture(text, echo, pending, pack)

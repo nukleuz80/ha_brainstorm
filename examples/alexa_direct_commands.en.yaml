@@ -1,0 +1,54 @@
+# Direct commands without a skill, for automations.yaml. It needs Alexa Media Player.
+# Alexa may first say that it does not know the command. The own skill avoids that.
+- id: brainstorm_alexa_voice_capture
+  alias: Brainstorm - Alexa voice capture
+  description: Captures ideas spoken as "idea ...", "note ...", "remember ..." or "remind me ...".
+  trigger:
+    - trigger: event
+      event_type: alexa_media_last_called_event
+  variables:
+    spoken: "{{ trigger.event.data.summary | default('') | lower | trim }}"
+    echo_device: >-
+      {% set name = trigger.event.data.name | default('') %}
+      {{ integration_entities('alexa_media') | select('search', '^media_player\.')
+         | expand | selectattr('attributes.friendly_name', 'eq', name)
+         | map(attribute='entity_id') | first | default('') }}
+  condition:
+    - condition: template
+      value_template: >-
+        {{ spoken is match('(new idea|idea|new note|note|remember|brainstorm|remind me|remind) ') }}
+    - condition: template
+      value_template: >-
+        {% set allowed = state_attr('sensor.brainstorm_ideen_ubersicht', 'allowed_echos') %}
+        {{ echo_device != '' and (not allowed or echo_device in allowed) }}
+    - condition: template
+      value_template: "{{ state_attr('sensor.brainstorm_ideen_ubersicht', 'voice_mode') != 'skill' }}"
+  action:
+    - if:
+        - condition: template
+          value_template: "{{ is_state(echo_device, 'playing') }}"
+      then:
+        - action: media_player.media_stop
+          target:
+            entity_id: "{{ echo_device }}"
+          continue_on_error: true
+    - action: brainstorm.add_idea
+      data:
+        text: >-
+          {{ spoken | regex_replace('^(new idea( for( the)?)?|idea( for( the)?)?|new note|note|remember( to| that)?|brainstorm|remind me( to| about)?|remind) ', '') }}
+        source: alexa
+        language: en
+        device: "{{ state_attr(echo_device, 'friendly_name') or echo_device }}"
+        parse_due: "{{ spoken.startswith('remind') }}"
+      response_variable: added_idea
+    - action: notify.alexa_media
+      data:
+        target:
+          - "{{ echo_device }}"
+        data:
+          type: tts
+        message: >-
+          {% set category = added_idea.idea.category | default('Inbox') %}
+          {{ 'Saved under ' ~ category ~ '.' if category != 'Inbox' else 'Saved.' }}
+  mode: queued
+  max: 10

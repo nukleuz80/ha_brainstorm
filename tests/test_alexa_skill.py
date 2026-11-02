@@ -295,14 +295,17 @@ def _run_skill_code(
                 },
             }
         },
-        "request": request_data
-        or {
-            "type": "IntentRequest",
-            "intent": {
-                "name": "CaptureIdeaIntent",
-                "slots": {"text": {"value": "kellerlicht dimmen"}},
-            },
-        },
+        "request": {"locale": "de-DE"}
+        | (
+            request_data
+            or {
+                "type": "IntentRequest",
+                "intent": {
+                    "name": "CaptureIdeaIntent",
+                    "slots": {"text": {"value": "kellerlicht dimmen"}},
+                },
+            }
+        ),
     }
     with patch("urllib.request.urlopen", fake_urlopen):
         return namespace["lambda_handler"](event, None), requests
@@ -313,7 +316,9 @@ def test_skill_code_speaks_answer_from_home_assistant() -> None:
     result, requests = _run_skill_code(b'{"speech": "Gespeichert."}')
 
     assert result["response"]["outputSpeech"]["text"] == "Gespeichert."
-    assert json.loads(requests[0].data) == _capture_payload(display=False)
+    assert json.loads(requests[0].data) == _capture_payload(
+        display=False, locale="de-DE"
+    )
 
 
 @pytest.mark.parametrize(
@@ -329,7 +334,7 @@ def test_skill_code_speaks_answer_from_home_assistant() -> None:
 )
 def test_clean_voice_text(spoken: str, expected: str) -> None:
     """Test that spoken text is cleaned like in the native capture."""
-    assert clean_voice_text(spoken) == expected
+    assert clean_voice_text(spoken, GERMAN) == expected
 
 
 def _add_echo(hass: HomeAssistant, entity_id: str = ECHO_ENTITY, name: str = ECHO_NAME) -> None:
@@ -571,7 +576,7 @@ async def test_late_echo_clears_unknown_device(
 
 def test_voice_model_matches_skill_code() -> None:
     """Test that the skill handles every custom intent of the voice model."""
-    model = alexa_skill.INTERACTION_MODEL["interactionModel"]["languageModel"]
+    model = GERMAN.skill_model["interactionModel"]["languageModel"]
     assert model["invocationName"] == "brainstorm"
     for intent in model["intents"]:
         if not intent["name"].startswith("AMAZON."):

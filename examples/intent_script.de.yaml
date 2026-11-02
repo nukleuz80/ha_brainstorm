@@ -1,0 +1,30 @@
+# Add this to intent_script.yaml, with "intent_script: !include intent_script.yaml"
+# in configuration.yaml. It answers in one language, so use the file of your Assist.
+BrainstormAddIdea:
+  action:
+    action: brainstorm.add_idea
+    data:
+      text: "{{ text }}"
+      source: "assist"
+      language: "de"
+      device: >-
+        {% if device_id is string and device_id | length > 0 %}
+          {{ device_attr(device_id, 'name_by_user') or device_attr(device_id, 'name') or area_name(device_id) or 'Assist' }}
+        {% elif satellite_id is string and satellite_id | length > 0 %}
+          {{ state_attr(satellite_id, 'friendly_name') or satellite_id }}
+        {% else %}
+          Assist
+        {% endif %}
+  speech:
+    text: "Zu Brainstorm hinzugefügt."
+
+BrainstormGetIdeas:
+  action:
+    - action: brainstorm.get_announcement
+      data:
+        category: "{{ brainstorm_category | default('all') }}"
+      response_variable: announcement
+    - stop: ""
+      response_variable: announcement
+  speech:
+    text: "{{ action_response.speech }}"

@@ -23,7 +23,7 @@ GERMAN_TEXT = re.compile(
 # Words people may write in any language, like a !dringend tag
 ALLOWED_GERMAN = {"später"}
 # The settings hold their menu labels next to each other in both languages
-GERMAN_UNTIL_SKILL_IS_TRANSLATED = {"alexa_skill.py", "config_flow.py"}
+SHOWS_BOTH_LANGUAGES = {"config_flow.py"}
 
 
 @pytest.mark.parametrize(
@@ -91,7 +91,7 @@ def test_no_german_text_outside_of_the_language_packs() -> None:
                 and GERMAN_TEXT.search(node.value)
                 and node.value not in ALLOWED_GERMAN
                 and "a-zA-Z" not in node.value
-                and path.name not in GERMAN_UNTIL_SKILL_IS_TRANSLATED
+                and path.name not in SHOWS_BOTH_LANGUAGES
             ):
                 found.append((path.name, node.lineno, node.value[:60]))
     assert not found
