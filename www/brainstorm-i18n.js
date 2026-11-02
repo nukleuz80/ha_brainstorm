@@ -145,6 +145,7 @@ const DICTIONARIES = {
     "Vergrößern": "Zoom in",
     "Verkleinern": "Zoom out",
     "Verschieben": "Move",
+    "Vollbild beenden": "Leave full screen",
     "Vollbild umschalten (ESC zum Beenden)": "Toggle full screen (ESC to leave)",
     "Vollbild-Schaltfläche (⛶) anzeigen": "Show the full screen button (⛶)",
     "Wann soll Brainstorm erinnern? ({format})": "When should Brainstorm remind you? ({format})",

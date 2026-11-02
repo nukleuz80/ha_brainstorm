@@ -1,8 +1,8 @@
-import { dateLocale, dueInputFormat, formatDueInput, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.2";
+import { dateLocale, dueInputFormat, formatDueInput, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.3";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.6.2 - Skill, Reminders, Privacy and Sharing
+ * Version: 1.6.3 - Skill, Reminders, Privacy and Sharing
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -648,10 +648,8 @@ class BrainstormMindmapCard extends HTMLElement {
 
         /* Top Bar */
         .top-bar {
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
+          position: relative;
+          flex: 0 0 auto;
           z-index: 20;
           padding: 10px 14px;
           display: flex;
@@ -659,24 +657,22 @@ class BrainstormMindmapCard extends HTMLElement {
           justify-content: space-between;
           gap: 8px;
           flex-wrap: nowrap;
-          background: linear-gradient(180deg, var(--ha-card-background, var(--card-background-color, #ffffff)) 0%, color-mix(in srgb, var(--ha-card-background, var(--card-background-color, #ffffff)) 0%, transparent) 100%);
-          pointer-events: none;
+          background: var(--ha-card-background, var(--card-background-color, #ffffff));
+          border-bottom: 1px solid var(--divider-color, rgba(127, 127, 127, 0.15));
         }
         .top-left {
           display: flex;
           align-items: center;
           gap: 8px;
-          flex: 0 0 auto;
-          pointer-events: auto;
+          flex: 0 1 auto;
+          min-width: 0;
         }
         .top-right {
           display: flex;
           align-items: center;
           gap: 6px;
-          flex: 1 1 auto;
-          min-width: 0;
+          flex: 0 0 auto;
           justify-content: flex-end;
-          pointer-events: auto;
         }
         .brand-logo {
           width: 36px;
@@ -709,6 +705,10 @@ class BrainstormMindmapCard extends HTMLElement {
           font-size: 1.05rem;
           font-weight: 700;
           color: var(--primary-text-color, #212121);
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
         .reminder-tag {
           color: var(--primary-color);
@@ -770,6 +770,8 @@ class BrainstormMindmapCard extends HTMLElement {
           border-radius: 50%;
           width: 36px;
           height: 36px;
+          flex: 0 0 auto;
+          padding: 0;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -803,6 +805,26 @@ class BrainstormMindmapCard extends HTMLElement {
           border-radius: 0 !important;
           margin: 0 !important;
         }
+        ha-card.is-fullscreen .top-bar {
+          padding-top: max(10px, env(safe-area-inset-top));
+          padding-left: max(14px, env(safe-area-inset-left));
+          padding-right: max(14px, env(safe-area-inset-right));
+        }
+        ha-card.is-fullscreen .add-note-btn {
+          bottom: calc(10px + env(safe-area-inset-bottom)) !important;
+          left: max(10px, env(safe-area-inset-left)) !important;
+        }
+        ha-card.is-fullscreen .controls-panel {
+          bottom: calc(10px + env(safe-area-inset-bottom)) !important;
+          right: max(10px, env(safe-area-inset-right)) !important;
+        }
+        ha-card.is-fullscreen .dialog-backdrop {
+          padding-top: max(8px, env(safe-area-inset-top)) !important;
+          padding-bottom: max(8px, env(safe-area-inset-bottom)) !important;
+        }
+        ha-card.is-fullscreen .dialog-box {
+          max-height: calc(100dvh - max(8px, env(safe-area-inset-top)) - max(8px, env(safe-area-inset-bottom))) !important;
+        }
         .pills-container {
           display: flex;
           align-items: center;
@@ -813,22 +835,30 @@ class BrainstormMindmapCard extends HTMLElement {
           min-width: 0;
           max-width: none;
           padding: 2px 4px;
-          pointer-events: auto;
           scrollbar-width: none;
         }
         .pills-container::-webkit-scrollbar {
           display: none;
         }
-        @container (max-width: 600px), (max-width: 600px) {
-          .cat-pill[data-cat="all"] {
-            display: none !important;
+        @container (max-width: 600px) {
+          .top-bar {
+            flex-wrap: wrap;
+            row-gap: 6px;
           }
-          .title {
+          .top-left {
+            flex: 1 1 0;
+          }
+          .pills-container {
+            order: 3;
+            flex: 1 0 100%;
+            padding: 2px 0;
+          }
+          .cat-pill[data-cat="all"] {
             display: none !important;
           }
           .cat-pill {
             padding: 4px 10px !important;
-            min-height: 28px !important;
+            min-height: 32px !important;
             font-size: 0.74rem !important;
             border-radius: 14px !important;
           }
@@ -836,19 +866,14 @@ class BrainstormMindmapCard extends HTMLElement {
             width: 7px !important;
             height: 7px !important;
           }
-          .top-tool-btn,
-          .fullscreen-btn {
-            width: 32px !important;
-            height: 32px !important;
-            font-size: 0.95rem !important;
-          }
           .note-cloud {
             padding: 7px 10px !important;
             min-width: 130px !important;
-            max-width: 190px !important;
-            margin-left: -65px !important;
-            margin-top: -32px !important;
+            max-width: min(190px, calc(50cqw - 16px)) !important;
             border-radius: 12px !important;
+          }
+          .cloud-device {
+            max-width: 72px;
           }
           .cloud-text {
             font-size: 0.82rem !important;
@@ -890,12 +915,10 @@ class BrainstormMindmapCard extends HTMLElement {
             gap: 6px !important;
           }
           .control-btn {
-            width: 32px !important;
-            height: 32px !important;
             font-size: 1rem !important;
           }
         }
-        @container (max-width: 380px), (max-width: 380px) {
+        @container (max-width: 380px) {
           .add-note-btn .btn-text {
             display: none !important;
           }
@@ -1100,10 +1123,10 @@ class BrainstormMindmapCard extends HTMLElement {
         /* Note Cards (Mushroom / UI Minimalist style) */
         .note-cloud {
           position: absolute;
+          width: max-content;
           min-width: 170px;
           max-width: 250px;
-          margin-left: -90px;
-          margin-top: -45px;
+          transform: translate(-50%, -50%);
           z-index: 10;
           background: var(--ha-card-background, var(--card-background-color, #ffffff));
           border: 1px solid var(--ha-card-border-color, var(--divider-color, rgba(127, 127, 127, 0.15)));
@@ -1143,6 +1166,7 @@ class BrainstormMindmapCard extends HTMLElement {
           display: inline-flex;
           align-items: center;
           gap: 3px;
+          white-space: nowrap;
         }
         .prio-tag:hover {
           transform: scale(1.05);
@@ -1175,6 +1199,8 @@ class BrainstormMindmapCard extends HTMLElement {
           display: flex;
           align-items: center;
           justify-content: space-between;
+          flex-wrap: wrap;
+          gap: 4px 6px;
           font-size: 0.72rem;
           color: var(--secondary-text-color, #64748b);
           margin-bottom: 6px;
@@ -1202,6 +1228,7 @@ class BrainstormMindmapCard extends HTMLElement {
           display: flex;
           align-items: center;
           gap: 4px;
+          white-space: nowrap;
           font-size: 0.72rem;
           color: var(--secondary-text-color, #64748b);
         }
@@ -1916,9 +1943,9 @@ class BrainstormMindmapCard extends HTMLElement {
       const isFs = cardRoot.classList.toggle("is-fullscreen");
       fullscreenBtn.innerHTML = isFs ? "✕" : "⛶";
       fullscreenBtn.classList.toggle("is-fullscreen", isFs);
-      fullscreenBtn.title = isFs ? "Vollbild beenden" : "Vollbild umschalten (ESC)";
+      fullscreenBtn.title = isFs ? t("Vollbild beenden") : t("Vollbild umschalten (ESC zum Beenden)");
       setTimeout(() => {
-        this._centerLayout(false);
+        this._centerLayout(!this._userMovedNodes || this._userMovedNodes.size === 0);
       }, 50);
     };
 
@@ -2099,10 +2126,10 @@ class BrainstormMindmapCard extends HTMLElement {
       ? Math.max(isNarrow ? 125 : 260, Math.min(w * (isNarrow ? 0.35 : 0.30), isNarrow ? 220 : 360))
       : Math.max(isNarrow ? 115 : 250, Math.min(w * (isNarrow ? 0.28 : 0.22), isNarrow ? 190 : 310));
     const ry0 = count <= 6
-      ? Math.max(isNarrow ? 90 : 180, Math.min(h * (isNarrow ? 0.32 : 0.30), isNarrow ? 160 : 220))
-      : Math.max(isNarrow ? 85 : 175, Math.min(h * (isNarrow ? 0.25 : 0.24), isNarrow ? 140 : 185));
+      ? Math.max(isNarrow ? 90 : 180, Math.min(h * (isNarrow ? 0.32 : 0.30), isNarrow ? h * 0.32 : 220))
+      : Math.max(isNarrow ? 85 : 175, Math.min(h * (isNarrow ? 0.2 : 0.24), isNarrow ? h * 0.2 : 185));
     const drx = isNarrow ? Math.max(120, Math.min(w * 0.16, 170)) : Math.max(210, Math.min(w * 0.16, 250));
-    const dry = isNarrow ? Math.max(70, Math.min(h * 0.14, 95)) : Math.max(110, Math.min(h * 0.16, 135));
+    const dry = isNarrow ? Math.max(70, h * 0.18) : Math.max(110, Math.min(h * 0.16, 135));
 
     const positionedItems = [];
 
@@ -2130,44 +2157,63 @@ class BrainstormMindmapCard extends HTMLElement {
     });
 
     // Collision relaxation pass: repel from center bulb and avoid card overlaps
-    const cardW = isNarrow ? 160 : 230;
-    const cardH = isNarrow ? 70 : 100;
-    const minCenterDistX = isNarrow ? 115 : 185;
-    const minCenterDistY = isNarrow ? 85 : 135;
+    const gap = isNarrow ? 8 : 14;
+    positionedItems.forEach((item) => {
+      const el = this.shadowRoot.getElementById(`cloud_${item.idea.id}`);
+      item.w = (el && el.offsetWidth) || (isNarrow ? 160 : 230);
+      item.h = (el && el.offsetHeight) || (isNarrow ? 110 : 130);
+    });
+    const centerItem = {
+      x: this._centerPos.x,
+      y: this._centerPos.y,
+      w: (centerNode && centerNode.offsetWidth) || 154,
+      h: (centerNode && centerNode.offsetHeight) || 154,
+      fixed: true,
+    };
+    const collisionItems = [centerItem, ...positionedItems];
 
-    for (let iter = 0; iter < 25; iter++) {
-      // 1. Center push-out
-      for (const item of positionedItems) {
-        if (item.fixed) continue;
-        const cdx = item.x - this._centerPos.x;
-        const cdy = item.y - this._centerPos.y;
-        const norm = (cdx / minCenterDistX) ** 2 + (cdy / minCenterDistY) ** 2;
-        if (norm < 1.0 && norm > 0.0001) {
-          const factor = Math.sqrt(1.0 / norm) * 1.04;
-          item.x = this._centerPos.x + cdx * factor;
-          item.y = this._centerPos.y + cdy * factor;
-        }
-      }
+    // On narrow cards the notes stay within the width and spread vertically
+    const margin = isNarrow ? 8 : 12;
+    const clampX = (item, x) => {
+      if (!isNarrow || item.fixed) return x;
+      return Math.max(margin + item.w / 2, Math.min(w - margin - item.w / 2, x));
+    };
+    if (isNarrow && count > 4) {
+      const freeItems = positionedItems.filter((item) => !item.fixed);
+      const rowCount = Math.ceil(freeItems.length / 2);
+      freeItems.forEach((item, i) => {
+        const row = Math.floor(i / 2);
+        item.x = w * (i % 2 ? 0.75 : 0.25);
+        item.y = this._centerPos.y + (row - (rowCount - 1) / 2) * (item.h + gap);
+      });
+    }
+    positionedItems.forEach((item) => {
+      item.x = clampX(item, item.x);
+    });
 
-      // 2. Card-to-card repulsion
-      for (let i = 0; i < positionedItems.length; i++) {
-        for (let j = i + 1; j < positionedItems.length; j++) {
-          const a = positionedItems[i];
-          const b = positionedItems[j];
+    for (let iter = 0; iter < 80; iter++) {
+      for (let i = 0; i < collisionItems.length; i++) {
+        for (let j = i + 1; j < collisionItems.length; j++) {
+          const a = collisionItems[i];
+          const b = collisionItems[j];
           const dx = b.x - a.x;
           const dy = b.y - a.y;
-          const adx = Math.abs(dx);
-          const ady = Math.abs(dy);
+          const minX = (a.w + b.w) / 2 + gap;
+          const minY = (a.h + b.h) / 2 + gap;
+          const ox = minX - Math.abs(dx);
+          const oy = minY - Math.abs(dy);
 
-          if (adx < cardW && ady < cardH) {
-            const ox = cardW - adx;
-            const oy = cardH - ady;
-            if (ox / cardW < oy / cardH) {
-              const pushX = (dx >= 0 ? 1 : -1) * (ox / 2 + 1.5);
-              if (!a.fixed) a.x -= pushX;
-              if (!b.fixed) b.x += pushX;
+          if (ox > 0 && oy > 0) {
+            const share = a.fixed || b.fixed ? 1 : 0.5;
+            const pushX = (dx >= 0 ? 1 : -1) * ox * share;
+            const nextAx = a.fixed ? a.x : a.x - pushX;
+            const nextBx = b.fixed ? b.x : b.x + pushX;
+            const canPushX = clampX(a, nextAx) === nextAx && clampX(b, nextBx) === nextBx;
+            if (canPushX && ox / minX < oy / minY) {
+              a.x = nextAx;
+              b.x = nextBx;
             } else {
-              const pushY = (dy >= 0 ? 1 : -1) * (oy / 2 + 1.5);
+              const pushY = (dy >= 0 ? 1 : -1) * oy * share;
               if (!a.fixed) a.y -= pushY;
               if (!b.fixed) b.y += pushY;
             }
@@ -2190,23 +2236,23 @@ class BrainstormMindmapCard extends HTMLElement {
     if (positionedItems.length > 0 && this._scale >= 0.95 && this._scale <= 1.05) {
       let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
       positionedItems.forEach((item) => {
-        if (item.x - 120 < minX) minX = item.x - 120;
-        if (item.x + 120 > maxX) maxX = item.x + 120;
-        if (item.y - 55 < minY) minY = item.y - 55;
-        if (item.y + 55 > maxY) maxY = item.y + 55;
+        minX = Math.min(minX, item.x - item.w / 2);
+        maxX = Math.max(maxX, item.x + item.w / 2);
+        minY = Math.min(minY, item.y - item.h / 2);
+        maxY = Math.max(maxY, item.y + item.h / 2);
       });
 
-      const spanW = maxX - minX + 50;
-      const spanH = maxY - minY + 50;
+      // Keep the cards clear of the buttons along the bottom edge
+      const bottomInset = 56;
+      const availW = w - margin * 2;
+      const availH = h - margin - bottomInset;
 
-      if (spanW > w || spanH > h) {
-        const scaleX = w / spanW;
-        const scaleY = h / spanH;
-        const minFitLimit = isNarrow ? 0.35 : 0.65;
-        const fitScale = Math.max(minFitLimit, Math.min(1.0, Math.min(scaleX, scaleY) * 0.92));
-        this._scale = fitScale;
-        this._panX = (w / 2) * (1 - this._scale);
-        this._panY = (h / 2) * (1 - this._scale);
+      if (minX < margin || maxX > w - margin || minY < margin || maxY > h - bottomInset) {
+        const minFitLimit = isNarrow ? 0.5 : 0.65;
+        const fitScale = Math.min(availW / (maxX - minX), availH / (maxY - minY));
+        this._scale = Math.max(minFitLimit, Math.min(1.0, fitScale));
+        this._panX = w / 2 - this._scale * ((minX + maxX) / 2);
+        this._panY = margin + availH / 2 - this._scale * ((minY + maxY) / 2);
         this._applyTransform();
       }
     }
@@ -3474,7 +3520,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.6.2 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.6.3 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );
