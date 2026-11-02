@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from custom_components.brainstorm.nlp import (
+from custom_components.brainstorm.languages.de import (
     build_glossary,
     clean_and_format_idea_text,
     extract_spoken_due,

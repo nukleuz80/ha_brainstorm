@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.5.11-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.5.12-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver%20self--assessed-C0C0C0.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -138,8 +138,8 @@ HACS only installs the integration, so continue with [Install the cards](#instal
 
 1. Copy `www/brainstorm-card.js` and `www/brainstorm-mindmap-card.js` from the release to `/config/www/`.
 2. Add both under **Settings ➔ Dashboards ➔ Resources** as **JavaScript module**:
-   - `/local/brainstorm-card.js?v=1.5.11`
-   - `/local/brainstorm-mindmap-card.js?v=1.5.11`
+   - `/local/brainstorm-card.js?v=1.5.12`
+   - `/local/brainstorm-mindmap-card.js?v=1.5.12`
 3. Reload the page in your browser.
 
 ### Removing the Integration
@@ -308,9 +308,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.5.11
+  - url: /local/brainstorm-card.js?v=1.5.12
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.5.11
+  - url: /local/brainstorm-mindmap-card.js?v=1.5.12
     type: module
 ```
 
@@ -646,6 +646,7 @@ Shares several ideas or a whole category. Needs privacy to be switched on.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.5.12`** | 2026-11-02 | **Prepared for more languages, no change in German:**<br>• **Language packs:** All German rules now live in their own pack, ready for further languages.<br>• **Same results:** A reference test with over 1,100 sentences ensures that German entries are built exactly as before.<br>• **Other languages:** Home Assistant in another language no longer applies German grammar to your text. It stays as spoken, with a capital first letter. |
 | **`v1.5.11`** | 2026-11-02 | **Honest English documentation:**<br>• **Language support table:** Both READMEs show what works in which language today. Voice input and the cards are German for now.<br>• **Correct examples:** English examples of commands that do not exist are replaced by the real German ones with a translation.<br>• **Missing chapters:** The English README now covers voice commands, manual installation, installing the cards and the sidebar dashboard, and its changelog is complete.<br>• **HACS note:** Both READMEs say that HACS does not install the cards. |
 | **`v1.5.10`** | 2026-11-01 | **Glossary and optional AI for spoken entries:**<br>• **Right spellings:** Names of people and categories and fixed terms like *PDF* or *Home Assistant* are spelled right automatically. Own terms and corrections are set under *General settings*.<br>• **More nouns:** A word list and compounds like *Sportverein* improve capitalization.<br>• **Optional AI step:** Under *Calendar, AI & Alexa Reminders*, an AI task entity improves the entry in the background. If it adds words or numbers or changes a negation, the version of the rules stays. The text goes to the provider of the chosen AI, and the step is off by default. |
 | **`v1.5.9`** | 2026-11-01 | **Date, priority and original text:**<br>• **Date from the sentence:** *"morgen Arzt anrufen"* becomes *"Arzt anrufen"* with a due date and therefore a reminder, without a time of day at 09:00. The skill announces it. A new switch under *General settings* turns this off, and without reminders the date stays in the text.<br>• **Priority from the sentence:** "ganz wichtig", "unbedingt", "dringend" and "irgendwann" are found anywhere in the sentence.<br>• **Original text:** The spoken sentence stays stored and can be restored in the edit dialog of the card.<br>• **Category as subject:** *"Garten muss gegossen werden"* becomes *"Garten gießen"* instead of *"Muss gegossen werden"*. |

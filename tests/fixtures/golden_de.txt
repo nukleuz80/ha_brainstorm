@@ -1,0 +1,1141 @@
+!urgent das auto kaufen
+!urgent das auto mähen
+!urgent das auto putzen
+!urgent das fenster im bad putzen
+!urgent der drucker bezahlen
+!urgent der drucker kaufen
+!urgent der drucker rausstellen
+!urgent der drucker reparieren
+!urgent der esp32 im keller bezahlen
+!urgent der esp32 im keller reparieren
+!urgent der rasen abholen
+!urgent die heizung mähen
+!urgent die kinder vom flughafen abholen
+!urgent die kinder vom flughafen prüfen
+!urgent die mülltonne abholen
+!urgent die mülltonne prüfen
+!urgent die mülltonne putzen
+!urgent die mülltonne reparieren
+!urgent die rechnung abholen
+!urgent die rechnung rausstellen
+!urgent die tomaten bezahlen
+!urgent die tomaten kaufen
+!urgent kellerlicht abholen
+!urgent milch kaufen
+!urgent milch putzen
+"Die Hecke schneiden"
++ 350 weitere
+- [ ] Dritte Notiz `[🟢 Niedrig]` `[Echo]`
+- [ ] Erste Notiz `[🔥 Dringend]` `[alexa (Echo)]`
+- [ ] Vierte Notiz _(
+- [ ] Zweite Notiz `[🔴 Hoch]` `[alexa]`
+1 Einträge
+2 Milch kaufen
+3 offen · 1 dringend
+Add a media player that looks like one from Alexa Media.
+Add a phone's notify entity, renamed apart from the name set in its app.
+Add an idea that was due a minute ago.
+Add people and places as they look in Home Assistant.
+Akku begreifen
+Alexa App iPhone
+Alltag (Icon: mdi:home, Farbe: #ff7800)
+Alte Notiz hier
+Anderer Echo
+Arzt anrufen
+Auto in die Werkstatt
+Auto in die Werkstatt bringen
+Automationen in Home Assistant überarbeiten
+Bald den Garten umgraben
+Beet umgraben
+Blumen pflanzen
+Brainstorm Hub
+Brainstorm Hub Ideas overview
+Buch auf Bücherliste
+Buch von Hape Kerkeling für Lenia zu Schlaue Antworten
+Call a Brainstorm tool like Assist does for a user.
+Call an action and return its response.
+Call the secret webhook without any authentication, like the skill does.
+Call the share service as a user.
+Could not send over notify.defekt
+Could not speak
+Das Wetter sollte besser werden
+Das muss weg
+Den Arzt anrufen
+Der Hund braucht Futter
+Die Hecke muss geschnitten werden
+Die Hecke schneiden
+Die Hecke schneiden sollte man heute
+Die Kinder dürfen nicht vergessen werden
+Die Lieferung muss gefxzbarn werden
+Die Rechnung wurde noch nicht bezahlt
+Die Tür der Garage
+Doktor anrufen
+Dringend: Regal bauen
+Dritte Notiz
+Du hast 2 Einträge
+ESP32 flashen
+Echo Fest
+Echo Küche
+Echo Lenja
+Echo Show Küche
+Edeka in Sorsum
+Ein Buch auf die Bücher Liste
+Eine App für die Kinder bauen
+Error notifying brainstorm listener
+Erste Notiz
+Erste Notiz hier
+Etwas ganz anderes #alltag
+Etwas ganz anderes #garten
+Familie besuchen
+Fernseher an die Wand hängen
+Fire the event Alexa Media sends for a spoken sentence.
+Für die Kinder einen Sportverein finden
+Garage &lt;aufräumen&gt; &amp; mehr
+Garage aufräumen
+Garage aufräumen und Keller putzen
+Garten Zaun reparieren
+Garten gießen
+Garten muss gegossen werden
+Garten: Beet umgraben
+Garten: Blumen pflanzen
+Garten: muss gegossen werden
+Grafana PDF Report erhalten
+Hape Kerkeling
+Haus & Garten
+Haus streichen
+Haus und Garten
+Haus, streichen
+Hecke schneiden
+Hecke schneiden.
+Heizung entlüften
+Heizung geliefert werden
+Heizung kaputt
+Heizung liefern
+Heute stehen 2 Dinge an:
+Hier ist Projekte.
+Hund braucht Futter
+Hund zum Tierarzt
+I could not save that.
+Ich muss nicht zum Arzt
+Ideas overview
+Idee erfasst
+Idee erledigt
+Idee gelöscht
+Idee geändert
+Im Garten Hecke schneiden
+Inbox (Standard)
+Inbox, Alltag, Neu
+KI Kiste holen
+Kein Zugriff
+Keller aufräumen
+Kiwi holen
+Kuchen für die Oma backen
+Kurz: Tonnen.
+Kürbisse heute schnitzen
+Lampe in der Küche kaputt
+Lenia Muster
+Lenia Müller
+Licht im Keller austauschen
+Mit neuen Batterien testen
+Morgen Arzt anrufen
+Multilinguale möglichkeiten im Skill
+Muss auf jeden Fall überarbeitet werden
+Muss gegossen werden
+Müll rausbringen
+Neue Batterien
+Neue Notiz hier
+Neues Thema
+Niedrige Priorität: Regal bauen
+Normale Priorität: Regal bauen
+Ob schlaue antworten auch einen Skill braucht
+Okay, ich erinnere Lenja morgen um 8 Uhr
+Okay, ich erinnere dich morgen um 8 Uhr
+Oma anrufen
+Open a section of the reminder options and submit it.
+Open the category form and submit it like the frontend does.
+Open the settings and follow menu entries.
+Open the setup step of the options flow.
+Paket abholen
+Paket holen
+Priorität: 🟢 Niedrig • Gerät: Echo
+Privater Eintrag
+Projekt Gartenhaus neu aufsetzen
+Projekt Smarthome neu aufsetzen
+Rasen mähen hinten
+Rasenmäher noch einmal laufen
+Rechnung wurde nicht bezahlt
+Regal bauen
+Regal bauen !dringend
+Regal bauen !niedrig
+Regal bauen !wichtig
+Reifen wechseln
+Reisen: Koffer packen
+Router zu reparieren
+Run the generated skill code like Alexa would, with a fake network.
+Save the store and load a new instance from storage.
+Schlaue Antworten
+Sie muss zum Arzt
+Smarthome braucht einen neuen Server
+Submit the general settings form.
+Termin am Morgen
+Termin am morgen
+Termin für morgen
+Termin morgen um 10 Uhr
+Terrasse abhängen
+Terrasse reinigen
+That time is in the past.
+Tomaten düngen
+Tür der Garage streichen
+Tür geöffnet werden
+Tür öffnen
+Vierte Notiz
+WLAN Passwort ändern
+Wand streichen
+Was macht Sinn?
+Was macht die Heizung?
+Wichtig: Regal bauen
+Wir brauchen keine neue Heizung
+Zahnarzt anrufen
+Zaun reparieren
+Zweite Notiz
+Zweite Notiz hier
+abc def
+abends licht aus
+akku begreifen
+alte geheime idee
+am 25. november an den termin
+am 25.11. an den elternsprechtag
+am 25.11. elternsprechtag
+am 45.13. an den test
+am montag an die steuer
+am morgen brötchen holen
+am samstag an die steuer
+an den müll wenn ich nach hause komme
+an den termin am 1.2.2027 um 17 uhr
+an die mülltonnen
+arzt anrufen
+arzt unbedingt anrufen
+arzt von lenja
+arztbesuch planen
+aus der app
+auto in die werkstatt bringen
+automationen müssen in home assistant überarbeitet werden
+beim Heimkommen
+beim edeka an die milch
+bis morgen früh das auto abholen
+bis morgen früh das auto bezahlen
+bis morgen früh das auto mähen
+bis morgen früh das auto prüfen
+bis morgen früh das fenster im bad mähen
+bis morgen früh der drucker kaufen
+bis morgen früh der esp32 im keller mähen
+bis morgen früh die heizung putzen
+bis morgen früh die kinder vom flughafen kaufen
+bis morgen früh die kinder vom flughafen putzen
+bis morgen früh die kinder vom flughafen reparieren
+bis morgen früh die mülltonne kaufen
+bis morgen früh die mülltonne mähen
+bis morgen früh die mülltonne putzen
+bis morgen früh die rechnung kaufen
+bis morgen früh die rechnung mähen
+bis morgen früh die rechnung reparieren
+bis morgen früh die tomaten kaufen
+bis morgen früh die tomaten prüfen
+bis morgen früh die tomaten rausstellen
+bis morgen früh kellerlicht putzen
+bis morgen früh milch putzen
+bis morgen früh milch rausstellen
+bis morgen früh milch reparieren
+blumen pflanzen
+boese idee
+brainstorm 1.5.8 testen
+buch von hape kerkeling für lenia zu schlaue antworten
+das auto am freitag reparieren
+das auto ganz wichtig kaufen
+das auto ganz wichtig mähen
+das auto ist kaputt
+das auto muss gemäht werden
+das auto muss in die werkstatt
+das auto muss rausgestellt werden
+das auto mähen #garten
+das auto soll noch rausgestellt werden
+das auto um 8 uhr prüfen
+das auto wurde nicht abgeholt
+das auto wurde nicht bezahlt
+das auto wurde nicht gekauft
+das auto wurde nicht gemäht
+das auto wurde nicht geprüft
+das auto wurde nicht geputzt
+das auto wurde nicht rausgestellt
+das auto wurde nicht repariert
+das essen
+das fenster im bad bezahlen #garten
+das fenster im bad ganz wichtig reparieren
+das fenster im bad irgendwann mal prüfen
+das fenster im bad irgendwann mal rausstellen
+das fenster im bad ist kaputt
+das fenster im bad kaufen #garten
+das fenster im bad muss gemäht werden
+das fenster im bad muss rausgestellt werden
+das fenster im bad müsste rausgestellt werden
+das fenster im bad müsste repariert werden
+das fenster im bad rausstellen #garten
+das fenster im bad soll noch bezahlt werden
+das fenster im bad soll noch rausgestellt werden
+das fenster im bad soll noch repariert werden
+das fenster im bad um 8 uhr kaufen
+das fenster im bad um 8 uhr putzen
+das fenster im bad wurde nicht abgeholt
+das fenster im bad wurde nicht bezahlt
+das fenster im bad wurde nicht gekauft
+das fenster im bad wurde nicht gemäht
+das fenster im bad wurde nicht geprüft
+das fenster im bad wurde nicht geputzt
+das fenster im bad wurde nicht rausgestellt
+das fenster im bad wurde nicht repariert
+das ist wichtig
+das licht im keller muss ausgetauscht werden
+das muss weg
+das wetter sollte besser werden
+dass das auto gemäht werden muss
+dass das auto repariert werden muss
+dass das fenster im bad bezahlt werden muss
+dass das fenster im bad geputzt werden muss
+dass das fenster im bad rausgestellt werden muss
+dass das fenster im bad repariert werden muss
+dass der drucker bezahlt werden muss
+dass der drucker geputzt werden muss
+dass der esp32 im keller gekauft werden muss
+dass der esp32 im keller gemäht werden muss
+dass der esp32 im keller rausgestellt werden muss
+dass die heizung geputzt werden muss
+dass die kinder vom flughafen bezahlt werden muss
+dass die kinder vom flughafen gemäht werden muss
+dass die kinder vom flughafen geprüft werden muss
+dass die mülltonne gemäht werden muss
+dass die mülltonne rausgestellt werden muss
+dass die tomaten gekauft werden muss
+dass die tomaten gemäht werden muss
+dass die tomaten repariert werden muss
+dass kellerlicht geputzt werden muss
+dass kellerlicht repariert werden muss
+dass milch gekauft werden muss
+dass milch geputzt werden muss
+dass milch rausgestellt werden muss
+dass milch repariert werden muss
+den arzt
+den arzt anrufen
+den bus
+den elternsprechtag
+den kuchen
+den müll
+den reifen
+den termin
+der drucker abholen #garten
+der drucker am freitag bezahlen
+der drucker am freitag mähen
+der drucker am freitag prüfen
+der drucker irgendwann mal abholen
+der drucker irgendwann mal bezahlen
+der drucker irgendwann mal kaufen
+der drucker irgendwann mal putzen
+der drucker irgendwann mal rausstellen
+der drucker ist kaputt
+der drucker muss abgeholt werden
+der drucker muss gekauft werden
+der drucker muss gemäht werden
+der drucker muss rausgestellt werden
+der drucker müsste bezahlt werden
+der drucker putzen #garten
+der drucker soll noch abgeholt werden
+der drucker soll noch geprüft werden
+der drucker soll noch repariert werden
+der drucker um 8 uhr abholen
+der drucker um 8 uhr reparieren
+der drucker wurde nicht abgeholt
+der drucker wurde nicht bezahlt
+der drucker wurde nicht gekauft
+der drucker wurde nicht gemäht
+der drucker wurde nicht geprüft
+der drucker wurde nicht geputzt
+der drucker wurde nicht rausgestellt
+der drucker wurde nicht repariert
+der esp32 im keller abholen #garten
+der esp32 im keller am freitag mähen
+der esp32 im keller am freitag prüfen
+der esp32 im keller ganz wichtig bezahlen
+der esp32 im keller ganz wichtig putzen
+der esp32 im keller ganz wichtig reparieren
+der esp32 im keller irgendwann mal kaufen
+der esp32 im keller irgendwann mal mähen
+der esp32 im keller ist kaputt
+der esp32 im keller muss bezahlt werden
+der esp32 im keller müsste gemäht werden
+der esp32 im keller müsste geputzt werden
+der esp32 im keller um 8 uhr bezahlen
+der esp32 im keller um 8 uhr kaufen
+der esp32 im keller um 8 uhr reparieren
+der esp32 im keller wurde nicht abgeholt
+der esp32 im keller wurde nicht bezahlt
+der esp32 im keller wurde nicht gekauft
+der esp32 im keller wurde nicht gemäht
+der esp32 im keller wurde nicht geprüft
+der esp32 im keller wurde nicht geputzt
+der esp32 im keller wurde nicht rausgestellt
+der esp32 im keller wurde nicht repariert
+der fernseher muss an die wand gehängt werden
+der hund braucht futter
+der hund muss zum tierarzt
+der rasen am freitag bezahlen
+der rasen am freitag kaufen
+der rasen am freitag mähen
+der rasen am freitag prüfen
+der rasen bezahlen #garten
+der rasen ganz wichtig bezahlen
+der rasen ganz wichtig kaufen
+der rasen ganz wichtig prüfen
+der rasen irgendwann mal abholen
+der rasen ist kaputt
+der rasen kaufen #garten
+der rasen muss bezahlt werden
+der rasen muss geprüft werden
+der rasen muss geputzt werden
+der rasen müsste bezahlt werden
+der rasen müsste geprüft werden
+der rasen müsste geputzt werden
+der rasen müsste rausgestellt werden
+der rasen rausstellen #garten
+der rasen soll noch gekauft werden
+der rasen soll noch rausgestellt werden
+der rasen um 8 uhr bezahlen
+der rasen um 8 uhr putzen
+der rasen um 8 uhr rausstellen
+der rasen wurde nicht abgeholt
+der rasen wurde nicht bezahlt
+der rasen wurde nicht gekauft
+der rasen wurde nicht gemäht
+der rasen wurde nicht geprüft
+der rasen wurde nicht geputzt
+der rasen wurde nicht rausgestellt
+der rasen wurde nicht repariert
+die Tür der Garage
+die Tür der Garage streichen
+die garage muss mal aufgeräumt werden
+die hecke muss geschnitten werden
+die hecke muss noch geschnitten werden
+die hecke sollte geschnitten werden
+die heizung am freitag kaufen
+die heizung am freitag prüfen
+die heizung am freitag rausstellen
+die heizung ganz wichtig putzen
+die heizung irgendwann mal rausstellen
+die heizung ist kaputt
+die heizung müsste bezahlt werden
+die heizung müsste gemäht werden
+die heizung müsste geputzt werden
+die heizung putzen #garten
+die heizung soll noch bezahlt werden
+die heizung soll noch gekauft werden
+die heizung soll noch geprüft werden
+die heizung soll noch geputzt werden
+die heizung um 8 uhr bezahlen
+die heizung um 8 uhr rausstellen
+die heizung wurde nicht abgeholt
+die heizung wurde nicht bezahlt
+die heizung wurde nicht gekauft
+die heizung wurde nicht gemäht
+die heizung wurde nicht geprüft
+die heizung wurde nicht geputzt
+die heizung wurde nicht rausgestellt
+die heizung wurde nicht repariert
+die kinder dürfen nicht vergessen werden
+die kinder vom flughafen ganz wichtig bezahlen
+die kinder vom flughafen ganz wichtig putzen
+die kinder vom flughafen irgendwann mal kaufen
+die kinder vom flughafen ist kaputt
+die kinder vom flughafen muss gemäht werden
+die kinder vom flughafen müsste rausgestellt werden
+die kinder vom flughafen rausstellen #garten
+die kinder vom flughafen reparieren #garten
+die kinder vom flughafen soll noch rausgestellt werden
+die kinder vom flughafen um 8 uhr prüfen
+die kinder vom flughafen um 8 uhr rausstellen
+die kinder vom flughafen wurde nicht abgeholt
+die kinder vom flughafen wurde nicht bezahlt
+die kinder vom flughafen wurde nicht gekauft
+die kinder vom flughafen wurde nicht gemäht
+die kinder vom flughafen wurde nicht geprüft
+die kinder vom flughafen wurde nicht geputzt
+die kinder vom flughafen wurde nicht rausgestellt
+die kinder vom flughafen wurde nicht repariert
+die lieferung muss gefxzbarn werden
+die milch
+die mülltonne am freitag bezahlen
+die mülltonne ganz wichtig prüfen
+die mülltonne irgendwann mal prüfen
+die mülltonne ist kaputt
+die mülltonne muss abgeholt werden
+die mülltonne muss geputzt werden
+die mülltonne muss repariert werden
+die mülltonne müsste abgeholt werden
+die mülltonne müsste gekauft werden
+die mülltonne müsste rausgestellt werden
+die mülltonne wurde nicht abgeholt
+die mülltonne wurde nicht bezahlt
+die mülltonne wurde nicht gekauft
+die mülltonne wurde nicht gemäht
+die mülltonne wurde nicht geprüft
+die mülltonne wurde nicht geputzt
+die mülltonne wurde nicht rausgestellt
+die mülltonne wurde nicht repariert
+die mülltonnen
+die rechnung am freitag prüfen
+die rechnung ganz wichtig putzen
+die rechnung irgendwann mal abholen
+die rechnung irgendwann mal mähen
+die rechnung irgendwann mal putzen
+die rechnung irgendwann mal reparieren
+die rechnung ist kaputt
+die rechnung muss abgeholt werden
+die rechnung muss gekauft werden
+die rechnung muss geputzt werden
+die rechnung müsste geputzt werden
+die rechnung reparieren #garten
+die rechnung soll noch rausgestellt werden
+die rechnung soll noch repariert werden
+die rechnung um 8 uhr bezahlen
+die rechnung wurde nicht abgeholt
+die rechnung wurde nicht bezahlt
+die rechnung wurde nicht gekauft
+die rechnung wurde nicht gemäht
+die rechnung wurde nicht geprüft
+die rechnung wurde nicht geputzt
+die rechnung wurde nicht rausgestellt
+die rechnung wurde nicht repariert
+die rechnung wurde noch nicht bezahlt
+die spülmaschine muss repariert werden und die pumpe auch
+die steuer
+die terrasse muss abgehangen werden
+die tomaten am freitag bezahlen
+die tomaten ganz wichtig reparieren
+die tomaten irgendwann mal abholen
+die tomaten irgendwann mal bezahlen
+die tomaten irgendwann mal mähen
+die tomaten irgendwann mal reparieren
+die tomaten ist kaputt
+die tomaten muss bezahlt werden
+die tomaten muss gekauft werden
+die tomaten muss rausgestellt werden
+die tomaten soll noch gemäht werden
+die tomaten um 8 uhr bezahlen
+die tomaten um 8 uhr prüfen
+die tomaten um 8 uhr rausstellen
+die tomaten wurde nicht abgeholt
+die tomaten wurde nicht bezahlt
+die tomaten wurde nicht gekauft
+die tomaten wurde nicht gemäht
+die tomaten wurde nicht geprüft
+die tomaten wurde nicht geputzt
+die tomaten wurde nicht rausgestellt
+die tomaten wurde nicht repariert
+die tonnen
+die tonnen morgen früh
+die tür der garage muss gestrichen werden
+disk error
+dringend das auto prüfen
+dringend das fenster im bad kaufen
+dringend der drucker kaufen
+dringend der drucker mähen
+dringend der rasen mähen
+dringend der rasen rausstellen
+dringend die heizung rausstellen
+dringend die heizung reparieren
+dringend die kinder vom flughafen abholen
+dringend die kinder vom flughafen mähen
+dringend die kinder vom flughafen putzen
+dringend die mülltonne abholen
+dringend die mülltonne rausstellen
+dringend die mülltonne reparieren
+dringend die rechnung bezahlen
+dringend die rechnung mähen
+dringend die tomaten kaufen
+dringend die tomaten rausstellen
+dringend die tomaten reparieren
+dringend kellerlicht abholen
+dringend kellerlicht bezahlen
+dringend kellerlicht mähen
+dringend kellerlicht putzen
+dringend kellerlicht rausstellen
+dringend milch bezahlen
+dringend milch mähen
+dringend milch reparieren
+ein buch
+ein buch auf die bücher liste
+ein buch auf die liste
+ein buch von hape kerkeling für lenia und lenia müller zu schlaue antworten als pdf
+elternsprechtag frei nehmen
+elternsprechtag ganz wichtig frei nehmen
+erinnere mich an den müll
+erinnere mich morgen um halb neun an das auto
+erinnere mich morgen um halb neun an das fenster im bad
+erinnere mich morgen um halb neun an der drucker
+erinnere mich morgen um halb neun an der esp32 im keller
+erinnere mich morgen um halb neun an der rasen
+erinnere mich morgen um halb neun an die heizung
+erinnere mich morgen um halb neun an die kinder vom flughafen
+erinnere mich morgen um halb neun an die mülltonne
+erinnere mich morgen um halb neun an die rechnung
+erinnere mich morgen um halb neun an die tomaten
+erinnere mich morgen um halb neun an kellerlicht
+erinnere mich morgen um halb neun an milch
+errors\[[^\]]+\] = "(\w+)"
+erste idee
+existiert bereits
+fremde idee
+früh aufstehen
+für Lenia und Lenia Müller
+für alle
+für den Garten Tomaten düngen
+für den garten tomaten düngen
+für die kinder einen sportverein finden
+für smarthome das auto reparieren
+für smarthome das fenster im bad abholen
+für smarthome das fenster im bad mähen
+für smarthome das fenster im bad putzen
+für smarthome der esp32 im keller bezahlen
+für smarthome der esp32 im keller prüfen
+für smarthome der esp32 im keller reparieren
+für smarthome der rasen kaufen
+für smarthome der rasen prüfen
+für smarthome der rasen reparieren
+für smarthome die heizung abholen
+für smarthome die heizung putzen
+für smarthome die heizung rausstellen
+für smarthome die kinder vom flughafen bezahlen
+für smarthome die kinder vom flughafen putzen
+für smarthome die kinder vom flughafen rausstellen
+für smarthome die kinder vom flughafen reparieren
+für smarthome die mülltonne abholen
+für smarthome die mülltonne bezahlen
+für smarthome die mülltonne prüfen
+für smarthome die mülltonne putzen
+für smarthome die rechnung putzen
+für smarthome die rechnung rausstellen
+für smarthome die tomaten bezahlen
+für smarthome die tomaten kaufen
+für smarthome die tomaten mähen
+für smarthome die tomaten rausstellen
+für smarthome die tomaten reparieren
+für smarthome kellerlicht abholen
+für smarthome kellerlicht mähen
+für smarthome kellerlicht putzen
+für smarthome milch bezahlen
+für smarthome milch reparieren
+ganz etwas anderes
+garage <aufräumen> & mehr
+garage streichen
+garten tomaten düngen
+garten: das auto reparieren
+garten: das fenster im bad prüfen
+garten: das fenster im bad rausstellen
+garten: der drucker mähen
+garten: der drucker prüfen
+garten: der drucker rausstellen
+garten: der esp32 im keller putzen
+garten: der esp32 im keller rausstellen
+garten: der esp32 im keller reparieren
+garten: der rasen kaufen
+garten: der rasen reparieren
+garten: die heizung bezahlen
+garten: die heizung kaufen
+garten: die heizung rausstellen
+garten: die kinder vom flughafen abholen
+garten: die kinder vom flughafen kaufen
+garten: die mülltonne bezahlen
+garten: die mülltonne putzen
+garten: die mülltonne rausstellen
+garten: die rechnung abholen
+garten: die rechnung mähen
+garten: die rechnung prüfen
+garten: die tomaten kaufen
+garten: die tomaten putzen
+garten: milch mähen
+garten: milch putzen
+garten: milch reparieren
+grafana muss pdf report erhalten
+haus & garten
+haus und garten
+hausaufgaben machen
+hecke schneiden
+hecke schneiden in zwei wochen
+heute abend an den müll
+heute abend um 22 uhr müll raus
+heute abend um 8 an den müll
+heute arzt anrufen
+hund braucht futter
+iPhone laden
+ich brauche kaffee
+ich muss den arzt anrufen
+ich muss morgen das auto kaufen
+ich muss morgen das auto prüfen
+ich muss morgen das auto rausstellen
+ich muss morgen das fenster im bad abholen
+ich muss morgen das fenster im bad kaufen
+ich muss morgen der drucker mähen
+ich muss morgen der drucker reparieren
+ich muss morgen der esp32 im keller bezahlen
+ich muss morgen der esp32 im keller prüfen
+ich muss morgen der esp32 im keller rausstellen
+ich muss morgen der esp32 im keller reparieren
+ich muss morgen der rasen mähen
+ich muss morgen der rasen rausstellen
+ich muss morgen die kinder vom flughafen abholen
+ich muss morgen die mülltonne mähen
+ich muss morgen die mülltonne prüfen
+ich muss morgen die rechnung bezahlen
+ich muss morgen die rechnung mähen
+ich muss morgen die tomaten bezahlen
+ich muss morgen die tomaten prüfen
+ich muss morgen die tomaten putzen
+ich muss morgen früh den arzt anrufen
+ich muss morgen kellerlicht bezahlen
+ich muss morgen milch abholen
+ich muss morgen milch prüfen
+ich muss morgen unbedingt den arzt anrufen
+ich muss nicht zum arzt
+ich möchte den keller aufräumen
+ich müsste mal wieder oma anrufen
+ich sollte mal die heizung entlüften
+ich will die reifen wechseln
+idee eine app für die kinder bauen
+idee vom leser
+idee von
+idee von jan
+idee von lenja
+im Garten muss die Hecke geschnitten werden
+im garten das auto mähen
+im garten das auto putzen
+im garten das fenster im bad abholen
+im garten der drucker bezahlen
+im garten der drucker reparieren
+im garten der esp32 im keller abholen
+im garten der esp32 im keller mähen
+im garten der esp32 im keller prüfen
+im garten der rasen reparieren
+im garten die heizung prüfen
+im garten die heizung rausstellen
+im garten die kinder vom flughafen putzen
+im garten die mülltonne abholen
+im garten die mülltonne kaufen
+im garten die mülltonne putzen
+im garten die mülltonne rausstellen
+im garten die rechnung abholen
+im garten die rechnung prüfen
+im garten die tomaten mähen
+im garten die tomaten prüfen
+im garten die tomaten rausstellen
+im garten die tomaten reparieren
+im garten kellerlicht reparieren
+im garten milch abholen
+in 10 minuten an den kuchen
+in drei tagen an den reifen
+in einer stunde an den kuchen
+in zwei stunden an den kuchen
+irgendwann mal garage streichen
+ist das dringend?
+jeden montag müll raus
+kaffee kaufen
+kaffee kochen
+kannst du notieren das auto bezahlen
+kannst du notieren das auto rausstellen
+kannst du notieren das fenster im bad abholen
+kannst du notieren das fenster im bad mähen
+kannst du notieren das fenster im bad prüfen
+kannst du notieren der drucker abholen
+kannst du notieren der esp32 im keller mähen
+kannst du notieren der esp32 im keller prüfen
+kannst du notieren der esp32 im keller putzen
+kannst du notieren der rasen bezahlen
+kannst du notieren der rasen putzen
+kannst du notieren die heizung mähen
+kannst du notieren die heizung putzen
+kannst du notieren die kinder vom flughafen putzen
+kannst du notieren die mülltonne abholen
+kannst du notieren die mülltonne bezahlen
+kannst du notieren die rechnung kaufen
+kannst du notieren die rechnung mähen
+kannst du notieren die rechnung rausstellen
+kannst du notieren kellerlicht putzen
+kannst du notieren kellerlicht reparieren
+kannst du notieren milch rausstellen
+kein datum
+kein json
+keine Erinnerung
+keine offenen
+kellerlicht am freitag bezahlen
+kellerlicht am freitag mähen
+kellerlicht am freitag putzen
+kellerlicht dimmen
+kellerlicht ganz wichtig prüfen
+kellerlicht ganz wichtig reparieren
+kellerlicht irgendwann mal bezahlen
+kellerlicht irgendwann mal kaufen
+kellerlicht irgendwann mal prüfen
+kellerlicht irgendwann mal rausstellen
+kellerlicht ist kaputt
+kellerlicht muss abgeholt werden
+kellerlicht muss bezahlt werden
+kellerlicht muss gemäht werden
+kellerlicht muss rausgestellt werden
+kellerlicht müsste abgeholt werden
+kellerlicht rausstellen #garten
+kellerlicht soll noch abgeholt werden
+kellerlicht um 8 uhr kaufen
+kellerlicht wurde nicht abgeholt
+kellerlicht wurde nicht bezahlt
+kellerlicht wurde nicht gekauft
+kellerlicht wurde nicht gemäht
+kellerlicht wurde nicht geprüft
+kellerlicht wurde nicht geputzt
+kellerlicht wurde nicht rausgestellt
+kellerlicht wurde nicht repariert
+ki kiste holen
+kiwi holen
+kommt der arzt morgen?
+kuchen backen
+kuchen für die oma backen
+könntest du dir merken dass ich die rechnung bezahlen muss
+kürbisse müssen wir heute schnitzen
+lenja morgen um 8 an den termin
+lenjas alltag
+letzten freitag war der arzt da
+licht aus
+licht dimmen
+meine idee
+merke dir das auto putzen
+merke dir das auto reparieren
+merke dir das fenster im bad abholen
+merke dir der esp32 im keller kaufen
+merke dir der esp32 im keller mähen
+merke dir der rasen abholen
+merke dir der rasen prüfen
+merke dir die heizung mähen
+merke dir die heizung putzen
+merke dir die heizung reparieren
+merke dir die kinder vom flughafen kaufen
+merke dir die kinder vom flughafen rausstellen
+merke dir die mülltonne bezahlen
+merke dir die mülltonne rausstellen
+merke dir die rechnung bezahlen
+merke dir die rechnung prüfen
+merke dir die tomaten abholen
+merke dir die tomaten kaufen
+merke dir die tomaten prüfen
+merke dir kellerlicht bezahlen
+merke dir kellerlicht prüfen
+merke dir kellerlicht putzen
+milch am freitag mähen
+milch am freitag prüfen
+milch ganz wichtig abholen
+milch ganz wichtig kaufen
+milch ganz wichtig mähen
+milch ganz wichtig prüfen
+milch irgendwann mal abholen
+milch irgendwann mal bezahlen
+milch irgendwann mal rausstellen
+milch ist kaputt
+milch muss abgeholt werden
+milch muss gemäht werden
+milch muss geprüft werden
+milch mähen #garten
+milch müsste bezahlt werden
+milch müsste gekauft werden
+milch müsste geputzt werden
+milch reparieren #garten
+milch soll noch abgeholt werden
+milch soll noch geprüft werden
+milch um 8 uhr bezahlen
+milch um 8 uhr putzen
+milch um 8 uhr rausstellen
+milch um 8 uhr reparieren
+milch wurde nicht abgeholt
+milch wurde nicht bezahlt
+milch wurde nicht gekauft
+milch wurde nicht gemäht
+milch wurde nicht geprüft
+milch wurde nicht geputzt
+milch wurde nicht rausgestellt
+milch wurde nicht repariert
+mit neuen batterien testen
+morgen arzt anrufen
+morgen früh an die tonnen
+morgen um
+morgen um 10 uhr den arzt anrufen
+morgen um 8 an die mülltonnen
+morgen um 8 an die tonnen
+morgen um 8 uhr 30 an die mülltonnen
+morgen um 9 an das paket
+morgen um 9 an den termin beim edeka
+morgen um acht an die tonnen
+muss auf jeden fall überarbeitet werden
+müll raus
+müll rausbringen
+neue idee
+neue idee kaffee kochen
+nicht gefunden
+nicht so wichtig garage streichen
+nicht vergessen den müll rauszubringen
+nichts gespeichert
+noch eine
+notiere dass das auto geprüft werden muss
+notiere dass das auto rausgestellt werden muss
+notiere dass das auto repariert werden muss
+notiere dass das fenster im bad geprüft werden muss
+notiere dass der drucker abgeholt werden muss
+notiere dass der drucker geputzt werden muss
+notiere dass der drucker rausgestellt werden muss
+notiere dass der esp32 im keller gemäht werden muss
+notiere dass der esp32 im keller rausgestellt werden muss
+notiere dass der rasen abgeholt werden muss
+notiere dass der rasen gekauft werden muss
+notiere dass der rasen geprüft werden muss
+notiere dass der rasen geputzt werden muss
+notiere dass die heizung geprüft werden muss
+notiere dass die kinder vom flughafen geprüft werden muss
+notiere dass die rechnung geputzt werden muss
+notiere dass die tomaten bezahlt werden muss
+notiere dass die tomaten geprüft werden muss
+notiere dass kellerlicht abgeholt werden muss
+notiere dass kellerlicht gekauft werden muss
+notiere dass kellerlicht rausgestellt werden muss
+notiere dass milch abgeholt werden muss
+notiere dass milch geprüft werden muss
+notiere dass milch geputzt werden muss
+notiere dass milch repariert werden muss
+notify.weg does not exist
+nächste woche an die steuer
+ob schlaue antworten auch einen skill braucht
+ohne Erinnerung
+packet holen
+per stimme
+projekt das auto abholen
+projekt das auto kaufen
+projekt das auto putzen
+projekt das auto rausstellen
+projekt das auto reparieren
+projekt das fenster im bad kaufen
+projekt das fenster im bad prüfen
+projekt der drucker bezahlen
+projekt der drucker rausstellen
+projekt der esp32 im keller putzen
+projekt der rasen mähen
+projekt der rasen prüfen
+projekt der rasen putzen
+projekt der rasen rausstellen
+projekt der rasen reparieren
+projekt die heizung mähen
+projekt die heizung prüfen
+projekt die heizung rausstellen
+projekt die kinder vom flughafen mähen
+projekt die kinder vom flughafen prüfen
+projekt die kinder vom flughafen putzen
+projekt die kinder vom flughafen rausstellen
+projekt die kinder vom flughafen reparieren
+projekt die mülltonne prüfen
+projekt die rechnung abholen
+projekt die rechnung prüfen
+projekt die tomaten abholen
+projekt die tomaten bezahlen
+projekt die tomaten putzen
+projekt milch kaufen
+projekt milch rausstellen
+rasenmäher muss noch einmal laufen
+rechnung dringend bezahlen
+rechnung wurde nicht bezahlt
+red"><img src=x onerror=alert(1)>
+regal bauen
+reifen wechseln
+rosen schneiden
+sage brainstorm notiere etwas anderes
+sage brainstorm notiere kellerlicht dimmen
+sage brainstorm notiere zweite idee
+schon da
+schreib bitte auf dass wir terrasse reinigen
+seit montag kaputt
+sie muss zum arzt
+später dazu
+steuer abgeben
+termin für übermorgen um 14 uhr machen
+termin machen
+testidee zwei
+testidee zwei auf meine to do liste
+tonnen raus
+tonnen rausstellen
+um 14 uhr an das essen
+um 14:45 ans essen
+um 5 kisten bestellen
+um halb neun an den bus
+um viertel nach zwölf an das essen
+update listener
+uralte idee
+vergiss nicht das auto zu mähen
+vergiss nicht das auto zu reparieren
+vergiss nicht das fenster im bad zu kaufen
+vergiss nicht der drucker zu bezahlen
+vergiss nicht der drucker zu mähen
+vergiss nicht der drucker zu rausstellen
+vergiss nicht der esp32 im keller zu abholen
+vergiss nicht der rasen zu abholen
+vergiss nicht die heizung zu putzen
+vergiss nicht die kinder vom flughafen zu reparieren
+vergiss nicht die mülltonne zu putzen
+vergiss nicht die rechnung zu bezahlen
+vergiss nicht die rechnung zu prüfen
+vergiss nicht die rechnung zu putzen
+vergiss nicht die tomaten zu putzen
+vergiss nicht die tomaten zu reparieren
+vergiss nicht kellerlicht zu bezahlen
+vergiss nicht kellerlicht zu rausstellen
+via Echo
+via alexa
+von besitzer
+wand streichen
+warum wurde das auto nicht abgeholt
+warum wurde das auto nicht bezahlt
+warum wurde das auto nicht gekauft
+warum wurde das auto nicht gemäht
+warum wurde das auto nicht geprüft
+warum wurde das auto nicht geputzt
+warum wurde das auto nicht rausgestellt
+warum wurde das auto nicht repariert
+warum wurde das fenster im bad nicht abgeholt
+warum wurde das fenster im bad nicht bezahlt
+warum wurde das fenster im bad nicht gekauft
+warum wurde das fenster im bad nicht gemäht
+warum wurde das fenster im bad nicht geprüft
+warum wurde das fenster im bad nicht geputzt
+warum wurde das fenster im bad nicht rausgestellt
+warum wurde das fenster im bad nicht repariert
+warum wurde der drucker nicht abgeholt
+warum wurde der drucker nicht bezahlt
+warum wurde der drucker nicht gekauft
+warum wurde der drucker nicht gemäht
+warum wurde der drucker nicht geprüft
+warum wurde der drucker nicht geputzt
+warum wurde der drucker nicht rausgestellt
+warum wurde der drucker nicht repariert
+warum wurde der esp32 im keller nicht abgeholt
+warum wurde der esp32 im keller nicht bezahlt
+warum wurde der esp32 im keller nicht gekauft
+warum wurde der esp32 im keller nicht gemäht
+warum wurde der esp32 im keller nicht geprüft
+warum wurde der esp32 im keller nicht geputzt
+warum wurde der esp32 im keller nicht rausgestellt
+warum wurde der esp32 im keller nicht repariert
+warum wurde der rasen nicht abgeholt
+warum wurde der rasen nicht bezahlt
+warum wurde der rasen nicht gekauft
+warum wurde der rasen nicht gemäht
+warum wurde der rasen nicht geprüft
+warum wurde der rasen nicht geputzt
+warum wurde der rasen nicht rausgestellt
+warum wurde der rasen nicht repariert
+warum wurde die heizung nicht abgeholt
+warum wurde die heizung nicht bezahlt
+warum wurde die heizung nicht gekauft
+warum wurde die heizung nicht gemäht
+warum wurde die heizung nicht geprüft
+warum wurde die heizung nicht geputzt
+warum wurde die heizung nicht rausgestellt
+warum wurde die heizung nicht repariert
+warum wurde die kinder vom flughafen nicht abgeholt
+warum wurde die kinder vom flughafen nicht bezahlt
+warum wurde die kinder vom flughafen nicht gekauft
+warum wurde die kinder vom flughafen nicht gemäht
+warum wurde die kinder vom flughafen nicht geprüft
+warum wurde die kinder vom flughafen nicht geputzt
+warum wurde die kinder vom flughafen nicht rausgestellt
+warum wurde die kinder vom flughafen nicht repariert
+warum wurde die mülltonne nicht abgeholt
+warum wurde die mülltonne nicht bezahlt
+warum wurde die mülltonne nicht gekauft
+warum wurde die mülltonne nicht gemäht
+warum wurde die mülltonne nicht geprüft
+warum wurde die mülltonne nicht geputzt
+warum wurde die mülltonne nicht rausgestellt
+warum wurde die mülltonne nicht repariert
+warum wurde die rechnung nicht abgeholt
+warum wurde die rechnung nicht bezahlt
+warum wurde die rechnung nicht gekauft
+warum wurde die rechnung nicht gemäht
+warum wurde die rechnung nicht geprüft
+warum wurde die rechnung nicht geputzt
+warum wurde die rechnung nicht rausgestellt
+warum wurde die rechnung nicht repariert
+warum wurde die tomaten nicht abgeholt
+warum wurde die tomaten nicht bezahlt
+warum wurde die tomaten nicht gekauft
+warum wurde die tomaten nicht gemäht
+warum wurde die tomaten nicht geprüft
+warum wurde die tomaten nicht geputzt
+warum wurde die tomaten nicht rausgestellt
+warum wurde die tomaten nicht repariert
+warum wurde kellerlicht nicht abgeholt
+warum wurde kellerlicht nicht bezahlt
+warum wurde kellerlicht nicht gekauft
+warum wurde kellerlicht nicht gemäht
+warum wurde kellerlicht nicht geprüft
+warum wurde kellerlicht nicht geputzt
+warum wurde kellerlicht nicht rausgestellt
+warum wurde kellerlicht nicht repariert
+warum wurde milch nicht abgeholt
+warum wurde milch nicht bezahlt
+warum wurde milch nicht gekauft
+warum wurde milch nicht gemäht
+warum wurde milch nicht geprüft
+warum wurde milch nicht geputzt
+warum wurde milch nicht rausgestellt
+warum wurde milch nicht repariert
+was macht die heizung?
+wenn ich bei edeka bin an die milch
+wenn ich heimkomme an den müll
+wenn ich im edeka in sorsum bin an brot
+wenn lenja heimkommt an den müll
+wichtige unterlagen holen
+wir brauchen 8 neue stühle
+wir brauchen keine neue heizung
+wir brauchen multilinguale möglichkeiten im skill
+wir brauchen neue batterien
+wir brauchen neue blumenerde
+wir müssen das auto prüfen
+wir müssen das auto rausstellen
+wir müssen das fenster im bad abholen
+wir müssen das fenster im bad kaufen
+wir müssen der drucker abholen
+wir müssen der esp32 im keller mähen
+wir müssen der esp32 im keller rausstellen
+wir müssen der rasen prüfen
+wir müssen der rasen rausstellen
+wir müssen die heizung mähen
+wir müssen die kinder vom flughafen reparieren
+wir müssen die rechnung mähen
+wir müssen die tomaten mähen
+wir müssen die tomaten prüfen
+wir müssen kellerlicht mähen
+wir müssen kellerlicht rausstellen
+wir müssen kellerlicht reparieren
+wir müssen milch reparieren
+wir sollten die garage aufräumen
+without an integration
+wäsche bis freitag waschen
+wäsche waschen
+xyz abc
+xyz def
+zweite idee
+~~Alte Notiz hier~~
+äh ich wollte noch sagen dass die lampe in der küche kaputt ist
+übermorgen an den arzt
+übermorgen um 9 Uhr
+↳ eltern
+✅ notify.phone
+❌ notify.gone

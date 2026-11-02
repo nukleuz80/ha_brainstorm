@@ -85,7 +85,7 @@ from .const import (
     RULE_ZONE_ENABLED,
 )
 from .ai import async_generate_text
-from .nlp import parse_due, strip_reminder_words
+from .languages import get_pack
 
 if TYPE_CHECKING:
     from .store import BrainstormStore
@@ -211,9 +211,14 @@ def _alternatives(names: dict[str, str]) -> str:
 
 
 def build_reminder_request(
-    hass: HomeAssistant, options: dict[str, Any], text: str, now: datetime
+    hass: HomeAssistant,
+    options: dict[str, Any],
+    text: str,
+    now: datetime,
+    language: str | None = None,
 ) -> ReminderRequest:
     """Understand who should be reminded of what, when or where."""
+    pack = get_pack(language or hass.config.language)
     remaining = text.strip()
     assignee: str | None = None
     people: dict[str, str] = {}
@@ -226,7 +231,7 @@ def build_reminder_request(
             assignee = people[match.group(1).lower()]
             remaining = remaining[match.end() :]
 
-    due, remaining = parse_due(remaining, now)
+    due, remaining = pack.parse_due(remaining, now)
     trigger: dict[str, str | None] | None = None
     default_person = options.get(CONF_DEFAULT_PERSON) or None
     who = r"(ich|sie|er"
@@ -276,7 +281,7 @@ def build_reminder_request(
             if match:
                 remaining = f"{remaining[: match.start()]} {remaining[match.end() :]}"
 
-    return ReminderRequest(strip_reminder_words(remaining), due, trigger, assignee)
+    return ReminderRequest(pack.strip_reminder_words(remaining), due, trigger, assignee)
 
 
 class ReminderManager:

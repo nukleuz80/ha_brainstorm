@@ -78,15 +78,8 @@ from .const import (
     VOICE_MODE_NATIVE,
 )
 from .ai import async_generate_text
-from .nlp import (
-    build_glossary,
-    clean_and_format_idea_text,
-    extract_spoken_due,
-    extract_spoken_priority,
-    format_typed_text,
-    starts_with_verb,
-    validate_ai_rewrite,
-)
+from .languages import CATEGORY_KEYS, get_pack
+from .languages.common import CATEGORY_PROJECTS, LanguagePack
 
 if TYPE_CHECKING:
     from .alexa_skill import AlexaSkill
@@ -108,304 +101,7 @@ def _validate_category_style(icon: str | None, color: str | None) -> None:
         raise ServiceValidationError(f"Ungültige Farbe (Hex erwartet): {color}")
 
 
-CATEGORY_ALIASES: dict[str, list[str]] = {
-    "Haus & Garten": [
-        "haus & garten",
-        "haus und garten",
-        "haus & gartenbereich",
-        "garten",
-        "haus",
-        "gartenarbeit",
-        "gartenbereich",
-        "balkon",
-        "terrasse",
-        "terasse",
-    ],
-    "Smarthome": [
-        "smarthome",
-        "smart home",
-        "hausautomation",
-        "homeautomation",
-        "home assistant",
-        "homeassistant",
-        "iot",
-    ],
-    "Projekte": [
-        "projekte",
-        "projekt",
-        "bauprojekte",
-        "bauprojekt",
-        "bastelprojekte",
-        "bastelprojekt",
-        "basteln",
-        "werkstatt",
-        "diy",
-    ],
-    "Alltag": [
-        "alltag",
-        "haushalt",
-        "erledigungen",
-        "erledigung",
-        "einkauf",
-        "einkäufe",
-        "familie",
-        "privat",
-        "persönlich",
-    ],
-    "Brainstorm": [
-        "brainstorm",
-        "brainstorming",
-        "brain storm",
-        "brain-storm",
-        "brainstorm hub",
-        "brainstorm app",
-        "mindmap",
-        "mind map",
-    ],
-}
 
-CATEGORY_KEYWORDS: dict[str, list[str]] = {
-    "Brainstorm": [
-        "brainstorm",
-        "brainstorming",
-        "mindmap",
-        "synapse",
-        "synapsen",
-        "gedanken",
-        "geistesblitz",
-        "ideenkarte",
-        "ideensammlung",
-        "kartendarstellung",
-        "visualisierung",
-        "radial",
-        "app",
-        "notiz-app",
-        "logbuch",
-        "funktion",
-        "karten",
-    ],
-    "Haus & Garten": [
-        "garten",
-        "rasen",
-        "rasenmähen",
-        "rasensprengen",
-        "mähen",
-        "sprengen",
-        "blume",
-        "blumen",
-        "sonnenblume",
-        "sonnenblumen",
-        "rose",
-        "rosen",
-        "pflanze",
-        "pflanzen",
-        "beet",
-        "hochbeet",
-        "hecke",
-        "heckenschere",
-        "unkraut",
-        "gießen",
-        "wässern",
-        "balkon",
-        "terrasse",
-        "terasse",
-        "baum",
-        "bäume",
-        "ast",
-        "äste",
-        "schneiden",
-        "laub",
-        "kompost",
-        "dünger",
-        "düngen",
-        "gewächshaus",
-        "pool",
-        "poolpumpe",
-        "poolroboter",
-        "zaun",
-        "schuppen",
-        "dachrinne",
-        "gartenhaus",
-        "trampolin",
-        "vogelhaus",
-        "grill",
-        "sandkasten",
-        "bewässerung",
-        "bewässern",
-        "tomate",
-        "tomaten",
-    ],
-    "Smarthome": [
-        "smarthome",
-        "smart home",
-        "home assistant",
-        "homeassistant",
-        "automation",
-        "automatisieren",
-        "shelly",
-        "zigbee",
-        "zha",
-        "z2m",
-        "zigbee2mqtt",
-        "esphome",
-        "esp32",
-        "esp8266",
-        "tasmota",
-        "mqtt",
-        "bwm",
-        "bewegungsmelder",
-        "präsenzmelder",
-        "präsenz",
-        "sensor",
-        "sensoren",
-        "temperatur",
-        "feuchtigkeit",
-        "luftfeuchtigkeit",
-        "licht",
-        "lichter",
-        "beleuchtung",
-        "lampe",
-        "lampen",
-        "dimmen",
-        "dimmer",
-        "steckdose",
-        "steckdosen",
-        "schalter",
-        "relais",
-        "frigate",
-        "kamera",
-        "kameras",
-        "dashboard",
-        "lovelace",
-        "tablet",
-        "wlan",
-        "wifi",
-        "netzwerk",
-        "router",
-        "fritzbox",
-        "blueprint",
-        "yaml",
-        "alexa",
-        "echo",
-        "thermostat",
-        "heizkörper",
-        "heizung",
-        "bkw",
-        "balkonkraftwerk",
-        "wechselrichter",
-        "inverter",
-        "stromzähler",
-        "powercalc",
-    ],
-    "Projekte": [
-        "projekt",
-        "projekte",
-        "erweitern",
-        "feature",
-        "entwicklung",
-        "entwickeln",
-        "programmieren",
-        "implementieren",
-        "konzept",
-        "bauen",
-        "basteln",
-        "umbau",
-        "umbauen",
-        "renovieren",
-        "renovierung",
-        "streichen",
-        "lackieren",
-        "abschleifen",
-        "schleifen",
-        "bohren",
-        "bohrer",
-        "sägen",
-        "kreissäge",
-        "werkstatt",
-        "werkzeug",
-        "3d-druck",
-        "3d druck",
-        "drucken",
-        "filament",
-        "löten",
-        "lötkolben",
-        "schrauben",
-        "dübel",
-        "holz",
-        "brett",
-        "bretter",
-        "latte",
-        "latten",
-        "metall",
-        "konstruieren",
-        "designen",
-        "reparieren",
-        "reparatur",
-        "werkbank",
-    ],
-    "Alltag": [
-        "alltag",
-        "haushalt",
-        "einkaufen",
-        "einkauf",
-        "einkaufsliste",
-        "supermarkt",
-        "kaufen",
-        "besorgen",
-        "mitbringen",
-        "apotheke",
-        "medikament",
-        "kinder",
-        "kind",
-        "flughafen",
-        "bahnhof",
-        "schule",
-        "kita",
-        "kindergarten",
-        "arzt",
-        "zahnarzt",
-        "termin",
-        "rechnung",
-        "bezahlen",
-        "überweisen",
-        "brief",
-        "post",
-        "paket",
-        "abholen",
-        "abgeben",
-        "wäsche",
-        "waschen",
-        "bügeln",
-        "trockner",
-        "spülmaschine",
-        "wischen",
-        "saugen",
-        "staubsauger",
-        "putzen",
-        "fenster",
-        "müll",
-        "biotonne",
-        "restmüll",
-        "altpapier",
-        "gelber sack",
-        "müllabfuhr",
-        "auto waschen",
-        "tüv",
-        "tanken",
-        "ölwechsel",
-        "tierarzt",
-        "futter",
-        "kochen",
-        "rezept",
-        "backen",
-        "geburtstag",
-        "geschenk",
-        "brot",
-        "milch",
-        "mittagessen",
-        "abendessen",
-    ],
-}
 
 
 type BrainstormConfigEntry = ConfigEntry[BrainstormStore]
@@ -792,8 +488,15 @@ class BrainstormStore:
             except (OSError, HomeAssistantError) as err:
                 _LOGGER.error("Brainstorm auto-export to Markdown failed: %s", err)
 
+    def _pack(self, language: str | None = None) -> LanguagePack:
+        """Return the language of a request, or the one of Home Assistant."""
+        return get_pack(language or self.hass.config.language)
+
     def parse_priority(
-        self, text: str, explicit_priority: str | None = None
+        self,
+        text: str,
+        explicit_priority: str | None = None,
+        language: str | None = None,
     ) -> tuple[str, str]:
         """Extract priority from explicit value, tags, prefixes, or return medium as default."""
         if explicit_priority:
@@ -825,84 +528,53 @@ class BrainstormStore:
                 return clean, PRIORITY_LOW
             return clean, PRIORITY_MEDIUM
 
-        # Urgent prefixes
-        m_urg = re.match(
-            r"^(?:dringend|sofort|eilig|asap|notfall|höchste\s+priorität|prio\s+dringend|prio\s+sofort)(?::|\s+|,)\s*(.+)$",
-            clean,
-            re.IGNORECASE,
-        )
-        if m_urg:
-            return m_urg.group(1).strip(), PRIORITY_URGENT
-
-        # High prefixes
-        m_high = re.match(
-            r"^(?:wichtig|hohe\s+priorität|priorität\s+hoch|prio\s+1|prio\s+hoch)(?::|\s+|,)\s*(.+)$",
-            clean,
-            re.IGNORECASE,
-        )
-        if m_high:
-            return m_high.group(1).strip(), PRIORITY_HIGH
-
-        # Low prefixes
-        m_low = re.match(
-            r"^(?:niedrige\s+priorität|priorität\s+niedrig|prio\s+3|prio\s+niedrig|wenn\s+zeit(?:\s+ist)?|später\s+mal|irgendwann|optional)(?::|\s+|,)\s*(.+)$",
-            clean,
-            re.IGNORECASE,
-        )
-        if m_low:
-            return m_low.group(1).strip(), PRIORITY_LOW
-
-        # Medium prefixes
-        m_med = re.match(
-            r"^(?:normale\s+priorität|mittlere\s+priorität|priorität\s+normal|priorität\s+mittel|prio\s+2|prio\s+mittel)(?::|\s+|,)\s*(.+)$",
-            clean,
-            re.IGNORECASE,
-        )
-        if m_med:
-            return m_med.group(1).strip(), PRIORITY_MEDIUM
+        for pattern, priority in self._pack(language).priority_prefixes:
+            if match := pattern.match(clean):
+                return match.group(1).strip(), priority
 
         return clean, PRIORITY_MEDIUM
 
-    def _glossary(self) -> dict[str, str]:
+    def _glossary(self, pack: LanguagePack) -> dict[str, str]:
         """Return the spellings for spoken text, including people and categories."""
         names = [state.name for state in self.hass.states.async_all("person")]
-        return build_glossary(
+        return pack.build_glossary(
             self.options.get(CONF_GLOSSARY), [*names, *self._categories]
         )
 
     def _schedule_ai_cleanup(
-        self, idea_id: str, spoken_text: str, rule_text: str
+        self, idea_id: str, spoken_text: str, rule_text: str, pack: LanguagePack
     ) -> None:
         """Let an AI improve a stored note, without making anyone wait for it."""
         entity = self.options.get(CONF_AI_ENTITY)
-        if not self.options.get(CONF_AI_TEXT_CLEANUP) or not entity:
+        if (
+            not self.options.get(CONF_AI_TEXT_CLEANUP)
+            or not entity
+            or pack.ai_cleanup_prompt is None
+        ):
             return
         task = self.hass.async_create_background_task(
-            self._async_ai_cleanup(entity, idea_id, spoken_text, rule_text),
+            self._async_ai_cleanup(entity, idea_id, spoken_text, rule_text, pack),
             f"brainstorm_ai_cleanup_{idea_id}",
         )
         self._ai_tasks.add(task)
         task.add_done_callback(self._ai_tasks.discard)
 
     async def _async_ai_cleanup(
-        self, entity: str, idea_id: str, spoken_text: str, rule_text: str
+        self,
+        entity: str,
+        idea_id: str,
+        spoken_text: str,
+        rule_text: str,
+        pack: LanguagePack,
     ) -> None:
         """Replace the text of a note if the AI's version passes all checks."""
-        instructions = (
-            "Forme diese gesprochene Notiz in einen kurzen deutschen Stichpunkt für "
-            "eine Aufgabenliste um, mit richtiger Rechtschreibung und Großschreibung. "
-            "Antworte nur mit dem Stichpunkt. Erfinde keine Inhalte, Namen oder Zahlen "
-            "und ändere nie eine Verneinung. Lasse Füllwörter und Wörter wie 'wichtig' "
-            "oder 'dringend' weg. Eine Aufgabe endet mit dem Verb im Infinitiv.\n"
-            f"Gesprochen: {spoken_text}\n"
-            f"Bisheriger Stichpunkt: {rule_text}"
-        )
+        instructions = pack.ai_cleanup_prompt(spoken_text, rule_text)
         candidate = await async_generate_text(self.hass, entity, instructions)
         idea = self._ideas.get(idea_id)
         # The person may have changed the note in the meantime
         if candidate is None or idea is None or idea.get(ATTR_TEXT) != rule_text:
             return
-        improved = validate_ai_rewrite(spoken_text, rule_text, candidate)
+        improved = pack.validate_ai_rewrite(spoken_text, rule_text, candidate)
         if improved is None:
             _LOGGER.debug("Ignoring the AI text for %s: %s", idea_id, candidate)
             return
@@ -920,9 +592,13 @@ class BrainstormStore:
         explicit_category: str | None = None,
         explicit_priority: str | None = None,
         spoken: bool = True,
+        language: str | None = None,
     ) -> tuple[str, str, list[str], str]:
         """Parse raw text to extract category, clean text, hashtags and priority."""
-        clean_text, resolved_prio = self.parse_priority(text, explicit_priority)
+        pack = self._pack(language)
+        clean_text, resolved_prio = self.parse_priority(
+            text, explicit_priority, language
+        )
         category: str | None = None
 
         # Build dynamic alias and keyword lookup for all registered categories
@@ -932,17 +608,18 @@ class BrainstormStore:
         for cat in self._categories:
             if cat.lower() == "inbox":
                 continue
-            aliases = list(CATEGORY_ALIASES.get(cat, []))
+            key = CATEGORY_KEYS.get(cat)
+            aliases = list(pack.category_aliases.get(key, []))
             cat_clean = cat.strip().lower()
             if cat_clean not in aliases:
                 aliases.append(cat_clean)
             if "&" in cat_clean:
-                aliases.append(cat_clean.replace("&", "und").strip())
+                aliases.append(cat_clean.replace("&", pack.and_word).strip())
             active_aliases[cat] = aliases
 
-            kws = list(CATEGORY_KEYWORDS.get(cat, []))
+            kws = list(pack.category_keywords.get(key, []))
             for word in re.findall(r"[a-zA-Z0-9äöüÄÖÜß]{3,}", cat_clean):
-                if word not in kws and word not in ("und", "der", "die", "das"):
+                if word not in kws and word not in pack.category_stop_words:
                     kws.append(word)
             active_keywords[cat] = kws
 
@@ -992,11 +669,7 @@ class BrainstormStore:
         # e.g. 'Projekt Brainstorm erweitern' -> Category: 'Brainstorm', Text: 'Brainstorm erweitern'
         # or 'Projekt Gartenhaus bauen' -> Category: 'Projekte', Text: 'Gartenhaus bauen'
         if not category:
-            match_compound = re.match(
-                r"^(?:im\s+|in\s+|für\s+|beim\s+)?(?:projekt|thema|bereich)\s+([a-zA-Z0-9äöüÄÖÜß\-_&]{2,30})(?::|\s+dass\s+|\s+ich\s+|\s+wir\s+|\s*,\s*|\s+)(.+)$",
-                clean_text,
-                re.IGNORECASE,
-            )
+            match_compound = pack.topic_pattern.match(clean_text)
             if match_compound:
                 target_cand = match_compound.group(1).strip()
                 rem_content = match_compound.group(2).strip()
@@ -1006,8 +679,12 @@ class BrainstormStore:
                         category = cat_name
                         clean_text = f"{target_cand.capitalize()} {rem_content}"
                         break
-                if not category and "Projekte" in self._categories:
-                    category = "Projekte"
+                projects = next(
+                    (c for c in self._categories if CATEGORY_KEYS.get(c) == CATEGORY_PROJECTS),
+                    None,
+                )
+                if not category and projects:
+                    category = projects
                     clean_text = f"{target_cand} {rem_content}"
 
         # 3. Prepositional / Leading Indicator phrases:
@@ -1015,11 +692,7 @@ class BrainstormStore:
         if not category:
             for cat_name, aliases in active_aliases.items():
                 for alias in sorted(aliases, key=len, reverse=True):
-                    pattern = (
-                        rf"^(?:(?:für|fürs|im|in\s+der|in\s+dem|auf\s+der|auf\s+dem|am|beim|zum|zur)\s+"
-                        rf"(?:den\s+|das\s+|die\s+|dem\s+)?)?{re.escape(alias)}"
-                        rf"(:|\s+dass\s+|\s+ich\s+|\s+wir\s+|\s*,\s*|\s+)(.+)$"
-                    )
+                    pattern = f"{pack.alias_lead}{re.escape(alias)}{pack.alias_tail}"
                     m = re.match(pattern, clean_text, re.IGNORECASE)
                     if m:
                         category = cat_name
@@ -1027,7 +700,7 @@ class BrainstormStore:
                         # After a plain space, a single remaining word usually needs
                         # the alias to make sense ('Haus streichen'), and a verb
                         # shows the alias is the subject ('Garten muss gemäht werden').
-                        is_subject = not m.group(1).strip() and starts_with_verb(
+                        is_subject = not m.group(1).strip() and pack.starts_with_verb(
                             remainder
                         )
                         if not is_subject and (
@@ -1089,7 +762,9 @@ class BrainstormStore:
 
         # 6. Check priority once more if still medium (in case priority keyword appeared after stripped category prefix)
         if resolved_prio == PRIORITY_MEDIUM and not explicit_priority:
-            clean_text, detected_prio = self.parse_priority(clean_text)
+            clean_text, detected_prio = self.parse_priority(
+                clean_text, language=language
+            )
             if detected_prio != PRIORITY_MEDIUM:
                 resolved_prio = detected_prio
 
@@ -1099,15 +774,15 @@ class BrainstormStore:
             and resolved_prio == PRIORITY_MEDIUM
             and not explicit_priority
         ):
-            clean_text, spoken_prio = extract_spoken_priority(clean_text)
+            clean_text, spoken_prio = pack.extract_priority(clean_text)
             resolved_prio = spoken_prio or resolved_prio
 
         # 7. Smart NLP Text Normalization, a typed text only gets its typos fixed
         if self._smart_formatting:
             formatted = (
-                clean_and_format_idea_text(clean_text, self._glossary())
+                pack.clean_text(clean_text, self._glossary(pack))
                 if spoken
-                else format_typed_text(clean_text)
+                else pack.format_typed(clean_text)
             )
             if formatted:
                 clean_text = formatted
@@ -1129,8 +804,10 @@ class BrainstormStore:
         trigger: dict[str, str | None] | None = None,
         owner: str | None = None,
         shares: dict[str, str] | None = None,
+        language: str | None = None,
     ) -> dict[str, Any]:
         """Add a new brainstorm idea."""
+        pack = self._pack(language)
         raw_check = (text or "").strip().lower()
         if not raw_check or raw_check in {
             "none",
@@ -1152,7 +829,7 @@ class BrainstormStore:
             and due is None
             and trigger is None
         ):
-            spoken_due, remaining = extract_spoken_due(text.strip(), dt_util.now())
+            spoken_due, remaining = pack.extract_due(text.strip(), dt_util.now())
             if spoken_due is not None:
                 due = spoken_due
                 raw_text, text = text.strip(), remaining
@@ -1162,7 +839,7 @@ class BrainstormStore:
             raw_text = text.strip()
 
         clean_text, resolved_cat, parsed_tags, resolved_prio = self.parse_text_and_category(
-            text, category, priority, spoken=spoken
+            text, category, priority, spoken=spoken, language=language
         )
 
         all_tags = list(set((tags or []) + parsed_tags))
@@ -1220,7 +897,7 @@ class BrainstormStore:
         await self.async_save()
 
         if spoken and self._smart_formatting and source != SOURCE_ASSIST_LLM:
-            self._schedule_ai_cleanup(idea_id, text.strip(), clean_text)
+            self._schedule_ai_cleanup(idea_id, text.strip(), clean_text, pack)
 
         # Fire event for automations and logbook with entity_id and context
         event_data = {

@@ -1,4 +1,4 @@
-"""Natural language processing and intelligent text normalization for Brainstorm Hub."""
+"""German rules and words of Brainstorm Hub."""
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -6,7 +6,18 @@ from datetime import date, datetime, time, timedelta
 from difflib import SequenceMatcher
 import re
 
-from .const import PRIORITY_HIGH, PRIORITY_LOW, PRIORITY_URGENT
+from ..const import PRIORITY_HIGH, PRIORITY_LOW, PRIORITY_MEDIUM, PRIORITY_URGENT
+from .common import (
+    CATEGORY_BRAINSTORM,
+    CATEGORY_DAILY,
+    CATEGORY_HOME_GARDEN,
+    CATEGORY_PROJECTS,
+    CATEGORY_SMARTHOME,
+    LanguagePack,
+    apply_glossary,
+    capitalize_first,
+    merge_glossary,
+)
 from .german_nouns import AMBIGUOUS_PLURALS, GERMAN_NOUNS
 
 # Mapping of common German Partizip II forms to clean Infinitives
@@ -354,13 +365,6 @@ def _is_noun(word: str) -> bool:
     )
 
 
-def _capitalize(word: str) -> str:
-    """Uppercase the first letter and keep spellings like 'WLAN' or 'iPhone'."""
-    if any(c.isupper() for c in word):
-        return word
-    return word[:1].upper() + word[1:]
-
-
 def _is_noun_after_preposition(
     preposition: str, word: str, next_word: str | None = None
 ) -> bool:
@@ -502,9 +506,9 @@ def _format_words(text: str) -> str:
 
         # Capitalization rules
         if idx == 0:
-            word_cap = _capitalize(clean_w)
+            word_cap = capitalize_first(clean_w)
         elif _is_noun(lower_w):
-            word_cap = _capitalize(clean_w)
+            word_cap = capitalize_first(clean_w)
         elif (
             words[idx - 1].lower() in PREPOSITION_TRIGGERS
             and _is_noun_after_preposition(
@@ -513,14 +517,14 @@ def _format_words(text: str) -> str:
                 words[idx + 1].lower().strip(".,!?:;") if idx + 1 < len(words) else None,
             )
         ):
-            word_cap = _capitalize(clean_w)
+            word_cap = capitalize_first(clean_w)
         elif (
             idx > 1
             and words[idx - 2].lower() in PREPOSITION_TRIGGERS
             and words[idx - 1].lower() in ARTICLES_AND_PRONOUNS
             and len(lower_w) > 2
         ):
-            word_cap = _capitalize(clean_w)
+            word_cap = capitalize_first(clean_w)
         else:
             word_cap = clean_w
 
@@ -538,44 +542,13 @@ def format_typed_text(raw_text: str) -> str:
         replacement = SPELL_CORRECTIONS.get(core.lower())
         corrected.append(word.replace(core, replacement) if core and replacement else word)
     if corrected:
-        corrected[0] = _capitalize(corrected[0])
+        corrected[0] = capitalize_first(corrected[0])
     return " ".join(corrected)
 
 
 def build_glossary(custom_terms: str | None, names: list[str]) -> dict[str, str]:
-    """Build the spellings to enforce from names and the person's own list.
-
-    A line of the list is a term ('Lenia') or a correction ('fehler = Richtig').
-    The person's own entries win over everything else.
-    """
-    glossary = dict(BUILTIN_GLOSSARY)
-    for name in names:
-        clean_name = name.strip()
-        if len(clean_name) < 3 or _RE_SENTENCE_WORD.fullmatch(clean_name):
-            continue
-        glossary.setdefault(clean_name.lower(), clean_name)
-        first_name = clean_name.split()[0]
-        if len(first_name) >= 3 and not _RE_SENTENCE_WORD.fullmatch(first_name):
-            glossary.setdefault(first_name.lower(), first_name)
-    for line in re.split(r"[\n;]", custom_terms or ""):
-        wrong, separator, right = line.partition("=")
-        if not wrong.strip():
-            continue
-        glossary[wrong.strip().lower()] = right.strip() if separator else wrong.strip()
-    return {wrong: right for wrong, right in glossary.items() if right}
-
-
-def _apply_glossary(text: str, glossary: dict[str, str]) -> str:
-    """Put each known term into its proper spelling, longest terms first."""
-    pattern = "|".join(
-        re.escape(term) for term in sorted(glossary, key=len, reverse=True)
-    )
-    return re.sub(
-        rf"(?<![\w-])(?:{pattern})(?![\w-])",
-        lambda match: glossary[match.group(0).lower()],
-        text,
-        flags=re.IGNORECASE,
-    )
+    """Build the spellings to enforce from names and the person's own list."""
+    return merge_glossary(BUILTIN_GLOSSARY, custom_terms, names, _RE_SENTENCE_WORD)
 
 
 def clean_and_format_idea_text(
@@ -619,7 +592,7 @@ def clean_and_format_idea_text(
 
     # 4. Spelling and capitalization
     result = _format_words(s)
-    result = _apply_glossary(result, BUILTIN_GLOSSARY if glossary is None else glossary)
+    result = apply_glossary(result, BUILTIN_GLOSSARY if glossary is None else glossary)
     # Strip any trailing punctuation that might look like conversational fragment
     if not result.endswith("?"):
         result = re.sub(r"[\.,;:!\?]+$", "", result).strip()
@@ -997,3 +970,386 @@ def validate_ai_rewrite(spoken: str, rule_text: str, candidate: str) -> str | No
     if kept_words and found / len(kept_words) < 0.6:
         return None
     return text
+
+
+def ai_cleanup_prompt(spoken_text: str, rule_text: str) -> str:
+    """Return the instructions for an AI to improve a spoken note."""
+    return (
+            "Forme diese gesprochene Notiz in einen kurzen deutschen Stichpunkt für "
+            "eine Aufgabenliste um, mit richtiger Rechtschreibung und Großschreibung. "
+            "Antworte nur mit dem Stichpunkt. Erfinde keine Inhalte, Namen oder Zahlen "
+            "und ändere nie eine Verneinung. Lasse Füllwörter und Wörter wie 'wichtig' "
+            "oder 'dringend' weg. Eine Aufgabe endet mit dem Verb im Infinitiv.\n"
+            f"Gesprochen: {spoken_text}\n"
+            f"Bisheriger Stichpunkt: {rule_text}"
+    )
+
+
+CATEGORY_ALIASES: dict[str, list[str]] = {
+    CATEGORY_HOME_GARDEN: [
+        "haus & garten",
+        "haus und garten",
+        "haus & gartenbereich",
+        "garten",
+        "haus",
+        "gartenarbeit",
+        "gartenbereich",
+        "balkon",
+        "terrasse",
+        "terasse",
+    ],
+    CATEGORY_SMARTHOME: [
+        "smarthome",
+        "smart home",
+        "hausautomation",
+        "homeautomation",
+        "home assistant",
+        "homeassistant",
+        "iot",
+    ],
+    CATEGORY_PROJECTS: [
+        "projekte",
+        "projekt",
+        "bauprojekte",
+        "bauprojekt",
+        "bastelprojekte",
+        "bastelprojekt",
+        "basteln",
+        "werkstatt",
+        "diy",
+    ],
+    CATEGORY_DAILY: [
+        "alltag",
+        "haushalt",
+        "erledigungen",
+        "erledigung",
+        "einkauf",
+        "einkäufe",
+        "familie",
+        "privat",
+        "persönlich",
+    ],
+    CATEGORY_BRAINSTORM: [
+        "brainstorm",
+        "brainstorming",
+        "brain storm",
+        "brain-storm",
+        "brainstorm hub",
+        "brainstorm app",
+        "mindmap",
+        "mind map",
+    ],
+}
+
+CATEGORY_KEYWORDS: dict[str, list[str]] = {
+    CATEGORY_BRAINSTORM: [
+        "brainstorm",
+        "brainstorming",
+        "mindmap",
+        "synapse",
+        "synapsen",
+        "gedanken",
+        "geistesblitz",
+        "ideenkarte",
+        "ideensammlung",
+        "kartendarstellung",
+        "visualisierung",
+        "radial",
+        "app",
+        "notiz-app",
+        "logbuch",
+        "funktion",
+        "karten",
+    ],
+    CATEGORY_HOME_GARDEN: [
+        "garten",
+        "rasen",
+        "rasenmähen",
+        "rasensprengen",
+        "mähen",
+        "sprengen",
+        "blume",
+        "blumen",
+        "sonnenblume",
+        "sonnenblumen",
+        "rose",
+        "rosen",
+        "pflanze",
+        "pflanzen",
+        "beet",
+        "hochbeet",
+        "hecke",
+        "heckenschere",
+        "unkraut",
+        "gießen",
+        "wässern",
+        "balkon",
+        "terrasse",
+        "terasse",
+        "baum",
+        "bäume",
+        "ast",
+        "äste",
+        "schneiden",
+        "laub",
+        "kompost",
+        "dünger",
+        "düngen",
+        "gewächshaus",
+        "pool",
+        "poolpumpe",
+        "poolroboter",
+        "zaun",
+        "schuppen",
+        "dachrinne",
+        "gartenhaus",
+        "trampolin",
+        "vogelhaus",
+        "grill",
+        "sandkasten",
+        "bewässerung",
+        "bewässern",
+        "tomate",
+        "tomaten",
+    ],
+    CATEGORY_SMARTHOME: [
+        "smarthome",
+        "smart home",
+        "home assistant",
+        "homeassistant",
+        "automation",
+        "automatisieren",
+        "shelly",
+        "zigbee",
+        "zha",
+        "z2m",
+        "zigbee2mqtt",
+        "esphome",
+        "esp32",
+        "esp8266",
+        "tasmota",
+        "mqtt",
+        "bwm",
+        "bewegungsmelder",
+        "präsenzmelder",
+        "präsenz",
+        "sensor",
+        "sensoren",
+        "temperatur",
+        "feuchtigkeit",
+        "luftfeuchtigkeit",
+        "licht",
+        "lichter",
+        "beleuchtung",
+        "lampe",
+        "lampen",
+        "dimmen",
+        "dimmer",
+        "steckdose",
+        "steckdosen",
+        "schalter",
+        "relais",
+        "frigate",
+        "kamera",
+        "kameras",
+        "dashboard",
+        "lovelace",
+        "tablet",
+        "wlan",
+        "wifi",
+        "netzwerk",
+        "router",
+        "fritzbox",
+        "blueprint",
+        "yaml",
+        "alexa",
+        "echo",
+        "thermostat",
+        "heizkörper",
+        "heizung",
+        "bkw",
+        "balkonkraftwerk",
+        "wechselrichter",
+        "inverter",
+        "stromzähler",
+        "powercalc",
+    ],
+    CATEGORY_PROJECTS: [
+        "projekt",
+        "projekte",
+        "erweitern",
+        "feature",
+        "entwicklung",
+        "entwickeln",
+        "programmieren",
+        "implementieren",
+        "konzept",
+        "bauen",
+        "basteln",
+        "umbau",
+        "umbauen",
+        "renovieren",
+        "renovierung",
+        "streichen",
+        "lackieren",
+        "abschleifen",
+        "schleifen",
+        "bohren",
+        "bohrer",
+        "sägen",
+        "kreissäge",
+        "werkstatt",
+        "werkzeug",
+        "3d-druck",
+        "3d druck",
+        "drucken",
+        "filament",
+        "löten",
+        "lötkolben",
+        "schrauben",
+        "dübel",
+        "holz",
+        "brett",
+        "bretter",
+        "latte",
+        "latten",
+        "metall",
+        "konstruieren",
+        "designen",
+        "reparieren",
+        "reparatur",
+        "werkbank",
+    ],
+    CATEGORY_DAILY: [
+        "alltag",
+        "haushalt",
+        "einkaufen",
+        "einkauf",
+        "einkaufsliste",
+        "supermarkt",
+        "kaufen",
+        "besorgen",
+        "mitbringen",
+        "apotheke",
+        "medikament",
+        "kinder",
+        "kind",
+        "flughafen",
+        "bahnhof",
+        "schule",
+        "kita",
+        "kindergarten",
+        "arzt",
+        "zahnarzt",
+        "termin",
+        "rechnung",
+        "bezahlen",
+        "überweisen",
+        "brief",
+        "post",
+        "paket",
+        "abholen",
+        "abgeben",
+        "wäsche",
+        "waschen",
+        "bügeln",
+        "trockner",
+        "spülmaschine",
+        "wischen",
+        "saugen",
+        "staubsauger",
+        "putzen",
+        "fenster",
+        "müll",
+        "biotonne",
+        "restmüll",
+        "altpapier",
+        "gelber sack",
+        "müllabfuhr",
+        "auto waschen",
+        "tüv",
+        "tanken",
+        "ölwechsel",
+        "tierarzt",
+        "futter",
+        "kochen",
+        "rezept",
+        "backen",
+        "geburtstag",
+        "geschenk",
+        "brot",
+        "milch",
+        "mittagessen",
+        "abendessen",
+    ],
+}
+
+PACK = LanguagePack(
+    code="de",
+    category_names={
+        CATEGORY_HOME_GARDEN: "Haus & Garten",
+        CATEGORY_SMARTHOME: "Smarthome",
+        CATEGORY_PROJECTS: "Projekte",
+        CATEGORY_DAILY: "Alltag",
+        CATEGORY_BRAINSTORM: "Brainstorm",
+    },
+    category_aliases=CATEGORY_ALIASES,
+    category_keywords=CATEGORY_KEYWORDS,
+    and_word="und",
+    category_stop_words=frozenset({"und", "der", "die", "das"}),
+    alias_lead=(
+        r"^(?:(?:für|fürs|im|in\s+der|in\s+dem|auf\s+der|auf\s+dem|am|beim|zum|zur)\s+"
+        r"(?:den\s+|das\s+|die\s+|dem\s+)?)?"
+    ),
+    alias_tail=r"(:|\s+dass\s+|\s+ich\s+|\s+wir\s+|\s*,\s*|\s+)(.+)$",
+    topic_pattern=re.compile(
+        r"^(?:im\s+|in\s+|für\s+|beim\s+)?(?:projekt|thema|bereich)\s+"
+        r"([a-zA-Z0-9äöüÄÖÜß\-_&]{2,30})(?::|\s+dass\s+|\s+ich\s+|\s+wir\s+|\s*,\s*|\s+)(.+)$",
+        re.IGNORECASE,
+    ),
+    priority_prefixes=(
+        (
+            re.compile(
+                r"^(?:dringend|sofort|eilig|asap|notfall|höchste\s+priorität|"
+                r"prio\s+dringend|prio\s+sofort)(?::|\s+|,)\s*(.+)$",
+                re.IGNORECASE,
+            ),
+            PRIORITY_URGENT,
+        ),
+        (
+            re.compile(
+                r"^(?:wichtig|hohe\s+priorität|priorität\s+hoch|prio\s+1|prio\s+hoch)"
+                r"(?::|\s+|,)\s*(.+)$",
+                re.IGNORECASE,
+            ),
+            PRIORITY_HIGH,
+        ),
+        (
+            re.compile(
+                r"^(?:niedrige\s+priorität|priorität\s+niedrig|prio\s+3|prio\s+niedrig|"
+                r"wenn\s+zeit(?:\s+ist)?|später\s+mal|irgendwann|optional)"
+                r"(?::|\s+|,)\s*(.+)$",
+                re.IGNORECASE,
+            ),
+            PRIORITY_LOW,
+        ),
+        (
+            re.compile(
+                r"^(?:normale\s+priorität|mittlere\s+priorität|priorität\s+normal|"
+                r"priorität\s+mittel|prio\s+2|prio\s+mittel)(?::|\s+|,)\s*(.+)$",
+                re.IGNORECASE,
+            ),
+            PRIORITY_MEDIUM,
+        ),
+    ),
+    clean_text=clean_and_format_idea_text,
+    format_typed=format_typed_text,
+    extract_due=extract_spoken_due,
+    parse_due=parse_due,
+    strip_reminder_words=strip_reminder_words,
+    extract_priority=extract_spoken_priority,
+    starts_with_verb=starts_with_verb,
+    build_glossary=build_glossary,
+    validate_ai_rewrite=validate_ai_rewrite,
+    ai_cleanup_prompt=ai_cleanup_prompt,
+)

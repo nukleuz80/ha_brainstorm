@@ -24,6 +24,12 @@ from custom_components.brainstorm.const import (
 from custom_components.brainstorm.store import BrainstormStore
 
 
+@pytest.fixture(autouse=True)
+def german_home_assistant(hass: HomeAssistant) -> None:
+    """Run these tests with the German rules, as their sentences are German."""
+    hass.config.language = "de"
+
+
 @pytest.fixture
 async def store(hass: HomeAssistant, hass_storage: dict[str, Any]) -> BrainstormStore:
     """Return a loaded store."""

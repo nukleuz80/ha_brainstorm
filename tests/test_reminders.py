@@ -22,7 +22,7 @@ from pytest_homeassistant_custom_component.common import (
 from pytest_homeassistant_custom_component.typing import ClientSessionGenerator
 
 from custom_components.brainstorm.const import OVERVIEW_ENTITY_ID
-from custom_components.brainstorm.nlp import parse_due
+from custom_components.brainstorm.languages.de import parse_due
 from custom_components.brainstorm.reminders import (
     build_reminder_request,
     find_echo_entity,
@@ -37,6 +37,13 @@ from .conftest import SetupEntry
 NOW = datetime(2026, 10, 31, 10, 0, tzinfo=dt_util.UTC)
 PUSH = "notify.mobile_app_phone"
 SKILL_ID = "amzn1.ask.skill.mine"
+
+
+@pytest.fixture(autouse=True)
+def german_home_assistant(request: pytest.FixtureRequest) -> None:
+    """Run these tests with the German rules, as their sentences are German."""
+    if "hass" in request.fixturenames:
+        request.getfixturevalue("hass").config.language = "de"
 
 
 def _at(day_offset: int, hour: int, minute: int = 0) -> datetime:
