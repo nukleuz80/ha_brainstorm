@@ -164,7 +164,15 @@
       },
       "reminders": {
         "title": "Brainstorm › Erinnerungen",
-        "description": "Wähle einen Bereich. Alles lässt sich einzeln ein- und ausschalten.\n\n{notice}\n\n{status}",
+        "description": "Wähle einen Bereich. Alles lässt sich einzeln ein- und ausschalten.\n\n{notice}\n\n{next_reminder}",
+        "menu_option_descriptions": {
+          "reminder_general": "{status_general}",
+          "reminder_schedule": "{status_schedule}",
+          "reminder_lists": "{status_lists}",
+          "reminder_places": "{status_places}",
+          "reminder_persons": "{status_persons}",
+          "reminder_extras": "{status_extras}"
+        },
         "menu_options": {
           "reminder_general": "Ein/Aus & Kanäle",
           "reminder_schedule": "Ruhezeit, Briefing & Wochenrückblick",

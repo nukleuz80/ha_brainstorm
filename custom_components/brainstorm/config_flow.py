@@ -861,81 +861,103 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             await asyncio.sleep(STORE_WAIT_SECONDS)
         raise AbortFlow("store_not_ready")
 
-    def _status_lines(self) -> str:
-        """Describe what is switched on, so nobody has to open every section."""
+    def _reminder_status(self) -> dict[str, str]:
+        """Describe what is switched on, shown below the entry of each section."""
         options = dict(self.config_entry.options or self.config_entry.data)
 
-        def line(active: bool, german: str, english: str, detail: str = "") -> str:
+        def item(active: bool, german: str, english: str, detail: str = "") -> str:
             text = self._text(german, english)
             return f"{'🟢' if active else '⚪'} {text}{f': {detail}' if detail else ''}"
 
-        enabled = options.get(CONF_REMINDERS_ENABLED, True)
+        def switch(active: bool, detail: str = "") -> str:
+            return item(active, "An" if active else "Aus", "On" if active else "Off", detail)
+
         mode = options.get(CONF_REMINDER_ALEXA, REMINDER_ALEXA_OFF)
         services = options.get(CONF_REMINDER_NOTIFY) or []
-        notify_on = bool(services) and options.get(CONF_NOTIFY_ENABLED, True)
         quiet = (
             f"{str(options[CONF_QUIET_START])[:5]}–{str(options[CONF_QUIET_END])[:5]}"
             if options.get(CONF_QUIET_START) and options.get(CONF_QUIET_END)
             else ""
         )
-        digest = str(options.get(CONF_DIGEST_TIME) or "")[:5]
-        review = str(options.get(CONF_REVIEW_TIME) or "")[:5]
-        lines = [
-            line(enabled, "Erinnerungen", "Reminders"),
-            line(mode != REMINDER_ALEXA_OFF, "Alexa-Ansage", "Alexa announcement"),
-            line(
-                notify_on,
-                "Benachrichtigungen",
-                "Notifications",
-                ", ".join(s.partition(".")[2] for s in services),
-            ),
-            line(
-                bool(quiet) and options.get(CONF_QUIET_ENABLED, True),
-                "Ruhezeit",
-                "Quiet hours",
-                quiet,
-            ),
-            line(bool(options.get(CONF_DIGEST_ENABLED)), "Briefing", "Briefing", digest),
-            line(
-                bool(options.get(CONF_REVIEW_ENABLED)),
-                "Wochenrückblick",
-                "Weekly review",
-                review,
-            ),
-            line(
-                bool(options.get(CONF_LIST_RULES_ENABLED)),
-                "Regeln pro Liste",
-                "Rules per list",
-                str(len(options.get(CONF_LIST_RULES) or {})) or "",
-            ),
-            line(
-                bool(options.get(CONF_ARRIVAL_ENABLED)),
-                "Heimkommen",
-                "Coming home",
-            ),
-            line(bool(options.get(CONF_PLACES_ENABLED)), "Orte", "Places"),
-            line(bool(options.get(CONF_PERSONS_ENABLED)), "Personen", "People"),
-            line(bool(options.get(CONF_CALENDAR_ENABLED)), "Kalender", "Calendar"),
-            line(bool(options.get(CONF_AI_ENABLED)), "KI", "AI"),
-            line(
-                bool(options.get(CONF_NATIVE_REMINDERS)),
-                "Alexa-Erinnerungen",
-                "Alexa reminders",
-            ),
-        ]
+        rules = len(options.get(CONF_LIST_RULES) or {})
+        sections = {
+            "status_general": [
+                item(
+                    options.get(CONF_REMINDERS_ENABLED, True),
+                    "Erinnerungen",
+                    "Reminders",
+                ),
+                item(mode != REMINDER_ALEXA_OFF, "Alexa-Ansage", "Alexa announcement"),
+                item(
+                    bool(services) and options.get(CONF_NOTIFY_ENABLED, True),
+                    "Benachrichtigungen",
+                    "Notifications",
+                    ", ".join(
+                        service.partition(".")[2].removeprefix("mobile_app_")
+                        for service in services
+                    ),
+                ),
+            ],
+            "status_schedule": [
+                item(
+                    bool(quiet) and options.get(CONF_QUIET_ENABLED, True),
+                    "Ruhezeit",
+                    "Quiet hours",
+                    quiet,
+                ),
+                item(
+                    bool(options.get(CONF_DIGEST_ENABLED)),
+                    "Briefing",
+                    "Briefing",
+                    str(options.get(CONF_DIGEST_TIME) or "")[:5],
+                ),
+                item(
+                    bool(options.get(CONF_REVIEW_ENABLED)),
+                    "Wochenrückblick",
+                    "Weekly review",
+                    str(options.get(CONF_REVIEW_TIME) or "")[:5],
+                ),
+            ],
+            "status_lists": [
+                switch(
+                    bool(options.get(CONF_LIST_RULES_ENABLED)),
+                    self._text(
+                        f"{rules} Regel{'n' if rules != 1 else ''}",
+                        f"{rules} rule{'s' if rules != 1 else ''}",
+                    )
+                    if rules
+                    else "",
+                )
+            ],
+            "status_places": [
+                item(bool(options.get(CONF_PLACES_ENABLED)), "Orte", "Places"),
+                item(bool(options.get(CONF_ARRIVAL_ENABLED)), "Heimkommen", "Coming home"),
+            ],
+            "status_persons": [switch(bool(options.get(CONF_PERSONS_ENABLED)))],
+            "status_extras": [
+                item(bool(options.get(CONF_CALENDAR_ENABLED)), "Kalender", "Calendar"),
+                item(bool(options.get(CONF_AI_ENABLED)), "KI", "AI"),
+                item(
+                    bool(options.get(CONF_NATIVE_REMINDERS)),
+                    "Alexa-Erinnerungen",
+                    "Alexa reminders",
+                ),
+            ],
+        }
+        return {key: " · ".join(items) for key, items in sections.items()}
+
+    def _next_reminder(self) -> str:
+        """Name the next reminder, or nothing when none is planned."""
         store = get_loaded_store(self.hass)
         upcoming = store.next_due_idea() if store is not None else None
-        if upcoming is not None:
-            due = dt_util.parse_datetime(upcoming[ATTR_DUE])
-            if due is not None:
-                when = format_due(due, dt_util.now(), self.hass.config.language)
-                lines.append(
-                    self._text(
-                        f"⏰ Nächste Erinnerung {when}: {upcoming.get(ATTR_TEXT)}",
-                        f"⏰ Next reminder {when}: {upcoming.get(ATTR_TEXT)}",
-                    )
-                )
-        return "\n\n".join(lines)
+        due = dt_util.parse_datetime(upcoming[ATTR_DUE]) if upcoming else None
+        if due is None:
+            return ""
+        when = format_due(due, dt_util.now(), self.hass.config.language)
+        return self._text(
+            f"⏰ Nächste Erinnerung {when}: {upcoming.get(ATTR_TEXT)}",
+            f"⏰ Next reminder {when}: {upcoming.get(ATTR_TEXT)}",
+        )
 
     async def async_step_reminder_test(
         self, user_input: dict[str, Any] | None = None
@@ -985,7 +1007,8 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             menu_options=self._get_localized_menu("reminders"),
             description_placeholders={
                 "notice": self._take_notice(),
-                "status": self._status_lines(),
+                "next_reminder": self._next_reminder(),
+                **self._reminder_status(),
             },
         )
 

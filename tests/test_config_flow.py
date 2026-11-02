@@ -283,11 +283,18 @@ async def test_submenu_goes_back_and_shows_status(
     result = await hass.config_entries.options.async_configure(
         result["flow_id"], {"next_step_id": "reminders"}
     )
-    status = result["description_placeholders"]["status"]
-    assert "🟢" in status
-    assert "22:00–07:00" in status
-    assert "phone" in status
-    assert "tonnen raus".lower() in status.lower()
+    placeholders = result["description_placeholders"]
+    assert "🟢 Benachrichtigungen: phone" in placeholders["status_general"]
+    assert "22:00–07:00" in placeholders["status_schedule"]
+    assert placeholders["status_lists"] == "⚪ Aus"
+    assert "tonnen raus" in placeholders["next_reminder"].lower()
+
+    root = Path(__file__).parents[1] / "custom_components" / "brainstorm"
+    for name in ("strings.json", "translations/en.json", "translations/de.json"):
+        step = json.loads((root / name).read_text("utf-8"))["options"]["step"]["reminders"]
+        for option, text in step["menu_option_descriptions"].items():
+            assert option in result["menu_options"]
+            assert text.strip("{}") in placeholders
 
     result = await hass.config_entries.options.async_configure(
         result["flow_id"], {"next_step_id": "init"}

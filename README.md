@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.6.0-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.6.1-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver%20self--assessed-C0C0C0.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -136,8 +136,8 @@ HACS only installs the integration, so continue with [Install the cards](#instal
 
 1. Copy `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` and `www/brainstorm-i18n.js` from the release to `/config/www/`. The third file holds the texts and needs no resource entry.
 2. Add both under **Settings ➔ Dashboards ➔ Resources** as **JavaScript module**:
-   - `/local/brainstorm-card.js?v=1.6.0`
-   - `/local/brainstorm-mindmap-card.js?v=1.6.0`
+   - `/local/brainstorm-card.js?v=1.6.1`
+   - `/local/brainstorm-mindmap-card.js?v=1.6.1`
 3. Reload the page in your browser.
 
 ### Removing the Integration
@@ -303,9 +303,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.6.0
+  - url: /local/brainstorm-card.js?v=1.6.1
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.6.0
+  - url: /local/brainstorm-mindmap-card.js?v=1.6.1
     type: module
 ```
 
@@ -642,6 +642,7 @@ Shares several ideas or a whole category. Needs privacy to be switched on.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.6.1`** | 2026-11-02 | The reminder settings no longer show a list that looks clickable: the current state now sits directly below each clickable section. |
 | **`v1.6.0`** | 2026-11-02 | **English is officially supported:**<br>• **Complete:** Settings, cards, spoken notes, due dates, priorities, reminders, the Alexa skill and Assist sentences work in English.<br>• **Your data stays:** Stored categories and entries are not translated, renamed or migrated, in any language. A test checks this for German, English and an unknown language.<br>• **More languages:** `CONTRIBUTING.md` explains how to add one in three steps. Until then, other languages keep your text as it is and answer in English. |
 | **`v1.5.16`** | 2026-11-02 | **Speak English with your own skill:**<br>• **Voice model:** Home Assistant offers an English voice model when it runs in English: *"Alexa, ask Brainstorm to note dim the basement light"*, *"remind me tomorrow at 8 to …"*, *"done"*, *"later"*, *"read"*, *"show my lists"*.<br>• **Language of the request:** With the new skill code, the skill follows the language of the Echo. Existing skills keep working without any change and use the language of Home Assistant.<br>• **Without Home Assistant:** The skill code holds its messages in all languages for when Home Assistant cannot be reached.<br>• **Examples:** `examples/` has Assist sentences and intent scripts in both languages, and an English Alexa dialog and direct command automation. |
 | **`v1.5.15`** | 2026-11-02 | **The cards in English:**<br>• **All texts:** Both cards and their editors show their texts in the language of your Home Assistant profile, with dates to match. Languages without their own texts show English.<br>• **New file to copy:** `www/brainstorm-i18n.js` holds the texts. Copy it next to the two card files when you update by hand. It needs no resource entry.<br>• **Card editor:** The category choice only offers categories that exist. |
