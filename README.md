@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.5.10-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.5.11-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver%20self--assessed-C0C0C0.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -22,23 +22,44 @@ Whether you are cooking, working in the workshop, relaxing in the garden, or on 
 
 ---
 
+## 🌍 Language Support
+
+Brainstorm Hub was built in German, and English support is being added step by step. **Today, voice input and the cards only work in German.** The table shows the current state of the latest release.
+
+| Area | German | English |
+| :--- | :--- | :--- |
+| Settings of the integration | ✅ | ✅ |
+| Documentation | ✅ | ✅ |
+| Spoken answers of the Alexa skill | ✅ | ✅ |
+| Voice commands of the Alexa skill | ✅ | ❌ planned |
+| Assist sentences | ✅ | ❌ planned |
+| Shortening sentences, due dates and priorities from speech | ✅ | ❌ planned |
+| Dashboard cards | ✅ | ❌ planned |
+| Reminder texts, logbook and error messages | ✅ | ❌ planned |
+
+English text is stored as you say or type it. It only gets a capital first letter, it is not shortened, and no due date or priority is taken from it. Voice examples in this document are in German because those are the commands that work today, with a translation next to them where it helps.
+
+---
+
 ## 🌟 🗣️ Key Feature: Seamless Amazon Alexa Hands-Free Voice Capture
 
-> 🗣️ *“Alexa, Brainstorm”* ➔ 🤖 *“Brainstorm ready. What's on your mind?”*  
-> 🗣️ *“Urgent garden: Repair lawnmower”* ➔ 🤖 *“Saved under House & Garden [🔥 Urgent].”*
+> *Currently available in German only, see [Language Support](#-language-support).*
+>
+> 🗣️ *“Alexa, Brainstorm”* ➔ 🤖 *“Brainstorm bereit. Sprich deine Notiz oder sage Ansage.”* (Brainstorm ready. Speak your note or say announcement.)  
+> 🗣️ *“Dringend Garten: Rasenmäher reparieren”* (urgent, garden: repair lawnmower) ➔ 🤖 *“Gespeichert unter Haus & Garten [🔥 Dringend].”* (Saved under House & Garden, urgent.)
 
 Brainstorm Hub turns every **Amazon Echo** device in your home into an instant, friction-free thought catcher — ideal when your hands are wet, dirty, or occupied.
 
 ### ⚡ Why Alexa Voice Capture is the Premier Feature:
 - 🚫 **Zero Music & Shopping List Collisions:** Out of the box, Alexa frequently misinterprets open-ended notes by dumping them into chaotic Amazon shopping lists or launching songs by the rock band *“Brainstorm”* on Spotify. Brainstorm Hub eliminates this friction with optimized routine triggers and automatic background stop commands for a whisper-quiet, 100% reliable dialogue.
-- 🗣️ **Interactive Two-Way Dialogue Mode:** Simply say *“Alexa, Brainstorm”* or *“Alexa, New Idea”*. Alexa listens, parses your input, and instantly responds with spoken confirmation of the assigned category and urgency level.
-- ⚡ **One-Shot Direct Voice Commands:** When seconds count: *“Alexa, note in Smarthome dim basement light”* or *“Alexa, idea urgent Garden: Clean patio”*.
-- 🧠 **Smart NLP Text Cleaning & Grammar Transformation:** Strips out conversational filler words (*“please write down that we need to…”* ➔ *“Clean patio”*), fixes speech typos, and transforms passive verb constructions into clear actionable tasks.
+- 🗣️ **Interactive Two-Way Dialogue Mode:** Simply say *“Alexa, Brainstorm”* or *“Alexa, Neue Idee”* (new idea). Alexa listens, parses your input, and instantly responds with spoken confirmation of the assigned category and urgency level.
+- ⚡ **One-Shot Direct Voice Commands:** When seconds count: *“Alexa, notiere in Smarthome Kellerlicht dimmen”* (note in Smarthome: dim basement light) or *“Alexa, Idee dringend Garten: Terrasse reinigen”* (urgent idea, garden: clean patio).
+- 🧠 **Smart NLP Text Cleaning & Grammar Transformation:** Strips out conversational filler words (*“schreib bitte auf dass wir…”* ➔ *“Terrasse reinigen”*), fixes speech typos, and transforms passive verb constructions into clear actionable tasks.
   - **Whole sentences instead of fragments (v1.5.8):** *"der Rasen muss gemäht werden"* ➔ *"Rasen mähen"*. Negations, questions and sentences that cannot be rebuilt completely keep their wording. Typed text only gets its typos fixed.
   - **Due date and priority from the sentence (v1.5.10):** *"ich muss morgen unbedingt den Arzt anrufen"* ➔ *"Arzt anrufen"*, due tomorrow at 09:00, high priority. The due date leads to a reminder and can be switched off. The spoken sentence stays stored and can be restored in the card.
   - **Own terms (v1.5.10):** Names of people and categories are spelled right automatically, own terms and corrections are set under *General settings*.
   - **Optional AI step (v1.5.10):** An AI task entity improves the entry in the background. If it adds words or numbers or changes a negation, the version of the rules stays.
-- 🏷️ **Contextual Priority & Category Extraction:** Detects priority triggers (*“urgent”*, *“important”*, *“priority 1”*, *“whenever possible”*) and category prefixes (*“in Smarthome”*, *“for the garden”*) regardless of word order in the sentence.
+- 🏷️ **Contextual Priority & Category Extraction:** Detects German priority triggers (*“dringend”*, *“wichtig”*, *“prio 1”*, *“wenn Zeit ist”*) and category prefixes (*“im Smarthome”*, *“für den Garten”*) regardless of word order in the sentence.
 - 📍 **Echo Origin Tracking:** Automatically records which Echo device received the idea (e.g., `🗣️ Alexa (Echo Show Kitchen)` vs. `🗣️ Alexa (Workshop Echo Dot)`).
 
 ---
@@ -47,7 +68,7 @@ Brainstorm Hub turns every **Amazon Echo** device in your home into an instant, 
 
 - 🎯 **Intelligent Priority Management & Visual Urgency Levels:**
   - **4 Priority Levels:** `low` (🟢 Low), `medium` (🟡 Medium / Default), `high` (🔴 High), and `urgent` (🔥 Urgent).
-  - **Natural Language Urgency Detection:** Recognizes priority words in spoken or typed notes (e.g. *“Urgent Garden: Fix mower”*, *“Priority 1…”*, *“!urgent”*, *“!high”*), cleans the text, and sets the priority automatically.
+  - **Natural Language Urgency Detection:** Recognizes German priority words in spoken or typed notes (e.g. *“Dringend Garten: Rasenmäher reparieren”*, *“Prio 1…”*) and the tags *“!urgent”*, *“!high”* and *“!low”*, cleans the text, and sets the priority automatically.
   - **1-Click Priority Cycling:** Cycle priorities directly (`Medium` ➔ `High` ➔ `Urgent` ➔ `Low`) by clicking the priority badge in either the list or mindmap view.
   - **Visual Mindmap Pulse Effects:** Urgent idea nodes pulse with an animated flame effect (`cloud-urgent`), while high-priority notes glow with a warm highlight.
 - 🤖 **Assist LLM Tools & Function-Calling API:**
@@ -97,12 +118,29 @@ Or manually:
 4. Search for **Brainstorm Hub** and click **Download**.
 5. Restart Home Assistant.
 
+HACS only installs the integration, so continue with [Install the cards](#install-the-cards), then add the integration as shown in the next option.
+
 ### Option 2: Add Integration (Config Flow)
 
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
 
 1. Go to **Settings ➔ Devices & Services ➔ Add Integration**.
 2. Search for **Brainstorm Hub** and follow the on-screen setup guide.
+
+### Option 3: Manual Installation
+
+1. Download the latest release.
+2. Copy the folder `custom_components/brainstorm` to `/config/custom_components/`.
+3. Continue with [Install the cards](#install-the-cards).
+4. Restart Home Assistant and add the integration as shown in option 2.
+
+### Install the Cards
+
+1. Copy `www/brainstorm-card.js` and `www/brainstorm-mindmap-card.js` from the release to `/config/www/`.
+2. Add both under **Settings ➔ Dashboards ➔ Resources** as **JavaScript module**:
+   - `/local/brainstorm-card.js?v=1.5.11`
+   - `/local/brainstorm-mindmap-card.js?v=1.5.11`
+3. Reload the page in your browser.
 
 ### Removing the Integration
 
@@ -115,6 +153,52 @@ Depending on what you used, also remove:
 - **Your Alexa skill:** Delete it in the Alexa developer console and its code in AWS Lambda. Real Alexa reminders stay in the Alexa app until you delete them there.
 - **Automations and sentences:** Your own automations, scripts, and custom sentences that call Brainstorm, as well as an iPhone shortcut.
 - **Your data:** Home Assistant keeps your ideas in `/config/.storage/brainstorm.storage`, the skill link in `brainstorm.alexa_skill` and the reminder state in `brainstorm.reminders` in the same folder. Delete these files and the Markdown folder (default `/config/brainstorm`) if you do not plan to come back.
+
+---
+
+## 🗣️ Voice Commands
+
+All voice commands below are currently German, see [Language Support](#-language-support).
+
+### Alexa Dialog (Recommended)
+
+Start the dialog with a routine, scene or voice command:
+
+> 🗣️ *“Alexa, Neue Idee”* or *“Alexa, Brainstorm”*  
+> 🤖 **Alexa:** *“Brainstorm bereit. Sprich deine Notiz oder sage Ansage.”*  
+> 🗣️ **You:** *“Im Garten müssen die Rosen geschnitten werden.”* (The roses in the garden have to be cut.)  
+> 🤖 **Alexa:** *“Gespeichert unter Haus & Garten.”*
+
+Because **Brainstorm** is also the name of a band, Alexa tries to play music when it hears the single word. Create two separate routines in the Alexa app, because Amazon allows one voice trigger per routine, and routines take priority over music search:
+
+1. **When:** voice ➔ `Alexa, öffne brainstorm`. **Action:** Smart Home ➔ Scenes ➔ **Brainstorm Hauptmenü** (Alexa offers Home Assistant scripts as scenes).
+2. **When:** voice ➔ `Alexa, brainstorm`. **Action:** the same scene.
+
+### Alexa Direct Commands
+
+Say everything in one sentence. An automation stops any skill or music that started and confirms the entry:
+
+- 🗣️ *“Alexa, **Idee** Rasensprenger reparieren.”* (repair sprinkler) ➔ `Haus & Garten`
+- 🗣️ *“Alexa, **Notiere** Kellerlicht dimmen.”* (dim basement light) ➔ `Smarthome`
+- 🗣️ *“Alexa, **Merke dir für den Garten** Tomaten düngen.”* (fertilize tomatoes) ➔ `Haus & Garten`
+- 🗣️ *“Alexa, **Brainstorm** Balkonkraftwerk Ertrag auswerten.”* (check balcony solar yield) ➔ `Smarthome`
+- 🗣️ *“Alexa, **Neue Idee für Projekte** Smart Mirror bauen.”* (build a smart mirror) ➔ `Projekte`
+
+### Home Assistant Assist
+
+**Brainstorm sentences**, which need your own custom sentences:
+
+- 🗣️ *“Setze Rasenmähen auf Brainstorm”*
+- 🗣️ *“Neue Idee Blumen gießen”*
+- 🗣️ *“Notiere Backup der Datenbank erstellen”*
+- 🗣️ *“Merke dir Reifen wechseln”*
+- 🗣️ *“Brainstorm Zigbee Bewegungsmelder testen”*
+
+**To-do list sentences**, which use Home Assistant's built-in commands:
+
+- 🗣️ *“Setze Rasenmähen auf die Liste Brainstorm Haus und Garten”*
+- 🗣️ *“Füge Milch zu Brainstorm Inbox hinzu”*
+- 🗣️ *“Hake Rasenmähen auf Brainstorm Haus und Garten ab”*
 
 ---
 
@@ -224,9 +308,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.5.10
+  - url: /local/brainstorm-card.js?v=1.5.11
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.5.10
+  - url: /local/brainstorm-mindmap-card.js?v=1.5.11
     type: module
 ```
 
@@ -252,6 +336,14 @@ show_grid: true
 show_bulb_watermark: true
 hide_empty_categories: true
 ```
+
+Click `⛶` at the top right to enlarge the mindmap to the full screen.
+
+### 3. Your Own Sidebar Dashboard
+
+Brainstorm also works as its own entry in the Home Assistant sidebar, for example under the path `/brainstorm-hub`, with three views: the mindmap above the list, the mindmap as a full-screen panel, and the list alone for fast typing and touch input.
+
+`sensor.brainstorm_ideen_ubersicht` is the fixed entity ID in every language, so cards and automations keep working.
 
 ---
 
@@ -554,6 +646,7 @@ Shares several ideas or a whole category. Needs privacy to be switched on.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.5.11`** | 2026-11-02 | **Honest English documentation:**<br>• **Language support table:** Both READMEs show what works in which language today. Voice input and the cards are German for now.<br>• **Correct examples:** English examples of commands that do not exist are replaced by the real German ones with a translation.<br>• **Missing chapters:** The English README now covers voice commands, manual installation, installing the cards and the sidebar dashboard, and its changelog is complete.<br>• **HACS note:** Both READMEs say that HACS does not install the cards. |
 | **`v1.5.10`** | 2026-11-01 | **Glossary and optional AI for spoken entries:**<br>• **Right spellings:** Names of people and categories and fixed terms like *PDF* or *Home Assistant* are spelled right automatically. Own terms and corrections are set under *General settings*.<br>• **More nouns:** A word list and compounds like *Sportverein* improve capitalization.<br>• **Optional AI step:** Under *Calendar, AI & Alexa Reminders*, an AI task entity improves the entry in the background. If it adds words or numbers or changes a negation, the version of the rules stays. The text goes to the provider of the chosen AI, and the step is off by default. |
 | **`v1.5.9`** | 2026-11-01 | **Date, priority and original text:**<br>• **Date from the sentence:** *"morgen Arzt anrufen"* becomes *"Arzt anrufen"* with a due date and therefore a reminder, without a time of day at 09:00. The skill announces it. A new switch under *General settings* turns this off, and without reminders the date stays in the text.<br>• **Priority from the sentence:** "ganz wichtig", "unbedingt", "dringend" and "irgendwann" are found anywhere in the sentence.<br>• **Original text:** The spoken sentence stays stored and can be restored in the edit dialog of the card.<br>• **Category as subject:** *"Garten muss gegossen werden"* becomes *"Garten gießen"* instead of *"Muss gegossen werden"*. |
 | **`v1.5.8`** | 2026-11-01 | **Better shortening of spoken entries:**<br>• **Whole sentences are rebuilt:** *"der Rasen muss gemäht werden"* becomes *"Rasen mähen"* instead of *"Rasen muss mähen"*. This now also covers "sollte", "will", "möchte" and separable verbs like *"rausgestellt"*.<br>• **New openers and filler words:** "äh", "ich glaube", "mir ist eingefallen", "vergiss nicht", "mal", "halt" and similar are removed.<br>• **All or nothing:** Negations, questions and sentences that cannot be rebuilt completely keep their wording.<br>• **Typed text stays:** Entries from the dashboard and to-do lists only get their typos fixed. |
@@ -602,10 +695,37 @@ Shares several ideas or a whole category. Needs privacy to be switched on.
 | **`v1.4.30`** | 2026-10-29 | **Mindmap Synapses Bugfix on Category Switch:**<br>• **Eliminated Orphaned Ghost Lines:** Resolved an issue where switching categories left residual Bézier curves without node boxes. `_drawConnections` now strictly verifies active category filtering.<br>• **Clean Layout Reset:** Node positions and dragging states reset cleanly on category switch. |
 | **`v1.4.29`** | 2026-10-29 | **Drag & Drop Reordering, Subtask Nesting & Apple Reminders Menu:**<br>• **Drag & Drop Sorting:** Reorder ideas in the list view smoothly via drag handles (`⠿`) with persistent storage.<br>• **Drag & Drop Subtask Nesting:** Dragging an item onto an existing task nests it directly as a subtask.<br>• **Apple Reminders Context Menu:** Long-press on mobile (~420ms) or right-click on desktop triggers haptic feedback and opens a quick menu for indenting, unindenting, moving, editing, or deleting. |
 | **`v1.4.28`** | 2026-10-29 | **Hide Empty Categories Default:** Empty categories (0 notes) hidden by default in filter pills across both cards (`hide_empty_categories: true`). |
+| **`v1.4.27`** | 2026-10-28 | **Subtasks and active category:** Indent and outdent notes with one tap or in the edit dialog. New notes from the quick input go to the active category tab. The mindmap toolbar hides *All* on phones. |
+| **`v1.4.26`** | 2026-10-28 | **Hide empty categories:** New option `hide_empty_categories` for the integration and for each card. The selected category stays visible and the dropdowns keep all categories. |
+| **`v1.4.25`** | 2026-10-25 | **Category dropdown in the card editors:** `default_category` lists all categories and still accepts free input. |
+| **`v1.4.24`** | 2026-10-25 | **Fix:** A syntax error stopped the mindmap card from loading (*Custom element doesn't exist*). |
+| **`v1.4.23`** | 2026-10-25 | **Responsive header and color mode fix:** Tidier header and quick capture with chips for category and priority, better phone layout. The color mode button now switches immediately in both cards. |
 | **`v1.4.22`** | 2026-10-25 | **Priority Management:** 4 priority levels (`urgent`, `high`, `medium`, `low`), NLP urgency extraction, 1-click badge cycling, and animated flame pulse effects in mindmap. |
+| **`v1.4.21`** | 2026-10-25 | **Dynamic category detection:** Aliases and keywords are built for all active categories at runtime, including your own. *Projekt …* prefixes are understood, and project notes in the Alexa main menu are no longer taken for a query. |
 | **`v1.4.20`** | 2026-10-24 | **Assist LLM Function Calling:** 5 native Home Assistant LLM tools for conversational AI assistants. |
+| **`v1.4.19`** | 2026-10-24 | **Silver quality scale as a self-assessment (corrected to Bronze in v1.5.1, reached with v1.5.2) and logbook:** Native logbook entries, a reconfigure flow, standard service errors and clean unloading. |
+| **`v1.4.18`** | 2026-10-24 | **Bronze quality scale as a self-assessment (checked again in v1.5.1) and faster Alexa:** `runtime_data`, `PARALLEL_UPDATES` and `quality_scale.yaml`. Removing delays and repeated stops makes dialogs four times faster. |
+| **`v1.4.17`** | 2026-10-23 | **Category colors:** Each category gets its own color, your own categories get one from a hash. Edges, lines and tags show it, and the category bar gets colored dots. |
+| **`v1.4.16`** | 2026-10-23 | **Multi-ring mindmap:** Up to three rings, a relaxation pass against overlaps, a free center, colored connection lines and zoom to fit. Moved cards stay in place. |
+| **`v1.4.15`** | 2026-10-23 | **Fix for the visual card editor:** Switches now take effect immediately in the preview and on dashboards. Better layout for the sidebar dashboard. |
+| **`v1.4.14`** | 2026-10-23 | **Device origin for Alexa and Assist:** The cards, sensor attributes, to-do descriptions, Markdown export and services show the device that captured an idea. |
+| **`v1.4.13`** | 2026-10-22 | **Reading ideas aloud:** New service `brainstorm.get_announcement`, attribute `speech_overview`, an Alexa dialog and Assist intents. |
+| **`v1.4.12`** | 2026-10-22 | **Sensor fallback:** Cards fall back to the Brainstorm sensor if another entity is configured, and the editor only offers Brainstorm entities. |
+| **`v1.4.11`** | 2026-10-22 | **Category filter:** Spaces around category names no longer hide ideas. |
+| **`v1.4.10`** | 2026-10-21 | **Validation:** Both cards reject empty or duplicate input with a clear message, and the backend raises `ServiceValidationError`. |
+| **`v1.4.9`** | 2026-10-21 | **Fix:** A `TypeError` stopped active ideas from showing in the list. |
+| **`v1.4.8`** | 2026-10-21 | **Fix:** The input in the *New category* dialog uses the full width again. |
+| **`v1.4.7`** | 2026-10-21 | **Fix:** A duplicate declaration stopped the card from loading, `customElements.define` got guards, and a YAML error in `services.yaml` is gone. |
+| **`v1.4.6`** | 2026-10-20 | **Visual card editors:** All card settings can be changed with clicks, dropdowns and switches. |
+| **`v1.4.5`** | 2026-10-20 | **Theme colors and color mode switch:** Theme or multicolor mode in both cards, stored in the browser and in the card option `color_mode`. |
+| **`v1.4.4`** | 2026-10-20 | **Transparent bulb and full height:** A transparent bulb watermark and full use of the popup height. |
+| **`v1.4.3`** | 2026-10-20 | **No more jitter, own dialogs:** Smoother clicks and dragging. Browser prompts are replaced by dialogs inside the card. |
+| **`v1.4.2`** | 2026-10-20 | **Mushroom design and popup:** The mindmap follows the Mushroom and Minimalist style, and the preview became a centered popup. |
+| **`v1.4.1`** | 2026-10-20 | **Mindmap display:** Theme colors for categories and the full-screen button, and almost full screen height by default. |
 | **`v1.4.0`** | 2026-10-20 | **NLP Text Optimization:** Automatic conversational filler stripping, verb infinitizing, and spell correction. |
 | **`v1.3.0`** | 2026-10-20 | **Mindmap Card Release:** Interactive radial synapse layout with category hub and idea clouds. |
+| **`v1.2.1`** | 2026-10-20 | **Fixes:** No more `ResponseNone` entries or music collisions with Alexa, fixed the Assist wildcard parsing and a card error (`counts is not defined`). |
+| **`v1.1.0`** | 2026-10-20 | **Frontend redesign and standards:** Two-tier card layout, HACS compatibility, `DeviceInfo` and Assist support. |
 | **`v1.0.0`** | 2026-10-19 | **Initial Release:** Core integration, To-do platform, Markdown export, and Alexa dialogue. |
 
 ---
