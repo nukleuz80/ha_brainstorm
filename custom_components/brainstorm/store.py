@@ -57,7 +57,6 @@ from .const import (
     CONF_REMINDERS_ENABLED,
     CONF_SMART_FORMATTING,
     CONF_VOICE_DUE,
-    DEFAULT_CATEGORIES,
     DEFAULT_HIDE_EMPTY_CATEGORIES,
     DEFAULT_MARKDOWN_PATH,
     DEFAULT_PRIORITY,
@@ -122,7 +121,7 @@ class BrainstormStore:
         self.options = options or {}
         self._store = Store(hass, STORAGE_VERSION, STORAGE_KEY)
         self._ideas: dict[str, dict[str, Any]] = {}
-        self._categories: list[str] = list(DEFAULT_CATEGORIES)
+        self._categories: list[str] = list(self._pack().default_categories)
         self._category_icons: dict[str, str] = {}
         self._category_colors: dict[str, str] = {}
         self._listeners: list[Callable[[], None]] = []
@@ -818,6 +817,7 @@ class BrainstormStore:
             "abbrechen",
             "stop",
             "stopp",
+            "cancel",
         }:
             raise ServiceValidationError(f"Ungültiger oder leerer Notiz-Text: {text}")
 

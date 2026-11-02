@@ -39,13 +39,6 @@ PUSH = "notify.mobile_app_phone"
 SKILL_ID = "amzn1.ask.skill.mine"
 
 
-@pytest.fixture(autouse=True)
-def german_home_assistant(request: pytest.FixtureRequest) -> None:
-    """Run these tests with the German rules, as their sentences are German."""
-    if "hass" in request.fixturenames:
-        request.getfixturevalue("hass").config.language = "de"
-
-
 def _at(day_offset: int, hour: int, minute: int = 0) -> datetime:
     """Return a time relative to the test's now."""
     return (NOW + timedelta(days=day_offset)).replace(hour=hour, minute=minute)

@@ -4,6 +4,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
+from difflib import SequenceMatcher
 import re
 
 # Neutral names of the standard categories, so stored names need no translating
@@ -12,6 +13,15 @@ CATEGORY_SMARTHOME = "smarthome"
 CATEGORY_PROJECTS = "projects"
 CATEGORY_DAILY = "daily"
 CATEGORY_BRAINSTORM = "brainstorm"
+
+# The standard categories of a new installation outside of a language with its own
+ENGLISH_CATEGORIES: tuple[str, ...] = (
+    "Inbox",
+    "Smart Home",
+    "House & Garden",
+    "Projects",
+    "Daily Life",
+)
 
 NEVER_MATCHES = re.compile(r"(?!)")
 
@@ -22,6 +32,7 @@ class LanguagePack:
 
     code: str
     # Standard categories
+    default_categories: tuple[str, ...]
     category_names: dict[str, str]
     category_aliases: dict[str, list[str]]
     category_keywords: dict[str, list[str]]
@@ -95,3 +106,57 @@ def apply_glossary(text: str, glossary: dict[str, str]) -> str:
         text,
         flags=re.IGNORECASE,
     )
+
+
+def _has_similar_word(word: str, others: set[str], threshold: float) -> bool:
+    """Return whether a word or a close spelling of it is among other words."""
+    return word in others or any(
+        SequenceMatcher(None, word, other).ratio() >= threshold for other in others
+    )
+
+
+def validate_rewrite(
+    spoken: str,
+    rule_text: str,
+    candidate: str,
+    negation: re.Pattern[str],
+    allowed_words: frozenset[str],
+    letters: str,
+) -> str | None:
+    """Return the AI's text if it only shortens what was said, otherwise None.
+
+    It may not be longer than the spoken text, add a word or number, change a
+    negation, or lose most of what the rules kept.
+    """
+
+    def words_of(text: str) -> list[str]:
+        """Return the lowercase words of a text."""
+        return re.findall(letters, text.lower())
+
+    text = candidate.strip().strip("\"'„“”‚‘’").rstrip(".!").strip()
+    if not text or "\n" in text or len(text) > max(len(spoken), len(rule_text)):
+        return None
+
+    source = f"{spoken} {rule_text}"
+    source_words = set(words_of(source))
+    joined = "".join(words_of(spoken))
+    for word in words_of(text):
+        if (
+            len(word) >= 3
+            and word not in allowed_words
+            and word not in joined
+            and not _has_similar_word(word, source_words, 0.7)
+        ):
+            return None
+
+    if not set(re.findall(r"\d+", text)) <= set(re.findall(r"\d+", source)):
+        return None
+    if bool(negation.search(spoken)) != bool(negation.search(text)):
+        return None
+
+    kept_words = {word for word in words_of(rule_text) if len(word) >= 4}
+    answer_words = set(words_of(text))
+    found = sum(_has_similar_word(word, answer_words, 0.7) for word in kept_words)
+    if kept_words and found / len(kept_words) < 0.6:
+        return None
+    return text

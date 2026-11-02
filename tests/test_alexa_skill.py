@@ -615,6 +615,7 @@ async def test_skill_says_when_an_idea_cannot_be_stored(
     hass_client_no_auth: ClientSessionGenerator,
 ) -> None:
     """Test that a failed save is spoken, so that nobody relies on the idea."""
+    hass.config.language = "en"
     entry = await _setup_skill(hass, setup_entry)
     with patch.object(
         type(entry.runtime_data),
@@ -635,6 +636,7 @@ async def test_skill_refuses_a_reminder_in_the_past(
     hass_client_no_auth: ClientSessionGenerator,
 ) -> None:
     """Test a spoken time that has already passed."""
+    hass.config.language = "en"
     entry = await _setup_skill(hass, setup_entry)
     past = dt_util.now() - timedelta(hours=1)
     request = ReminderRequest(text="Regal bauen", due=past)

@@ -115,6 +115,7 @@ EVENT_REMINDER_DUE = "brainstorm_reminder_due"
 ATTR_ID = "id"
 ATTR_TEXT = "text"
 ATTR_RAW_TEXT = "raw_text"
+ATTR_LANGUAGE = "language"
 ATTR_CATEGORY = "category"
 ATTR_SOURCE = "source"
 # Sources whose text was typed by hand, everything else is treated as spoken

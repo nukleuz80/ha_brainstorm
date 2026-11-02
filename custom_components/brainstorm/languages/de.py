@@ -3,10 +3,9 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import date, datetime, time, timedelta
-from difflib import SequenceMatcher
 import re
 
-from ..const import PRIORITY_HIGH, PRIORITY_LOW, PRIORITY_MEDIUM, PRIORITY_URGENT
+from ..const import DEFAULT_CATEGORIES, PRIORITY_HIGH, PRIORITY_LOW, PRIORITY_MEDIUM, PRIORITY_URGENT
 from .common import (
     CATEGORY_BRAINSTORM,
     CATEGORY_DAILY,
@@ -17,6 +16,7 @@ from .common import (
     apply_glossary,
     capitalize_first,
     merge_glossary,
+    validate_rewrite,
 )
 from .german_nouns import AMBIGUOUS_PLURALS, GERMAN_NOUNS
 
@@ -925,51 +925,11 @@ _AI_ALLOWED_WORDS: frozenset[str] = frozenset(
 )
 
 
-def _letter_words(text: str) -> list[str]:
-    """Return the lowercase words of a text."""
-    return re.findall(r"[a-zäöüß]+", text.lower())
-
-
-def _has_similar_word(word: str, others: set[str], threshold: float) -> bool:
-    """Return whether a word or a close spelling of it is among other words."""
-    return word in others or any(
-        SequenceMatcher(None, word, other).ratio() >= threshold for other in others
-    )
-
-
 def validate_ai_rewrite(spoken: str, rule_text: str, candidate: str) -> str | None:
-    """Return the AI's text if it only shortens what was said, otherwise None.
-
-    It may not be longer than the spoken text, add a word or number, change a
-    negation, or lose most of what the rules kept.
-    """
-    text = candidate.strip().strip("\"'„“”‚‘’").rstrip(".!").strip()
-    if not text or "\n" in text or len(text) > max(len(spoken), len(rule_text)):
-        return None
-
-    source = f"{spoken} {rule_text}"
-    source_words = set(_letter_words(source))
-    joined = "".join(_letter_words(spoken))
-    for word in _letter_words(text):
-        if (
-            len(word) >= 3
-            and word not in _AI_ALLOWED_WORDS
-            and word not in joined
-            and not _has_similar_word(word, source_words, 0.7)
-        ):
-            return None
-
-    if not set(re.findall(r"\d+", text)) <= set(re.findall(r"\d+", source)):
-        return None
-    if bool(_RE_NEGATION.search(spoken)) != bool(_RE_NEGATION.search(text)):
-        return None
-
-    kept_words = {word for word in _letter_words(rule_text) if len(word) >= 4}
-    answer_words = set(_letter_words(text))
-    found = sum(_has_similar_word(word, answer_words, 0.7) for word in kept_words)
-    if kept_words and found / len(kept_words) < 0.6:
-        return None
-    return text
+    """Return the AI's text if it only shortens what was said, otherwise None."""
+    return validate_rewrite(
+        spoken, rule_text, candidate, _RE_NEGATION, _AI_ALLOWED_WORDS, r"[a-zäöüß]+"
+    )
 
 
 def ai_cleanup_prompt(spoken_text: str, rule_text: str) -> str:
@@ -1286,6 +1246,7 @@ CATEGORY_KEYWORDS: dict[str, list[str]] = {
 
 PACK = LanguagePack(
     code="de",
+    default_categories=tuple(DEFAULT_CATEGORIES),
     category_names={
         CATEGORY_HOME_GARDEN: "Haus & Garten",
         CATEGORY_SMARTHOME: "Smarthome",

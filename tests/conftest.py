@@ -18,6 +18,13 @@ def auto_enable_custom_integrations(enable_custom_integrations: None) -> None:
     """Enable loading of custom integrations in all tests."""
 
 
+@pytest.fixture(autouse=True)
+def german_home_assistant(request: pytest.FixtureRequest) -> None:
+    """Run tests with the German rules, as most of their sentences are German."""
+    if "hass" in request.fixturenames:
+        request.getfixturevalue("hass").config.language = "de"
+
+
 @pytest.fixture
 def setup_entry(hass: HomeAssistant, hass_storage: dict[str, Any]) -> SetupEntry:
     """Return a helper that sets up a config entry with optional stored data."""

@@ -82,6 +82,7 @@ from .const import (
     VOICE_MODES,
 )
 
+from .languages import get_pack
 from .reminders import format_due, phone_service_for
 from .store import BrainstormStore, get_loaded_store
 
@@ -297,7 +298,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         current_cats = (
             store.categories
             if store and store.categories
-            else ["Inbox", "Smarthome", "Haus & Garten", "Projekte", "Alltag"]
+            else list(get_pack(self.hass.config.language).default_categories)
         )
 
         if user_input is not None:
@@ -425,7 +426,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         current_cats = (
             store.categories
             if store and store.categories
-            else ["Inbox", "Smarthome", "Haus & Garten", "Projekte", "Alltag"]
+            else list(get_pack(self.hass.config.language).default_categories)
         )
 
         if user_input is not None:
@@ -508,7 +509,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         current_cats = (
             store.categories
             if store and store.categories
-            else ["Inbox", "Smarthome", "Haus & Garten", "Projekte", "Alltag"]
+            else list(get_pack(self.hass.config.language).default_categories)
         )
 
         if user_input is not None:

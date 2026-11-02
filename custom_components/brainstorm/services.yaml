@@ -44,6 +44,13 @@ add_idea:
       example: "Echo Show Küche"
       selector:
         text:
+    language:
+      name: Sprache
+      description: Sprache des Textes (z.B. "de" oder "en"). Ohne Angabe gilt die Sprache von Home Assistant.
+      required: false
+      example: "en"
+      selector:
+        text:
     tags:
       name: Tags
       description: Zusätzliche Schlagworte.

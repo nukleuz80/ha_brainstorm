@@ -7,10 +7,10 @@ from __future__ import annotations
 
 import re
 
-from . import de, neutral
+from . import de, en, neutral
 from .common import LanguagePack
 
-PACKS: dict[str, LanguagePack] = {de.PACK.code: de.PACK}
+PACKS: dict[str, LanguagePack] = {pack.code: pack for pack in (de.PACK, en.PACK)}
 
 # Any language's name of a standard category leads to its neutral key, so that
 # stored categories work in every language without being renamed

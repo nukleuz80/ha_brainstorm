@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.5.12-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.5.13-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver%20Selbsteinsch%C3%A4tzung-C0C0C0.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -33,7 +33,7 @@ Brainstorm Hub ist auf Deutsch entstanden, Englisch kommt schrittweise dazu. Die
 | Antworten des Alexa-Skills | ✅ | ✅ |
 | Sprachbefehle des Alexa-Skills | ✅ | ❌ geplant |
 | Assist-Sätze | ✅ | ❌ geplant |
-| Satzkürzung, Termin und Priorität aus der Sprache | ✅ | ❌ geplant |
+| Satzkürzung, Termin und Priorität aus der Sprache | ✅ | ✅ |
 | Dashboard-Karten | ✅ | ❌ geplant |
 | Erinnerungstexte, Logbuch und Fehlermeldungen | ✅ | ❌ geplant |
 
@@ -156,8 +156,8 @@ HACS installiert nur die Integration. Die Karten kopierst du anschließend wie u
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js` und `www/brainstorm-mindmap-card.js` in `/config/www/`.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.5.12` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.5.12` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.5.13` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.5.13` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ### Integration entfernen
@@ -690,6 +690,7 @@ Gibt mehrere Einträge oder eine ganze Kategorie für Personen frei. Braucht ein
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.5.13`** | 02.11.2026 | **Englische Notizen:**<br>• **Kurze Aufgaben:** *„the lawn has to be mowed“* ➔ *„Mow lawn“*, *„I need to call the doctor“* ➔ *„Call doctor“*. Verneinungen, Fragen und nicht vollständig umbaubare Sätze behalten ihren Wortlaut.<br>• **Termin und Priorität aus dem Satz:** *tomorrow at 8*, *next Monday at 5 pm*, *in two hours*, *March 15th*, *asap*, *important*, *someday*.<br>• **Englische Kategorien:** Eine neue englische Installation beginnt mit englischen Kategorien. Vorhandene Kategorien behalten ihre Namen und verstehen zusätzlich englische Wörter.<br>• **Neues Feld:** `brainstorm.add_idea` nimmt `language` an, zum Beispiel für einen Kurzbefehl in einer anderen Sprache. |
 | **`v1.5.12`** | 02.11.2026 | **Vorbereitet auf weitere Sprachen, keine Änderung im Deutschen:**<br>• **Sprachpakete:** Alle deutschen Regeln liegen jetzt in einem eigenen Paket, bereit für weitere Sprachen.<br>• **Gleiche Ergebnisse:** Ein Referenztest mit über 1.100 Sätzen stellt sicher, dass deutsche Einträge genau wie bisher entstehen.<br>• **Andere Sprachen:** Home Assistant in einer anderen Sprache wendet keine deutsche Grammatik mehr auf deinen Text an. Er bleibt wie gesprochen, mit großem Anfangsbuchstaben. |
 | **`v1.5.11`** | 02.11.2026 | **Ehrliche englische Dokumentation:**<br>• **Tabelle zur Sprachunterstützung:** Beide READMEs zeigen, was heute in welcher Sprache geht. Spracheingabe und Karten sind vorerst deutsch.<br>• **Richtige Beispiele:** Englische Beispiele für Befehle, die es nicht gibt, sind durch die echten deutschen mit Übersetzung ersetzt.<br>• **Fehlende Kapitel:** Das englische README beschreibt jetzt Sprachbefehle, manuelle Installation, das Einbinden der Karten und das Seitenleisten-Dashboard, sein Changelog ist vollständig.<br>• **HACS-Hinweis:** Beide READMEs sagen, dass HACS die Karten nicht mit installiert. |
 | **`v1.5.10`** | 01.11.2026 | **Wörterbuch und optionale KI für gesprochene Einträge:**<br>• **Richtige Schreibweisen:** Namen von Personen und Kategorien sowie feste Begriffe wie *PDF* oder *Home Assistant* werden automatisch richtig geschrieben. Eigene Begriffe und Korrekturen stehen unter *Allgemeine Einstellungen*.<br>• **Mehr Hauptwörter:** Eine Wortliste und zusammengesetzte Wörter wie *Sportverein* verbessern die Großschreibung.<br>• **Optionale KI-Stufe:** Unter *Kalender, KI & Alexa* verbessert eine KI-Aufgaben-Entität den Eintrag im Hintergrund. Fügt sie Wörter oder Zahlen hinzu oder ändert eine Verneinung, bleibt die Fassung der Regeln stehen. Der Text geht an den Anbieter der gewählten KI, die Stufe ist standardmäßig aus. |

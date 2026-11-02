@@ -63,6 +63,7 @@ async def test_request_language_wins_over_home_assistant(hass: HomeAssistant) ->
     """A request in another language uses that language's rules."""
     hass.config.language = "fr"
     store = BrainstormStore(hass, {})
+    store._categories = ["Inbox", "Haus & Garten"]  # noqa: SLF001
     text, category, _, _ = store.parse_text_and_category(
         "der rasen muss gemäht werden", language="de"
     )
@@ -76,3 +77,17 @@ async def test_tags_work_in_every_language(hass: HomeAssistant) -> None:
     store: Any = BrainstormStore(hass, {})
     assert store.parse_priority("Regal !dringend")[1] == "urgent"
     assert store.parse_priority("Regal !urgent")[1] == "urgent"
+
+
+async def test_service_accepts_a_language(hass: HomeAssistant, setup_entry: Any) -> None:
+    """An automation can state the language of its text."""
+    hass.config.language = "de"
+    await setup_entry()
+    response = await hass.services.async_call(
+        "brainstorm",
+        "add_idea",
+        {"text": "the lawn has to be mowed", "source": "assist", "language": "en"},
+        blocking=True,
+        return_response=True,
+    )
+    assert response["idea"]["text"] == "Mow lawn"

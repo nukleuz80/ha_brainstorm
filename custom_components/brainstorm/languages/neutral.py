@@ -5,6 +5,7 @@ from datetime import datetime
 import re
 
 from .common import (
+    ENGLISH_CATEGORIES,
     NEVER_MATCHES,
     LanguagePack,
     apply_glossary,
@@ -36,6 +37,7 @@ def _build_glossary(custom_terms: str | None, names: list[str]) -> dict[str, str
 
 PACK = LanguagePack(
     code="neutral",
+    default_categories=ENGLISH_CATEGORIES,
     category_names={},
     category_aliases={},
     category_keywords={},

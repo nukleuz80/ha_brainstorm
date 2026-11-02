@@ -247,6 +247,7 @@ async def test_entities_are_named_relative_to_the_device_and_are_not_polled(
     hass: HomeAssistant, setup_entry: SetupEntry, entity_registry: er.EntityRegistry
 ) -> None:
     """Test the names of the entities and that they only update when pushed."""
+    hass.config.language = "en"
     entry = await setup_entry()
     entries = er.async_entries_for_config_entry(entity_registry, entry.entry_id)
     names = {reg.domain: reg.original_name for reg in entries if reg.domain == "sensor"}

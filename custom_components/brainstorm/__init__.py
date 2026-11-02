@@ -22,6 +22,7 @@ from .const import (
     ATTR_CATEGORY,
     ATTR_COLOR,
     ATTR_ASSIGNEE,
+    ATTR_LANGUAGE,
     ATTR_DEVICE,
     ATTR_DUE,
     ATTR_ICON,
@@ -85,6 +86,7 @@ SERVICE_ADD_IDEA_SCHEMA = vol.Schema(
         vol.Optional(ATTR_PARSE_DUE): cv.boolean,
         vol.Optional(ATTR_ASSIGNEE): vol.Any(None, cv.entity_id),
         vol.Optional(ATTR_ZONE): vol.Any(None, cv.entity_id),
+        vol.Optional(ATTR_LANGUAGE): vol.Any(None, cv.string),
     },
     extra=vol.ALLOW_EXTRA,
 )
@@ -275,9 +277,12 @@ def _register_services(hass: HomeAssistant) -> None:
             due = dt_util.as_local(due)
         assignee = call.data.get(ATTR_ASSIGNEE)
         zone = call.data.get(ATTR_ZONE)
+        language = call.data.get(ATTR_LANGUAGE)
         trigger = {"zone": zone, "person": assignee} if zone else None
         if due is None and call.data.get(ATTR_PARSE_DUE):
-            request = build_reminder_request(hass, store.options, text, dt_util.now())
+            request = build_reminder_request(
+                hass, store.options, text, dt_util.now(), language
+            )
             if request.text and (request.due or request.trigger):
                 due, trigger, text = request.due, request.trigger, request.text
                 assignee = request.assignee or assignee
@@ -295,6 +300,7 @@ def _register_services(hass: HomeAssistant) -> None:
             assignee=assignee,
             trigger=trigger,
             owner=call.context.user_id or store.voice_user_for(device),
+            language=language,
         )
         return {"success": True, "idea": idea}
 
