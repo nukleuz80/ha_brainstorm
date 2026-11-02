@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.5.16-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.6.0-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver%20self--assessed-C0C0C0.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -24,7 +24,7 @@ Whether you are cooking, working in the workshop, relaxing in the garden, or on 
 
 ## 🌍 Language Support
 
-Brainstorm Hub was built in German, and English support is being added step by step. The table shows the current state of the latest release.
+Brainstorm Hub works in German and English, and your existing categories and entries are never translated or renamed. The table shows the current state. To add a language, see [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 | Area | German | English |
 | :--- | :--- | :--- |
@@ -136,8 +136,8 @@ HACS only installs the integration, so continue with [Install the cards](#instal
 
 1. Copy `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` and `www/brainstorm-i18n.js` from the release to `/config/www/`. The third file holds the texts and needs no resource entry.
 2. Add both under **Settings ➔ Dashboards ➔ Resources** as **JavaScript module**:
-   - `/local/brainstorm-card.js?v=1.5.16`
-   - `/local/brainstorm-mindmap-card.js?v=1.5.16`
+   - `/local/brainstorm-card.js?v=1.6.0`
+   - `/local/brainstorm-mindmap-card.js?v=1.6.0`
 3. Reload the page in your browser.
 
 ### Removing the Integration
@@ -303,9 +303,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.5.16
+  - url: /local/brainstorm-card.js?v=1.6.0
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.5.16
+  - url: /local/brainstorm-mindmap-card.js?v=1.6.0
     type: module
 ```
 
@@ -642,6 +642,7 @@ Shares several ideas or a whole category. Needs privacy to be switched on.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.6.0`** | 2026-11-02 | **English is officially supported:**<br>• **Complete:** Settings, cards, spoken notes, due dates, priorities, reminders, the Alexa skill and Assist sentences work in English.<br>• **Your data stays:** Stored categories and entries are not translated, renamed or migrated, in any language. A test checks this for German, English and an unknown language.<br>• **More languages:** `CONTRIBUTING.md` explains how to add one in three steps. Until then, other languages keep your text as it is and answer in English. |
 | **`v1.5.16`** | 2026-11-02 | **Speak English with your own skill:**<br>• **Voice model:** Home Assistant offers an English voice model when it runs in English: *"Alexa, ask Brainstorm to note dim the basement light"*, *"remind me tomorrow at 8 to …"*, *"done"*, *"later"*, *"read"*, *"show my lists"*.<br>• **Language of the request:** With the new skill code, the skill follows the language of the Echo. Existing skills keep working without any change and use the language of Home Assistant.<br>• **Without Home Assistant:** The skill code holds its messages in all languages for when Home Assistant cannot be reached.<br>• **Examples:** `examples/` has Assist sentences and intent scripts in both languages, and an English Alexa dialog and direct command automation. |
 | **`v1.5.15`** | 2026-11-02 | **The cards in English:**<br>• **All texts:** Both cards and their editors show their texts in the language of your Home Assistant profile, with dates to match. Languages without their own texts show English.<br>• **New file to copy:** `www/brainstorm-i18n.js` holds the texts. Copy it next to the two card files when you update by hand. It needs no resource entry.<br>• **Card editor:** The category choice only offers categories that exist. |
 | **`v1.5.14`** | 2026-11-02 | **English texts in the backend:**<br>• **Reminders:** Spoken reminders, notifications with their buttons, the briefing, the weekly review and the AI summary follow the language of Home Assistant.<br>• **Also in English:** Logbook, to-do descriptions, Markdown export, read-aloud texts, AI tool answers and the Echo Show lists.<br>• **Reminder phrases:** *"when I get home"*, *"when I get to the market"* and *"remind Alex tomorrow at 8"* work in English.<br>• **Error messages and actions:** They now use Home Assistant's translations, which also shows them in the language of each user.<br>• **German stays:** All German texts keep their wording. |

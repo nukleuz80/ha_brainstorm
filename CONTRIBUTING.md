@@ -42,3 +42,13 @@ This project strictly adheres to the official Home Assistant developer documenta
   - Include up-to-date installation instructions for both HACS and manual methods, card configuration, and screenshots.
   - Keep release notes clear and informative for users.
 
+## 7. Add a Language
+
+A new language can arrive in three steps, each useful by itself. Tests run over all listed languages and report anything that is missing.
+
+1. **Interface:** Add `custom_components/brainstorm/translations/<code>.json` and a dictionary in `www/brainstorm-i18n.js`. The cards use the German text as the key, and a missing text shows the English one.
+2. **Input:** Add `custom_components/brainstorm/languages/<code>.py` with a `PACK`, using `en.py` as the model, and list it in `languages/__init__.py`. It holds the rules for short tasks, dates and priorities, the category words, all spoken texts and the Alexa voice model.
+3. **Voice:** Add `examples/custom_sentences/<code>/brainstorm.yaml` and `examples/intent_script.<code>.yaml`, and update the language table in both READMEs.
+
+Without a pack, a language keeps text as it is, with a capital first letter, and answers in English. Stored category names are never translated, and new standard categories only apply to a new installation.
+

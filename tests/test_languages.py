@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import ast
+import copy
 from datetime import datetime, timezone
 from pathlib import Path
 import re
@@ -10,6 +11,7 @@ from typing import Any
 import pytest
 from homeassistant.core import HomeAssistant
 
+from custom_components.brainstorm.const import STORAGE_KEY
 from custom_components.brainstorm.languages import PACKS, get_pack
 from custom_components.brainstorm.languages.common import LanguagePack
 from custom_components.brainstorm.languages.neutral import PACK as NEUTRAL
@@ -142,3 +144,48 @@ async def test_service_accepts_a_language(hass: HomeAssistant, setup_entry: Any)
         return_response=True,
     )
     assert response["idea"]["text"] == "Mow lawn"
+
+
+@pytest.mark.parametrize("language", ["de", "en", "fr"])
+async def test_stored_data_stays_untouched_in_every_language(
+    hass: HomeAssistant, hass_storage: dict[str, Any], language: str
+) -> None:
+    """Loading and saving in any language changes no category and no entry."""
+    hass.config.language = language
+    stored = {
+        "categories": ["Inbox", "Smarthome", "Haus & Garten", "Projekte", "Alltag", "Axis"],
+        "category_icons": {"Axis": "mdi:axis"},
+        "category_colors": {"Axis": "#123456"},
+        "category_shares": {},
+        "ideas": [
+            {
+                "id": "abc",
+                "text": "der rasen muss gemäht werden",
+                "category": "Haus & Garten",
+                "priority": "high",
+                "status": "active",
+                "source": "alexa",
+                "created_at": "2026-01-01T10:00:00+00:00",
+                "updated_at": "2026-01-01T10:00:00+00:00",
+                "tags": [],
+            }
+        ],
+    }
+    hass_storage[STORAGE_KEY] = {
+        "version": 1,
+        "minor_version": 1,
+        "key": STORAGE_KEY,
+        "data": copy.deepcopy(stored),
+    }
+    store = BrainstormStore(hass, {})
+    await store.async_load()
+    await store.async_add_category("Neu")
+    await store.async_remove_category("Neu")
+
+    assert store.categories == stored["categories"]
+    assert store.ideas == stored["ideas"]
+    await hass.async_block_till_done()
+    saved = hass_storage[STORAGE_KEY]
+    assert saved["version"] == 1
+    assert saved["data"]["categories"] == stored["categories"]
+    assert saved["data"]["ideas"] == stored["ideas"]
