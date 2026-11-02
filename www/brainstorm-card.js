@@ -1,9 +1,9 @@
-import { dateLocale, dueInputFormat, formatDueInput, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.1";
+import { dateLocale, dueInputFormat, formatDueInput, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.2";
 
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.6.1 - Skill, Reminders, Privacy and Sharing
+ * Version 1.6.2 - Skill, Reminders, Privacy and Sharing
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",
@@ -2602,9 +2602,6 @@ class BrainstormCard extends HTMLElement {
             height: 32px;
             font-size: 0.8rem;
           }
-          .send-text {
-            display: none;
-          }
           .send-icon {
             font-size: 1rem;
             margin: 0;
@@ -3423,9 +3420,8 @@ class BrainstormCard extends HTMLElement {
                   autocomplete="off"
                 />
                 <button class="mic-btn" id="micBtn" type="button" title="${t("Idee sprechen")}" aria-label="${t("Idee sprechen")}" style="display: none;">🎙️</button>
-                <button class="send-btn" id="sendBtn" title="${t("Idee erfassen")}">
+                <button class="send-btn" id="sendBtn" title="${t("Idee erfassen")}" aria-label="${t("Idee erfassen")}">
                   <span class="send-icon">➕</span>
-                  <span class="send-text">${t("Hinzufügen")}</span>
                 </button>
               </div>
               <div class="mic-status" id="micStatus" role="status" style="display: none;"></div>
@@ -4811,7 +4807,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.6.1 ",
+  "%c BRAINSTORM-CARD %c v1.6.2 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );
