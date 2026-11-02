@@ -18,6 +18,7 @@ from .const import (
     ATTR_TEXT,
     DOMAIN,
 )
+from .languages import get_pack
 from .store import BrainstormStore, get_loaded_store
 
 _LOGGER = logging.getLogger(__name__)
@@ -169,7 +170,11 @@ class BrainstormAddIdeaTool(llm.Tool):
                 "text": idea[ATTR_TEXT],
                 "category": idea[ATTR_CATEGORY],
                 "priority": idea.get(ATTR_PRIORITY, "medium"),
-                "message": f"Idee erfolgreich in '{idea[ATTR_CATEGORY]}' (Priorität: {idea.get(ATTR_PRIORITY, 'medium')}) erfasst.",
+                "message": get_pack(self.hass.config.language).msg(
+                    "llm_added",
+                    category=idea[ATTR_CATEGORY],
+                    priority=idea.get(ATTR_PRIORITY, "medium"),
+                ),
             }
         )
 
@@ -356,7 +361,9 @@ class BrainstormCompleteIdeaTool(llm.Tool):
                 "id": updated.get(ATTR_ID),
                 "text": updated.get(ATTR_TEXT),
                 "category": updated.get(ATTR_CATEGORY),
-                "message": f"'{updated.get(ATTR_TEXT)}' wurde als erledigt markiert.",
+                "message": get_pack(self.hass.config.language).msg(
+                    "llm_completed", text=updated.get(ATTR_TEXT)
+                ),
             }
         )
 
@@ -435,11 +442,16 @@ class BrainstormDeleteIdeaTool(llm.Tool):
         deleted = await store.async_delete_idea(
             target_id, context=llm_context.context
         )
+        pack = get_pack(self.hass.config.language)
         return llm.ToolResult(
             data={
                 "success": deleted,
                 "id": target_id,
-                "message": f"Idee '{target_text or target_id}' wurde gelöscht." if deleted else "Löschen fehlgeschlagen.",
+                "message": (
+                    pack.msg("llm_deleted", text=target_text or target_id)
+                    if deleted
+                    else pack.msg("llm_delete_failed")
+                ),
             }
         )
 
@@ -501,7 +513,7 @@ class BrainstormLlmAPI(llm.API):
     ) -> llm.APIInstance:
         """Return the API instance with fresh tools and context."""
         store = get_loaded_store(self.hass)
-        cats = ", ".join(store.categories) if store else "Inbox, Smarthome, Haus & Garten, Projekte, Alltag"
+        cats = ", ".join(store.categories) if store else ", ".join(get_pack(self.hass.config.language).default_categories)
         api_prompt = (
             "Brainstorm Hub is the central idea, thought, and note management system in Home Assistant. "
             f"Available categories: {cats}. "

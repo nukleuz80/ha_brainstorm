@@ -193,10 +193,14 @@ async def test_todo_service_roundtrip_hides_archived(
 
 def test_services_yaml_descriptions_are_complete() -> None:
     """Test that a hash in a description does not truncate it as a YAML comment."""
-    path = Path(__file__).parents[1] / "custom_components/brainstorm/services.yaml"
-    services = yaml.safe_load(path.read_text("utf-8"))
-    assert "#" in services["add_category"]["fields"]["color"]["description"]
-    assert "#" in services["set_category_style"]["fields"]["color"]["description"]
+    root = Path(__file__).parents[1] / "custom_components/brainstorm"
+    services = yaml.safe_load((root / "services.yaml").read_text("utf-8"))
+    texts = json.loads((root / "strings.json").read_text("utf-8"))["services"]
+    assert set(services) == set(texts)
+    for name, service in services.items():
+        assert set(service.get("fields") or {}) == set(texts[name].get("fields") or {})
+        assert all(field["description"] for field in texts[name].get("fields", {}).values())
+    assert "#" in texts["add_category"]["fields"]["color"]["description"]
 
 
 async def test_setup_retries_when_stored_data_cannot_be_read(
@@ -253,7 +257,7 @@ async def test_entities_are_named_relative_to_the_device_and_are_not_polled(
     names = {reg.domain: reg.original_name for reg in entries if reg.domain == "sensor"}
     assert names == {"sensor": "Ideas overview"}
     assert hass.states.get(OVERVIEW_ENTITY_ID).name == "Brainstorm Hub Ideas overview"
-    assert "Alltag" in {reg.original_name for reg in entries if reg.domain == "todo"}
+    assert "Daily Life" in {reg.original_name for reg in entries if reg.domain == "todo"}
     component = hass.data["entity_components"]
     for domain in ("sensor", "todo"):
         for entity in component[domain].entities:

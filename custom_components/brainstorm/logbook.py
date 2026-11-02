@@ -26,15 +26,17 @@ from .const import (
     EVENT_IDEA_UPDATED,
     OVERVIEW_ENTITY_ID,
 )
+from .languages import get_pack
 from .store import get_loaded_store
 
 
 def _visible_text(hass: HomeAssistant, data: dict[str, Any]) -> str:
     """Return an idea's text for the logbook, which every user can read."""
     store = get_loaded_store(hass)
+    pack = get_pack(hass.config.language)
     if store is not None and store.privacy_enabled:
-        return "Privater Eintrag"
-    return data.get(ATTR_TEXT, "Unbekannte Notiz")
+        return pack.msg("log_private")
+    return data.get(ATTR_TEXT, pack.msg("log_unknown"))
 
 
 @callback
@@ -45,6 +47,7 @@ def async_describe_events(
     ],
 ) -> None:
     """Describe Brainstorm Hub logbook events."""
+    pack = get_pack(hass.config.language)
 
     @callback
     def async_describe_idea_added(event: LazyEventPartialState | Event) -> dict[str, Any]:
@@ -58,11 +61,11 @@ def async_describe_events(
 
         prio_tag = ""
         if priority == "urgent":
-            prio_tag = " [🔥 Dringend]"
+            prio_tag = f" [{pack.msg('prio_urgent')}]"
         elif priority == "high":
-            prio_tag = " [🔴 Hoch]"
+            prio_tag = f" [{pack.msg('prio_high')}]"
         elif priority == "low":
-            prio_tag = " [🟢 Niedrig]"
+            prio_tag = f" [{pack.msg('prio_low')}]"
 
         origin_info = f"({category}"
         if device:
@@ -76,7 +79,7 @@ def async_describe_events(
 
         return {
             LOGBOOK_ENTRY_NAME: f"Brainstorm{cat_prefix}: {display_text}",
-            LOGBOOK_ENTRY_MESSAGE: f"Idee erfasst{prio_tag} {origin_info}".strip(),
+            LOGBOOK_ENTRY_MESSAGE: f"{pack.msg('log_added')}{prio_tag} {origin_info}".strip(),
             LOGBOOK_ENTRY_ENTITY_ID: OVERVIEW_ENTITY_ID,
             LOGBOOK_ENTRY_ICON: "mdi:lightbulb-on" if priority != "urgent" else "mdi:alert-circle",
         }
@@ -92,7 +95,7 @@ def async_describe_events(
 
         return {
             LOGBOOK_ENTRY_NAME: f"Brainstorm{cat_prefix}: {display_text}",
-            LOGBOOK_ENTRY_MESSAGE: "Idee erledigt",
+            LOGBOOK_ENTRY_MESSAGE: pack.msg("log_completed"),
             LOGBOOK_ENTRY_ENTITY_ID: OVERVIEW_ENTITY_ID,
             LOGBOOK_ENTRY_ICON: "mdi:check-circle-outline",
         }
@@ -108,7 +111,7 @@ def async_describe_events(
 
         return {
             LOGBOOK_ENTRY_NAME: f"Brainstorm{cat_prefix}: {display_text}",
-            LOGBOOK_ENTRY_MESSAGE: "Idee geändert",
+            LOGBOOK_ENTRY_MESSAGE: pack.msg("log_updated"),
             LOGBOOK_ENTRY_ENTITY_ID: OVERVIEW_ENTITY_ID,
             LOGBOOK_ENTRY_ICON: "mdi:pencil",
         }
@@ -124,7 +127,7 @@ def async_describe_events(
 
         return {
             LOGBOOK_ENTRY_NAME: f"Brainstorm{cat_prefix}: {display_text}",
-            LOGBOOK_ENTRY_MESSAGE: "Idee gelöscht",
+            LOGBOOK_ENTRY_MESSAGE: pack.msg("log_deleted"),
             LOGBOOK_ENTRY_ENTITY_ID: OVERVIEW_ENTITY_ID,
             LOGBOOK_ENTRY_ICON: "mdi:delete-outline",
         }

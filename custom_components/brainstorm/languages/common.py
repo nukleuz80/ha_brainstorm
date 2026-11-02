@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import date, datetime
 from difflib import SequenceMatcher
 import re
 
@@ -24,6 +24,19 @@ ENGLISH_CATEGORIES: tuple[str, ...] = (
 )
 
 NEVER_MATCHES = re.compile(r"(?!)")
+
+
+@dataclass(frozen=True)
+class ReminderWords:
+    """Regular expression parts of 'when I get home' and 'when I am at the shop'."""
+
+    me: tuple[str, ...]
+    others: tuple[str, ...]
+    when: str
+    home: str
+    place: str
+    place_lead: str
+    place_end: str
 
 
 @dataclass(frozen=True)
@@ -54,8 +67,30 @@ class LanguagePack:
     starts_with_verb: Callable[[str], bool]
     build_glossary: Callable[[str | None, list[str]], dict[str, str]]
     validate_ai_rewrite: Callable[[str, str, str], str | None]
+    # What Brainstorm says and writes
+    messages: dict[str, str]
+    format_due: Callable[[datetime, date], str]
+    count_entries: Callable[[int], str]
+    reminder_words: ReminderWords
+    # Words for the house and garden list, and the word that shows a category is one
+    garden_words: tuple[str, ...]
+    garden_match: str
     # None means this language has no AI step
     ai_cleanup_prompt: Callable[[str, str], str] | None = field(default=None)
+
+    def msg(self, key: str, **values: object) -> str:
+        """Return a text of this language with its values filled in."""
+        return self.messages[key].format(**values)
+
+    def join(self, items: list[str]) -> str:
+        """Return items as a spoken list: 'a, b and c'."""
+        if len(items) < 2:
+            return "".join(items)
+        return f"{', '.join(items[:-1])} {self.messages['and']} {items[-1]}"
+
+    def spoken_category(self, category: str) -> str:
+        """Return a category name the way it can be read aloud."""
+        return category.replace("&", self.and_word)
 
 
 def capitalize_first(word: str) -> str:

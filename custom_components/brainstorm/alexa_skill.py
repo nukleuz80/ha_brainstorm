@@ -36,6 +36,7 @@ from .const import (
     SKILL_STORAGE_KEY,
     SKILL_STORAGE_VERSION,
 )
+from .languages import get_pack
 from .reminders import (
     ZONE_HOME,
     ReminderRequest,
@@ -721,7 +722,7 @@ class AlexaSkill:
                 self._ideas.categories,
                 self._ideas.category_colors,
                 category,
-                self._is_german,
+                get_pack(self.hass.config.language),
             )
         ]
 
@@ -787,7 +788,7 @@ class AlexaSkill:
             )
         # A date found in the sentence leads to a reminder, so it has to be said
         due = dt_util.parse_datetime(idea.get(ATTR_DUE) or "")
-        when = f", Termin {format_due(due, dt_util.now())}" if due else ""
+        when = f", Termin {format_due(due, dt_util.now(), self.hass.config.language)}" if due else ""
         category = idea.get(ATTR_CATEGORY)
         if category and category != "Inbox":
             return self._speech(
@@ -801,7 +802,7 @@ class AlexaSkill:
     ) -> web.Response:
         """Confirm a reminder, and pass on what a real Alexa reminder would need."""
         now = dt_util.now()
-        when = format_due(request.due, now) if request.due else self._place_name(request)
+        when = format_due(request.due, now, self.hass.config.language) if request.due else self._place_name(request)
         who = self._person_name(request.assignee) or "dich"
         text = idea.get(ATTR_TEXT)
         speech = f"Okay, ich erinnere {who} {when} an {text}."
@@ -943,7 +944,7 @@ class AlexaSkill:
             )
         due = dt_util.now() + SNOOZE_TIME
         await self._ideas.async_set_due(idea[ATTR_ID], due)
-        when = format_due(due, dt_util.now())
+        when = format_due(due, dt_util.now(), self.hass.config.language)
         return self._speech(
             f"Okay, ich erinnere dich {when} wieder.", f"Okay, again {when}."
         )

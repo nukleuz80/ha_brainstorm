@@ -95,9 +95,13 @@ EXPORT_BLOCKED_DIRS = {"custom_components", "www"}
 def _validate_category_style(icon: str | None, color: str | None) -> None:
     """Raise if a category icon or color is malformed."""
     if icon and icon.strip() and not ICON_PATTERN.match(icon.strip()):
-        raise ServiceValidationError(f"Ungültiges Icon: {icon}")
+        raise ServiceValidationError(
+            translation_domain=DOMAIN, translation_key="invalid_icon", translation_placeholders={"icon": icon}
+        )
     if color and color.strip() and not COLOR_PATTERN.match(color.strip()):
-        raise ServiceValidationError(f"Ungültige Farbe (Hex erwartet): {color}")
+        raise ServiceValidationError(
+            translation_domain=DOMAIN, translation_key="invalid_color", translation_placeholders={"color": color}
+        )
 
 
 
@@ -240,7 +244,9 @@ class BrainstormStore:
         """Change who may see several ideas at once, returning how many changed."""
         ideas = [self._ideas[idea_id] for idea_id in idea_ids if idea_id in self._ideas]
         if any(not self.is_owner(idea, user_id) for idea in ideas):
-            raise ServiceValidationError("Nur Besitzer dürfen Einträge freigeben.")
+            raise ServiceValidationError(
+            translation_domain=DOMAIN, translation_key="owner_only_share"
+        )
         for idea in ideas:
             current = dict(idea.get(ATTR_SHARES) or {})
             for target, level in shares.items():
@@ -819,7 +825,9 @@ class BrainstormStore:
             "stopp",
             "cancel",
         }:
-            raise ServiceValidationError(f"Ungültiger oder leerer Notiz-Text: {text}")
+            raise ServiceValidationError(
+            translation_domain=DOMAIN, translation_key="invalid_text", translation_placeholders={"text": str(text)}
+        )
 
         spoken = source not in TYPED_SOURCES
         if (
@@ -890,7 +898,7 @@ class BrainstormStore:
             "source": source,
             "device": (device or "").strip() if device else None,
             "timestamp": now_iso,
-            "description": f"Idee erfasst: \"{clean_text}\" ({resolved_cat})",
+            "description": f"{pack.msg('log_added')}: \"{clean_text}\" ({resolved_cat})",
         }
 
         self._ideas[idea_id] = idea
@@ -954,15 +962,15 @@ class BrainstormStore:
             and parent_id.strip() not in self._ideas
         ):
             raise ServiceValidationError(
-                f"Die übergeordnete Idee '{parent_id}' wurde nicht gefunden."
-            )
+            translation_domain=DOMAIN, translation_key="parent_not_found", translation_placeholders={"id": parent_id}
+        )
 
         if update_parent and parent_id and self._creates_parent_cycle(
             idea_id, parent_id.strip()
         ):
             raise ServiceValidationError(
-                f"Idee '{parent_id}' kann nicht übergeordnet werden (Zyklus)."
-            )
+            translation_domain=DOMAIN, translation_key="parent_cycle", translation_placeholders={"id": parent_id}
+        )
 
         idea = self._ideas[idea_id]
         newly_completed = status == "completed" and idea.get(ATTR_STATUS) != "completed"
@@ -1001,10 +1009,11 @@ class BrainstormStore:
 
         act_context = context or Context()
         action_type = "completed" if newly_completed else "updated"
+        pack = self._pack()
         action_desc = (
-            f"Idee erledigt: \"{idea.get(ATTR_TEXT)}\" ({idea.get(ATTR_CATEGORY)})"
+            f"{pack.msg('log_completed')}: \"{idea.get(ATTR_TEXT)}\" ({idea.get(ATTR_CATEGORY)})"
             if newly_completed
-            else f"Idee geändert: \"{idea.get(ATTR_TEXT)}\" ({idea.get(ATTR_CATEGORY)})"
+            else f"{pack.msg('log_updated')}: \"{idea.get(ATTR_TEXT)}\" ({idea.get(ATTR_CATEGORY)})"
         )
         self._last_action = {
             "action": action_type,
@@ -1094,8 +1103,11 @@ class BrainstormStore:
         ]
         return max(reminded, key=lambda idea: idea[ATTR_REMINDED_AT], default=None)
 
-    def get_overview_text(self, user_id: str | None = None) -> str:
+    def get_overview_text(
+        self, user_id: str | None = None, language: str | None = None
+    ) -> str:
         """Generate a short spoken overview instead of reading every idea."""
+        pack = self._pack(language)
         parts = []
         total = 0
         for category in self._categories:
@@ -1109,10 +1121,16 @@ class BrainstormStore:
             )
             if count:
                 total += count
-                parts.append(f"{count} in {category.replace('&', 'und')}")
+                parts.append(
+                    pack.msg(
+                        "overview_part",
+                        count=count,
+                        category=pack.spoken_category(category),
+                    )
+                )
         if not parts:
-            return "Du hast aktuell keine offenen Notizen in Brainstorm."
-        return f"Du hast {total} Einträge: {', '.join(parts)}. Welche Kategorie?"
+            return pack.msg("overview_empty")
+        return pack.msg("overview", total=total, parts=", ".join(parts))
 
     async def async_reorder_ideas(self, idea_ids: list[str]) -> bool:
         """Update order of ideas based on the provided list of IDs."""
@@ -1139,13 +1157,14 @@ class BrainstormStore:
 
         now_iso = dt_util.now().isoformat()
         act_context = context or Context()
+        pack = self._pack()
         self._last_action = {
             "action": "deleted",
             "id": idea_id,
             "text": deleted_idea.get(ATTR_TEXT),
             "category": deleted_idea.get(ATTR_CATEGORY),
             "timestamp": now_iso,
-            "description": f"Idee gelöscht: \"{deleted_idea.get(ATTR_TEXT)}\" ({deleted_idea.get(ATTR_CATEGORY)})",
+            "description": f"{pack.msg('log_deleted')}: \"{deleted_idea.get(ATTR_TEXT)}\" ({deleted_idea.get(ATTR_CATEGORY)})",
         }
 
         await self.async_save()
@@ -1277,39 +1296,21 @@ class BrainstormStore:
         return results
 
     def get_announcement_text(
-        self, category: str | None = None, user_id: str | None = None
+        self,
+        category: str | None = None,
+        user_id: str | None = None,
+        language: str | None = None,
     ) -> str:
-        """Generate a concise, natural German TTS speech text of active ideas."""
+        """Generate a concise, natural spoken text of the active ideas."""
+        pack = self._pack(language)
         active_ideas = [
             i for i in self.visible_ideas(user_id) if i.get(ATTR_STATUS) == "active"
         ]
 
-        def _format_count(n: int) -> str:
-            words = {
-                1: "einen",
-                2: "zwei",
-                3: "drei",
-                4: "vier",
-                5: "fünf",
-                6: "sechs",
-                7: "sieben",
-                8: "acht",
-                9: "neun",
-                10: "zehn",
-            }
-            if n == 1:
-                return "einen Eintrag"
-            return f"{words.get(n, str(n))} Einträge"
-
         def _format_items(items: list[str]) -> str:
-            clean = [it.strip().rstrip(".!,;:") for it in items if it and it.strip()]
-            if not clean:
-                return ""
-            if len(clean) == 1:
-                return clean[0]
-            if len(clean) == 2:
-                return f"{clean[0]} und {clean[1]}"
-            return f"{', '.join(clean[:-1])} und {clean[-1]}"
+            return pack.join(
+                [it.strip().rstrip(".!,;:") for it in items if it and it.strip()]
+            )
 
         # If a specific category was requested
         if category and str(category).strip() and str(category).strip().lower() not in ["all", "alle", "none"]:
@@ -1317,11 +1318,11 @@ class BrainstormStore:
             # Match case-insensitively or with common variations (e.g. haus und garten / garten)
             matched = None
             for c in self._categories:
-                c_norm = c.lower().replace("&", "und").strip()
+                c_norm = c.lower().replace("&", pack.and_word).strip()
                 if c.lower() == clean_cat or c_norm == clean_cat:
                     matched = c
                     break
-                if clean_cat in ["garten", "haus"] and "garten" in c.lower():
+                if clean_cat in pack.garden_words and pack.garden_match in c.lower():
                     matched = c
                     break
 
@@ -1331,14 +1332,19 @@ class BrainstormStore:
                 for i in active_ideas
                 if (i.get(ATTR_CATEGORY) or "").lower() == target_cat.lower()
             ]
-            spoken_cat = target_cat.replace("&", "und")
+            spoken_cat = pack.spoken_category(target_cat)
             if not cat_ideas:
-                return f"In der Kategorie {spoken_cat} gibt es aktuell keine offenen Einträge."
-            return f"{spoken_cat} hat {_format_count(len(cat_ideas))}: {_format_items(cat_ideas)}."
+                return pack.msg("category_empty", category=spoken_cat)
+            return pack.msg(
+                "category_items",
+                category=spoken_cat,
+                count=pack.count_entries(len(cat_ideas)),
+                items=_format_items(cat_ideas),
+            )
 
         # All categories
         if not active_ideas:
-            return "Du hast aktuell keine offenen Notizen in Brainstorm."
+            return pack.msg("overview_empty")
 
         parts = []
         for cat in self._categories:
@@ -1349,9 +1355,13 @@ class BrainstormStore:
             ]
             if not cat_ideas:
                 continue
-            spoken_cat = cat.replace("&", "und")
             parts.append(
-                f"{spoken_cat} hat {_format_count(len(cat_ideas))}: {_format_items(cat_ideas)}."
+                pack.msg(
+                    "category_items",
+                    category=pack.spoken_category(cat),
+                    count=pack.count_entries(len(cat_ideas)),
+                    items=_format_items(cat_ideas),
+                )
             )
 
         return " ".join(parts)
@@ -1371,8 +1381,9 @@ class BrainstormStore:
         elif self.hass.config.is_allowed_path(str(target)):
             return
         raise ServiceValidationError(
-            f"Export nach '{export_dir}' ist nicht erlaubt. Erlaubt sind Unterordner "
-            "des Config-Verzeichnisses und allowlist_external_dirs."
+            translation_domain=DOMAIN,
+            translation_key="export_not_allowed",
+            translation_placeholders={"path": export_dir},
         )
 
     async def async_export_to_markdown(self, target_dir: str | None = None) -> None:
@@ -1388,6 +1399,8 @@ class BrainstormStore:
                 by_cat[cat] = []
             by_cat[cat].append(dict(idea))
 
+        pack = self._pack()
+
         def _do_export():
             self._validate_export_dir(export_dir)
             os.makedirs(export_dir, exist_ok=True)
@@ -1402,9 +1415,9 @@ class BrainstormStore:
                         i for i in items if i.get(ATTR_STATUS) in ("completed", "archived")
                     ]
 
-                    f.write("## Aktive Ideen\n")
+                    f.write(f"{pack.msg('export_active')}\n")
                     if not active:
-                        f.write("_Keine aktiven Ideen_\n\n")
+                        f.write(f"{pack.msg('export_none')}\n\n")
                     else:
                         for item in active:
                             created = item.get(ATTR_CREATED_AT, "")[:16].replace("T", " ")
@@ -1420,18 +1433,18 @@ class BrainstormStore:
                                 src_str = ""
                             prio = item.get(ATTR_PRIORITY, DEFAULT_PRIORITY)
                             if prio == PRIORITY_URGENT:
-                                prio_str = " `[🔥 Dringend]`"
+                                prio_str = f" `[{pack.msg('prio_urgent')}]`"
                             elif prio == PRIORITY_HIGH:
-                                prio_str = " `[🔴 Hoch]`"
+                                prio_str = f" `[{pack.msg('prio_high')}]`"
                             elif prio == PRIORITY_LOW:
-                                prio_str = " `[🟢 Niedrig]`"
+                                prio_str = f" `[{pack.msg('prio_low')}]`"
                             else:
                                 prio_str = ""
                             f.write(f"- [ ] {item.get(ATTR_TEXT)}{prio_str}{src_str} _({created})_\n")
                         f.write("\n")
 
                     if completed:
-                        f.write("## Erledigt / Archiviert\n")
+                        f.write(f"{pack.msg('export_done')}\n")
                         for item in completed:
                             f.write(f"- [x] ~~{item.get(ATTR_TEXT)}~~\n")
                         f.write("\n")

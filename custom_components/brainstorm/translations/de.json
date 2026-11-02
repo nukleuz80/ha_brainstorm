@@ -440,6 +440,302 @@
   "exceptions": {
     "not_loaded": {
       "message": "Brainstorm Hub ist nicht geladen. Prüfe die Integration unter Einstellungen > Geräte & Dienste."
+    },
+    "no_access_idea": {
+      "message": "Kein Zugriff auf Idee '{id}'."
+    },
+    "admin_only": {
+      "message": "Nur Administratoren dürfen das ausführen."
+    },
+    "idea_not_found": {
+      "message": "Idee '{id}' wurde nicht gefunden."
+    },
+    "sharing_needs_privacy": {
+      "message": "Freigaben gibt es nur mit eingeschalteter Privatsphäre."
+    },
+    "share_target_missing": {
+      "message": "Bitte Einträge oder eine Kategorie angeben."
+    },
+    "no_idea_found": {
+      "message": "Keiner dieser Einträge wurde gefunden."
+    },
+    "category_name_empty": {
+      "message": "Der Kategoriename darf nicht leer sein."
+    },
+    "category_exists": {
+      "message": "Die Kategorie '{name}' existiert bereits."
+    },
+    "category_name_required": {
+      "message": "Kategoriename ist erforderlich."
+    },
+    "category_not_removable": {
+      "message": "Die Kategorie '{name}' gibt es nicht oder sie kann nicht entfernt werden."
+    },
+    "export_failed": {
+      "message": "Der Markdown-Export ist fehlgeschlagen: {error}"
+    },
+    "no_access_entry": {
+      "message": "Kein Zugriff auf diesen Eintrag."
+    },
+    "entry_not_found": {
+      "message": "Eintrag '{id}' wurde nicht gefunden."
+    },
+    "invalid_icon": {
+      "message": "Ungültiges Icon: {icon}"
+    },
+    "invalid_color": {
+      "message": "Ungültige Farbe (Hex erwartet): {color}"
+    },
+    "owner_only_share": {
+      "message": "Nur Besitzer dürfen Einträge freigeben."
+    },
+    "invalid_text": {
+      "message": "Ungültiger oder leerer Notiz-Text: {text}"
+    },
+    "parent_not_found": {
+      "message": "Die übergeordnete Idee '{id}' wurde nicht gefunden."
+    },
+    "parent_cycle": {
+      "message": "Idee '{id}' kann nicht übergeordnet werden (Zyklus)."
+    },
+    "export_not_allowed": {
+      "message": "Export nach '{path}' ist nicht erlaubt. Erlaubt sind Unterordner des Config-Verzeichnisses und allowlist_external_dirs."
+    }
+  },
+  "services": {
+    "add_idea": {
+      "name": "Idee hinzufügen",
+      "description": "Fügt blitzschnell eine neue Brainstorm-Idee hinzu. Erkennt automatisch Kategorien im Text (z.B. 'Garten: Blumen pflanzen' oder '#smarthome').",
+      "fields": {
+        "text": {
+          "name": "Text / Idee",
+          "description": "Der Inhalt des Gedankens oder der Idee."
+        },
+        "category": {
+          "name": "Kategorie (Optional)",
+          "description": "Thema/Kategorie. Bleibt dies leer, wird sie aus dem Text ermittelt oder 'Inbox' zugewiesen."
+        },
+        "priority": {
+          "name": "Priorität (Optional)",
+          "description": "Dringlichkeit der Idee (low, medium, high, urgent). Wird andernfalls automatisch erkannt."
+        },
+        "source": {
+          "name": "Quelle",
+          "description": "Woher die Idee stammt (z.B. alexa, companion, dashboard, etc.)."
+        },
+        "device": {
+          "name": "Erfassungsgerät",
+          "description": "Das auslösende Gerät (z.B. \"Echo Show Küche\", \"Wohnzimmer Echo Dot\", \"Jan (Handy)\")."
+        },
+        "language": {
+          "name": "Sprache",
+          "description": "Sprache des Textes (z.B. \"de\" oder \"en\"). Ohne Angabe gilt die Sprache von Home Assistant."
+        },
+        "tags": {
+          "name": "Tags",
+          "description": "Zusätzliche Schlagworte."
+        },
+        "parent_id": {
+          "name": "Übergeordnete Idee (Parent-ID)",
+          "description": "ID der übergeordneten Idee für Unteraufgaben/Einrückung (optional)."
+        },
+        "due": {
+          "name": "Fällig am (Optional)",
+          "description": "Wann Brainstorm an diese Idee erinnern soll."
+        },
+        "parse_due": {
+          "name": "Termin aus dem Text erkennen",
+          "description": "Erkennt Angaben wie \"morgen um 8\" im Text und nimmt sie als Termin."
+        },
+        "assignee": {
+          "name": "Für Person (Optional)",
+          "description": "Wer erinnert werden soll."
+        },
+        "zone": {
+          "name": "An diesem Ort erinnern (Optional)",
+          "description": "Erinnert beim Betreten dieser Zone."
+        }
+      }
+    },
+    "update_idea": {
+      "name": "Idee bearbeiten",
+      "description": "Aktualisiert Text, Kategorie oder Status einer bestehenden Idee.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "Eindeutige ID der Idee."
+        },
+        "text": {
+          "name": "Neuer Text",
+          "description": "Geänderter Text."
+        },
+        "category": {
+          "name": "Kategorie",
+          "description": "Neue Kategorie."
+        },
+        "priority": {
+          "name": "Priorität",
+          "description": "Neue Priorität (low, medium, high, urgent)."
+        },
+        "status": {
+          "name": "Status",
+          "description": "Neuer Status (active, completed, archived)."
+        },
+        "device": {
+          "name": "Erfassungsgerät",
+          "description": "Gerät aktualisieren."
+        },
+        "parent_id": {
+          "name": "Übergeordnete Idee (Parent-ID)",
+          "description": "ID der übergeordneten Idee für Unteraufgaben/Einrückung (leer = Hauptaufgabe)."
+        },
+        "order": {
+          "name": "Reihenfolge",
+          "description": "Benutzerdefinierter Sortierindex."
+        },
+        "due": {
+          "name": "Fällig am (Optional)",
+          "description": "Wann Brainstorm an diese Idee erinnern soll."
+        },
+        "assignee": {
+          "name": "Für Person (Optional)",
+          "description": "Wer erinnert werden soll."
+        },
+        "zone": {
+          "name": "An diesem Ort erinnern (Optional)",
+          "description": "Erinnert beim Betreten dieser Zone."
+        }
+      }
+    },
+    "delete_idea": {
+      "name": "Idee löschen",
+      "description": "Entfernt eine Idee dauerhaft.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "ID der zu löschenden Idee."
+        }
+      }
+    },
+    "get_ideas": {
+      "name": "Ideen abrufen",
+      "description": "Gibt eine Liste gespeicherter Ideen zurück (für Templates oder Automationen).",
+      "fields": {
+        "category": {
+          "name": "Kategorie",
+          "description": "Optional nach Kategorie filtern."
+        },
+        "priority": {
+          "name": "Priorität",
+          "description": "Optional nach Priorität filtern (low, medium, high, urgent)."
+        },
+        "status": {
+          "name": "Status",
+          "description": "Status-Filter (active, completed oder all)."
+        }
+      }
+    },
+    "get_announcement": {
+      "name": "Sprachansage generieren",
+      "description": "Erzeugt einen flüssigen, gesprochenen Ansagetext für Alexa oder Assist über alle oder eine bestimmte Kategorie.",
+      "fields": {
+        "category": {
+          "name": "Kategorie (Optional)",
+          "description": "Optional nach einer bestimmten Kategorie filtern (z.B. Smarthome). Ohne Angabe werden alle aktiven Kategorien vorgelesen."
+        },
+        "device": {
+          "name": "Gerät",
+          "description": "Das Gerät, das gefragt hat. Bei eingeschalteter Privatsphäre bestimmt es, wessen Einträge genannt werden."
+        }
+      }
+    },
+    "add_category": {
+      "name": "Kategorie hinzufügen",
+      "description": "Erstellt eine neue Brainstorm-Kategorie und die dazugehörige To-do-Liste.",
+      "fields": {
+        "name": {
+          "name": "Kategoriename",
+          "description": "Name der neuen Kategorie."
+        },
+        "icon": {
+          "name": "Icon",
+          "description": "Optionales Home Assistant / MDI Icon."
+        },
+        "color": {
+          "name": "Farbe",
+          "description": "Optionale Akzentfarbe (Hexadezimal wie #ff7800)."
+        }
+      }
+    },
+    "set_category_style": {
+      "name": "Kategorie-Design anpassen",
+      "description": "Legt ein benutzerdefiniertes Icon und/oder eine Akzentfarbe für eine Kategorie fest.",
+      "fields": {
+        "category": {
+          "name": "Kategorie",
+          "description": "Name der zu formatierenden Kategorie."
+        },
+        "icon": {
+          "name": "Icon",
+          "description": "Home Assistant / MDI Icon."
+        },
+        "color": {
+          "name": "Farbe",
+          "description": "Akzentfarbe für Notizen und Filter (Hexadezimal wie #06b6d4)."
+        },
+        "reset": {
+          "name": "Zurücksetzen",
+          "description": "Falls aktiviert, werden benutzerdefiniertes Icon und Farbe entfernt und auf Standard zurückgesetzt."
+        }
+      }
+    },
+    "remove_category": {
+      "name": "Kategorie entfernen",
+      "description": "Entfernt eine Kategorie (verbleibende Ideen werden nach 'Inbox' verschoben).",
+      "fields": {
+        "name": {
+          "name": "Kategoriename",
+          "description": "Name der Kategorie."
+        }
+      }
+    },
+    "export_markdown": {
+      "name": "Nach Markdown exportieren",
+      "description": "Schreibt alle Kategorien und Ideen als Markdown-Dateien ins Dateisystem.",
+      "fields": {
+        "path": {
+          "name": "Pfad",
+          "description": "Zielordner (Standard: /config/brainstorm)."
+        }
+      }
+    },
+    "reorder_ideas": {
+      "name": "Notizen sortieren (Reorder)",
+      "description": "Aktualisiert die benutzerdefinierte Sortierreihenfolge der Notizen anhand einer Liste von IDs.",
+      "fields": {
+        "idea_ids": {
+          "name": "Notiz-IDs",
+          "description": "Geordnete Liste der Notiz-IDs."
+        }
+      }
+    },
+    "share": {
+      "name": "Freigeben",
+      "description": "Gibt mehrere Einträge oder eine ganze Kategorie für Personen frei. Braucht eingeschaltete Privatsphäre.",
+      "fields": {
+        "ids": {
+          "name": "Einträge",
+          "description": "IDs der freizugebenden Einträge."
+        },
+        "category": {
+          "name": "Kategorie",
+          "description": "Alle eigenen Einträge dieser Kategorie freigeben, auch spätere."
+        },
+        "shares": {
+          "name": "Freigaben",
+          "description": "Benutzer-ID (oder \"all\") und Stufe, z. B. {\"all\": \"view\"}. Stufen sind view und edit; null entfernt die Freigabe."
+        }
+      }
     }
   }
 }

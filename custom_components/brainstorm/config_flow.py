@@ -928,7 +928,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         if upcoming is not None:
             due = dt_util.parse_datetime(upcoming[ATTR_DUE])
             if due is not None:
-                when = format_due(due, dt_util.now())
+                when = format_due(due, dt_util.now(), self.hass.config.language)
                 lines.append(
                     self._text(
                         f"⏰ Nächste Erinnerung {when}: {upcoming.get(ATTR_TEXT)}",

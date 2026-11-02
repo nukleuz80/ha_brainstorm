@@ -86,6 +86,7 @@ from .const import (
 )
 from .ai import async_generate_text
 from .languages import get_pack
+from .languages.common import LanguagePack
 
 if TYPE_CHECKING:
     from .store import BrainstormStore
@@ -107,12 +108,6 @@ ALEXA_MEDIA_DOMAIN = "alexa_media"
 MOBILE_APP_SERVICE_PREFIX = "mobile_app_"
 PRESENT_STATES = ("on", "home", "detected", "occupied")
 
-_HOME_WORDS = (
-    r"(?:wieder\s+)?(?:nach\s+hause\s+komm\w*|heim\s?komm\w*|zu\s?hause\s+(?:bin|ist)"
-    r"|daheim\s+(?:bin|ist))"
-)
-_PLACE_WORDS = r"(?:im|in\s+der|in|beim|bei|am)"
-
 
 def _parse_time(value: str | None) -> time | None:
     """Parse a stored time of day."""
@@ -129,28 +124,11 @@ def is_quiet_time(now: datetime, start: time | None, end: time | None) -> bool:
     return current >= start or current < end
 
 
-def format_due(due: datetime, now: datetime) -> str:
+def format_due(due: datetime, now: datetime, language: str = "de") -> str:
     """Return a due time the way a person says it."""
-    due = dt_util.as_local(due)
-    today = dt_util.as_local(now).date()
-    clock = f"{due.hour} Uhr" if due.minute == 0 else f"{due.hour} Uhr {due.minute}"
-    day = due.date()
-    if day == today:
-        return f"heute um {clock}"
-    if day == today + timedelta(days=1):
-        return f"morgen um {clock}"
-    if day == today + timedelta(days=2):
-        return f"übermorgen um {clock}"
-    weekday = (
-        "Montag",
-        "Dienstag",
-        "Mittwoch",
-        "Donnerstag",
-        "Freitag",
-        "Samstag",
-        "Sonntag",
-    )[day.weekday()]
-    return f"am {weekday}, den {day.day}.{day.month}., um {clock}"
+    return get_pack(language).format_due(
+        dt_util.as_local(due), dt_util.as_local(now).date()
+    )
 
 
 def find_echo_entity(hass: HomeAssistant, name: str) -> str | None:
@@ -234,7 +212,8 @@ def build_reminder_request(
     due, remaining = pack.parse_due(remaining, now)
     trigger: dict[str, str | None] | None = None
     default_person = options.get(CONF_DEFAULT_PERSON) or None
-    who = r"(ich|sie|er"
+    words = pack.reminder_words
+    who = "(" + "|".join((*words.me, *words.others))
     if people:
         who += f"|{_alternatives(people)}"
     who += ")"
@@ -242,14 +221,16 @@ def build_reminder_request(
     def person_for(word: str | None) -> str | None:
         """Return the person a word in the sentence stands for."""
         lowered = (word or "").lower()
-        if lowered == "ich":
+        if lowered in words.me:
             return default_person
-        if lowered in ("sie", "er"):
+        if lowered in words.others:
             return assignee
         return people.get(lowered, assignee or default_person)
 
     if due is None and options.get(CONF_ARRIVAL_ENABLED):
-        if match := re.search(rf"\bwenn\s+{who}\s+{_HOME_WORDS}\b", remaining, re.I):
+        if match := re.search(
+            rf"\b{words.when}\s+{who}\s+{words.home}\b", remaining, re.I
+        ):
             trigger = {"zone": ZONE_HOME, "person": person_for(match.group(1))}
             remaining = f"{remaining[: match.start()]} {remaining[match.end() :]}"
 
@@ -262,7 +243,7 @@ def build_reminder_request(
         if zones:
             place = _alternatives(zones)
             match = re.search(
-                rf"\bwenn\s+{who}\s+{_PLACE_WORDS}\s+({place})(?:\s+(?:bin|ist))?\b",
+                rf"\b{words.when}\s+{who}\s+{words.place}\s+({place}){words.place_end}\b",
                 remaining,
                 re.I,
             )
@@ -272,11 +253,11 @@ def build_reminder_request(
                     "person": person_for(match.group(1)),
                 }
             elif match := re.search(
-                rf"^(?:{_PLACE_WORDS})\s+({place})\b", remaining, re.I
+                rf"^(?:{words.place_lead})\s+({place})\b", remaining, re.I
             ):
                 trigger = {
                     "zone": zones[match.group(1).lower()],
-                    "person": person_for("ich"),
+                    "person": default_person,
                 }
             if match:
                 remaining = f"{remaining[: match.start()]} {remaining[match.end() :]}"
@@ -286,6 +267,11 @@ def build_reminder_request(
 
 class ReminderManager:
     """Deliver ideas over the channels this installation has switched on."""
+
+    @property
+    def _pack(self) -> LanguagePack:
+        """Return the language of Home Assistant, as nobody is asking for these."""
+        return get_pack(self.hass.config.language)
 
     def __init__(
         self, hass: HomeAssistant, store: BrainstormStore, options: dict[str, Any]
@@ -539,7 +525,7 @@ class ReminderManager:
         if idea.get(ATTR_ALEXA_NATIVE):
             return True
         return await self._async_speak(
-            self._idea_echos(idea), f"Erinnerung: {idea.get(ATTR_TEXT)}."
+            self._idea_echos(idea), self._pack.msg("reminder_spoken", text=idea.get(ATTR_TEXT))
         )
 
     async def _async_send(
@@ -581,20 +567,23 @@ class ReminderManager:
                     "actions": [
                         {
                             "action": f"{ACTION_PREFIX}{ACTION_DONE}_{idea_id}",
-                            "title": "Erledigt",
+                            "title": self._pack.msg("action_done"),
                         },
                         {
                             "action": f"{ACTION_PREFIX}{ACTION_SNOOZE}_{idea_id}",
-                            "title": "1 Stunde später",
+                            "title": self._pack.msg("action_snooze"),
                         },
                         {
                             "action": f"{ACTION_PREFIX}{ACTION_TOMORROW}_{idea_id}",
-                            "title": "Morgen",
+                            "title": self._pack.msg("action_tomorrow"),
                         },
                     ],
                 }
             await self._async_send(
-                service, "Brainstorm: Erinnerung", str(idea.get(ATTR_TEXT)), data
+                service,
+                self._pack.msg("reminder_title"),
+                str(idea.get(ATTR_TEXT)),
+                data,
             )
 
     async def _async_handle_action(self, event: Event) -> None:
@@ -690,7 +679,11 @@ class ReminderManager:
         ]
         if not texts:
             return None
-        return f"{category.replace('&', 'und')}: {', '.join(texts)}."
+        return self._pack.msg(
+            "list_line",
+            category=self._pack.spoken_category(category),
+            items=", ".join(texts),
+        )
 
     async def _async_broadcast_list(
         self, category: str, rule: dict[str, Any], message: str
@@ -761,11 +754,7 @@ class ReminderManager:
         entity = self._options.get(CONF_AI_ENTITY)
         if not self._options.get(CONF_AI_ENABLED) or not entity:
             return message
-        instructions = (
-            "Fasse diese Erinnerung als kurzen, natürlichen deutschen Satz zum "
-            "Vorlesen zusammen. Erfinde nichts dazu und lasse keinen Eintrag weg: "
-            f"{message}"
-        )
+        instructions = self._pack.msg("summarize_prompt", message=message)
         return await async_generate_text(self.hass, entity, instructions) or message
 
     def test_targets(self) -> list[str]:
@@ -886,9 +875,10 @@ class ReminderManager:
         if not due_today:
             return None
         if len(due_today) == 1:
-            return f"Heute steht an: {due_today[0]}."
-        joined = f"{', '.join(due_today[:-1])} und {due_today[-1]}"
-        return f"Heute stehen {len(due_today)} Dinge an: {joined}."
+            return self._pack.msg("digest_one", item=due_today[0])
+        return self._pack.msg(
+            "digest_many", count=len(due_today), items=self._pack.join(due_today)
+        )
 
     def build_review(self, now: datetime) -> str | None:
         """Return the review of long open ideas, None if there are none."""
@@ -907,10 +897,7 @@ class ReminderManager:
         oldest = [text for _, text in stale[:REVIEW_MAX_ITEMS]]
         joined = ", ".join(oldest)
         count = len(stale)
-        return (
-            f"Wochenrückblick: {count} Einträge sind seit über {days} Tagen offen. "
-            f"Die ältesten sind: {joined}. Kann davon etwas weg?"
-        )
+        return self._pack.msg("review", count=count, days=days, items=joined)
 
     def _someone_present(self) -> bool:
         """Return whether a chosen presence sensor reports someone."""
@@ -935,7 +922,7 @@ class ReminderManager:
         self._last_digest = now.date()
         await self._async_save_state()
         if message := self.build_digest(now):
-            await self._async_broadcast("Brainstorm: Heute", message)
+            await self._async_broadcast(self._pack.msg("digest_title"), message)
 
     async def _async_check_review(self, now: datetime) -> None:
         """Send the weekly review once."""
@@ -952,7 +939,7 @@ class ReminderManager:
         self._last_review = now.date()
         await self._async_save_state()
         if message := self.build_review(now):
-            await self._async_broadcast("Brainstorm: Wochenrückblick", message)
+            await self._async_broadcast(self._pack.msg("review_title"), message)
 
 
 @callback

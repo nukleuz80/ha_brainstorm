@@ -17,6 +17,7 @@ from custom_components.brainstorm.languages.en import (
     parse_due,
     validate_ai_rewrite,
 )
+from custom_components.brainstorm.reminders import build_reminder_request
 from custom_components.brainstorm.store import BrainstormStore
 
 # A Tuesday
@@ -309,3 +310,63 @@ async def test_add_idea_uses_the_language(store: BrainstormStore) -> None:
     assert idea["priority"] == "urgent"
     assert idea["due"]
     assert idea["raw_text"] == "i really need to call the doctor tomorrow asap"
+
+
+@pytest.mark.parametrize(
+    ("due", "spoken"),
+    [
+        (_at(0, 17), "today at 5 pm"),
+        (_at(1, 8, 30), "tomorrow at 8:30 am"),
+        (_at(2, 12), "the day after tomorrow at 12 pm"),
+        (_at(3, 0), "on Friday, March 13, at 12 am"),
+    ],
+)
+def test_format_due(due: datetime, spoken: str) -> None:
+    """Dates are read the way people say them."""
+    assert PACK.format_due(due, NOW.date()) == spoken
+
+
+async def test_english_reminder_words(hass: HomeAssistant) -> None:
+    """A reminder understands who, when and where in English."""
+    hass.config.language = "en"
+    hass.states.async_set("person.alex", "home", {"friendly_name": "Alex"})
+    hass.states.async_set("zone.market", "0", {"friendly_name": "Market"})
+    options = {
+        "persons_enabled": True,
+        "arrival_enabled": True,
+        "places_enabled": True,
+        "default_person": "person.me",
+    }
+    home = build_reminder_request(
+        hass, options, "the bins when i get home", NOW
+    )
+    assert home.trigger == {"zone": "zone.home", "person": "person.me"}
+    assert home.text == "the bins"
+    place = build_reminder_request(
+        hass, options, "the milk when i get to market", NOW
+    )
+    assert place.trigger == {"zone": "zone.market", "person": "person.me"}
+    assert place.text == "the milk"
+    person = build_reminder_request(
+        hass, options, "alex tomorrow at 8 to take out the bins", NOW
+    )
+    assert person.assignee == "person.alex"
+    assert person.due == _at(1, 8)
+    assert person.text == "take out the bins"
+
+
+async def test_english_texts_of_a_store(store: BrainstormStore) -> None:
+    """Spoken overviews are in the language of Home Assistant."""
+    assert store.get_overview_text() == "You have no open notes in Brainstorm right now."
+    await store.async_add_idea("buy milk", category="Daily Life", source="dashboard")
+    await store.async_add_idea("buy eggs", category="Daily Life", source="dashboard")
+    assert store.get_overview_text() == (
+        "You have 2 entries: 2 in Daily Life. Which category?"
+    )
+    assert store.get_announcement_text("Daily Life") in (
+        "Daily Life has two entries: Buy eggs and Buy milk.",
+        "Daily Life has two entries: Buy milk and Buy eggs.",
+    )
+    assert store.get_announcement_text("Daily Life", language="de").startswith(
+        "Daily Life hat zwei Einträge: "
+    )

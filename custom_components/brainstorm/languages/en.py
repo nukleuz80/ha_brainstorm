@@ -14,6 +14,7 @@ from .common import (
     CATEGORY_SMARTHOME,
     ENGLISH_CATEGORIES,
     LanguagePack,
+    ReminderWords,
     apply_glossary,
     capitalize_first,
     merge_glossary,
@@ -788,6 +789,88 @@ CATEGORY_KEYWORDS: dict[str, list[str]] = {
     ],
 }
 
+MESSAGES: dict[str, str] = {
+    "and": "and",
+    "reminder_spoken": "Reminder: {text}.",
+    "reminder_title": "Brainstorm: Reminder",
+    "action_done": "Done",
+    "action_snooze": "1 hour later",
+    "action_tomorrow": "Tomorrow",
+    "digest_title": "Brainstorm: Today",
+    "review_title": "Brainstorm: Weekly review",
+    "digest_one": "Due today: {item}.",
+    "digest_many": "{count} things are due today: {items}.",
+    "review": (
+        "Weekly review: {count} entries have been open for more than {days} days. "
+        "The oldest are: {items}. Can any of them go?"
+    ),
+    "summarize_prompt": (
+        "Summarize this reminder as a short, natural English sentence to read aloud. "
+        "Do not add anything and do not leave out any entry: {message}"
+    ),
+    "list_line": "{category}: {items}.",
+    "overview_empty": "You have no open notes in Brainstorm right now.",
+    "overview": "You have {total} entries: {parts}. Which category?",
+    "overview_part": "{count} in {category}",
+    "category_empty": "There are no open entries in the category {category} right now.",
+    "category_items": "{category} has {count}: {items}.",
+    "prio_urgent": "🔥 Urgent",
+    "prio_high": "🔴 High",
+    "prio_low": "🟢 Low",
+    "todo_priority": "Priority: {label}",
+    "todo_source": "Source: {value}",
+    "todo_device": "Device: {value}",
+    "log_private": "Private entry",
+    "log_unknown": "Unknown note",
+    "log_added": "Idea captured",
+    "log_completed": "Idea completed",
+    "log_updated": "Idea changed",
+    "log_deleted": "Idea deleted",
+    "export_active": "## Active ideas",
+    "export_none": "_No active ideas_",
+    "export_done": "## Completed / Archived",
+    "llm_added": "Idea captured in '{category}' (priority: {priority}).",
+    "llm_completed": "'{text}' was marked as done.",
+    "llm_deleted": "Idea '{text}' was deleted.",
+    "llm_delete_failed": "Deleting failed.",
+    "display_mark_done": "Mark as done",
+    "display_no_open": "No open ideas.",
+    "display_open": "open",
+    "display_urgent": "urgent",
+    "display_today": "Today",
+    "display_tomorrow": "Tomorrow",
+    "display_more": "+ {count} more",
+    "display_prio_urgent": "Urgent",
+    "display_prio_high": "High",
+    "display_prio_low": "Low",
+}
+
+
+def format_due(due: datetime, today: date) -> str:
+    """Return a local due time the way a person says it."""
+    hour = due.hour % 12 or 12
+    suffix = "am" if due.hour < 12 else "pm"
+    clock = f"{hour} {suffix}" if due.minute == 0 else f"{hour}:{due.minute:02d} {suffix}"
+    day = due.date()
+    if day == today:
+        return f"today at {clock}"
+    if day == today + timedelta(days=1):
+        return f"tomorrow at {clock}"
+    if day == today + timedelta(days=2):
+        return f"the day after tomorrow at {clock}"
+    weekday = _WEEKDAYS[day.weekday()].capitalize()
+    month = _MONTHS[day.month - 1].capitalize()
+    return f"on {weekday}, {month} {day.day}, at {clock}"
+
+
+def count_entries(count: int) -> str:
+    """Return a number of entries the way a person says it."""
+    if count == 1:
+        return "one entry"
+    words = {value: word for word, value in _NUMBER_WORDS.items() if value <= 10}
+    return f"{words.get(count, str(count))} entries"
+
+
 PACK = LanguagePack(
     code="en",
     default_categories=ENGLISH_CATEGORIES,
@@ -855,5 +938,25 @@ PACK = LanguagePack(
     starts_with_verb=starts_with_verb,
     build_glossary=build_glossary,
     validate_ai_rewrite=validate_ai_rewrite,
+    messages=MESSAGES,
+    format_due=format_due,
+    count_entries=count_entries,
+    reminder_words=ReminderWords(
+        me=("i",),
+        others=("she", "he", "they"),
+        when=r"(?:when|once|as\s+soon\s+as)",
+        home=(
+            r"(?:(?:get|gets|come|comes|arrive|arrives)\s+(?:back\s+)?home"
+            r"|(?:am|is|are|'m)\s+(?:back\s+)?home)"
+        ),
+        place=(
+            r"(?:(?:get|gets|arrive|arrives)\s+(?:to|at|in)(?:\s+the)?"
+            r"|(?:am|is|are)\s+(?:at|in)(?:\s+the)?|reach|reaches)"
+        ),
+        place_lead=r"(?:at|in)(?:\s+the)?",
+        place_end=r"",
+    ),
+    garden_words=("garden", "house"),
+    garden_match="garden",
     ai_cleanup_prompt=ai_cleanup_prompt,
 )

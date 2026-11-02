@@ -1,25 +1,17 @@
 add_idea:
-  name: Idee hinzufügen
-  description: "Fügt blitzschnell eine neue Brainstorm-Idee hinzu. Erkennt automatisch Kategorien im Text (z.B. 'Garten: Blumen pflanzen' oder '#smarthome')."
   fields:
     text:
-      name: Text / Idee
-      description: Der Inhalt des Gedankens oder der Idee.
       required: true
       example: "Wohnzimmer: Neue LED Leiste anbringen"
       selector:
         text:
           multiline: true
     category:
-      name: Kategorie (Optional)
-      description: Thema/Kategorie. Bleibt dies leer, wird sie aus dem Text ermittelt oder 'Inbox' zugewiesen.
       required: false
       example: "Smarthome"
       selector:
         text:
     priority:
-      name: Priorität (Optional)
-      description: Dringlichkeit der Idee (low, medium, high, urgent). Wird andernfalls automatisch erkannt.
       required: false
       example: "high"
       selector:
@@ -30,94 +22,66 @@ add_idea:
             - high
             - urgent
     source:
-      name: Quelle
-      description: Woher die Idee stammt (z.B. alexa, companion, dashboard, etc.).
       required: false
       default: "manual"
       example: "alexa"
       selector:
         text:
     device:
-      name: Erfassungsgerät
-      description: Das auslösende Gerät (z.B. "Echo Show Küche", "Wohnzimmer Echo Dot", "Jan (Handy)").
       required: false
       example: "Echo Show Küche"
       selector:
         text:
     language:
-      name: Sprache
-      description: Sprache des Textes (z.B. "de" oder "en"). Ohne Angabe gilt die Sprache von Home Assistant.
       required: false
       example: "en"
       selector:
         text:
     tags:
-      name: Tags
-      description: Zusätzliche Schlagworte.
       required: false
       selector:
         object:
     parent_id:
-      name: Übergeordnete Idee (Parent-ID)
-      description: ID der übergeordneten Idee für Unteraufgaben/Einrückung (optional).
       required: false
       example: "42fdbc8c"
       selector:
         text:
     due:
-      name: Fällig am (Optional)
-      description: Wann Brainstorm an diese Idee erinnern soll.
       required: false
       selector:
         datetime:
     parse_due:
-      name: Termin aus dem Text erkennen
-      description: Erkennt Angaben wie "morgen um 8" im Text und nimmt sie als Termin.
       required: false
       default: false
       selector:
         boolean:
     assignee:
-      name: Für Person (Optional)
-      description: Wer erinnert werden soll.
       required: false
       selector:
         entity:
           domain: person
     zone:
-      name: An diesem Ort erinnern (Optional)
-      description: Erinnert beim Betreten dieser Zone.
       required: false
       selector:
         entity:
           domain: zone
 
 update_idea:
-  name: Idee bearbeiten
-  description: Aktualisiert Text, Kategorie oder Status einer bestehenden Idee.
   fields:
     id:
-      name: ID
-      description: Eindeutige ID der Idee.
       required: true
       example: "a1b2c3d4"
       selector:
         text:
     text:
-      name: Neuer Text
-      description: Geänderter Text.
       required: false
       selector:
         text:
     category:
-      name: Kategorie
-      description: Neue Kategorie.
       required: false
       selector:
         text:
     priority:
-      name: Priorität
-      description: Neue Priorität (low, medium, high, urgent).
       required: false
       example: "high"
       selector:
@@ -128,8 +92,6 @@ update_idea:
             - high
             - urgent
     status:
-      name: Status
-      description: Neuer Status (active, completed, archived).
       required: false
       selector:
         select:
@@ -138,70 +100,48 @@ update_idea:
             - completed
             - archived
     device:
-      name: Erfassungsgerät
-      description: Gerät aktualisieren.
       required: false
       selector:
         text:
     parent_id:
-      name: Übergeordnete Idee (Parent-ID)
-      description: ID der übergeordneten Idee für Unteraufgaben/Einrückung (leer = Hauptaufgabe).
       required: false
       example: "42fdbc8c"
       selector:
         text:
     order:
-      name: Reihenfolge
-      description: Benutzerdefinierter Sortierindex.
       required: false
       selector:
         number:
           mode: box
     due:
-      name: Fällig am (Optional)
-      description: Wann Brainstorm an diese Idee erinnern soll.
       required: false
       selector:
         datetime:
     assignee:
-      name: Für Person (Optional)
-      description: Wer erinnert werden soll.
       required: false
       selector:
         entity:
           domain: person
     zone:
-      name: An diesem Ort erinnern (Optional)
-      description: Erinnert beim Betreten dieser Zone.
       required: false
       selector:
         entity:
           domain: zone
 
 delete_idea:
-  name: Idee löschen
-  description: Entfernt eine Idee dauerhaft.
   fields:
     id:
-      name: ID
-      description: ID der zu löschenden Idee.
       required: true
       selector:
         text:
 
 get_ideas:
-  name: Ideen abrufen
-  description: Gibt eine Liste gespeicherter Ideen zurück (für Templates oder Automationen).
   fields:
     category:
-      name: Kategorie
-      description: Optional nach Kategorie filtern.
       required: false
       selector:
         text:
     priority:
-      name: Priorität
-      description: Optional nach Priorität filtern (low, medium, high, urgent).
       required: false
       selector:
         select:
@@ -211,8 +151,6 @@ get_ideas:
             - high
             - urgent
     status:
-      name: Status
-      description: Status-Filter (active, completed oder all).
       default: "active"
       selector:
         select:
@@ -222,134 +160,90 @@ get_ideas:
             - all
 
 get_announcement:
-  name: Sprachansage generieren
-  description: Erzeugt einen flüssigen, gesprochenen Ansagetext für Alexa oder Assist über alle oder eine bestimmte Kategorie.
   fields:
     category:
-      name: Kategorie (Optional)
-      description: Optional nach einer bestimmten Kategorie filtern (z.B. Smarthome). Ohne Angabe werden alle aktiven Kategorien vorgelesen.
       required: false
       example: "Smarthome"
       selector:
         text:
     device:
-      name: Gerät
-      description: Das Gerät, das gefragt hat. Bei eingeschalteter Privatsphäre bestimmt es, wessen Einträge genannt werden.
       required: false
       selector:
         text:
 
 add_category:
-  name: Kategorie hinzufügen
-  description: Erstellt eine neue Brainstorm-Kategorie und die dazugehörige To-do-Liste.
   fields:
     name:
-      name: Kategoriename
-      description: Name der neuen Kategorie.
       required: true
       example: "Reisen"
       selector:
         text:
     icon:
-      name: Icon
-      description: Optionales Home Assistant / MDI Icon.
       required: false
       example: "mdi:airplane"
       selector:
         icon:
     color:
-      name: Farbe
-      description: "Optionale Akzentfarbe (Hexadezimal wie #ff7800)."
       required: false
       example: "#38bdf8"
       selector:
         text:
 
 set_category_style:
-  name: Kategorie-Design anpassen
-  description: Legt ein benutzerdefiniertes Icon und/oder eine Akzentfarbe für eine Kategorie fest.
   fields:
     category:
-      name: Kategorie
-      description: Name der zu formatierenden Kategorie.
       required: true
       example: "Smarthome"
       selector:
         text:
     icon:
-      name: Icon
-      description: Home Assistant / MDI Icon.
       required: false
       example: "mdi:home-automation"
       selector:
         icon:
     color:
-      name: Farbe
-      description: "Akzentfarbe für Notizen und Filter (Hexadezimal wie #06b6d4)."
       required: false
       example: "#06b6d4"
       selector:
         text:
     reset:
-      name: Zurücksetzen
-      description: Falls aktiviert, werden benutzerdefiniertes Icon und Farbe entfernt und auf Standard zurückgesetzt.
       required: false
       default: false
       selector:
         boolean:
 
 remove_category:
-  name: Kategorie entfernen
-  description: Entfernt eine Kategorie (verbleibende Ideen werden nach 'Inbox' verschoben).
   fields:
     name:
-      name: Kategoriename
-      description: Name der Kategorie.
       required: true
       selector:
         text:
 
 export_markdown:
-  name: Nach Markdown exportieren
-  description: Schreibt alle Kategorien und Ideen als Markdown-Dateien ins Dateisystem.
   fields:
     path:
-      name: Pfad
-      description: "Zielordner (Standard: /config/brainstorm)."
       required: false
       selector:
         text:
 
 reorder_ideas:
-  name: Notizen sortieren (Reorder)
-  description: Aktualisiert die benutzerdefinierte Sortierreihenfolge der Notizen anhand einer Liste von IDs.
   fields:
     idea_ids:
-      name: Notiz-IDs
-      description: Geordnete Liste der Notiz-IDs.
       required: true
       selector:
         object:
 
 share:
-  name: Freigeben
-  description: Gibt mehrere Einträge oder eine ganze Kategorie für Personen frei. Braucht eingeschaltete Privatsphäre.
   fields:
     ids:
-      name: Einträge
-      description: IDs der freizugebenden Einträge.
       required: false
       selector:
         object:
     category:
-      name: Kategorie
-      description: Alle eigenen Einträge dieser Kategorie freigeben, auch spätere.
       required: false
       selector:
         text:
     shares:
-      name: Freigaben
-      description: 'Benutzer-ID (oder "all") und Stufe, z. B. {"all": "view"}. Stufen sind view und edit; null entfernt die Freigabe.'
       required: true
       selector:
         object:

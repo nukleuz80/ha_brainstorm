@@ -305,8 +305,10 @@ async def test_own_category_is_recognized(store: BrainstormStore) -> None:
 
 async def test_invalid_text_is_refused(store: BrainstormStore) -> None:
     """Test that a canceled sentence does not become an idea."""
-    with pytest.raises(ServiceValidationError, match="abbrechen"):
+    with pytest.raises(ServiceValidationError) as error:
         await store.async_add_idea("abbrechen")
+    assert error.value.translation_key == "invalid_text"
+    assert error.value.translation_placeholders == {"text": "abbrechen"}
 
 
 async def test_broken_listener_does_not_stop_the_others(

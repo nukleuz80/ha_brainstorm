@@ -4,10 +4,12 @@ from __future__ import annotations
 from datetime import datetime
 import re
 
+from . import en
 from .common import (
     ENGLISH_CATEGORIES,
     NEVER_MATCHES,
     LanguagePack,
+    ReminderWords,
     apply_glossary,
     capitalize_first,
     merge_glossary,
@@ -56,4 +58,19 @@ PACK = LanguagePack(
     starts_with_verb=lambda text: False,
     build_glossary=_build_glossary,
     validate_ai_rewrite=lambda spoken, rule_text, candidate: None,
+    # Without an own language, Brainstorm answers in English
+    messages=en.MESSAGES,
+    format_due=en.format_due,
+    count_entries=en.count_entries,
+    reminder_words=ReminderWords(
+        me=(),
+        others=(),
+        when=NEVER_MATCHES.pattern,
+        home=NEVER_MATCHES.pattern,
+        place=NEVER_MATCHES.pattern,
+        place_lead=NEVER_MATCHES.pattern,
+        place_end="",
+    ),
+    garden_words=(),
+    garden_match="",
 )

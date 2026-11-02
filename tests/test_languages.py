@@ -1,7 +1,10 @@
 """Tests for the language packs."""
 from __future__ import annotations
 
+import ast
 from datetime import datetime, timezone
+from pathlib import Path
+import re
 from typing import Any
 
 import pytest
@@ -13,6 +16,14 @@ from custom_components.brainstorm.languages.neutral import PACK as NEUTRAL
 from custom_components.brainstorm.store import BrainstormStore
 
 NOW = datetime(2026, 3, 10, 10, 0, tzinfo=timezone.utc)
+GERMAN_TEXT = re.compile(
+    r"[äöüßÄÖÜ]|\b(?:Idee|Ideen|Eintrag|Einträge|Notiz|Kategorie|Erinnerung|Termin|"
+    r"Heute|Morgen|nicht|wurde)\b"
+)
+# Words people may write in any language, like a !dringend tag
+ALLOWED_GERMAN = {"später"}
+# The settings hold their menu labels next to each other in both languages
+GERMAN_UNTIL_SKILL_IS_TRANSLATED = {"alexa_skill.py", "config_flow.py"}
 
 
 @pytest.mark.parametrize(
@@ -44,6 +55,46 @@ def test_every_pack_describes_the_same_categories(pack: LanguagePack) -> None:
     assert set(pack.category_aliases) == set(pack.category_names)
     assert set(pack.category_keywords) == set(pack.category_names)
     assert pack.ai_cleanup_prompt is not None
+
+
+@pytest.mark.parametrize("pack", PACKS.values(), ids=lambda pack: pack.code)
+def test_every_pack_has_all_messages(pack: LanguagePack) -> None:
+    """A text missing in one language would fail at the moment it is needed."""
+    assert set(pack.messages) == set(PACKS["de"].messages)
+    for key, text in pack.messages.items():
+        assert re.findall(r"{(\w+)}", text) == re.findall(
+            r"{(\w+)}", PACKS["de"].messages[key]
+        ) or sorted(re.findall(r"{(\w+)}", text)) == sorted(
+            re.findall(r"{(\w+)}", PACKS["de"].messages[key])
+        ), key
+
+
+def test_no_german_text_outside_of_the_language_packs() -> None:
+    """Anything a person reads comes from a language pack or a translation."""
+    root = Path(__file__).parents[1] / "custom_components/brainstorm"
+    found = []
+    for path in root.glob("*.py"):
+        tree = ast.parse(path.read_text("utf-8"))
+        docstrings = {
+            id(node.body[0].value)
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Module | ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef)
+            and node.body
+            and isinstance(node.body[0], ast.Expr)
+            and isinstance(node.body[0].value, ast.Constant)
+        }
+        for node in ast.walk(tree):
+            if (
+                isinstance(node, ast.Constant)
+                and isinstance(node.value, str)
+                and id(node) not in docstrings
+                and GERMAN_TEXT.search(node.value)
+                and node.value not in ALLOWED_GERMAN
+                and "a-zA-Z" not in node.value
+                and path.name not in GERMAN_UNTIL_SKILL_IS_TRANSLATED
+            ):
+                found.append((path.name, node.lineno, node.value[:60]))
+    assert not found
 
 
 async def test_unknown_language_leaves_words_alone(hass: HomeAssistant) -> None:

@@ -440,6 +440,302 @@
   "exceptions": {
     "not_loaded": {
       "message": "Brainstorm Hub is not loaded. Check the integration under Settings > Devices & services."
+    },
+    "no_access_idea": {
+      "message": "No access to idea '{id}'."
+    },
+    "admin_only": {
+      "message": "Only administrators may do this."
+    },
+    "idea_not_found": {
+      "message": "Idea '{id}' was not found."
+    },
+    "sharing_needs_privacy": {
+      "message": "Sharing is only available with privacy switched on."
+    },
+    "share_target_missing": {
+      "message": "Please name entries or a category."
+    },
+    "no_idea_found": {
+      "message": "None of these entries were found."
+    },
+    "category_name_empty": {
+      "message": "The category name must not be empty."
+    },
+    "category_exists": {
+      "message": "The category '{name}' already exists."
+    },
+    "category_name_required": {
+      "message": "A category name is required."
+    },
+    "category_not_removable": {
+      "message": "The category '{name}' does not exist or cannot be removed."
+    },
+    "export_failed": {
+      "message": "The Markdown export failed: {error}"
+    },
+    "no_access_entry": {
+      "message": "No access to this entry."
+    },
+    "entry_not_found": {
+      "message": "Entry '{id}' was not found."
+    },
+    "invalid_icon": {
+      "message": "Invalid icon: {icon}"
+    },
+    "invalid_color": {
+      "message": "Invalid color (hex expected): {color}"
+    },
+    "owner_only_share": {
+      "message": "Only owners may share entries."
+    },
+    "invalid_text": {
+      "message": "Invalid or empty note text: {text}"
+    },
+    "parent_not_found": {
+      "message": "The parent idea '{id}' was not found."
+    },
+    "parent_cycle": {
+      "message": "Idea '{id}' cannot be a parent (cycle)."
+    },
+    "export_not_allowed": {
+      "message": "Export to '{path}' is not allowed. Allowed are subfolders of the config directory and allowlist_external_dirs."
+    }
+  },
+  "services": {
+    "add_idea": {
+      "name": "Add idea",
+      "description": "Adds a new idea and detects the category in the text, such as `Garten: Blumen pflanzen` or `#smarthome`.",
+      "fields": {
+        "text": {
+          "name": "Text",
+          "description": "The content of the idea."
+        },
+        "category": {
+          "name": "Category",
+          "description": "Category. If empty, it is detected from the text or set to `Inbox`."
+        },
+        "priority": {
+          "name": "Priority",
+          "description": "Urgency (`low`, `medium`, `high`, `urgent`). Detected automatically if empty."
+        },
+        "source": {
+          "name": "Source",
+          "description": "Where the idea comes from, such as `alexa` or `dashboard`."
+        },
+        "device": {
+          "name": "Device",
+          "description": "The device that triggered it, such as `Echo Show Küche`."
+        },
+        "language": {
+          "name": "Language",
+          "description": "Language of the text, such as de or en. Without it, the language of Home Assistant applies."
+        },
+        "tags": {
+          "name": "Tags",
+          "description": "Additional keywords."
+        },
+        "parent_id": {
+          "name": "Parent ID",
+          "description": "ID of the parent idea, to create a subtask."
+        },
+        "due": {
+          "name": "Due",
+          "description": "When Brainstorm should remind you of this idea."
+        },
+        "parse_due": {
+          "name": "Parse due",
+          "description": "Detects phrases like `morgen um 8` in the text and uses them as the time."
+        },
+        "assignee": {
+          "name": "Assignee",
+          "description": "The person to remind."
+        },
+        "zone": {
+          "name": "Zone",
+          "description": "Reminds when entering this zone."
+        }
+      }
+    },
+    "update_idea": {
+      "name": "Update idea",
+      "description": "Changes an existing idea.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "Unique ID of the idea."
+        },
+        "text": {
+          "name": "Text",
+          "description": "New text."
+        },
+        "category": {
+          "name": "Category",
+          "description": "New category."
+        },
+        "priority": {
+          "name": "Priority",
+          "description": "New priority (`low`, `medium`, `high`, `urgent`)."
+        },
+        "status": {
+          "name": "Status",
+          "description": "New status (`active`, `completed`, `archived`)."
+        },
+        "device": {
+          "name": "Device",
+          "description": "New device."
+        },
+        "parent_id": {
+          "name": "Parent ID",
+          "description": "ID of the parent idea. Empty makes it a main task."
+        },
+        "order": {
+          "name": "Order",
+          "description": "Custom sort index."
+        },
+        "due": {
+          "name": "Due",
+          "description": "When Brainstorm should remind you of this idea."
+        },
+        "assignee": {
+          "name": "Assignee",
+          "description": "The person to remind."
+        },
+        "zone": {
+          "name": "Zone",
+          "description": "Reminds when entering this zone."
+        }
+      }
+    },
+    "delete_idea": {
+      "name": "Delete idea",
+      "description": "Permanently removes an idea.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "ID of the idea to delete."
+        }
+      }
+    },
+    "get_ideas": {
+      "name": "Get ideas",
+      "description": "Returns stored ideas as a response, for templates and automations.",
+      "fields": {
+        "category": {
+          "name": "Category",
+          "description": "Only this category."
+        },
+        "priority": {
+          "name": "Priority",
+          "description": "Only this priority (`low`, `medium`, `high`, `urgent`)."
+        },
+        "status": {
+          "name": "Status",
+          "description": "Status filter (`active`, `completed` or `all`)."
+        }
+      }
+    },
+    "get_announcement": {
+      "name": "Generate announcement",
+      "description": "Returns a spoken text about all categories or one of them as a response, for Alexa or Assist.",
+      "fields": {
+        "category": {
+          "name": "Category",
+          "description": "Only this category, such as `Smarthome`. Empty means all."
+        },
+        "device": {
+          "name": "Device",
+          "description": "The device that asked. With privacy on, it decides whose entries are named."
+        }
+      }
+    },
+    "add_category": {
+      "name": "Add category",
+      "description": "Creates a new category and its to-do list.",
+      "fields": {
+        "name": {
+          "name": "Name",
+          "description": "Name of the new category."
+        },
+        "icon": {
+          "name": "Icon",
+          "description": "Optional Home Assistant / MDI icon."
+        },
+        "color": {
+          "name": "Color",
+          "description": "Optional accent color as hexadecimal, such as `#ff7800`."
+        }
+      }
+    },
+    "set_category_style": {
+      "name": "Set category design",
+      "description": "Sets a custom icon and accent color for a category.",
+      "fields": {
+        "category": {
+          "name": "Category",
+          "description": "Name of the category."
+        },
+        "icon": {
+          "name": "Icon",
+          "description": "Home Assistant / MDI icon."
+        },
+        "color": {
+          "name": "Color",
+          "description": "Accent color as hexadecimal, such as `#06b6d4`."
+        },
+        "reset": {
+          "name": "Reset",
+          "description": "Removes the custom icon and color."
+        }
+      }
+    },
+    "remove_category": {
+      "name": "Remove category",
+      "description": "Removes a category. Its ideas move to `Inbox`.",
+      "fields": {
+        "name": {
+          "name": "Name",
+          "description": "Name of the category."
+        }
+      }
+    },
+    "export_markdown": {
+      "name": "Export to Markdown",
+      "description": "Writes all categories and ideas as Markdown files.",
+      "fields": {
+        "path": {
+          "name": "Path",
+          "description": "Target folder. Default: `/config/brainstorm`."
+        }
+      }
+    },
+    "reorder_ideas": {
+      "name": "Reorder ideas",
+      "description": "Saves the custom order of the ideas.",
+      "fields": {
+        "idea_ids": {
+          "name": "IDea IDs",
+          "description": "Ordered list of idea IDs."
+        }
+      }
+    },
+    "share": {
+      "name": "Share",
+      "description": "Shares several ideas or a whole category. Needs privacy to be switched on.",
+      "fields": {
+        "ids": {
+          "name": "IDs",
+          "description": "IDs of the ideas to share."
+        },
+        "category": {
+          "name": "Category",
+          "description": "Shares all your ideas in this category, including later ones."
+        },
+        "shares": {
+          "name": "Shares",
+          "description": "User ID (or `all`) and level, such as `{\"all\": \"view\"}`. Levels are `view` and `edit`; `null` removes a share."
+        }
+      }
     }
   }
 }

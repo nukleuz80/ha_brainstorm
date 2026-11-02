@@ -18,7 +18,9 @@ from homeassistant.util import dt as dt_util
 import pytest
 from pytest_homeassistant_custom_component.typing import ClientSessionGenerator
 
-from custom_components.brainstorm import alexa_display, alexa_skill
+from custom_components.brainstorm import alexa_display
+from custom_components.brainstorm import alexa_skill
+from custom_components.brainstorm.languages.de import PACK as GERMAN
 from custom_components.brainstorm.alexa_skill import clean_voice_text
 from custom_components.brainstorm.const import OVERVIEW_ENTITY_ID
 from custom_components.brainstorm.reminders import ReminderRequest
@@ -836,7 +838,7 @@ def test_document_receives_its_data() -> None:
         ["Alltag", "Projekte"],
         {},
         None,
-        True,
+        GERMAN,
     )
     parameters = directive["document"]["mainTemplate"]["parameters"]
     document = json.dumps(directive["document"])
@@ -874,7 +876,7 @@ def test_tile_labels_priority_due_date_and_parent() -> None:
         },
         {"id": "c", "text": "ohne", "category": "Alltag", "due": "kein datum"},
     ]
-    directive = alexa_display.build_directive(ideas, ["Alltag"], {}, None, True)
+    directive = alexa_display.build_directive(ideas, ["Alltag"], {}, None, GERMAN)
     page = directive["datasources"][alexa_display.DATA_NAME]["pages"][0]
     parent, child, plain = page["items"]
 
@@ -892,7 +894,7 @@ def test_short_colors_can_be_tinted() -> None:
     ideas = [{"id": "a", "text": "b", "category": "Alltag"}]
     for color in ("#abc", "#aabbcc", "#aabbccdd"):
         directive = alexa_display.build_directive(
-            ideas, ["Alltag"], {"Alltag": color}, None, True
+            ideas, ["Alltag"], {"Alltag": color}, None, GERMAN
         )
         page = directive["datasources"][alexa_display.DATA_NAME]["pages"][0]
         assert page["color"] == "#aabbcc"
@@ -914,7 +916,7 @@ def test_screen_limits_keep_the_answer_small() -> None:
         {"id": f"{index:08x}", "text": "x" * 500, "category": "Alltag"}
         for index in range(500)
     ]
-    directive = alexa_display.build_directive(ideas, ["Alltag"], {}, None, True)
+    directive = alexa_display.build_directive(ideas, ["Alltag"], {}, None, GERMAN)
 
     page = directive["datasources"][alexa_display.DATA_NAME]["pages"][0]
     assert len(page["items"]) == alexa_display.MAX_DISPLAY_ITEMS
@@ -930,7 +932,7 @@ def test_screen_ignores_a_broken_color() -> None:
         ("${viewport}", alexa_display.DEFAULT_COLOR),
     ):
         directive = alexa_display.build_directive(
-            ideas, ["Alltag"], {"Alltag": color}, None, True
+            ideas, ["Alltag"], {"Alltag": color}, None, GERMAN
         )
         assert directive["datasources"][alexa_display.DATA_NAME]["pages"][0]["color"] == expected
 

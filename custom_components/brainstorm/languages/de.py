@@ -13,6 +13,7 @@ from .common import (
     CATEGORY_PROJECTS,
     CATEGORY_SMARTHOME,
     LanguagePack,
+    ReminderWords,
     apply_glossary,
     capitalize_first,
     merge_glossary,
@@ -1244,6 +1245,104 @@ CATEGORY_KEYWORDS: dict[str, list[str]] = {
     ],
 }
 
+MESSAGES: dict[str, str] = {
+    "and": "und",
+    "reminder_spoken": "Erinnerung: {text}.",
+    "reminder_title": "Brainstorm: Erinnerung",
+    "action_done": "Erledigt",
+    "action_snooze": "1 Stunde später",
+    "action_tomorrow": "Morgen",
+    "digest_title": "Brainstorm: Heute",
+    "review_title": "Brainstorm: Wochenrückblick",
+    "digest_one": "Heute steht an: {item}.",
+    "digest_many": "Heute stehen {count} Dinge an: {items}.",
+    "review": (
+        "Wochenrückblick: {count} Einträge sind seit über {days} Tagen offen. "
+        "Die ältesten sind: {items}. Kann davon etwas weg?"
+    ),
+    "summarize_prompt": (
+        "Fasse diese Erinnerung als kurzen, natürlichen deutschen Satz zum "
+        "Vorlesen zusammen. Erfinde nichts dazu und lasse keinen Eintrag weg: "
+        "{message}"
+    ),
+    "list_line": "{category}: {items}.",
+    "overview_empty": "Du hast aktuell keine offenen Notizen in Brainstorm.",
+    "overview": "Du hast {total} Einträge: {parts}. Welche Kategorie?",
+    "overview_part": "{count} in {category}",
+    "category_empty": "In der Kategorie {category} gibt es aktuell keine offenen Einträge.",
+    "category_items": "{category} hat {count}: {items}.",
+    "prio_urgent": "🔥 Dringend",
+    "prio_high": "🔴 Hoch",
+    "prio_low": "🟢 Niedrig",
+    "todo_priority": "Priorität: {label}",
+    "todo_source": "Quelle: {value}",
+    "todo_device": "Gerät: {value}",
+    "log_private": "Privater Eintrag",
+    "log_unknown": "Unbekannte Notiz",
+    "log_added": "Idee erfasst",
+    "log_completed": "Idee erledigt",
+    "log_updated": "Idee geändert",
+    "log_deleted": "Idee gelöscht",
+    "export_active": "## Aktive Ideen",
+    "export_none": "_Keine aktiven Ideen_",
+    "export_done": "## Erledigt / Archiviert",
+    "llm_added": "Idee erfolgreich in '{category}' (Priorität: {priority}) erfasst.",
+    "llm_completed": "'{text}' wurde als erledigt markiert.",
+    "llm_deleted": "Idee '{text}' wurde gelöscht.",
+    "llm_delete_failed": "Löschen fehlgeschlagen.",
+    "display_mark_done": "Als erledigt markieren",
+    "display_no_open": "Keine offenen Ideen.",
+    "display_open": "offen",
+    "display_urgent": "dringend",
+    "display_today": "Heute",
+    "display_tomorrow": "Morgen",
+    "display_more": "+ {count} weitere",
+    "display_prio_urgent": "Dringend",
+    "display_prio_high": "Hoch",
+    "display_prio_low": "Niedrig",
+}
+
+
+def format_due(due: datetime, today: date) -> str:
+    """Return a local due time the way a person says it."""
+    clock = f"{due.hour} Uhr" if due.minute == 0 else f"{due.hour} Uhr {due.minute}"
+    day = due.date()
+    if day == today:
+        return f"heute um {clock}"
+    if day == today + timedelta(days=1):
+        return f"morgen um {clock}"
+    if day == today + timedelta(days=2):
+        return f"übermorgen um {clock}"
+    weekday = (
+        "Montag",
+        "Dienstag",
+        "Mittwoch",
+        "Donnerstag",
+        "Freitag",
+        "Samstag",
+        "Sonntag",
+    )[day.weekday()]
+    return f"am {weekday}, den {day.day}.{day.month}., um {clock}"
+
+
+def count_entries(count: int) -> str:
+    """Return a number of entries the way a person says it."""
+    if count == 1:
+        return "einen Eintrag"
+    words = {
+        2: "zwei",
+        3: "drei",
+        4: "vier",
+        5: "fünf",
+        6: "sechs",
+        7: "sieben",
+        8: "acht",
+        9: "neun",
+        10: "zehn",
+    }
+    return f"{words.get(count, str(count))} Einträge"
+
+
 PACK = LanguagePack(
     code="de",
     default_categories=tuple(DEFAULT_CATEGORIES),
@@ -1312,5 +1411,22 @@ PACK = LanguagePack(
     starts_with_verb=starts_with_verb,
     build_glossary=build_glossary,
     validate_ai_rewrite=validate_ai_rewrite,
+    messages=MESSAGES,
+    format_due=format_due,
+    count_entries=count_entries,
+    reminder_words=ReminderWords(
+        me=("ich",),
+        others=("sie", "er"),
+        when=r"wenn",
+        home=(
+            r"(?:wieder\s+)?(?:nach\s+hause\s+komm\w*|heim\s?komm\w*|zu\s?hause\s+(?:bin|ist)"
+            r"|daheim\s+(?:bin|ist))"
+        ),
+        place=r"(?:im|in\s+der|in|beim|bei|am)",
+        place_lead=r"(?:im|in\s+der|in|beim|bei|am)",
+        place_end=r"(?:\s+(?:bin|ist))?",
+    ),
+    garden_words=("garten", "haus"),
+    garden_match="garten",
     ai_cleanup_prompt=ai_cleanup_prompt,
 )

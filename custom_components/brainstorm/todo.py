@@ -29,6 +29,7 @@ from .const import (
     ATTR_TEXT,
     DOMAIN,
 )
+from .languages import get_pack
 from .store import BrainstormConfigEntry, BrainstormStore
 
 PARALLEL_UPDATES = 0
@@ -138,6 +139,7 @@ class BrainstormTodoList(TodoListEntity):
         if self._store.privacy_enabled:
             items = [item for item in items if self._store.is_shared_with_all(item)]
         todo_items = []
+        pack = get_pack(self.hass.config.language)
         for item in items:
             if item.get(ATTR_STATUS) == "archived":
                 continue
@@ -149,18 +151,18 @@ class BrainstormTodoList(TodoListEntity):
 
             parts = []
             if prio == "urgent":
-                parts.append("Priorität: 🔥 Dringend")
+                parts.append(pack.msg("todo_priority", label=pack.msg("prio_urgent")))
             elif prio == "high":
-                parts.append("Priorität: 🔴 Hoch")
+                parts.append(pack.msg("todo_priority", label=pack.msg("prio_high")))
             elif prio == "low":
-                parts.append("Priorität: 🟢 Niedrig")
+                parts.append(pack.msg("todo_priority", label=pack.msg("prio_low")))
 
             if dev and src:
-                parts.append(f"Quelle: {src} ({dev})")
+                parts.append(pack.msg("todo_source", value=f"{src} ({dev})"))
             elif dev:
-                parts.append(f"Gerät: {dev}")
+                parts.append(pack.msg("todo_device", value=dev))
             elif src:
-                parts.append(f"Quelle: {src}")
+                parts.append(pack.msg("todo_source", value=src))
 
             desc = " • ".join(parts) if parts else None
 
@@ -196,7 +198,9 @@ class BrainstormTodoList(TodoListEntity):
         """Update an idea item."""
         idea = self._store.get_idea(item.uid)
         if idea is not None and not self._store.can_edit(idea, self._user_id):
-            raise HomeAssistantError("Kein Zugriff auf diesen Eintrag.")
+            raise HomeAssistantError(
+            translation_domain=DOMAIN, translation_key="no_access_entry"
+        )
         new_status = (
             "completed"
             if item.status == TodoItemStatus.COMPLETED
@@ -212,14 +216,20 @@ class BrainstormTodoList(TodoListEntity):
             update_due=True,
         )
         if updated is None:
-            raise ServiceValidationError(f"Eintrag '{item.uid}' wurde nicht gefunden.")
+            raise ServiceValidationError(
+            translation_domain=DOMAIN, translation_key="entry_not_found", translation_placeholders={"id": str(item.uid)}
+        )
 
     async def async_delete_todo_items(self, uids: list[str]) -> None:
         """Delete idea items."""
         for uid in uids:
             idea = self._store.get_idea(uid)
             if idea is not None and not self._store.is_owner(idea, self._user_id):
-                raise HomeAssistantError("Kein Zugriff auf diesen Eintrag.")
+                raise HomeAssistantError(
+            translation_domain=DOMAIN, translation_key="no_access_entry"
+        )
             if not await self._store.async_delete_idea(uid, context=self._context):
-                raise ServiceValidationError(f"Eintrag '{uid}' wurde nicht gefunden.")
+                raise ServiceValidationError(
+            translation_domain=DOMAIN, translation_key="entry_not_found", translation_placeholders={"id": uid}
+        )
 

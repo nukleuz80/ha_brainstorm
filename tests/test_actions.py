@@ -138,9 +138,9 @@ async def test_category_actions_report_failures(
     assert entry.runtime_data.category_icons["Reisen"] == "mdi:car"
     assert entry.runtime_data.category_colors["Reisen"] == "#ff7800"
 
-    with pytest.raises(ServiceValidationError, match="existiert bereits"):
+    with pytest.raises(ServiceValidationError, match="already exists"):
         await _call(hass, "add_category", name="reisen")
-    with pytest.raises(ServiceValidationError, match="leer"):
+    with pytest.raises(ServiceValidationError, match="empty"):
         await _call(hass, "add_category", name="  ")
 
     result = await _call(hass, "remove_category", name="Reisen")
@@ -161,7 +161,7 @@ async def test_set_category_style(hass: HomeAssistant, setup_entry: SetupEntry) 
 
     result = await _call(hass, "set_category_style", category="Alltag", reset=True)
     assert "Alltag" not in result["category_icons"]
-    with pytest.raises(ServiceValidationError, match="Kategoriename"):
+    with pytest.raises(ServiceValidationError, match="name is required"):
         await _call(hass, "set_category_style", category=" ")
     with pytest.raises(ServiceValidationError):
         await _call(hass, "set_category_style", category="Alltag", color="rot")
@@ -210,7 +210,7 @@ async def test_share_reports_unknown_ideas(
     await setup_entry(
         options={"privacy_enabled": True, "privacy_owner": hass_admin_user.id}
     )
-    with pytest.raises(ServiceValidationError, match="gefunden"):
+    with pytest.raises(ServiceValidationError, match="were found"):
         await _call(hass, "share", ids=["gibtsnicht"], shares={"all": "view"})
 
 
@@ -317,7 +317,7 @@ async def test_todo_delete_refuses_other_owners(
     entity._context = None  # noqa: SLF001
     with patch.object(
         BrainstormTodoList, "_user_id", new_callable=lambda: property(lambda _: "fremd")
-    ), pytest.raises(HomeAssistantError, match="Kein Zugriff"):
+    ), pytest.raises(HomeAssistantError, match="No access"):
         await entity.async_delete_todo_items([idea["id"]])
 
 

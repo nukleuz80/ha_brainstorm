@@ -235,14 +235,18 @@ def _check_idea_edit(store: BrainstormStore, idea_id: str, call: ServiceCall) ->
     """Refuse changes without the right to edit an idea."""
     idea = store.get_idea(idea_id)
     if idea is not None and not store.can_edit(idea, call.context.user_id):
-        raise ServiceValidationError(f"Kein Zugriff auf Idee '{idea_id}'.")
+        raise ServiceValidationError(
+            translation_domain=DOMAIN, translation_key="no_access_idea", translation_placeholders={"id": idea_id}
+        )
 
 
 def _check_idea_owner(store: BrainstormStore, idea_id: str, call: ServiceCall) -> None:
     """Refuse what only the owner of an idea may do."""
     idea = store.get_idea(idea_id)
     if idea is not None and not store.is_owner(idea, call.context.user_id):
-        raise ServiceValidationError(f"Kein Zugriff auf Idee '{idea_id}'.")
+        raise ServiceValidationError(
+            translation_domain=DOMAIN, translation_key="no_access_idea", translation_placeholders={"id": idea_id}
+        )
 
 
 async def _check_shared_setting_access(
@@ -254,7 +258,9 @@ async def _check_shared_setting_access(
         return
     user = await hass.auth.async_get_user(user_id)
     if user is None or not user.is_admin:
-        raise ServiceValidationError("Nur Administratoren dürfen das ausführen.")
+        raise ServiceValidationError(
+            translation_domain=DOMAIN, translation_key="admin_only"
+        )
 
 
 @callback
@@ -351,7 +357,9 @@ def _register_services(hass: HomeAssistant) -> None:
                 fields[ATTR_REMINDED_AT] = None
             await store.async_mark_fields(idea_id, fields)
         if updated is None:
-            raise ServiceValidationError(f"Idee '{idea_id}' wurde nicht gefunden.")
+            raise ServiceValidationError(
+            translation_domain=DOMAIN, translation_key="idea_not_found", translation_placeholders={"id": idea_id}
+        )
         return {"success": True, "idea": updated}
 
     async def handle_share(call: ServiceCall) -> dict[str, Any]:
@@ -359,12 +367,14 @@ def _register_services(hass: HomeAssistant) -> None:
         store = _require_store(hass)
         if not store.privacy_enabled:
             raise ServiceValidationError(
-                "Freigaben gibt es nur mit eingeschalteter Privatsphäre."
-            )
+            translation_domain=DOMAIN, translation_key="sharing_needs_privacy"
+        )
         idea_ids = call.data.get("ids")
         category = call.data.get(ATTR_CATEGORY)
         if bool(idea_ids) == bool(category):
-            raise ServiceValidationError("Bitte Einträge oder eine Kategorie angeben.")
+            raise ServiceValidationError(
+            translation_domain=DOMAIN, translation_key="share_target_missing"
+        )
         shares = call.data["shares"]
         if category:
             owner = call.context.user_id or store.voice_user_id
@@ -374,7 +384,9 @@ def _register_services(hass: HomeAssistant) -> None:
             idea_ids, shares, call.context.user_id
         )
         if not changed:
-            raise ServiceValidationError("Keiner dieser Einträge wurde gefunden.")
+            raise ServiceValidationError(
+            translation_domain=DOMAIN, translation_key="no_idea_found"
+        )
         return {"success": True, "changed": changed}
 
     async def handle_reorder_ideas(call: ServiceCall) -> dict[str, Any]:
@@ -384,7 +396,9 @@ def _register_services(hass: HomeAssistant) -> None:
         idea_ids = call.data.get("idea_ids", [])
         for idea_id in idea_ids:
             if store.get_idea(idea_id) is None:
-                raise ServiceValidationError(f"Idee '{idea_id}' wurde nicht gefunden.")
+                raise ServiceValidationError(
+            translation_domain=DOMAIN, translation_key="idea_not_found", translation_placeholders={"id": idea_id}
+        )
             _check_idea_edit(store, idea_id, call)
         success = await store.async_reorder_ideas(idea_ids)
         return {"success": success}
@@ -396,7 +410,9 @@ def _register_services(hass: HomeAssistant) -> None:
         idea_id = call.data[ATTR_ID]
         _check_idea_owner(store, idea_id, call)
         if not await store.async_delete_idea(idea_id, context=call.context):
-            raise ServiceValidationError(f"Idee '{idea_id}' wurde nicht gefunden.")
+            raise ServiceValidationError(
+            translation_domain=DOMAIN, translation_key="idea_not_found", translation_placeholders={"id": idea_id}
+        )
         return {"success": True}
 
     async def handle_get_ideas(call: ServiceCall) -> dict[str, Any]:
@@ -429,10 +445,14 @@ def _register_services(hass: HomeAssistant) -> None:
         icon = call.data.get(ATTR_ICON)
         color = call.data.get(ATTR_COLOR)
         if not name:
-            raise ServiceValidationError("Der Kategoriename darf nicht leer sein.")
+            raise ServiceValidationError(
+            translation_domain=DOMAIN, translation_key="category_name_empty"
+        )
         success = await store.async_add_category(name, icon=icon, color=color)
         if not success:
-            raise ServiceValidationError(f"Die Kategorie '{name}' existiert bereits.")
+            raise ServiceValidationError(
+            translation_domain=DOMAIN, translation_key="category_exists", translation_placeholders={"name": name}
+        )
         return {"success": success, "categories": store.categories}
 
     async def handle_set_category_style(call: ServiceCall) -> dict[str, Any]:
@@ -445,7 +465,9 @@ def _register_services(hass: HomeAssistant) -> None:
         reset = call.data.get(ATTR_RESET, False)
 
         if not category:
-            raise ServiceValidationError("Kategoriename ist erforderlich.")
+            raise ServiceValidationError(
+            translation_domain=DOMAIN, translation_key="category_name_required"
+        )
 
         success = await store.async_set_category_style(
             category,
@@ -468,8 +490,8 @@ def _register_services(hass: HomeAssistant) -> None:
         name = call.data["name"]
         if not await store.async_remove_category(name):
             raise ServiceValidationError(
-                f"Die Kategorie '{name}' gibt es nicht oder sie kann nicht entfernt werden."
-            )
+            translation_domain=DOMAIN, translation_key="category_not_removable", translation_placeholders={"name": name}
+        )
         return {"success": True, "categories": store.categories}
 
     async def handle_export_markdown(call: ServiceCall) -> dict[str, Any]:
@@ -481,7 +503,9 @@ def _register_services(hass: HomeAssistant) -> None:
         try:
             await store.async_export_to_markdown(path)
         except OSError as err:
-            raise HomeAssistantError(f"Der Markdown-Export ist fehlgeschlagen: {err}") from err
+            raise HomeAssistantError(
+            translation_domain=DOMAIN, translation_key="export_failed", translation_placeholders={"error": str(err)}
+        ) from err
         return {"success": True}
 
     async def handle_get_announcement(call: ServiceCall) -> dict[str, Any]:

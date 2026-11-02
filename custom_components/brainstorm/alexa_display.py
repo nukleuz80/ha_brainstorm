@@ -9,6 +9,7 @@ from typing import Any
 
 from homeassistant.util import dt as dt_util
 
+from .languages.common import LanguagePack
 from .const import (
     ATTR_CATEGORY,
     ATTR_DUE,
@@ -57,9 +58,9 @@ PALETTE = (
 DEFAULT_COLOR = PALETTE[0]
 PRIORITY_COLORS = {"urgent": "#ef4444", "high": "#f97316", "low": "#94a3b8"}
 PRIORITY_LABELS = {
-    "urgent": ("Dringend", "Urgent"),
-    "high": ("Hoch", "High"),
-    "low": ("Niedrig", "Low"),
+    "urgent": "display_prio_urgent",
+    "high": "display_prio_high",
+    "low": "display_prio_low",
 }
 _HEX_COLOR = re.compile(r"#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})")
 
@@ -374,7 +375,7 @@ def _chip(text: str, color: str) -> dict[str, str]:
     return {"text": text, "color": color, "tint": f"{color}{TINT_ALPHA}"}
 
 
-def _due_chip(due: Any, german: bool) -> dict[str, str] | None:
+def _due_chip(due: Any, pack: LanguagePack) -> dict[str, str] | None:
     """Return the label of a due date, red once it has passed."""
     parsed = dt_util.parse_datetime(due) if isinstance(due, str) else None
     if parsed is None:
@@ -383,9 +384,9 @@ def _due_chip(due: Any, german: bool) -> dict[str, str] | None:
     now = dt_util.now()
     clock = local.strftime("%H:%M")
     if local.date() == now.date():
-        text = f"{'Heute' if german else 'Today'} {clock}"
+        text = f"{pack.msg('display_today')} {clock}"
     elif local.date() == (now + timedelta(days=1)).date():
-        text = f"{'Morgen' if german else 'Tomorrow'} {clock}"
+        text = f"{pack.msg('display_tomorrow')} {clock}"
     else:
         text = local.strftime("%d.%m. %H:%M")
     return _chip(text, OVERDUE_COLOR if local < now else MUTED_COLOR)
@@ -414,16 +415,16 @@ def _row(
     subtask: bool,
     color: str,
     texts: dict[Any, Any],
-    german: bool,
+    pack: LanguagePack,
 ) -> dict[str, Any]:
     """Return one tile of a page."""
     priority = str(idea.get(ATTR_PRIORITY))
     accent = PRIORITY_COLORS.get(priority, color)
     chips = []
-    if due := _due_chip(idea.get(ATTR_DUE), german):
+    if due := _due_chip(idea.get(ATTR_DUE), pack):
         chips.append(due)
     if priority in PRIORITY_LABELS:
-        chips.append(_chip(PRIORITY_LABELS[priority][0 if german else 1], accent))
+        chips.append(_chip(pack.msg(PRIORITY_LABELS[priority]), accent))
     if subtask:
         parent = _safe_text(texts.get(idea.get(ATTR_PARENT_ID)), MAX_PARENT_LENGTH)
         chips.append(_chip(f"↳ {parent}", MUTED_COLOR))
@@ -436,12 +437,12 @@ def _row(
     }
 
 
-def _subtitle(rows: list[tuple[dict[str, Any], bool]], german: bool) -> str:
+def _subtitle(rows: list[tuple[dict[str, Any], bool]], pack: LanguagePack) -> str:
     """Return how much is open on a page, and how much of it is urgent."""
     urgent = sum(1 for idea, _ in rows if idea.get(ATTR_PRIORITY) == "urgent")
-    text = f"{len(rows)} {'offen' if german else 'open'}"
+    text = f"{len(rows)} {pack.msg('display_open')}"
     if urgent:
-        text += f" · {urgent} {'dringend' if german else 'urgent'}"
+        text += f" · {urgent} {pack.msg('display_urgent')}"
     return text
 
 
@@ -450,10 +451,10 @@ def build_directive(
     categories: Iterable[str],
     colors: dict[str, str],
     category: str | None,
-    german: bool,
+    pack: LanguagePack,
 ) -> dict[str, Any]:
     """Return the directive that shows one swipeable page per category with ideas."""
-    done_label = "Als erledigt markieren" if german else "Mark as done"
+    done_label = pack.msg("display_mark_done")
     grouped: dict[str, list[dict[str, Any]]] = {name: [] for name in categories}
     for idea in ideas:
         grouped.setdefault(str(idea.get(ATTR_CATEGORY)), []).append(idea)
@@ -474,18 +475,18 @@ def build_directive(
             {
                 "category": name,
                 "title": _safe_text(name),
-                "subtitle": _subtitle(rows, german),
+                "subtitle": _subtitle(rows, pack),
                 "color": color,
                 "tint": f"{color}{TINT_ALPHA}",
                 "done_label": done_label,
                 "empty": False,
                 "hint": (
-                    (f"+ {hidden} weitere" if german else f"+ {hidden} more")
+                    pack.msg("display_more", count=hidden)
                     if hidden
                     else ""
                 ),
                 "items": [
-                    _row(idea, subtask, color, texts, german)
+                    _row(idea, subtask, color, texts, pack)
                     for idea, subtask in shown
                 ],
             }
@@ -501,7 +502,7 @@ def build_directive(
                 "tint": f"{DEFAULT_COLOR}{TINT_ALPHA}",
                 "done_label": done_label,
                 "empty": True,
-                "hint": "Keine offenen Ideen." if german else "No open ideas.",
+                "hint": pack.msg("display_no_open"),
                 "items": [],
             }
         )
