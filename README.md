@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.6.3-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.6.4-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver%20self--assessed-C0C0C0.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -136,8 +136,8 @@ HACS only installs the integration, so continue with [Install the cards](#instal
 
 1. Copy `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` and `www/brainstorm-i18n.js` from the release to `/config/www/`. The third file holds the texts and needs no resource entry.
 2. Add both under **Settings ➔ Dashboards ➔ Resources** as **JavaScript module**:
-   - `/local/brainstorm-card.js?v=1.6.3`
-   - `/local/brainstorm-mindmap-card.js?v=1.6.3`
+   - `/local/brainstorm-card.js?v=1.6.4`
+   - `/local/brainstorm-mindmap-card.js?v=1.6.4`
 3. Reload the page in your browser.
 
 ### Removing the Integration
@@ -303,9 +303,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.6.3
+  - url: /local/brainstorm-card.js?v=1.6.4
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.6.3
+  - url: /local/brainstorm-mindmap-card.js?v=1.6.4
     type: module
 ```
 
@@ -642,6 +642,7 @@ Shares several ideas or a whole category. Needs privacy to be switched on.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.6.4`** | 2026-11-02 | The dialogs no longer squeeze their fields: on the iPhone, the **Parent task** selection is readable again and the note text has its full height. |
 | **`v1.6.3`** | 2026-11-02 | **Mindmap card on phones:**<br>• **Header:** Logo, title and buttons sit in one row and the categories in a second one; nothing is squeezed or overlapped any more.<br>• **Full screen:** The header no longer disappears behind the notch or Dynamic Island, and the buttons at the bottom keep clear of the home indicator.<br>• **iPhone:** The phone layout now also applies in Safari and the Companion app.<br>• **Notes:** They no longer overlap and are arranged in two columns around the center. |
 | **`v1.6.2`** | 2026-11-02 | The add button of the card only shows the plus, on phones and on the desktop. |
 | **`v1.6.1`** | 2026-11-02 | The reminder settings no longer show a list that looks clickable: the current state now sits directly below each clickable section. |

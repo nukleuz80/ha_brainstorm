@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.6.3-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.6.4-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver%20Selbsteinsch%C3%A4tzung-C0C0C0.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -156,8 +156,8 @@ HACS installiert nur die Integration. Die Karten kopierst du anschließend wie u
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` und `www/brainstorm-i18n.js` in `/config/www/`. Die dritte Datei enthält die Texte und braucht keinen Ressourcen-Eintrag.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.6.3` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.6.3` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.6.4` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.6.4` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ### Integration entfernen
@@ -693,6 +693,7 @@ Gibt mehrere Einträge oder eine ganze Kategorie für Personen frei. Braucht ein
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.6.4`** | 02.11.2026 | Die Dialoge drücken ihre Felder nicht mehr zusammen: Auf dem iPhone ist die Auswahl **Übergeordnete Aufgabe** wieder lesbar und der Notiztext hat seine volle Höhe. |
 | **`v1.6.3`** | 02.11.2026 | **Mindmap-Karte auf dem Handy:**<br>• **Kopfzeile:** Logo, Titel und Buttons stehen in einer Zeile, die Kategorien in einer zweiten; nichts wird mehr gequetscht oder überdeckt.<br>• **Vollbild:** Die Kopfzeile verschwindet nicht mehr hinter Notch oder Dynamic Island, die Buttons unten halten Abstand zum Home-Balken.<br>• **iPhone:** Die Handy-Ansicht greift jetzt auch in Safari und der Companion-App.<br>• **Notizen:** Sie überlappen sich nicht mehr und stehen in zwei Spalten um die Mitte. |
 | **`v1.6.2`** | 02.11.2026 | Der Hinzufügen-Button der Karte zeigt auf dem Handy und am Desktop nur noch das Plus. |
 | **`v1.6.1`** | 02.11.2026 | Die Erinnerungs-Einstellungen zeigen keine scheinbar anklickbare Liste mehr: Der aktuelle Stand steht jetzt direkt unter jedem klickbaren Bereich. |
