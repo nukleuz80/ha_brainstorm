@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.5.14-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.5.15-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver%20Selbsteinsch%C3%A4tzung-C0C0C0.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -34,7 +34,7 @@ Brainstorm Hub ist auf Deutsch entstanden, Englisch kommt schrittweise dazu. Die
 | Sprachbefehle des Alexa-Skills | ✅ | ❌ geplant |
 | Assist-Sätze | ✅ | ❌ geplant |
 | Satzkürzung, Termin und Priorität aus der Sprache | ✅ | ✅ |
-| Dashboard-Karten | ✅ | ❌ geplant |
+| Dashboard-Karten | ✅ | ✅ |
 | Erinnerungstexte, Logbuch und Fehlermeldungen | ✅ | ✅ |
 
 ---
@@ -154,16 +154,16 @@ HACS installiert nur die Integration. Die Karten kopierst du anschließend wie u
 
 1. Lade das neueste Release herunter.
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
-3. Kopiere die Dateien `www/brainstorm-card.js` und `www/brainstorm-mindmap-card.js` in `/config/www/`.
+3. Kopiere die Dateien `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` und `www/brainstorm-i18n.js` in `/config/www/`. Die dritte Datei enthält die Texte und braucht keinen Ressourcen-Eintrag.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.5.14` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.5.14` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.5.15` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.5.15` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ### Integration entfernen
 
 1. Öffne **Einstellungen ➔ Geräte & Dienste ➔ Brainstorm Hub**, klicke auf die drei Punkte und wähle **Löschen**.
-2. Über HACS installiert: Öffne Brainstorm Hub in HACS und wähle **Entfernen**. Manuell installiert: Lösche `/config/custom_components/brainstorm` und die beiden Karten-Dateien in `/config/www/`.
+2. Über HACS installiert: Öffne Brainstorm Hub in HACS und wähle **Entfernen**. Manuell installiert: Lösche `/config/custom_components/brainstorm` und die drei Karten-Dateien in `/config/www/`.
 3. Entferne die beiden Karten-Ressourcen unter **Einstellungen ➔ Dashboards ➔ Ressourcen** und alle Brainstorm-Karten aus deinen Dashboards.
 4. Starte Home Assistant neu.
 
@@ -691,6 +691,7 @@ Gibt mehrere Einträge oder eine ganze Kategorie für Personen frei. Braucht ein
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.5.15`** | 02.11.2026 | **Die Karten auf Englisch:**<br>• **Alle Texte:** Beide Karten und ihre Editoren zeigen ihre Texte in der Sprache deines Home-Assistant-Profils, die Daten passend dazu. Sprachen ohne eigene Texte zeigen Englisch.<br>• **Neue Datei zum Kopieren:** `www/brainstorm-i18n.js` enthält die Texte. Kopiere sie bei einem Update von Hand neben die beiden Karten-Dateien. Sie braucht keinen Ressourcen-Eintrag.<br>• **Karteneditor:** Die Kategorieauswahl bietet nur noch vorhandene Kategorien an. |
 | **`v1.5.14`** | 02.11.2026 | **Englische Texte im Backend:**<br>• **Erinnerungen:** Gesprochene Erinnerungen, Benachrichtigungen mit ihren Knöpfen, das Briefing, der Wochenrückblick und die KI-Zusammenfassung folgen der Sprache von Home Assistant.<br>• **Auch auf Englisch:** Logbuch, To-do-Beschreibungen, Markdown-Export, Ansagen, Antworten der KI-Werkzeuge und die Listen auf dem Echo Show.<br>• **Erinnerungssätze:** *„when I get home“*, *„when I get to the market“* und *„remind Alex tomorrow at 8“* gehen auf Englisch.<br>• **Fehlermeldungen und Aktionen:** Sie nutzen jetzt die Übersetzungen von Home Assistant und erscheinen damit in der Sprache des jeweiligen Benutzers.<br>• **Deutsch bleibt:** Alle deutschen Texte behalten ihren Wortlaut. |
 | **`v1.5.13`** | 02.11.2026 | **Englische Notizen:**<br>• **Kurze Aufgaben:** *„the lawn has to be mowed“* ➔ *„Mow lawn“*, *„I need to call the doctor“* ➔ *„Call doctor“*. Verneinungen, Fragen und nicht vollständig umbaubare Sätze behalten ihren Wortlaut.<br>• **Termin und Priorität aus dem Satz:** *tomorrow at 8*, *next Monday at 5 pm*, *in two hours*, *March 15th*, *asap*, *important*, *someday*.<br>• **Englische Kategorien:** Eine neue englische Installation beginnt mit englischen Kategorien. Vorhandene Kategorien behalten ihre Namen und verstehen zusätzlich englische Wörter.<br>• **Neues Feld:** `brainstorm.add_idea` nimmt `language` an, zum Beispiel für einen Kurzbefehl in einer anderen Sprache. |
 | **`v1.5.12`** | 02.11.2026 | **Vorbereitet auf weitere Sprachen, keine Änderung im Deutschen:**<br>• **Sprachpakete:** Alle deutschen Regeln liegen jetzt in einem eigenen Paket, bereit für weitere Sprachen.<br>• **Gleiche Ergebnisse:** Ein Referenztest mit über 1.100 Sätzen stellt sicher, dass deutsche Einträge genau wie bisher entstehen.<br>• **Andere Sprachen:** Home Assistant in einer anderen Sprache wendet keine deutsche Grammatik mehr auf deinen Text an. Er bleibt wie gesprochen, mit großem Anfangsbuchstaben. |

@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.5.14-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.5.15-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver%20self--assessed-C0C0C0.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -34,7 +34,7 @@ Brainstorm Hub was built in German, and English support is being added step by s
 | Voice commands of the Alexa skill | ✅ | ❌ planned |
 | Assist sentences | ✅ | ❌ planned |
 | Shortening sentences, due dates and priorities from speech | ✅ | ✅ |
-| Dashboard cards | ✅ | ❌ planned |
+| Dashboard cards | ✅ | ✅ |
 | Reminder texts, logbook and error messages | ✅ | ✅ |
 
 Voice commands in this document are in German because those are the commands that work today, with a translation next to them where it helps. Text in other languages stays as you say or type it, with a capital first letter. Home Assistant's language decides which rules apply, and `brainstorm.add_idea` also accepts a `language` field.
@@ -136,16 +136,16 @@ HACS only installs the integration, so continue with [Install the cards](#instal
 
 ### Install the Cards
 
-1. Copy `www/brainstorm-card.js` and `www/brainstorm-mindmap-card.js` from the release to `/config/www/`.
+1. Copy `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` and `www/brainstorm-i18n.js` from the release to `/config/www/`. The third file holds the texts and needs no resource entry.
 2. Add both under **Settings ➔ Dashboards ➔ Resources** as **JavaScript module**:
-   - `/local/brainstorm-card.js?v=1.5.14`
-   - `/local/brainstorm-mindmap-card.js?v=1.5.14`
+   - `/local/brainstorm-card.js?v=1.5.15`
+   - `/local/brainstorm-mindmap-card.js?v=1.5.15`
 3. Reload the page in your browser.
 
 ### Removing the Integration
 
 1. Go to **Settings ➔ Devices & Services ➔ Brainstorm Hub**, open the three dots and choose **Delete**.
-2. Installed through HACS: open Brainstorm Hub in HACS and choose **Remove**. Installed manually: delete `/config/custom_components/brainstorm` and the two card files in `/config/www/`.
+2. Installed through HACS: open Brainstorm Hub in HACS and choose **Remove**. Installed manually: delete `/config/custom_components/brainstorm` and the three card files in `/config/www/`.
 3. Remove the two card resources under **Settings ➔ Dashboards ➔ Resources**, and any Brainstorm cards from your dashboards.
 4. Restart Home Assistant.
 
@@ -308,9 +308,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.5.14
+  - url: /local/brainstorm-card.js?v=1.5.15
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.5.14
+  - url: /local/brainstorm-mindmap-card.js?v=1.5.15
     type: module
 ```
 
@@ -647,6 +647,7 @@ Shares several ideas or a whole category. Needs privacy to be switched on.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.5.15`** | 2026-11-02 | **The cards in English:**<br>• **All texts:** Both cards and their editors show their texts in the language of your Home Assistant profile, with dates to match. Languages without their own texts show English.<br>• **New file to copy:** `www/brainstorm-i18n.js` holds the texts. Copy it next to the two card files when you update by hand. It needs no resource entry.<br>• **Card editor:** The category choice only offers categories that exist. |
 | **`v1.5.14`** | 2026-11-02 | **English texts in the backend:**<br>• **Reminders:** Spoken reminders, notifications with their buttons, the briefing, the weekly review and the AI summary follow the language of Home Assistant.<br>• **Also in English:** Logbook, to-do descriptions, Markdown export, read-aloud texts, AI tool answers and the Echo Show lists.<br>• **Reminder phrases:** *"when I get home"*, *"when I get to the market"* and *"remind Alex tomorrow at 8"* work in English.<br>• **Error messages and actions:** They now use Home Assistant's translations, which also shows them in the language of each user.<br>• **German stays:** All German texts keep their wording. |
 | **`v1.5.13`** | 2026-11-02 | **English notes:**<br>• **Short tasks:** *"the lawn has to be mowed"* ➔ *"Mow lawn"*, *"I need to call the doctor"* ➔ *"Call doctor"*. Negations, questions and sentences that cannot be rebuilt completely keep their wording.<br>• **Due dates and priorities from the sentence:** *tomorrow at 8*, *next Monday at 5 pm*, *in two hours*, *March 15th*, *asap*, *important*, *someday*.<br>• **English categories:** A new installation in English starts with English categories. Existing categories keep their names and also understand English words.<br>• **New field:** `brainstorm.add_idea` accepts `language`, for example for a shortcut in another language. |
 | **`v1.5.12`** | 2026-11-02 | **Prepared for more languages, no change in German:**<br>• **Language packs:** All German rules now live in their own pack, ready for further languages.<br>• **Same results:** A reference test with over 1,100 sentences ensures that German entries are built exactly as before.<br>• **Other languages:** Home Assistant in another language no longer applies German grammar to your text. It stays as spoken, with a capital first letter. |

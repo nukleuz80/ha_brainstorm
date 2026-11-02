@@ -1,6 +1,8 @@
+import { dateLocale, dueInputFormat, formatDueInput, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.5.15";
+
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.5.14 - Skill, Reminders, Privacy and Sharing
+ * Version: 1.5.15 - Skill, Reminders, Privacy and Sharing
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -149,6 +151,7 @@ class BrainstormMindmapCard extends HTMLElement {
   }
 
   set hass(hass) {
+    setLanguage(hass);
     this._hass = hass;
     this._refreshPrivateData();
     if (!this._initialized) {
@@ -451,7 +454,7 @@ class BrainstormMindmapCard extends HTMLElement {
     else if (s.includes("dashboard")) icon = "💻";
 
     if (device && String(device).trim()) {
-      return `${icon} <span class="cloud-device" title="Gerät: ${this._escapeHtml(String(device).trim())}">(${this._escapeHtml(String(device).trim())})</span>`;
+      return `${icon} <span class="cloud-device" title="${t("Gerät: {device}", { device: this._escapeHtml(String(device).trim()) })}">(${this._escapeHtml(String(device).trim())})</span>`;
     }
     return `${icon}`;
   }
@@ -466,10 +469,10 @@ class BrainstormMindmapCard extends HTMLElement {
       const date = new Date(isoString);
       const now = new Date();
       const diffSec = Math.floor((now - date) / 1000);
-      if (diffSec < 60) return "gerade eben";
-      if (diffSec < 3600) return `vor ${Math.floor(diffSec / 60)}m`;
-      if (diffSec < 86400) return `vor ${Math.floor(diffSec / 3600)}h`;
-      return date.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
+      if (diffSec < 60) return t("gerade eben");
+      if (diffSec < 3600) return t("vor {count}m", { count: Math.floor(diffSec / 60) });
+      if (diffSec < 86400) return t("vor {count}h", { count: Math.floor(diffSec / 3600) });
+      return date.toLocaleDateString(dateLocale(), { day: "2-digit", month: "2-digit" });
     } catch {
       return "";
     }
@@ -481,7 +484,7 @@ class BrainstormMindmapCard extends HTMLElement {
       const date = new Date(idea.due);
       if (!Number.isNaN(date.getTime())) {
         const pad = (value) => String(value).padStart(2, "0");
-        const label = `${pad(date.getDate())}.${pad(date.getMonth() + 1)}. ${date.getHours()}:${pad(date.getMinutes())}`;
+        const label = `${shortDate(date)} ${date.getHours()}:${pad(date.getMinutes())}`;
         parts.push(`⏰ ${label}`);
       }
     }
@@ -490,10 +493,10 @@ class BrainstormMindmapCard extends HTMLElement {
       return state ? state.attributes.friendly_name || entityId : entityId;
     };
     if (idea.trigger && idea.trigger.zone) {
-      parts.push(`📍 ${idea.trigger.zone === "zone.home" ? "Zuhause" : name(idea.trigger.zone)}`);
+      parts.push(`📍 ${idea.trigger.zone === "zone.home" ? t("Zuhause") : name(idea.trigger.zone)}`);
     }
     if (idea.assignee) parts.push(`👤 ${name(idea.assignee)}`);
-    if (idea.access && idea.access !== "owner") parts.push(`👥 ${idea.owner_name || "Geteilt"}`);
+    if (idea.access && idea.access !== "owner") parts.push(`👥 ${idea.owner_name || t("Geteilt")}`);
     if (idea.access === "owner" && Object.keys(idea.shares || {}).length) {
       parts.push(`👥 ${Object.keys(idea.shares).length}`);
     }
@@ -504,15 +507,15 @@ class BrainstormMindmapCard extends HTMLElement {
     const p = (priority || "medium").toLowerCase();
     const idAttr = id ? `data-id="${this._escapeHtml(id)}"` : "";
     if (p === "urgent") {
-      return `<span class="prio-tag urgent" ${idAttr} data-prio="urgent" title="Priorität: 🔥 Dringend (Klicken zum Umschalten)">🔥 Dringend</span>`;
+      return `<span class="prio-tag urgent" ${idAttr} data-prio="urgent" title="${t("Priorität: 🔥 Dringend (Klicken zum Umschalten)")}">${t("🔥 Dringend")}</span>`;
     }
     if (p === "high") {
-      return `<span class="prio-tag high" ${idAttr} data-prio="high" title="Priorität: 🔴 Hoch (Klicken zum Umschalten)">🔴 Hoch</span>`;
+      return `<span class="prio-tag high" ${idAttr} data-prio="high" title="${t("Priorität: 🔴 Hoch (Klicken zum Umschalten)")}">${t("🔴 Hoch")}</span>`;
     }
     if (p === "low") {
-      return `<span class="prio-tag low" ${idAttr} data-prio="low" title="Priorität: 🟢 Niedrig (Klicken zum Umschalten)">🟢 Niedrig</span>`;
+      return `<span class="prio-tag low" ${idAttr} data-prio="low" title="${t("Priorität: 🟢 Niedrig (Klicken zum Umschalten)")}">${t("🟢 Niedrig")}</span>`;
     }
-    return `<span class="prio-tag medium" ${idAttr} data-prio="medium" title="Priorität: 🟡 Mittel (Klicken zum Umschalten)">🟡 Mittel</span>`;
+    return `<span class="prio-tag medium" ${idAttr} data-prio="medium" title="${t("Priorität: 🟡 Mittel (Klicken zum Umschalten)")}">${t("🟡 Mittel")}</span>`;
   }
 
   _cyclePriority(currentPrio) {
@@ -1632,10 +1635,10 @@ class BrainstormMindmapCard extends HTMLElement {
           </div>
           <div class="pills-container" id="pillsBar"></div>
           <div class="top-right">
-            <button class="top-tool-btn" id="colorModeBtn" style="display: ${this._config.show_color_toggle === true ? 'inline-flex' : 'none'};" title="${this._colorMode === 'theme' ? 'Farbmodus: Theme-Farben aktiv (Klicken für Bunt)' : 'Farbmodus: Bunt aktiv (Klicken für Theme-Farben)'}">
+            <button class="top-tool-btn" id="colorModeBtn" style="display: ${this._config.show_color_toggle === true ? 'inline-flex' : 'none'};" title="${this._colorMode === 'theme' ? t("Farbmodus: Theme-Farben aktiv (Klicken für Bunt)") : t("Farbmodus: Bunt aktiv (Klicken für Theme-Farben)")}">
               ${this._colorMode === 'theme' ? '🎨' : '🌈'}
             </button>
-            <button class="fullscreen-btn" id="fullscreenToggleBtn" style="display: ${this._config.show_fullscreen_btn === true ? 'inline-flex' : 'none'};" title="Vollbild umschalten (ESC zum Beenden)">⛶</button>
+            <button class="fullscreen-btn" id="fullscreenToggleBtn" style="display: ${this._config.show_fullscreen_btn === true ? 'inline-flex' : 'none'};" title="${t("Vollbild umschalten (ESC zum Beenden)")}">⛶</button>
           </div>
         </div>
 
@@ -1651,12 +1654,12 @@ class BrainstormMindmapCard extends HTMLElement {
               <div class="center-content">
                 <div class="center-icon" id="centerIcon" style="display: flex; justify-content: center; margin-bottom: 2px;"></div>
                 <div class="center-title" id="centerTitle">Inbox</div>
-                <div class="center-badge" id="centerBadge">0 Notizen</div>
+                <div class="center-badge" id="centerBadge">${t("0 Notizen")}</div>
               </div>
             </div>
             <div id="notesContainer"></div>
             <div class="empty-state" id="emptyState" style="display: none;">
-              Keine aktiven Notizen in dieser Kategorie.<br>Klicke unten links auf "+ Idee", um eine hinzuzufügen.
+              ${t('Keine aktiven Notizen in dieser Kategorie.<br>Klicke unten links auf "+ Idee", um eine hinzuzufügen.')}
             </div>
           </div>
         </div>
@@ -1664,22 +1667,22 @@ class BrainstormMindmapCard extends HTMLElement {
         <!-- Bottom Left: Add Note -->
         <button class="add-note-btn" id="addNoteBtn" style="display: ${this._config.show_add_btn === true ? 'flex' : 'none'};">
           <span>➕</span>
-          <span class="btn-text">Neue Idee</span>
+          <span class="btn-text">${t("Neue Idee")}</span>
         </button>
 
         <!-- Bottom Right: Zoom & Reset Controls -->
         <div class="controls-panel" style="display: ${this._config.show_controls === true ? 'flex' : 'none'};">
-          <button class="control-btn" id="zoomInBtn" title="Vergrößern">+</button>
-          <button class="control-btn" id="zoomOutBtn" title="Verkleinern">−</button>
-          <button class="control-btn" id="resetViewBtn" title="Zentrieren / Anordnen">⟲</button>
+          <button class="control-btn" id="zoomInBtn" title="${t("Vergrößern")}">+</button>
+          <button class="control-btn" id="zoomOutBtn" title="${t("Verkleinern")}">−</button>
+          <button class="control-btn" id="resetViewBtn" title="${t("Zentrieren / Anordnen")}">⟲</button>
         </div>
 
         <!-- In-Card Modal Dialog (Mushroom Style) -->
         <div class="dialog-backdrop" id="mindmapDialog" style="display: none;">
           <div class="dialog-box" id="dialogBox">
             <div class="dialog-header">
-              <div class="dialog-title" id="dialogTitle">Titel</div>
-              <button class="dialog-close" id="dialogCloseBtn" title="Schließen (ESC)">✕</button>
+              <div class="dialog-title" id="dialogTitle">${t("Titel")}</div>
+              <button class="dialog-close" id="dialogCloseBtn" title="${t("Schließen (ESC)")}">✕</button>
             </div>
             <div class="dialog-body" id="dialogBody"></div>
           </div>
@@ -1720,8 +1723,8 @@ class BrainstormMindmapCard extends HTMLElement {
         } catch {}
         colorModeBtn.innerHTML = this._colorMode === "theme" ? "🎨" : "🌈";
         colorModeBtn.title = this._colorMode === "theme"
-          ? "Farbmodus: Theme-Farben aktiv (Klicken für Bunt)"
-          : "Farbmodus: Bunt aktiv (Klicken für Theme-Farben)";
+          ? t("Farbmodus: Theme-Farben aktiv (Klicken für Bunt)")
+          : t("Farbmodus: Bunt aktiv (Klicken für Theme-Farben)");
         this._lastDataSignature = ""; // force re-render
         this._updateContent();
       });
@@ -2270,7 +2273,7 @@ class BrainstormMindmapCard extends HTMLElement {
       if (!sensor) return;
 
       const attributes = sensor.attributes || {};
-      const categories = attributes.categories || ["Inbox", "Smarthome", "Haus & Garten", "Projekte", "Alltag"];
+      const categories = attributes.categories || ["Inbox"];
       const activeIdeas = attributes.ideas || [];
 
       // Filter ideas by selected category
@@ -2296,7 +2299,7 @@ class BrainstormMindmapCard extends HTMLElement {
         if (this._config.show_last_alexa === true && alexaInfo && alexaInfo.name) {
           lastAlexaWrap.style.display = "inline-flex";
           lastAlexaWrap.innerHTML = `
-            <div class="last-alexa-badge" title="Zuletzt aktive Alexa: ${this._escapeHtml(alexaInfo.name)} (Klicken für Details)">
+            <div class="last-alexa-badge" title="${t("Zuletzt aktive Alexa: {name} (Klicken für Details)", { name: this._escapeHtml(alexaInfo.name) })}">
               <span class="alexa-badge-icon">
                 <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
                   <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5-3c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
@@ -2332,8 +2335,8 @@ class BrainstormMindmapCard extends HTMLElement {
         colorModeBtn.style.display = this._config.show_color_toggle === true ? "inline-flex" : "none";
         colorModeBtn.innerHTML = this._colorMode === "theme" ? "🎨" : "🌈";
         colorModeBtn.title = this._colorMode === "theme"
-          ? "Farbmodus: Theme-Farben aktiv (Klicken für Bunt)"
-          : "Farbmodus: Bunt aktiv (Klicken für Theme-Farben)";
+          ? t("Farbmodus: Theme-Farben aktiv (Klicken für Bunt)")
+          : t("Farbmodus: Bunt aktiv (Klicken für Theme-Farben)");
       }
 
       const fullscreenBtn = this.shadowRoot.getElementById("fullscreenToggleBtn");
@@ -2373,7 +2376,7 @@ class BrainstormMindmapCard extends HTMLElement {
         pillsBar.innerHTML = `
           <div class="cat-pill ${this._selectedCategory === "all" ? "active" : ""}" data-cat="all" style="--category-color: var(--primary-color, #a855f7);">
             <ha-icon icon="mdi:layers-outline" style="--mdc-icon-size: 14px; width: 14px; height: 14px; margin-right: 4px; display: inline-flex; align-items: center; vertical-align: middle; color: ${this._selectedCategory === 'all' ? '#ffffff' : 'var(--primary-color, #a855f7)'};"></ha-icon>
-            <span>Alle (${activeIdeas.length})</span>
+            <span>${t("Alle")} (${activeIdeas.length})</span>
           </div>
           ${visibleCategories
             .map((cat) => {
@@ -2415,9 +2418,9 @@ class BrainstormMindmapCard extends HTMLElement {
       const centerIcon = this.shadowRoot.getElementById("centerIcon");
 
       if (centerTitle && centerBadge) {
-        const displayCat = this._selectedCategory === "all" ? "Alle" : this._selectedCategory;
+        const displayCat = this._selectedCategory === "all" ? t("Alle") : this._selectedCategory;
         centerTitle.textContent = displayCat;
-        centerBadge.textContent = `${filteredIdeas.length} ${filteredIdeas.length === 1 ? "Idee" : "Ideen"}`;
+        centerBadge.textContent = `${filteredIdeas.length} ${filteredIdeas.length === 1 ? t("Idee") : t("Ideen")}`;
 
         // Accent border color matching category
         const catColor = this._selectedCategory === "all"
@@ -2460,23 +2463,23 @@ class BrainstormMindmapCard extends HTMLElement {
         html += `
           <div class="note-cloud ${prioClass}" id="cloud_${idea.id}" data-id="${idea.id}" style="--cat-color: ${color};">
             <div class="cloud-meta">
-              <span class="cat-tag" data-cat="${this._escapeHtml(idea.category)}" title="Kategorie ändern">
+              <span class="cat-tag" data-cat="${this._escapeHtml(idea.category)}" title="${t("Kategorie ändern")}">
                 <ha-icon icon="${this._getCategoryIcon(idea.category)}" style="--mdc-icon-size: 12px; width: 12px; height: 12px; display: inline-flex; align-items: center; vertical-align: middle;"></ha-icon> ${this._escapeHtml(idea.category)}
               </span>
               ${prioBadge}
               ${this._getReminderBadges(idea)}
-              <span class="cloud-source" title="Quelle: ${this._escapeHtml(idea.source || 'Dashboard')}${idea.device ? ' • Gerät: ' + this._escapeHtml(idea.device) : ''}">
+              <span class="cloud-source" title="${t("Quelle")}: ${this._escapeHtml(idea.source || 'Dashboard')}${idea.device ? ` • ${t("Gerät")}: ` + this._escapeHtml(idea.device) : ''}">
                 <span>${sourceBadge}</span>
                 <span>•</span>
                 <span>${timeAgo}</span>
               </span>
             </div>
-            <div class="cloud-text" title="Klicken zum Bearbeiten">${this._escapeHtml(idea.text)}</div>
+            <div class="cloud-text" title="${t("Klicken zum Bearbeiten")}">${this._escapeHtml(idea.text)}</div>
             <div class="cloud-actions">
-              <button class="action-btn done-btn" data-act="done" data-id="${idea.id}" title="Als erledigt markieren">✓</button>
-              <button class="action-btn" data-act="edit" data-id="${idea.id}" title="Bearbeiten">✏️</button>
-              <button class="action-btn" data-act="move" data-id="${idea.id}" title="Kategorie ändern">📁</button>
-              <button class="action-btn del-btn" data-act="delete" data-id="${idea.id}" title="Löschen">🗑️</button>
+              <button class="action-btn done-btn" data-act="done" data-id="${idea.id}" title="${t("Als erledigt markieren")}">✓</button>
+              <button class="action-btn" data-act="edit" data-id="${idea.id}" title="${t("Bearbeiten")}">✏️</button>
+              <button class="action-btn" data-act="move" data-id="${idea.id}" title="${t("Kategorie ändern")}">📁</button>
+              <button class="action-btn del-btn" data-act="delete" data-id="${idea.id}" title="${t("Löschen")}">🗑️</button>
             </div>
           </div>
         `;
@@ -2653,7 +2656,7 @@ class BrainstormMindmapCard extends HTMLElement {
     const categories = sensor ? (sensor.attributes.categories || ["Inbox"]) : ["Inbox"];
     const counts = sensor ? (sensor.attributes.category_counts || {}) : {};
 
-    this._openDialog("🏷️ Kategorie auswählen", (body) => {
+    this._openDialog(t("🏷️ Kategorie auswählen"), (body) => {
       let previewHtml = "";
       if (noteText) {
         previewHtml = `<div class="dialog-note-preview">"${this._escapeHtml(noteText)}"</div>`;
@@ -2661,7 +2664,7 @@ class BrainstormMindmapCard extends HTMLElement {
 
       body.innerHTML = `
         ${previewHtml}
-        <div class="dialog-label">Kategorie wählen:</div>
+        <div class="dialog-label">${t("Kategorie wählen:")}</div>
         <div class="dialog-categories-grid">
           ${categories
             .map((cat) => {
@@ -2678,10 +2681,10 @@ class BrainstormMindmapCard extends HTMLElement {
             })
             .join("")}
         </div>
-        <div class="dialog-label" style="margin-top: 6px;">Oder neue Kategorie anlegen:</div>
+        <div class="dialog-label" style="margin-top: 6px;">${t("Oder neue Kategorie anlegen:")}</div>
         <div class="dialog-new-cat-row">
-          <input type="text" class="dialog-input" id="newCatInput" placeholder="Kategoriename..." />
-          <button class="dialog-btn dialog-btn-primary" id="addNewCatBtn">➕ Erstellen</button>
+          <input type="text" class="dialog-input" id="newCatInput" placeholder="${t("Kategoriename...")}" />
+          <button class="dialog-btn dialog-btn-primary" id="addNewCatBtn">${t("➕ Erstellen")}</button>
         </div>
         <div class="dialog-error" id="newCatError" style="display: none;"></div>
       `;
@@ -2732,11 +2735,11 @@ class BrainstormMindmapCard extends HTMLElement {
       const handleCreateCat = async () => {
         const val = (newCatInput.value || "").trim();
         if (!val) {
-          showCatError("⚠️ Bitte gib einen Kategorienamen ein.");
+          showCatError(t("⚠️ Bitte gib einen Kategorienamen ein."));
           return;
         }
         if (categories.some((c) => c.toLowerCase() === val.toLowerCase())) {
-          showCatError(`⚠️ Die Kategorie "${val}" existiert bereits.`);
+          showCatError(t('⚠️ Die Kategorie "{name}" existiert bereits.', { name: val }));
           return;
         }
         this._closeDialog();
@@ -2762,21 +2765,21 @@ class BrainstormMindmapCard extends HTMLElement {
     let selectedCat = currentCategory || "Inbox";
     let selectedPrio = (currentPriority || "medium").toLowerCase();
 
-    this._openDialog("✏️ Notiz bearbeiten", (body) => {
+    this._openDialog(t("✏️ Notiz bearbeiten"), (body) => {
       body.innerHTML = `
-        <div class="dialog-label">Notiztext:</div>
+        <div class="dialog-label">${t("Notiztext:")}</div>
         <textarea class="dialog-textarea" id="editTextarea" rows="3">${this._escapeHtml(currentText)}</textarea>
         <div class="dialog-error" id="editTextError" style="display: none;"></div>
 
-        <div class="dialog-label">Priorität:</div>
+        <div class="dialog-label">${t("Priorität:")}</div>
         <div class="dialog-prio-grid" id="editPrioGrid">
-          <div class="dialog-prio-chip ${selectedPrio === "low" ? "selected" : ""}" data-prio="low">🟢 Niedrig</div>
-          <div class="dialog-prio-chip ${selectedPrio === "medium" ? "selected" : ""}" data-prio="medium">🟡 Mittel</div>
-          <div class="dialog-prio-chip ${selectedPrio === "high" ? "selected" : ""}" data-prio="high">🔴 Hoch</div>
-          <div class="dialog-prio-chip ${selectedPrio === "urgent" ? "selected" : ""}" data-prio="urgent">🔥 Dringend</div>
+          <div class="dialog-prio-chip ${selectedPrio === "low" ? "selected" : ""}" data-prio="low">${t("🟢 Niedrig")}</div>
+          <div class="dialog-prio-chip ${selectedPrio === "medium" ? "selected" : ""}" data-prio="medium">${t("🟡 Mittel")}</div>
+          <div class="dialog-prio-chip ${selectedPrio === "high" ? "selected" : ""}" data-prio="high">${t("🔴 Hoch")}</div>
+          <div class="dialog-prio-chip ${selectedPrio === "urgent" ? "selected" : ""}" data-prio="urgent">${t("🔥 Dringend")}</div>
         </div>
 
-        <div class="dialog-label" style="margin-top: 10px;">Kategorie:</div>
+        <div class="dialog-label" style="margin-top: 10px;">${t("Kategorie:")}</div>
         <div class="dialog-categories-grid" id="editCatGrid">
           ${categories
             .map((cat) => {
@@ -2793,8 +2796,8 @@ class BrainstormMindmapCard extends HTMLElement {
         </div>
 
         <div class="dialog-footer">
-          <button class="dialog-btn dialog-btn-cancel" id="cancelEditBtn">Abbrechen</button>
-          <button class="dialog-btn dialog-btn-primary" id="saveEditBtn">Speichern</button>
+          <button class="dialog-btn dialog-btn-cancel" id="cancelEditBtn">${t("Abbrechen")}</button>
+          <button class="dialog-btn dialog-btn-primary" id="saveEditBtn">${t("Speichern")}</button>
         </div>
       `;
 
@@ -2851,7 +2854,7 @@ class BrainstormMindmapCard extends HTMLElement {
       const handleSave = async () => {
         const newText = (textarea.value || "").trim();
         if (!newText) {
-          showTextError("⚠️ Der Text darf nicht leer sein.");
+          showTextError(t("⚠️ Der Text darf nicht leer sein."));
           return;
         }
         this._closeDialog();
@@ -2885,21 +2888,21 @@ class BrainstormMindmapCard extends HTMLElement {
     let selectedCat = this._selectedCategory && this._selectedCategory !== "all" ? this._selectedCategory : "Inbox";
     let selectedPrio = "medium";
 
-    this._openDialog("💡 Neue Idee erfassen", (body) => {
+    this._openDialog(t("💡 Neue Idee erfassen"), (body) => {
       body.innerHTML = `
-        <div class="dialog-label">Idee / Gedanke:</div>
-        <textarea class="dialog-textarea" id="addTextarea" placeholder="Was möchtest du festhalten?..." rows="3"></textarea>
+        <div class="dialog-label">${t("Idee / Gedanke:")}</div>
+        <textarea class="dialog-textarea" id="addTextarea" placeholder="${t("Was möchtest du festhalten?...")}" rows="3"></textarea>
         <div class="dialog-error" id="addTextError" style="display: none;"></div>
 
-        <div class="dialog-label">Priorität:</div>
+        <div class="dialog-label">${t("Priorität:")}</div>
         <div class="dialog-prio-grid" id="addPrioGrid">
-          <div class="dialog-prio-chip" data-prio="low">🟢 Niedrig</div>
-          <div class="dialog-prio-chip selected" data-prio="medium">🟡 Mittel</div>
-          <div class="dialog-prio-chip" data-prio="high">🔴 Hoch</div>
-          <div class="dialog-prio-chip" data-prio="urgent">🔥 Dringend</div>
+          <div class="dialog-prio-chip" data-prio="low">${t("🟢 Niedrig")}</div>
+          <div class="dialog-prio-chip selected" data-prio="medium">${t("🟡 Mittel")}</div>
+          <div class="dialog-prio-chip" data-prio="high">${t("🔴 Hoch")}</div>
+          <div class="dialog-prio-chip" data-prio="urgent">${t("🔥 Dringend")}</div>
         </div>
 
-        <div class="dialog-label" style="margin-top: 10px;">Kategorie:</div>
+        <div class="dialog-label" style="margin-top: 10px;">${t("Kategorie:")}</div>
         <div class="dialog-categories-grid" id="addCatGrid">
           ${categories
             .map((cat) => {
@@ -2916,8 +2919,8 @@ class BrainstormMindmapCard extends HTMLElement {
         </div>
 
         <div class="dialog-footer">
-          <button class="dialog-btn dialog-btn-cancel" id="cancelAddBtn">Abbrechen</button>
-          <button class="dialog-btn dialog-btn-primary" id="saveAddBtn">Hinzufügen</button>
+          <button class="dialog-btn dialog-btn-cancel" id="cancelAddBtn">${t("Abbrechen")}</button>
+          <button class="dialog-btn dialog-btn-primary" id="saveAddBtn">${t("Hinzufügen")}</button>
         </div>
       `;
 
@@ -2971,7 +2974,7 @@ class BrainstormMindmapCard extends HTMLElement {
       const handleAdd = async () => {
         const text = (textarea.value || "").trim();
         if (!text) {
-          showTextError("⚠️ Der Text darf nicht leer sein.");
+          showTextError(t("⚠️ Der Text darf nicht leer sein."));
           return;
         }
         this._closeDialog();
@@ -3000,15 +3003,15 @@ class BrainstormMindmapCard extends HTMLElement {
   }
 
   _showDeleteConfirm(id, noteText) {
-    this._openDialog("🗑️ Notiz löschen?", (body) => {
+    this._openDialog(t("🗑️ Notiz löschen?"), (body) => {
       body.innerHTML = `
         <div class="dialog-note-preview">"${this._escapeHtml(noteText)}"</div>
         <p style="margin: 8px 0; font-size: 0.88rem; color: var(--secondary-text-color, #64748b);">
-          Möchtest du diese Notiz wirklich unwiderruflich aus Brainstorm entfernen?
+          ${t("Möchtest du diese Notiz wirklich unwiderruflich aus Brainstorm entfernen?")}
         </p>
         <div class="dialog-footer">
-          <button class="dialog-btn dialog-btn-cancel" id="cancelDelBtn">Abbrechen</button>
-          <button class="dialog-btn dialog-btn-primary" id="confirmDelBtn" style="background: var(--error-color, #db4437);">Löschen</button>
+          <button class="dialog-btn dialog-btn-cancel" id="cancelDelBtn">${t("Abbrechen")}</button>
+          <button class="dialog-btn dialog-btn-primary" id="confirmDelBtn" style="background: var(--error-color, #db4437);">${t("Löschen")}</button>
         </div>
       `;
 
@@ -3074,6 +3077,7 @@ class BrainstormMindmapCardEditor extends HTMLElement {
   }
 
   set hass(hass) {
+    setLanguage(hass);
     this._hass = hass;
     if (this._form) {
       this._form.hass = hass;
@@ -3093,7 +3097,7 @@ class BrainstormMindmapCardEditor extends HTMLElement {
   }
 
   _getCategoryOptions() {
-    const defaultList = ["Inbox", "Smarthome", "Haus & Garten", "Projekte", "Alltag", "Brainstorm"];
+    const defaultList = ["Inbox"];
     const categories = [];
     const sensorName = (this._config && this._config.sensor) || "sensor.brainstorm_ideen_ubersicht";
     if (this._hass && this._hass.states && this._hass.states[sensorName]) {
@@ -3129,7 +3133,7 @@ class BrainstormMindmapCardEditor extends HTMLElement {
     };
 
     return [
-      { value: "all", label: "🌟 Alle Kategorien (Gesamtübersicht)" },
+      { value: "all", label: t("🌟 Alle Kategorien (Gesamtübersicht)") },
       ...categories.map((c) => {
         const icon = icons[c.toLowerCase()] || "🏷️";
         return { value: c, label: `${icon} ${c}` };
@@ -3142,51 +3146,51 @@ class BrainstormMindmapCardEditor extends HTMLElement {
     return [
       {
         name: "title",
-        label: "Mindmap-Titel",
+        label: t("Mindmap-Titel"),
         default: "Brainstorm Mindmap",
         selector: { text: {} },
       },
       {
         name: "sensor",
-        label: "Sensor-Entität",
+        label: t("Sensor-Entität"),
         default: "sensor.brainstorm_ideen_ubersicht",
         selector: { entity: { domain: ["sensor"] } },
       },
       {
         name: "show_last_alexa",
-        label: "Zuletzt aktive Alexa (Last Alexa) anzeigen",
+        label: t("Zuletzt aktive Alexa (Last Alexa) anzeigen"),
         default: false,
         selector: { boolean: {} },
       },
       {
         name: "last_alexa_entity",
-        label: "Last Alexa Entität (Echo / Sensor)",
+        label: t("Last Alexa Entität (Echo / Sensor)"),
         default: "sensor.last_alexa",
         selector: { entity: { domain: ["sensor", "media_player"] } },
       },
       {
         name: "color_mode",
-        label: "Standard-Farbmodus",
+        label: t("Standard-Farbmodus"),
         default: "theme",
         selector: {
           select: {
             mode: "dropdown",
             options: [
-              { value: "theme", label: "🎨 Theme-Farben (Dynamisch nach Home Assistant Theme)" },
-              { value: "multicolor", label: "🌈 Bunt (Multicolor-Kategoriefarben)" },
+              { value: "theme", label: t("🎨 Theme-Farben (Dynamisch nach Home Assistant Theme)") },
+              { value: "multicolor", label: t("🌈 Bunt (Multicolor-Kategoriefarben)") },
             ],
           },
         },
       },
       {
         name: "height",
-        label: "Höhe der Mindmap (z.B. 600px, 75vh, calc(100vh - 32px))",
+        label: t("Höhe der Mindmap (z.B. 600px, 75vh, calc(100vh - 32px))"),
         default: "calc(100vh - 32px)",
         selector: { text: {} },
       },
       {
         name: "default_category",
-        label: "Standard-Kategorie im Fokus",
+        label: t("Standard-Kategorie im Fokus"),
         default: "all",
         selector: {
           select: {
@@ -3198,55 +3202,55 @@ class BrainstormMindmapCardEditor extends HTMLElement {
       },
       {
         name: "show_bulb_watermark",
-        label: "Leuchtende Glühbirne im Zentrum als Wasserzeichen anzeigen",
+        label: t("Leuchtende Glühbirne im Zentrum als Wasserzeichen anzeigen"),
         default: true,
         selector: { boolean: {} },
       },
       {
         name: "show_grid",
-        label: "Punktraster im Hintergrund anzeigen",
+        label: t("Punktraster im Hintergrund anzeigen"),
         default: true,
         selector: { boolean: {} },
       },
       {
         name: "show_logo",
-        label: "Brainstorm Logo in Toolbar anzeigen",
+        label: t("Brainstorm Logo in Toolbar anzeigen"),
         default: true,
         selector: { boolean: {} },
       },
       {
         name: "show_toolbar",
-        label: "Obere Werkzeugleiste (Titel & Filter-Pills) anzeigen",
+        label: t("Obere Werkzeugleiste (Titel & Filter-Pills) anzeigen"),
         default: true,
         selector: { boolean: {} },
       },
       {
         name: "hide_empty_categories",
-        label: "Kategorien ohne Notizen (0) ausblenden",
+        label: t("Kategorien ohne Notizen (0) ausblenden"),
         default: true,
         selector: { boolean: {} },
       },
       {
         name: "show_color_toggle",
-        label: "Farbmodus-Umschalter (🎨/🌈) in Toolbar anzeigen",
+        label: t("Farbmodus-Umschalter (🎨/🌈) in Toolbar anzeigen"),
         default: true,
         selector: { boolean: {} },
       },
       {
         name: "show_fullscreen_btn",
-        label: "Vollbild-Schaltfläche (⛶) anzeigen",
+        label: t("Vollbild-Schaltfläche (⛶) anzeigen"),
         default: true,
         selector: { boolean: {} },
       },
       {
         name: "show_controls",
-        label: "Zoom- & Zentrieren-Schaltflächen anzeigen",
+        label: t("Zoom- & Zentrieren-Schaltflächen anzeigen"),
         default: true,
         selector: { boolean: {} },
       },
       {
         name: "show_add_btn",
-        label: "Neue Notiz-Schaltfläche (+ Idee) anzeigen",
+        label: t("Neue Notiz-Schaltfläche (+ Idee) anzeigen"),
         default: true,
         selector: { boolean: {} },
       },
@@ -3323,7 +3327,7 @@ class BrainstormMindmapCardEditor extends HTMLElement {
       <div class="editor-container">
         <div class="editor-header">
           <img src="/local/brainstorm-bulb.svg" alt="Brainstorm" onerror="this.style.display='none'" />
-          <span>Brainstorm Mindmap – Visuelle Kartenkonfiguration</span>
+          <span>${t("Brainstorm Mindmap – Visuelle Kartenkonfiguration")}</span>
         </div>
         <div id="formContainer"></div>
       </div>
@@ -3364,46 +3368,46 @@ class BrainstormMindmapCardEditor extends HTMLElement {
     container.innerHTML = `
       <div class="fallback-container">
         <div class="fallback-row">
-          <label class="fallback-label">Mindmap-Titel</label>
+          <label class="fallback-label">${t("Mindmap-Titel")}</label>
           <input class="fallback-input" id="fbTitle" type="text" value="${this._config.title || 'Brainstorm Mindmap'}" />
         </div>
         <div class="fallback-row">
-          <label class="fallback-label">Sensor-Entität</label>
+          <label class="fallback-label">${t("Sensor-Entität")}</label>
           <input class="fallback-input" id="fbSensor" type="text" value="${this._config.sensor || 'sensor.brainstorm_ideen_ubersicht'}" />
         </div>
         <div class="fallback-row">
           <label class="fallback-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
             <input type="checkbox" id="fbShowLastAlexa" ${this._config.show_last_alexa ? 'checked' : ''} />
-            <span>Zuletzt aktive Alexa (Last Alexa) anzeigen</span>
+            <span>${t("Zuletzt aktive Alexa (Last Alexa) anzeigen")}</span>
           </label>
         </div>
         <div class="fallback-row">
-          <label class="fallback-label">Last Alexa Entität</label>
+          <label class="fallback-label">${t("Last Alexa Entität")}</label>
           <input class="fallback-input" id="fbLastAlexaEntity" type="text" value="${this._config.last_alexa_entity || 'sensor.last_alexa'}" />
         </div>
         <div class="fallback-row">
-          <label class="fallback-label">Standard-Kategorie im Fokus</label>
+          <label class="fallback-label">${t("Standard-Kategorie im Fokus")}</label>
           <select class="fallback-select" id="fbDefaultCat">
             ${this._getCategoryOptions().map(o => `<option value="${this._escapeHtml(o.value)}" ${(this._config.default_category || 'all') === o.value ? 'selected' : ''}>${this._escapeHtml(o.label)}</option>`).join("")}
           </select>
         </div>
         <div class="fallback-row">
-          <label class="fallback-label">Farbmodus</label>
+          <label class="fallback-label">${t("Farbmodus")}</label>
           <select class="fallback-select" id="fbColorMode">
-            <option value="theme" ${(this._config.color_mode || 'theme') === 'theme' ? 'selected' : ''}>🎨 Theme-Farben</option>
-            <option value="multicolor" ${this._config.color_mode === 'multicolor' ? 'selected' : ''}>🌈 Bunt (Multicolor)</option>
+            <option value="theme" ${(this._config.color_mode || 'theme') === 'theme' ? 'selected' : ''}>${t("🎨 Theme-Farben")}</option>
+            <option value="multicolor" ${this._config.color_mode === 'multicolor' ? 'selected' : ''}>${t("🌈 Bunt (Multicolor)")}</option>
           </select>
         </div>
         <div class="fallback-row">
           <label class="fallback-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
             <input type="checkbox" id="fbShowLogo" ${this._config.show_logo !== false ? 'checked' : ''} />
-            <span>Brainstorm Logo in Toolbar anzeigen</span>
+            <span>${t("Brainstorm Logo in Toolbar anzeigen")}</span>
           </label>
         </div>
         <div class="fallback-row">
           <label class="fallback-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
             <input type="checkbox" id="fbHideEmpty" ${this._config.hide_empty_categories ? 'checked' : ''} />
-            <span>Kategorien ohne Notizen (0) ausblenden</span>
+            <span>${t("Kategorien ohne Notizen (0) ausblenden")}</span>
           </label>
         </div>
       </div>
@@ -3463,14 +3467,14 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
   window.customCards.push({
     type: "brainstorm-mindmap-card",
     name: "Brainstorm Mindmap Card",
-    description: "Interaktive Mindmap-Darstellung für deine Brainstorm Hub Notizen und Ideen.",
+    description: t("Interaktive Mindmap-Darstellung für deine Brainstorm Hub Notizen und Ideen."),
     preview: true,
     documentationURL: "https://github.com/nukleuz80/ha_brainstorm",
   });
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.5.14 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.5.15 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

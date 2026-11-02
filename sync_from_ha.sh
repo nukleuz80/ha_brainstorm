@@ -6,6 +6,7 @@ echo "Syncing brainstorm files from Home Assistant..."
 rsync -av --delete --exclude="__pycache__" /config/custom_components/brainstorm/ "$REPO_DIR/custom_components/brainstorm/"
 cp -f /config/www/brainstorm-card.js "$REPO_DIR/www/brainstorm-card.js"
 cp -f /config/www/brainstorm-mindmap-card.js "$REPO_DIR/www/brainstorm-mindmap-card.js"
+cp -f /config/www/brainstorm-i18n.js "$REPO_DIR/www/brainstorm-i18n.js"
 cp -f /config/www/brainstorm-logo.png "$REPO_DIR/www/brainstorm-logo.png" 2>/dev/null || true
 cp -f /config/www/brainstorm-logo.svg "$REPO_DIR/www/brainstorm-logo.svg" 2>/dev/null || true
 cp -f /config/www/brainstorm-bulb.svg "$REPO_DIR/www/brainstorm-bulb.svg" 2>/dev/null || true

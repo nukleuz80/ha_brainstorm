@@ -1,7 +1,9 @@
+import { dateLocale, dueInputFormat, formatDueInput, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.5.15";
+
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.5.14 - Skill, Reminders, Privacy and Sharing
+ * Version 1.5.15 - Skill, Reminders, Privacy and Sharing
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",
@@ -149,6 +151,7 @@ class BrainstormCard extends HTMLElement {
   }
 
   set hass(hass) {
+    setLanguage(hass);
     this._hass = hass;
     this._refreshPrivateData();
     if (!this._initialized) {
@@ -406,7 +409,7 @@ class BrainstormCard extends HTMLElement {
   _getSourceBadge(source, device) {
     const s = (source || "").toLowerCase();
     let icon = "📝";
-    let name = "Notiz";
+    let name = t("Notiz");
     if (s.includes("alexa") || s === "voice") {
       icon = "🗣️";
       name = "Alexa";
@@ -418,10 +421,10 @@ class BrainstormCard extends HTMLElement {
       name = "Assist";
     } else if (s.includes("companion_voice") || s.includes("mic") || s.includes("speech")) {
       icon = "🎙️";
-      name = "Sprache";
+      name = t("Sprache");
     } else if (s.includes("companion") || s.includes("mobile") || s.includes("handy")) {
       icon = "📱";
-      name = "Handy";
+      name = t("Handy");
     } else if (s.includes("dashboard")) {
       icon = "💻";
       name = "Dashboard";
@@ -429,9 +432,9 @@ class BrainstormCard extends HTMLElement {
 
     if (device && String(device).trim()) {
       const cleanDev = String(device).trim();
-      return `<span class="source-badge" title="Quelle: ${name} • Gerät: ${this._escapeHtml(cleanDev)}">${icon} ${this._escapeHtml(name)} <span class="source-device">(${this._escapeHtml(cleanDev)})</span></span>`;
+      return `<span class="source-badge" title="${t("Quelle: {name} • Gerät: {device}", { name, device: this._escapeHtml(cleanDev) })}">${icon} ${this._escapeHtml(name)} <span class="source-device">(${this._escapeHtml(cleanDev)})</span></span>`;
     }
-    return `<span class="source-badge" title="Quelle: ${name}">${icon} ${this._escapeHtml(name)}</span>`;
+    return `<span class="source-badge" title="${t("Quelle: {name}", { name })}">${icon} ${this._escapeHtml(name)}</span>`;
   }
 
   _getSourceIcon(source) {
@@ -444,10 +447,10 @@ class BrainstormCard extends HTMLElement {
       const date = new Date(isoString);
       const now = new Date();
       const diffSec = Math.floor((now - date) / 1000);
-      if (diffSec < 60) return "gerade eben";
-      if (diffSec < 3600) return `vor ${Math.floor(diffSec / 60)} Min.`;
-      if (diffSec < 86400) return `vor ${Math.floor(diffSec / 3600)} Std.`;
-      return date.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
+      if (diffSec < 60) return t("gerade eben");
+      if (diffSec < 3600) return t("vor {count} Min.", { count: Math.floor(diffSec / 60) });
+      if (diffSec < 86400) return t("vor {count} Std.", { count: Math.floor(diffSec / 3600) });
+      return date.toLocaleDateString(dateLocale(), { day: "2-digit", month: "2-digit" });
     } catch {
       return "";
     }
@@ -457,15 +460,15 @@ class BrainstormCard extends HTMLElement {
     const p = (priority || "medium").toLowerCase();
     const idAttr = id ? `data-id="${this._escapeHtml(id)}"` : "";
     if (p === "urgent") {
-      return `<span class="prio-tag urgent" ${idAttr} data-prio="urgent" title="Priorität: 🔥 Dringend (Klicken zum Umschalten)">🔥 Dringend</span>`;
+      return `<span class="prio-tag urgent" ${idAttr} data-prio="urgent" title="${t("Priorität: 🔥 Dringend (Klicken zum Umschalten)")}">${t("🔥 Dringend")}</span>`;
     }
     if (p === "high") {
-      return `<span class="prio-tag high" ${idAttr} data-prio="high" title="Priorität: 🔴 Hoch (Klicken zum Umschalten)">🔴 Hoch</span>`;
+      return `<span class="prio-tag high" ${idAttr} data-prio="high" title="${t("Priorität: 🔴 Hoch (Klicken zum Umschalten)")}">${t("🔴 Hoch")}</span>`;
     }
     if (p === "low") {
-      return `<span class="prio-tag low" ${idAttr} data-prio="low" title="Priorität: 🟢 Niedrig (Klicken zum Umschalten)">🟢 Niedrig</span>`;
+      return `<span class="prio-tag low" ${idAttr} data-prio="low" title="${t("Priorität: 🟢 Niedrig (Klicken zum Umschalten)")}">${t("🟢 Niedrig")}</span>`;
     }
-    return `<span class="prio-tag medium" ${idAttr} data-prio="medium" title="Priorität: 🟡 Mittel (Klicken zum Umschalten)">🟡 Mittel</span>`;
+    return `<span class="prio-tag medium" ${idAttr} data-prio="medium" title="${t("Priorität: 🟡 Mittel (Klicken zum Umschalten)")}">${t("🟡 Mittel")}</span>`;
   }
 
   _cyclePriority(currentPrio) {
@@ -497,21 +500,20 @@ class BrainstormCard extends HTMLElement {
       return result;
     }
     const input = window.prompt(
-      "Wann soll Brainstorm erinnern? (TT.MM.JJJJ HH:MM)",
+      t("Wann soll Brainstorm erinnern? ({format})", { format: dueInputFormat() }),
       this._formatDueInput(due ? new Date(due) : this._dueDateForAction("due-morning"))
     );
     if (input === null) return undefined;
-    const match = input.trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})\s+(\d{1,2}):(\d{2})$/);
-    if (!match) {
-      window.alert("Bitte im Format TT.MM.JJJJ HH:MM eingeben.");
+    const parsed = parseDueInput(input);
+    if (!parsed) {
+      window.alert(t("Bitte im Format {format} eingeben.", { format: dueInputFormat() }));
       return undefined;
     }
-    return new Date(+match[3], +match[2] - 1, +match[1], +match[4], +match[5]);
+    return parsed;
   }
 
   _formatDueInput(date) {
-    const pad = (value) => String(value).padStart(2, "0");
-    return `${pad(date.getDate())}.${pad(date.getMonth() + 1)}.${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    return formatDueInput(date);
   }
 
   _formatDueBadge(due) {
@@ -522,11 +524,11 @@ class BrainstormCard extends HTMLElement {
     const clock = `${date.getHours()}:${pad(date.getMinutes())}`;
     const tomorrow = new Date(now);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    let label = `${pad(date.getDate())}.${pad(date.getMonth() + 1)}. ${clock}`;
-    if (date.toDateString() === now.toDateString()) label = `Heute ${clock}`;
-    else if (date.toDateString() === tomorrow.toDateString()) label = `Morgen ${clock}`;
+    let label = `${shortDate(date)} ${clock}`;
+    if (date.toDateString() === now.toDateString()) label = t("Heute {clock}", { clock });
+    else if (date.toDateString() === tomorrow.toDateString()) label = t("Morgen {clock}", { clock });
     const overdue = date < now;
-    return `<span class="due-badge ${overdue ? "overdue" : ""}" title="${overdue ? "Überfällig" : "Erinnerung"}">⏰ ${label}</span>`;
+    return `<span class="due-badge ${overdue ? "overdue" : ""}" title="${overdue ? t("Überfällig") : t("Erinnerung")}">⏰ ${label}</span>`;
   }
 
   _applyShareFilter(ideas) {
@@ -555,9 +557,9 @@ class BrainstormCard extends HTMLElement {
       `<button class="share-filter-btn ${filter === value ? "active" : ""}" data-filter="${value}">${label}</button>`;
     bar.style.display = "flex";
     bar.innerHTML = `
-      ${attributes.privacy ? `${button("all", "Alle")}${button("mine", "Meine")}${button("shared", "Mit mir geteilt")}` : ""}
-      ${canShareCategory ? `<button class="share-filter-btn share-category-btn" id="shareCategoryBtn">👥 ${this._escapeHtml(selected)} freigeben</button>` : ""}
-      ${canSelect ? `<button class="share-filter-btn ${this._selectionMode ? "active" : ""}" id="selectionToggleBtn">☑️ Auswählen</button>` : ""}
+      ${attributes.privacy ? `${button("all", t("Alle"))}${button("mine", t("Meine"))}${button("shared", t("Mit mir geteilt"))}` : ""}
+      ${canShareCategory ? `<button class="share-filter-btn share-category-btn" id="shareCategoryBtn">${t("👥 {category} freigeben", { category: this._escapeHtml(selected) })}</button>` : ""}
+      ${canSelect ? `<button class="share-filter-btn ${this._selectionMode ? "active" : ""}" id="selectionToggleBtn">${t("☑️ Auswählen")}</button>` : ""}
     `;
     const selectionToggle = bar.querySelector("#selectionToggleBtn");
     if (selectionToggle) {
@@ -615,7 +617,7 @@ class BrainstormCard extends HTMLElement {
     if (!button) return;
     button.classList.toggle("recording", state === "recording");
     button.classList.toggle("busy", state === "busy");
-    const label = state === "recording" ? "Aufnahme beenden" : "Idee sprechen";
+    const label = state === "recording" ? t("Aufnahme beenden") : t("Idee sprechen");
     button.title = label;
     button.setAttribute("aria-label", label);
   }
@@ -633,7 +635,7 @@ class BrainstormCard extends HTMLElement {
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch (err) {
-      this._showMicStatus("Das Mikrofon ist nicht erlaubt. Bitte im Browser freigeben.");
+      this._showMicStatus(t("Das Mikrofon ist nicht erlaubt. Bitte im Browser freigeben."));
       return;
     }
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -649,7 +651,7 @@ class BrainstormCard extends HTMLElement {
     };
     this._micSession = session;
     this._setMicState("recording");
-    this._showMicStatus("Ich höre zu … Zum Beenden nochmal tippen.");
+    this._showMicStatus(t("Ich höre zu … Zum Beenden nochmal tippen."));
 
     const source = audioContext.createMediaStreamSource(stream);
     const processor = audioContext.createScriptProcessor(4096, 1, 1);
@@ -674,7 +676,7 @@ class BrainstormCard extends HTMLElement {
       );
     } catch (err) {
       console.error("[Brainstorm] Could not start speech recognition:", err);
-      this._endMic(session, "Die Spracherkennung konnte nicht starten.");
+      this._endMic(session, t("Die Spracherkennung konnte nicht starten."));
     }
   }
 
@@ -824,12 +826,12 @@ class BrainstormCard extends HTMLElement {
     const canShare = !!this._privacyAttributes && owned.length > 0;
     bar.style.display = "flex";
     bar.innerHTML = `
-      <span class="selection-count">${count} ausgewählt</span>
-      <button class="share-filter-btn" data-bulk="all">Alle</button>
-      <button class="share-filter-btn" data-bulk="done" ${count ? "" : "disabled"}>✓ Erledigen</button>
-      <button class="share-filter-btn" data-bulk="move" ${count ? "" : "disabled"}>🏷️ Verschieben</button>
-      ${this._privacyAttributes ? `<button class="share-filter-btn" data-bulk="share" ${canShare ? "" : "disabled"}>👥 Freigeben</button>` : ""}
-      ${this._config.allow_delete === true ? `<button class="share-filter-btn" data-bulk="delete" ${owned.length ? "" : "disabled"}>🗑️ Löschen</button>` : ""}
+      <span class="selection-count">${t("{count} ausgewählt", { count })}</span>
+      <button class="share-filter-btn" data-bulk="all">${t("Alle")}</button>
+      <button class="share-filter-btn" data-bulk="done" ${count ? "" : "disabled"}>${t("✓ Erledigen")}</button>
+      <button class="share-filter-btn" data-bulk="move" ${count ? "" : "disabled"}>${t("🏷️ Verschieben")}</button>
+      ${this._privacyAttributes ? `<button class="share-filter-btn" data-bulk="share" ${canShare ? "" : "disabled"}>${t("👥 Freigeben")}</button>` : ""}
+      ${this._config.allow_delete === true ? `<button class="share-filter-btn" data-bulk="delete" ${owned.length ? "" : "disabled"}>${t("🗑️ Löschen")}</button>` : ""}
     `;
     bar.querySelectorAll("[data-bulk]").forEach((btn) => {
       btn.addEventListener("click", () => this._runBulkAction(btn.getAttribute("data-bulk")));
@@ -883,7 +885,7 @@ class BrainstormCard extends HTMLElement {
 
   _finishSelection(failed) {
     if (failed.length) {
-      window.alert(`Nicht geändert: ${failed.join(", ")}`);
+      window.alert(t("Nicht geändert: {items}", { items: failed.join(", ") }));
     }
     this._selectionMode = false;
     this._selectedIds = new Set();
@@ -894,14 +896,14 @@ class BrainstormCard extends HTMLElement {
   _showBulkMoveDialog(items) {
     const sensor = this._getSensorEntity();
     const categories = (sensor && sensor.attributes.categories) || [];
-    this._openDialog(`🏷️ ${items.length} Einträge verschieben`, (body) => {
+    this._openDialog(t("🏷️ {count} Einträge verschieben", { count: items.length }), (body) => {
       body.innerHTML = `
         <select class="action-dialog-input" id="bulkMoveSelect" style="cursor: pointer; width: 100%;">
           ${categories.map((cat) => `<option value="${this._escapeHtml(cat)}">${this._escapeHtml(cat)}</option>`).join("")}
         </select>
         <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px;">
-          <button class="action-dialog-btn action-dialog-btn-cancel" id="cancelBulkMove">Abbrechen</button>
-          <button class="action-dialog-btn action-dialog-btn-primary" id="saveBulkMove">Verschieben</button>
+          <button class="action-dialog-btn action-dialog-btn-cancel" id="cancelBulkMove">${t("Abbrechen")}</button>
+          <button class="action-dialog-btn action-dialog-btn-primary" id="saveBulkMove">${t("Verschieben")}</button>
         </div>
       `;
       body.querySelector("#cancelBulkMove").addEventListener("click", () => this._closeDialog());
@@ -914,12 +916,12 @@ class BrainstormCard extends HTMLElement {
   }
 
   _showBulkDeleteDialog(items, skipped) {
-    this._openDialog(`🗑️ ${items.length} Einträge löschen?`, (body) => {
+    this._openDialog(t("🗑️ {count} Einträge löschen?", { count: items.length }), (body) => {
       body.innerHTML = `
-        ${skipped ? `<div class="action-dialog-label">${skipped} fremde Einträge bleiben erhalten.</div>` : ""}
+        ${skipped ? `<div class="action-dialog-label">${t("{count} fremde Einträge bleiben erhalten.", { count: skipped })}</div>` : ""}
         <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px;">
-          <button class="action-dialog-btn action-dialog-btn-cancel" id="cancelBulkDelete">Abbrechen</button>
-          <button class="action-dialog-btn action-dialog-btn-primary" id="saveBulkDelete">Löschen</button>
+          <button class="action-dialog-btn action-dialog-btn-cancel" id="cancelBulkDelete">${t("Abbrechen")}</button>
+          <button class="action-dialog-btn action-dialog-btn-primary" id="saveBulkDelete">${t("Löschen")}</button>
         </div>
       `;
       body.querySelector("#cancelBulkDelete").addEventListener("click", () => this._closeDialog());
@@ -941,42 +943,41 @@ class BrainstormCard extends HTMLElement {
   _formatShareBadge(item) {
     if (!item.access) return "";
     if (item.access !== "owner") {
-      const level = item.access === "view" ? "ansehen" : "bearbeiten";
-      return `<span class="due-badge" title="Geteilt von ${this._escapeHtml(item.owner_name || "")}, du darfst ${level}">👥 ${this._escapeHtml(item.owner_name || "Geteilt")}${item.access === "view" ? " 👁️" : ""}</span>`;
+            return `<span class="due-badge" title="${t(item.access === "view" ? "Geteilt von {name}, du darfst ansehen" : "Geteilt von {name}, du darfst bearbeiten", { name: this._escapeHtml(item.owner_name || "") })}">👥 ${this._escapeHtml(item.owner_name || t("Geteilt"))}${item.access === "view" ? " 👁️" : ""}</span>`;
     }
     const count = Object.keys(item.shares || {}).length;
-    return count ? `<span class="due-badge" title="Für andere freigegeben">👥 ${count}</span>` : "";
+    return count ? `<span class="due-badge" title="${t("Für andere freigegeben")}">👥 ${count}</span>` : "";
   }
 
   _showShareDialog(ids, category, current, skipped = 0) {
     const attributes = this._privacyAttributes || {};
-    const users = [{ id: "all", name: "Alle Benutzer" }, ...(attributes.share_users || [])];
+    const users = [{ id: "all", name: t("Alle Benutzer") }, ...(attributes.share_users || [])];
     // Several ideas can differ, so nothing changes unless a level is chosen
     const isBulk = !category && ids.length > 1;
     const title = category
       ? `👥 ${this._escapeHtml(category)} freigeben`
       : isBulk
-      ? `👥 ${ids.length} Einträge freigeben`
-      : "👥 Freigeben";
+      ? t("👥 {count} Einträge freigeben", { count: ids.length })
+      : t("👥 Freigeben");
     this._openDialog(title, (body) => {
       body.innerHTML = `
-        ${skipped ? `<div class="action-dialog-label">${skipped} fremde Einträge werden ausgelassen.</div>` : ""}
+        ${skipped ? `<div class="action-dialog-label">${t("{count} fremde Einträge werden ausgelassen.", { count: skipped })}</div>` : ""}
         ${users
           .map(
             (user) => `
           <div class="action-dialog-label">${this._escapeHtml(user.name)}:</div>
           <select class="action-dialog-input share-level" data-user="${this._escapeHtml(user.id)}" style="cursor: pointer; width: 100%;">
-            ${isBulk ? `<option value="__keep__" selected>Nicht ändern</option>` : ""}
-            <option value="" ${!isBulk && !current[user.id] ? "selected" : ""}>Keine Freigabe</option>
-            <option value="view" ${current[user.id] === "view" ? "selected" : ""}>Ansehen</option>
-            <option value="edit" ${current[user.id] === "edit" ? "selected" : ""}>Bearbeiten</option>
+            ${isBulk ? `<option value="__keep__" selected>${t("Nicht ändern")}</option>` : ""}
+            <option value="" ${!isBulk && !current[user.id] ? "selected" : ""}>${t("Keine Freigabe")}</option>
+            <option value="view" ${current[user.id] === "view" ? "selected" : ""}>${t("Ansehen")}</option>
+            <option value="edit" ${current[user.id] === "edit" ? "selected" : ""}>${t("Bearbeiten")}</option>
           </select>`
           )
           .join("")}
         <div class="action-dialog-error" id="shareError" style="display: none;"></div>
         <div class="action-dialog-actions" style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px;">
-          <button class="action-dialog-btn action-dialog-btn-cancel" id="cancelShareBtn">Abbrechen</button>
-          <button class="action-dialog-btn action-dialog-btn-primary" id="saveShareBtn">Speichern</button>
+          <button class="action-dialog-btn action-dialog-btn-cancel" id="cancelShareBtn">${t("Abbrechen")}</button>
+          <button class="action-dialog-btn action-dialog-btn-primary" id="saveShareBtn">${t("Speichern")}</button>
         </div>
       `;
       body.querySelector("#cancelShareBtn").addEventListener("click", () => this._closeDialog());
@@ -1007,11 +1008,11 @@ class BrainstormCard extends HTMLElement {
     };
     let badges = "";
     if (item.trigger && item.trigger.zone) {
-      const place = item.trigger.zone === "zone.home" ? "Zuhause" : name(item.trigger.zone);
-      badges += `<span class="due-badge" title="Erinnert an diesem Ort">📍 ${this._escapeHtml(place)}</span>`;
+      const place = item.trigger.zone === "zone.home" ? t("Zuhause") : name(item.trigger.zone);
+      badges += `<span class="due-badge" title="${t("Erinnert an diesem Ort")}">📍 ${this._escapeHtml(place)}</span>`;
     }
     if (item.assignee) {
-      badges += `<span class="due-badge" title="Für diese Person">👤 ${this._escapeHtml(name(item.assignee))}</span>`;
+      badges += `<span class="due-badge" title="${t("Für diese Person")}">👤 ${this._escapeHtml(name(item.assignee))}</span>`;
     }
     return badges;
   }
@@ -1145,28 +1146,28 @@ class BrainstormCard extends HTMLElement {
     const candidateParents = activeIdeas.filter((i) => i.id !== id && !i.parent_id);
     const rawText = (activeIdeas.find((i) => i.id === id) || {}).raw_text;
 
-    this._openDialog("✏️ Notiz bearbeiten", (body) => {
+    this._openDialog(t("✏️ Notiz bearbeiten"), (body) => {
       body.innerHTML = `
-        <div class="action-dialog-label">Notiztext:</div>
+        <div class="action-dialog-label">${t("Notiztext:")}</div>
         <textarea class="action-dialog-textarea" id="editTextarea" rows="3">${this._escapeHtml(currentText)}</textarea>
         <div class="action-dialog-error" id="editTextError" style="display: none;"></div>
         ${rawText && rawText !== currentText ? `
-          <div class="action-dialog-label">Original gesprochen:</div>
+          <div class="action-dialog-label">${t("Original gesprochen:")}</div>
           <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
             <span id="editOriginalText" style="flex: 1 1 180px; color: var(--secondary-text-color);">${this._escapeHtml(rawText)}</span>
-            <button class="action-dialog-btn action-dialog-btn-cancel" id="editUseOriginal" style="min-height: 44px;">Übernehmen</button>
+            <button class="action-dialog-btn action-dialog-btn-cancel" id="editUseOriginal" style="min-height: 44px;">${t("Übernehmen")}</button>
           </div>
         ` : ""}
 
-        <div class="action-dialog-label">Priorität:</div>
+        <div class="action-dialog-label">${t("Priorität:")}</div>
         <div class="action-dialog-prio-grid" id="editPrioGrid">
-          <div class="action-dialog-prio-chip ${selectedPrio === "low" ? "selected" : ""}" data-prio="low" style="--chip-prio-color: #10b981;">🟢 Niedrig</div>
-          <div class="action-dialog-prio-chip ${selectedPrio === "medium" ? "selected" : ""}" data-prio="medium" style="--chip-prio-color: #eab308;">🟡 Mittel</div>
-          <div class="action-dialog-prio-chip ${selectedPrio === "high" ? "selected" : ""}" data-prio="high" style="--chip-prio-color: #f97316;">🔴 Hoch</div>
-          <div class="action-dialog-prio-chip ${selectedPrio === "urgent" ? "selected" : ""}" data-prio="urgent" style="--chip-prio-color: #ef4444;">🔥 Dringend</div>
+          <div class="action-dialog-prio-chip ${selectedPrio === "low" ? "selected" : ""}" data-prio="low" style="--chip-prio-color: #10b981;">${t("🟢 Niedrig")}</div>
+          <div class="action-dialog-prio-chip ${selectedPrio === "medium" ? "selected" : ""}" data-prio="medium" style="--chip-prio-color: #eab308;">${t("🟡 Mittel")}</div>
+          <div class="action-dialog-prio-chip ${selectedPrio === "high" ? "selected" : ""}" data-prio="high" style="--chip-prio-color: #f97316;">${t("🔴 Hoch")}</div>
+          <div class="action-dialog-prio-chip ${selectedPrio === "urgent" ? "selected" : ""}" data-prio="urgent" style="--chip-prio-color: #ef4444;">${t("🔥 Dringend")}</div>
         </div>
 
-        <div class="action-dialog-label">Kategorie:</div>
+        <div class="action-dialog-label">${t("Kategorie:")}</div>
         <div class="action-dialog-categories-grid" id="editCatGrid">
           ${categories
             .map((cat) => {
@@ -1182,9 +1183,9 @@ class BrainstormCard extends HTMLElement {
             .join("")}
         </div>
 
-        <div class="action-dialog-label" style="margin-top: 6px;">Übergeordnete Aufgabe:</div>
+        <div class="action-dialog-label" style="margin-top: 6px;">${t("Übergeordnete Aufgabe:")}</div>
         <select class="action-dialog-input" id="editParentSelect" style="cursor: pointer; width: 100%;">
-          <option value="">— Keine (Hauptaufgabe) —</option>
+          <option value="">${t("— Keine (Hauptaufgabe) —")}</option>
           ${candidateParents
             .map(
               (p) => `
@@ -1197,8 +1198,8 @@ class BrainstormCard extends HTMLElement {
         </select>
 
         <div class="action-dialog-footer">
-          <button class="action-dialog-btn action-dialog-btn-cancel" id="cancelEditBtn">Abbrechen</button>
-          <button class="action-dialog-btn action-dialog-btn-primary" id="saveEditBtn">Speichern</button>
+          <button class="action-dialog-btn action-dialog-btn-cancel" id="cancelEditBtn">${t("Abbrechen")}</button>
+          <button class="action-dialog-btn action-dialog-btn-primary" id="saveEditBtn">${t("Speichern")}</button>
         </div>
       `;
 
@@ -1262,7 +1263,7 @@ class BrainstormCard extends HTMLElement {
       const handleSave = async () => {
         const newText = (textarea.value || "").trim();
         if (!newText) {
-          showTextError("⚠️ Der Text darf nicht leer sein.");
+          showTextError(t("⚠️ Der Text darf nicht leer sein."));
           return;
         }
         this._closeDialog();
@@ -1302,7 +1303,7 @@ class BrainstormCard extends HTMLElement {
     const categories = sensor ? (sensor.attributes.categories || ["Inbox"]) : ["Inbox"];
     const counts = sensor ? (sensor.attributes.category_counts || {}) : {};
 
-    this._openDialog("🏷️ Kategorie auswählen", (body) => {
+    this._openDialog(t("🏷️ Kategorie auswählen"), (body) => {
       let previewHtml = "";
       if (noteText) {
         previewHtml = `<div class="action-dialog-note-preview">"${this._escapeHtml(noteText)}"</div>`;
@@ -1310,7 +1311,7 @@ class BrainstormCard extends HTMLElement {
 
       body.innerHTML = `
         ${previewHtml}
-        <div class="action-dialog-label">Kategorie wählen:</div>
+        <div class="action-dialog-label">${t("Kategorie wählen:")}</div>
         <div class="action-dialog-categories-grid">
           ${categories
             .map((cat) => {
@@ -1327,10 +1328,10 @@ class BrainstormCard extends HTMLElement {
             })
             .join("")}
         </div>
-        <div class="action-dialog-label" style="margin-top: 6px;">Oder neue Kategorie anlegen:</div>
+        <div class="action-dialog-label" style="margin-top: 6px;">${t("Oder neue Kategorie anlegen:")}</div>
         <div class="action-dialog-new-cat-row">
-          <input type="text" class="action-dialog-input" id="newCatInput" placeholder="Kategoriename..." />
-          <button class="action-dialog-btn action-dialog-btn-primary" id="addNewCatBtn">➕ Erstellen</button>
+          <input type="text" class="action-dialog-input" id="newCatInput" placeholder="${t("Kategoriename...")}" />
+          <button class="action-dialog-btn action-dialog-btn-primary" id="addNewCatBtn">${t("➕ Erstellen")}</button>
         </div>
         <div class="action-dialog-error" id="newCatError" style="display: none;"></div>
       `;
@@ -1379,11 +1380,11 @@ class BrainstormCard extends HTMLElement {
       const handleCreateCat = async () => {
         const val = (newCatInput.value || "").trim();
         if (!val) {
-          showCatError("⚠️ Bitte gib einen Kategorienamen ein.");
+          showCatError(t("⚠️ Bitte gib einen Kategorienamen ein."));
           return;
         }
         if (categories.some((c) => c.toLowerCase() === val.toLowerCase())) {
-          showCatError(`⚠️ Die Kategorie "${val}" existiert bereits.`);
+          showCatError(t('⚠️ Die Kategorie "{name}" existiert bereits.', { name: val }));
           return;
         }
         this._closeDialog();
@@ -1407,16 +1408,16 @@ class BrainstormCard extends HTMLElement {
     const sensor = this._getSensorEntity();
     const existingCats = (sensor && sensor.attributes && sensor.attributes.categories) || [];
 
-    this._openDialog("➕ Neue Kategorie", (body) => {
+    this._openDialog(t("➕ Neue Kategorie"), (body) => {
       body.innerHTML = `
-        <div class="action-dialog-label">Name der neuen Kategorie:</div>
+        <div class="action-dialog-label">${t("Name der neuen Kategorie:")}</div>
         <div style="width: 100%; display: flex; flex-direction: column;">
-          <input type="text" class="action-dialog-input" id="createCatInput" placeholder="z. B. Smart Home, Finanzen, Einkaufen..." style="width: 100%;" />
+          <input type="text" class="action-dialog-input" id="createCatInput" placeholder="${t("z. B. Smart Home, Finanzen, Einkaufen...")}" style="width: 100%;" />
           <div class="action-dialog-error" id="createCatError" style="display: none;"></div>
         </div>
         <div class="action-dialog-footer">
-          <button class="action-dialog-btn action-dialog-btn-cancel" id="cancelAddCatBtn">Abbrechen</button>
-          <button class="action-dialog-btn action-dialog-btn-primary" id="saveAddCatBtn">Kategorie erstellen</button>
+          <button class="action-dialog-btn action-dialog-btn-cancel" id="cancelAddCatBtn">${t("Abbrechen")}</button>
+          <button class="action-dialog-btn action-dialog-btn-primary" id="saveAddCatBtn">${t("Kategorie erstellen")}</button>
         </div>
       `;
 
@@ -1448,11 +1449,11 @@ class BrainstormCard extends HTMLElement {
       const handleAdd = async () => {
         const name = (input.value || "").trim();
         if (!name) {
-          showError("⚠️ Bitte gib einen Kategorienamen ein.");
+          showError(t("⚠️ Bitte gib einen Kategorienamen ein."));
           return;
         }
         if (existingCats.some((c) => c.toLowerCase() === name.toLowerCase())) {
-          showError(`⚠️ Die Kategorie "${name}" existiert bereits.`);
+          showError(t('⚠️ Die Kategorie "{name}" existiert bereits.', { name }));
           return;
         }
         this._closeDialog();
@@ -1474,17 +1475,17 @@ class BrainstormCard extends HTMLElement {
 
   _removeCategory(categoryName) {
     if (categoryName === "Inbox") return;
-    this._openDialog("🗑️ Kategorie löschen?", (body) => {
+    this._openDialog(t("🗑️ Kategorie löschen?"), (body) => {
       body.innerHTML = `
         <p style="margin: 8px 0; font-size: 0.9rem; line-height: 1.4; color: var(--primary-text-color, #212121);">
-          Möchtest du die Kategorie <strong>"${this._escapeHtml(categoryName)}"</strong> wirklich löschen?
+          ${t('Möchtest du die Kategorie <strong>"{name}"</strong> wirklich löschen?', { name: this._escapeHtml(categoryName) })}
         </p>
         <p style="margin: 0 0 12px 0; font-size: 0.8rem; color: var(--secondary-text-color, #64748b);">
-          Enthaltene Notizen werden automatisch in die Kategorie <em>Inbox</em> verschoben.
+          ${t("Enthaltene Notizen werden automatisch in die Kategorie <em>Inbox</em> verschoben.")}
         </p>
         <div class="action-dialog-footer">
-          <button class="action-dialog-btn action-dialog-btn-cancel" id="cancelRemoveCatBtn">Abbrechen</button>
-          <button class="action-dialog-btn action-dialog-btn-primary" id="confirmRemoveCatBtn" style="background: var(--error-color, #db4437);">Löschen</button>
+          <button class="action-dialog-btn action-dialog-btn-cancel" id="cancelRemoveCatBtn">${t("Abbrechen")}</button>
+          <button class="action-dialog-btn action-dialog-btn-primary" id="confirmRemoveCatBtn" style="background: var(--error-color, #db4437);">${t("Löschen")}</button>
         </div>
       `;
 
@@ -1510,16 +1511,16 @@ class BrainstormCard extends HTMLElement {
     const currentColor = this._getCategoryColor(category);
     const currentIcon = this._getCategoryIcon(category);
 
-    this._openDialog(`🎨 Design für „${this._escapeHtml(category)}“`, (body) => {
+    this._openDialog(t("🎨 Design für „{name}“", { name: this._escapeHtml(category) }), (body) => {
       body.innerHTML = `
         <div style="display: flex; flex-direction: column; gap: 14px;">
           <div>
-            <label class="action-dialog-label" style="display: block; margin-bottom: 6px;">Icon (Home Assistant / MDI):</label>
+            <label class="action-dialog-label" style="display: block; margin-bottom: 6px;">${t("Icon (Home Assistant / MDI):")}</label>
             <div style="display: flex; gap: 8px; align-items: center;">
               <span id="styleIconPreview" style="display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 8px; background: rgba(0,0,0,0.06); color: ${currentColor}; font-size: 20px;">
                 <ha-icon icon="${currentIcon}" style="--mdc-icon-size: 22px; width: 22px; height: 22px;"></ha-icon>
               </span>
-              <input type="text" class="action-dialog-input" id="styleIconInput" value="${currentIcon}" placeholder="z. B. mdi:home-automation" style="flex: 1;" />
+              <input type="text" class="action-dialog-input" id="styleIconInput" value="${currentIcon}" placeholder="${t("z. B. mdi:home-automation")}" style="flex: 1;" />
             </div>
             <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px;">
               ${["mdi:inbox", "mdi:home-automation", "mdi:flower", "mdi:clipboard-check-outline", "mdi:calendar-check", "mdi:brain", "mdi:cart", "mdi:account-group", "mdi:briefcase", "mdi:cash-multiple", "mdi:car", "mdi:beach", "mdi:heart-pulse"]
@@ -1528,7 +1529,7 @@ class BrainstormCard extends HTMLElement {
             </div>
           </div>
           <div>
-            <label class="action-dialog-label" style="display: block; margin-bottom: 6px;">Akzentfarbe:</label>
+            <label class="action-dialog-label" style="display: block; margin-bottom: 6px;">${t("Akzentfarbe:")}</label>
             <div style="display: flex; gap: 10px; align-items: center;">
               <input type="color" id="styleColorPicker" value="${currentColor.startsWith('#') && currentColor.length === 7 ? currentColor : '#2563eb'}" style="width: 44px; height: 38px; border: none; border-radius: 6px; cursor: pointer; background: transparent;" />
               <input type="text" class="action-dialog-input" id="styleColorInput" value="${currentColor}" placeholder="#2563eb" style="flex: 1;" />
@@ -1536,10 +1537,10 @@ class BrainstormCard extends HTMLElement {
           </div>
         </div>
         <div class="action-dialog-footer" style="margin-top: 18px; display: flex; justify-content: space-between;">
-          <button class="action-dialog-btn action-dialog-btn-cancel" id="resetCatStyleBtn" style="color: #ef4444;">Zurücksetzen</button>
+          <button class="action-dialog-btn action-dialog-btn-cancel" id="resetCatStyleBtn" style="color: #ef4444;">${t("Zurücksetzen")}</button>
           <div style="display: flex; gap: 8px;">
-            <button class="action-dialog-btn action-dialog-btn-cancel" id="cancelStyleCatBtn">Abbrechen</button>
-            <button class="action-dialog-btn action-dialog-btn-primary" id="saveStyleCatBtn">Speichern</button>
+            <button class="action-dialog-btn action-dialog-btn-cancel" id="cancelStyleCatBtn">${t("Abbrechen")}</button>
+            <button class="action-dialog-btn action-dialog-btn-primary" id="saveStyleCatBtn">${t("Speichern")}</button>
           </div>
         </div>
       `;
@@ -1630,8 +1631,8 @@ class BrainstormCard extends HTMLElement {
         <button class="apple-menu-btn action-indent" data-act="outdent">
           <span class="btn-icon">↰</span>
           <div class="btn-content">
-            <span>Ausrücken</span>
-            <span class="btn-sublabel">Wieder zur Hauptaufgabe machen</span>
+            <span>${t("Ausrücken")}</span>
+            <span class="btn-sublabel">${t("Wieder zur Hauptaufgabe machen")}</span>
           </div>
         </button>
       `;
@@ -1641,7 +1642,7 @@ class BrainstormCard extends HTMLElement {
         <button class="apple-menu-btn action-indent" data-act="indent" data-target="${prevTopLevelItem.id}">
           <span class="btn-icon">↳</span>
           <div class="btn-content">
-            <span>Unteraufgabe einrücken</span>
+            <span>${t("Unteraufgabe einrücken")}</span>
             <span class="btn-sublabel">Unter: „${this._escapeHtml(prevTitle)}“</span>
           </div>
         </button>
@@ -1653,7 +1654,7 @@ class BrainstormCard extends HTMLElement {
       actionsHtml += `
         <button class="apple-menu-btn" data-act="move-up">
           <span class="btn-icon">⬆️</span>
-          <div class="btn-content"><span>Nach oben verschieben</span></div>
+          <div class="btn-content"><span>${t("Nach oben verschieben")}</span></div>
         </button>
       `;
     }
@@ -1661,7 +1662,7 @@ class BrainstormCard extends HTMLElement {
       actionsHtml += `
         <button class="apple-menu-btn" data-act="move-down">
           <span class="btn-icon">⬇️</span>
-          <div class="btn-content"><span>Nach unten verschieben</span></div>
+          <div class="btn-content"><span>${t("Nach unten verschieben")}</span></div>
         </button>
       `;
     }
@@ -1673,7 +1674,7 @@ class BrainstormCard extends HTMLElement {
       actionsHtml += `
         <button class="apple-menu-btn" data-act="share">
           <span class="btn-icon">👥</span>
-          <div class="btn-content"><span>Freigeben</span></div>
+          <div class="btn-content"><span>${t("Freigeben")}</span></div>
         </button>
       `;
     }
@@ -1682,24 +1683,24 @@ class BrainstormCard extends HTMLElement {
     actionsHtml += `
       <button class="apple-menu-btn" data-act="due-evening">
         <span class="btn-icon">⏰</span>
-        <div class="btn-content"><span>Erinnern: heute Abend</span></div>
+        <div class="btn-content"><span>${t("Erinnern: heute Abend")}</span></div>
       </button>
       <button class="apple-menu-btn" data-act="due-morning">
         <span class="btn-icon">⏰</span>
-        <div class="btn-content"><span>Erinnern: morgen früh</span></div>
+        <div class="btn-content"><span>${t("Erinnern: morgen früh")}</span></div>
       </button>
       <button class="apple-menu-btn" data-act="due-week">
         <span class="btn-icon">⏰</span>
-        <div class="btn-content"><span>Erinnern: nächste Woche</span></div>
+        <div class="btn-content"><span>${t("Erinnern: nächste Woche")}</span></div>
       </button>
       <button class="apple-menu-btn" data-act="due-custom">
         <span class="btn-icon">📅</span>
-        <div class="btn-content"><span>Erinnern: Zeitpunkt wählen</span></div>
+        <div class="btn-content"><span>${t("Erinnern: Zeitpunkt wählen")}</span></div>
       </button>
       ${item.due ? `
       <button class="apple-menu-btn" data-act="due-clear">
         <span class="btn-icon">🔕</span>
-        <div class="btn-content"><span>Erinnerung entfernen</span></div>
+        <div class="btn-content"><span>${t("Erinnerung entfernen")}</span></div>
       </button>` : ""}
       <div class="apple-menu-separator"></div>
     `;
@@ -1708,7 +1709,7 @@ class BrainstormCard extends HTMLElement {
     actionsHtml += `
       <button class="apple-menu-btn" data-act="edit">
         <span class="btn-icon">✏️</span>
-        <div class="btn-content"><span>Notiz bearbeiten</span></div>
+        <div class="btn-content"><span>${t("Notiz bearbeiten")}</span></div>
       </button>
     `;
 
@@ -1716,7 +1717,7 @@ class BrainstormCard extends HTMLElement {
     actionsHtml += `
       <button class="apple-menu-btn action-danger" data-act="delete">
         <span class="btn-icon">🗑️</span>
-        <div class="btn-content"><span>Notiz löschen</span></div>
+        <div class="btn-content"><span>${t("Notiz löschen")}</span></div>
       </button>
     `;
 
@@ -3398,13 +3399,13 @@ class BrainstormCard extends HTMLElement {
             </div>
             <div class="header-titles">
               <span class="card-title" id="cardTitle">${this._config.title !== undefined ? this._config.title : "Brainstorm Hub"}</span>
-              <div class="badge" id="badgeCount" style="display: ${this._config.show_badge === true ? "inline-flex" : "none"};">0 Ideen</div>
+              <div class="badge" id="badgeCount" style="display: ${this._config.show_badge === true ? "inline-flex" : "none"};">${t("0 Ideen")}</div>
               <div id="lastAlexaWrap" class="last-alexa-wrap" style="display: none;"></div>
             </div>
           </div>
           <div class="header-actions">
-            <button class="color-mode-btn" id="cardColorModeBtn" style="display: ${this._config.show_color_toggle === true ? "flex" : "none"};" title="${this._colorMode === 'theme' ? 'Farbmodus: Theme-Farben aktiv (Klicken für Bunt)' : 'Farbmodus: Bunt aktiv (Klicken für Theme-Farben)'}">${this._colorMode === 'theme' ? '🎨' : '🌈'}</button>
-            <button class="view-toggle-btn" id="viewToggleBtn" style="display: ${this._config.show_mindmap_button === true ? "flex" : "none"};" title="Mindmap als Layer öffnen">
+            <button class="color-mode-btn" id="cardColorModeBtn" style="display: ${this._config.show_color_toggle === true ? "flex" : "none"};" title="${this._colorMode === 'theme' ? t("Farbmodus: Theme-Farben aktiv (Klicken für Bunt)") : t("Farbmodus: Bunt aktiv (Klicken für Theme-Farben)")}">${this._colorMode === 'theme' ? '🎨' : '🌈'}</button>
+            <button class="view-toggle-btn" id="viewToggleBtn" style="display: ${this._config.show_mindmap_button === true ? "flex" : "none"};" title="${t("Mindmap als Layer öffnen")}">
               <span class="btn-icon">🧠</span>
               <span class="btn-text">Mindmap</span>
             </button>
@@ -3418,13 +3419,13 @@ class BrainstormCard extends HTMLElement {
                 <input 
                   type="text" 
                   id="ideaInput" 
-                  placeholder="Blitz-Idee tippen... (z.B. 'Garten: Baum schneiden')" 
+                  placeholder="${t("Blitz-Idee tippen... (z.B. 'Garten: Baum schneiden')")}" 
                   autocomplete="off"
                 />
-                <button class="mic-btn" id="micBtn" type="button" title="Idee sprechen" aria-label="Idee sprechen" style="display: none;">🎙️</button>
-                <button class="send-btn" id="sendBtn" title="Idee erfassen">
+                <button class="mic-btn" id="micBtn" type="button" title="${t("Idee sprechen")}" aria-label="${t("Idee sprechen")}" style="display: none;">🎙️</button>
+                <button class="send-btn" id="sendBtn" title="${t("Idee erfassen")}">
                   <span class="send-icon">➕</span>
-                  <span class="send-text">Hinzufügen</span>
+                  <span class="send-text">${t("Hinzufügen")}</span>
                 </button>
               </div>
               <div class="mic-status" id="micStatus" role="status" style="display: none;"></div>
@@ -3432,16 +3433,16 @@ class BrainstormCard extends HTMLElement {
                 <div class="quick-meta-left">
                   <div class="quick-select-wrap cat-wrap">
                     <span class="quick-select-icon">🏷️</span>
-                    <select class="cat-select" id="catSelect" title="Ziel-Kategorie auswählen">
-                      <option value="auto">Auto (Erkennen)</option>
+                    <select class="cat-select" id="catSelect" title="${t("Ziel-Kategorie auswählen")}">
+                      <option value="auto">${t("Auto (Erkennen)")}</option>
                     </select>
                   </div>
                   <div class="quick-select-wrap prio-wrap">
-                    <select class="prio-select" id="prioSelect" title="Priorität festlegen">
-                      <option value="medium" selected>🟡 Mittel</option>
-                      <option value="high">🔴 Hoch</option>
-                      <option value="urgent">🔥 Dringend</option>
-                      <option value="low">🟢 Niedrig</option>
+                    <select class="prio-select" id="prioSelect" title="${t("Priorität festlegen")}">
+                      <option value="medium" selected>${t("🟡 Mittel")}</option>
+                      <option value="high">${t("🔴 Hoch")}</option>
+                      <option value="urgent">${t("🔥 Dringend")}</option>
+                      <option value="low">${t("🟢 Niedrig")}</option>
                     </select>
                   </div>
                 </div>
@@ -3459,7 +3460,7 @@ class BrainstormCard extends HTMLElement {
         <!-- Mindmap Modal Layer (3/4 Screen Popup) -->
         <div class="mindmap-modal-backdrop" id="mindmapModal" style="display: none;">
           <div class="mindmap-modal-content">
-            <button class="mindmap-modal-close" id="closeMindmapModalBtn" title="Mindmap schließen (ESC)">✕</button>
+            <button class="mindmap-modal-close" id="closeMindmapModalBtn" title="${t("Mindmap schließen (ESC)")}">✕</button>
             <brainstorm-mindmap-card id="popupMindmap" style="width: 100%; height: 100%; display: flex; flex: 1; min-height: 0;"></brainstorm-mindmap-card>
           </div>
         </div>
@@ -3468,8 +3469,8 @@ class BrainstormCard extends HTMLElement {
         <div class="action-dialog-backdrop" id="cardDialog" style="display: none;">
           <div class="action-dialog-box" id="cardDialogBox">
             <div class="action-dialog-header">
-              <div class="action-dialog-title" id="cardDialogTitle">Titel</div>
-              <button class="action-dialog-close" id="cardDialogCloseBtn" title="Schließen (ESC)">✕</button>
+              <div class="action-dialog-title" id="cardDialogTitle">${t("Titel")}</div>
+              <button class="action-dialog-close" id="cardDialogCloseBtn" title="${t("Schließen (ESC)")}">✕</button>
             </div>
             <div class="action-dialog-body" id="cardDialogBody"></div>
           </div>
@@ -3479,7 +3480,7 @@ class BrainstormCard extends HTMLElement {
         <div class="apple-menu-backdrop" id="appleContextMenu" style="display: none;">
           <div class="apple-menu-card" id="appleMenuCard">
             <div class="apple-menu-header">
-              <span class="apple-menu-headline">Aktionen für Notiz</span>
+              <span class="apple-menu-headline">${t("Aktionen für Notiz")}</span>
               <span class="apple-menu-item-text" id="appleMenuTitle"></span>
             </div>
             <div class="apple-menu-actions" id="appleMenuActions"></div>
@@ -3523,8 +3524,8 @@ class BrainstormCard extends HTMLElement {
         } catch {}
         cardColorModeBtn.innerHTML = this._colorMode === "theme" ? "🎨" : "🌈";
         cardColorModeBtn.title = this._colorMode === "theme"
-          ? "Farbmodus: Theme-Farben aktiv (Klicken für Bunt)"
-          : "Farbmodus: Bunt aktiv (Klicken für Theme-Farben)";
+          ? t("Farbmodus: Theme-Farben aktiv (Klicken für Bunt)")
+          : t("Farbmodus: Bunt aktiv (Klicken für Theme-Farben)");
         this._lastColorMode = null; // Force re-render
         this._lastUpdated = null;
         this._updateContent();
@@ -3633,7 +3634,7 @@ class BrainstormCard extends HTMLElement {
       this._lastAlexaKey = currentAlexaKey;
 
       const attributes = sensorEntity.attributes || {};
-      const categories = attributes.categories || ["Inbox", "Smarthome", "Haus & Garten", "Projekte", "Alltag"];
+      const categories = attributes.categories || ["Inbox"];
       this._checkSavedCategory(categories);
       const counts = attributes.category_counts || {};
       this._privacyAttributes = attributes.privacy ? attributes : null;
@@ -3653,9 +3654,9 @@ class BrainstormCard extends HTMLElement {
     if (badgeEl) {
       badgeEl.style.display = this._config.show_badge === true ? "inline-flex" : "none";
       if (completedCount > 0) {
-        badgeEl.textContent = `${activeIdeas.length} aktiv • ${completedCount} erledigt`;
+        badgeEl.textContent = t("{active} aktiv • {done} erledigt", { active: activeIdeas.length, done: completedCount });
       } else {
-        badgeEl.textContent = `${activeIdeas.length} Ideen`;
+        badgeEl.textContent = t("{count} Ideen", { count: activeIdeas.length });
       }
     }
 
@@ -3664,7 +3665,7 @@ class BrainstormCard extends HTMLElement {
       if (this._config.show_last_alexa === true && alexaInfo && alexaInfo.name) {
         lastAlexaWrap.style.display = "inline-flex";
         lastAlexaWrap.innerHTML = `
-          <div class="last-alexa-badge" title="Zuletzt aktive Alexa: ${this._escapeHtml(alexaInfo.name)} (Klicken für Details)">
+          <div class="last-alexa-badge" title="${t("Zuletzt aktive Alexa: {name} (Klicken für Details)", { name: this._escapeHtml(alexaInfo.name) })}">
             <span class="alexa-badge-icon">
               <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
                 <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5-3c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
@@ -3691,8 +3692,8 @@ class BrainstormCard extends HTMLElement {
       cardColorModeBtn.style.display = this._config.show_color_toggle === true ? "flex" : "none";
       cardColorModeBtn.innerHTML = this._colorMode === "theme" ? "🎨" : "🌈";
       cardColorModeBtn.title = this._colorMode === "theme"
-        ? "Farbmodus: Theme-Farben aktiv (Klicken für Bunt)"
-        : "Farbmodus: Bunt aktiv (Klicken für Theme-Farben)";
+        ? t("Farbmodus: Theme-Farben aktiv (Klicken für Bunt)")
+        : t("Farbmodus: Bunt aktiv (Klicken für Theme-Farben)");
     }
 
     const viewToggleBtn = this.shadowRoot.getElementById("viewToggleBtn");
@@ -3715,9 +3716,9 @@ class BrainstormCard extends HTMLElement {
     const ideaInput = this.shadowRoot.getElementById("ideaInput");
     if (ideaInput && document.activeElement !== ideaInput) {
       if (this._selectedCategory && this._selectedCategory !== "all" && this._selectedCategory !== "__completed__") {
-        ideaInput.placeholder = `Notiz in "${this._selectedCategory}" verfassen...`;
+        ideaInput.placeholder = t('Notiz in "{category}" verfassen...', { category: this._selectedCategory });
       } else {
-        ideaInput.placeholder = "Blitz-Idee tippen... (z.B. 'Garten: Baum schneiden')";
+        ideaInput.placeholder = t("Blitz-Idee tippen... (z.B. 'Garten: Baum schneiden')");
       }
     }
 
@@ -3729,7 +3730,7 @@ class BrainstormCard extends HTMLElement {
       // Only update options if categories changed
       if (existingOptions.join(",") !== newValues.join(",")) {
         catSelectEl.innerHTML = `
-          <option value="auto">Auto (Erkennen)</option>
+          <option value="auto">${t("Auto (Erkennen)")}</option>
           ${categories.map((c) => `<option value="${this._escapeHtml(c)}">${this._escapeHtml(c)}</option>`).join("")}
         `;
         catSelectEl.value = currentVal;
@@ -3758,7 +3759,7 @@ class BrainstormCard extends HTMLElement {
       pillsContainer.innerHTML = `
         <div class="pill ${this._selectedCategory === "all" ? "active" : ""}" data-cat="all">
           <ha-icon icon="mdi:layers-outline" style="--mdc-icon-size: 14px; width: 14px; height: 14px; margin-right: 4px; display: inline-flex; align-items: center; vertical-align: middle;"></ha-icon>
-          <span>Alle</span>
+          <span>${t("Alle")}</span>
           <span class="pill-count">${activeIdeas.length}</span>
         </div>
         ${visibleCategories
@@ -3776,8 +3777,8 @@ class BrainstormCard extends HTMLElement {
                 <ha-icon icon="${catIcon}" style="--mdc-icon-size: 14px; width: 14px; height: 14px; margin-right: 4px; display: inline-flex; align-items: center; vertical-align: middle; color: ${isActive ? '#ffffff' : catColor};"></ha-icon>
                 <span>${this._escapeHtml(cat)}</span>
                 <span class="pill-count">${count}</span>
-                ${isActive ? `<span class="style-cat-btn" title="Design für '${this._escapeHtml(cat)}' anpassen" data-stylecat="${this._escapeHtml(cat)}" style="margin-left: 4px; font-size: 0.72rem; cursor: pointer; opacity: 0.85;">🎨</span>` : ""}
-                ${canDelete ? `<span class="remove-cat-btn" title="Kategorie '${this._escapeHtml(cat)}' löschen" data-delcat="${this._escapeHtml(cat)}">✕</span>` : ""}
+                ${isActive ? `<span class="style-cat-btn" title="${t("Design für '{name}' anpassen", { name: this._escapeHtml(cat) })}" data-stylecat="${this._escapeHtml(cat)}" style="margin-left: 4px; font-size: 0.72rem; cursor: pointer; opacity: 0.85;">🎨</span>` : ""}
+                ${canDelete ? `<span class="remove-cat-btn" title="${t("Kategorie '{name}' löschen", { name: this._escapeHtml(cat) })}" data-delcat="${this._escapeHtml(cat)}">✕</span>` : ""}
               </div>
             `;
           })
@@ -3785,16 +3786,16 @@ class BrainstormCard extends HTMLElement {
         ${
           completedCount > 0
             ? `
-          <div class="pill completed-pill ${isCompletedView ? "active" : ""}" data-cat="__completed__" title="Erledigte Ideen anzeigen">
+          <div class="pill completed-pill ${isCompletedView ? "active" : ""}" data-cat="__completed__" title="${t("Erledigte Ideen anzeigen")}">
             <ha-icon icon="mdi:check-circle-outline" style="--mdc-icon-size: 14px; width: 14px; height: 14px; margin-right: 4px; display: inline-flex; align-items: center; vertical-align: middle;"></ha-icon>
-            <span>Erledigt</span>
+            <span>${t("Erledigt")}</span>
             <span class="pill-count">${completedCount}</span>
           </div>
         `
             : ""
         }
-        <div class="pill add-cat-pill" id="addCatBtn" title="Neue Kategorie erstellen">
-          <span>+ Kategorie</span>
+        <div class="pill add-cat-pill" id="addCatBtn" title="${t("Neue Kategorie erstellen")}">
+          <span>${t("+ Kategorie")}</span>
         </div>
       `;
 
@@ -3897,10 +3898,10 @@ class BrainstormCard extends HTMLElement {
           <div class="empty-state">
             ${
               isCompletedView
-                ? "Keine erledigten Ideen vorhanden."
+                ? t("Keine erledigten Ideen vorhanden.")
                 : this._selectedCategory === "all"
-                ? "✨ Noch keine aktiven Ideen. Tippe oben eine Idee ein oder sprich mit Alexa!"
-                : `Keine Ideen in der Kategorie "${this._selectedCategory}".`
+                ? t("✨ Noch keine aktiven Ideen. Tippe oben eine Idee ein oder sprich mit Alexa!")
+                : t('Keine Ideen in der Kategorie "{category}".', { category: this._selectedCategory })
             }
           </div>
         `;
@@ -3919,21 +3920,21 @@ class BrainstormCard extends HTMLElement {
             const itemDelete = canDelete && (!item.access || item.access === "owner");
             return `
             <div class="idea-item ${isSub ? "is-subtask" : ""} ${isCompletedView ? "completed" : ""}" data-id="${item.id}" data-idx="${idx}" style="--item-cat-color: ${this._getCategoryColor(item.category)};">
-              ${!isCompletedView && itemEdit ? `<span class="drag-handle" title="Halten & Ziehen zum Sortieren oder Unteraufgabe zuordnen" data-id="${item.id}">⠿</span>` : ""}
+              ${!isCompletedView && itemEdit ? `<span class="drag-handle" title="${t("Halten & Ziehen zum Sortieren oder Unteraufgabe zuordnen")}" data-id="${item.id}">⠿</span>` : ""}
               <button 
                 class="check-btn ${isCompletedView ? "checked" : ""}" 
-                title="${isCompletedView ? "Wieder als aktiv markieren" : "Als erledigt markieren"}" 
+                title="${isCompletedView ? t("Wieder als aktiv markieren") : t("Als erledigt markieren")}" 
                 data-id="${item.id}"
                 data-completed="${isCompletedView ? "true" : "false"}"
                 ${item.access === "view" ? "disabled" : ""}
               >${isCompletedView ? "✓" : ""}</button>
               <div class="idea-content">
-                <div class="idea-text" title="${itemEdit ? "Klicken zum Bearbeiten (Lange drücken für Kontextmenü)" : ""}" data-id="${item.id}" style="${itemEdit ? "" : "cursor: default;"}">
-                  ${isSub ? `<span class="subtask-indicator" title="Unteraufgabe">↳</span>` : ""}${this._escapeHtml(item.text)}
+                <div class="idea-text" title="${itemEdit ? t("Klicken zum Bearbeiten (Lange drücken für Kontextmenü)") : ""}" data-id="${item.id}" style="${itemEdit ? "" : "cursor: default;"}">
+                  ${isSub ? `<span class="subtask-indicator" title="${t("Unteraufgabe")}">↳</span>` : ""}${this._escapeHtml(item.text)}
                 </div>
                 <div class="idea-meta">
-                  ${isSub ? `<span class="subtask-badge" title="Unteraufgabe">Unteraufgabe</span>` : ""}
-                  <span class="category-tag ${itemEdit ? "clickable" : ""}" title="${itemEdit ? "Kategorie ändern" : "Kategorie"}" data-id="${item.id}" data-cat="${this._escapeHtml(item.category)}" style="color: ${this._getCategoryColor(item.category)}; background: color-mix(in srgb, ${this._getCategoryColor(item.category)} 12%, var(--secondary-background-color, rgba(0,0,0,0.06))); border: 1px solid color-mix(in srgb, ${this._getCategoryColor(item.category)} 25%, transparent);"><ha-icon icon="${this._getCategoryIcon(item.category)}" style="--mdc-icon-size: 11px; width: 11px; height: 11px; margin-right: 3px; display: inline-flex; align-items: center; vertical-align: middle;"></ha-icon>${this._escapeHtml(item.category)}</span>
+                  ${isSub ? `<span class="subtask-badge" title="${t("Unteraufgabe")}">${t("Unteraufgabe")}</span>` : ""}
+                  <span class="category-tag ${itemEdit ? "clickable" : ""}" title="${itemEdit ? t("Kategorie ändern") : t("Kategorie")}" data-id="${item.id}" data-cat="${this._escapeHtml(item.category)}" style="color: ${this._getCategoryColor(item.category)}; background: color-mix(in srgb, ${this._getCategoryColor(item.category)} 12%, var(--secondary-background-color, rgba(0,0,0,0.06))); border: 1px solid color-mix(in srgb, ${this._getCategoryColor(item.category)} 25%, transparent);"><ha-icon icon="${this._getCategoryIcon(item.category)}" style="--mdc-icon-size: 11px; width: 11px; height: 11px; margin-right: 3px; display: inline-flex; align-items: center; vertical-align: middle;"></ha-icon>${this._escapeHtml(item.category)}</span>
                   ${this._getPriorityBadge(item.priority, item.id)}
                   ${item.due ? this._formatDueBadge(item.due) : ""}
                   ${this._formatTargetBadges(item)}
@@ -3947,14 +3948,14 @@ class BrainstormCard extends HTMLElement {
                 ${
                   itemEdit
                     ? isSub
-                      ? `<button class="indent-btn outdent-btn" title="Ausrücken (zu Hauptaufgabe)" data-id="${item.id}" data-action="outdent">↰</button>`
+                      ? `<button class="indent-btn outdent-btn" title="${t("Ausrücken (zu Hauptaufgabe)")}" data-id="${item.id}" data-action="outdent">↰</button>`
                       : item.candidateParentId
-                      ? `<button class="indent-btn do-indent-btn" title="Unter vorherige Aufgabe einrücken" data-id="${item.id}" data-parent-id="${item.candidateParentId}" data-action="indent">↳</button>`
+                      ? `<button class="indent-btn do-indent-btn" title="${t("Unter vorherige Aufgabe einrücken")}" data-id="${item.id}" data-parent-id="${item.candidateParentId}" data-action="indent">↳</button>`
                       : ""
                     : ""
                 }
-                ${itemEdit ? `<button class="edit-btn" title="Bearbeiten" data-id="${item.id}">✎</button>` : ""}
-                ${itemDelete ? `<button class="delete-btn" title="Löschen" data-id="${item.id}">✕</button>` : ""}
+                ${itemEdit ? `<button class="edit-btn" title="${t("Bearbeiten")}" data-id="${item.id}">✎</button>` : ""}
+                ${itemDelete ? `<button class="delete-btn" title="${t("Löschen")}" data-id="${item.id}">✕</button>` : ""}
               </div>
             </div>
           `;
@@ -4240,7 +4241,7 @@ class BrainstormCard extends HTMLElement {
               if (!ghostEl) {
                 ghostEl = document.createElement("div");
                 ghostEl.className = "touch-drag-ghost";
-                ghostEl.textContent = `⠿ ${activeTouch.itemEl.querySelector(".idea-text")?.textContent?.trim() || "Notiz"}`;
+                ghostEl.textContent = `⠿ ${activeTouch.itemEl.querySelector(".idea-text")?.textContent?.trim() || t("Notiz")}`;
                 this.shadowRoot.appendChild(ghostEl);
               }
               ghostEl.style.left = `${touch.clientX + 10}px`;
@@ -4382,6 +4383,7 @@ class BrainstormCardEditor extends HTMLElement {
   }
 
   set hass(hass) {
+    setLanguage(hass);
     this._hass = hass;
     if (this._form) {
       this._form.hass = hass;
@@ -4401,7 +4403,7 @@ class BrainstormCardEditor extends HTMLElement {
   }
 
   _getCategoryOptions() {
-    const defaultList = ["Inbox", "Smarthome", "Haus & Garten", "Projekte", "Alltag", "Brainstorm"];
+    const defaultList = ["Inbox"];
     const categories = [];
     const sensorName = (this._config && this._config.sensor) || "sensor.brainstorm_ideen_ubersicht";
     if (this._hass && this._hass.states && this._hass.states[sensorName]) {
@@ -4437,7 +4439,7 @@ class BrainstormCardEditor extends HTMLElement {
     };
 
     return [
-      { value: "all", label: "🌟 Alle Kategorien (Standard)" },
+      { value: "all", label: t("🌟 Alle Kategorien (Standard)") },
       ...categories.map((c) => {
         const icon = icons[c.toLowerCase()] || "🏷️";
         return { value: c, label: `${icon} ${c}` };
@@ -4450,45 +4452,45 @@ class BrainstormCardEditor extends HTMLElement {
     return [
       {
         name: "title",
-        label: "Kartentitel",
+        label: t("Kartentitel"),
         default: "Brainstorm Hub",
         selector: { text: {} },
       },
       {
         name: "sensor",
-        label: "Sensor-Entität",
+        label: t("Sensor-Entität"),
         default: "sensor.brainstorm_ideen_ubersicht",
         selector: { entity: { domain: ["sensor"] } },
       },
       {
         name: "show_last_alexa",
-        label: "Zuletzt aktive Alexa (Last Alexa) anzeigen",
+        label: t("Zuletzt aktive Alexa (Last Alexa) anzeigen"),
         default: false,
         selector: { boolean: {} },
       },
       {
         name: "last_alexa_entity",
-        label: "Last Alexa Entität (Echo / Sensor)",
+        label: t("Last Alexa Entität (Echo / Sensor)"),
         default: "sensor.last_alexa",
         selector: { entity: { domain: ["sensor", "media_player"] } },
       },
       {
         name: "color_mode",
-        label: "Standard-Farbmodus",
+        label: t("Standard-Farbmodus"),
         default: "theme",
         selector: {
           select: {
             mode: "dropdown",
             options: [
-              { value: "theme", label: "🎨 Theme-Farben (Dynamisch nach Home Assistant Theme)" },
-              { value: "multicolor", label: "🌈 Bunt (Multicolor-Kategoriefarben)" },
+              { value: "theme", label: t("🎨 Theme-Farben (Dynamisch nach Home Assistant Theme)") },
+              { value: "multicolor", label: t("🌈 Bunt (Multicolor-Kategoriefarben)") },
             ],
           },
         },
       },
       {
         name: "default_category",
-        label: "Standard-Filterkategorie beim Öffnen",
+        label: t("Standard-Filterkategorie beim Öffnen"),
         default: "all",
         selector: {
           select: {
@@ -4500,85 +4502,85 @@ class BrainstormCardEditor extends HTMLElement {
       },
       {
         name: "max_items",
-        label: "Maximale Notizenanzahl (0 = Unbegrenzt)",
+        label: t("Maximale Notizenanzahl (0 = Unbegrenzt)"),
         default: 0,
         selector: { number: { min: 0, max: 200, mode: "box" } },
       },
       {
         name: "show_quick_input",
-        label: "Schnelleingabe-Feld für neue Notizen anzeigen",
+        label: t("Schnelleingabe-Feld für neue Notizen anzeigen"),
         default: true,
         selector: { boolean: {} },
       },
       {
         name: "show_mic",
-        label: "Mikrofon im Schnelleingabe-Feld anzeigen (nur über HTTPS)",
+        label: t("Mikrofon im Schnelleingabe-Feld anzeigen (nur über HTTPS)"),
         default: true,
         selector: { boolean: {} },
       },
       {
         name: "show_categories",
-        label: "Kategorie-Leiste (Filter-Pills) anzeigen",
+        label: t("Kategorie-Leiste (Filter-Pills) anzeigen"),
         default: true,
         selector: { boolean: {} },
       },
       {
         name: "hide_empty_categories",
-        label: "Kategorien ohne Notizen (0) ausblenden",
+        label: t("Kategorien ohne Notizen (0) ausblenden"),
         default: true,
         selector: { boolean: {} },
       },
       {
         name: "compact_mode",
-        label: "Kompakte Zeilenhöhe (mehr Aufgaben auf einen Blick)",
+        label: t("Kompakte Zeilenhöhe (mehr Aufgaben auf einen Blick)"),
         default: false,
         selector: { boolean: {} },
       },
       {
         name: "show_badge",
-        label: "Zähler-Badge im Header anzeigen",
+        label: t("Zähler-Badge im Header anzeigen"),
         default: true,
         selector: { boolean: {} },
       },
       {
         name: "show_logo",
-        label: "Logo im Header anzeigen",
+        label: t("Logo im Header anzeigen"),
         default: true,
         selector: { boolean: {} },
       },
       {
         name: "show_mindmap_button",
-        label: "Mindmap-Schaltfläche (🧠) im Header anzeigen",
+        label: t("Mindmap-Schaltfläche (🧠) im Header anzeigen"),
         default: true,
         selector: { boolean: {} },
       },
       {
         name: "show_color_toggle",
-        label: "Farbmodus-Umschalter (🎨/🌈) im Header anzeigen",
+        label: t("Farbmodus-Umschalter (🎨/🌈) im Header anzeigen"),
         default: true,
         selector: { boolean: {} },
       },
       {
         name: "show_source_icons",
-        label: "Quellen-Icons anzeigen (Alexa, Assist, Handy, Dashboard)",
+        label: t("Quellen-Icons anzeigen (Alexa, Assist, Handy, Dashboard)"),
         default: true,
         selector: { boolean: {} },
       },
       {
         name: "show_timestamps",
-        label: "Relative Zeitangaben anzeigen (z.B. 'vor 5 Min.')",
+        label: t("Relative Zeitangaben anzeigen (z.B. 'vor 5 Min.')"),
         default: true,
         selector: { boolean: {} },
       },
       {
         name: "allow_edit",
-        label: "Bearbeiten von Notizen erlauben (Klick & Stift-Icon)",
+        label: t("Bearbeiten von Notizen erlauben (Klick & Stift-Icon)"),
         default: true,
         selector: { boolean: {} },
       },
       {
         name: "allow_delete",
-        label: "Löschen von Notizen erlauben (✕-Schaltfläche)",
+        label: t("Löschen von Notizen erlauben (✕-Schaltfläche)"),
         default: true,
         selector: { boolean: {} },
       },
@@ -4655,7 +4657,7 @@ class BrainstormCardEditor extends HTMLElement {
       <div class="editor-container">
         <div class="editor-header">
           <img src="/local/brainstorm-bulb.svg" alt="Brainstorm" onerror="this.style.display='none'" />
-          <span>Brainstorm Hub – Visuelle Kartenkonfiguration</span>
+          <span>${t("Brainstorm Hub – Visuelle Kartenkonfiguration")}</span>
         </div>
         <div id="formContainer"></div>
       </div>
@@ -4696,52 +4698,52 @@ class BrainstormCardEditor extends HTMLElement {
     container.innerHTML = `
       <div class="fallback-container">
         <div class="fallback-row">
-          <label class="fallback-label">Kartentitel</label>
+          <label class="fallback-label">${t("Kartentitel")}</label>
           <input class="fallback-input" id="fbTitle" type="text" value="${this._config.title || 'Brainstorm Hub'}" />
         </div>
         <div class="fallback-row">
-          <label class="fallback-label">Sensor-Entität</label>
+          <label class="fallback-label">${t("Sensor-Entität")}</label>
           <input class="fallback-input" id="fbSensor" type="text" value="${this._config.sensor || 'sensor.brainstorm_ideen_ubersicht'}" />
         </div>
         <div class="fallback-row">
           <label class="fallback-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
             <input type="checkbox" id="fbShowLastAlexa" ${this._config.show_last_alexa ? 'checked' : ''} />
-            <span>Zuletzt aktive Alexa (Last Alexa) anzeigen</span>
+            <span>${t("Zuletzt aktive Alexa (Last Alexa) anzeigen")}</span>
           </label>
         </div>
         <div class="fallback-row">
-          <label class="fallback-label">Last Alexa Entität</label>
+          <label class="fallback-label">${t("Last Alexa Entität")}</label>
           <input class="fallback-input" id="fbLastAlexaEntity" type="text" value="${this._config.last_alexa_entity || 'sensor.last_alexa'}" />
         </div>
         <div class="fallback-row">
-          <label class="fallback-label">Standard-Filterkategorie beim Öffnen</label>
+          <label class="fallback-label">${t("Standard-Filterkategorie beim Öffnen")}</label>
           <select class="fallback-select" id="fbDefaultCat">
             ${this._getCategoryOptions().map(o => `<option value="${this._escapeHtml(o.value)}" ${(this._config.default_category || 'all') === o.value ? 'selected' : ''}>${this._escapeHtml(o.label)}</option>`).join("")}
           </select>
         </div>
         <div class="fallback-row">
-          <label class="fallback-label">Farbmodus</label>
+          <label class="fallback-label">${t("Farbmodus")}</label>
           <select class="fallback-select" id="fbColorMode">
-            <option value="theme" ${(this._config.color_mode || 'theme') === 'theme' ? 'selected' : ''}>🎨 Theme-Farben</option>
-            <option value="multicolor" ${this._config.color_mode === 'multicolor' ? 'selected' : ''}>🌈 Bunt (Multicolor)</option>
+            <option value="theme" ${(this._config.color_mode || 'theme') === 'theme' ? 'selected' : ''}>${t("🎨 Theme-Farben")}</option>
+            <option value="multicolor" ${this._config.color_mode === 'multicolor' ? 'selected' : ''}>${t("🌈 Bunt (Multicolor)")}</option>
           </select>
         </div>
         <div class="fallback-row">
           <label class="fallback-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
             <input type="checkbox" id="fbHideEmpty" ${this._config.hide_empty_categories ? 'checked' : ''} />
-            <span>Kategorien ohne Notizen (0) ausblenden</span>
+            <span>${t("Kategorien ohne Notizen (0) ausblenden")}</span>
           </label>
         </div>
         <div class="fallback-row">
           <label class="fallback-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
             <input type="checkbox" id="fbShowLogo" ${this._config.show_logo !== false ? 'checked' : ''} />
-            <span>Logo im Header anzeigen</span>
+            <span>${t("Logo im Header anzeigen")}</span>
           </label>
         </div>
         <div class="fallback-row">
           <label class="fallback-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
             <input type="checkbox" id="fbCompactMode" ${this._config.compact_mode ? 'checked' : ''} />
-            <span>Kompakte Zeilenhöhe (mehr Aufgaben auf einen Blick)</span>
+            <span>${t("Kompakte Zeilenhöhe (mehr Aufgaben auf einen Blick)")}</span>
           </label>
         </div>
       </div>
@@ -4803,13 +4805,13 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
     type: "brainstorm-card",
     name: "Brainstorm Card",
     preview: true,
-    description: "Moderne Schnellerfassung und Themen-Filter für Brainstorm Hub",
+    description: t("Moderne Schnellerfassung und Themen-Filter für Brainstorm Hub"),
     documentationURL: "https://github.com/nukleuz80/ha_brainstorm",
   });
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.5.14 ",
+  "%c BRAINSTORM-CARD %c v1.5.15 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );
