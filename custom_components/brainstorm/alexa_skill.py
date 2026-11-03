@@ -84,7 +84,13 @@ ACTIONS = (
 )
 SNOOZE_TIME = timedelta(hours=1)
 # What the skill has to be able to say without Home Assistant
-SKILL_CODE_TEXTS = ("skill_unreachable", "skill_inactive", "skill_no_text", "skill_help")
+SKILL_CODE_TEXTS = (
+    "skill_unreachable",
+    "skill_inactive",
+    "skill_no_text",
+    "skill_help",
+    "skill_fallback",
+)
 
 # Kept small on purpose, so that improvements reach users through the integration
 _SKILL_CODE = '''"""Brainstorm Hub Alexa skill. Keep this code private, it contains your secret address."""
@@ -228,7 +234,9 @@ def lambda_handler(event, context):
         return _call_home_assistant(event, "show", slots.get("category", {}).get("value") or "")
     if intent.get("name") == "ReadAllIdeasIntent":
         return _call_home_assistant(event, "read_all")
-    if intent.get("name") in ("AMAZON.HelpIntent", "AMAZON.FallbackIntent"):
+    if intent.get("name") == "AMAZON.FallbackIntent":
+        return _response(_text(event, "skill_fallback"), False)
+    if intent.get("name") == "AMAZON.HelpIntent":
         return _response(_text(event, "skill_help"), False)
     return _response("Okay.")
 '''

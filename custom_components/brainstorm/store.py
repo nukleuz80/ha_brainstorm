@@ -612,19 +612,30 @@ class BrainstormStore:
         active_aliases: dict[str, list[str]] = {}
         active_keywords: dict[str, list[str]] = {}
 
+        # A category of its own wins over a standard alias with its name, so that
+        # 'Einkauf' does not end up in 'Alltag' once the person created 'Einkauf'
+        own_names = {c.strip().lower() for c in self._categories}
         for cat in self._categories:
             if cat.lower() == "inbox":
                 continue
             key = CATEGORY_KEYS.get(cat)
-            aliases = list(pack.category_aliases.get(key, []))
             cat_clean = cat.strip().lower()
+            aliases = [
+                a
+                for a in pack.category_aliases.get(key, [])
+                if a == cat_clean or a not in own_names
+            ]
             if cat_clean not in aliases:
                 aliases.append(cat_clean)
             if "&" in cat_clean:
                 aliases.append(cat_clean.replace("&", pack.and_word).strip())
             active_aliases[cat] = aliases
 
-            kws = list(pack.category_keywords.get(key, []))
+            kws = [
+                k
+                for k in pack.category_keywords.get(key, [])
+                if k == cat_clean or k not in own_names
+            ]
             for word in re.findall(r"[a-zA-Z0-9äöüÄÖÜß]{3,}", cat_clean):
                 if word not in kws and word not in pack.category_stop_words:
                     kws.append(word)
@@ -710,8 +721,13 @@ class BrainstormStore:
                         is_subject = not m.group(1).strip() and pack.starts_with_verb(
                             remainder
                         )
+                        # 'für den Einkauf Duschgel' names the list, so only
+                        # 'Duschgel' is the note
+                        has_lead = not clean_text.lower().startswith(alias)
                         if not is_subject and (
-                            m.group(1).strip() or len(remainder.split()) > 1
+                            has_lead
+                            or m.group(1).strip()
+                            or len(remainder.split()) > 1
                         ):
                             clean_text = remainder
                         break

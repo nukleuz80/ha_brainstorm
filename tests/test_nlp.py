@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 import pytest
 
 from custom_components.brainstorm.languages.de import (
+    extract_spoken_due,
     build_glossary,
     clean_and_format_idea_text,
     extract_spoken_due,
@@ -303,3 +304,37 @@ def test_validate_ai_rewrite(
 ) -> None:
     """Test that an AI text is only accepted if it adds and changes nothing."""
     assert validate_ai_rewrite(spoken, rule_text, candidate) == expected
+
+
+_APPOINTMENT_NOW = datetime(2026, 11, 3, 7, 0, tzinfo=timezone.utc)
+
+
+@pytest.mark.parametrize(
+    ("spoken", "due", "text"),
+    [
+        (
+            "ein termin lenia essen bringen heute um zwölf uhr dreißig",
+            datetime(2026, 11, 3, 12, 30, tzinfo=timezone.utc),
+            "lenia essen bringen",
+        ),
+        (
+            "termin zahnarzt um neun",
+            datetime(2026, 11, 3, 9, 0, tzinfo=timezone.utc),
+            "zahnarzt",
+        ),
+        (
+            "ein termin für acht uhr fünf",
+            datetime(2026, 11, 3, 8, 5, tzinfo=timezone.utc),
+            "ein termin",
+        ),
+    ],
+)
+def test_appointment_with_time_only(spoken: str, due: datetime, text: str) -> None:
+    """Test that an appointment needs no day, only a time of day."""
+    assert extract_spoken_due(spoken, _APPOINTMENT_NOW) == (due, text)
+
+
+@pytest.mark.parametrize("spoken", ["lichter um 22 uhr aus", "ein termin"])
+def test_time_without_appointment_stays_text(spoken: str) -> None:
+    """Test that a time in an ordinary note does not become a reminder."""
+    assert extract_spoken_due(spoken, _APPOINTMENT_NOW) == (None, spoken)

@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.6.6-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.6.7-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver%20Selbsteinsch%C3%A4tzung-C0C0C0.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -156,8 +156,8 @@ HACS installiert nur die Integration. Die Karten kopierst du anschließend wie u
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` und `www/brainstorm-i18n.js` in `/config/www/`. Die dritte Datei enthält die Texte und braucht keinen Ressourcen-Eintrag.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.6.6` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.6.6` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.6.7` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.6.7` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ### Integration entfernen
@@ -324,7 +324,7 @@ Der Skill gehört dir allein und spricht nur mit deinem eigenen Home Assistant. 
 5. Stelle im Tab **Test** oben **Development** ein.
 6. Klicke in Home Assistant auf **Absenden** und sprich am Echo: *„Alexa, sage Brainstorm notiere Testidee.“* Die erste Anfrage koppelt deinen Skill, andere Skills werden danach abgewiesen. Unter **Konfigurieren** siehst du die Kopplung und die letzte Anfrage.
 
-**Hinweise:** Halte den Skill-Code geheim, er enthält deine geheime Adresse. Wurde sie bekannt, erzeugst du dort eine neue und kopierst den Skill-Code erneut. Die Echo-Auswahl und die Geräteanzeige gelten auch im Skill. Dafür lernt Home Assistant jeden Echo beim ersten Satz aus dem Alexa-Verlauf (das braucht die Integration Alexa Media); dieser erste Satz kann bis zu 3,5 Sekunden länger dauern. Kommt der Eintrag im Verlauf später, wird die Idee trotzdem gespeichert und der Echo nachgetragen. Im Menü brauchst du ein Befehlswort wie *„notiere …“*, reiner Freitext geht im Skill nicht. Der Modus **Skill** schaltet die bisherige Erfassung ab, wenn deine Automation das Attribut `voice_mode` von `sensor.brainstorm_ideen_ubersicht` prüft:
+**Hinweise:** Halte den Skill-Code geheim, er enthält deine geheime Adresse. Wurde sie bekannt, erzeugst du dort eine neue und kopierst den Skill-Code erneut. Die Echo-Auswahl und die Geräteanzeige gelten auch im Skill. Dafür lernt Home Assistant jeden Echo beim ersten Satz aus dem Alexa-Verlauf (das braucht die Integration Alexa Media); dieser erste Satz kann bis zu 3,5 Sekunden länger dauern. Kommt der Eintrag im Verlauf später, wird die Idee trotzdem gespeichert und der Echo nachgetragen. Im Menü brauchst du ein Befehlswort wie *„notiere …“* oder einen Satzanfang wie *„wir brauchen …“*, *„wir müssen …“*, *„ich muss …“*. Reiner Freitext geht im Skill nicht, weil Alexa einem Skill unbekannte Sätze nicht weitergibt. Im Modus **Skill** solltest du die Alexa-Routinen für *„öffne Brainstorm“* aus Variante A löschen, sonst startet statt des Skills der alte Dialog. Der Modus **Skill** schaltet die bisherige Erfassung ab, wenn deine Automation das Attribut `voice_mode` von `sensor.brainstorm_ideen_ubersicht` prüft:
 
 ```yaml
 - condition: template
@@ -695,6 +695,7 @@ Gibt mehrere Einträge oder eine ganze Kategorie für Personen frei. Braucht ein
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.6.7`** | 03.11.2026 | **Skill versteht natürlichere Sätze:**<br>• **Ohne Befehlswort:** *„sage Brainstorm wir brauchen Duschgel“*, *„… wir müssen …“*, *„… ich muss …“*, *„… dass …“* werden als Notiz gespeichert. Auch *„Nokia …“*, wie Alexa *„notiere“* oft versteht, und *„notiere mir …“* klappen.<br>• **Listen und Erinnerungen:** *„zeige mir die Liste Brainstorm“*, *„erinnere mich um/am …“*.<br>• **Klare Rückfrage:** Versteht Alexa einen Satz nicht, sagt der Skill *„Fang mit notiere an“*, statt nur Beispiele aufzuzählen.<br>• **Eigene Kategorie zuerst:** *„notiere für den Einkauf Duschgel“* landet in deiner Kategorie *Einkauf* (statt *Alltag*) und heißt nur *Duschgel*.<br>• **Termin mit Uhrzeit:** *„notiere Termin Zahnarzt um neun“* bekommt die Uhrzeit, auch ohne Tag.<br>• **Neues Sprachmodell und neuer Skill-Code:** Beides einmal neu in die Alexa-Entwicklerkonsole kopieren. |
 | **`v1.6.6`** | 03.11.2026 | **Echo-Auswahl eingeklappt:** Im Bearbeiten-Dialog ist *Erinnern auf* zunächst eingeklappt und zeigt die gewählten Echos oder *Wie in den Einstellungen*. Ein Tipp klappt die Liste auf. |
 | **`v1.6.5`** | 03.11.2026 | **Termin im Bearbeiten-Dialog:**<br>• **Datum und Uhrzeit:** Beide Karten setzen, ändern und entfernen den Termin eines Eintrags direkt im Dialog. Ohne Uhrzeit erinnert Brainstorm um 9:00 Uhr.<br>• **Echos wählen:** Pro Eintrag wählst du, welche Echos die Erinnerung sprechen. Ohne Auswahl gelten wie bisher die Erinnerungs-Einstellungen.<br>• **Neues Feld:** `brainstorm.update_idea` nimmt `echos` an. |
 | **`v1.6.4`** | 02.11.2026 | Die Dialoge drücken ihre Felder nicht mehr zusammen: Auf dem iPhone ist die Auswahl **Übergeordnete Aufgabe** wieder lesbar und der Notiztext hat seine volle Höhe. |

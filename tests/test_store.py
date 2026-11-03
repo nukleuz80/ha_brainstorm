@@ -88,6 +88,22 @@ async def test_parse_text_and_category(
     assert store.parse_text_and_category(text)[:2] == (expected_text, expected_category)
 
 
+async def test_own_category_wins_over_standard_alias(store: BrainstormStore) -> None:
+    """Test that a created category takes its name back from a standard alias."""
+    assert store.parse_text_and_category("für den einkauf duschgel")[:2] == (
+        "Duschgel",
+        "Alltag",
+    )
+    await store.async_set_categories([*store.categories, "Einkauf"])
+
+    assert store.parse_text_and_category("für den einkauf duschgel")[:2] == (
+        "Duschgel",
+        "Einkauf",
+    )
+    assert store.parse_text_and_category("Einkauf: Milch")[:2] == ("Milch", "Einkauf")
+    assert store.parse_text_and_category("Haushalt putzen")[1] == "Alltag"
+
+
 async def test_failing_auto_export_does_not_abort_add(
     hass: HomeAssistant, tmp_path: Path
 ) -> None:

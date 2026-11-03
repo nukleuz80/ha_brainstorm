@@ -311,6 +311,35 @@ def _run_skill_code(
         return namespace["lambda_handler"](event, None), requests
 
 
+@pytest.mark.parametrize(
+    ("intent", "key"),
+    [("AMAZON.FallbackIntent", "skill_fallback"), ("AMAZON.HelpIntent", "skill_help")],
+)
+def test_skill_code_explains_unknown_sentences(intent: str, key: str) -> None:
+    """Test that a sentence Alexa could not place asks for a command word."""
+    result, requests = _run_skill_code(
+        b"", {"type": "IntentRequest", "intent": {"name": intent}}
+    )
+
+    assert requests == []
+    assert result["response"]["outputSpeech"]["text"] == GERMAN.messages[key]
+    assert result["response"]["shouldEndSession"] is False
+
+
+def test_skill_model_has_natural_sentences() -> None:
+    """Test that the model takes sentences people say without a command word."""
+    model = GERMAN.skill_model["interactionModel"]["languageModel"]
+    samples = {
+        intent["name"]: intent["samples"] for intent in model["intents"]
+    }
+    for sample in ("wir brauchen {text}", "nokia {text}", "dass {text}"):
+        assert sample in samples["CaptureIdeaIntent"]
+    assert "zeige mir die liste {category}" in samples["ShowIdeasIntent"]
+    assert "erinnere mich am {text}" in samples["ReminderIntent"]
+    every = [s for intent in samples.values() for s in intent]
+    assert len(every) == len(set(every))
+
+
 def test_skill_code_speaks_answer_from_home_assistant() -> None:
     """Test that the generated code forwards the text and speaks the reply."""
     result, requests = _run_skill_code(b'{"speech": "Gespeichert."}')
@@ -325,7 +354,8 @@ def test_skill_code_speaks_answer_from_home_assistant() -> None:
     ("spoken", "expected"),
     [
         ("kellerlicht dimmen", "kellerlicht dimmen"),
-        ("für den garten tomaten düngen", "garten tomaten düngen"),
+        # The category parser needs the preposition to see a list name
+        ("für den garten tomaten düngen", "für den garten tomaten düngen"),
         ("testidee zwei auf meine to do liste", "testidee zwei"),
         ("ein buch auf die liste", "ein buch"),
         ("erinnere mich an den müll", "den müll"),

@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.6.6-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.6.7-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver%20self--assessed-C0C0C0.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -136,8 +136,8 @@ HACS only installs the integration, so continue with [Install the cards](#instal
 
 1. Copy `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` and `www/brainstorm-i18n.js` from the release to `/config/www/`. The third file holds the texts and needs no resource entry.
 2. Add both under **Settings ➔ Dashboards ➔ Resources** as **JavaScript module**:
-   - `/local/brainstorm-card.js?v=1.6.6`
-   - `/local/brainstorm-mindmap-card.js?v=1.6.6`
+   - `/local/brainstorm-card.js?v=1.6.7`
+   - `/local/brainstorm-mindmap-card.js?v=1.6.7`
 3. Reload the page in your browser.
 
 ### Removing the Integration
@@ -304,9 +304,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.6.6
+  - url: /local/brainstorm-card.js?v=1.6.7
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.6.6
+  - url: /local/brainstorm-mindmap-card.js?v=1.6.7
     type: module
 ```
 
@@ -644,6 +644,7 @@ Shares several ideas or a whole category. Needs privacy to be switched on.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.6.7`** | 2026-11-03 | **The skill understands more natural sentences:**<br>• **German without a command word:** *„sage Brainstorm wir brauchen Duschgel“*, *„… wir müssen …“*, *„… ich muss …“*, *„… dass …“* are saved as notes. *„Nokia …“*, as Alexa often hears *„notiere“*, and *„notiere mir …“* work too.<br>• **Lists and reminders:** *„zeige mir die Liste Brainstorm“*, *„erinnere mich um/am …“*.<br>• **Clear hint:** When Alexa cannot place a sentence, the skill says to start with *note* instead of only listing examples.<br>• **Your own category first:** A category you created wins over a standard alias with its name, so *„für den Einkauf Duschgel“* goes to *Einkauf* instead of *Alltag*.<br>• **Appointment with a time:** *„Termin Zahnarzt um neun“* gets its time even without a day.<br>• **New voice model and skill code:** Copy both into the Alexa developer console once. |
 | **`v1.6.6`** | 2026-11-03 | **Echo choice folded in:** In the edit dialog, *Remind on* starts folded and shows the chosen Echos, or *As in the settings*. A tap opens the list. |
 | **`v1.6.5`** | 2026-11-03 | **Due date in the edit dialog:**<br>• **Date and time:** Both cards set, change and remove the due date of an entry directly in the dialog. Without a time, Brainstorm reminds you at 09:00.<br>• **Choose Echos:** Per entry, choose the Echos that speak the reminder. Without a choice, the reminder settings apply as before.<br>• **New field:** `brainstorm.update_idea` takes `echos`. |
 | **`v1.6.4`** | 2026-11-02 | The dialogs no longer squeeze their fields: on the iPhone, the **Parent task** selection is readable again and the note text has its full height. |

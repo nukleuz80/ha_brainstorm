@@ -851,8 +851,15 @@ _RE_NO_DUE_DATE = re.compile(
 )
 _RE_DATE_CONNECTOR = re.compile(
     r"\b(?:bis\s+(?:spätestens\s+)?|spätestens\s+|für\s+|ab\s+)"
-    rf"(?=(?:übermorgen|heute|morgen|nächste|kommende|am\s|\d|{'|'.join(_WEEKDAYS)})\b)",
+    rf"(?=(?:übermorgen|heute|morgen|nächste|kommende|am\s|um\s|\d|{'|'.join(_WEEKDAYS)})\b"
+    rf"|(?:{_NUMBER})\s+uhr\b)",
     re.IGNORECASE,
+)
+# A note that says it is an appointment may give only a time of day
+_RE_APPOINTMENT = re.compile(r"\btermin\b", re.IGNORECASE)
+_RE_SPOKEN_TIME = re.compile(rf"\b(?:{_NUMBER})\s+uhr\b|\bum\s+(?:{_NUMBER})\b", re.I)
+_RE_APPOINTMENT_WORDS = re.compile(
+    r"^(?:(?:ein(?:en)?|neue[nr]?)\s+)?termin(?:\s+(?:für|am|um))?\s+", re.IGNORECASE
 )
 
 _SPOKEN_PRIORITIES: tuple[tuple[re.Pattern[str], str], ...] = (
@@ -897,11 +904,22 @@ def extract_spoken_due(text: str, now: datetime) -> tuple[datetime | None, str]:
     The text stays as it is if nothing is left of it or the time has passed, which
     keeps 'heute' in the text in the evening instead of reminding at once.
     """
-    if _RE_NO_DUE_DATE.search(text) or not _RE_SPOKEN_DATE.search(text):
+    if _RE_NO_DUE_DATE.search(text):
+        return None, text
+    appointment = bool(_RE_APPOINTMENT.search(text))
+    if not _RE_SPOKEN_DATE.search(text) and not (
+        appointment and _RE_SPOKEN_TIME.search(text)
+    ):
         return None, text
     due, remaining = parse_due(_RE_DATE_CONNECTOR.sub("", text), now)
     if due is None or due <= now or not remaining:
         return None, text
+    if appointment:
+        # 'ein Termin Lenia Essen bringen' is about Lenia, the due date says the rest
+        rest = _RE_APPOINTMENT_WORDS.sub("", remaining, count=1)
+        # 'Termin machen' needs the word, a lone verb would say nothing
+        if rest and not re.fullmatch(r"\w+en", rest):
+            remaining = rest
     return due, remaining
 
 
@@ -1298,11 +1316,6 @@ VOICE_PREFIXES: tuple[str, ...] = (
     "merke dir ",
     "merke ",
     "brainstorm ",
-    # Alexa has already removed the command word from the skill's text
-    "für den ",
-    "für das ",
-    "für die ",
-    "für ",
 )
 VOICE_SUFFIXES: tuple[str, ...] = (
     " auf meine einkaufsliste",
@@ -1343,6 +1356,18 @@ INTERACTION_MODEL: dict = {
                         "schreibe {text}",
                         "schreib {text}",
                         "schreib auf {text}",
+                        "notiere mir {text}",
+                        "notier mal {text}",
+                        # Alexa often hears 'notiere' as 'Nokia'
+                        "nokia {text}",
+                        # Natural sentences without a command word
+                        "wir brauchen {text}",
+                        "wir müssen {text}",
+                        "wir sollten {text}",
+                        "ich brauche {text}",
+                        "ich muss {text}",
+                        "ich sollte {text}",
+                        "dass {text}",
                     ],
                 },
                 {
@@ -1352,6 +1377,10 @@ INTERACTION_MODEL: dict = {
                         "erinnere mich an {text}",
                         "erinnere mich {text}",
                         "erinnere {text}",
+                        "erinnere mich um {text}",
+                        "erinnere mich am {text}",
+                        "erinner mich an {text}",
+                        "erinner mich {text}",
                         "termin {text}",
                     ],
                 },
@@ -1383,6 +1412,11 @@ INTERACTION_MODEL: dict = {
                         "zeige meine listen",
                         "zeige {category}",
                         "zeig {category}",
+                        "zeige mir {category}",
+                        "zeig mir {category}",
+                        "zeige die liste {category}",
+                        "zeige mir die liste {category}",
+                        "zeig mir die liste {category}",
                     ],
                 },
                 {
@@ -1472,6 +1506,10 @@ MESSAGES: dict[str, str] = {
     "skill_help": (
         "Sage zum Beispiel: notiere Kellerlicht dimmen, erinnere mich morgen um 8 an die "
         "Tonnen, oder Ansage Alltag."
+    ),
+    "skill_fallback": (
+        "Das habe ich nicht verstanden. Fang mit notiere an, zum Beispiel: notiere "
+        "Duschgel kaufen. Oder sage: erinnere mich morgen um 8 an die Tonnen."
     ),
     "skill_launch": "Brainstorm bereit. Sage notiere und deine Notiz, oder sage Ansage.",
     "skill_save_failed": "Das konnte ich nicht speichern.",
