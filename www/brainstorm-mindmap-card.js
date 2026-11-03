@@ -1,12 +1,15 @@
-import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.12";
+import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.13";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.6.12 - Skill, Reminders, Privacy and Sharing
+ * Version: 1.6.13 - Skill, Reminders, Privacy and Sharing
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
  */
+
+// Folded branches of the mind map, kept per device
+const COLLAPSED_KEY = "brainstorm_mindmap_collapsed";
 
 const BRAINSTORM_MINDMAP_DEFAULTS = {
   title: "Brainstorm Mindmap",
@@ -47,7 +50,9 @@ class BrainstormMindmapCard extends HTMLElement {
     this._nodePositions = new Map(); // id -> {x, y}
     this._userMovedNodes = new Set();
     // Positions just placed by hand, until Home Assistant sends them back
-    this._mapPosOverrides = new Map(); // id -> {x, y} relative to the center
+    this._mapPosOverrides = new Map(); // id -> {x, y} relative to the center, or null
+    // Folded branches, remembered per device
+    this._collapsed = this._loadCollapsed();
     this._centerPos = { x: 400, y: 300 };
     this._activeDrag = null; // { id, startMouseX, startMouseY, startNodeX, startNodeY }
     this._pendingDrag = null; // { id, cloud, startMouseX, startMouseY, startNodeX, startNodeY }
@@ -1146,6 +1151,29 @@ class BrainstormMindmapCard extends HTMLElement {
           user-select: none;
           transition: border-color 0.15s ease, box-shadow 0.15s ease;
         }
+        .branch-toggle {
+          position: absolute;
+          top: -12px;
+          right: -12px;
+          min-width: 26px;
+          height: 26px;
+          padding: 0 6px;
+          border-radius: 13px;
+          border: 2px solid var(--ha-card-background, var(--card-background-color, #ffffff));
+          background: var(--cat-color, var(--primary-color, #03a9f4));
+          color: #ffffff;
+          font-size: 0.8rem;
+          font-weight: 700;
+          line-height: 1;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        }
+        .branch-toggle:hover {
+          filter: brightness(1.1);
+        }
         .note-cloud:hover {
           box-shadow: 0 4px 18px rgba(0, 0, 0, 0.09);
           border-color: color-mix(in srgb, var(--cat-color, var(--primary-color, #03a9f4)) 40%, var(--divider-color, rgba(127, 127, 127, 0.2)));
@@ -1779,6 +1807,7 @@ class BrainstormMindmapCard extends HTMLElement {
           <button class="control-btn" id="zoomInBtn" title="${t("Vergrößern")}">+</button>
           <button class="control-btn" id="zoomOutBtn" title="${t("Verkleinern")}">−</button>
           <button class="control-btn" id="resetViewBtn" title="${t("Zentrieren / Anordnen")}">⟲</button>
+          <button class="control-btn" id="arrangeBtn" title="${t("Neu ordnen: von Hand verschobene Notizen wieder automatisch platzieren")}">🪄</button>
         </div>
 
         <!-- In-Card Modal Dialog (Mushroom Style) -->
@@ -2014,6 +2043,8 @@ class BrainstormMindmapCard extends HTMLElement {
     resetViewBtn.addEventListener("click", () => {
       this._centerLayout(true);
     });
+    const arrangeBtn = this.shadowRoot.getElementById("arrangeBtn");
+    if (arrangeBtn) arrangeBtn.addEventListener("click", () => this._arrangeAgain());
 
     // Quick Add -> Show Dialog Modal
     addNoteBtn.addEventListener("click", () => this._showAddDialog());
@@ -2104,14 +2135,68 @@ class BrainstormMindmapCard extends HTMLElement {
     return Boolean(this._selectedCategory) && this._selectedCategory !== "all";
   }
 
+  _loadCollapsed() {
+    try {
+      const stored = JSON.parse(window.localStorage.getItem(COLLAPSED_KEY) || "[]");
+      return new Set(Array.isArray(stored) ? stored : []);
+    } catch (err) {
+      return new Set();
+    }
+  }
+
+  _saveCollapsed() {
+    try {
+      window.localStorage.setItem(COLLAPSED_KEY, JSON.stringify([...this._collapsed]));
+    } catch (err) {
+      // Private windows may refuse storage, the branch then folds for this visit only
+    }
+  }
+
+  _categoryIdeas() {
+    const sensor = this._getSensorEntity();
+    if (!sensor) return [];
+    return (sensor.attributes.ideas || []).filter((i) => {
+      if (this._selectedCategory === "all") return true;
+      return String(i.category || "").trim() === String(this._selectedCategory || "").trim();
+    });
+  }
+
+  // The ideas on the map, without those inside a folded branch
+  _mapIdeas(ideas = this._categoryIdeas()) {
+    const ids = new Set(ideas.map((i) => i.id));
+    const byId = new Map(ideas.map((i) => [i.id, i]));
+    return ideas.filter((idea) => {
+      const seen = new Set();
+      let parent = this._branchParent(idea, ids);
+      while (parent && !seen.has(parent)) {
+        if (this._collapsed.has(parent)) return false;
+        seen.add(parent);
+        parent = this._branchParent(byId.get(parent), ids);
+      }
+      return true;
+    });
+  }
+
+  _toggleBranch(id) {
+    if (this._collapsed.has(id)) this._collapsed.delete(id);
+    else this._collapsed.add(id);
+    this._saveCollapsed();
+    this._lastLayoutKey = "";
+    this._updateContent();
+  }
+
   _savedPosition(idea) {
     if (!this._usesSavedPositions() || !this._centerPos) return null;
     const saved = idea.map_pos;
-    const override = this._mapPosOverrides.get(idea.id);
-    if (override && saved && saved.x === override.x && saved.y === override.y) {
-      this._mapPosOverrides.delete(idea.id);
+    if (this._mapPosOverrides.has(idea.id)) {
+      // Home Assistant has caught up with what was just done here
+      const override = this._mapPosOverrides.get(idea.id);
+      const arrived = override === null
+        ? !saved
+        : Boolean(saved) && saved.x === override.x && saved.y === override.y;
+      if (arrived) this._mapPosOverrides.delete(idea.id);
     }
-    const pos = this._mapPosOverrides.get(idea.id) || saved;
+    const pos = this._mapPosOverrides.has(idea.id) ? this._mapPosOverrides.get(idea.id) : saved;
     if (!pos || !Number.isFinite(pos.x) || !Number.isFinite(pos.y)) return null;
     return { x: this._centerPos.x + pos.x, y: this._centerPos.y + pos.y };
   }
@@ -2167,6 +2252,39 @@ class BrainstormMindmapCard extends HTMLElement {
       .catch((err) => console.error("[BrainstormMindmap] Failed to save positions:", err));
   }
 
+  // Puts notes placed by hand back where the map would put them itself
+  _arrangeAgain() {
+    const placed = this._categoryIdeas().filter((idea) => this._savedPosition(idea));
+    if (!placed.length) {
+      this._userMovedNodes.clear();
+      this._centerLayout(true);
+      return;
+    }
+    this._openDialog(t("🪄 Map neu ordnen?"), (body) => {
+      body.innerHTML = `
+        <div class="dialog-label">${t("{count} von Hand verschobene Notizen kommen wieder an ihren automatischen Platz, auf allen Geräten.", { count: placed.length })}</div>
+        <div class="dialog-footer">
+          <button class="dialog-btn dialog-btn-cancel" id="cancelArrangeBtn">${t("Abbrechen")}</button>
+          <button class="dialog-btn dialog-btn-primary" id="confirmArrangeBtn">${t("Ordnen")}</button>
+        </div>
+      `;
+      body.querySelector("#cancelArrangeBtn").addEventListener("click", () => this._closeDialog());
+      body.querySelector("#confirmArrangeBtn").addEventListener("click", () => {
+        this._closeDialog();
+        const positions = {};
+        placed.forEach((idea) => {
+          positions[idea.id] = null;
+          this._mapPosOverrides.set(idea.id, null);
+        });
+        this._userMovedNodes.clear();
+        this._centerLayout(true);
+        this._hass
+          .callWS({ type: "brainstorm/map_positions", positions })
+          .catch((err) => console.error("[BrainstormMindmap] Failed to reset positions:", err));
+      });
+    });
+  }
+
   _moveDraggedNodes(dx, dy) {
     const drag = this._activeDrag;
     const nodes = [{ id: drag.id, x: drag.startNodeX, y: drag.startNodeY }, ...(drag.group || [])];
@@ -2184,12 +2302,8 @@ class BrainstormMindmapCard extends HTMLElement {
   }
 
   _arrangeNodesRadially() {
-    const sensor = this._getSensorEntity();
-    if (!sensor) return;
-    const ideas = (sensor.attributes.ideas || []).filter((i) => {
-      if (this._selectedCategory === "all") return true;
-      return String(i.category || "").trim() === String(this._selectedCategory || "").trim();
-    });
+    if (!this._getSensorEntity()) return;
+    const ideas = this._mapIdeas();
 
     const count = ideas.length;
     if (count === 0) {
@@ -2302,9 +2416,72 @@ class BrainstormMindmapCard extends HTMLElement {
       });
     });
 
+    const branchDist = isNarrow ? 150 : 230;
+
+    // With branches, each one gets its own slice of the circle so lines do not cross
+    if (childrenOf.size > 0 && !isNarrow) {
+      positionedItems.length = 0;
+      const weight = new Map();
+      let maxDepth = 0;
+      const weigh = (idea, depth, seen) => {
+        if (seen.has(idea.id)) return 0;
+        seen.add(idea.id);
+        maxDepth = Math.max(maxDepth, depth);
+        const kids = childrenOf.get(idea.id) || [];
+        const sum = kids.reduce((total, kid) => total + weigh(kid, depth + 1, seen), 0);
+        weight.set(idea.id, Math.max(1, sum));
+        return Math.max(1, sum);
+      };
+      const weighed = new Set();
+      const total = roots.reduce((sum, root) => sum + weigh(root, 0, weighed), 0) || 1;
+      // The outer ring needs room for every leaf
+      const grow = Math.max(1, (total * 230) / (2 * Math.PI * (rx0 + maxDepth * drx)));
+      const done = new Set();
+      const placeTree = (idea, start, end, depth, parent) => {
+        if (done.has(idea.id)) return;
+        done.add(idea.id);
+        const angle = (start + end) / 2;
+        const saved = this._savedPosition(idea);
+        const moved = this._userMovedNodes.has(idea.id) && this._nodePositions.get(idea.id);
+        let item;
+        if (saved || moved) {
+          const pos = saved || moved;
+          item = { idea, x: pos.x, y: pos.y, fixed: true };
+        } else if (parent && parent.fixed) {
+          // Below a note placed by hand, the branch follows that note
+          item = {
+            idea,
+            x: parent.x + Math.cos(angle) * branchDist,
+            y: parent.y + Math.sin(angle) * branchDist * 0.75,
+            fixed: false,
+          };
+        } else {
+          item = {
+            idea,
+            x: this._centerPos.x + Math.cos(angle) * (rx0 + depth * drx) * grow,
+            y: this._centerPos.y + Math.sin(angle) * (ry0 + depth * dry) * grow,
+            fixed: false,
+          };
+        }
+        positionedItems.push(item);
+        let cursor = start;
+        (childrenOf.get(idea.id) || []).forEach((kid) => {
+          const span = ((end - start) * (weight.get(kid.id) || 1)) / weight.get(idea.id);
+          placeTree(kid, cursor, cursor + span, depth + 1, item);
+          cursor += span;
+        });
+      };
+      const firstSpan = roots.length ? (2 * Math.PI * weight.get(roots[0].id)) / total : 0;
+      let cursor = -Math.PI / 2 - firstSpan / 2;
+      roots.forEach((root) => {
+        const span = (2 * Math.PI * weight.get(root.id)) / total;
+        placeTree(root, cursor, cursor + span, 0, null);
+        cursor += span;
+      });
+    }
+
     // Subtasks fan out behind their parent, away from the center
     const placed = new Map(positionedItems.map((item) => [item.idea.id, item]));
-    const branchDist = isNarrow ? 150 : 230;
     const placeAt = (idea, x, y) => {
       const saved = this._savedPosition(idea);
       const moved = this._userMovedNodes.has(idea.id) && this._nodePositions.get(idea.id);
@@ -2457,17 +2634,12 @@ class BrainstormMindmapCard extends HTMLElement {
     const svg = this.shadowRoot.getElementById("connectorsLayer");
     if (!svg) return;
 
-    const sensor = this._getSensorEntity();
-    if (!sensor) {
+    if (!this._getSensorEntity()) {
       svg.innerHTML = "";
       return;
     }
 
-    const allIdeas = (sensor.attributes && sensor.attributes.ideas) || [];
-    const activeIdeas = allIdeas.filter((i) => {
-      if (this._selectedCategory === "all") return true;
-      return String(i.category || "").trim() === String(this._selectedCategory || "").trim();
-    });
+    const activeIdeas = this._mapIdeas();
 
     if (!this._centerPos) {
       const canvasArea = this.shadowRoot.getElementById("canvasArea");
@@ -2695,18 +2867,27 @@ class BrainstormMindmapCard extends HTMLElement {
 
       emptyState.style.display = "none";
 
-      // Render notes HTML
+      // Render notes HTML, without those inside a folded branch
+      const shownIdeas = this._mapIdeas(filteredIdeas);
+      const listIds = new Set(filteredIdeas.map((i) => i.id));
       let html = "";
-      filteredIdeas.forEach((idea) => {
+      shownIdeas.forEach((idea) => {
         const color = this._getCategoryColor(idea.category);
         const sourceBadge = this._getSourceBadge(idea.source, idea.device);
         const timeAgo = this._formatTime(idea.created_at);
         const prio = (idea.priority || "medium").toLowerCase();
         const prioClass = prio === "urgent" ? "cloud-urgent" : prio === "high" ? "cloud-high" : "";
         const prioBadge = this._getPriorityBadge(idea.priority, idea.id);
+        const hasBranch = filteredIdeas.some((i) => i.id !== idea.id && i.parent_id === idea.id && listIds.has(i.id));
+        const folded = hasBranch && this._collapsed.has(idea.id);
+        const hiddenCount = folded ? this._descendantIds(idea.id, filteredIdeas).length : 0;
+        const branchToggle = hasBranch
+          ? `<button class="branch-toggle" data-id="${idea.id}" title="${folded ? t("Zweig aufklappen") : t("Zweig einklappen")}">${folded ? `+${hiddenCount}` : "−"}</button>`
+          : "";
 
         html += `
           <div class="note-cloud ${prioClass}" id="cloud_${idea.id}" data-id="${idea.id}" style="--cat-color: ${color};">
+            ${branchToggle}
             <div class="cloud-meta">
               <span class="cat-tag" data-cat="${this._escapeHtml(idea.category)}" title="${t("Kategorie ändern")}">
                 <ha-icon icon="${this._getCategoryIcon(idea.category)}" style="--mdc-icon-size: 12px; width: 12px; height: 12px; display: inline-flex; align-items: center; vertical-align: middle;"></ha-icon> ${this._escapeHtml(idea.category)}
@@ -2745,13 +2926,13 @@ class BrainstormMindmapCard extends HTMLElement {
 
       // Check if we need initial radial arrangement
       let needsArrangement = false;
-      filteredIdeas.forEach((idea) => {
+      shownIdeas.forEach((idea) => {
         if (!this._nodePositions.has(idea.id)) {
           needsArrangement = true;
         }
       });
 
-      const activeIds = new Set(filteredIdeas.map((i) => i.id));
+      const activeIds = new Set(shownIdeas.map((i) => i.id));
       for (const id of this._nodePositions.keys()) {
         if (!activeIds.has(id)) {
           this._nodePositions.delete(id);
@@ -2760,10 +2941,10 @@ class BrainstormMindmapCard extends HTMLElement {
       }
 
       // Branches or positions changed, maybe on another device
-      const layoutKey = filteredIdeas
+      const layoutKey = shownIdeas
         .map((i) => {
           const pos = this._usesSavedPositions() && i.map_pos ? `${i.map_pos.x},${i.map_pos.y}` : "";
-          return `${i.id}:${i.parent_id || ""}:${pos}`;
+          return `${i.id}:${i.parent_id || ""}:${pos}:${this._collapsed.has(i.id) ? "folded" : ""}`;
         })
         .join("|");
       if (layoutKey !== this._lastLayoutKey) {
@@ -2771,11 +2952,11 @@ class BrainstormMindmapCard extends HTMLElement {
         needsArrangement = true;
       }
 
-      if (needsArrangement || this._nodePositions.size !== filteredIdeas.length) {
+      if (needsArrangement || this._nodePositions.size !== shownIdeas.length) {
         this._arrangeNodesRadially();
       } else {
         // Restore existing positions
-        filteredIdeas.forEach((idea) => {
+        shownIdeas.forEach((idea) => {
           const pos = this._nodePositions.get(idea.id);
           const el = this.shadowRoot.getElementById(`cloud_${idea.id}`);
           if (el && pos) {
@@ -2789,17 +2970,21 @@ class BrainstormMindmapCard extends HTMLElement {
       // Attach Node Drag & Action Listeners
       container.querySelectorAll(".note-cloud").forEach((cloud) => {
         const id = cloud.getAttribute("data-id");
-        const idea = filteredIdeas.find((i) => i.id === id);
+        const idea = shownIdeas.find((i) => i.id === id);
         if (!idea) return;
         // A parent takes its subtasks along
-        const dragGroup = () => this._descendantIds(id, filteredIdeas).map((childId) => {
-          const pos = this._nodePositions.get(childId) || { x: 0, y: 0 };
-          return { id: childId, x: pos.x, y: pos.y };
-        });
+        const dragGroup = () => this._descendantIds(id, filteredIdeas)
+          .map((childId) => {
+            // A folded subtask has no note on the map, only its saved place
+            const child = filteredIdeas.find((i) => i.id === childId);
+            const pos = this._nodePositions.get(childId) || (child && this._savedPosition(child));
+            return pos ? { id: childId, x: pos.x, y: pos.y } : null;
+          })
+          .filter(Boolean);
 
         // Mouse down records pending drag - only moves if threshold > 5px (prevents click jitter!)
         cloud.addEventListener("mousedown", (e) => {
-          if (e.target.closest(".action-btn") || e.target.closest(".cat-tag") || e.target.closest(".prio-tag")) return;
+          if (e.target.closest(".action-btn") || e.target.closest(".cat-tag") || e.target.closest(".prio-tag") || e.target.closest(".branch-toggle")) return;
           if (e.button !== 0) return;
           const pos = this._nodePositions.get(id) || { x: 0, y: 0 };
           this._pendingDrag = {
@@ -2815,7 +3000,7 @@ class BrainstormMindmapCard extends HTMLElement {
 
         // Touch start records pending drag
         cloud.addEventListener("touchstart", (e) => {
-          if (e.target.closest(".action-btn") || e.target.closest(".cat-tag") || e.target.closest(".prio-tag")) return;
+          if (e.target.closest(".action-btn") || e.target.closest(".cat-tag") || e.target.closest(".prio-tag") || e.target.closest(".branch-toggle")) return;
           if (e.touches.length === 1) {
             const touch = e.touches[0];
             const pos = this._nodePositions.get(id) || { x: 0, y: 0 };
@@ -2840,6 +3025,14 @@ class BrainstormMindmapCard extends HTMLElement {
           const path = this.shadowRoot.getElementById(`path_${id}`);
           if (path) path.classList.remove("highlight");
         });
+
+        const toggleEl = cloud.querySelector(".branch-toggle");
+        if (toggleEl) {
+          toggleEl.addEventListener("click", (e) => {
+            e.stopPropagation();
+            this._toggleBranch(idea.id);
+          });
+        }
 
         // Priority Tag click -> Cycle Priority
         const prioTagEl = cloud.querySelector(".prio-tag");
@@ -3811,7 +4004,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.6.12 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.6.13 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );
