@@ -1022,3 +1022,70 @@ async def test_options_assign_and_remove_echo(
     )
     await hass.async_block_till_done()
     assert entry.options["voice_owners"] == {}
+
+
+async def test_websocket_keeps_map_positions(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_ws_client: WebSocketGenerator,
+    hass_read_only_access_token: str,
+    hass_owner_user: Any,
+) -> None:
+    """Test that a user keeps the map positions of ideas they may change."""
+    assert await async_setup_component(hass, "websocket_api", {})
+    entry = await setup_entry(
+        options={"privacy_enabled": True, "privacy_owner": hass_owner_user.id}
+    )
+    store = entry.runtime_data
+    user = hass.auth.async_validate_access_token(hass_read_only_access_token).user
+    own = await store.async_add_idea(
+        "eigene", category="Inbox", context=Context(user_id=user.id)
+    )
+    viewed = await store.async_add_idea(
+        "nur lesen", category="Inbox", context=Context(user_id=hass_owner_user.id)
+    )
+    await store.async_set_idea_shares(
+        [viewed["id"]], {user.id: "view"}, hass_owner_user.id
+    )
+    updated_at = own["updated_at"]
+
+    client = await hass_ws_client(hass, hass_read_only_access_token)
+    await client.send_json_auto_id(
+        {
+            "type": "brainstorm/map_positions",
+            "positions": {
+                own["id"]: {"x": 120.04, "y": -80},
+                viewed["id"]: {"x": 5, "y": 5},
+                "missing": {"x": 1, "y": 1},
+            },
+        }
+    )
+    assert (await client.receive_json())["result"] == {"changed": 1}
+    assert store.get_idea(own["id"])["map_pos"] == {"x": 120.0, "y": -80.0}
+    assert store.get_idea(own["id"])["updated_at"] == updated_at
+    assert "map_pos" not in store.get_idea(viewed["id"])
+
+    await client.send_json_auto_id({"type": "brainstorm/ideas"})
+    ideas = {i["id"]: i for i in (await client.receive_json())["result"]["ideas"]}
+    assert ideas[own["id"]]["map_pos"] == {"x": 120.0, "y": -80.0}
+    assert "map_pos" not in ideas[viewed["id"]]
+
+    await client.send_json_auto_id(
+        {"type": "brainstorm/map_positions", "positions": {own["id"]: None}}
+    )
+    assert (await client.receive_json())["result"] == {"changed": 1}
+    assert "map_pos" not in store.get_idea(own["id"])
+
+
+async def test_new_category_forgets_the_map_position(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that an idea moved to another list is placed anew on its map."""
+    entry = await setup_entry()
+    store = entry.runtime_data
+    idea = await store.async_add_idea("Regal bauen", category="Inbox")
+    await store.async_set_map_positions({idea["id"]: {"x": 10, "y": 20}}, None)
+    await store.async_update_idea(idea["id"], text="Regal bauen")
+    assert store.get_idea(idea["id"])["map_pos"] == {"x": 10.0, "y": 20.0}
+    await store.async_update_idea(idea["id"], category="Projekte")
+    assert "map_pos" not in store.get_idea(idea["id"])

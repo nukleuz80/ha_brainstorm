@@ -1,4 +1,4 @@
-"""WebSocket command that gives each user only the ideas they may see."""
+"""WebSocket commands for the ideas each user may see and change."""
 from __future__ import annotations
 
 from typing import Any
@@ -7,6 +7,7 @@ import voluptuous as vol
 
 from homeassistant.components import websocket_api
 from homeassistant.core import HomeAssistant, callback
+import homeassistant.helpers.config_validation as cv
 
 from .const import CONF_SHARE_USERS
 from .store import get_loaded_store
@@ -16,6 +17,7 @@ from .store import get_loaded_store
 def async_register_commands(hass: HomeAssistant) -> None:
     """Register the WebSocket commands."""
     websocket_api.async_register_command(hass, websocket_get_ideas)
+    websocket_api.async_register_command(hass, websocket_set_map_positions)
 
 
 @websocket_api.websocket_command({vol.Required("type"): "brainstorm/ideas"})
@@ -57,3 +59,41 @@ async def websocket_get_ideas(
         if user.id != connection.user.id and (not allowed or user.id in allowed)
     ]
     connection.send_result(msg["id"], result)
+
+
+MAP_POSITION = vol.Any(
+    None,
+    vol.Schema(
+        {
+            vol.Required("x"): vol.All(vol.Coerce(float), vol.Range(-1e5, 1e5)),
+            vol.Required("y"): vol.All(vol.Coerce(float), vol.Range(-1e5, 1e5)),
+        }
+    ),
+)
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "brainstorm/map_positions",
+        vol.Required("positions"): vol.All(
+            vol.Schema({cv.string: MAP_POSITION}), vol.Length(max=500)
+        ),
+    }
+)
+@websocket_api.async_response
+async def websocket_set_map_positions(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Keep where the connected user placed ideas on the mind map."""
+    store = get_loaded_store(hass)
+    if store is None:
+        connection.send_error(
+            msg["id"], websocket_api.ERR_NOT_FOUND, "Brainstorm is not loaded"
+        )
+        return
+    changed = await store.async_set_map_positions(
+        msg["positions"], connection.user.id
+    )
+    connection.send_result(msg["id"], {"changed": changed})

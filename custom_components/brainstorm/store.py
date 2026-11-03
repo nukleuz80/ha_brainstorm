@@ -23,6 +23,7 @@ from .const import (
     ATTR_ALEXA_NATIVE,
     ATTR_ASSIGNEE,
     ATTR_CREATED_BY,
+    ATTR_MAP_POS,
     ATTR_OWNER,
     ATTR_SHARES,
     ACCESS_OWNER,
@@ -360,6 +361,8 @@ class BrainstormStore:
                     result[ATTR_SHARES] = idea.get(ATTR_SHARES) or {}
                 if author := idea.get(ATTR_CREATED_BY):
                     result[ATTR_CREATED_BY] = author
+            if position := idea.get(ATTR_MAP_POS):
+                result[ATTR_MAP_POS] = position
             return result
 
         last_action = self.last_action
@@ -1029,6 +1032,9 @@ class BrainstormStore:
             cat_clean = category.strip()
             if cat_clean not in self._categories:
                 self._categories.append(cat_clean)
+            # Its place on the map of the old list means nothing in the new one
+            if idea.get(ATTR_CATEGORY) != cat_clean:
+                idea.pop(ATTR_MAP_POS, None)
             idea[ATTR_CATEGORY] = cat_clean
         if priority is not None:
             _, normalized_prio = self.parse_priority("", priority)
@@ -1113,6 +1119,36 @@ class BrainstormStore:
         idea.update(fields)
         await self.async_save()
         self._notify_listeners()
+
+    async def async_set_map_positions(
+        self,
+        positions: dict[str, dict[str, float] | None],
+        user_id: str | None,
+    ) -> int:
+        """Keep where ideas sit on the mind map, returning how many changed.
+
+        A position is relative to the center of the map, so it fits every screen.
+        None removes it, letting the map place the idea on its own again. Ideas
+        the user may not change keep their position.
+        """
+        changed = 0
+        for idea_id, position in positions.items():
+            idea = self._ideas.get(idea_id)
+            if idea is None or not self.can_edit(idea, user_id):
+                continue
+            if position is None:
+                if idea.pop(ATTR_MAP_POS, None) is not None:
+                    changed += 1
+                continue
+            value = {"x": round(position["x"], 1), "y": round(position["y"], 1)}
+            if idea.get(ATTR_MAP_POS) != value:
+                idea[ATTR_MAP_POS] = value
+                changed += 1
+        if changed:
+            # Moving a note on the map is no change of the note itself
+            await self.async_save()
+            self._notify_listeners()
+        return changed
 
     def find_open_idea(
         self, spoken: str, user_id: str | None = None

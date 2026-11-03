@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.6.11-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.6.12-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -101,6 +101,8 @@ Brainstorm Hub verwandelt alle deine **Amazon Echo**-Geräte im Haus in sekunden
     - Notizen dargestellt als charmante Gedankenwolken mit gestrichelten Konturen und Kategorie-Farbcodes.
     - Organische Bézier-Verbindungslinien, die beim Überfahren aufleuchten.
     - Frei verschiebbare Notizen per Drag & Drop (auf Desktop und Touchscreens).
+    - **Äste:** Unteraufgaben hängen an ihrer Elternidee, ihre Linien gehen von dort statt von der Mitte aus. 🌿 an einer Notiz legt eine Unteridee an.
+    - **Gespeicherte Anordnung:** In einer einzelnen Liste behalten verschobene Notizen ihren Platz auf allen Geräten. Eine Elternidee nimmt ihre Unteraufgaben mit. Die Übersicht aller Listen ordnet sich selbst.
     - Stufenloser Zoom & Pan per Mausrad, Pinch-Geste oder Steuerungsbuttons.
     - **Vollbild-Modus (`⛶`):** Per Knopfdruck oder Dashboard-Einbindung als beeindruckendes Vollbild-Erlebnis (ESC zum Schließen).
     - Direkte Aktionen an jeder Gedankenwolke (Erledigen, Text editieren, Kategorie wechseln, Löschen).
@@ -156,8 +158,8 @@ HACS installiert nur die Integration. Die Karten kopierst du anschließend wie u
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` und `www/brainstorm-i18n.js` in `/config/www/`. Die dritte Datei enthält die Texte und braucht keinen Ressourcen-Eintrag.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.6.11` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.6.11` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.6.12` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.6.12` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ### Integration entfernen
@@ -764,6 +766,7 @@ Weitere Beispiele für Assist und Alexa liegen im Ordner [`examples/`](examples/
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.6.12`** | 03.11.2026 | **Mindmap mit Ästen und gespeicherter Anordnung:**<br>• **Äste:** Unteraufgaben hängen in der Map an ihrer Elternidee, die Linie geht von ihr aus. Ein neuer Knopf 🌿 an jeder Notiz legt eine Unteridee an.<br>• **Positionen bleiben:** Ziehst du in einer einzelnen Liste eine Notiz, merkt sich Brainstorm ihren Platz im neuen Feld `map_pos`, relativ zur Mitte und damit passend für jede Bildschirmgröße. Sie steht danach auf allen Geräten dort. Eine Elternidee nimmt beim Ziehen ihre Unteraufgaben mit.<br>• **Neuer WebSocket-Befehl** `brainstorm/map_positions` speichert oder löscht mehrere Positionen auf einmal, nur für Ideen, die du bearbeiten darfst. Wechselt eine Idee die Kategorie, vergisst sie ihre Position. |
 | **`v1.6.11`** | 03.11.2026 | **Getippter Text bleibt, wie er ist:** Ruft man die Aktion `brainstorm.add_idea` ohne `source` auf (Entwicklerwerkzeuge, Skripte, KI-Agenten), gilt der Text als getippt. Er behält seinen Wortlaut statt wie ein gesprochener Satz gekürzt zu werden, der Großbuchstaben mitten im Satz bekam und Wörter verlor. Sprachwege mit eigener Quelle wie `alexa` oder `assist` kürzen weiter wie bisher. |
 | **`v1.6.10`** | 03.11.2026 | **Verfasser anzeigen:** Legt jemand einen Eintrag in einer fremden Liste an, merkt sich Brainstorm ihn im neuen Feld `created_by`. Beide Karten zeigen dann ein Abzeichen mit seinem Namen, die Listenkarte mit dem Bild seiner Person, falls vorhanden. |
 | **`v1.6.9`** | 03.11.2026 | **In freigegebene Listen schreiben:** Wer eine Kategorie persönlich mit *Bearbeiten* freigegeben bekommt, legt dort neue Einträge für den Besitzer an, statt sie für sich zu behalten. Unteraufgaben gehören dem Besitzer der übergeordneten Aufgabe. Damit kann zum Beispiel eine KI über ihren eigenen Benutzer Aufgaben in deine Liste schreiben. Löschen bleibt beim Besitzer. |
