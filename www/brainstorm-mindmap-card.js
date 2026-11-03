@@ -1,8 +1,8 @@
-import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.17";
+import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.18";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.6.17 - Skill, Reminders, Privacy and Sharing
+ * Version: 1.6.18 - Skill, Reminders, Privacy and Sharing
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -1479,6 +1479,16 @@ class BrainstormMindmapCard extends HTMLElement {
           margin-bottom: 8px;
           user-select: text;
           cursor: pointer;
+        }
+        .cloud-result {
+          margin: -4px 0 8px;
+          padding-left: 7px;
+          border-left: 2px solid var(--success-color, #4caf50);
+          font-size: 0.76rem;
+          line-height: 1.3;
+          color: var(--secondary-text-color, #727272);
+          white-space: pre-line;
+          word-break: break-word;
         }
 
         /* Cloud Actions */
@@ -3682,6 +3692,7 @@ class BrainstormMindmapCard extends HTMLElement {
               </span>
             </div>
             <div class="cloud-text" title="${t("Klicken zum Bearbeiten")}">${this._escapeHtml(idea.text)}</div>
+            ${idea.result ? `<div class="cloud-result" title="${t("Ergebnis")}">${this._escapeHtml(idea.result)}</div>` : ""}
             <div class="cloud-actions">
               <button class="action-btn done-btn" data-act="done" data-id="${idea.id}" title="${t("Als erledigt markieren")}">✓</button>
               <button class="action-btn" data-act="branch" data-id="${idea.id}" title="${t("Unteridee anlegen")}">🌿</button>
@@ -4887,7 +4898,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.6.17 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.6.18 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

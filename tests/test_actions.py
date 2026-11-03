@@ -7,6 +7,7 @@ from typing import Any
 from unittest.mock import patch
 
 import pytest
+import voluptuous as vol
 from homeassistant.components.todo import TodoItem, TodoItemStatus
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
@@ -76,6 +77,52 @@ async def test_update_idea_changes_the_optional_fields(
 
     updated = (await _call(hass, "update_idea", id=idea["id"], parent_id=None))["idea"]
     assert updated["parent_id"] is None
+
+
+async def test_update_idea_keeps_a_result_note(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test the result note written when ticking an idea off."""
+    entry = await setup_entry()
+    idea = (await _call(hass, "add_idea", text="Regal bauen"))["idea"]
+    assert "result" not in idea
+
+    updated = (
+        await _call(
+            hass,
+            "update_idea",
+            id=idea["id"],
+            status="completed",
+            result="  Aufgebaut, Dübel 8 mm  ",
+        )
+    )["idea"]
+    assert updated["status"] == "completed"
+    assert updated["result"] == "Aufgebaut, Dübel 8 mm"
+
+    # The cards get it with the completed ideas
+    completed = entry.runtime_data.get_overview_attributes()["completed_ideas"]
+    assert completed[0]["result"] == "Aufgebaut, Dübel 8 mm"
+
+    # Reopening keeps the note, other changes leave it alone
+    updated = (await _call(hass, "update_idea", id=idea["id"], status="active"))["idea"]
+    assert updated["result"] == "Aufgebaut, Dübel 8 mm"
+
+    # An empty note removes it
+    updated = (await _call(hass, "update_idea", id=idea["id"], result=""))["idea"]
+    assert "result" not in updated
+    await _call(hass, "update_idea", id=idea["id"], result="Neu")
+    updated = (await _call(hass, "update_idea", id=idea["id"], result=None))["idea"]
+    assert "result" not in updated
+
+
+async def test_update_idea_rejects_a_too_long_result(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test the length limit of the result note."""
+    await setup_entry()
+    idea = (await _call(hass, "add_idea", text="Regal bauen"))["idea"]
+    with pytest.raises(vol.Invalid):
+        await _call(hass, "update_idea", id=idea["id"], result="x" * 1001)
 
 
 async def test_update_idea_sets_and_clears_the_echos(

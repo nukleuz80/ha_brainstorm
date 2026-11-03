@@ -627,6 +627,10 @@
         "echos": {
           "name": "Echos",
           "description": "Die Echos, die die Erinnerung an diesen Eintrag sprechen. Leer folgt den Erinnerungs-Einstellungen."
+        },
+        "result": {
+          "name": "Ergebnis",
+          "description": "Was aus dem Eintrag geworden ist, meist beim Abhaken notiert. Beide Karten zeigen es an. Leer entfernt es."
         }
       }
     },

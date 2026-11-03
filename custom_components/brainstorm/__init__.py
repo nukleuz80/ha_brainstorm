@@ -32,6 +32,7 @@ from .const import (
     ATTR_PARENT_ID,
     ATTR_PARSE_DUE,
     ATTR_PRIORITY,
+    ATTR_RESULT,
     ATTR_REMINDED_AT,
     ATTR_RESET,
     ATTR_SOURCE,
@@ -42,6 +43,7 @@ from .const import (
     ATTR_ZONE,
     DOMAIN,
     PLATFORMS,
+    RESULT_MAX_LENGTH,
     SERVICE_REORDER_IDEAS,
     SERVICE_SET_CATEGORY_STYLE,
     SHARE_EDIT,
@@ -108,6 +110,9 @@ SERVICE_UPDATE_IDEA_SCHEMA = vol.Schema(
         vol.Optional(ATTR_ASSIGNEE): vol.Any(None, cv.entity_id),
         vol.Optional(ATTR_ZONE): vol.Any(None, cv.entity_id),
         vol.Optional(ATTR_ECHOS): vol.Any(None, cv.entity_ids),
+        vol.Optional(ATTR_RESULT): vol.Any(
+            None, vol.All(cv.string, vol.Length(max=RESULT_MAX_LENGTH))
+        ),
     },
     extra=vol.ALLOW_EXTRA,
 )
@@ -360,6 +365,8 @@ def _register_services(hass: HomeAssistant) -> None:
             context=call.context,
             due=dt_util.as_local(call.data[ATTR_DUE]) if call.data.get(ATTR_DUE) else None,
             update_due=ATTR_DUE in call.data,
+            result=call.data.get(ATTR_RESULT),
+            update_result=ATTR_RESULT in call.data,
         )
         if updated is not None and (
             ATTR_ASSIGNEE in call.data

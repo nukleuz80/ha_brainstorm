@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.6.17-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.6.18-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -164,8 +164,8 @@ HACS installiert nur die Integration. Die Karten kopierst du anschließend wie u
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` und `www/brainstorm-i18n.js` in `/config/www/`. Die dritte Datei enthält die Texte und braucht keinen Ressourcen-Eintrag.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.6.17` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.6.17` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.6.18` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.6.18` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ### Integration entfernen
@@ -636,6 +636,7 @@ Aktualisiert Text, Kategorie oder Status einer bestehenden Idee.
 | `assignee` | Nein | Wer erinnert werden soll. |
 | `zone` | Nein | Erinnert beim Betreten dieser Zone. |
 | `echos` | Nein | Die Echos, die die Erinnerung an diesen Eintrag sprechen, als Liste. `null` gilt wieder die Erinnerungs-Einstellungen. |
+| `result` | Nein | Was aus dem Eintrag geworden ist, meist beim Abhaken notiert (höchstens 1000 Zeichen). Beide Karten zeigen es unter dem Text. Bleibt beim Wiederöffnen erhalten, leer oder `null` entfernt es. |
 
 ### `brainstorm.delete_idea`
 
@@ -791,6 +792,7 @@ Weitere Beispiele für Assist und Alexa liegen im Ordner [`examples/`](examples/
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.6.18`** | 03.11.2026 | **Ergebnis-Notiz beim Abhaken:**<br>• `brainstorm.update_idea` hat das neue Feld `result`. Damit lässt sich beim Abhaken festhalten, was aus einem Eintrag geworden ist, etwa „Erledigt in v1.6.18, getestet“.<br>• Beide Karten zeigen die Notiz mit grünem Rand unter dem Text, die Liste auch in der Ansicht „Erledigt“.<br>• Beim Wiederöffnen bleibt die Notiz stehen, ein leeres `result` entfernt sie. |
 | **`v1.6.17`** | 03.11.2026 | **Mindmap: Export als Bild:**<br>• Der neue Knopf 🖼️ oben rechts speichert die Map als **SVG** (Vektor, scharf in jeder Größe) oder **PNG** (in doppelter Auflösung).<br>• Das Bild zeigt Linien, Notizen und die Mitte in den Farben der gewählten Vorlage, ohne Knöpfe und Abzeichen. Eingeklappte Zweige bleiben weg.<br>• Der Dateiname enthält Liste und Datum, etwa `brainstorm-haus-garten-2026-11-03.png`. Mit `show_export_btn: false` lässt sich der Knopf ausblenden. |
 | **`v1.6.16`** | 03.11.2026 | **Mindmap: Vorlagen für das Aussehen:**<br>• Vier Vorlagen im Karten-Editor: **Standard** (Wolken, Kurven, Kategoriefarben), **Klar** (Rechtecke, eckige Linien), **Skizze** (Kapseln, gestrichelt, Pastell) und **Neon** (dunkel und leuchtend).<br>• Form (`node_shape`), Linien (`line_style`) und Farben (`color_scheme`) lassen sich einzeln anders wählen, etwa Neon mit Rechtecken oder Standard einfarbig.<br>• Alle Vorlagen nutzen die Farben des Home-Assistant-Themes, nur Neon bringt seinen eigenen dunklen Hintergrund mit. |
 | **`v1.6.15`** | 03.11.2026 | **Mindmap: Rückgängig:**<br>• **Strg+Z** oder der neue Knopf ↶ unten rechts nimmt die letzten 30 Schritte dieser Sitzung zurück: neue Notizen, Text, Dialog-Änderungen, Erledigt, Priorität, Kategorie, Verschieben, Neu ordnen und Löschen. Eine kurze Meldung zeigt, was zurückgenommen wurde.<br>• **Löschen rückgängig:** Neue Aktion `brainstorm.restore_idea`. Home Assistant hält gelöschte Ideen bis zum nächsten Start bereit (höchstens 50), samt Verbindung zu ihren Unteraufgaben. Zurückholen darf nur, wer gelöscht hat. |

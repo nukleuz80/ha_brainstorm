@@ -1,9 +1,9 @@
-import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.17";
+import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.18";
 
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.6.17 - Skill, Reminders, Privacy and Sharing
+ * Version 1.6.18 - Skill, Reminders, Privacy and Sharing
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",
@@ -3053,6 +3053,16 @@ class BrainstormCard extends HTMLElement {
           word-break: break-word;
           color: var(--primary-text-color, #212121);
         }
+        .idea-result {
+          margin-top: 3px;
+          padding-left: 8px;
+          border-left: 2px solid var(--success-color, #4caf50);
+          font-size: 0.8rem;
+          line-height: 1.3;
+          color: var(--secondary-text-color, #727272);
+          white-space: pre-line;
+          word-break: break-word;
+        }
         .idea-meta {
           display: flex;
           align-items: center;
@@ -4081,6 +4091,7 @@ class BrainstormCard extends HTMLElement {
                 <div class="idea-text" title="${itemEdit ? t("Klicken zum Bearbeiten (Lange drücken für Kontextmenü)") : ""}" data-id="${item.id}" style="${itemEdit ? "" : "cursor: default;"}">
                   ${isSub ? `<span class="subtask-indicator" title="${t("Unteraufgabe")}">↳</span>` : ""}${this._escapeHtml(item.text)}
                 </div>
+                ${item.result ? `<div class="idea-result" title="${t("Ergebnis")}">${this._escapeHtml(item.result)}</div>` : ""}
                 <div class="idea-meta">
                   ${isSub ? `<span class="subtask-badge" title="${t("Unteraufgabe")}">${t("Unteraufgabe")}</span>` : ""}
                   <span class="category-tag ${itemEdit ? "clickable" : ""}" title="${itemEdit ? t("Kategorie ändern") : t("Kategorie")}" data-id="${item.id}" data-cat="${this._escapeHtml(item.category)}" style="color: ${this._getCategoryColor(item.category)}; background: color-mix(in srgb, ${this._getCategoryColor(item.category)} 12%, var(--secondary-background-color, rgba(0,0,0,0.06))); border: 1px solid color-mix(in srgb, ${this._getCategoryColor(item.category)} 25%, transparent);"><ha-icon icon="${this._getCategoryIcon(item.category)}" style="--mdc-icon-size: 11px; width: 11px; height: 11px; margin-right: 3px; display: inline-flex; align-items: center; vertical-align: middle;"></ha-icon>${this._escapeHtml(item.category)}</span>
@@ -4961,7 +4972,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.6.17 ",
+  "%c BRAINSTORM-CARD %c v1.6.18 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

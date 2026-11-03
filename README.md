@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.6.17-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.6.18-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -144,8 +144,8 @@ HACS only installs the integration, so continue with [Install the cards](#instal
 
 1. Copy `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` and `www/brainstorm-i18n.js` from the release to `/config/www/`. The third file holds the texts and needs no resource entry.
 2. Add both under **Settings ➔ Dashboards ➔ Resources** as **JavaScript module**:
-   - `/local/brainstorm-card.js?v=1.6.17`
-   - `/local/brainstorm-mindmap-card.js?v=1.6.17`
+   - `/local/brainstorm-card.js?v=1.6.18`
+   - `/local/brainstorm-mindmap-card.js?v=1.6.18`
 3. Reload the page in your browser.
 
 ### Removing the Integration
@@ -314,9 +314,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.6.17
+  - url: /local/brainstorm-card.js?v=1.6.18
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.6.17
+  - url: /local/brainstorm-mindmap-card.js?v=1.6.18
     type: module
 ```
 
@@ -585,6 +585,7 @@ Changes an existing idea.
 | `assignee` | No | The person to remind. |
 | `zone` | No | Reminds when entering this zone. |
 | `echos` | No | The Echos that speak the reminder of this idea, as a list. `null` goes back to the reminder settings. |
+| `result` | No | What came of the idea, usually written when ticking it off (at most 1000 characters). Both cards show it below the text. It stays when the idea is reopened; empty or `null` removes it. |
 
 ### `brainstorm.delete_idea`
 
@@ -740,6 +741,7 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.6.18`** | 2026-11-03 | **Result note when ticking off:**<br>• `brainstorm.update_idea` has the new field `result`. It records what came of an entry, for example “Done in v1.6.18, tested”.<br>• Both cards show the note with a green edge below the text, the list also in the “Done” view.<br>• The note stays when the entry is reopened; an empty `result` removes it. |
 | **`v1.6.17`** | 2026-11-03 | **Mind map: export as a picture:**<br>• The new 🖼️ button at the top right saves the map as **SVG** (vector, sharp at any size) or **PNG** (at twice the resolution).<br>• The picture shows lines, notes and the center in the colors of the chosen template, without buttons and badges. Folded branches stay out.<br>• The file name holds the list and the date, such as `brainstorm-haus-garten-2026-11-03.png`. `show_export_btn: false` hides the button. |
 | **`v1.6.16`** | 2026-11-03 | **Mind map: templates for the look:**<br>• Four templates in the card editor: **Standard** (clouds, curves, category colors), **Clean** (rectangles, angled lines), **Sketch** (pills, dashed, pastel) and **Neon** (dark and glowing).<br>• Shape (`node_shape`), lines (`line_style`) and colors (`color_scheme`) can each be chosen on their own, such as neon with rectangles or standard in a single color.<br>• All templates use the colors of the Home Assistant theme, only neon brings its own dark background. |
 | **`v1.6.15`** | 2026-11-03 | **Mind map: undo:**<br>• **Ctrl+Z** or the new ↶ button at the bottom right takes back the last 30 steps of this session: new notes, text, dialog changes, done, priority, category, moving, arranging again and deleting. A short message shows what was undone.<br>• **Undo a deletion:** New action `brainstorm.restore_idea`. Home Assistant keeps deleted ideas until its next start (50 at most), with the links to their subtasks. Only the person who deleted an idea can bring it back. |

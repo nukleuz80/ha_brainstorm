@@ -627,6 +627,10 @@
         "echos": {
           "name": "Echos",
           "description": "The Echos that speak the reminder of this idea. Empty follows the reminder settings."
+        },
+        "result": {
+          "name": "Result",
+          "description": "What came of the idea, usually written when ticking it off. Shown in both cards. Empty removes it."
         }
       }
     },

@@ -41,6 +41,7 @@ from .const import (
     ATTR_ORDER,
     ATTR_PARENT_ID,
     ATTR_PRIORITY,
+    ATTR_RESULT,
     ATTR_SOURCE,
     ATTR_STATUS,
     ATTR_TAGS,
@@ -367,6 +368,8 @@ class BrainstormStore:
                     result[ATTR_CREATED_BY] = author
             if position := idea.get(ATTR_MAP_POS):
                 result[ATTR_MAP_POS] = position
+            if note := idea.get(ATTR_RESULT):
+                result[ATTR_RESULT] = note
             return result
 
         last_action = self.last_action
@@ -1005,8 +1008,14 @@ class BrainstormStore:
         context: Context | None = None,
         due: datetime | None = None,
         update_due: bool = False,
+        result: str | None = None,
+        update_result: bool = False,
     ) -> dict[str, Any] | None:
-        """Update an existing idea."""
+        """Update an existing idea.
+
+        The result note says what came of an idea, usually when it is ticked
+        off. It stays when the idea is reopened, and an empty one removes it.
+        """
         if idea_id not in self._ideas:
             _LOGGER.warning("Brainstorm idea %s not found for update", idea_id)
             return None
@@ -1057,6 +1066,11 @@ class BrainstormStore:
                 idea[ATTR_ESCALATED] = False
                 idea[ATTR_URGENT_SENT] = False
                 idea[ATTR_ALEXA_NATIVE] = False
+        if update_result:
+            if result and result.strip():
+                idea[ATTR_RESULT] = result.strip()
+            else:
+                idea.pop(ATTR_RESULT, None)
         if update_parent:
             if not parent_id or parent_id.strip() in ("", "none"):
                 idea[ATTR_PARENT_ID] = None

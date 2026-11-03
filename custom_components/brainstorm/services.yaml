@@ -133,6 +133,12 @@ update_idea:
           domain: media_player
           integration: alexa_media
           multiple: true
+    result:
+      required: false
+      example: "Erledigt in v1.6.18, getestet"
+      selector:
+        text:
+          multiline: true
 
 delete_idea:
   fields:

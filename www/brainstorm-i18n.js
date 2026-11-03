@@ -32,6 +32,7 @@ const DICTIONARIES = {
     "Design für '{name}' anpassen": "Change the design of '{name}'",
     "Die Spracherkennung konnte nicht starten.": "Speech recognition could not start.",
     "Enthaltene Notizen werden automatisch in die Kategorie <em>Inbox</em> verschoben.": "Notes in it are moved to the category <em>Inbox</em> automatically.",
+    "Ergebnis": "Result",
     "Erinnern: Zeitpunkt wählen": "Remind: choose a time",
     "Erinnern: heute Abend": "Remind: this evening",
     "Erinnern: morgen früh": "Remind: tomorrow morning",
