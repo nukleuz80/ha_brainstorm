@@ -40,8 +40,16 @@ async def websocket_get_ideas(
     ]
     names = {user.id: user.name or user.id for user in users}
     result = store.get_overview_attributes(connection.user.id)
+    pictures = {
+        state.attributes["user_id"]: state.attributes.get("entity_picture")
+        for state in hass.states.async_all("person")
+        if state.attributes.get("user_id")
+    }
     for idea in (*result["ideas"], *result["completed_ideas"]):
         idea["owner_name"] = names.get(idea.get("owner"), "")
+        if author := idea.get("created_by"):
+            idea["author_name"] = names.get(author, "")
+            idea["author_picture"] = pictures.get(author)
     result["current_user"] = connection.user.id
     result["share_users"] = [
         {"id": user.id, "name": names[user.id]}

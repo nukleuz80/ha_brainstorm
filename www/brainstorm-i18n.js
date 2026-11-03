@@ -54,6 +54,7 @@ const DICTIONARIES = {
     "Geteilt": "Shared",
     "Geteilt von {name}, du darfst ansehen": "Shared by {name}, you may view it",
     "Geteilt von {name}, du darfst bearbeiten": "Shared by {name}, you may edit it",
+    "Eingetragen von {name}": "Added by {name}",
     "Halten & Ziehen zum Sortieren oder Unteraufgabe zuordnen": "Hold and drag to sort or to make a subtask",
     "Handy": "Phone",
     "Heute {clock}": "Today {clock}",

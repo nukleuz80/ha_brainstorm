@@ -798,6 +798,46 @@ async def test_websocket_reports_access_and_people(
     assert hass_owner_user.id in [u["id"] for u in result["share_users"]]
 
 
+async def test_websocket_names_who_wrote_into_a_list(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_ws_client: WebSocketGenerator,
+    hass_read_only_access_token: str,
+    hass_owner_user: Any,
+) -> None:
+    """Test that the owner of a list sees who added an idea to it."""
+    assert await async_setup_component(hass, "websocket_api", {})
+    entry = await setup_entry(
+        options={"privacy_enabled": True, "privacy_owner": hass_owner_user.id}
+    )
+    store = entry.runtime_data
+    agent = hass.auth.async_validate_access_token(hass_read_only_access_token).user
+    hass.states.async_set(
+        "person.agent",
+        "unknown",
+        {"user_id": agent.id, "entity_picture": "/local/agent.png"},
+    )
+    await store.async_set_category_shares(
+        hass_owner_user.id, "Inbox", {agent.id: "edit"}
+    )
+    added = await store.async_add_idea(
+        "vom agenten", category="Inbox", context=Context(user_id=agent.id)
+    )
+    own = await store.async_add_idea(
+        "selbst", category="Inbox", context=Context(user_id=hass_owner_user.id)
+    )
+    assert added["owner"] == hass_owner_user.id
+    assert added["created_by"] == agent.id
+    assert "created_by" not in own
+
+    client = await hass_ws_client(hass, hass_read_only_access_token)
+    await client.send_json_auto_id({"type": "brainstorm/ideas"})
+    ideas = {i["text"].lower(): i for i in (await client.receive_json())["result"]["ideas"]}
+    assert ideas["vom agenten"]["author_name"] == agent.name
+    assert ideas["vom agenten"]["author_picture"] == "/local/agent.png"
+    assert "author_name" not in ideas["selbst"]
+
+
 async def test_no_extra_fields_without_privacy(
     hass: HomeAssistant, setup_entry: SetupEntry
 ) -> None:

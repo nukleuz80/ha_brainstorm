@@ -22,6 +22,7 @@ from .const import (
     ATTR_CREATED_AT,
     ATTR_ALEXA_NATIVE,
     ATTR_ASSIGNEE,
+    ATTR_CREATED_BY,
     ATTR_OWNER,
     ATTR_SHARES,
     ACCESS_OWNER,
@@ -357,6 +358,8 @@ class BrainstormStore:
                 # Only the owner needs to know who else can see an idea
                 if access == ACCESS_OWNER:
                     result[ATTR_SHARES] = idea.get(ATTR_SHARES) or {}
+                if author := idea.get(ATTR_CREATED_BY):
+                    result[ATTR_CREATED_BY] = author
             return result
 
         last_action = self.last_action
@@ -890,6 +893,7 @@ class BrainstormStore:
         now_iso = dt_util.now().isoformat()
         idea_id = uuid.uuid4().hex[:8]
 
+        author = owner or (context.user_id if context else None)
         resolved_parent = None
         if parent_id and parent_id.strip() in self._ideas:
             resolved_parent = parent_id.strip()
@@ -915,7 +919,7 @@ class BrainstormStore:
             ATTR_ASSIGNEE: assignee,
             ATTR_TRIGGER: trigger,
             ATTR_OWNER: self.owner_for_new_idea(
-                owner or (context.user_id if context else None),
+                author,
                 resolved_cat,
                 self._ideas.get(resolved_parent) if resolved_parent else None,
             ),
@@ -924,6 +928,9 @@ class BrainstormStore:
         # Keeps what was really said, so a bad shortening can be undone
         if raw_text != clean_text:
             idea[ATTR_RAW_TEXT] = raw_text
+        # Written into someone else's list, so its owner can see who it was
+        if author and idea[ATTR_OWNER] != author:
+            idea[ATTR_CREATED_BY] = author
         # Someone who is meant to be reminded also has to see the idea
         if assignee_user := self._person_user(assignee):
             idea[ATTR_SHARES].setdefault(assignee_user, SHARE_EDIT)

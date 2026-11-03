@@ -1,9 +1,9 @@
-import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.9";
+import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.10";
 
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.6.9 - Skill, Reminders, Privacy and Sharing
+ * Version 1.6.10 - Skill, Reminders, Privacy and Sharing
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",
@@ -938,6 +938,15 @@ class BrainstormCard extends HTMLElement {
         this._finishSelection(failed);
       });
     });
+  }
+
+  _formatAuthorBadge(item) {
+    if (!item.created_by || !item.author_name) return "";
+    const name = this._escapeHtml(item.author_name);
+    const picture = item.author_picture
+      ? `<img class="author-picture" src="${this._escapeHtml(item.author_picture)}" alt="">`
+      : "✍️";
+    return `<span class="due-badge author-badge" title="${t("Eingetragen von {name}", { name })}">${picture} ${name}</span>`;
   }
 
   _formatShareBadge(item) {
@@ -3200,6 +3209,12 @@ class BrainstormCard extends HTMLElement {
           border-color: var(--primary-color);
           color: var(--text-primary-color, #fff);
         }
+        .author-picture {
+          width: 14px;
+          height: 14px;
+          border-radius: 50%;
+          object-fit: cover;
+        }
         .due-badge {
           display: inline-flex;
           align-items: center;
@@ -4073,6 +4088,7 @@ class BrainstormCard extends HTMLElement {
                   ${item.due ? this._formatDueBadge(item.due) : ""}
                   ${this._formatTargetBadges(item)}
                   ${this._formatShareBadge(item)}
+                  ${this._formatAuthorBadge(item)}
                   ${showSource ? `${this._getSourceBadge(item.source, item.device)}` : ""}
                   ${showSource && showTime ? `<span>•</span>` : ""}
                   ${showTime ? `<span>${this._formatTime(item.created_at)}</span>` : ""}
@@ -4945,7 +4961,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.6.9 ",
+  "%c BRAINSTORM-CARD %c v1.6.10 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );
