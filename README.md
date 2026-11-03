@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.6.18-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.6.19-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -144,8 +144,8 @@ HACS only installs the integration, so continue with [Install the cards](#instal
 
 1. Copy `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` and `www/brainstorm-i18n.js` from the release to `/config/www/`. The third file holds the texts and needs no resource entry.
 2. Add both under **Settings ➔ Dashboards ➔ Resources** as **JavaScript module**:
-   - `/local/brainstorm-card.js?v=1.6.18`
-   - `/local/brainstorm-mindmap-card.js?v=1.6.18`
+   - `/local/brainstorm-card.js?v=1.6.19`
+   - `/local/brainstorm-mindmap-card.js?v=1.6.19`
 3. Reload the page in your browser.
 
 ### Removing the Integration
@@ -278,6 +278,28 @@ By default, all users of your Home Assistant see all ideas. Change this under **
 
 Admins and anyone with file access can still read everything. Home Assistant's to-do lists only show what is shared with everyone, because all users can read them. Existing Markdown exports stay in place when you switch this on, and new ones are only created if you allow it.
 
+## 🤖 Brainstorm as a task list for coding AIs
+
+A category can be the backlog of a programming project: you collect tasks by Alexa, card or Assist, and a coding AI such as Claude Code reads them over an MCP server for Home Assistant, implements them and ticks them off with a **result note**. Both cards show this note below the idea, so you see what came of it without asking.
+
+**Setup**
+
+1. **A user of its own for the AI:** Under **Settings ➔ People**, add a user, for example *Claude*. If its person gets a picture, the cards show it on the ideas the AI adds.
+2. **Token:** Log in as this user, create a long-lived access token under **Profile ➔ Security** and connect the MCP server with it, for example [ha-mcp](https://github.com/homeassistant-ai/ha-mcp).
+3. **Switch privacy on** (see above) and share the backlog category with the AI user: *view* to read, *edit* if it may tick ideas off. Everything else stays invisible to it.
+4. **Install the skill:** Copy the folder [`examples/claude-code/skills/brainstorm-backlog`](examples/claude-code/skills/brainstorm-backlog/SKILL.md) to `~/.claude/skills/` (for all projects) or to `.claude/skills/` in the project.
+5. **Name the category:** Write it into the project's `CLAUDE.md` or `AGENTS.md`, for example: *"The backlog is the Brainstorm category 'Brainstorm'."*
+
+**Working rules of the skill**
+
+- It reads only over `brainstorm.get_ideas`, never the file in `.storage`. This way the AI only sees what is shared.
+- Subtasks are done in their order, conditions in the text ("check first whether …") come first.
+- It ticks off only what is implemented, tested and committed, with `status: completed` and a short `result` (version, change, test, open points). The reply names every idea it ticked off.
+- Deleting, shares and settings stay with you. When an action is refused, the AI tells you which share is missing instead of trying another way.
+
+> [!NOTE]
+> **Admin or not?** Brainstorm itself needs no admin rights to read, add, edit and tick off; only removing categories and the Markdown export require them while privacy is on. A user without admin rights is the safer choice, because an admin can read private ideas in other ways, such as file access. Whether your MCP server offers all its tools to such a user depends on the server. For ha-mcp this has not been checked yet; feedback is welcome as an issue.
+
 ## ⏰ Reminders & Notifications
 
 Brainstorm reminds you of due ideas on its own, over the services you have already set up in Home Assistant. Everything is optional and runs locally.
@@ -314,9 +336,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.6.18
+  - url: /local/brainstorm-card.js?v=1.6.19
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.6.18
+  - url: /local/brainstorm-mindmap-card.js?v=1.6.19
     type: module
 ```
 
@@ -741,6 +763,7 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.6.19`** | 2026-11-03 | **Brainstorm as a task list for coding AIs:**<br>• New chapter “🤖 Brainstorm as a task list for coding AIs”: a user of its own for the AI, token, sharing the backlog category, working rules.<br>• New Claude Code skill in `examples/claude-code/skills/brainstorm-backlog`: reads the backlog over `brainstorm.get_ideas`, keeps order and conditions and ticks off only finished work with a result note.<br>• Note on which actions need admin rights and why a user without them is safer. |
 | **`v1.6.18`** | 2026-11-03 | **Result note when ticking off:**<br>• `brainstorm.update_idea` has the new field `result`. It records what came of an entry, for example “Done in v1.6.18, tested”.<br>• Both cards show the note with a green edge below the text, the list also in the “Done” view.<br>• The note stays when the entry is reopened; an empty `result` removes it. |
 | **`v1.6.17`** | 2026-11-03 | **Mind map: export as a picture:**<br>• The new 🖼️ button at the top right saves the map as **SVG** (vector, sharp at any size) or **PNG** (at twice the resolution).<br>• The picture shows lines, notes and the center in the colors of the chosen template, without buttons and badges. Folded branches stay out.<br>• The file name holds the list and the date, such as `brainstorm-haus-garten-2026-11-03.png`. `show_export_btn: false` hides the button. |
 | **`v1.6.16`** | 2026-11-03 | **Mind map: templates for the look:**<br>• Four templates in the card editor: **Standard** (clouds, curves, category colors), **Clean** (rectangles, angled lines), **Sketch** (pills, dashed, pastel) and **Neon** (dark and glowing).<br>• Shape (`node_shape`), lines (`line_style`) and colors (`color_scheme`) can each be chosen on their own, such as neon with rectangles or standard in a single color.<br>• All templates use the colors of the Home Assistant theme, only neon brings its own dark background. |

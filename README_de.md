@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.6.18-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.6.19-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -164,8 +164,8 @@ HACS installiert nur die Integration. Die Karten kopierst du anschließend wie u
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` und `www/brainstorm-i18n.js` in `/config/www/`. Die dritte Datei enthält die Texte und braucht keinen Ressourcen-Eintrag.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.6.18` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.6.18` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.6.19` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.6.19` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ### Integration entfernen
@@ -412,6 +412,28 @@ Standardmäßig sehen alle Benutzer deines Home Assistant alle Einträge. Unter 
 
 > [!IMPORTANT]
 > Administratoren und alle mit Zugriff auf die Dateien können weiterhin alles lesen. Die To-do-Listen von Home Assistant zeigen nur, was für alle freigegeben ist, weil sie alle Benutzer lesen können. Bestehende Markdown-Exporte bleiben beim Einschalten liegen; neue entstehen nur, wenn du das erlaubst.
+
+## 🤖 Brainstorm als Aufgabenliste für Coding-KIs
+
+Eine Kategorie kann das Backlog eines Programmierprojekts sein: Du sammelst Aufgaben per Alexa, Karte oder Assist, und eine Coding-KI wie Claude Code liest sie über einen MCP-Server für Home Assistant, setzt sie um und hakt sie mit einer **Ergebnis-Notiz** ab. Beide Karten zeigen diese Notiz unter dem Eintrag, so siehst du ohne Nachfragen, was daraus geworden ist.
+
+**Einrichtung**
+
+1. **Eigener Benutzer für die KI:** Unter **Einstellungen ➔ Personen** einen Benutzer anlegen, etwa *Claude*. Bekommt seine Person ein Bild, zeigen die Karten es an den Einträgen, die die KI anlegt.
+2. **Token:** Als dieser Benutzer anmelden, unter **Profil ➔ Sicherheit** ein langlebiges Zugriffstoken erstellen und damit den MCP-Server verbinden, zum Beispiel [ha-mcp](https://github.com/homeassistant-ai/ha-mcp).
+3. **Privatsphäre einschalten** (siehe oben) und die Backlog-Kategorie für den KI-Benutzer freigeben: *Ansehen* zum Lesen, *Bearbeiten*, wenn er abhaken darf. Alles andere bleibt für ihn unsichtbar.
+4. **Skill installieren:** Den Ordner [`examples/claude-code/skills/brainstorm-backlog`](examples/claude-code/skills/brainstorm-backlog/SKILL.md) nach `~/.claude/skills/` kopieren (für alle Projekte) oder nach `.claude/skills/` im Projekt.
+5. **Kategorie nennen:** In `CLAUDE.md` oder `AGENTS.md` des Projekts eintragen, etwa: *„Das Backlog ist die Brainstorm-Kategorie ‚Brainstorm‘.“*
+
+**Arbeitsregeln des Skills**
+
+- Gelesen wird nur über `brainstorm.get_ideas`, nie über die Datei in `.storage`. So sieht die KI nur, was freigegeben ist.
+- Unteraufgaben werden in ihrer Reihenfolge erledigt, Bedingungen im Text („erst prüfen, ob …“) zuerst.
+- Abgehakt wird nur, was umgesetzt, getestet und eingecheckt ist, mit `status: completed` und einem kurzen `result` (Version, Änderung, Test, offene Punkte). Die Antwort nennt jeden abgehakten Eintrag.
+- Löschen, Freigaben und Einstellungen bleiben bei dir. Lehnt eine Aktion ab, sagt die KI dir, welche Freigabe fehlt, statt es anders zu versuchen.
+
+> [!NOTE]
+> **Admin oder nicht?** Brainstorm selbst braucht für Lesen, Anlegen, Bearbeiten und Abhaken keine Adminrechte; nur das Entfernen von Kategorien und der Markdown-Export verlangen sie, solange die Privatsphäre an ist. Ein Benutzer ohne Adminrechte ist die sicherere Wahl, weil ein Administrator über andere Wege, etwa Dateizugriff, auch private Einträge lesen kann. Ob dein MCP-Server mit so einem Benutzer alle Werkzeuge anbietet, hängt vom Server ab. Für ha-mcp ist das noch nicht geprüft; Rückmeldungen gern als Issue.
 
 ---
 
@@ -792,6 +814,7 @@ Weitere Beispiele für Assist und Alexa liegen im Ordner [`examples/`](examples/
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.6.19`** | 03.11.2026 | **Brainstorm als Aufgabenliste für Coding-KIs:**<br>• Neues Kapitel „🤖 Brainstorm als Aufgabenliste für Coding-KIs“: eigener KI-Benutzer, Token, Freigabe der Backlog-Kategorie, Arbeitsregeln.<br>• Neuer Claude-Code-Skill unter `examples/claude-code/skills/brainstorm-backlog`: liest das Backlog über `brainstorm.get_ideas`, hält Reihenfolge und Bedingungen ein und hakt nur Fertiges mit Ergebnis-Notiz ab.<br>• Hinweis, welche Aktionen Adminrechte brauchen und warum ein Benutzer ohne Adminrechte sicherer ist. |
 | **`v1.6.18`** | 03.11.2026 | **Ergebnis-Notiz beim Abhaken:**<br>• `brainstorm.update_idea` hat das neue Feld `result`. Damit lässt sich beim Abhaken festhalten, was aus einem Eintrag geworden ist, etwa „Erledigt in v1.6.18, getestet“.<br>• Beide Karten zeigen die Notiz mit grünem Rand unter dem Text, die Liste auch in der Ansicht „Erledigt“.<br>• Beim Wiederöffnen bleibt die Notiz stehen, ein leeres `result` entfernt sie. |
 | **`v1.6.17`** | 03.11.2026 | **Mindmap: Export als Bild:**<br>• Der neue Knopf 🖼️ oben rechts speichert die Map als **SVG** (Vektor, scharf in jeder Größe) oder **PNG** (in doppelter Auflösung).<br>• Das Bild zeigt Linien, Notizen und die Mitte in den Farben der gewählten Vorlage, ohne Knöpfe und Abzeichen. Eingeklappte Zweige bleiben weg.<br>• Der Dateiname enthält Liste und Datum, etwa `brainstorm-haus-garten-2026-11-03.png`. Mit `show_export_btn: false` lässt sich der Knopf ausblenden. |
 | **`v1.6.16`** | 03.11.2026 | **Mindmap: Vorlagen für das Aussehen:**<br>• Vier Vorlagen im Karten-Editor: **Standard** (Wolken, Kurven, Kategoriefarben), **Klar** (Rechtecke, eckige Linien), **Skizze** (Kapseln, gestrichelt, Pastell) und **Neon** (dunkel und leuchtend).<br>• Form (`node_shape`), Linien (`line_style`) und Farben (`color_scheme`) lassen sich einzeln anders wählen, etwa Neon mit Rechtecken oder Standard einfarbig.<br>• Alle Vorlagen nutzen die Farben des Home-Assistant-Themes, nur Neon bringt seinen eigenen dunklen Hintergrund mit. |
