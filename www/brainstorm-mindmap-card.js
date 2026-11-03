@@ -1,8 +1,8 @@
-import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.16";
+import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.17";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.6.16 - Skill, Reminders, Privacy and Sharing
+ * Version: 1.6.17 - Skill, Reminders, Privacy and Sharing
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -28,6 +28,7 @@ const BRAINSTORM_MINDMAP_DEFAULTS = {
   show_fullscreen_btn: true,
   show_controls: true,
   show_add_btn: true,
+  show_export_btn: true,
   hide_empty_categories: true,
   map_template: "standard",
   node_shape: "template",
@@ -179,6 +180,9 @@ class BrainstormMindmapCard extends HTMLElement {
 
     const fullscreenBtn = this.shadowRoot.getElementById("fullscreenToggleBtn");
     if (fullscreenBtn) fullscreenBtn.style.display = this._config.show_fullscreen_btn === true ? "inline-flex" : "none";
+
+    const exportBtn = this.shadowRoot.getElementById("exportBtn");
+    if (exportBtn) exportBtn.style.display = this._config.show_export_btn === true ? "inline-flex" : "none";
 
     const controlsPanel = this.shadowRoot.querySelector(".controls-panel");
     if (controlsPanel) controlsPanel.style.display = this._config.show_controls === true ? "flex" : "none";
@@ -1957,6 +1961,7 @@ class BrainstormMindmapCard extends HTMLElement {
             <button class="top-tool-btn" id="colorModeBtn" style="display: ${this._config.show_color_toggle === true ? 'inline-flex' : 'none'};" title="${this._colorMode === 'theme' ? t("Farbmodus: Theme-Farben aktiv (Klicken für Bunt)") : t("Farbmodus: Bunt aktiv (Klicken für Theme-Farben)")}">
               ${this._colorMode === 'theme' ? '🎨' : '🌈'}
             </button>
+            <button class="top-tool-btn" id="exportBtn" style="display: ${this._config.show_export_btn === true ? 'inline-flex' : 'none'};" title="${t("Map als Bild speichern")}">🖼️</button>
             <button class="fullscreen-btn" id="fullscreenToggleBtn" style="display: ${this._config.show_fullscreen_btn === true ? 'inline-flex' : 'none'};" title="${t("Vollbild umschalten (ESC zum Beenden)")}">⛶</button>
           </div>
         </div>
@@ -2240,6 +2245,8 @@ class BrainstormMindmapCard extends HTMLElement {
     if (arrangeBtn) arrangeBtn.addEventListener("click", () => this._arrangeAgain());
     const undoBtn = this.shadowRoot.getElementById("undoBtn");
     if (undoBtn) undoBtn.addEventListener("click", () => this._undo());
+    const exportBtn = this.shadowRoot.getElementById("exportBtn");
+    if (exportBtn) exportBtn.addEventListener("click", () => this._showExportDialog());
     this._updateUndoButton();
 
     // Quick Add -> Show Dialog Modal
@@ -2472,6 +2479,265 @@ class BrainstormMindmapCard extends HTMLElement {
     toast.classList.add("visible");
     clearTimeout(this._toastTimer);
     this._toastTimer = setTimeout(() => toast.classList.remove("visible"), 2500);
+  }
+
+  _showExportDialog() {
+    this._openDialog(t("🖼️ Map als Bild speichern"), (body) => {
+      body.innerHTML = `
+        <div class="dialog-label">${t("Gespeichert wird, was gerade auf der Map steht, ohne eingeklappte Zweige.")}</div>
+        <div class="dialog-footer">
+          <button class="dialog-btn dialog-btn-cancel" id="exportSvgBtn">${t("SVG (Vektor)")}</button>
+          <button class="dialog-btn dialog-btn-primary" id="exportPngBtn">${t("PNG (Bild)")}</button>
+        </div>
+      `;
+      body.querySelector("#exportSvgBtn").addEventListener("click", () => {
+        this._closeDialog();
+        this._exportMap("svg");
+      });
+      body.querySelector("#exportPngBtn").addEventListener("click", () => {
+        this._closeDialog();
+        this._exportMap("png");
+      });
+    });
+  }
+
+  _exportFileName(extension) {
+    const category = this._selectedCategory === "all" ? t("Alle") : this._selectedCategory || "map";
+    const slug = String(category)
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[̀-ͯ]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "map";
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, "0");
+    return `brainstorm-${slug}-${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}.${extension}`;
+  }
+
+  _downloadBlob(blob, name) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = name;
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  }
+
+  async _exportMap(format) {
+    try {
+      const image = this._buildMapSvg();
+      if (!image) {
+        this._showToast(t("Auf der Map ist nichts zum Speichern"));
+        return;
+      }
+      if (format === "svg") {
+        this._downloadBlob(new Blob([image.markup], { type: "image/svg+xml" }), this._exportFileName("svg"));
+        return;
+      }
+      const blob = await this._svgToPng(image);
+      this._downloadBlob(blob, this._exportFileName("png"));
+    } catch (err) {
+      console.error("[BrainstormMindmap] Export failed:", err);
+      this._showToast(t("Speichern als Bild ging nicht"));
+    }
+  }
+
+  // Draws the SVG onto a canvas at twice the size, for sharp pictures
+  _svgToPng(image, scale = 2) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(new Blob([image.markup], { type: "image/svg+xml" }));
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.ceil(image.width * scale);
+          canvas.height = Math.ceil(image.height * scale);
+          const ctx = canvas.getContext("2d");
+          ctx.scale(scale, scale);
+          ctx.drawImage(img, 0, 0, image.width, image.height);
+          URL.revokeObjectURL(url);
+          canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("empty canvas"))), "image/png");
+        } catch (err) {
+          URL.revokeObjectURL(url);
+          reject(err);
+        }
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error("SVG could not be drawn"));
+      };
+      img.src = url;
+    });
+  }
+
+  // A picture of the map as plain SVG: lines, notes and the center, in the
+  // colors the map shows right now, without buttons and badges
+  _buildMapSvg() {
+    const sr = this.shadowRoot;
+    const clouds = [...sr.querySelectorAll("#notesContainer .note-cloud:not(.draft)")];
+    if (!clouds.length) return null;
+    const xml = (text) =>
+      String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    const px = (value) => parseFloat(value) || 0;
+    const measure = document.createElement("canvas").getContext("2d");
+    const wrap = (text, font, maxWidth) => {
+      measure.font = font;
+      const lines = [];
+      String(text)
+        .split(/\n/)
+        .forEach((paragraph) => {
+          let line = "";
+          paragraph.split(/\s+/).forEach((word) => {
+            const next = line ? `${line} ${word}` : word;
+            if (line && measure.measureText(next).width > maxWidth) {
+              lines.push(line);
+              line = word;
+            } else {
+              line = next;
+            }
+          });
+          lines.push(line);
+        });
+      return lines;
+    };
+
+    const nodes = [];
+    clouds.forEach((el, index) => {
+      const pos = this._nodePositions.get(el.dataset.id);
+      if (!pos) return;
+      const style = getComputedStyle(el);
+      const textEl = el.querySelector(".cloud-text");
+      const tagEl = el.querySelector(".cat-tag");
+      const textStyle = getComputedStyle(textEl || el);
+      const tagStyle = getComputedStyle(tagEl || el);
+      const width = el.offsetWidth;
+      const padX = Math.max(px(style.paddingLeft), 10);
+      const fontSize = px(textStyle.fontSize) || 14;
+      const font = `${textStyle.fontWeight} ${fontSize}px ${textStyle.fontFamily}`;
+      const lines = wrap(textEl ? textEl.textContent.trim() : "", font, width - padX * 2);
+      const lineHeight = Math.round(fontSize * 1.35);
+      const tagSize = 10;
+      const height = 12 + tagSize + 6 + lines.length * lineHeight + 10;
+      nodes.push({
+        index,
+        x: pos.x - width / 2,
+        y: pos.y - height / 2,
+        width,
+        height,
+        padX,
+        lines,
+        lineHeight,
+        font,
+        fontSize,
+        tagSize,
+        tag: tagEl ? tagEl.textContent.trim().toUpperCase() : "",
+        tagColor: tagStyle.color,
+        textColor: textStyle.color,
+        fill: style.backgroundColor,
+        stroke: style.borderTopColor,
+        strokeWidth: px(style.borderTopWidth),
+        accent: style.borderLeftColor,
+        accentWidth: px(style.borderLeftWidth),
+        radius: Math.min(px(style.borderTopLeftRadius), height / 2),
+      });
+    });
+
+    const centerNode = sr.getElementById("centerNode");
+    const centerStyle = getComputedStyle(centerNode);
+    const centerSize = centerNode.offsetWidth || 130;
+    const center = {
+      x: this._centerPos.x,
+      y: this._centerPos.y,
+      size: centerSize,
+      round: centerStyle.borderTopLeftRadius.includes("%") || px(centerStyle.borderTopLeftRadius) >= centerSize / 2,
+      radius: px(centerStyle.borderTopLeftRadius),
+      fill: centerStyle.backgroundColor,
+      stroke: centerStyle.borderTopColor,
+      title: (sr.getElementById("centerTitle") || {}).textContent || "",
+      badge: (sr.getElementById("centerBadge") || {}).textContent || "",
+      color: getComputedStyle(sr.getElementById("centerTitle") || centerNode).color,
+    };
+
+    const pad = 40;
+    let minX = center.x - centerSize / 2;
+    let minY = center.y - centerSize / 2;
+    let maxX = center.x + centerSize / 2;
+    let maxY = center.y + centerSize / 2;
+    nodes.forEach((node) => {
+      minX = Math.min(minX, node.x);
+      minY = Math.min(minY, node.y);
+      maxX = Math.max(maxX, node.x + node.width);
+      maxY = Math.max(maxY, node.y + node.height);
+    });
+    minX -= pad;
+    minY -= pad;
+    const width = Math.ceil(maxX + pad - minX);
+    const height = Math.ceil(maxY + pad - minY);
+
+    const canvasArea = sr.getElementById("canvasArea");
+    const cardRoot = sr.getElementById("cardRoot");
+    const transparent = (color) => !color || color === "transparent" || /rgba\(.*,\s*0\)$/.test(color);
+    const areaStyle = getComputedStyle(canvasArea);
+    const background = !transparent(areaStyle.backgroundColor)
+      ? areaStyle.backgroundColor
+      : !transparent(getComputedStyle(cardRoot).backgroundColor)
+        ? getComputedStyle(cardRoot).backgroundColor
+        : "#ffffff";
+    // The neon template paints a gradient, the picture takes its dark end
+    const gradient = areaStyle.backgroundImage && areaStyle.backgroundImage.startsWith("radial-gradient");
+
+    let body = "";
+    sr.querySelectorAll("#connectorsLayer path").forEach((path) => {
+      const style = getComputedStyle(path);
+      body += `<path d="${xml(path.getAttribute("d"))}" fill="none" stroke="${xml(style.stroke)}" stroke-opacity="${xml(style.strokeOpacity)}" stroke-width="${xml(px(style.strokeWidth) || 1.8)}"${style.strokeDasharray && style.strokeDasharray !== "none" ? ` stroke-dasharray="${xml(style.strokeDasharray)}"` : ""} stroke-linecap="round" stroke-linejoin="round"/>`;
+    });
+
+    const c = center;
+    body += c.round
+      ? `<circle cx="${c.x}" cy="${c.y}" r="${c.size / 2 - 1.25}" fill="${xml(c.fill)}" stroke="${xml(c.stroke)}" stroke-width="2.5"/>`
+      : `<rect x="${c.x - c.size / 2}" y="${c.y - c.size / 2}" width="${c.size}" height="${c.size}" rx="${c.radius}" fill="${xml(c.fill)}" stroke="${xml(c.stroke)}" stroke-width="2.5"/>`;
+    body += `<text x="${c.x}" y="${c.y - 2}" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="700" fill="${xml(c.color)}">${xml(c.title)}</text>`;
+    body += `<text x="${c.x}" y="${c.y + 18}" text-anchor="middle" font-family="sans-serif" font-size="11" fill="${xml(c.stroke)}">${xml(c.badge)}</text>`;
+
+    const pageColor = gradient ? "#0b1020" : background;
+    let defs = "";
+    nodes.forEach((n) => {
+      const clipId = `clip${n.index}`;
+      defs += `<clipPath id="${clipId}"><rect x="${n.x}" y="${n.y}" width="${n.width}" height="${n.height}" rx="${n.radius}"/></clipPath>`;
+      body += `<g>`;
+      // See-through notes would show the lines behind them
+      body += `<rect x="${n.x}" y="${n.y}" width="${n.width}" height="${n.height}" rx="${n.radius}" fill="${xml(pageColor)}"/>`;
+      body += `<rect x="${n.x}" y="${n.y}" width="${n.width}" height="${n.height}" rx="${n.radius}" fill="${xml(n.fill)}" stroke="${xml(n.stroke)}" stroke-width="${n.strokeWidth || 1}"/>`;
+      if (n.accentWidth > n.strokeWidth + 0.5) {
+        body += `<rect x="${n.x}" y="${n.y}" width="${n.accentWidth}" height="${n.height}" fill="${xml(n.accent)}" clip-path="url(#${clipId})"/>`;
+      }
+      const textX = n.x + n.padX;
+      let y = n.y + 12 + n.tagSize;
+      if (n.tag) {
+        body += `<text x="${textX}" y="${y}" font-family="sans-serif" font-size="${n.tagSize}" font-weight="700" letter-spacing="0.5" fill="${xml(n.tagColor)}">${xml(n.tag)}</text>`;
+      }
+      y += 6;
+      n.lines.forEach((line) => {
+        y += n.lineHeight;
+        body += `<text x="${textX}" y="${y - (n.lineHeight - n.fontSize) / 2 - 2}" style="font: ${xml(n.font)}" fill="${xml(n.textColor)}">${xml(line)}</text>`;
+      });
+      body += `</g>`;
+    });
+
+    const markup =
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="${minX} ${minY} ${width} ${height}">` +
+      `<defs>${defs}</defs>` +
+      `<rect x="${minX}" y="${minY}" width="${width}" height="${height}" fill="${xml(pageColor)}"/>` +
+      body +
+      `</svg>`;
+    return { markup, width, height };
   }
 
   _focusMap() {
@@ -4390,6 +4656,12 @@ class BrainstormMindmapCardEditor extends HTMLElement {
         selector: { boolean: {} },
       },
       {
+        name: "show_export_btn",
+        label: t("Schaltfläche zum Speichern als Bild (🖼️) anzeigen"),
+        default: true,
+        selector: { boolean: {} },
+      },
+      {
         name: "show_add_btn",
         label: t("Neue Notiz-Schaltfläche (+ Idee) anzeigen"),
         default: true,
@@ -4615,7 +4887,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.6.16 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.6.17 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

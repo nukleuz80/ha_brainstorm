@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.6.16-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.6.17-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -108,6 +108,7 @@ Brainstorm Hub verwandelt alle deine **Amazon Echo**-Geräte im Haus in sekunden
     - **Tastatur:** Ein Klick wählt eine Notiz aus. **Tab** legt eine Unteraufgabe an, **Enter** eine Notiz daneben, **Entf** löscht nach Rückfrage, **F2** oder Doppelklick bearbeitet den Text. Mit den Pfeiltasten gehst du die Zweige entlang: links zum Oberpunkt, rechts zur ersten Unteraufgabe, hoch und runter zu den Nachbarn.
     - **Direkt bearbeiten:** Ein Klick auf den Text öffnet ihn gleich in der Wolke. **Enter** speichert, **Umschalt+Enter** macht eine neue Zeile, **Esc** bricht ab. Termin, Priorität und Echos stellst du weiter mit ✏️ im Dialog ein.
     - **Rückgängig:** **Strg+Z** oder der Knopf ↶ unten rechts nimmt die letzten Schritte dieser Sitzung zurück: neue Notizen, Textänderungen, Erledigt, Priorität, Kategorie, Verschieben, Neu ordnen und auch Löschen. Gelöschte Notizen hält Home Assistant bis zum nächsten Neustart bereit.
+    - **Vorlagen und Bild-Export:** Vier Vorlagen (Standard, Klar, Skizze, Neon) bestimmen Form, Linien und Farben. 🖼️ oben rechts speichert die Map als SVG oder PNG.
     - Stufenloser Zoom & Pan per Mausrad, Pinch-Geste oder Steuerungsbuttons.
     - **Vollbild-Modus (`⛶`):** Per Knopfdruck oder Dashboard-Einbindung als beeindruckendes Vollbild-Erlebnis (ESC zum Schließen).
     - Direkte Aktionen an jeder Gedankenwolke (Erledigen, Text editieren, Kategorie wechseln, Löschen).
@@ -163,8 +164,8 @@ HACS installiert nur die Integration. Die Karten kopierst du anschließend wie u
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` und `www/brainstorm-i18n.js` in `/config/www/`. Die dritte Datei enthält die Texte und braucht keinen Ressourcen-Eintrag.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.6.16` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.6.16` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.6.17` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.6.17` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ### Integration entfernen
@@ -261,6 +262,7 @@ title: Brainstorm Mindmap
 height: 600px               # Optionale Höhe (z.B. 550px, 600px, 100%)
 default_category: Inbox     # Standard-Kategorie beim Laden (oder 'all')
 map_template: standard      # Aussehen: standard, clean, sketch oder neon
+show_export_btn: true       # 🖼️ Map als SVG oder PNG speichern
 ```
 *Tipp:* Klicke oben rechts auf das Vollbild-Symbol `⛶`, um die Mindmap jederzeit auf den gesamten Bildschirm zu vergrößern!
 
@@ -789,6 +791,7 @@ Weitere Beispiele für Assist und Alexa liegen im Ordner [`examples/`](examples/
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.6.17`** | 03.11.2026 | **Mindmap: Export als Bild:**<br>• Der neue Knopf 🖼️ oben rechts speichert die Map als **SVG** (Vektor, scharf in jeder Größe) oder **PNG** (in doppelter Auflösung).<br>• Das Bild zeigt Linien, Notizen und die Mitte in den Farben der gewählten Vorlage, ohne Knöpfe und Abzeichen. Eingeklappte Zweige bleiben weg.<br>• Der Dateiname enthält Liste und Datum, etwa `brainstorm-haus-garten-2026-11-03.png`. Mit `show_export_btn: false` lässt sich der Knopf ausblenden. |
 | **`v1.6.16`** | 03.11.2026 | **Mindmap: Vorlagen für das Aussehen:**<br>• Vier Vorlagen im Karten-Editor: **Standard** (Wolken, Kurven, Kategoriefarben), **Klar** (Rechtecke, eckige Linien), **Skizze** (Kapseln, gestrichelt, Pastell) und **Neon** (dunkel und leuchtend).<br>• Form (`node_shape`), Linien (`line_style`) und Farben (`color_scheme`) lassen sich einzeln anders wählen, etwa Neon mit Rechtecken oder Standard einfarbig.<br>• Alle Vorlagen nutzen die Farben des Home-Assistant-Themes, nur Neon bringt seinen eigenen dunklen Hintergrund mit. |
 | **`v1.6.15`** | 03.11.2026 | **Mindmap: Rückgängig:**<br>• **Strg+Z** oder der neue Knopf ↶ unten rechts nimmt die letzten 30 Schritte dieser Sitzung zurück: neue Notizen, Text, Dialog-Änderungen, Erledigt, Priorität, Kategorie, Verschieben, Neu ordnen und Löschen. Eine kurze Meldung zeigt, was zurückgenommen wurde.<br>• **Löschen rückgängig:** Neue Aktion `brainstorm.restore_idea`. Home Assistant hält gelöschte Ideen bis zum nächsten Start bereit (höchstens 50), samt Verbindung zu ihren Unteraufgaben. Zurückholen darf nur, wer gelöscht hat. |
 | **`v1.6.14`** | 03.11.2026 | **Mindmap: Tastatur und Bearbeiten direkt in der Wolke:**<br>• **Auswahl:** Ein Klick wählt eine Notiz aus, sie bekommt einen farbigen Rahmen.<br>• **Tastatur:** Tab legt eine Unteraufgabe an, Enter eine Notiz daneben. Dafür erscheint gleich ein leeres Feld auf der Map, nach dem Speichern geht es von der neuen Notiz aus weiter. Entf löscht nach Rückfrage, F2 bearbeitet, die Pfeiltasten gehen die Zweige entlang, Esc hebt die Auswahl auf.<br>• **Direkt bearbeiten:** Ein Klick auf den Text oder ein Doppelklick öffnet ihn in der Wolke. Enter speichert, Esc bricht ab. Was in der Zeit von Home Assistant kommt, zeigt die Map erst danach an, damit nichts verloren geht. Für Termin, Priorität und Echos bleibt der Dialog hinter ✏️.<br>• Ein Klick, der ein Ziehen beendet, öffnet nichts mehr. |
