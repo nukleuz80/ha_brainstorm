@@ -537,7 +537,7 @@
         },
         "source": {
           "name": "Source",
-          "description": "Where the idea comes from, such as `alexa` or `dashboard`."
+          "description": "Where the idea comes from, such as `alexa`, `assist` or `dashboard`. Without a source the text counts as typed and keeps its wording; only a voice source shortens spoken sentences."
         },
         "device": {
           "name": "Device",

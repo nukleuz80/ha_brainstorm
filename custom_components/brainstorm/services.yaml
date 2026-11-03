@@ -23,7 +23,6 @@ add_idea:
             - urgent
     source:
       required: false
-      default: "manual"
       example: "alexa"
       selector:
         text:

@@ -280,3 +280,29 @@ async def test_cards_get_an_error_without_a_loaded_entry(
     reply = await client.receive_json()
     assert reply["success"] is False
     assert reply["error"]["code"] == "not_found"
+
+
+@pytest.mark.parametrize(
+    ("data", "expected"),
+    [
+        (
+            {"text": "Bitte prüfe statt ihrem Vorschlag die ha-mcp Doku, die."},
+            "Bitte prüfe statt ihrem Vorschlag die ha-mcp Doku, die.",
+        ),
+        (
+            {"text": "Die Hecke muss geschnitten werden", "source": "assist"},
+            "Hecke schneiden",
+        ),
+    ],
+)
+async def test_action_without_source_keeps_typed_text(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    data: dict[str, str],
+    expected: str,
+) -> None:
+    """Test that only a voice source shortens the text of the action."""
+    entry = await setup_entry()
+    await hass.services.async_call(DOMAIN, "add_idea", data, blocking=True)
+    (idea,) = entry.runtime_data.ideas
+    assert idea["text"] == expected

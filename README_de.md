@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.6.10-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.6.11-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -156,8 +156,8 @@ HACS installiert nur die Integration. Die Karten kopierst du anschließend wie u
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` und `www/brainstorm-i18n.js` in `/config/www/`. Die dritte Datei enthält die Texte und braucht keinen Ressourcen-Eintrag.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.6.10` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.6.10` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.6.11` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.6.11` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ### Integration entfernen
@@ -589,7 +589,7 @@ Fügt blitzschnell eine neue Brainstorm-Idee hinzu. Erkennt automatisch Kategori
 | `text` | Ja | Der Inhalt des Gedankens oder der Idee. |
 | `category` | Nein | Thema/Kategorie. Bleibt dies leer, wird sie aus dem Text ermittelt oder 'Inbox' zugewiesen. |
 | `priority` | Nein | Dringlichkeit der Idee (low, medium, high, urgent). Wird andernfalls automatisch erkannt. |
-| `source` | Nein | Woher die Idee stammt (z.B. alexa, companion, dashboard, etc.). |
+| `source` | Nein | Woher die Idee stammt (z.B. alexa, assist, dashboard). Ohne Quelle gilt der Text als getippt und behält seinen Wortlaut. Nur mit einer Sprachquelle werden gesprochene Sätze gekürzt. |
 | `device` | Nein | Das auslösende Gerät (z.B. "Echo Show Küche", "Wohnzimmer Echo Dot", "Jan (Handy)"). |
 | `tags` | Nein | Zusätzliche Schlagworte. |
 | `parent_id` | Nein | ID der übergeordneten Idee für Unteraufgaben/Einrückung (optional). |
@@ -764,6 +764,7 @@ Weitere Beispiele für Assist und Alexa liegen im Ordner [`examples/`](examples/
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.6.11`** | 03.11.2026 | **Getippter Text bleibt, wie er ist:** Ruft man die Aktion `brainstorm.add_idea` ohne `source` auf (Entwicklerwerkzeuge, Skripte, KI-Agenten), gilt der Text als getippt. Er behält seinen Wortlaut statt wie ein gesprochener Satz gekürzt zu werden, der Großbuchstaben mitten im Satz bekam und Wörter verlor. Sprachwege mit eigener Quelle wie `alexa` oder `assist` kürzen weiter wie bisher. |
 | **`v1.6.10`** | 03.11.2026 | **Verfasser anzeigen:** Legt jemand einen Eintrag in einer fremden Liste an, merkt sich Brainstorm ihn im neuen Feld `created_by`. Beide Karten zeigen dann ein Abzeichen mit seinem Namen, die Listenkarte mit dem Bild seiner Person, falls vorhanden. |
 | **`v1.6.9`** | 03.11.2026 | **In freigegebene Listen schreiben:** Wer eine Kategorie persönlich mit *Bearbeiten* freigegeben bekommt, legt dort neue Einträge für den Besitzer an, statt sie für sich zu behalten. Unteraufgaben gehören dem Besitzer der übergeordneten Aufgabe. Damit kann zum Beispiel eine KI über ihren eigenen Benutzer Aufgaben in deine Liste schreiben. Löschen bleibt beim Besitzer. |
 | **`v1.6.8`** | 03.11.2026 | **Home Assistant Quality Scale: Gold (Selbsteinschätzung):**<br>• **Diagnose:** *Diagnose herunterladen* liefert Zahlen und Einstellungen für Fehlerberichte, ohne Ideen-Texte, Personen oder Echos.<br>• **Reparaturen:** Home Assistant meldet, wenn der Skill-Modus an ist, aber keine öffentliche HTTPS-Adresse existiert, und wenn gewählte Echos nicht mehr da sind.<br>• **Icons:** Icons für Sensor, Listen und alle Aktionen kommen aus `icons.json`.<br>• **Übersetzte Fehler:** Auch der Fehler beim Lesen der gespeicherten Daten ist übersetzt.<br>• **Doku:** Neue Abschnitte zu Entitäten, Aktualisierung, Beispielen, bekannten Einschränkungen und Fehlerbehebung. |

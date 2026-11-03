@@ -80,7 +80,7 @@ SERVICE_ADD_IDEA_SCHEMA = vol.Schema(
         vol.Required(ATTR_TEXT): cv.string,
         vol.Optional(ATTR_CATEGORY): vol.Any(None, cv.string),
         vol.Optional(ATTR_PRIORITY): vol.Any(None, cv.string),
-        vol.Optional(ATTR_SOURCE, default="manual"): cv.string,
+        vol.Optional(ATTR_SOURCE): cv.string,
         vol.Optional(ATTR_DEVICE): vol.Any(None, cv.string),
         vol.Optional(ATTR_TAGS): vol.All(cv.ensure_list, [cv.string]),
         vol.Optional(ATTR_PARENT_ID): vol.Any(None, cv.string),
@@ -289,7 +289,12 @@ def _register_services(hass: HomeAssistant) -> None:
         text = call.data[ATTR_TEXT]
         category = call.data.get(ATTR_CATEGORY)
         priority = call.data.get(ATTR_PRIORITY)
-        source = call.data.get(ATTR_SOURCE, "manual")
+        # Without a source, someone typed the text into the action directly
+        # (developer tools, a script, an AI agent), so its wording is kept
+        source = call.data.get(ATTR_SOURCE)
+        spoken = None if source else False
+        if source is None:
+            source = "manual"
         device = call.data.get(ATTR_DEVICE)
         tags = call.data.get(ATTR_TAGS)
         parent_id = call.data.get(ATTR_PARENT_ID)
@@ -322,6 +327,7 @@ def _register_services(hass: HomeAssistant) -> None:
             trigger=trigger,
             owner=call.context.user_id or store.voice_user_for(device),
             language=language,
+            spoken=spoken,
         )
         return {"success": True, "idea": idea}
 

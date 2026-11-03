@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.6.10-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.6.11-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -136,8 +136,8 @@ HACS only installs the integration, so continue with [Install the cards](#instal
 
 1. Copy `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` and `www/brainstorm-i18n.js` from the release to `/config/www/`. The third file holds the texts and needs no resource entry.
 2. Add both under **Settings ➔ Dashboards ➔ Resources** as **JavaScript module**:
-   - `/local/brainstorm-card.js?v=1.6.10`
-   - `/local/brainstorm-mindmap-card.js?v=1.6.10`
+   - `/local/brainstorm-card.js?v=1.6.11`
+   - `/local/brainstorm-mindmap-card.js?v=1.6.11`
 3. Reload the page in your browser.
 
 ### Removing the Integration
@@ -306,9 +306,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.6.10
+  - url: /local/brainstorm-card.js?v=1.6.11
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.6.10
+  - url: /local/brainstorm-mindmap-card.js?v=1.6.11
     type: module
 ```
 
@@ -538,7 +538,7 @@ Adds a new idea and detects the category in the text, such as `Garden: plant flo
 | `text` | Yes | The content of the idea. |
 | `category` | No | Category. If empty, it is detected from the text or set to `Inbox`. |
 | `priority` | No | Urgency (`low`, `medium`, `high`, `urgent`). Detected automatically if empty. |
-| `source` | No | Where the idea comes from, such as `alexa` or `dashboard`. |
+| `source` | No | Where the idea comes from, such as `alexa`, `assist` or `dashboard`. Without a source the text counts as typed and keeps its wording. Only a voice source shortens spoken sentences. |
 | `device` | No | The device that triggered it, such as `Echo Show Küche`. |
 | `tags` | No | Additional keywords. |
 | `parent_id` | No | ID of the parent idea, to create a subtask. |
@@ -713,6 +713,7 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.6.11`** | 2026-11-03 | **Typed text stays as written:** Calling `brainstorm.add_idea` without a `source` (developer tools, scripts, AI agents) now counts as typed text. It keeps its wording instead of being shortened like a spoken sentence, which capitalized words mid-sentence and dropped some. Voice paths with their own source such as `alexa` or `assist` shorten as before. |
 | **`v1.6.10`** | 2026-11-03 | **Show the author:** When someone adds an idea to another user's list, Brainstorm keeps them in the new field `created_by`. Both cards then show a badge with their name, the list card with the picture of their person if there is one. |
 | **`v1.6.9`** | 2026-11-03 | **Writing into shared lists:** Whoever gets a category shared personally to *edit* adds new ideas there for its owner instead of keeping them. Subtasks belong to the owner of their parent. This lets an AI, for example, write tasks into your list through its own user. Deleting stays with the owner. |
 | **`v1.6.8`** | 2026-11-03 | **Home Assistant Quality Scale: Gold (self-assessed):**<br>• **Diagnostics:** *Download diagnostics* gives counts and settings for bug reports, without idea texts, people or Echos.<br>• **Repairs:** Home Assistant reports when the skill mode is on without a public HTTPS address, and when chosen Echos are gone.<br>• **Icons:** Icons for the sensor, the lists and all actions come from `icons.json`.<br>• **Translated errors:** The error for unreadable stored data is translated too.<br>• **Docs:** New chapters on entities, data updates, examples, known limitations and troubleshooting. |

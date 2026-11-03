@@ -849,6 +849,7 @@ class BrainstormStore:
         owner: str | None = None,
         shares: dict[str, str] | None = None,
         language: str | None = None,
+        spoken: bool | None = None,
     ) -> dict[str, Any]:
         """Add a new brainstorm idea."""
         pack = self._pack(language)
@@ -868,7 +869,8 @@ class BrainstormStore:
             translation_domain=DOMAIN, translation_key="invalid_text", translation_placeholders={"text": str(text)}
         )
 
-        spoken = source not in TYPED_SOURCES
+        if spoken is None:
+            spoken = source not in TYPED_SOURCES
         if (
             spoken
             and self._smart_formatting

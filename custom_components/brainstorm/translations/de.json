@@ -537,7 +537,7 @@
         },
         "source": {
           "name": "Quelle",
-          "description": "Woher die Idee stammt (z.B. alexa, companion, dashboard, etc.)."
+          "description": "Woher die Idee stammt (z.B. alexa, assist, dashboard). Ohne Quelle gilt der Text als getippt und behält seinen Wortlaut; gesprochene Sätze werden nur mit einer Sprachquelle gekürzt."
         },
         "device": {
           "name": "Erfassungsgerät",
