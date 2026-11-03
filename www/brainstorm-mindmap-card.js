@@ -1,8 +1,8 @@
-import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.15";
+import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.16";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.6.15 - Skill, Reminders, Privacy and Sharing
+ * Version: 1.6.16 - Skill, Reminders, Privacy and Sharing
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -29,7 +29,22 @@ const BRAINSTORM_MINDMAP_DEFAULTS = {
   show_controls: true,
   show_add_btn: true,
   hide_empty_categories: true,
+  map_template: "standard",
+  node_shape: "template",
+  line_style: "template",
+  color_scheme: "template",
 };
+
+// Ready-made looks; shape, lines and colors can each be chosen on their own
+const MAP_TEMPLATES = {
+  standard: { shape: "cloud", lines: "curve", scheme: "category" },
+  clean: { shape: "rect", lines: "angled", scheme: "category" },
+  sketch: { shape: "pill", lines: "dashed", scheme: "pastel" },
+  neon: { shape: "pill", lines: "curve", scheme: "neon" },
+};
+const NODE_SHAPES = ["cloud", "pill", "rect"];
+const LINE_STYLES = ["curve", "straight", "angled", "dashed"];
+const COLOR_SCHEMES = ["category", "pastel", "mono", "neon"];
 
 class BrainstormMindmapCard extends HTMLElement {
   constructor() {
@@ -121,8 +136,32 @@ class BrainstormMindmapCard extends HTMLElement {
     }
   }
 
+  // The look of the map: the template, with single parts chosen differently
+  _mapStyle() {
+    const config = this._config || {};
+    const base = MAP_TEMPLATES[config.map_template] || MAP_TEMPLATES.standard;
+    const pick = (value, allowed, fallback) => (allowed.includes(value) ? value : fallback);
+    return {
+      shape: pick(config.node_shape, NODE_SHAPES, base.shape),
+      lines: pick(config.line_style, LINE_STYLES, base.lines),
+      scheme: pick(config.color_scheme, COLOR_SCHEMES, base.scheme),
+    };
+  }
+
+  _applyMapStyle() {
+    const cardRoot = this.shadowRoot && this.shadowRoot.getElementById("cardRoot");
+    if (!cardRoot) return;
+    const style = this._mapStyle();
+    const classes = [`shape-${style.shape}`, `lines-${style.lines}`, `scheme-${style.scheme}`];
+    [...cardRoot.classList]
+      .filter((name) => /^(shape|lines|scheme)-/.test(name) && !classes.includes(name))
+      .forEach((name) => cardRoot.classList.remove(name));
+    classes.forEach((name) => cardRoot.classList.add(name));
+  }
+
   _applyConfigUpdates() {
     if (!this.shadowRoot) return;
+    this._applyMapStyle();
     const titleEl = this.shadowRoot.getElementById("cardTitle");
     if (titleEl) titleEl.textContent = this._config.title !== undefined ? this._config.title : "Brainstorm Mindmap";
 
@@ -1165,6 +1204,78 @@ class BrainstormMindmapCard extends HTMLElement {
           user-select: none;
           transition: border-color 0.15s ease, box-shadow 0.15s ease;
         }
+        /* Templates: shapes */
+        ha-card.shape-pill .note-cloud {
+          border-radius: 26px !important;
+          border-left-width: 1px;
+          border-color: color-mix(in srgb, var(--cat-color, var(--primary-color, #03a9f4)) 55%, transparent);
+          padding-left: 18px !important;
+          padding-right: 18px !important;
+        }
+        ha-card.shape-rect .note-cloud {
+          border-radius: 3px !important;
+        }
+        ha-card.shape-rect .center-node {
+          border-radius: 14px !important;
+        }
+        /* Templates: lines */
+        ha-card.lines-straight .synapse-path,
+        ha-card.lines-angled .synapse-path {
+          stroke-dasharray: none;
+        }
+        ha-card.lines-angled .synapse-path {
+          stroke-linejoin: round;
+        }
+        ha-card.lines-dashed .synapse-path {
+          stroke-dasharray: 7, 5;
+          stroke-linecap: round;
+        }
+        /* Templates: colors */
+        ha-card.scheme-pastel .note-cloud,
+        ha-card.scheme-pastel .center-node {
+          background: color-mix(in srgb, var(--cat-color, var(--primary-color, #03a9f4)) 15%, var(--card-background-color, #ffffff));
+        }
+        ha-card.scheme-pastel .note-cloud {
+          border-color: color-mix(in srgb, var(--cat-color, var(--primary-color, #03a9f4)) 40%, transparent);
+          box-shadow: none;
+        }
+        ha-card.scheme-pastel .synapse-path {
+          stroke-opacity: 0.55;
+        }
+        ha-card.scheme-mono .note-cloud,
+        ha-card.scheme-mono .center-node {
+          --cat-color: var(--secondary-text-color, #64748b) !important;
+        }
+        ha-card.scheme-mono .center-node {
+          border-color: var(--primary-text-color, #1e293b) !important;
+        }
+        ha-card.scheme-mono .synapse-path {
+          --path-color: var(--secondary-text-color, #64748b) !important;
+        }
+        ha-card.scheme-mono .note-cloud.selected {
+          --cat-color: var(--primary-color, #03a9f4) !important;
+        }
+        ha-card.scheme-neon .canvas-area {
+          --primary-text-color: #e2e8f0;
+          --secondary-text-color: #94a3b8;
+          --card-background-color: #0f172a;
+          --ha-card-background: #0f172a;
+          --divider-color: rgba(148, 163, 184, 0.25);
+          background: radial-gradient(circle at 50% 45%, #1e1b4b 0%, #0b1020 70%);
+        }
+        ha-card.scheme-neon .note-cloud {
+          background: rgba(15, 23, 42, 0.92);
+          border: 1px solid var(--cat-color, #22d3ee);
+          box-shadow: 0 0 14px color-mix(in srgb, var(--cat-color, #22d3ee) 55%, transparent);
+        }
+        ha-card.scheme-neon .center-node {
+          background: #0f172a;
+          box-shadow: 0 0 26px color-mix(in srgb, var(--cat-color, #22d3ee) 60%, transparent) !important;
+        }
+        ha-card.scheme-neon .synapse-path {
+          stroke-opacity: 0.85;
+          filter: drop-shadow(0 0 3px var(--path-color, #22d3ee));
+        }
         .control-btn:disabled {
           opacity: 0.35;
           cursor: default;
@@ -1902,6 +2013,7 @@ class BrainstormMindmapCard extends HTMLElement {
       </ha-card>
     `;
 
+    this._applyMapStyle();
     this._bindEvents();
   }
 
@@ -3023,6 +3135,23 @@ class BrainstormMindmapCard extends HTMLElement {
     this._drawConnections();
   }
 
+  _linePath(lines, x1, y1, x2, y2) {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    if (lines === "straight") return `M ${x1} ${y1} L ${x2} ${y2}`;
+    if (lines === "angled") {
+      // Out sideways, then up or down, then on to the note
+      const midX = x1 + dx / 2;
+      return `M ${x1} ${y1} H ${midX} V ${y2} H ${x2}`;
+    }
+    // Cubic Bézier curve for an organic synapse look
+    const cx1 = x1 + dx * 0.35;
+    const cy1 = y1 + dy * 0.15;
+    const cx2 = x1 + dx * 0.65;
+    const cy2 = y1 + dy * 0.85;
+    return `M ${x1} ${y1} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${x2} ${y2}`;
+  }
+
   _drawConnections() {
     const svg = this.shadowRoot.getElementById("connectorsLayer");
     if (!svg) return;
@@ -3042,6 +3171,7 @@ class BrainstormMindmapCard extends HTMLElement {
     }
 
     const ids = new Set(activeIdeas.map((i) => i.id));
+    const lines = this._mapStyle().lines;
     let svgHtml = "";
     activeIdeas.forEach((idea) => {
       const el = this.shadowRoot.getElementById(`cloud_${idea.id}`);
@@ -3058,15 +3188,7 @@ class BrainstormMindmapCard extends HTMLElement {
       const x2 = pos.x;
       const y2 = pos.y;
 
-      // Cubic Bézier curve calculation for organic synapse effect
-      const dx = x2 - x1;
-      const dy = y2 - y1;
-      const cx1 = x1 + dx * 0.35;
-      const cy1 = y1 + dy * 0.15;
-      const cx2 = x1 + dx * 0.65;
-      const cy2 = y1 + dy * 0.85;
-
-      const pathData = `M ${x1} ${y1} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${x2} ${y2}`;
+      const pathData = this._linePath(lines, x1, y1, x2, y2);
       svgHtml += `
         <path id="path_${idea.id}" class="synapse-path${from ? " branch-path" : ""}" d="${pathData}" style="--path-color: ${catColor};" />
       `;
@@ -4136,6 +4258,72 @@ class BrainstormMindmapCardEditor extends HTMLElement {
         },
       },
       {
+        name: "map_template",
+        label: t("Vorlage für das Aussehen"),
+        default: "standard",
+        selector: {
+          select: {
+            mode: "dropdown",
+            options: [
+              { value: "standard", label: t("Standard: Wolken, Kurven, Kategoriefarben") },
+              { value: "clean", label: t("Klar: Rechtecke, eckige Linien") },
+              { value: "sketch", label: t("Skizze: Kapseln, gestrichelt, Pastell") },
+              { value: "neon", label: t("Neon: dunkel und leuchtend") },
+            ],
+          },
+        },
+      },
+      {
+        name: "node_shape",
+        label: t("Form der Notizen"),
+        default: "template",
+        selector: {
+          select: {
+            mode: "dropdown",
+            options: [
+              { value: "template", label: t("Wie die Vorlage") },
+              { value: "cloud", label: t("Wolke") },
+              { value: "pill", label: t("Kapsel") },
+              { value: "rect", label: t("Rechteck") },
+            ],
+          },
+        },
+      },
+      {
+        name: "line_style",
+        label: t("Linien"),
+        default: "template",
+        selector: {
+          select: {
+            mode: "dropdown",
+            options: [
+              { value: "template", label: t("Wie die Vorlage") },
+              { value: "curve", label: t("Kurve") },
+              { value: "straight", label: t("Gerade") },
+              { value: "angled", label: t("Eckig") },
+              { value: "dashed", label: t("Gestrichelt") },
+            ],
+          },
+        },
+      },
+      {
+        name: "color_scheme",
+        label: t("Farbschema"),
+        default: "template",
+        selector: {
+          select: {
+            mode: "dropdown",
+            options: [
+              { value: "template", label: t("Wie die Vorlage") },
+              { value: "category", label: t("Kategoriefarben") },
+              { value: "pastel", label: t("Pastell") },
+              { value: "mono", label: t("Einfarbig") },
+              { value: "neon", label: t("Neon") },
+            ],
+          },
+        },
+      },
+      {
         name: "height",
         label: t("Höhe der Mindmap (z.B. 600px, 75vh, calc(100vh - 32px))"),
         default: "calc(100vh - 32px)",
@@ -4427,7 +4615,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.6.15 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.6.16 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );
