@@ -1,8 +1,8 @@
-import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.13";
+import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.14";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.6.13 - Skill, Reminders, Privacy and Sharing
+ * Version: 1.6.14 - Skill, Reminders, Privacy and Sharing
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -61,6 +61,10 @@ class BrainstormMindmapCard extends HTMLElement {
     this._lastAlexaKey = null;
     this._lastDataSignature = "";
     this._isModalOpen = false;
+    // The note the keyboard works on, and the text field open in a note
+    this._selectedId = null;
+    this._inlineEdit = null;
+    this._dragEndedAt = 0;
   }
 
   static async getConfigElement() {
@@ -178,6 +182,10 @@ class BrainstormMindmapCard extends HTMLElement {
     }
     // Don't re-render and interrupt active interactions
     if (this._activeDrag || this._pendingDrag || this._isModalOpen) {
+      return;
+    }
+    if (this._inlineEdit) {
+      this._inlineEdit.deferred = true;
       return;
     }
     this._lastDataSignature = sig;
@@ -1151,6 +1159,41 @@ class BrainstormMindmapCard extends HTMLElement {
           user-select: none;
           transition: border-color 0.15s ease, box-shadow 0.15s ease;
         }
+        .canvas-area:focus {
+          outline: none;
+        }
+        .note-cloud.selected {
+          border-color: var(--cat-color, var(--primary-color, #03a9f4));
+          box-shadow: 0 0 0 3px color-mix(in srgb, var(--cat-color, var(--primary-color, #03a9f4)) 40%, transparent);
+          z-index: 12;
+        }
+        .note-cloud.draft {
+          z-index: 30;
+          cursor: text;
+        }
+        .cloud-inline-editor {
+          display: block;
+          box-sizing: border-box;
+          width: 100%;
+          min-width: 140px;
+          margin: 0 0 6px;
+          padding: 4px 6px;
+          border: 1px solid var(--cat-color, var(--primary-color, #03a9f4));
+          border-radius: 8px;
+          background: var(--card-background-color, #ffffff);
+          color: var(--primary-text-color, #1e293b);
+          font: inherit;
+          font-size: 0.92rem;
+          line-height: 1.3;
+          resize: none;
+          overflow: hidden;
+          outline: none;
+          user-select: text;
+          cursor: text;
+        }
+        .note-cloud.draft .cloud-inline-editor {
+          margin: 0;
+        }
         .branch-toggle {
           position: absolute;
           top: -12px;
@@ -1775,7 +1818,7 @@ class BrainstormMindmapCard extends HTMLElement {
         </div>
 
         <!-- Interactive Canvas Area -->
-        <div class="canvas-area" id="canvasArea">
+        <div class="canvas-area" id="canvasArea" tabindex="0">
           <div class="grid-bg" id="gridBg" style="display: ${this._config.show_grid !== false ? 'block' : 'none'};"></div>
           <div class="viewport" id="viewport">
             <svg class="connectors" id="connectorsLayer"></svg>
@@ -2027,6 +2070,8 @@ class BrainstormMindmapCard extends HTMLElement {
       fullscreenBtn.addEventListener("click", toggleFullscreen);
     }
 
+    canvasArea.addEventListener("keydown", (e) => this._onMapKey(e));
+
     window.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
         if (this._isModalOpen) {
@@ -2225,12 +2270,231 @@ class BrainstormMindmapCard extends HTMLElement {
     return result;
   }
 
+  _focusMap() {
+    const canvasArea = this.shadowRoot.getElementById("canvasArea");
+    if (canvasArea) canvasArea.focus({ preventScroll: true });
+  }
+
+  _selectIdea(id) {
+    this._selectedId = id;
+    this.shadowRoot.querySelectorAll(".note-cloud.selected").forEach((el) => el.classList.remove("selected"));
+    const el = id && this.shadowRoot.getElementById(`cloud_${id}`);
+    if (el) el.classList.add("selected");
+    if (id) this._focusMap();
+  }
+
+  // Keys on the map: Tab adds a subtask, Enter a note beside it, Delete removes
+  // it after asking, F2 edits it, the arrows walk along the branches
+  _onMapKey(e) {
+    if (this._isModalOpen || this._inlineEdit || e.ctrlKey || e.metaKey || e.altKey) return;
+    const target = e.composedPath()[0];
+    if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
+    const ideas = this._mapIdeas();
+    const ids = new Set(ideas.map((i) => i.id));
+    const idea = ideas.find((i) => i.id === this._selectedId);
+    const key = e.key;
+
+    if (!idea) {
+      if (key === "Enter") {
+        e.preventDefault();
+        this._showAddDialog();
+      } else if (key.startsWith("Arrow") && ideas.length) {
+        e.preventDefault();
+        const first = ideas.find((i) => !this._branchParent(i, ids)) || ideas[0];
+        this._selectIdea(first.id);
+      }
+      return;
+    }
+
+    const parentId = this._branchParent(idea, ids);
+    const siblings = ideas.filter((i) => this._branchParent(i, ids) === parentId);
+    const children = ideas.filter((i) => this._branchParent(i, ids) === idea.id);
+    const step = (offset) => {
+      const index = siblings.findIndex((i) => i.id === idea.id);
+      const next = siblings[(index + offset + siblings.length) % siblings.length];
+      if (next) this._selectIdea(next.id);
+    };
+
+    if (key === "Tab" && !e.shiftKey) {
+      e.preventDefault();
+      this._startDraft(idea, true);
+    } else if (key === "Enter") {
+      e.preventDefault();
+      this._startDraft(idea, false);
+    } else if (key === "Delete" || key === "Backspace") {
+      e.preventDefault();
+      this._showDeleteConfirm(idea.id, idea.text);
+    } else if (key === "F2") {
+      e.preventDefault();
+      this._startInlineEdit(idea.id);
+    } else if (key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
+      this._selectIdea(null);
+    } else if (key === "ArrowLeft") {
+      e.preventDefault();
+      if (parentId) this._selectIdea(parentId);
+    } else if (key === "ArrowRight") {
+      e.preventDefault();
+      if (this._collapsed.has(idea.id)) this._toggleBranch(idea.id);
+      else if (children.length) this._selectIdea(children[0].id);
+    } else if (key === "ArrowUp" || key === "ArrowDown") {
+      e.preventDefault();
+      step(key === "ArrowUp" ? -1 : 1);
+    }
+  }
+
+  // A text field inside a note: Enter keeps the text, Shift+Enter starts a new
+  // line, Escape gives up, leaving the field keeps what was typed
+  _openInlineEditor(textarea, onSave, onCancel) {
+    let finished = false;
+    const grow = () => {
+      textarea.style.height = "auto";
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    };
+    const finish = (save) => {
+      if (finished) return;
+      finished = true;
+      const text = (textarea.value || "").trim();
+      const deferred = this._inlineEdit && this._inlineEdit.deferred;
+      this._inlineEdit = null;
+      if (save && text) onSave(text);
+      else onCancel();
+      this._focusMap();
+      // Show what arrived from Home Assistant while the field was open
+      if (deferred && this._hass) this.hass = this._hass;
+    };
+    textarea.addEventListener("input", grow);
+    textarea.addEventListener("keydown", (e) => {
+      e.stopPropagation();
+      if ((e.key === "Enter" && !e.shiftKey) || e.key === "Tab") {
+        e.preventDefault();
+        finish(true);
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        finish(false);
+      }
+    });
+    textarea.addEventListener("blur", () => finish(true));
+    ["mousedown", "touchstart", "click", "dblclick", "wheel"].forEach((type) =>
+      textarea.addEventListener(type, (e) => e.stopPropagation(), { passive: true })
+    );
+    this._inlineEdit = { textarea };
+    grow();
+    textarea.focus({ preventScroll: true });
+  }
+
+  _startInlineEdit(id) {
+    if (this._inlineEdit || this._isModalOpen) return;
+    const idea = this._categoryIdeas().find((i) => i.id === id);
+    const cloud = this.shadowRoot.getElementById(`cloud_${id}`);
+    const textEl = cloud && cloud.querySelector(".cloud-text");
+    if (!idea || !textEl) return;
+    const textarea = document.createElement("textarea");
+    textarea.className = "cloud-inline-editor";
+    textarea.rows = 1;
+    textarea.value = idea.text || "";
+    textEl.style.display = "none";
+    textEl.after(textarea);
+    cloud.classList.add("editing");
+    const close = () => {
+      textarea.remove();
+      textEl.style.display = "";
+      cloud.classList.remove("editing");
+    };
+    this._openInlineEditor(
+      textarea,
+      (text) => {
+        close();
+        if (text === (idea.text || "").trim()) return;
+        textEl.textContent = text;
+        this._hass
+          .callService("brainstorm", "update_idea", { id, text })
+          .catch((err) => {
+            console.error("[BrainstormMindmap] Failed to update idea:", err);
+            textEl.textContent = idea.text || "";
+          });
+      },
+      close
+    );
+    textarea.select();
+  }
+
+  // An empty note right on the map, as a subtask of the anchor or beside it
+  _startDraft(anchor, asChild) {
+    if (this._inlineEdit || this._isModalOpen || !this._hass) return;
+    const ids = new Set(this._categoryIdeas().map((i) => i.id));
+    const parentId = asChild ? anchor.id : this._branchParent(anchor, ids);
+    if (asChild && this._collapsed.has(anchor.id)) this._toggleBranch(anchor.id);
+    const container = this.shadowRoot.getElementById("notesContainer");
+    const pos = this._nodePositions.get(anchor.id);
+    if (!container || !pos) return;
+
+    let x = pos.x;
+    let y = pos.y + 90;
+    if (asChild) {
+      // Further out, away from the center
+      const dx = pos.x - this._centerPos.x;
+      const dy = pos.y - this._centerPos.y;
+      const length = Math.hypot(dx, dy) || 1;
+      x = pos.x + (dx / length) * 190;
+      y = pos.y + (dy / length) * 130;
+    }
+
+    const draft = document.createElement("div");
+    draft.className = "note-cloud draft selected";
+    draft.style.setProperty("--cat-color", this._getCategoryColor(anchor.category));
+    draft.style.left = `${x}px`;
+    draft.style.top = `${y}px`;
+    const textarea = document.createElement("textarea");
+    textarea.className = "cloud-inline-editor";
+    textarea.rows = 1;
+    textarea.placeholder = asChild ? t("Neue Unteridee …") : t("Neue Idee …");
+    draft.appendChild(textarea);
+    container.appendChild(draft);
+    this.shadowRoot.querySelectorAll(".note-cloud.selected").forEach((el) => {
+      if (el !== draft) el.classList.remove("selected");
+    });
+
+    this._openInlineEditor(
+      textarea,
+      (text) => {
+        draft.remove();
+        this._hass
+          .callWS({
+            type: "call_service",
+            domain: "brainstorm",
+            service: "add_idea",
+            service_data: {
+              text,
+              category: anchor.category,
+              source: "dashboard",
+              ...(parentId ? { parent_id: parentId } : {}),
+            },
+            return_response: true,
+          })
+          .then((result) => {
+            const created = result && result.response && result.response.idea;
+            // The keyboard goes on from the new note
+            if (created && created.id) this._selectIdea(created.id);
+          })
+          .catch((err) => console.error("[BrainstormMindmap] Failed to add idea:", err));
+      },
+      () => {
+        draft.remove();
+        this._selectIdea(anchor.id);
+      }
+    );
+  }
+
   _finishDrag() {
     const drag = this._activeDrag;
     const el = this.shadowRoot.getElementById(`cloud_${drag.id}`);
     if (el) el.classList.remove("dragging");
     const moved = [drag.id, ...(drag.group || []).map((g) => g.id)];
     this._activeDrag = null;
+    // The click that ends a drag neither selects nor edits
+    this._dragEndedAt = Date.now();
     if (!this._usesSavedPositions()) {
       moved.forEach((id) => this._userMovedNodes.add(id));
       return;
@@ -2886,7 +3150,7 @@ class BrainstormMindmapCard extends HTMLElement {
           : "";
 
         html += `
-          <div class="note-cloud ${prioClass}" id="cloud_${idea.id}" data-id="${idea.id}" style="--cat-color: ${color};">
+          <div class="note-cloud ${prioClass}${idea.id === this._selectedId ? " selected" : ""}" id="cloud_${idea.id}" data-id="${idea.id}" style="--cat-color: ${color};">
             ${branchToggle}
             <div class="cloud-meta">
               <span class="cat-tag" data-cat="${this._escapeHtml(idea.category)}" title="${t("Kategorie ändern")}">
@@ -2984,7 +3248,7 @@ class BrainstormMindmapCard extends HTMLElement {
 
         // Mouse down records pending drag - only moves if threshold > 5px (prevents click jitter!)
         cloud.addEventListener("mousedown", (e) => {
-          if (e.target.closest(".action-btn") || e.target.closest(".cat-tag") || e.target.closest(".prio-tag") || e.target.closest(".branch-toggle")) return;
+          if (e.target.closest(".action-btn") || e.target.closest(".cat-tag") || e.target.closest(".prio-tag") || e.target.closest(".branch-toggle") || e.target.closest(".cloud-inline-editor")) return;
           if (e.button !== 0) return;
           const pos = this._nodePositions.get(id) || { x: 0, y: 0 };
           this._pendingDrag = {
@@ -3000,7 +3264,7 @@ class BrainstormMindmapCard extends HTMLElement {
 
         // Touch start records pending drag
         cloud.addEventListener("touchstart", (e) => {
-          if (e.target.closest(".action-btn") || e.target.closest(".cat-tag") || e.target.closest(".prio-tag") || e.target.closest(".branch-toggle")) return;
+          if (e.target.closest(".action-btn") || e.target.closest(".cat-tag") || e.target.closest(".prio-tag") || e.target.closest(".branch-toggle") || e.target.closest(".cloud-inline-editor")) return;
           if (e.touches.length === 1) {
             const touch = e.touches[0];
             const pos = this._nodePositions.get(id) || { x: 0, y: 0 };
@@ -3043,12 +3307,22 @@ class BrainstormMindmapCard extends HTMLElement {
           });
         }
 
-        // Text click or edit button -> Edit Dialog
+        // A click selects the note, a click on its text edits it right there
+        cloud.addEventListener("click", (e) => {
+          if (Date.now() - this._dragEndedAt < 300 || e.target.closest(".cloud-inline-editor")) return;
+          this._selectIdea(idea.id);
+        });
+        cloud.addEventListener("dblclick", (e) => {
+          if (e.target.closest(".action-btn") || e.target.closest(".cloud-inline-editor")) return;
+          this._startInlineEdit(idea.id);
+        });
         const textEl = cloud.querySelector(".cloud-text");
         if (textEl) {
           textEl.addEventListener("click", (e) => {
             e.stopPropagation();
-            this._showEditDialog(idea.id, idea.text, idea.category, idea.priority);
+            if (Date.now() - this._dragEndedAt < 300) return;
+            this._selectIdea(idea.id);
+            this._startInlineEdit(idea.id);
           });
         }
 
@@ -3066,6 +3340,7 @@ class BrainstormMindmapCard extends HTMLElement {
           btn.addEventListener("click", (e) => {
             e.stopPropagation();
             const act = btn.getAttribute("data-act");
+            this._selectIdea(idea.id);
             if (act === "done") this._completeIdea(idea.id);
             else if (act === "branch") this._showAddDialog(idea);
             else if (act === "edit") this._showEditDialog(idea.id, idea.text, idea.category, idea.priority);
@@ -3108,6 +3383,8 @@ class BrainstormMindmapCard extends HTMLElement {
     const dialog = this.shadowRoot.getElementById("mindmapDialog");
     if (dialog) dialog.style.display = "none";
     this._isModalOpen = false;
+    // Keys keep working on the map after a dialog
+    if (this._selectedId) this._focusMap();
   }
 
   _showCategoryPicker(id, currentCategory, noteText) {
@@ -4004,7 +4281,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.6.13 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.6.14 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

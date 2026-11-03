@@ -58,6 +58,8 @@ const DICTIONARIES = {
     "Unteridee anlegen": "Add a subidea",
     "🌿 Neue Unteridee": "🌿 New subidea",
     "Unter: {text}": "Below: {text}",
+    "Neue Unteridee …": "New subtask …",
+    "Neue Idee …": "New note …",
     "Zweig aufklappen": "Unfold branch",
     "Zweig einklappen": "Fold branch",
     "Ordnen": "Arrange",

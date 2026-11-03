@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.6.13-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.6.14-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -84,6 +84,8 @@ Brainstorm Hub turns every **Amazon Echo** device in your home into an instant, 
   - **Saved layout:** In a single list, notes you drag keep their place on every device. A parent takes its subtasks along. The overview of all lists arranges itself.
   - **Fold branches:** The round button on a note with subtasks folds its branch and shows how many notes it hides. Each device remembers what is folded.
   - **Tree layout:** Every branch gets its own slice of the circle, so lines do not cross. 🪄 puts notes placed by hand back to their automatic place.
+  - **Keyboard:** A click selects a note. **Tab** adds a subtask, **Enter** a note beside it, **Delete** removes it after asking, **F2** or a double click edits the text. The arrow keys walk along the branches: left to the parent, right to the first subtask, up and down to the neighbours.
+  - **Edit in place:** A click on the text opens it right in the cloud. **Enter** saves, **Shift+Enter** adds a line, **Esc** cancels. Due date, priority and Echos stay in the dialog behind ✏️.
 - 🎴 **Quick Capture Card (`custom:brainstorm-card`):**
   - Two-tiered sleek design with quick-input bar, priority selector, category pills, and full edit/delete modal dialogs.
   - View switcher (`🧠 Mindmap` ⇄ `📋 List`) in card header.
@@ -140,8 +142,8 @@ HACS only installs the integration, so continue with [Install the cards](#instal
 
 1. Copy `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` and `www/brainstorm-i18n.js` from the release to `/config/www/`. The third file holds the texts and needs no resource entry.
 2. Add both under **Settings ➔ Dashboards ➔ Resources** as **JavaScript module**:
-   - `/local/brainstorm-card.js?v=1.6.13`
-   - `/local/brainstorm-mindmap-card.js?v=1.6.13`
+   - `/local/brainstorm-card.js?v=1.6.14`
+   - `/local/brainstorm-mindmap-card.js?v=1.6.14`
 3. Reload the page in your browser.
 
 ### Removing the Integration
@@ -310,9 +312,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.6.13
+  - url: /local/brainstorm-card.js?v=1.6.14
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.6.13
+  - url: /local/brainstorm-mindmap-card.js?v=1.6.14
     type: module
 ```
 
@@ -717,6 +719,7 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.6.14`** | 2026-11-03 | **Mind map: keyboard and editing in place:**<br>• **Selection:** A click selects a note and gives it a coloured frame.<br>• **Keyboard:** Tab adds a subtask, Enter a note beside it. An empty field shows up on the map right away, and after saving you carry on from the new note. Delete removes it after asking, F2 edits, the arrow keys walk along the branches, Esc clears the selection.<br>• **Edit in place:** A click on the text or a double click opens it in the cloud. Enter saves, Esc cancels. Updates from Home Assistant wait until you are done, so nothing gets lost. The dialog behind ✏️ stays for due date, priority and Echos.<br>• A click that ends a drag no longer opens anything. |
 | **`v1.6.13`** | 2026-11-03 | **Mind map: fold branches and arrange them as a tree:**<br>• **Fold:** Notes with subtasks have a round button. It folds the branch and then shows how many notes it holds, such as “+5”. Each device remembers this on its own. Dragging a folded note moves the saved places of its subtasks along.<br>• **Tree layout:** With branches, each one gets a slice of the circle that fits its size. Subtasks sit further out and lines do not cross. Notes moved by hand stay where they are. Lists without branches look as before.<br>• **Arrange again (🪄):** The new button at the bottom right asks first, then puts every note of the list placed by hand back to its automatic place, on every device. |
 | **`v1.6.12`** | 2026-11-03 | **Mind map with branches and a saved layout:**<br>• **Branches:** Subtasks hang on their parent idea on the map, and the line starts there. A new 🌿 button on every note adds a subidea.<br>• **Positions stay:** When you drag a note in a single list, Brainstorm keeps its place in the new field `map_pos`, relative to the center so it fits every screen size. It then sits there on every device. A parent takes its subtasks along.<br>• **New WebSocket command** `brainstorm/map_positions` saves or clears several positions at once, only for ideas you may edit. An idea that changes its category forgets its position. |
 | **`v1.6.11`** | 2026-11-03 | **Typed text stays as written:** Calling `brainstorm.add_idea` without a `source` (developer tools, scripts, AI agents) now counts as typed text. It keeps its wording instead of being shortened like a spoken sentence, which capitalized words mid-sentence and dropped some. Voice paths with their own source such as `alexa` or `assist` shorten as before. |
