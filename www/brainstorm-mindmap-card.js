@@ -1,8 +1,8 @@
-import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.5";
+import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.6";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.6.5 - Skill, Reminders, Privacy and Sharing
+ * Version: 1.6.6 - Skill, Reminders, Privacy and Sharing
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -1577,6 +1577,40 @@ class BrainstormMindmapCard extends HTMLElement {
           padding-bottom: 0;
           line-height: normal;
         }
+        .dialog-echo-details[open] .dialog-echo-summary {
+          margin-bottom: 10px;
+        }
+        .dialog-echo-summary {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          min-height: 44px;
+          cursor: pointer;
+          list-style: none;
+        }
+        .dialog-echo-summary::-webkit-details-marker {
+          display: none;
+        }
+        .dialog-echo-summary::after {
+          content: "▾";
+          margin-left: auto;
+          color: var(--secondary-text-color, #64748b);
+          transition: transform 0.15s ease;
+        }
+        .dialog-echo-details[open] .dialog-echo-summary::after {
+          transform: rotate(180deg);
+        }
+        .dialog-echo-chosen {
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          font-size: 0.85rem;
+          color: var(--primary-text-color, #212121);
+        }
+        .dialog-echo-details .dialog-hint {
+          margin-top: 6px;
+        }
         .dialog-echo-grid {
           display: grid;
           grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -2890,7 +2924,11 @@ class BrainstormMindmapCard extends HTMLElement {
         <div class="dialog-hint">${t("Ohne Uhrzeit erinnert Brainstorm um 9:00.")}</div>
 
         ${echos.length ? `
-          <div class="dialog-label">${t("Erinnern auf:")}</div>
+          <details class="dialog-echo-details">
+          <summary class="dialog-echo-summary">
+            <span class="dialog-label">${t("Erinnern auf:")}</span>
+            <span class="dialog-echo-chosen" id="editEchoChosen"></span>
+          </summary>
           <div class="dialog-echo-grid" id="editEchoGrid">
             ${echos
               .map(
@@ -2904,6 +2942,7 @@ class BrainstormMindmapCard extends HTMLElement {
               .join("")}
           </div>
           <div class="dialog-hint">${t("Ohne Auswahl gelten die Einstellungen der Erinnerungen.")}</div>
+          </details>
         ` : ""}
 
         <div class="dialog-footer">
@@ -2925,6 +2964,13 @@ class BrainstormMindmapCard extends HTMLElement {
         dueDate.value = "";
         dueTime.value = "";
       });
+      const echoChosen = body.querySelector("#editEchoChosen");
+      const showChosenEchos = () => {
+        if (!echoChosen) return;
+        const names = echos.filter((echo) => selectedEchos.includes(echo.id)).map((echo) => echo.name);
+        echoChosen.textContent = names.length ? names.join(", ") : t("Wie in den Einstellungen");
+      };
+      showChosenEchos();
       body.querySelectorAll("#editEchoGrid .dialog-cat-chip").forEach((chip) => {
         chip.addEventListener("click", () => {
           const echo = chip.getAttribute("data-echo");
@@ -2932,6 +2978,7 @@ class BrainstormMindmapCard extends HTMLElement {
           selectedEchos = chip.classList.contains("selected")
             ? [...selectedEchos, echo]
             : selectedEchos.filter((e) => e !== echo);
+          showChosenEchos();
         });
       });
 
@@ -3609,7 +3656,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.6.5 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.6.6 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

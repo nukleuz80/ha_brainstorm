@@ -178,6 +178,7 @@ const DICTIONARIES = {
     "Ohne Auswahl gelten die Einstellungen der Erinnerungen.": "Without a choice, the reminder settings apply.",
     "Ohne Uhrzeit erinnert Brainstorm um 9:00.": "Without a time, Brainstorm reminds you at 9:00.",
     "Termin:": "Due:",
+    "Wie in den Einstellungen": "As in the settings",
     "Termin entfernen": "Remove due date",
     "Übernehmen": "Use it",
     "— Keine (Hauptaufgabe) —": "— None (main task) —",
