@@ -103,6 +103,8 @@ class BrainstormTodoList(TodoListEntity):
 
     _attr_has_entity_name = True
     _attr_should_poll = False
+    # Gives the icon, the name stays the category's own name
+    _attr_translation_key = "category"
     _attr_supported_features = (
         TodoListEntityFeature.CREATE_TODO_ITEM
         | TodoListEntityFeature.UPDATE_TODO_ITEM
@@ -117,7 +119,6 @@ class BrainstormTodoList(TodoListEntity):
         self._category = category
         self._attr_unique_id = _todo_unique_id(entry_id, category)
         self._attr_name = category
-        self._attr_icon = "mdi:lightbulb-outline"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry_id)},
             name="Brainstorm Hub",

@@ -8,9 +8,9 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.6.7-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.6.8-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
-[![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver%20Selbsteinsch%C3%A4tzung-C0C0C0.svg)](https://contributors.home-assistant.io/core/quality-scale/)
+[![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/nukleuz80/ha_brainstorm)
@@ -156,8 +156,8 @@ HACS installiert nur die Integration. Die Karten kopierst du anschließend wie u
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` und `www/brainstorm-i18n.js` in `/config/www/`. Die dritte Datei enthält die Texte und braucht keinen Ressourcen-Eintrag.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.6.7` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.6.7` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.6.8` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.6.8` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ### Integration entfernen
@@ -565,6 +565,15 @@ Du findest sie unter **Einstellungen ➔ Geräte & Dienste ➔ Brainstorm Hub �
 
 ---
 
+## 🧩 Entitäten
+
+| Entität | Was sie zeigt |
+|---|---|
+| `sensor.brainstorm_ideen_ubersicht` | Anzahl offener Ideen. Attribute: `active_count`, `completed_count`, `category_counts`, `priority_counts`, `categories`, `active_categories`, `latest_idea`, `recent_ideas`, `ideas`, `speech_overview`, `voice_mode`, `allowed_echos`. Mit eingeschalteter Privatsphäre sind nur Zahlen zu sehen. |
+| `todo.<kategorie>` | Eine To-do-Liste pro Kategorie. Einträge lassen sich in der To-do-Ansicht anlegen, umbenennen, erledigen, mit Termin versehen und löschen; die Karten zeigen das sofort. Neue Kategorien bekommen gleich eine Liste, gelöschte verlieren ihre. |
+
+Alle Entitäten gehören zum Gerät **Brainstorm Hub**. Unter **Einstellungen > Geräte & Dienste > Brainstorm Hub > ⋮ > Diagnose herunterladen** gibt es eine Datei für Fehlerberichte. Sie enthält Zahlen und Einstellungen, aber keine Ideen-Texte, Personen oder Echos.
+
 ## 🛠️ Dienste (Services)
 
 Jede Aktion bleibt verfügbar, solange die Integration nicht geladen ist, und erklärt dann, warum sie nicht ausgeführt werden kann.
@@ -691,10 +700,69 @@ Gibt mehrere Einträge oder eine ganze Kategorie für Personen frei. Braucht ein
 
 ---
 
+## 🔄 Wie die Daten aktualisiert werden
+
+Brainstorm Hub speichert alle Ideen lokal in `.storage/brainstorm.storage` und fragt nichts in Abständen ab. Jede Änderung, ob von einer Karte, Alexa, Assist, einer Aktion oder einer To-do-Liste, aktualisiert Sensor und To-do-Listen im selben Moment und geht über die WebSocket-API an alle offenen Karten.
+
+## 💡 Beispiele
+
+**Jeden Morgen die offenen Ideen vorlesen:**
+```yaml
+triggers:
+  - trigger: time
+    at: "07:30:00"
+actions:
+  - action: brainstorm.get_announcement
+    response_variable: ueberblick
+  - action: notify.alexa_media
+    data:
+      target: media_player.echo_kuche
+      data:
+        type: announce
+      message: "{{ ueberblick.speech }}"
+```
+
+**Notieren, wenn die Waschmaschine fertig ist:**
+```yaml
+triggers:
+  - trigger: state
+    entity_id: binary_sensor.waschmaschine_lauft
+    to: "off"
+actions:
+  - action: brainstorm.add_idea
+    data:
+      text: Wäsche aufhängen
+      category: Alltag
+      priority: high
+```
+
+Weitere Beispiele für Assist und Alexa liegen im Ordner [`examples/`](examples/).
+
+## ⚠️ Bekannte Einschränkungen
+
+- **Freie Sätze im Skill:** Alexa gibt einem Skill nur Text weiter, wenn der Satz mit einem bekannten Wort beginnt, z. B. *notiere*, *wir brauchen* oder *ich muss*. Andere Sätze enden in einem kurzen Hinweis, mit *notiere* anzufangen.
+- **Echo-Erkennung** braucht die Integration Alexa Media. Ohne sie werden Ideen aus dem Skill trotzdem gespeichert, nur ohne den Echo, von dem sie kamen.
+- **Der Name „Brainstorm“** ist auch eine Band. Ohne eigenen Skill oder Routinen startet Alexa womöglich Musik.
+- **Erinnerungen auf Echos** werden über Alexa Media gesprochen. Echte Alexa-Erinnerungen brauchen zusätzlich die Erinnerungs-Berechtigung deines Skills.
+- **Eine Installation:** Pro Home Assistant lässt sich nur ein Brainstorm Hub einrichten.
+
+## 🩺 Fehlerbehebung
+
+| Problem | Lösung |
+|---|---|
+| Der Skill sagt, er erreicht Home Assistant nicht | Sieh unter **Einstellungen > Reparaturen** nach. Home Assistant braucht eine öffentliche HTTPS-Adresse, z. B. über Home Assistant Cloud. Danach den Skill-Code neu kopieren. |
+| Alexa sagt immer wieder, ich soll mit *notiere* anfangen | Das aktuelle Sprachmodell in die Alexa-Entwicklerkonsole kopieren, dann **Save** und **Build**. |
+| *„Alexa, öffne Brainstorm“* startet den alten Dialog | Die Alexa-Routinen für *öffne Brainstorm* in der Alexa-App löschen. |
+| Eine Idee landet in der falschen Kategorie | Die Kategorie vorne nennen: *„notiere für den Einkauf Milch“*. Eine eigene Kategorie hat Vorrang vor Standard-Begriffen mit ihrem Namen. |
+| Eine Karte zeigt noch eine alte Version | Die Ressource auf die aktuelle `?v=`-Nummer setzen und die Seite ohne Cache neu laden. |
+| Ein Echo wird nicht erkannt oder ignoriert | Die Echo-Auswahl unter **Konfigurieren** prüfen. **Einstellungen > Reparaturen** nennt gewählte Echos, die es nicht mehr gibt. |
+| Etwas anderes klappt nicht | Die Diagnose herunterladen (siehe *Entitäten*) und ein [Issue](https://github.com/nukleuz80/ha_brainstorm/issues) eröffnen. |
+
 ## 📜 Versionshistorie & Changelog
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.6.8`** | 03.11.2026 | **Home Assistant Quality Scale: Gold (Selbsteinschätzung):**<br>• **Diagnose:** *Diagnose herunterladen* liefert Zahlen und Einstellungen für Fehlerberichte, ohne Ideen-Texte, Personen oder Echos.<br>• **Reparaturen:** Home Assistant meldet, wenn der Skill-Modus an ist, aber keine öffentliche HTTPS-Adresse existiert, und wenn gewählte Echos nicht mehr da sind.<br>• **Icons:** Icons für Sensor, Listen und alle Aktionen kommen aus `icons.json`.<br>• **Übersetzte Fehler:** Auch der Fehler beim Lesen der gespeicherten Daten ist übersetzt.<br>• **Doku:** Neue Abschnitte zu Entitäten, Aktualisierung, Beispielen, bekannten Einschränkungen und Fehlerbehebung. |
 | **`v1.6.7`** | 03.11.2026 | **Skill versteht natürlichere Sätze:**<br>• **Ohne Befehlswort:** *„sage Brainstorm wir brauchen Duschgel“*, *„… wir müssen …“*, *„… ich muss …“*, *„… dass …“* werden als Notiz gespeichert. Auch *„Nokia …“*, wie Alexa *„notiere“* oft versteht, und *„notiere mir …“* klappen.<br>• **Listen und Erinnerungen:** *„zeige mir die Liste Brainstorm“*, *„erinnere mich um/am …“*.<br>• **Klare Rückfrage:** Versteht Alexa einen Satz nicht, sagt der Skill *„Fang mit notiere an“*, statt nur Beispiele aufzuzählen.<br>• **Eigene Kategorie zuerst:** *„notiere für den Einkauf Duschgel“* landet in deiner Kategorie *Einkauf* (statt *Alltag*) und heißt nur *Duschgel*.<br>• **Termin mit Uhrzeit:** *„notiere Termin Zahnarzt um neun“* bekommt die Uhrzeit, auch ohne Tag.<br>• **Neues Sprachmodell und neuer Skill-Code:** Beides einmal neu in die Alexa-Entwicklerkonsole kopieren. |
 | **`v1.6.6`** | 03.11.2026 | **Echo-Auswahl eingeklappt:** Im Bearbeiten-Dialog ist *Erinnern auf* zunächst eingeklappt und zeigt die gewählten Echos oder *Wie in den Einstellungen*. Ein Tipp klappt die Liste auf. |
 | **`v1.6.5`** | 03.11.2026 | **Termin im Bearbeiten-Dialog:**<br>• **Datum und Uhrzeit:** Beide Karten setzen, ändern und entfernen den Termin eines Eintrags direkt im Dialog. Ohne Uhrzeit erinnert Brainstorm um 9:00 Uhr.<br>• **Echos wählen:** Pro Eintrag wählst du, welche Echos die Erinnerung sprechen. Ohne Auswahl gelten wie bisher die Erinnerungs-Einstellungen.<br>• **Neues Feld:** `brainstorm.update_idea` nimmt `echos` an. |

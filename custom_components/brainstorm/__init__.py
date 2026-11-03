@@ -50,6 +50,7 @@ from .const import (
 )
 from .llm import async_register_llm_api
 from .reminders import ReminderManager, build_reminder_request
+from .repairs import async_check_issues, async_delete_issues
 from .store import BrainstormConfigEntry, BrainstormStore, get_loaded_store
 from .websocket import async_register_commands
 
@@ -187,7 +188,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) -
         await store.async_load()
         await skill.async_load()
     except HomeAssistantError as err:
-        raise ConfigEntryNotReady(f"Could not read the stored data: {err}") from err
+        raise ConfigEntryNotReady(
+            translation_domain=DOMAIN,
+            translation_key="store_not_readable",
+            translation_placeholders={"error": str(err)},
+        ) from err
     store.alexa_skill = skill
 
     entry.runtime_data = store
@@ -208,6 +213,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) -
     await reminders.async_start()
     entry.async_on_unload(reminders.async_stop)
 
+    # Settings are checked on every setup, and changing them reloads the entry
+    async_check_issues(hass, {**entry.data, **entry.options})
+
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
     return True
 
@@ -216,6 +224,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) 
     """Unload a config entry."""
     entry.runtime_data.async_cancel_ai_tasks()
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) -> None:
+    """Clean up the repair issues when the integration is removed."""
+    async_delete_issues(hass)
 
 
 async def async_reload_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) -> None:

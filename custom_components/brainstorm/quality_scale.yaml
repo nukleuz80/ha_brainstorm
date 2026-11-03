@@ -70,3 +70,62 @@ rules:
     status: exempt
     comment: The integration needs no authentication.
   test-coverage: done
+
+  # Gold
+  devices:
+    status: done
+    comment: All entities belong to the single service device Brainstorm Hub.
+  diagnostics:
+    status: done
+    comment: Counts and settings only, idea texts, people and Echos are left out.
+  discovery-update-info:
+    status: exempt
+    comment: The integration stores local data and has no device to discover.
+  discovery:
+    status: exempt
+    comment: The integration stores local data and has no device to discover.
+  docs-data-update:
+    status: done
+    comment: Documented in the README, as custom integrations have no page on home-assistant.io.
+  docs-examples:
+    status: done
+    comment: Automation examples in the README and in the examples folder.
+  docs-known-limitations:
+    status: done
+    comment: Documented in the README, as custom integrations have no page on home-assistant.io.
+  docs-supported-devices:
+    status: exempt
+    comment: The integration does not support devices, it works with its own local data.
+  docs-supported-functions:
+    status: done
+    comment: The entities and actions are documented in the README.
+  docs-troubleshooting:
+    status: done
+    comment: Documented in the README, as custom integrations have no page on home-assistant.io.
+  docs-use-cases:
+    status: done
+    comment: The highlights and voice chapters of the README describe the use cases.
+  dynamic-devices:
+    status: done
+    comment: A to-do list is added for every new category without a reload.
+  entity-category:
+    status: done
+    comment: The overview sensor and the to-do lists are primary entities.
+  entity-device-class:
+    status: exempt
+    comment: No device class fits a number of ideas or a to-do list.
+  entity-disabled-by-default:
+    status: exempt
+    comment: There are no noisy or rarely needed entities.
+  entity-translations:
+    status: done
+    comment: The sensor name is translated, the to-do lists carry the name the person gave the category.
+  exception-translations: done
+  icon-translations: done
+  reconfiguration-flow: done
+  repair-issues:
+    status: done
+    comment: Raised for a skill without a public HTTPS address and for chosen Echos that are gone.
+  stale-devices:
+    status: done
+    comment: There is one device, and to-do lists of removed categories are removed.

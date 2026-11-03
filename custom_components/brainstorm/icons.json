@@ -1,0 +1,49 @@
+{
+  "entity": {
+    "sensor": {
+      "overview": {
+        "default": "mdi:brain"
+      }
+    },
+    "todo": {
+      "category": {
+        "default": "mdi:lightbulb-outline"
+      }
+    }
+  },
+  "services": {
+    "add_idea": {
+      "service": "mdi:lightbulb-on-outline"
+    },
+    "update_idea": {
+      "service": "mdi:pencil-outline"
+    },
+    "delete_idea": {
+      "service": "mdi:delete-outline"
+    },
+    "get_ideas": {
+      "service": "mdi:format-list-bulleted"
+    },
+    "get_announcement": {
+      "service": "mdi:account-voice"
+    },
+    "add_category": {
+      "service": "mdi:folder-plus-outline"
+    },
+    "set_category_style": {
+      "service": "mdi:palette-outline"
+    },
+    "remove_category": {
+      "service": "mdi:folder-remove-outline"
+    },
+    "export_markdown": {
+      "service": "mdi:file-export-outline"
+    },
+    "reorder_ideas": {
+      "service": "mdi:sort"
+    },
+    "share": {
+      "service": "mdi:share-variant-outline"
+    }
+  }
+}

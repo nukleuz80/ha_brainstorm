@@ -443,6 +443,11 @@
       "overview": {
         "name": "Ideas overview"
       }
+    },
+    "todo": {
+      "category": {
+        "name": "Category"
+      }
     }
   },
   "exceptions": {
@@ -508,6 +513,9 @@
     },
     "export_not_allowed": {
       "message": "Export to '{path}' is not allowed. Allowed are subfolders of the config directory and allowlist_external_dirs."
+    },
+    "store_not_readable": {
+      "message": "Brainstorm Hub could not read its stored data: {error}"
     }
   },
   "services": {
@@ -748,6 +756,16 @@
           "description": "User ID (or `all`) and level, such as `{\"all\": \"view\"}`. Levels are `view` and `edit`; `null` removes a share."
         }
       }
+    }
+  },
+  "issues": {
+    "skill_no_public_url": {
+      "title": "The Alexa skill cannot reach Home Assistant",
+      "description": "Brainstorm Hub uses your own Alexa skill, but Home Assistant has no public HTTPS address. Alexa cannot deliver any request, so nothing said to the skill is saved.\n\nSet an external HTTPS address under **Settings > System > Network** or use Home Assistant Cloud. Then open **Brainstorm Hub > Configure > Alexa voice input & skill** and copy the skill code into the Alexa developer console again. Or switch the voice input back to **Native**."
+    },
+    "missing_echos": {
+      "title": "Chosen Echos no longer exist",
+      "description": "These Echos are chosen in Brainstorm Hub but no longer exist in Home Assistant: {echos}\n\nIdeas from them are let through, and reminders are not spoken there. Choose your Echos again under **Brainstorm Hub > Configure**, in the Echo choice and in the reminder settings."
     }
   }
 }

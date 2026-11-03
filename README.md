@@ -8,9 +8,9 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.6.7-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.6.8-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
-[![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver%20self--assessed-C0C0C0.svg)](https://contributors.home-assistant.io/core/quality-scale/)
+[![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/nukleuz80/ha_brainstorm)
@@ -136,8 +136,8 @@ HACS only installs the integration, so continue with [Install the cards](#instal
 
 1. Copy `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` and `www/brainstorm-i18n.js` from the release to `/config/www/`. The third file holds the texts and needs no resource entry.
 2. Add both under **Settings ➔ Dashboards ➔ Resources** as **JavaScript module**:
-   - `/local/brainstorm-card.js?v=1.6.7`
-   - `/local/brainstorm-mindmap-card.js?v=1.6.7`
+   - `/local/brainstorm-card.js?v=1.6.8`
+   - `/local/brainstorm-mindmap-card.js?v=1.6.8`
 3. Reload the page in your browser.
 
 ### Removing the Integration
@@ -304,9 +304,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.6.7
+  - url: /local/brainstorm-card.js?v=1.6.8
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.6.7
+  - url: /local/brainstorm-mindmap-card.js?v=1.6.8
     type: module
 ```
 
@@ -514,6 +514,15 @@ Find these under **Settings ➔ Devices & Services ➔ Brainstorm Hub ➔ Config
 
 ---
 
+## 🧩 Entities
+
+| Entity | What it shows |
+|---|---|
+| `sensor.brainstorm_ideen_ubersicht` | Number of open ideas. Attributes: `active_count`, `completed_count`, `category_counts`, `priority_counts`, `categories`, `active_categories`, `latest_idea`, `recent_ideas`, `ideas`, `speech_overview`, `voice_mode`, `allowed_echos`. With privacy switched on, only counts are shown. |
+| `todo.<category>` | One to-do list per category. Items can be added, renamed, completed, given a due date and deleted in the to-do panel; changes reach the cards at once. New categories get a list right away, removed ones lose theirs. |
+
+All entities belong to the device **Brainstorm Hub**. **Settings > Devices & services > Brainstorm Hub > ⋮ > Download diagnostics** gives a file for bug reports. It holds counts and settings, but no idea texts, people or Echos.
+
 ## ⚙️ Services
 
 Every action stays available while the integration is not loaded and then explains why it cannot run.
@@ -640,10 +649,69 @@ Shares several ideas or a whole category. Needs privacy to be switched on.
 
 ---
 
+## 🔄 How the Data Updates
+
+Brainstorm Hub keeps all ideas locally in `.storage/brainstorm.storage` and does not poll anything. Every change, whether from a card, Alexa, Assist, an action or a to-do list, updates the sensor and the to-do lists at the same moment and is pushed to all open cards over the WebSocket API.
+
+## 💡 Examples
+
+**Read the open ideas aloud every morning:**
+```yaml
+triggers:
+  - trigger: time
+    at: "07:30:00"
+actions:
+  - action: brainstorm.get_announcement
+    response_variable: overview
+  - action: notify.alexa_media
+    data:
+      target: media_player.echo_kitchen
+      data:
+        type: announce
+      message: "{{ overview.speech }}"
+```
+
+**Note something when the washing machine is done:**
+```yaml
+triggers:
+  - trigger: state
+    entity_id: binary_sensor.washing_machine_running
+    to: "off"
+actions:
+  - action: brainstorm.add_idea
+    data:
+      text: Hang up the laundry
+      category: Alltag
+      priority: high
+```
+
+More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
+
+## ⚠️ Known Limitations
+
+- **Free sentences in the skill:** Alexa only passes text to a skill when the sentence starts with a known word, such as *note*, *we need* or *I have to*. Other sentences end in a short hint to start with *note*.
+- **Echo recognition** needs the Alexa Media integration. Without it, ideas from the skill are still saved, but without the Echo they came from.
+- **The name "Brainstorm"** is also a band. Without your own skill or routines, Alexa may start music instead.
+- **Reminders on Echos** are spoken through Alexa Media. Real Alexa reminders also need the reminder permission of your skill.
+- **One installation:** Only one Brainstorm Hub can be set up per Home Assistant.
+
+## 🛠️ Troubleshooting
+
+| Problem | Solution |
+|---|---|
+| The skill says it cannot reach Home Assistant | Check **Settings > Repairs**. Home Assistant needs a public HTTPS address, for example Home Assistant Cloud. Then copy the skill code again. |
+| Alexa keeps giving the hint to start with *note* | Copy the current voice model into the Alexa developer console, then **Save** and **Build**. |
+| *"Alexa, open Brainstorm"* starts the old dialog | Delete the Alexa routines for *open Brainstorm* in the Alexa app. |
+| An idea lands in the wrong category | Name the category at the start: *"note for shopping milk"*. A category of your own wins over standard words with its name. |
+| A card still shows an old version | Set the resource to the current `?v=` number and reload the page without cache. |
+| An Echo is not recognised or ignored | Check the Echo choice under **Configure**. **Settings > Repairs** lists chosen Echos that no longer exist. |
+| Something else is wrong | Download the diagnostics (see *Entities*) and open an [issue](https://github.com/nukleuz80/ha_brainstorm/issues). |
+
 ## 📜 Version History & Changelog
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.6.8`** | 2026-11-03 | **Home Assistant Quality Scale: Gold (self-assessed):**<br>• **Diagnostics:** *Download diagnostics* gives counts and settings for bug reports, without idea texts, people or Echos.<br>• **Repairs:** Home Assistant reports when the skill mode is on without a public HTTPS address, and when chosen Echos are gone.<br>• **Icons:** Icons for the sensor, the lists and all actions come from `icons.json`.<br>• **Translated errors:** The error for unreadable stored data is translated too.<br>• **Docs:** New chapters on entities, data updates, examples, known limitations and troubleshooting. |
 | **`v1.6.7`** | 2026-11-03 | **The skill understands more natural sentences:**<br>• **German without a command word:** *„sage Brainstorm wir brauchen Duschgel“*, *„… wir müssen …“*, *„… ich muss …“*, *„… dass …“* are saved as notes. *„Nokia …“*, as Alexa often hears *„notiere“*, and *„notiere mir …“* work too.<br>• **Lists and reminders:** *„zeige mir die Liste Brainstorm“*, *„erinnere mich um/am …“*.<br>• **Clear hint:** When Alexa cannot place a sentence, the skill says to start with *note* instead of only listing examples.<br>• **Your own category first:** A category you created wins over a standard alias with its name, so *„für den Einkauf Duschgel“* goes to *Einkauf* instead of *Alltag*.<br>• **Appointment with a time:** *„Termin Zahnarzt um neun“* gets its time even without a day.<br>• **New voice model and skill code:** Copy both into the Alexa developer console once. |
 | **`v1.6.6`** | 2026-11-03 | **Echo choice folded in:** In the edit dialog, *Remind on* starts folded and shows the chosen Echos, or *As in the settings*. A tap opens the list. |
 | **`v1.6.5`** | 2026-11-03 | **Due date in the edit dialog:**<br>• **Date and time:** Both cards set, change and remove the due date of an entry directly in the dialog. Without a time, Brainstorm reminds you at 09:00.<br>• **Choose Echos:** Per entry, choose the Echos that speak the reminder. Without a choice, the reminder settings apply as before.<br>• **New field:** `brainstorm.update_idea` takes `echos`. |

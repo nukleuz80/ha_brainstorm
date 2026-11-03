@@ -443,6 +443,11 @@
       "overview": {
         "name": "Ideen Übersicht"
       }
+    },
+    "todo": {
+      "category": {
+        "name": "Category"
+      }
     }
   },
   "exceptions": {
@@ -508,6 +513,9 @@
     },
     "export_not_allowed": {
       "message": "Export nach '{path}' ist nicht erlaubt. Erlaubt sind Unterordner des Config-Verzeichnisses und allowlist_external_dirs."
+    },
+    "store_not_readable": {
+      "message": "Brainstorm Hub konnte seine gespeicherten Daten nicht lesen: {error}"
     }
   },
   "services": {
@@ -748,6 +756,16 @@
           "description": "Benutzer-ID (oder \"all\") und Stufe, z. B. {\"all\": \"view\"}. Stufen sind view und edit; null entfernt die Freigabe."
         }
       }
+    }
+  },
+  "issues": {
+    "skill_no_public_url": {
+      "title": "Der Alexa-Skill erreicht Home Assistant nicht",
+      "description": "Brainstorm Hub nutzt deinen eigenen Alexa-Skill, aber Home Assistant hat keine öffentliche HTTPS-Adresse. Alexa kann keine Anfrage zustellen, deshalb wird nichts gespeichert, was du dem Skill sagst.\n\nTrage unter **Einstellungen > System > Netzwerk** eine externe HTTPS-Adresse ein oder nutze Home Assistant Cloud. Öffne danach **Brainstorm Hub > Konfigurieren > Alexa-Spracheingabe & Skill** und kopiere den Skill-Code erneut in die Alexa-Entwicklerkonsole. Oder stelle die Spracheingabe wieder auf **Nativ**."
+    },
+    "missing_echos": {
+      "title": "Gewählte Echos gibt es nicht mehr",
+      "description": "Diese Echos sind in Brainstorm Hub gewählt, existieren in Home Assistant aber nicht mehr: {echos}\n\nIdeen von ihnen werden durchgelassen, und Erinnerungen werden dort nicht gesprochen. Wähle deine Echos unter **Brainstorm Hub > Konfigurieren** neu, in der Echo-Auswahl und in den Erinnerungs-Einstellungen."
     }
   }
 }

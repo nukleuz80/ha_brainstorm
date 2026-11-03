@@ -33,7 +33,6 @@ class BrainstormOverviewSensor(SensorEntity):
     _attr_has_entity_name = True
     _attr_should_poll = False
     _attr_translation_key = "overview"
-    _attr_icon = "mdi:brain"
     # The cards read these live; recording them would exceed the 16 KB recorder limit
     _unrecorded_attributes = frozenset(
         {
