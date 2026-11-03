@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.6.14-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.6.15-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -107,6 +107,7 @@ Brainstorm Hub verwandelt alle deine **Amazon Echo**-Geräte im Haus in sekunden
     - **Anordnung als Baum:** Jeder Zweig bekommt seinen eigenen Ausschnitt des Kreises, Linien kreuzen sich nicht. 🪄 setzt von Hand platzierte Notizen wieder an ihren automatischen Platz.
     - **Tastatur:** Ein Klick wählt eine Notiz aus. **Tab** legt eine Unteraufgabe an, **Enter** eine Notiz daneben, **Entf** löscht nach Rückfrage, **F2** oder Doppelklick bearbeitet den Text. Mit den Pfeiltasten gehst du die Zweige entlang: links zum Oberpunkt, rechts zur ersten Unteraufgabe, hoch und runter zu den Nachbarn.
     - **Direkt bearbeiten:** Ein Klick auf den Text öffnet ihn gleich in der Wolke. **Enter** speichert, **Umschalt+Enter** macht eine neue Zeile, **Esc** bricht ab. Termin, Priorität und Echos stellst du weiter mit ✏️ im Dialog ein.
+    - **Rückgängig:** **Strg+Z** oder der Knopf ↶ unten rechts nimmt die letzten Schritte dieser Sitzung zurück: neue Notizen, Textänderungen, Erledigt, Priorität, Kategorie, Verschieben, Neu ordnen und auch Löschen. Gelöschte Notizen hält Home Assistant bis zum nächsten Neustart bereit.
     - Stufenloser Zoom & Pan per Mausrad, Pinch-Geste oder Steuerungsbuttons.
     - **Vollbild-Modus (`⛶`):** Per Knopfdruck oder Dashboard-Einbindung als beeindruckendes Vollbild-Erlebnis (ESC zum Schließen).
     - Direkte Aktionen an jeder Gedankenwolke (Erledigen, Text editieren, Kategorie wechseln, Löschen).
@@ -162,8 +163,8 @@ HACS installiert nur die Integration. Die Karten kopierst du anschließend wie u
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` und `www/brainstorm-i18n.js` in `/config/www/`. Die dritte Datei enthält die Texte und braucht keinen Ressourcen-Eintrag.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.6.14` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.6.14` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.6.15` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.6.15` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ### Integration entfernen
@@ -626,11 +627,19 @@ Aktualisiert Text, Kategorie oder Status einer bestehenden Idee.
 
 ### `brainstorm.delete_idea`
 
-Entfernt eine Idee dauerhaft.
+Entfernt eine Idee. Bis zum nächsten Start von Home Assistant holt `brainstorm.restore_idea` sie zurück.
 
 | Feld | Pflicht | Bedeutung |
 | :--- | :--- | :--- |
 | `id` | Ja | ID der zu löschenden Idee. |
+
+### `brainstorm.restore_idea`
+
+Holt eine Idee zurück, die seit dem letzten Start von Home Assistant gelöscht wurde, samt der Verbindung zu ihren Unteraufgaben. Das kann nur, wer sie gelöscht hat. Die Mindmap-Karte nutzt das für „Rückgängig“.
+
+| Feld | Pflicht | Bedeutung |
+| :--- | :--- | :--- |
+| `id` | Ja | ID der gelöschten Idee. |
 
 ### `brainstorm.get_ideas`
 
@@ -770,6 +779,7 @@ Weitere Beispiele für Assist und Alexa liegen im Ordner [`examples/`](examples/
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.6.15`** | 03.11.2026 | **Mindmap: Rückgängig:**<br>• **Strg+Z** oder der neue Knopf ↶ unten rechts nimmt die letzten 30 Schritte dieser Sitzung zurück: neue Notizen, Text, Dialog-Änderungen, Erledigt, Priorität, Kategorie, Verschieben, Neu ordnen und Löschen. Eine kurze Meldung zeigt, was zurückgenommen wurde.<br>• **Löschen rückgängig:** Neue Aktion `brainstorm.restore_idea`. Home Assistant hält gelöschte Ideen bis zum nächsten Start bereit (höchstens 50), samt Verbindung zu ihren Unteraufgaben. Zurückholen darf nur, wer gelöscht hat. |
 | **`v1.6.14`** | 03.11.2026 | **Mindmap: Tastatur und Bearbeiten direkt in der Wolke:**<br>• **Auswahl:** Ein Klick wählt eine Notiz aus, sie bekommt einen farbigen Rahmen.<br>• **Tastatur:** Tab legt eine Unteraufgabe an, Enter eine Notiz daneben. Dafür erscheint gleich ein leeres Feld auf der Map, nach dem Speichern geht es von der neuen Notiz aus weiter. Entf löscht nach Rückfrage, F2 bearbeitet, die Pfeiltasten gehen die Zweige entlang, Esc hebt die Auswahl auf.<br>• **Direkt bearbeiten:** Ein Klick auf den Text oder ein Doppelklick öffnet ihn in der Wolke. Enter speichert, Esc bricht ab. Was in der Zeit von Home Assistant kommt, zeigt die Map erst danach an, damit nichts verloren geht. Für Termin, Priorität und Echos bleibt der Dialog hinter ✏️.<br>• Ein Klick, der ein Ziehen beendet, öffnet nichts mehr. |
 | **`v1.6.13`** | 03.11.2026 | **Mindmap: Zweige einklappen und als Baum ordnen:**<br>• **Einklappen:** Notizen mit Unteraufgaben haben einen runden Knopf. Er klappt den Zweig zu und zeigt dann, wie viele Notizen darin stecken, etwa „+5“. Jedes Gerät merkt sich das für sich. Ziehst du eine eingeklappte Notiz, wandern die gespeicherten Plätze ihrer Unteraufgaben mit.<br>• **Baum-Anordnung:** Gibt es Zweige, bekommt jeder einen Ausschnitt des Kreises passend zu seiner Größe. Unteraufgaben liegen weiter außen, Linien kreuzen sich nicht. Von Hand verschobene Notizen bleiben, wo sie sind. Listen ohne Zweige sehen aus wie bisher.<br>• **Neu ordnen (🪄):** Der neue Knopf unten rechts setzt nach einer Rückfrage alle von Hand platzierten Notizen der Liste wieder an ihren automatischen Platz, auf allen Geräten. |
 | **`v1.6.12`** | 03.11.2026 | **Mindmap mit Ästen und gespeicherter Anordnung:**<br>• **Äste:** Unteraufgaben hängen in der Map an ihrer Elternidee, die Linie geht von ihr aus. Ein neuer Knopf 🌿 an jeder Notiz legt eine Unteridee an.<br>• **Positionen bleiben:** Ziehst du in einer einzelnen Liste eine Notiz, merkt sich Brainstorm ihren Platz im neuen Feld `map_pos`, relativ zur Mitte und damit passend für jede Bildschirmgröße. Sie steht danach auf allen Geräten dort. Eine Elternidee nimmt beim Ziehen ihre Unteraufgaben mit.<br>• **Neuer WebSocket-Befehl** `brainstorm/map_positions` speichert oder löscht mehrere Positionen auf einmal, nur für Ideen, die du bearbeiten darfst. Wechselt eine Idee die Kategorie, vergisst sie ihre Position. |

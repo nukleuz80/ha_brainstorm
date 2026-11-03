@@ -1,8 +1,8 @@
-import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.14";
+import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.15";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.6.14 - Skill, Reminders, Privacy and Sharing
+ * Version: 1.6.15 - Skill, Reminders, Privacy and Sharing
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -10,6 +10,7 @@ import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputVal
 
 // Folded branches of the mind map, kept per device
 const COLLAPSED_KEY = "brainstorm_mindmap_collapsed";
+const UNDO_LIMIT = 30;
 
 const BRAINSTORM_MINDMAP_DEFAULTS = {
   title: "Brainstorm Mindmap",
@@ -65,6 +66,8 @@ class BrainstormMindmapCard extends HTMLElement {
     this._selectedId = null;
     this._inlineEdit = null;
     this._dragEndedAt = 0;
+    // Steps of this session that Ctrl+Z takes back, newest last
+    this._undoStack = [];
   }
 
   static async getConfigElement() {
@@ -551,6 +554,9 @@ class BrainstormMindmapCard extends HTMLElement {
         id: id,
         priority: nextPrio,
       });
+      this._pushUndo(this._ideaText(id), () =>
+        this._hass.callService("brainstorm", "update_idea", { id, priority: currentPrio })
+      );
     } catch (err) {
       console.error("[BrainstormMindmap] Failed to toggle priority:", err);
     }
@@ -1158,6 +1164,33 @@ class BrainstormMindmapCard extends HTMLElement {
           cursor: grab;
           user-select: none;
           transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .control-btn:disabled {
+          opacity: 0.35;
+          cursor: default;
+        }
+        .map-toast {
+          position: absolute;
+          left: 50%;
+          bottom: 16px;
+          transform: translate(-50%, 8px);
+          max-width: calc(100% - 32px);
+          padding: 8px 14px;
+          border-radius: 10px;
+          background: var(--primary-text-color, #1e293b);
+          color: var(--card-background-color, #ffffff);
+          font-size: 0.85rem;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 0.2s ease, transform 0.2s ease;
+          z-index: 40;
+        }
+        .map-toast.visible {
+          opacity: 0.92;
+          transform: translate(-50%, 0);
         }
         .canvas-area:focus {
           outline: none;
@@ -1851,7 +1884,10 @@ class BrainstormMindmapCard extends HTMLElement {
           <button class="control-btn" id="zoomOutBtn" title="${t("Verkleinern")}">−</button>
           <button class="control-btn" id="resetViewBtn" title="${t("Zentrieren / Anordnen")}">⟲</button>
           <button class="control-btn" id="arrangeBtn" title="${t("Neu ordnen: von Hand verschobene Notizen wieder automatisch platzieren")}">🪄</button>
+          <button class="control-btn" id="undoBtn" title="${t("Rückgängig (Strg+Z)")}" disabled>↶</button>
         </div>
+
+        <div class="map-toast" id="mapToast" role="status" aria-live="polite"></div>
 
         <!-- In-Card Modal Dialog (Mushroom Style) -->
         <div class="dialog-backdrop" id="mindmapDialog" style="display: none;">
@@ -2090,6 +2126,9 @@ class BrainstormMindmapCard extends HTMLElement {
     });
     const arrangeBtn = this.shadowRoot.getElementById("arrangeBtn");
     if (arrangeBtn) arrangeBtn.addEventListener("click", () => this._arrangeAgain());
+    const undoBtn = this.shadowRoot.getElementById("undoBtn");
+    if (undoBtn) undoBtn.addEventListener("click", () => this._undo());
+    this._updateUndoButton();
 
     // Quick Add -> Show Dialog Modal
     addNoteBtn.addEventListener("click", () => this._showAddDialog());
@@ -2270,6 +2309,59 @@ class BrainstormMindmapCard extends HTMLElement {
     return result;
   }
 
+  _ideaText(id) {
+    const idea = this._categoryIdeas().find((i) => i.id === id);
+    return idea ? idea.text || "" : "";
+  }
+
+  // Adds a note typed on the dashboard and gives back its ID
+  async _addIdea(data) {
+    const result = await this._hass.callWS({
+      type: "call_service",
+      domain: "brainstorm",
+      service: "add_idea",
+      service_data: { ...data, source: "dashboard" },
+      return_response: true,
+    });
+    const created = result && result.response && result.response.idea;
+    if (!created || !created.id) return null;
+    this._pushUndo(data.text, () => this._hass.callService("brainstorm", "delete_idea", { id: created.id }));
+    return created.id;
+  }
+
+  _pushUndo(text, run) {
+    this._undoStack.push({ text, run });
+    if (this._undoStack.length > UNDO_LIMIT) this._undoStack.shift();
+    this._updateUndoButton();
+  }
+
+  _updateUndoButton() {
+    const btn = this.shadowRoot.getElementById("undoBtn");
+    if (btn) btn.disabled = this._undoStack.length === 0;
+  }
+
+  async _undo() {
+    const step = this._undoStack.pop();
+    this._updateUndoButton();
+    if (!step || !this._hass) return;
+    try {
+      await step.run();
+      this._showToast(step.text ? t("↶ Rückgängig: {text}", { text: step.text }) : t("↶ Rückgängig"));
+    } catch (err) {
+      console.error("[BrainstormMindmap] Undo failed:", err);
+      this._showToast(t("Rückgängig ging nicht"));
+    }
+  }
+
+  _showToast(text) {
+    const toast = this.shadowRoot.getElementById("mapToast");
+    if (!toast) return;
+    toast.textContent = text;
+    toast.classList.add("visible");
+    clearTimeout(this._toastTimer);
+    this._toastTimer = setTimeout(() => toast.classList.remove("visible"), 2500);
+  }
+
   _focusMap() {
     const canvasArea = this.shadowRoot.getElementById("canvasArea");
     if (canvasArea) canvasArea.focus({ preventScroll: true });
@@ -2286,9 +2378,15 @@ class BrainstormMindmapCard extends HTMLElement {
   // Keys on the map: Tab adds a subtask, Enter a note beside it, Delete removes
   // it after asking, F2 edits it, the arrows walk along the branches
   _onMapKey(e) {
-    if (this._isModalOpen || this._inlineEdit || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (this._isModalOpen || this._inlineEdit) return;
     const target = e.composedPath()[0];
     if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "z") {
+      e.preventDefault();
+      this._undo();
+      return;
+    }
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
     const ideas = this._mapIdeas();
     const ids = new Set(ideas.map((i) => i.id));
     const idea = ideas.find((i) => i.id === this._selectedId);
@@ -2408,8 +2506,12 @@ class BrainstormMindmapCard extends HTMLElement {
         close();
         if (text === (idea.text || "").trim()) return;
         textEl.textContent = text;
+        const oldText = idea.text || "";
         this._hass
           .callService("brainstorm", "update_idea", { id, text })
+          .then(() =>
+            this._pushUndo(oldText, () => this._hass.callService("brainstorm", "update_idea", { id, text: oldText }))
+          )
           .catch((err) => {
             console.error("[BrainstormMindmap] Failed to update idea:", err);
             textEl.textContent = idea.text || "";
@@ -2460,23 +2562,14 @@ class BrainstormMindmapCard extends HTMLElement {
       textarea,
       (text) => {
         draft.remove();
-        this._hass
-          .callWS({
-            type: "call_service",
-            domain: "brainstorm",
-            service: "add_idea",
-            service_data: {
-              text,
-              category: anchor.category,
-              source: "dashboard",
-              ...(parentId ? { parent_id: parentId } : {}),
-            },
-            return_response: true,
-          })
-          .then((result) => {
-            const created = result && result.response && result.response.idea;
+        this._addIdea({
+          text,
+          category: anchor.category,
+          ...(parentId ? { parent_id: parentId } : {}),
+        })
+          .then((createdId) => {
             // The keyboard goes on from the new note
-            if (created && created.id) this._selectIdea(created.id);
+            if (createdId) this._selectIdea(createdId);
           })
           .catch((err) => console.error("[BrainstormMindmap] Failed to add idea:", err));
       },
@@ -2495,10 +2588,32 @@ class BrainstormMindmapCard extends HTMLElement {
     this._activeDrag = null;
     // The click that ends a drag neither selects nor edits
     this._dragEndedAt = Date.now();
+    const noteText = this._ideaText(drag.id);
     if (!this._usesSavedPositions()) {
+      // Only this device knows these places, so undo puts them back here
+      const starts = [{ id: drag.id, x: drag.startNodeX, y: drag.startNodeY }, ...(drag.group || [])];
+      const wasMoved = new Set(moved.filter((id) => this._userMovedNodes.has(id)));
       moved.forEach((id) => this._userMovedNodes.add(id));
+      this._pushUndo(noteText, async () => {
+        starts.forEach((start) => {
+          this._nodePositions.set(start.id, { x: start.x, y: start.y });
+          const cloud = this.shadowRoot.getElementById(`cloud_${start.id}`);
+          if (cloud) {
+            cloud.style.left = `${start.x}px`;
+            cloud.style.top = `${start.y}px`;
+          }
+          if (!wasMoved.has(start.id)) this._userMovedNodes.delete(start.id);
+        });
+        this._drawConnections();
+      });
       return;
     }
+    const ideasById = new Map(this._categoryIdeas().map((i) => [i.id, i]));
+    const previous = {};
+    moved.forEach((id) => {
+      const idea = ideasById.get(id);
+      previous[id] = this._mapPosOverrides.has(id) ? this._mapPosOverrides.get(id) : (idea && idea.map_pos) || null;
+    });
     const positions = {};
     moved.forEach((id) => {
       const pos = this._nodePositions.get(id);
@@ -2513,7 +2628,16 @@ class BrainstormMindmapCard extends HTMLElement {
     if (!Object.keys(positions).length || !this._hass) return;
     this._hass
       .callWS({ type: "brainstorm/map_positions", positions })
+      .then(() => this._pushUndo(noteText, () => this._restorePositions(previous)))
       .catch((err) => console.error("[BrainstormMindmap] Failed to save positions:", err));
+  }
+
+  // Saved places as they were, null for the automatic place
+  async _restorePositions(positions) {
+    Object.entries(positions).forEach(([id, pos]) => this._mapPosOverrides.set(id, pos));
+    this._lastLayoutKey = "";
+    this._updateContent();
+    await this._hass.callWS({ type: "brainstorm/map_positions", positions });
   }
 
   // Puts notes placed by hand back where the map would put them itself
@@ -2536,7 +2660,11 @@ class BrainstormMindmapCard extends HTMLElement {
       body.querySelector("#confirmArrangeBtn").addEventListener("click", () => {
         this._closeDialog();
         const positions = {};
+        const previous = {};
         placed.forEach((idea) => {
+          previous[idea.id] = this._mapPosOverrides.has(idea.id)
+            ? this._mapPosOverrides.get(idea.id)
+            : idea.map_pos || null;
           positions[idea.id] = null;
           this._mapPosOverrides.set(idea.id, null);
         });
@@ -2544,6 +2672,7 @@ class BrainstormMindmapCard extends HTMLElement {
         this._centerLayout(true);
         this._hass
           .callWS({ type: "brainstorm/map_positions", positions })
+          .then(() => this._pushUndo("", () => this._restorePositions(previous)))
           .catch((err) => console.error("[BrainstormMindmap] Failed to reset positions:", err));
       });
     });
@@ -3436,6 +3565,9 @@ class BrainstormMindmapCard extends HTMLElement {
                 id: id,
                 category: newCat,
               });
+              this._pushUndo(noteText, () =>
+                this._hass.callService("brainstorm", "update_idea", { id, category: currentCategory })
+              );
             } catch (err) {
               console.error("[BrainstormMindmap] Failed to change category:", err);
             }
@@ -3482,6 +3614,9 @@ class BrainstormMindmapCard extends HTMLElement {
         try {
           await this._hass.callService("brainstorm", "add_category", { name: val });
           await this._hass.callService("brainstorm", "update_idea", { id: id, category: val });
+          this._pushUndo(noteText, () =>
+            this._hass.callService("brainstorm", "update_idea", { id, category: currentCategory })
+          );
         } catch (err) {
           console.error("[BrainstormMindmap] Failed to create category:", err);
         }
@@ -3667,8 +3802,14 @@ class BrainstormMindmapCard extends HTMLElement {
           payload.echos = selectedEchos.length ? selectedEchos : null;
         }
 
+        // Everything this save changes, as it was before
+        const before = { id, text: currentText, priority: currentPriority || "medium" };
+        if ("category" in payload) before.category = currentCategory;
+        if ("due" in payload) before.due = idea.due || null;
+        if ("echos" in payload) before.echos = currentEchos.length ? currentEchos : null;
         try {
           await this._hass.callService("brainstorm", "update_idea", payload);
+          this._pushUndo(currentText, () => this._hass.callService("brainstorm", "update_idea", before));
         } catch (err) {
           console.error("[BrainstormMindmap] Failed to update idea:", err);
         }
@@ -3786,11 +3927,10 @@ class BrainstormMindmapCard extends HTMLElement {
         this._closeDialog();
 
         try {
-          await this._hass.callService("brainstorm", "add_idea", {
+          await this._addIdea({
             text: text,
             category: selectedCat,
             priority: selectedPrio,
-            source: "dashboard",
             ...(parent ? { parent_id: parent.id } : {}),
           });
         } catch (err) {
@@ -3827,6 +3967,9 @@ class BrainstormMindmapCard extends HTMLElement {
         this._closeDialog();
         try {
           await this._hass.callService("brainstorm", "delete_idea", { id: id });
+          // Home Assistant keeps deleted ideas until its next start
+          this._pushUndo(noteText, () => this._hass.callService("brainstorm", "restore_idea", { id }));
+          if (this._selectedId === id) this._selectedId = null;
         } catch (err) {
           console.error("[BrainstormMindmap] Failed to delete idea:", err);
         }
@@ -3846,6 +3989,9 @@ class BrainstormMindmapCard extends HTMLElement {
         id: id,
         status: "completed",
       });
+      this._pushUndo(this._ideaText(id), () =>
+        this._hass.callService("brainstorm", "update_idea", { id, status: "active" })
+      );
     } catch (e) {
       console.error("[BrainstormMindmap] Failed to complete idea:", e);
       if (el) {
@@ -4281,7 +4427,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.6.14 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.6.15 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

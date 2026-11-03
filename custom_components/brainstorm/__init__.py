@@ -61,6 +61,7 @@ CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 SERVICE_ADD_IDEA = "add_idea"
 SERVICE_UPDATE_IDEA = "update_idea"
 SERVICE_DELETE_IDEA = "delete_idea"
+SERVICE_RESTORE_IDEA = "restore_idea"
 SERVICE_GET_IDEAS = "get_ideas"
 SERVICE_SHARE = "share"
 SERVICE_ADD_CATEGORY = "add_category"
@@ -440,6 +441,20 @@ def _register_services(hass: HomeAssistant) -> None:
         )
         return {"success": True}
 
+    async def handle_restore_idea(call: ServiceCall) -> dict[str, Any]:
+        """Handle bringing back a deleted idea."""
+        store = _require_store(hass)
+
+        idea_id = call.data[ATTR_ID]
+        idea = await store.async_restore_idea(idea_id, call.context.user_id)
+        if idea is None:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="idea_not_restorable",
+                translation_placeholders={"id": idea_id},
+            )
+        return {"success": True, "idea": idea}
+
     async def handle_get_ideas(call: ServiceCall) -> dict[str, Any]:
         """Handle fetching ideas."""
         store = _require_store(hass)
@@ -592,6 +607,14 @@ def _register_services(hass: HomeAssistant) -> None:
         DOMAIN,
         SERVICE_DELETE_IDEA,
         handle_delete_idea,
+        schema=SERVICE_DELETE_IDEA_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_RESTORE_IDEA,
+        handle_restore_idea,
         schema=SERVICE_DELETE_IDEA_SCHEMA,
         supports_response=SupportsResponse.OPTIONAL,
     )

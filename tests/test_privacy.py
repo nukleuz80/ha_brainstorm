@@ -1089,3 +1089,18 @@ async def test_new_category_forgets_the_map_position(
     assert store.get_idea(idea["id"])["map_pos"] == {"x": 10.0, "y": 20.0}
     await store.async_update_idea(idea["id"], category="Projekte")
     assert "map_pos" not in store.get_idea(idea["id"])
+
+
+async def test_only_who_deleted_an_idea_can_restore_it(setup_entry: SetupEntry) -> None:
+    """Test that nobody else brings back a deleted private idea."""
+    entry = await _private(setup_entry)
+    store = entry.runtime_data
+    idea = next(i for i in store.ideas if i["text"].lower() == "idee von jan")
+
+    await store.async_delete_idea(idea["id"], context=Context(user_id=OWNER))
+    assert not store.can_restore(idea["id"], OTHER)
+    assert await store.async_restore_idea(idea["id"], OTHER) is None
+    restored = await store.async_restore_idea(idea["id"], OWNER)
+    assert restored is not None
+    assert restored["owner"] == OWNER
+    assert store.get_idea(idea["id"])["text"] == idea["text"]

@@ -93,6 +93,8 @@ COLOR_PATTERN = re.compile(r"^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8}
 ICON_PATTERN = re.compile(r"^[a-zA-Z0-9_-]+:[a-zA-Z0-9_-]+$")
 # Config subfolders exports must not write to; 'www' is served without authentication
 EXPORT_BLOCKED_DIRS = {"custom_components", "www"}
+# How many deleted ideas can be brought back until the next start
+MAX_RESTORABLE = 50
 
 
 def _validate_category_style(icon: str | None, color: str | None) -> None:
@@ -128,6 +130,8 @@ class BrainstormStore:
         self.options = options or {}
         self._store = Store(hass, STORAGE_VERSION, STORAGE_KEY)
         self._ideas: dict[str, dict[str, Any]] = {}
+        # Ideas deleted since the start, so a dashboard can undo the deletion
+        self._deleted: dict[str, dict[str, Any]] = {}
         self._categories: list[str] = list(self._pack().default_categories)
         self._category_icons: dict[str, str] = {}
         self._category_colors: dict[str, str] = {}
@@ -1236,9 +1240,19 @@ class BrainstormStore:
 
         deleted_idea = self._ideas.pop(idea_id)
         # Unparent any direct subtasks of the deleted idea
+        orphans = []
         for item in self._ideas.values():
             if item.get(ATTR_PARENT_ID) == idea_id:
                 item[ATTR_PARENT_ID] = None
+                orphans.append(item[ATTR_ID])
+        self._deleted.pop(idea_id, None)
+        self._deleted[idea_id] = {
+            "idea": deleted_idea,
+            "orphans": orphans,
+            "user_id": context.user_id if context else None,
+        }
+        while len(self._deleted) > MAX_RESTORABLE:
+            del self._deleted[next(iter(self._deleted))]
 
         now_iso = dt_util.now().isoformat()
         act_context = context or Context()
@@ -1260,6 +1274,46 @@ class BrainstormStore:
         self.hass.bus.async_fire(EVENT_IDEA_DELETED, event_data, context=act_context)
         self._notify_listeners(context=act_context)
         return True
+
+    def can_restore(self, idea_id: str, user_id: str | None) -> bool:
+        """Tell whether this user may bring back a deleted idea."""
+        deleted = self._deleted.get(idea_id)
+        if deleted is None or idea_id in self._ideas:
+            return False
+        return user_id is None or deleted["user_id"] in (None, user_id)
+
+    async def async_restore_idea(
+        self, idea_id: str, user_id: str | None = None
+    ) -> dict[str, Any] | None:
+        """Bring back an idea deleted since the start, with its subtasks."""
+        if not self.can_restore(idea_id, user_id):
+            return None
+        deleted = self._deleted.pop(idea_id)
+        idea = deleted["idea"]
+        if idea.get(ATTR_CATEGORY) not in self._categories:
+            idea[ATTR_CATEGORY] = self._categories[0] if self._categories else idea.get(ATTR_CATEGORY)
+        parent = idea.get(ATTR_PARENT_ID)
+        if parent and parent not in self._ideas:
+            idea[ATTR_PARENT_ID] = None
+        self._ideas[idea_id] = idea
+        # Subtasks that nobody has moved elsewhere in the meantime hang on it again
+        for orphan_id in deleted["orphans"]:
+            orphan = self._ideas.get(orphan_id)
+            if orphan is not None and not orphan.get(ATTR_PARENT_ID):
+                orphan[ATTR_PARENT_ID] = idea_id
+
+        pack = self._pack()
+        self._last_action = {
+            "action": "restored",
+            "id": idea_id,
+            "text": idea.get(ATTR_TEXT),
+            "category": idea.get(ATTR_CATEGORY),
+            "timestamp": dt_util.now().isoformat(),
+            "description": f"{pack.msg('log_restored')}: \"{idea.get(ATTR_TEXT)}\" ({idea.get(ATTR_CATEGORY)})",
+        }
+        await self.async_save()
+        self._notify_listeners()
+        return idea
 
     async def async_add_category(
         self,

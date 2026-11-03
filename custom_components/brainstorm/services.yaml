@@ -141,6 +141,13 @@ delete_idea:
       selector:
         text:
 
+restore_idea:
+  fields:
+    id:
+      required: true
+      selector:
+        text:
+
 get_ideas:
   fields:
     category:

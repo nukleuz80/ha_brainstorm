@@ -460,6 +460,9 @@
     "admin_only": {
       "message": "Only administrators may do this."
     },
+    "idea_not_restorable": {
+      "message": "Idea '{id}' cannot be restored. Only ideas deleted since the last start can come back, and only by the person who deleted them."
+    },
     "idea_not_found": {
       "message": "Idea '{id}' was not found."
     },
@@ -629,11 +632,21 @@
     },
     "delete_idea": {
       "name": "Delete idea",
-      "description": "Permanently removes an idea.",
+      "description": "Removes an idea. Until the next start of Home Assistant, restore_idea can bring it back.",
       "fields": {
         "id": {
           "name": "ID",
           "description": "ID of the idea to delete."
+        }
+      }
+    },
+    "restore_idea": {
+      "name": "Restore idea",
+      "description": "Brings back an idea deleted since the last start of Home Assistant, with the links to its subtasks. Only the person who deleted it can do this.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "ID of the deleted idea."
         }
       }
     },

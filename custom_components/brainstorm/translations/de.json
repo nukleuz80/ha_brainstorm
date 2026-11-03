@@ -460,6 +460,9 @@
     "admin_only": {
       "message": "Nur Administratoren dürfen das ausführen."
     },
+    "idea_not_restorable": {
+      "message": "Idee '{id}' lässt sich nicht wiederherstellen. Zurück kommen nur Ideen, die seit dem letzten Start gelöscht wurden, und nur durch die Person, die sie gelöscht hat."
+    },
     "idea_not_found": {
       "message": "Idee '{id}' wurde nicht gefunden."
     },
@@ -629,11 +632,21 @@
     },
     "delete_idea": {
       "name": "Idee löschen",
-      "description": "Entfernt eine Idee dauerhaft.",
+      "description": "Entfernt eine Idee. Bis zum nächsten Start von Home Assistant holt restore_idea sie zurück.",
       "fields": {
         "id": {
           "name": "ID",
           "description": "ID der zu löschenden Idee."
+        }
+      }
+    },
+    "restore_idea": {
+      "name": "Idee wiederherstellen",
+      "description": "Holt eine Idee zurück, die seit dem letzten Start von Home Assistant gelöscht wurde, samt der Verbindung zu ihren Unteraufgaben. Das kann nur, wer sie gelöscht hat.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "ID der gelöschten Idee."
         }
       }
     },

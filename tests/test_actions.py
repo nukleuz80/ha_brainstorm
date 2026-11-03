@@ -137,6 +137,50 @@ async def test_delete_idea(hass: HomeAssistant, setup_entry: SetupEntry) -> None
         await _call(hass, "delete_idea", id="gibtsnicht")
 
 
+async def test_restore_deleted_idea(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that a deleted idea comes back once, with its subtasks."""
+    entry = await setup_entry()
+    store = entry.runtime_data
+    parent = (await _call(hass, "add_idea", text="Garage aufräumen"))["idea"]
+    child = (await _call(hass, "add_idea", text="Regal bauen", parent_id=parent["id"]))["idea"]
+    moved = (await _call(hass, "add_idea", text="Lampe tauschen", parent_id=parent["id"]))["idea"]
+    other = (await _call(hass, "add_idea", text="Keller"))["idea"]
+
+    await _call(hass, "delete_idea", id=parent["id"])
+    # Hung somewhere else in the meantime, so it stays there
+    await _call(hass, "update_idea", id=moved["id"], parent_id=other["id"])
+
+    restored = (await _call(hass, "restore_idea", id=parent["id"]))["idea"]
+    assert restored["id"] == parent["id"]
+    assert restored["text"] == "Garage aufräumen"
+    assert store.get_idea(parent["id"])["created_at"] == parent["created_at"]
+    assert store.get_idea(child["id"])["parent_id"] == parent["id"]
+    assert store.get_idea(moved["id"])["parent_id"] == other["id"]
+    assert store.last_action["action"] == "restored"
+
+    with pytest.raises(ServiceValidationError, match="cannot be restored"):
+        await _call(hass, "restore_idea", id=parent["id"])
+    with pytest.raises(ServiceValidationError, match="gibtsnicht"):
+        await _call(hass, "restore_idea", id="gibtsnicht")
+
+
+async def test_only_recent_deletions_can_be_restored(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that only the newest deletions stay restorable."""
+    entry = await setup_entry()
+    store = entry.runtime_data
+    ids = [(await _call(hass, "add_idea", text=f"Idee {n}"))["idea"]["id"] for n in range(3)]
+    with patch("custom_components.brainstorm.store.MAX_RESTORABLE", 2):
+        for idea_id in ids:
+            await _call(hass, "delete_idea", id=idea_id)
+    assert not store.can_restore(ids[0], None)
+    assert store.can_restore(ids[1], None)
+    assert store.can_restore(ids[2], None)
+
+
 async def test_get_ideas_with_all_statuses(
     hass: HomeAssistant, setup_entry: SetupEntry
 ) -> None:
