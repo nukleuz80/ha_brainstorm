@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.6.8-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.6.9-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -136,8 +136,8 @@ HACS only installs the integration, so continue with [Install the cards](#instal
 
 1. Copy `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` and `www/brainstorm-i18n.js` from the release to `/config/www/`. The third file holds the texts and needs no resource entry.
 2. Add both under **Settings ➔ Dashboards ➔ Resources** as **JavaScript module**:
-   - `/local/brainstorm-card.js?v=1.6.8`
-   - `/local/brainstorm-mindmap-card.js?v=1.6.8`
+   - `/local/brainstorm-card.js?v=1.6.9`
+   - `/local/brainstorm-mindmap-card.js?v=1.6.9`
 3. Reload the page in your browser.
 
 ### Removing the Integration
@@ -264,6 +264,7 @@ By default, all users of your Home Assistant see all ideas. Change this under **
 - **Categories:** Select a category ➔ **👥 Share …**. This covers your own ideas in it, including later ones.
 - **Several ideas:** **☑️ Select**, then complete, move, share or delete them at once. This also works without privacy.
 - **Rights:** Edit allows changing and completing. Deleting and passing on stay with the owner.
+- **Writing into someone else's list:** If someone shares a category with you personally to *edit*, your new ideas in it go into their list and belong to them. The same goes for subtasks of their ideas. A share with *all users* does not count, and if several people shared the same category with you, the idea stays yours.
 - **Echos and Alexa apps:** Under **Assign Echos & Apps to People**, each device belongs to one person. What is said there is theirs, and only their ideas are read out. Home Assistant cannot recognize voices, and everyone in the room can hear it.
 
 Admins and anyone with file access can still read everything. Home Assistant's to-do lists only show what is shared with everyone, because all users can read them. Existing Markdown exports stay in place when you switch this on, and new ones are only created if you allow it.
@@ -304,9 +305,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.6.8
+  - url: /local/brainstorm-card.js?v=1.6.9
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.6.8
+  - url: /local/brainstorm-mindmap-card.js?v=1.6.9
     type: module
 ```
 
@@ -711,6 +712,7 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.6.9`** | 2026-11-03 | **Writing into shared lists:** Whoever gets a category shared personally to *edit* adds new ideas there for its owner instead of keeping them. Subtasks belong to the owner of their parent. This lets an AI, for example, write tasks into your list through its own user. Deleting stays with the owner. |
 | **`v1.6.8`** | 2026-11-03 | **Home Assistant Quality Scale: Gold (self-assessed):**<br>• **Diagnostics:** *Download diagnostics* gives counts and settings for bug reports, without idea texts, people or Echos.<br>• **Repairs:** Home Assistant reports when the skill mode is on without a public HTTPS address, and when chosen Echos are gone.<br>• **Icons:** Icons for the sensor, the lists and all actions come from `icons.json`.<br>• **Translated errors:** The error for unreadable stored data is translated too.<br>• **Docs:** New chapters on entities, data updates, examples, known limitations and troubleshooting. |
 | **`v1.6.7`** | 2026-11-03 | **The skill understands more natural sentences:**<br>• **German without a command word:** *„sage Brainstorm wir brauchen Duschgel“*, *„… wir müssen …“*, *„… ich muss …“*, *„… dass …“* are saved as notes. *„Nokia …“*, as Alexa often hears *„notiere“*, and *„notiere mir …“* work too.<br>• **Lists and reminders:** *„zeige mir die Liste Brainstorm“*, *„erinnere mich um/am …“*.<br>• **Clear hint:** When Alexa cannot place a sentence, the skill says to start with *note* instead of only listing examples.<br>• **Your own category first:** A category you created wins over a standard alias with its name, so *„für den Einkauf Duschgel“* goes to *Einkauf* instead of *Alltag*.<br>• **Appointment with a time:** *„Termin Zahnarzt um neun“* gets its time even without a day.<br>• **New voice model and skill code:** Copy both into the Alexa developer console once. |
 | **`v1.6.6`** | 2026-11-03 | **Echo choice folded in:** In the edit dialog, *Remind on* starts folded and shows the chosen Echos, or *As in the settings*. A tap opens the list. |

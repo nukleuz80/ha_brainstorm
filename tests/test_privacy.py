@@ -612,6 +612,66 @@ async def test_share_category_includes_later_ideas_and_survives_reload(
     assert "einkaufen" not in _texts(entry.runtime_data.visible_ideas(OTHER))
 
 
+async def test_edit_share_lets_add_ideas_for_the_owner(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that a list shared to edit gets new ideas for its owner."""
+    entry = await _private(setup_entry)
+    store = entry.runtime_data
+    await _share(hass, OWNER, category="Alltag", shares={OTHER: "edit"})
+
+    idea = await store.async_add_idea(
+        "neu von lenja", category="Alltag", context=Context(user_id=OTHER)
+    )
+    assert idea["owner"] == OWNER
+    assert "neu von lenja" in _texts(store.visible_ideas(OWNER))
+    # Lenja may change it but deleting stays with the owner of the list
+    assert store.can_edit(idea, OTHER)
+    assert not store.is_owner(idea, OTHER)
+
+    subtask = await store.async_add_idea(
+        "unteraufgabe", parent_id=idea["id"], context=Context(user_id=OTHER)
+    )
+    assert subtask["owner"] == OWNER
+
+    # Other categories stay Lenja's own
+    own = await store.async_add_idea(
+        "eigene idee", category="Inbox", context=Context(user_id=OTHER)
+    )
+    assert own["owner"] == OTHER
+
+
+@pytest.mark.parametrize("level", ["view", None])
+async def test_only_edit_share_adds_for_the_owner(
+    hass: HomeAssistant, setup_entry: SetupEntry, level: str | None
+) -> None:
+    """Test that viewing a list or a share with all keeps new ideas private."""
+    entry = await _private(setup_entry)
+    store = entry.runtime_data
+    shares = {OTHER: level} if level else {"all": "edit"}
+    await _share(hass, OWNER, category="Alltag", shares=shares)
+
+    idea = await store.async_add_idea(
+        "neu von lenja", category="Alltag", context=Context(user_id=OTHER)
+    )
+    assert idea["owner"] == OTHER
+
+
+async def test_two_shared_lists_keep_new_ideas_private(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that it stays unclear whose list was meant when two are shared."""
+    entry = await _private(setup_entry)
+    store = entry.runtime_data
+    await _share(hass, OWNER, category="Alltag", shares={OTHER: "edit"})
+    await _share(hass, "user-sava", category="Alltag", shares={OTHER: "edit"})
+
+    idea = await store.async_add_idea(
+        "neu von lenja", category="Alltag", context=Context(user_id=OTHER)
+    )
+    assert idea["owner"] == OTHER
+
+
 async def test_share_needs_privacy_and_a_target(
     hass: HomeAssistant, setup_entry: SetupEntry
 ) -> None:

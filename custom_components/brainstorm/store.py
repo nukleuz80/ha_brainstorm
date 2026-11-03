@@ -224,6 +224,24 @@ class BrainstormStore:
         """Return whether a user may delete and share an idea."""
         return self.access_level(idea, user_id) == ACCESS_OWNER
 
+    def owner_for_new_idea(
+        self, user_id: str | None, category: str, parent: dict[str, Any] | None
+    ) -> str | None:
+        """Return who owns a new idea, a shared list keeping it for its owner."""
+        if not self._privacy_enabled or user_id is None:
+            return user_id
+        # A subtask belongs to whoever owns its parent, else that owner would not see it
+        if parent is not None and self.can_edit(parent, user_id):
+            return self.owner_of(parent)
+        # Only a list shared with this user personally counts, not one shared with all
+        owners = {
+            owner
+            for owner, categories in self._category_shares.items()
+            if owner != user_id
+            and (categories.get(category) or {}).get(user_id) == SHARE_EDIT
+        }
+        return owners.pop() if len(owners) == 1 else user_id
+
     def is_shared_with_all(self, idea: dict[str, Any]) -> bool:
         """Return whether every Home Assistant user may see an idea."""
         category_shares = self._category_shares.get(self.owner_of(idea) or "", {}).get(
@@ -896,7 +914,11 @@ class BrainstormStore:
             ATTR_DUE: due.isoformat() if due else None,
             ATTR_ASSIGNEE: assignee,
             ATTR_TRIGGER: trigger,
-            ATTR_OWNER: owner or (context.user_id if context else None),
+            ATTR_OWNER: self.owner_for_new_idea(
+                owner or (context.user_id if context else None),
+                resolved_cat,
+                self._ideas.get(resolved_parent) if resolved_parent else None,
+            ),
             ATTR_SHARES: shares or {},
         }
         # Keeps what was really said, so a bad shortening can be undone

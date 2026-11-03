@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.6.8-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.6.9-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -156,8 +156,8 @@ HACS installiert nur die Integration. Die Karten kopierst du anschließend wie u
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` und `www/brainstorm-i18n.js` in `/config/www/`. Die dritte Datei enthält die Texte und braucht keinen Ressourcen-Eintrag.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.6.8` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.6.8` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.6.9` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.6.9` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ### Integration entfernen
@@ -387,6 +387,7 @@ Standardmäßig sehen alle Benutzer deines Home Assistant alle Einträge. Unter 
 - **Kategorien:** Kategorie auswählen ➔ **👥 … freigeben**. Das gilt für deine eigenen Einträge darin, auch für spätere.
 - **Mehrere Einträge:** **☑️ Auswählen**, dann auf einmal erledigen, verschieben, freigeben oder löschen. Das geht auch ohne Privatsphäre.
 - **Rechte:** *Bearbeiten* erlaubt Ändern und Abhaken. Löschen und Weitergeben bleiben beim Besitzer.
+- **In fremde Listen schreiben:** Gibt dir jemand eine Kategorie persönlich mit *Bearbeiten* frei, landen deine neuen Einträge darin in seiner Liste und gehören ihm. Das gilt auch für Unteraufgaben zu seinen Einträgen. Eine Freigabe für *Alle Benutzer* zählt dafür nicht, und haben dir mehrere Personen dieselbe Kategorie freigegeben, bleibt der Eintrag deiner.
 - **Echos und Alexa-Apps:** Unter **Echos & Apps Personen zuordnen** gehört jedes Gerät einer Person. Was dort gesagt wird, gehört ihr, und nur ihre Einträge werden vorgelesen. Home Assistant erkennt keine Stimmen, und im Raum hören alle mit.
 
 > [!IMPORTANT]
@@ -762,6 +763,7 @@ Weitere Beispiele für Assist und Alexa liegen im Ordner [`examples/`](examples/
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.6.9`** | 03.11.2026 | **In freigegebene Listen schreiben:** Wer eine Kategorie persönlich mit *Bearbeiten* freigegeben bekommt, legt dort neue Einträge für den Besitzer an, statt sie für sich zu behalten. Unteraufgaben gehören dem Besitzer der übergeordneten Aufgabe. Damit kann zum Beispiel eine KI über ihren eigenen Benutzer Aufgaben in deine Liste schreiben. Löschen bleibt beim Besitzer. |
 | **`v1.6.8`** | 03.11.2026 | **Home Assistant Quality Scale: Gold (Selbsteinschätzung):**<br>• **Diagnose:** *Diagnose herunterladen* liefert Zahlen und Einstellungen für Fehlerberichte, ohne Ideen-Texte, Personen oder Echos.<br>• **Reparaturen:** Home Assistant meldet, wenn der Skill-Modus an ist, aber keine öffentliche HTTPS-Adresse existiert, und wenn gewählte Echos nicht mehr da sind.<br>• **Icons:** Icons für Sensor, Listen und alle Aktionen kommen aus `icons.json`.<br>• **Übersetzte Fehler:** Auch der Fehler beim Lesen der gespeicherten Daten ist übersetzt.<br>• **Doku:** Neue Abschnitte zu Entitäten, Aktualisierung, Beispielen, bekannten Einschränkungen und Fehlerbehebung. |
 | **`v1.6.7`** | 03.11.2026 | **Skill versteht natürlichere Sätze:**<br>• **Ohne Befehlswort:** *„sage Brainstorm wir brauchen Duschgel“*, *„… wir müssen …“*, *„… ich muss …“*, *„… dass …“* werden als Notiz gespeichert. Auch *„Nokia …“*, wie Alexa *„notiere“* oft versteht, und *„notiere mir …“* klappen.<br>• **Listen und Erinnerungen:** *„zeige mir die Liste Brainstorm“*, *„erinnere mich um/am …“*.<br>• **Klare Rückfrage:** Versteht Alexa einen Satz nicht, sagt der Skill *„Fang mit notiere an“*, statt nur Beispiele aufzuzählen.<br>• **Eigene Kategorie zuerst:** *„notiere für den Einkauf Duschgel“* landet in deiner Kategorie *Einkauf* (statt *Alltag*) und heißt nur *Duschgel*.<br>• **Termin mit Uhrzeit:** *„notiere Termin Zahnarzt um neun“* bekommt die Uhrzeit, auch ohne Tag.<br>• **Neues Sprachmodell und neuer Skill-Code:** Beides einmal neu in die Alexa-Entwicklerkonsole kopieren. |
 | **`v1.6.6`** | 03.11.2026 | **Echo-Auswahl eingeklappt:** Im Bearbeiten-Dialog ist *Erinnern auf* zunächst eingeklappt und zeigt die gewählten Echos oder *Wie in den Einstellungen*. Ein Tipp klappt die Liste auf. |
