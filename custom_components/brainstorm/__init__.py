@@ -25,6 +25,7 @@ from .const import (
     ATTR_LANGUAGE,
     ATTR_DEVICE,
     ATTR_DUE,
+    ATTR_ECHOS,
     ATTR_ICON,
     ATTR_ID,
     ATTR_ORDER,
@@ -104,6 +105,7 @@ SERVICE_UPDATE_IDEA_SCHEMA = vol.Schema(
         vol.Optional(ATTR_DUE): vol.Any(None, cv.datetime),
         vol.Optional(ATTR_ASSIGNEE): vol.Any(None, cv.entity_id),
         vol.Optional(ATTR_ZONE): vol.Any(None, cv.entity_id),
+        vol.Optional(ATTR_ECHOS): vol.Any(None, cv.entity_ids),
     },
     extra=vol.ALLOW_EXTRA,
 )
@@ -340,9 +342,13 @@ def _register_services(hass: HomeAssistant) -> None:
             update_due=ATTR_DUE in call.data,
         )
         if updated is not None and (
-            ATTR_ASSIGNEE in call.data or ATTR_ZONE in call.data
+            ATTR_ASSIGNEE in call.data
+            or ATTR_ZONE in call.data
+            or ATTR_ECHOS in call.data
         ):
             fields: dict[str, Any] = {}
+            if ATTR_ECHOS in call.data:
+                fields[ATTR_ECHOS] = call.data[ATTR_ECHOS] or None
             if ATTR_ASSIGNEE in call.data:
                 fields[ATTR_ASSIGNEE] = call.data[ATTR_ASSIGNEE]
                 state = hass.states.get(call.data[ATTR_ASSIGNEE] or "")

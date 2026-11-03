@@ -612,6 +612,10 @@
         "zone": {
           "name": "An diesem Ort erinnern (Optional)",
           "description": "Erinnert beim Betreten dieser Zone."
+        },
+        "echos": {
+          "name": "Echos",
+          "description": "Die Echos, die die Erinnerung an diesen Eintrag sprechen. Leer folgt den Erinnerungs-Einstellungen."
         }
       }
     },

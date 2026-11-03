@@ -1,8 +1,8 @@
-import { dateLocale, dueInputFormat, formatDueInput, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.4";
+import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.5";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.6.4 - Skill, Reminders, Privacy and Sharing
+ * Version: 1.6.5 - Skill, Reminders, Privacy and Sharing
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -1569,6 +1569,38 @@ class BrainstormMindmapCard extends HTMLElement {
           min-height: 42px;
           display: block;
         }
+        input[type="date"].dialog-input,
+        input[type="time"].dialog-input {
+          height: 44px;
+          min-height: 44px;
+          padding-top: 0;
+          padding-bottom: 0;
+          line-height: normal;
+        }
+        .dialog-echo-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+          gap: 6px;
+        }
+        .dialog-due-row {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) minmax(0, 7rem) 44px;
+          gap: 8px;
+          align-items: center;
+        }
+        .dialog-due-row input::-webkit-date-and-time-value {
+          text-align: left;
+        }
+        .dialog-btn.dialog-due-clear {
+          width: 44px;
+          height: 44px;
+          padding: 0;
+        }
+        .dialog-hint {
+          margin-top: -8px;
+          font-size: 0.78rem;
+          color: var(--secondary-text-color, #64748b);
+        }
         .dialog-new-cat-row .dialog-input {
           flex: 1;
           width: auto;
@@ -2813,6 +2845,11 @@ class BrainstormMindmapCard extends HTMLElement {
     const categories = sensor ? (sensor.attributes.categories || ["Inbox"]) : ["Inbox"];
     let selectedCat = currentCategory || "Inbox";
     let selectedPrio = (currentPriority || "medium").toLowerCase();
+    const idea = ((sensor && sensor.attributes.ideas) || []).find((i) => i.id === id) || {};
+    const dueValues = dueInputValues(idea.due);
+    const echos = alexaEchos(this._hass);
+    const currentEchos = idea.echos || [];
+    let selectedEchos = [...currentEchos];
 
     this._openDialog(t("✏️ Notiz bearbeiten"), (body) => {
       body.innerHTML = `
@@ -2844,6 +2881,31 @@ class BrainstormMindmapCard extends HTMLElement {
             .join("")}
         </div>
 
+        <div class="dialog-label">${t("Termin:")}</div>
+        <div class="dialog-due-row">
+          <input type="date" class="dialog-input" id="editDueDate" value="${dueValues.date}">
+          <input type="time" class="dialog-input" id="editDueTime" value="${dueValues.time}">
+          <button class="dialog-btn dialog-btn-cancel dialog-due-clear" id="editDueClear" title="${t("Termin entfernen")}" aria-label="${t("Termin entfernen")}">✕</button>
+        </div>
+        <div class="dialog-hint">${t("Ohne Uhrzeit erinnert Brainstorm um 9:00.")}</div>
+
+        ${echos.length ? `
+          <div class="dialog-label">${t("Erinnern auf:")}</div>
+          <div class="dialog-echo-grid" id="editEchoGrid">
+            ${echos
+              .map(
+                (echo) => `
+              <div class="dialog-cat-chip ${currentEchos.includes(echo.id) ? "selected" : ""}" data-echo="${this._escapeHtml(echo.id)}">
+                <span class="dialog-cat-dot"></span>
+                <span class="dialog-cat-name">${this._escapeHtml(echo.name)}</span>
+              </div>
+            `
+              )
+              .join("")}
+          </div>
+          <div class="dialog-hint">${t("Ohne Auswahl gelten die Einstellungen der Erinnerungen.")}</div>
+        ` : ""}
+
         <div class="dialog-footer">
           <button class="dialog-btn dialog-btn-cancel" id="cancelEditBtn">${t("Abbrechen")}</button>
           <button class="dialog-btn dialog-btn-primary" id="saveEditBtn">${t("Speichern")}</button>
@@ -2854,8 +2916,24 @@ class BrainstormMindmapCard extends HTMLElement {
       const textError = body.querySelector("#editTextError");
       const saveBtn = body.querySelector("#saveEditBtn");
       const cancelBtn = body.querySelector("#cancelEditBtn");
-      const catChips = body.querySelectorAll(".dialog-cat-chip");
+      const catChips = body.querySelectorAll("#editCatGrid .dialog-cat-chip");
       const prioChips = body.querySelectorAll("#editPrioGrid .dialog-prio-chip");
+      const dueDate = body.querySelector("#editDueDate");
+      const dueTime = body.querySelector("#editDueTime");
+
+      body.querySelector("#editDueClear").addEventListener("click", () => {
+        dueDate.value = "";
+        dueTime.value = "";
+      });
+      body.querySelectorAll("#editEchoGrid .dialog-cat-chip").forEach((chip) => {
+        chip.addEventListener("click", () => {
+          const echo = chip.getAttribute("data-echo");
+          chip.classList.toggle("selected");
+          selectedEchos = chip.classList.contains("selected")
+            ? [...selectedEchos, echo]
+            : selectedEchos.filter((e) => e !== echo);
+        });
+      });
 
       const showTextError = (msg) => {
         if (!textError || !textarea) return;
@@ -2911,6 +2989,14 @@ class BrainstormMindmapCard extends HTMLElement {
         const payload = { id: id, text: newText, priority: selectedPrio };
         if (selectedCat && selectedCat !== currentCategory) {
           payload.category = selectedCat;
+        }
+        const newDue = dueFromInputValues(dueDate.value, dueTime.value);
+        const oldDue = idea.due ? new Date(idea.due).getTime() : null;
+        if ((newDue ? new Date(newDue).getTime() : null) !== oldDue) {
+          payload.due = newDue;
+        }
+        if ([...selectedEchos].sort().join() !== [...currentEchos].sort().join()) {
+          payload.echos = selectedEchos.length ? selectedEchos : null;
         }
 
         try {
@@ -3523,7 +3609,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.6.4 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.6.5 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

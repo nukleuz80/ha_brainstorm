@@ -612,6 +612,10 @@
         "zone": {
           "name": "Zone",
           "description": "Reminds when entering this zone."
+        },
+        "echos": {
+          "name": "Echos",
+          "description": "The Echos that speak the reminder of this idea. Empty follows the reminder settings."
         }
       }
     },

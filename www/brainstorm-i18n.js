@@ -174,6 +174,11 @@ const DICTIONARIES = {
     "{count} fremde Einträge werden ausgelassen.": "Entries of other people that are skipped: {count}",
     "Überfällig": "Overdue",
     "Übergeordnete Aufgabe:": "Parent task:",
+    "Erinnern auf:": "Remind on:",
+    "Ohne Auswahl gelten die Einstellungen der Erinnerungen.": "Without a choice, the reminder settings apply.",
+    "Ohne Uhrzeit erinnert Brainstorm um 9:00.": "Without a time, Brainstorm reminds you at 9:00.",
+    "Termin:": "Due:",
+    "Termin entfernen": "Remove due date",
     "Übernehmen": "Use it",
     "— Keine (Hauptaufgabe) —": "— None (main task) —",
     "☑️ Auswählen": "☑️ Select",
@@ -269,4 +274,32 @@ export function parseDueInput(input) {
   const iso = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{2})$/);
   if (iso) return new Date(+iso[1], +iso[2] - 1, +iso[3], +iso[4], +iso[5]);
   return null;
+}
+
+/** Return the values of a date and a time input for a due date. */
+export function dueInputValues(due) {
+  const date = due ? new Date(due) : null;
+  if (!date || Number.isNaN(date.getTime())) return { date: "", time: "" };
+  return {
+    date: `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`,
+    time: `${pad(date.getHours())}:${pad(date.getMinutes())}`,
+  };
+}
+
+/** Return the due date of a date and a time input, a missing time meaning 09:00. */
+export function dueFromInputValues(date, time) {
+  if (!date) return null;
+  const due = new Date(`${date}T${time || "09:00"}`);
+  return Number.isNaN(due.getTime()) ? null : due.toISOString();
+}
+
+/** Return the Echos of the Alexa Media Player integration, sorted by name. */
+export function alexaEchos(hass) {
+  return Object.keys((hass && hass.entities) || {})
+    .filter((id) => id.startsWith("media_player.") && hass.entities[id].platform === "alexa_media")
+    .map((id) => {
+      const state = hass.states[id];
+      return { id, name: (state && state.attributes.friendly_name) || id };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
 }

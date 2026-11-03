@@ -78,6 +78,26 @@ async def test_update_idea_changes_the_optional_fields(
     assert updated["parent_id"] is None
 
 
+async def test_update_idea_sets_and_clears_the_echos(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test choosing the Echos of an idea and going back to the settings."""
+    entry = await setup_entry()
+    idea = (await _call(hass, "add_idea", text="Regal bauen"))["idea"]
+    store = entry.runtime_data
+
+    await _call(hass, "update_idea", id=idea["id"], echos=["media_player.kuche"])
+    assert store.get_idea(idea["id"])["echos"] == ["media_player.kuche"]
+    shown = store.get_overview_attributes()["ideas"]
+    assert shown[0]["echos"] == ["media_player.kuche"]
+
+    await _call(hass, "update_idea", id=idea["id"], text="Regal aufbauen")
+    assert store.get_idea(idea["id"])["echos"] == ["media_player.kuche"]
+
+    await _call(hass, "update_idea", id=idea["id"], echos=None)
+    assert store.get_idea(idea["id"])["echos"] is None
+
+
 async def test_update_idea_refuses_an_unknown_parent(
     hass: HomeAssistant, setup_entry: SetupEntry
 ) -> None:

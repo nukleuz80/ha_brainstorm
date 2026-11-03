@@ -25,6 +25,7 @@ from .const import (
     ATTR_CREATED_AT,
     ATTR_DEVICE,
     ATTR_DUE,
+    ATTR_ECHOS,
     ATTR_ESCALATED,
     ATTR_ID,
     ATTR_PRIORITY,
@@ -469,6 +470,9 @@ class ReminderManager:
 
     def _idea_echos(self, idea: dict[str, Any]) -> list[str]:
         """Return the Echos for an idea, following its list and person."""
+        # Echos chosen for the entry itself win over every rule
+        if idea.get(ATTR_ECHOS):
+            return list(idea[ATTR_ECHOS])
         foreign = self._foreign_rule(idea)
         if foreign is not None:
             echos = list(foreign.get("echos") or [])

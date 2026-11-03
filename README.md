@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.6.4-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.6.5-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Silver%20self--assessed-C0C0C0.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -136,8 +136,8 @@ HACS only installs the integration, so continue with [Install the cards](#instal
 
 1. Copy `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` and `www/brainstorm-i18n.js` from the release to `/config/www/`. The third file holds the texts and needs no resource entry.
 2. Add both under **Settings ➔ Dashboards ➔ Resources** as **JavaScript module**:
-   - `/local/brainstorm-card.js?v=1.6.4`
-   - `/local/brainstorm-mindmap-card.js?v=1.6.4`
+   - `/local/brainstorm-card.js?v=1.6.5`
+   - `/local/brainstorm-mindmap-card.js?v=1.6.5`
 3. Reload the page in your browser.
 
 ### Removing the Integration
@@ -276,6 +276,7 @@ Brainstorm reminds you of due ideas on its own, over the services you have alrea
 - **By voice (skill):** *"Alexa, ask Brainstorm to remind me tomorrow at 8 to take out the bins"*. Phrases like *tonight*, *tomorrow morning*, *on Friday*, *next week*, *March 15th*, *in two hours* are understood. Numeric dates like 3/4 are not, because countries read them differently, and *at 5* without am or pm means the next time it comes up.
 - **In the lists:** Set a due date in the Home Assistant to-do lists. A plain date means 09:00.
 - **On the card:** Long-press an idea ➔ choose a reminder.
+- **In the edit dialog:** Both cards show a date and a time field, without a time Brainstorm reminds you at 09:00. Below, choose the Echos that speak this reminder. Without a choice, the reminder settings apply.
 - **In automations:** `brainstorm.add_idea` and `brainstorm.update_idea` with the `due` field.
 
 **Configure** under **Brainstorm Hub ➔ Configure ➔ Reminders & Notifications**. Every feature has its own switch:
@@ -303,9 +304,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.6.4
+  - url: /local/brainstorm-card.js?v=1.6.5
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.6.4
+  - url: /local/brainstorm-mindmap-card.js?v=1.6.5
     type: module
 ```
 
@@ -553,6 +554,7 @@ Changes an existing idea.
 | `due` | No | When Brainstorm should remind you of this idea. |
 | `assignee` | No | The person to remind. |
 | `zone` | No | Reminds when entering this zone. |
+| `echos` | No | The Echos that speak the reminder of this idea, as a list. `null` goes back to the reminder settings. |
 
 ### `brainstorm.delete_idea`
 
@@ -642,6 +644,7 @@ Shares several ideas or a whole category. Needs privacy to be switched on.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.6.5`** | 2026-11-03 | **Due date in the edit dialog:**<br>• **Date and time:** Both cards set, change and remove the due date of an entry directly in the dialog. Without a time, Brainstorm reminds you at 09:00.<br>• **Choose Echos:** Per entry, choose the Echos that speak the reminder. Without a choice, the reminder settings apply as before.<br>• **New field:** `brainstorm.update_idea` takes `echos`. |
 | **`v1.6.4`** | 2026-11-02 | The dialogs no longer squeeze their fields: on the iPhone, the **Parent task** selection is readable again and the note text has its full height. |
 | **`v1.6.3`** | 2026-11-02 | **Mindmap card on phones:**<br>• **Header:** Logo, title and buttons sit in one row and the categories in a second one; nothing is squeezed or overlapped any more.<br>• **Full screen:** The header no longer disappears behind the notch or Dynamic Island, and the buttons at the bottom keep clear of the home indicator.<br>• **iPhone:** The phone layout now also applies in Safari and the Companion app.<br>• **Notes:** They no longer overlap and are arranged in two columns around the center. |
 | **`v1.6.2`** | 2026-11-02 | The add button of the card only shows the plus, on phones and on the desktop. |

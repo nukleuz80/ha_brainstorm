@@ -30,6 +30,7 @@ from .const import (
     SHARE_VIEW,
     ATTR_DEVICE,
     ATTR_DUE,
+    ATTR_ECHOS,
     ATTR_TRIGGER,
     ATTR_URGENT_SENT,
     ATTR_ESCALATED,
@@ -369,6 +370,7 @@ class BrainstormStore:
                     "due": i.get(ATTR_DUE),
                     "assignee": i.get(ATTR_ASSIGNEE),
                     "trigger": i.get(ATTR_TRIGGER),
+                    "echos": i.get(ATTR_ECHOS),
                     "raw_text": i.get(ATTR_RAW_TEXT),
                 }
                 for i in active_ideas

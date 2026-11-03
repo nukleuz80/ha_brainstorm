@@ -127,6 +127,13 @@ update_idea:
       selector:
         entity:
           domain: zone
+    echos:
+      required: false
+      selector:
+        entity:
+          domain: media_player
+          integration: alexa_media
+          multiple: true
 
 delete_idea:
   fields:

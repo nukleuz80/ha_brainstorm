@@ -1,9 +1,9 @@
-import { dateLocale, dueInputFormat, formatDueInput, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.4";
+import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.5";
 
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.6.4 - Skill, Reminders, Privacy and Sharing
+ * Version 1.6.5 - Skill, Reminders, Privacy and Sharing
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",
@@ -1144,7 +1144,12 @@ class BrainstormCard extends HTMLElement {
     let selectedCat = currentCategory || "Inbox";
     let selectedPrio = (currentPriority || "medium").toLowerCase();
     const candidateParents = activeIdeas.filter((i) => i.id !== id && !i.parent_id);
-    const rawText = (activeIdeas.find((i) => i.id === id) || {}).raw_text;
+    const idea = activeIdeas.find((i) => i.id === id) || {};
+    const rawText = idea.raw_text;
+    const dueValues = dueInputValues(idea.due);
+    const echos = alexaEchos(this._hass);
+    const currentEchos = idea.echos || [];
+    let selectedEchos = [...currentEchos];
 
     this._openDialog(t("✏️ Notiz bearbeiten"), (body) => {
       body.innerHTML = `
@@ -1183,6 +1188,31 @@ class BrainstormCard extends HTMLElement {
             .join("")}
         </div>
 
+        <div class="action-dialog-label" style="margin-top: 6px;">${t("Termin:")}</div>
+        <div class="action-dialog-due-row">
+          <input type="date" class="action-dialog-input" id="editDueDate" value="${dueValues.date}">
+          <input type="time" class="action-dialog-input" id="editDueTime" value="${dueValues.time}">
+          <button class="action-dialog-btn action-dialog-btn-cancel action-dialog-due-clear" id="editDueClear" title="${t("Termin entfernen")}" aria-label="${t("Termin entfernen")}">✕</button>
+        </div>
+        <div class="action-dialog-hint">${t("Ohne Uhrzeit erinnert Brainstorm um 9:00.")}</div>
+
+        ${echos.length ? `
+          <div class="action-dialog-label">${t("Erinnern auf:")}</div>
+          <div class="action-dialog-echo-grid" id="editEchoGrid">
+            ${echos
+              .map(
+                (echo) => `
+              <div class="action-dialog-cat-chip ${currentEchos.includes(echo.id) ? "selected" : ""}" data-echo="${this._escapeHtml(echo.id)}">
+                <span class="action-dialog-cat-dot"></span>
+                <span class="action-dialog-cat-name">${this._escapeHtml(echo.name)}</span>
+              </div>
+            `
+              )
+              .join("")}
+          </div>
+          <div class="action-dialog-hint">${t("Ohne Auswahl gelten die Einstellungen der Erinnerungen.")}</div>
+        ` : ""}
+
         <div class="action-dialog-label" style="margin-top: 6px;">${t("Übergeordnete Aufgabe:")}</div>
         <select class="action-dialog-input" id="editParentSelect" style="cursor: pointer; width: 100%;">
           <option value="">${t("— Keine (Hauptaufgabe) —")}</option>
@@ -1214,8 +1244,24 @@ class BrainstormCard extends HTMLElement {
       const textError = body.querySelector("#editTextError");
       const saveBtn = body.querySelector("#saveEditBtn");
       const cancelBtn = body.querySelector("#cancelEditBtn");
-      const catChips = body.querySelectorAll(".action-dialog-cat-chip");
+      const catChips = body.querySelectorAll("#editCatGrid .action-dialog-cat-chip");
       const prioChips = body.querySelectorAll(".action-dialog-prio-chip");
+      const dueDate = body.querySelector("#editDueDate");
+      const dueTime = body.querySelector("#editDueTime");
+
+      body.querySelector("#editDueClear").addEventListener("click", () => {
+        dueDate.value = "";
+        dueTime.value = "";
+      });
+      body.querySelectorAll("#editEchoGrid .action-dialog-cat-chip").forEach((chip) => {
+        chip.addEventListener("click", () => {
+          const echo = chip.getAttribute("data-echo");
+          chip.classList.toggle("selected");
+          selectedEchos = chip.classList.contains("selected")
+            ? [...selectedEchos, echo]
+            : selectedEchos.filter((e) => e !== echo);
+        });
+      });
 
       setTimeout(() => {
         if (textarea) {
@@ -1271,6 +1317,14 @@ class BrainstormCard extends HTMLElement {
         const payload = { id: id, text: newText, priority: selectedPrio };
         if (selectedCat && selectedCat !== currentCategory) {
           payload.category = selectedCat;
+        }
+        const newDue = dueFromInputValues(dueDate.value, dueTime.value);
+        const oldDue = idea.due ? new Date(idea.due).getTime() : null;
+        if ((newDue ? new Date(newDue).getTime() : null) !== oldDue) {
+          payload.due = newDue;
+        }
+        if ([...selectedEchos].sort().join() !== [...currentEchos].sort().join()) {
+          payload.echos = selectedEchos.length ? selectedEchos : null;
         }
         const parentSelect = body.querySelector("#editParentSelect");
         if (parentSelect) {
@@ -2239,6 +2293,30 @@ class BrainstormCard extends HTMLElement {
           grid-template-columns: repeat(auto-fill, minmax(95px, 1fr));
           gap: 6px;
         }
+        .action-dialog-echo-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+          gap: 6px;
+        }
+        .action-dialog-due-row {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) minmax(0, 7rem) 44px;
+          gap: 8px;
+          align-items: center;
+        }
+        .action-dialog-due-row input::-webkit-date-and-time-value {
+          text-align: left;
+        }
+        .action-dialog-btn.action-dialog-due-clear {
+          width: 44px;
+          height: 44px;
+          padding: 0;
+        }
+        .action-dialog-hint {
+          margin-top: -8px;
+          font-size: 0.78rem;
+          color: var(--secondary-text-color, #64748b);
+        }
         .action-dialog-cat-chip {
           display: flex;
           align-items: center;
@@ -2336,6 +2414,8 @@ class BrainstormCard extends HTMLElement {
           min-height: 42px;
           display: block;
         }
+        input[type="date"].action-dialog-input,
+        input[type="time"].action-dialog-input,
         select.action-dialog-input {
           flex-shrink: 0;
           height: 44px;
@@ -4818,7 +4898,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.6.4 ",
+  "%c BRAINSTORM-CARD %c v1.6.5 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

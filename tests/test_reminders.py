@@ -212,6 +212,22 @@ async def test_other_notify_entity_is_kept(
     assert phone_service_for(hass, "notify.pushover") == "notify.pushover"
 
 
+async def test_echos_of_the_idea_win_over_the_origin(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that the Echos chosen for an idea speak instead of its origin."""
+    entry, alexa, _ = await _setup(hass, setup_entry, reminder_alexa="origin")
+    idea = await _due_idea(entry)
+    await entry.runtime_data.async_mark_fields(
+        idea["id"], {"echos": ["media_player.garten", "media_player.flur"]}
+    )
+
+    await entry.runtime_data.reminders.async_check(dt_util.now())
+    await hass.async_block_till_done()
+
+    assert alexa[0].data["target"] == ["media_player.garten", "media_player.flur"]
+
+
 async def test_unknown_origin_keeps_other_echos_silent(
     hass: HomeAssistant, setup_entry: SetupEntry
 ) -> None:
