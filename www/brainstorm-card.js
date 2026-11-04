@@ -1,9 +1,9 @@
-import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.28";
+import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.29";
 
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.6.28 - Skill, Reminders, Privacy and Sharing
+ * Version 1.6.29 - Skill, Reminders, Privacy and Sharing
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",
@@ -1127,6 +1127,53 @@ class BrainstormCard extends HTMLElement {
     }
   }
 
+  // A new subtask under a main task, in the category of the main task
+  _showAddSubtaskDialog(parent) {
+    if (!this._hass) return;
+    this._openDialog(t("🌿 Neue Unteridee"), (body) => {
+      body.innerHTML = `
+        <div class="action-dialog-label">${t("Unter: {text}", { text: this._escapeHtml(parent.text) })}</div>
+        <div class="action-dialog-label">${t("Idee / Gedanke:")}</div>
+        <textarea class="action-dialog-textarea" id="addSubtaskText" placeholder="${t("Was möchtest du festhalten?...")}" rows="3"></textarea>
+        <div class="action-dialog-footer">
+          <button class="action-dialog-btn action-dialog-btn-cancel" id="cancelSubtaskBtn">${t("Abbrechen")}</button>
+          <button class="action-dialog-btn action-dialog-btn-primary" id="saveSubtaskBtn" disabled>${t("Hinzufügen")}</button>
+        </div>
+      `;
+      const textarea = body.querySelector("#addSubtaskText");
+      const saveBtn = body.querySelector("#saveSubtaskBtn");
+      const save = async () => {
+        const text = textarea.value.trim();
+        if (!text) return;
+        saveBtn.disabled = true;
+        try {
+          await this._hass.callService("brainstorm", "add_idea", {
+            text,
+            category: parent.category,
+            parent_id: parent.id,
+            source: "dashboard",
+          });
+          this._closeDialog();
+        } catch (err) {
+          console.error("Failed to add subtask", err);
+          saveBtn.disabled = false;
+        }
+      };
+      textarea.addEventListener("input", () => {
+        saveBtn.disabled = !textarea.value.trim();
+      });
+      textarea.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
+          e.preventDefault();
+          save();
+        }
+      });
+      body.querySelector("#cancelSubtaskBtn").addEventListener("click", () => this._closeDialog());
+      saveBtn.addEventListener("click", save);
+      setTimeout(() => textarea.focus(), 50);
+    });
+  }
+
   // The AI suggests subtasks; nothing is stored until the person picks and saves
   _showSubtaskSuggestions(item) {
     if (!this._hass) return;
@@ -1219,7 +1266,9 @@ class BrainstormCard extends HTMLElement {
             "error",
             code === "ai_not_configured"
               ? t("Wähle zuerst eine KI-Aufgaben-Entität unter Brainstorm Hub ➔ Konfigurieren ➔ KI.")
-              : code === "unauthorized"
+              : code === "ai_unavailable"
+                ? t("Die KI ist gerade nicht erreichbar. Versuch es gleich nochmal.")
+                : code === "unauthorized"
                 ? t("Du darfst diese Notiz nicht ändern.")
                 : t("Die KI hat keine Unteraufgaben geliefert.")
           );
@@ -1883,6 +1932,16 @@ class BrainstormCard extends HTMLElement {
       <div class="apple-menu-separator"></div>
     `;
 
+    // A new subtask right under a main task
+    if (!isSub) {
+      actionsHtml += `
+        <button class="apple-menu-btn" data-act="branch">
+          <span class="btn-icon">🌿</span>
+          <div class="btn-content"><span>${t("Unteridee anlegen")}</span></div>
+        </button>
+      `;
+    }
+
     // The AI suggests subtasks for a main task
     if (this._aiSubtasks && !isSub) {
       actionsHtml += `
@@ -1925,6 +1984,11 @@ class BrainstormCard extends HTMLElement {
 
         if (act === "suggest") {
           this._showSubtaskSuggestions(item);
+          return;
+        }
+
+        if (act === "branch") {
+          this._showAddSubtaskDialog(item);
           return;
         }
 
@@ -2928,6 +2992,7 @@ class BrainstormCard extends HTMLElement {
             margin-left: 2px !important;
           }
           .indent-btn,
+          .branch-btn,
           .suggest-btn,
           .edit-btn,
           .delete-btn {
@@ -3381,6 +3446,7 @@ class BrainstormCard extends HTMLElement {
           margin-left: 4px;
         }
         .indent-btn,
+        .branch-btn,
         .suggest-btn,
         .edit-btn,
         .delete-btn {
@@ -3399,6 +3465,7 @@ class BrainstormCard extends HTMLElement {
           line-height: 1;
         }
         .idea-item:hover .indent-btn,
+        .idea-item:hover .branch-btn,
         .idea-item:hover .suggest-btn,
         .idea-item:hover .edit-btn,
         .idea-item:hover .delete-btn {
@@ -3409,6 +3476,7 @@ class BrainstormCard extends HTMLElement {
           opacity: 1 !important;
           background: var(--secondary-background-color, rgba(0,0,0,0.05));
         }
+        .branch-btn:hover,
         .suggest-btn:hover {
           opacity: 1 !important;
           background: var(--secondary-background-color, rgba(0,0,0,0.05));
@@ -4285,7 +4353,8 @@ class BrainstormCard extends HTMLElement {
                       : ""
                     : ""
                 }
-                ${itemEdit && aiSubtasks && !isSub ? `<button class="suggest-btn" title="${t("Unteraufgaben von der KI vorschlagen lassen")}" data-id="${item.id}">✨</button>` : ""}
+                ${itemEdit && !isSub && !isCompletedView ? `<button class="branch-btn" title="${t("Unteridee anlegen")}" data-id="${item.id}">🌿</button>` : ""}
+                ${itemEdit && aiSubtasks && !isSub && !isCompletedView ? `<button class="suggest-btn" title="${t("Unteraufgaben von der KI vorschlagen lassen")}" data-id="${item.id}">✨</button>` : ""}
                 ${itemEdit ? `<button class="edit-btn" title="${t("Bearbeiten")}" data-id="${item.id}">✎</button>` : ""}
                 ${itemDelete ? `<button class="delete-btn" title="${t("Löschen")}" data-id="${item.id}">✕</button>` : ""}
               </div>
@@ -4361,6 +4430,14 @@ class BrainstormCard extends HTMLElement {
             const currentCat = el.getAttribute("data-cat");
             const item = activeIdeas.find((i) => i.id === id);
             this._changeCategory(id, currentCat, item ? item.text : "");
+          });
+        });
+
+        ideasList.querySelectorAll(".branch-btn").forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const item = activeIdeas.find((i) => i.id === btn.getAttribute("data-id"));
+            if (item) this._showAddSubtaskDialog(item);
           });
         });
 
@@ -5152,7 +5229,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.6.28 ",
+  "%c BRAINSTORM-CARD %c v1.6.29 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

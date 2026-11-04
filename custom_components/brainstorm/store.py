@@ -80,7 +80,11 @@ from .const import (
     TYPED_SOURCES,
     VOICE_MODE_NATIVE,
 )
-from .ai import async_generate_text, parse_subtask_suggestions
+from .ai import (
+    async_generate_text,
+    async_request_text_with_retry,
+    parse_subtask_suggestions,
+)
 from .languages import CATEGORY_KEYS, get_pack
 from .languages.common import CATEGORY_PROJECTS, LanguagePack
 
@@ -631,7 +635,8 @@ class BrainstormStore:
     ) -> list[str] | None:
         """Ask the AI for subtasks of an idea, None when it gave nothing usable.
 
-        Nothing is stored: the person picks what to keep first.
+        Nothing is stored: the person picks what to keep first. Raises
+        AIUnavailableError when the AI did not answer, even when asked twice.
         """
         entity = self.options.get(CONF_AI_ENTITY)
         if not entity:
@@ -649,7 +654,7 @@ class BrainstormStore:
             category=idea.get(ATTR_CATEGORY) or "",
             existing=", ".join(children) if children else "–",
         )
-        answer = await async_generate_text(self.hass, entity, instructions)
+        answer = await async_request_text_with_retry(self.hass, entity, instructions)
         suggestions = parse_subtask_suggestions(
             answer, [idea.get(ATTR_TEXT) or "", *children]
         )

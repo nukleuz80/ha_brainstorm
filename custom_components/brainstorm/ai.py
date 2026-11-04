@@ -11,6 +11,8 @@ from homeassistant.exceptions import HomeAssistantError
 _LOGGER = logging.getLogger(__name__)
 
 AI_TIMEOUT_SECONDS = 20
+# Pause before asking a refusing provider once more
+AI_RETRY_DELAY_SECONDS = 2
 # How many subtasks a suggestion may hold, and how long each may be
 MAX_SUBTASK_SUGGESTIONS = 8
 MAX_SUBTASK_LENGTH = 200
@@ -18,10 +20,22 @@ MAX_SUBTASK_LENGTH = 200
 _LIST_MARK = re.compile(r"^\s*(?:[-*•–—]+|\d+\s*[.):]|\[[ xX]?\])\s*")
 
 
-async def async_generate_text(
+class AIUnavailableError(HomeAssistantError):
+    """The AI did not answer, for example because its provider is overloaded."""
+
+    def __init__(self, reason: str, *, timed_out: bool = False) -> None:
+        """Remember whether the AI only took too long."""
+        super().__init__(reason)
+        self.timed_out = timed_out
+
+
+async def async_request_text(
     hass: HomeAssistant, entity: str, instructions: str
 ) -> str | None:
-    """Let an AI task entity write a text, returning None on any problem."""
+    """Let an AI task entity write a text, None when the answer is empty.
+
+    Raises AIUnavailableError when the AI gave no answer at all.
+    """
     try:
         async with asyncio.timeout(AI_TIMEOUT_SECONDS):
             result = await hass.services.async_call(
@@ -35,11 +49,40 @@ async def async_generate_text(
                 blocking=True,
                 return_response=True,
             )
-    except (HomeAssistantError, ValueError, TimeoutError) as err:
+    except TimeoutError as err:
+        _LOGGER.warning("No text from %s within %s s", entity, AI_TIMEOUT_SECONDS)
+        raise AIUnavailableError("timeout", timed_out=True) from err
+    except (HomeAssistantError, ValueError) as err:
         _LOGGER.warning("Could not get a text from %s: %s", entity, err)
-        return None
+        raise AIUnavailableError(str(err)) from err
     text = (result or {}).get("data")
     return text.strip() if isinstance(text, str) and text.strip() else None
+
+
+async def async_generate_text(
+    hass: HomeAssistant, entity: str, instructions: str
+) -> str | None:
+    """Let an AI task entity write a text, returning None on any problem."""
+    try:
+        return await async_request_text(hass, entity, instructions)
+    except AIUnavailableError:
+        return None
+
+
+async def async_request_text_with_retry(
+    hass: HomeAssistant, entity: str, instructions: str
+) -> str | None:
+    """Ask once more after a short pause when the provider refused the first time.
+
+    A timeout is not repeated, as the person would wait twice as long.
+    """
+    try:
+        return await async_request_text(hass, entity, instructions)
+    except AIUnavailableError as err:
+        if err.timed_out:
+            raise
+    await asyncio.sleep(AI_RETRY_DELAY_SECONDS)
+    return await async_request_text(hass, entity, instructions)
 
 
 def parse_subtask_suggestions(text: str | None, known: list[str]) -> list[str]:

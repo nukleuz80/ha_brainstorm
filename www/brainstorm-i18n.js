@@ -280,6 +280,7 @@ const DICTIONARIES = {
     "{count} Unteraufgaben angelegt": "{count} subtasks added",
     "{count} Unteraufgaben": "{count} subtasks",
     "Die KI hat keine Unteraufgaben geliefert.": "The AI gave no subtasks.",
+    "Die KI ist gerade nicht erreichbar. Versuch es gleich nochmal.": "The AI cannot be reached right now. Try again in a moment.",
     "Wähle zuerst eine KI-Aufgaben-Entität unter Brainstorm Hub ➔ Konfigurieren ➔ KI.": "First choose an AI task entity under Brainstorm Hub ➔ Configure ➔ AI.",
     "Du darfst diese Notiz nicht ändern.": "You may not change this note.",
   },

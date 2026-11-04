@@ -2,6 +2,9 @@
 from __future__ import annotations
 
 from typing import Any
+from unittest.mock import patch
+
+import pytest
 
 from homeassistant.core import (
     Context,
@@ -10,11 +13,13 @@ from homeassistant.core import (
     ServiceResponse,
     SupportsResponse,
 )
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.typing import WebSocketGenerator
 
 from custom_components.brainstorm.ai import (
     MAX_SUBTASK_SUGGESTIONS,
+    AIUnavailableError,
     parse_subtask_suggestions,
 )
 from custom_components.brainstorm.const import OVERVIEW_ENTITY_ID
@@ -178,3 +183,69 @@ async def test_websocket_explains_missing_or_failing_ai(
         {"type": "brainstorm/suggest_subtasks", "idea_id": idea["id"]}
     )
     assert (await client.receive_json())["error"]["code"] == "ai_failed"
+
+
+def _register_flaky_ai(hass: HomeAssistant, answers: list[Any]) -> list[ServiceCall]:
+    """Let the AI refuse or answer in turn, as an overloaded provider does."""
+    calls: list[ServiceCall] = []
+
+    async def generate(call: ServiceCall) -> ServiceResponse:
+        calls.append(call)
+        answer = answers[min(len(calls), len(answers)) - 1]
+        if isinstance(answer, Exception):
+            raise answer
+        return {"data": answer}
+
+    hass.services.async_register(
+        "ai_task", "generate_data", generate, supports_response=SupportsResponse.ONLY
+    )
+    return calls
+
+
+async def test_a_refusing_provider_is_asked_once_more(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that a short overload of the provider does not reach the person."""
+    calls = _register_flaky_ai(
+        hass, [HomeAssistantError("503 high demand"), "- Farbe kaufen"]
+    )
+    entry = await setup_entry(options=AI_OPTIONS)
+    store = entry.runtime_data
+    idea = await store.async_add_idea("Zaun streichen")
+    with patch("custom_components.brainstorm.ai.AI_RETRY_DELAY_SECONDS", 0):
+        assert await store.async_suggest_subtasks(idea) == ["Farbe kaufen"]
+    assert len(calls) == 2
+
+
+async def test_websocket_tells_when_the_ai_cannot_be_reached(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_ws_client: WebSocketGenerator,
+) -> None:
+    """Test that a provider refusing twice is no empty answer for the card."""
+    assert await async_setup_component(hass, "websocket_api", {})
+    calls = _register_flaky_ai(hass, [HomeAssistantError("503 high demand")])
+    entry = await setup_entry(options=AI_OPTIONS)
+    idea = await entry.runtime_data.async_add_idea("Zaun streichen")
+    client = await hass_ws_client(hass)
+    with patch("custom_components.brainstorm.ai.AI_RETRY_DELAY_SECONDS", 0):
+        await client.send_json_auto_id(
+            {"type": "brainstorm/suggest_subtasks", "idea_id": idea["id"]}
+        )
+        reply = await client.receive_json()
+    assert reply["error"]["code"] == "ai_unavailable"
+    assert len(calls) == 2
+
+
+async def test_a_slow_ai_is_not_asked_twice(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that a timeout ends at once, so the person does not wait twice."""
+    calls = _register_flaky_ai(hass, [TimeoutError()])
+    entry = await setup_entry(options=AI_OPTIONS)
+    store = entry.runtime_data
+    idea = await store.async_add_idea("Zaun streichen")
+    with pytest.raises(AIUnavailableError) as err:
+        await store.async_suggest_subtasks(idea)
+    assert err.value.timed_out is True
+    assert len(calls) == 1

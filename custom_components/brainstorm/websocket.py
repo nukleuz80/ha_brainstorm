@@ -9,12 +9,14 @@ from homeassistant.components import websocket_api
 from homeassistant.core import HomeAssistant, callback
 import homeassistant.helpers.config_validation as cv
 
+from .ai import AIUnavailableError
 from .const import CONF_SHARE_USERS
 from .store import get_loaded_store
 
 # Error codes the cards translate for the person
 ERR_AI_NOT_CONFIGURED = "ai_not_configured"
 ERR_AI_FAILED = "ai_failed"
+ERR_AI_UNAVAILABLE = "ai_unavailable"
 
 
 @callback
@@ -138,7 +140,13 @@ async def websocket_suggest_subtasks(
             msg["id"], ERR_AI_NOT_CONFIGURED, "No AI task entity is set up"
         )
         return
-    suggestions = await store.async_suggest_subtasks(idea, msg.get("language"))
+    try:
+        suggestions = await store.async_suggest_subtasks(idea, msg.get("language"))
+    except AIUnavailableError:
+        connection.send_error(
+            msg["id"], ERR_AI_UNAVAILABLE, "The AI did not answer, try again later"
+        )
+        return
     if suggestions is None:
         connection.send_error(msg["id"], ERR_AI_FAILED, "The AI gave no subtasks")
         return
