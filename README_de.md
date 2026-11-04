@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.6.23-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.6.24-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -167,8 +167,8 @@ HACS installiert nur die Integration. Die Karten kopierst du anschließend wie u
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` und `www/brainstorm-i18n.js` in `/config/www/`. Die dritte Datei enthält die Texte und braucht keinen Ressourcen-Eintrag.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.6.23` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.6.23` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.6.24` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.6.24` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ### Integration entfernen
@@ -423,7 +423,7 @@ Eine Kategorie kann das Backlog eines Programmierprojekts sein: Du sammelst Aufg
 **Einrichtung**
 
 1. **Eigener Benutzer für die KI:** Unter **Einstellungen ➔ Personen** einen Benutzer anlegen, etwa *Claude*. Bekommt seine Person ein Bild, zeigen die Karten es an den Einträgen, die die KI anlegt.
-2. **Token:** Als dieser Benutzer anmelden, unter **Profil ➔ Sicherheit** ein langlebiges Zugriffstoken erstellen und damit den MCP-Server verbinden, zum Beispiel [ha-mcp](https://github.com/homeassistant-ai/ha-mcp).
+2. **Token:** Als dieser Benutzer anmelden, unter **Profil ➔ Sicherheit** ein langlebiges Zugriffstoken erstellen und damit den MCP-Server verbinden, zum Beispiel [ha-mcp](https://github.com/homeassistant-ai/ha-mcp). Ob der Benutzer Adminrechte braucht, hängt davon ab, wie ha-mcp läuft, siehe Hinweis unten.
 3. **Privatsphäre einschalten** (siehe oben) und die Backlog-Kategorie für den KI-Benutzer freigeben: *Ansehen* zum Lesen, *Bearbeiten*, wenn er abhaken darf. Alles andere bleibt für ihn unsichtbar.
 4. **Skill installieren:** Den Ordner [`examples/claude-code/skills/brainstorm-backlog`](examples/claude-code/skills/brainstorm-backlog/SKILL.md) nach `~/.claude/skills/` kopieren (für alle Projekte) oder nach `.claude/skills/` im Projekt.
 5. **Kategorie nennen:** In `CLAUDE.md` oder `AGENTS.md` des Projekts eintragen, etwa: *„Das Backlog ist die Brainstorm-Kategorie ‚Brainstorm‘.“*
@@ -436,7 +436,10 @@ Eine Kategorie kann das Backlog eines Programmierprojekts sein: Du sammelst Aufg
 - Löschen, Freigaben und Einstellungen bleiben bei dir. Lehnt eine Aktion ab, sagt die KI dir, welche Freigabe fehlt, statt es anders zu versuchen.
 
 > [!NOTE]
-> **Admin oder nicht?** Brainstorm selbst braucht für Lesen, Anlegen, Bearbeiten und Abhaken keine Adminrechte; nur das Entfernen von Kategorien und der Markdown-Export verlangen sie, solange die Privatsphäre an ist. Ein Benutzer ohne Adminrechte ist die sicherere Wahl, weil ein Administrator über andere Wege, etwa Dateizugriff, auch private Einträge lesen kann. Ob dein MCP-Server mit so einem Benutzer alle Werkzeuge anbietet, hängt vom Server ab. Für ha-mcp ist das noch nicht geprüft; Rückmeldungen gern als Issue.
+> **Admin oder nicht?** Brainstorm selbst braucht für Lesen, Anlegen, Bearbeiten und Abhaken keine Adminrechte; nur das Entfernen von Kategorien und der Markdown-Export verlangen sie, solange die Privatsphäre an ist. Ein Benutzer ohne Adminrechte ist die sicherere Wahl, weil ein Administrator über andere Wege, etwa Dateizugriff, auch private Einträge lesen kann. Ob das geht, hängt davon ab, wie ha-mcp läuft (geprüft im Code von ha-mcp 9.1.0, noch nicht live ausprobiert):
+>
+> - **ha-mcp als eigener Server oder als App (Add-on)**, verbunden mit `HOMEASSISTANT_TOKEN`: Ein Token eines Benutzers ohne Adminrechte funktioniert. ha-mcp unterstützt das nicht offiziell und warnt davor; seine Admin-Werkzeuge (Automationen, Konfiguration, Logs und Ähnliches) schlagen fehl. Aktionen laufen über den WebSocket, `brainstorm.get_ideas` und `brainstorm.update_idea` gehen also. ha-mcp meidet die REST-Pfade, die nur Admins dürfen, damit abgelehnte Anfragen nicht als Fehlanmeldung zählen und seine Adresse nicht gesperrt wird.
+> - **HA-MCP-Integration (Server in Home Assistant, über HACS):** Sie spricht immer mit dem Token eines Administrators mit Home Assistant und prüft das bei jedem Start. Der KI-Benutzer muss hier also Administrator sein. Erstelle das Token trotzdem als dieser Benutzer: Brainstorm zeigt der KI dann nur die freigegebenen Kategorien, und die Karten zeigen ihre Einträge unter ihrem Namen. Dateizugriff bleibt ihr aber möglich.
 
 ---
 
@@ -817,6 +820,7 @@ Weitere Beispiele für Assist und Alexa liegen im Ordner [`examples/`](examples/
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.6.24`** | 04.11.2026 | **Coding-KIs: Adminrechte für ha-mcp geklärt:**<br>• Das Kapitel *Brainstorm als Aufgabenliste für Coding-KIs* sagt jetzt, wann der KI-Benutzer Adminrechte braucht: ha-mcp als eigener Server geht auch ohne (seine Admin-Werkzeuge schlagen fehl, Brainstorms Aktionen gehen), die HA-MCP-Integration läuft immer mit dem Token eines Administrators. Geprüft im Code von ha-mcp 9.1.0.<br>• Der Claude-Code-Skill nennt dieselbe Regel in seiner Einrichtung. |
 | **`v1.6.23`** | 04.11.2026 | **Mindmap: Zeitangabe bleibt in der Wolke:**<br>• Bei langen Gerätenamen (*„Jans Echo Dot - Garten“*) ragte die Zeit (*„vor 14m“*) auf schmalen Bildschirmen über den Rand der Wolke. Jetzt wird der Gerätename mit „…“ gekürzt, die Zeit bleibt immer sichtbar. |
 | **`v1.6.22`** | 04.11.2026 | **Skill antwortet bei freien Sätzen sofort:**<br>• Alexa schreibt einen Satz erst zusammen mit der Antwort des Skills in den Verlauf. Das Warten darauf war deshalb vergeblich und kostete gut 4 Sekunden Stille. Jetzt antwortet der Skill sofort mit *„Okay, notiert“*, der Eintrag erscheint wenige Sekunden später.<br>• Home Assistant erkennt den passenden Verlaufseintrag an genau dieser Antwort (Feld `response` von Alexa Media). Andere Fragen am selben Echo werden nicht mehr versehentlich gespeichert. Ältere Alexa-Media-Versionen ohne dieses Feld nutzen weiter die Zuordnung über das Echo.<br>• Kommt innerhalb einer Minute kein Verlaufseintrag, erscheint eine Benachrichtigung in Home Assistant, statt den Satz still zu verlieren. |
 | **`v1.6.21`** | 04.11.2026 | **Links und Markdown in Notizen:**<br>• Beide Karten zeigen Webadressen und `[Text](https://…)` als anklickbare Links, dazu `**fett**`, `*kursiv*`, `~~durchgestrichen~~` und `` `Code` ``, auch in der Ergebnisnotiz.<br>• Sichere Maskierung: Der Text wird vollständig maskiert, nur die selbst erzeugten Tags sind HTML. Links nur zu `http`, `https` und `mailto`, mit `rel="noopener noreferrer"`. Gegen eingeschleustes HTML und `javascript:`-Links getestet.<br>• Ein Klick auf einen Link öffnet weder den Editor noch startet er das Verschieben einer Wolke. |

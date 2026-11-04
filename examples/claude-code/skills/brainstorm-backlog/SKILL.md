@@ -16,6 +16,10 @@ delete anything.
 - A Home Assistant MCP server is connected, for example
   [ha-mcp](https://github.com/homeassistant-ai/ha-mcp). Its token belongs to a
   user of its own for the AI (for example "Claude"), not to the person.
+  With the HA-MCP custom component (server inside Home Assistant) that user
+  is an administrator; standalone ha-mcp also works with a user without
+  admin rights, but then its admin-only tools fail. Brainstorm's actions work
+  either way.
 - Brainstorm privacy is on, and the person shared the backlog category with
   that user, with *Edit* if you may tick entries off.
 - The category name is in the project instructions (CLAUDE.md, AGENTS.md).
