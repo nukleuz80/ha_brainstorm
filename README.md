@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.6.26-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.6.27-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -19,6 +19,8 @@
 
 **Brainstorm Hub** is the ultimate smart capture center for all your thoughts, ideas, and tasks in your Home Assistant smart home.  
 Whether you are cooking, working in the workshop, relaxing in the garden, or on the go: capture sudden flashes of inspiration within seconds hands-free via voice (**Amazon Alexa** or **Home Assistant Assist**), through interactive Lovelace dashboard cards, or via automated triggers. Brainstorm categorizes your thoughts using intelligent NLP heuristics and optionally synchronizes them as clean Markdown files for Obsidian, Logseq, or Nextcloud.
+
+Feedback, ideas and improvements are very welcome, see [💬 Feedback & Contributing](#-feedback--contributing).
 
 ---
 
@@ -81,7 +83,7 @@ Brainstorm Hub turns every **Amazon Echo** device in your home into an instant, 
   - Smooth pan & zoom with synchronized background dot grid and canvas transparency.
   - Instant category filtering without ghost lines or orphaned connections.
   - **Branches:** Subtasks hang on their parent idea, and their lines start there instead of at the center. 🌿 on a note adds a subidea.
-  - **Subtasks from the AI (v1.6.26):** With an AI task entity set in the settings, ✨ on a note asks it for up to 8 subtasks. You untick what you do not want, can change the texts, and only what you save is added under the note. Only this note and its subtasks go to the AI, and only when you press the button. One undo removes them all again.
+  - **Subtasks from the AI (v1.6.26):** With an AI task entity set under *Configure ➔ AI*, ✨ on a note asks it for up to 8 subtasks. You untick what you do not want, can change the texts, and only what you save is added under the note. Only this note and its subtasks go to the AI, and only when you press the button. One undo removes them all again.
   - **Saved layout:** In a single list, notes you drag keep their place on every device. A parent takes its subtasks along. The overview of all lists arranges itself.
   - **Fold branches:** The round button on a note with subtasks folds its branch and shows how many notes it hides. Each device remembers what is folded.
   - **Tree layout:** Every branch gets its own slice of the circle, so lines do not cross. 🪄 puts notes placed by hand back to their automatic place.
@@ -149,8 +151,8 @@ HACS only installs the integration, so continue with [Install the cards](#instal
 
 1. Copy `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` and `www/brainstorm-i18n.js` from the release to `/config/www/`. The third file holds the texts and needs no resource entry.
 2. Add both under **Settings ➔ Dashboards ➔ Resources** as **JavaScript module**:
-   - `/local/brainstorm-card.js?v=1.6.26`
-   - `/local/brainstorm-mindmap-card.js?v=1.6.26`
+   - `/local/brainstorm-card.js?v=1.6.27`
+   - `/local/brainstorm-mindmap-card.js?v=1.6.27`
 3. Reload the page in your browser.
 
 ### Removing the Integration
@@ -326,7 +328,9 @@ Brainstorm reminds you of due ideas on its own, over the services you have alrea
 - **Rules per List:** normal channels, Alexa only, notifications only (private) or nothing, own services, sending a list on certain days or at a place.
 - **Places & Coming Home:** *"remind me to take out the trash when I get home"*, *"remind me of the milk when I get to the market"*, using your zones.
 - **People:** *"remind Alex tomorrow at 8 to call the dentist"*, with own channels per person.
-- **Calendar, AI & Alexa Reminders:** adds reminders once to a calendar (later changes are not transferred), shortens the briefing and review with an `ai_task` entity (your ideas go to its provider), and optionally creates real Amazon reminders in the skill (switch on **Build ➔ Permissions ➔ Reminders** in the Alexa console and grant consent once in the Alexa app).
+- **Calendar & Alexa Reminders:** adds reminders once to a calendar (later changes are not transferred) and optionally creates real Amazon reminders in the skill (switch on **Build ➔ Permissions ➔ Reminders** in the Alexa console and grant consent once in the Alexa app).
+
+The AI that shortens the briefing and review is set in the main menu under **Brainstorm Hub ➔ Configure ➔ AI** (since v1.6.27).
 
 **Lists on an Echo Show:** With the skill, an Echo with a screen shows your open ideas next to the voice answer: one page per category with tiles, swipe left or right to change it and scroll within a page. Touch the circle in front of an idea to complete it; a completed idea can be restored on the card. *"show daily life"* or *"show my lists"* shows the lists with only a short answer, while *"read"* and *"read everything"* show them while reading aloud.
 
@@ -344,9 +348,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.6.26
+  - url: /local/brainstorm-card.js?v=1.6.27
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.6.26
+  - url: /local/brainstorm-mindmap-card.js?v=1.6.27
     type: module
 ```
 
@@ -536,16 +540,23 @@ Find these under **Settings ➔ Devices & Services ➔ Brainstorm Hub ➔ Config
 | Notification services | This person's notification services. |
 | Echos | The Echos that speak this person's reminders. |
 
-#### Brainstorm › Reminders › Calendar, AI & Alexa
+#### Brainstorm › Reminders › Calendar & Alexa
 
 | Field | What it does |
 | :--- | :--- |
 | Add reminders to a calendar | One way, once per reminder. Later changes are not transferred. |
 | Calendar | The calendar that receives the reminders. |
-| Shorten the briefing and review with AI | Your ideas are sent to the provider of the chosen AI. |
-| Improve spoken entries with AI | Each spoken entry is stored first and improved a few seconds later. The result is dropped if it adds words or changes a negation. The text is sent to the provider of the chosen AI. |
-| AI task entity | The AI task entity that shortens the texts and, on the mind map, suggests subtasks (✨). |
 | Also create real Alexa reminders | In the Alexa console, also switch on Reminders under Build ➔ Permissions. Alexa then rings itself and Home Assistant does not speak as well. |
+
+#### Brainstorm › AI
+
+Brainstorm uses an AI task entity of Home Assistant, such as Google Gemini, OpenAI or Ollama. Without one, all of this stays off.
+
+| Field | What it does |
+| :--- | :--- |
+| AI task entity | When set, ✨ on a note of the mind map suggests subtasks. Only this note, its category and its subtasks are sent, and only when you press the button. |
+| Improve spoken entries with AI | Each spoken entry is stored first and improved a few seconds later. The result is dropped if it adds words or changes a negation. The text is sent to the provider of the chosen AI. |
+| Shorten the briefing and review with AI | The morning briefing and weekly review of the reminders are shortened. Your ideas are sent to the provider of the chosen AI. |
 
 #### Brainstorm › Privacy & Users
 
@@ -771,6 +782,7 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.6.27`** | 2026-11-04 | **Own menu entry for the AI:**<br>• The AI settings moved from *Reminders ➔ Calendar, AI & Alexa Reminders* to their own entry **AI** in the main menu: AI task entity, improving spoken entries, shortening briefing and review. Stored settings stay as they are.<br>• The reminder section is now called *Calendar & Alexa Reminders*.<br>• The mind map's ✨ dialog names the new place when no AI is chosen.<br>• **New section *Feedback & Contributing*:** Feedback, ideas and pull requests are very welcome. |
 | **`v1.6.26`** | 2026-11-04 | **Mind map: subtasks suggested by the AI:**<br>• **✨ on a note** asks the AI task entity from the settings for up to 8 subtasks. Nothing is stored until you pick: untick, edit, then save. The new subtasks get the note's category, the branch unfolds, and one undo removes them all.<br>• **Little data:** Only the note, its category and its existing subtasks go to the AI, and only on a button press. You can only ask for notes you may edit.<br>• **New WebSocket command** `brainstorm/suggest_subtasks`; the sensor attribute `ai_subtasks` tells the cards whether an AI task entity is set. Tests for the parser, the permissions and the dialog. |
 | **`v1.6.25`** | 2026-11-04 | **Mind map: pick several notes with the lasso:**<br>• **Shift+drag** on the empty map draws a frame around several notes, **Shift+click** or **Ctrl+click** adds single notes or takes them out. On touch screens the new ⬚ button at the bottom right switches to selecting: drag a frame or tap notes.<br>• **Together:** Dragging one picked note moves all picked ones with their subtasks. A bar above the map ticks them off, moves them to another category or deletes them after one question; **Delete** works too.<br>• **One undo for all:** Ctrl+Z takes back the whole step. Deleted subtasks come back on their parent.<br>• **Esc** or ✕ clears the selection and leaves the select mode. |
 | **`v1.6.24`** | 2026-11-04 | **Coding AIs: admin rights for ha-mcp clarified:**<br>• The chapter *Brainstorm as a task list for coding AIs* now says when the AI user needs admin rights: standalone ha-mcp works with a user without admin rights (its admin-only tools fail, Brainstorm's actions work), the HA-MCP custom component always runs with an administrator's token. Checked in the code of ha-mcp 9.1.0.<br>• The Claude Code skill names the same rule in its setup. |
@@ -884,6 +896,19 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 | **`v1.2.1`** | 2026-10-20 | **Fixes:** No more `ResponseNone` entries or music collisions with Alexa, fixed the Assist wildcard parsing and a card error (`counts is not defined`). |
 | **`v1.1.0`** | 2026-10-20 | **Frontend redesign and standards:** Two-tier card layout, HACS compatibility, `DeviceInfo` and Assist support. |
 | **`v1.0.0`** | 2026-10-19 | **Initial Release:** Core integration, To-do platform, Markdown export, and Alexa dialogue. |
+
+---
+
+## 💬 Feedback & Contributing
+
+I am truly grateful for every piece of feedback. Brainstorm Hub grew out of my own everyday life, and your experience is what makes it better for everyone.
+
+- **Something does not work?** Open an [issue](https://github.com/nukleuz80/ha_brainstorm/issues). The diagnostics help a lot (see *Troubleshooting*).
+- **An idea or a wish?** An [issue](https://github.com/nukleuz80/ha_brainstorm/issues) is welcome for that too. Small ideas are as welcome as big ones.
+- **Want to improve something yourself?** Pull requests are very welcome, whether code, translations, docs or typos. For bigger changes, let's talk briefly in an issue first so nothing gets built twice.
+- **Just tell me** how you use Brainstorm. That helps me shape where it goes next, too.
+
+I am open to improvements and happy about everyone who helps develop Brainstorm further.
 
 ---
 

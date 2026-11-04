@@ -48,6 +48,7 @@
           "general": "General Settings & Export",
           "alexa_skill": "Alexa Voice Input & Skill",
           "reminders": "Reminders & Notifications",
+          "ai": "AI",
           "close": "✅ Done",
           "privacy": "Privacy & Users",
           "privacy_voice": "Assign Echos & Apps to People"
@@ -179,7 +180,7 @@
           "reminder_lists": "Rules per List",
           "reminder_places": "Places & Coming Home",
           "reminder_persons": "People",
-          "reminder_extras": "Calendar, AI & Alexa Reminders",
+          "reminder_extras": "Calendar & Alexa Reminders",
           "reminder_test": "🧪 Test channels now",
           "init": "⬅️ Back",
           "close": "✅ Done"
@@ -326,24 +327,34 @@
         }
       },
       "reminder_extras": {
-        "title": "Brainstorm › Reminders › Calendar, AI & Alexa",
-        "description": "Optional extras, each with its own switch.",
+        "title": "Brainstorm › Reminders › Calendar & Alexa",
+        "description": "Optional extras, each with its own switch. The AI is now set in the main menu under **AI**.",
         "data": {
           "calendar_enabled": "Add reminders to a calendar",
           "calendar_entity": "Calendar",
-          "ai_enabled": "Shorten the briefing and review with AI",
-          "ai_text_cleanup": "Improve spoken entries with AI",
-          "ai_entity": "AI task entity",
           "native_reminders": "Also create real Alexa reminders",
           "go_back": "⬅️ Back, without saving"
         },
         "data_description": {
           "calendar_enabled": "One way, once per reminder. Later changes are not transferred.",
-          "ai_enabled": "Your ideas are sent to the provider of the chosen AI.",
-          "ai_text_cleanup": "Each spoken entry is stored first and improved a few seconds later. The result is dropped if it adds words or changes a negation. The text is sent to the provider of the chosen AI.",
           "native_reminders": "In the Alexa console, also switch on Reminders under Build ➔ Permissions. Alexa then rings itself and Home Assistant does not speak as well.",
           "calendar_entity": "The calendar that receives the reminders.",
-          "ai_entity": "The AI task entity that shortens and improves the texts. With it, the ✨ button on a mind map note also suggests subtasks; only that note and its subtasks are sent, and only when you press the button.",
+          "go_back": "Returns to the previous page without saving this form."
+        }
+      },
+      "ai": {
+        "title": "Brainstorm › AI",
+        "description": "Brainstorm uses an AI task entity of Home Assistant, such as Google Gemini, OpenAI or Ollama. Without one, all of this stays off.\n\nWith just the entity chosen, ✨ on a note of the mind map suggests subtasks. The two switches below are extra jobs for the AI.",
+        "data": {
+          "ai_entity": "AI task entity",
+          "ai_text_cleanup": "Improve spoken entries with AI",
+          "ai_enabled": "Shorten the briefing and review with AI",
+          "go_back": "⬅️ Back without saving"
+        },
+        "data_description": {
+          "ai_entity": "When set, ✨ on a note of the mind map suggests subtasks. Only this note, its category and its subtasks are sent, and only when you press the button.",
+          "ai_text_cleanup": "Each spoken entry is stored first and improved a few seconds later. The result is dropped if it adds words or changes a negation. The text goes to the provider of the chosen AI.",
+          "ai_enabled": "The morning briefing and weekly review of the reminders are shortened. Your entries go to the provider of the chosen AI for this.",
           "go_back": "Returns to the previous page without saving this form."
         }
       },

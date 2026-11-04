@@ -1,8 +1,8 @@
-import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.26";
+import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.27";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.6.26 - Skill, Reminders, Privacy and Sharing
+ * Version: 1.6.27 - Skill, Reminders, Privacy and Sharing
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -2765,7 +2765,7 @@ class BrainstormMindmapCard extends HTMLElement {
           render(
             "error",
             code === "ai_not_configured"
-              ? t("Wähle zuerst eine KI-Aufgaben-Entität in den Brainstorm-Einstellungen.")
+              ? t("Wähle zuerst eine KI-Aufgaben-Entität unter Brainstorm Hub ➔ Konfigurieren ➔ KI.")
               : code === "unauthorized"
                 ? t("Du darfst diese Notiz nicht ändern.")
                 : t("Die KI hat keine Unteraufgaben geliefert.")
@@ -5458,7 +5458,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.6.26 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.6.27 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

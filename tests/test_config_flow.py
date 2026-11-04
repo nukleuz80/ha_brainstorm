@@ -234,6 +234,7 @@ async def test_saving_applies_at_once_and_returns_to_menu(
         (["general"], "init"),
         (["categories"], "init"),
         (["alexa_skill"], "init"),
+        (["ai"], "init"),
         (["category_style"], "init"),
         (["reminders", "reminder_general"], "reminders"),
         (["reminders", "reminder_schedule"], "reminders"),
@@ -625,3 +626,58 @@ async def test_glossary_can_be_cleared(
     await hass.config_entries.options.async_configure(result["flow_id"], {})
     await hass.async_block_till_done()
     assert entry.options["glossary"] == ""
+
+
+async def test_ai_has_its_own_menu_entry(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that the AI is set in its own section, which can also clear it."""
+    entry = await setup_entry(options={"ai_entity": "ai_task.old"})
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    assert "ai" in result["menu_options"]
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "ai"}
+    )
+    assert result["step_id"] == "ai"
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {"ai_entity": "ai_task.test", "ai_text_cleanup": True, "ai_enabled": False},
+    )
+    assert result["type"] is FlowResultType.MENU
+    assert result["step_id"] == "init"
+    assert entry.options["ai_entity"] == "ai_task.test"
+    assert entry.options["ai_text_cleanup"] is True
+    await hass.async_block_till_done()
+    assert hass.states.get(OVERVIEW_ENTITY_ID).attributes["ai_subtasks"] is True
+
+    # The frontend leaves a cleared entity field out
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "ai"}
+    )
+    await hass.config_entries.options.async_configure(
+        result["flow_id"], {"ai_text_cleanup": False, "ai_enabled": False}
+    )
+    assert "ai_entity" not in entry.options
+
+
+async def test_calendar_and_alexa_extras_no_longer_ask_for_the_ai(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that saving the extras keeps the AI settings untouched."""
+    entry = await setup_entry(
+        options={"ai_entity": "ai_task.test", "ai_text_cleanup": True}
+    )
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "reminders"}
+    )
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "reminder_extras"}
+    )
+    fields = {str(key) for key in result["data_schema"].schema}
+    assert not fields & {"ai_entity", "ai_enabled", "ai_text_cleanup"}
+    await hass.config_entries.options.async_configure(
+        result["flow_id"], {"calendar_enabled": False, "native_reminders": False}
+    )
+    assert entry.options["ai_entity"] == "ai_task.test"
+    assert entry.options["ai_text_cleanup"] is True

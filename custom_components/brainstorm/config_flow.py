@@ -227,6 +227,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "general": "Allgemeine Einstellungen & Export",
                 "alexa_skill": "Alexa-Spracheingabe & Skill",
                 "reminders": "Erinnerungen & Benachrichtigungen",
+                "ai": "KI",
                 "privacy": "Privatsphäre & Benutzer",
                 "privacy_voice": "Echos & Apps Personen zuordnen",
                 "close": "✅ Fertig",
@@ -237,7 +238,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "reminder_lists": "Regeln pro Liste",
                 "reminder_places": "Orte & Heimkommen",
                 "reminder_persons": "Personen",
-                "reminder_extras": "Kalender, KI & Alexa-Erinnerungen",
+                "reminder_extras": "Kalender & Alexa-Erinnerungen",
                 "reminder_test": "🧪 Kanäle jetzt testen",
                 "init": "⬅️ Zurück",
                 "close": "✅ Fertig",
@@ -255,6 +256,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "general": "General Settings & Export",
                 "alexa_skill": "Alexa Voice Input & Skill",
                 "reminders": "Reminders & Notifications",
+                "ai": "AI",
                 "privacy": "Privacy & Users",
                 "privacy_voice": "Assign Echos & Apps to People",
                 "close": "✅ Done",
@@ -265,7 +267,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "reminder_lists": "Rules per List",
                 "reminder_places": "Places & Coming Home",
                 "reminder_persons": "People",
-                "reminder_extras": "Calendar, AI & Alexa Reminders",
+                "reminder_extras": "Calendar & Alexa Reminders",
                 "reminder_test": "🧪 Test channels now",
                 "init": "⬅️ Back",
                 "close": "✅ Done",
@@ -936,7 +938,6 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             "status_persons": [switch(bool(options.get(CONF_PERSONS_ENABLED)))],
             "status_extras": [
                 item(bool(options.get(CONF_CALENDAR_ENABLED)), "Kalender", "Calendar"),
-                item(bool(options.get(CONF_AI_ENABLED)), "KI", "AI"),
                 item(
                     bool(options.get(CONF_NATIVE_REMINDERS)),
                     "Alexa-Erinnerungen",
@@ -1344,15 +1345,48 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             ),
         )
 
+    async def async_step_ai(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Choose the AI task entity and what Brainstorm may use it for."""
+        if user_input is not None and user_input.pop(BACK_FIELD, False):
+            return await self.async_step_init()
+        options = dict(self.config_entry.options or self.config_entry.data)
+        if user_input is not None:
+            # The frontend leaves out a cleared entity, so drop the old one first
+            options.pop(CONF_AI_ENTITY, None)
+            options.update(user_input)
+            return await self._async_saved(options, "init")
+        return self.async_show_form(
+            step_id="ai",
+            data_schema=vol.Schema(
+                _with_back(
+                {
+                    vol.Optional(
+                        CONF_AI_ENTITY, description=_suggested(options, CONF_AI_ENTITY)
+                    ): selector.EntitySelector(
+                        selector.EntitySelectorConfig(domain="ai_task")
+                    ),
+                    vol.Required(
+                        CONF_AI_TEXT_CLEANUP,
+                        default=options.get(CONF_AI_TEXT_CLEANUP, False),
+                    ): selector.BooleanSelector(),
+                    vol.Required(
+                        CONF_AI_ENABLED, default=options.get(CONF_AI_ENABLED, False)
+                    ): selector.BooleanSelector(),
+                })
+            ),
+        )
+
     async def async_step_reminder_extras(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
-        """Switch calendar, AI and real Alexa reminders on or off."""
+        """Switch the calendar and real Alexa reminders on or off."""
         if user_input is not None and user_input.pop(BACK_FIELD, False):
             return await self.async_step_reminders()
         if user_input is not None:
             return await self._async_save_reminder_options(
-                (CONF_CALENDAR_ENTITY, CONF_AI_ENTITY), user_input
+                (CONF_CALENDAR_ENTITY,), user_input
             )
         options = dict(self.config_entry.options or self.config_entry.data)
         return self.async_show_form(
@@ -1369,18 +1403,6 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                         description=_suggested(options, CONF_CALENDAR_ENTITY),
                     ): selector.EntitySelector(
                         selector.EntitySelectorConfig(domain="calendar")
-                    ),
-                    vol.Required(
-                        CONF_AI_ENABLED, default=options.get(CONF_AI_ENABLED, False)
-                    ): selector.BooleanSelector(),
-                    vol.Required(
-                        CONF_AI_TEXT_CLEANUP,
-                        default=options.get(CONF_AI_TEXT_CLEANUP, False),
-                    ): selector.BooleanSelector(),
-                    vol.Optional(
-                        CONF_AI_ENTITY, description=_suggested(options, CONF_AI_ENTITY)
-                    ): selector.EntitySelector(
-                        selector.EntitySelectorConfig(domain="ai_task")
                     ),
                     vol.Required(
                         CONF_NATIVE_REMINDERS,

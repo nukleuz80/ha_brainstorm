@@ -48,6 +48,7 @@
           "general": "Allgemeine Einstellungen & Export",
           "alexa_skill": "Alexa-Spracheingabe & Skill",
           "reminders": "Erinnerungen & Benachrichtigungen",
+          "ai": "KI",
           "close": "✅ Fertig",
           "privacy": "Privatsphäre & Benutzer",
           "privacy_voice": "Echos & Apps Personen zuordnen"
@@ -179,7 +180,7 @@
           "reminder_lists": "Regeln pro Liste",
           "reminder_places": "Orte & Heimkommen",
           "reminder_persons": "Personen",
-          "reminder_extras": "Kalender, KI & Alexa-Erinnerungen",
+          "reminder_extras": "Kalender & Alexa-Erinnerungen",
           "reminder_test": "🧪 Kanäle jetzt testen",
           "init": "⬅️ Zurück",
           "close": "✅ Fertig"
@@ -326,24 +327,34 @@
         }
       },
       "reminder_extras": {
-        "title": "Brainstorm › Erinnerungen › Kalender, KI & Alexa",
-        "description": "Optionale Extras mit jeweils eigenem Schalter.",
+        "title": "Brainstorm › Erinnerungen › Kalender & Alexa",
+        "description": "Optionale Extras mit jeweils eigenem Schalter. Die KI stellst du jetzt im Hauptmenü unter **KI** ein.",
         "data": {
           "calendar_enabled": "Erinnerungen in einen Kalender eintragen",
           "calendar_entity": "Kalender",
-          "ai_enabled": "Briefing und Rückblick per KI kürzen",
-          "ai_text_cleanup": "Gesprochene Einträge per KI verbessern",
-          "ai_entity": "KI-Aufgaben-Entität",
           "native_reminders": "Zusätzlich echte Alexa-Erinnerungen anlegen",
           "go_back": "⬅️ Zurück, ohne zu speichern"
         },
         "data_description": {
           "calendar_enabled": "Nur in eine Richtung und einmal pro Erinnerung. Spätere Änderungen werden nicht übertragen.",
-          "ai_enabled": "Deine Einträge werden an den Anbieter der gewählten KI gesendet.",
-          "ai_text_cleanup": "Jeder gesprochene Eintrag wird zuerst gespeichert und wenige Sekunden später verbessert. Das Ergebnis wird verworfen, wenn es Wörter hinzufügt oder eine Verneinung ändert. Der Text geht an den Anbieter der gewählten KI.",
           "native_reminders": "Schalte in der Alexa-Konsole zusätzlich Reminders unter Build ➔ Permissions ein. Alexa klingelt dann selbst, und Home Assistant spricht nicht zusätzlich.",
           "calendar_entity": "Der Kalender, der die Erinnerungen erhält.",
-          "ai_entity": "Die KI-Aufgaben-Entität, die die Texte kürzt und verbessert. Ist sie gewählt, schlägt der Knopf ✨ an einer Notiz der Mindmap auch Unteraufgaben vor; gesendet werden nur diese Notiz und ihre Unteraufgaben, und nur, wenn du den Knopf drückst.",
+          "go_back": "Kehrt zur vorigen Seite zurück, ohne dieses Formular zu speichern."
+        }
+      },
+      "ai": {
+        "title": "Brainstorm › KI",
+        "description": "Brainstorm nutzt eine KI-Aufgaben-Entität von Home Assistant, etwa Google Gemini, OpenAI oder Ollama. Ohne Entität bleibt alles aus.\n\nSchon mit der gewählten Entität schlägt der Knopf ✨ an einer Notiz der Mindmap Unteraufgaben vor. Die beiden Schalter darunter sind zusätzliche Aufgaben für die KI.",
+        "data": {
+          "ai_entity": "KI-Aufgaben-Entität",
+          "ai_text_cleanup": "Gesprochene Einträge per KI verbessern",
+          "ai_enabled": "Briefing und Rückblick per KI kürzen",
+          "go_back": "⬅️ Zurück, ohne zu speichern"
+        },
+        "data_description": {
+          "ai_entity": "Ist sie gewählt, schlägt ✨ an einer Notiz der Mindmap Unteraufgaben vor. Gesendet werden nur diese Notiz, ihre Kategorie und ihre Unteraufgaben, und nur, wenn du den Knopf drückst.",
+          "ai_text_cleanup": "Jeder gesprochene Eintrag wird zuerst gespeichert und wenige Sekunden später verbessert. Das Ergebnis wird verworfen, wenn es Wörter hinzufügt oder eine Verneinung ändert. Der Text geht an den Anbieter der gewählten KI.",
+          "ai_enabled": "Morgen-Briefing und Wochenrückblick der Erinnerungen werden gekürzt. Deine Einträge gehen dafür an den Anbieter der gewählten KI.",
           "go_back": "Kehrt zur vorigen Seite zurück, ohne dieses Formular zu speichern."
         }
       },

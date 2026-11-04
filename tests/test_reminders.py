@@ -726,7 +726,6 @@ async def test_options_flow_saves_and_clears(
         ("reminder_places", {"places_enabled": True}, "places_enabled"),
         ("reminder_persons", {"persons_enabled": True}, "persons_enabled"),
         ("reminder_extras", {"calendar_enabled": True}, "calendar_enabled"),
-        ("reminder_extras", {"ai_enabled": True}, "ai_enabled"),
         ("reminder_extras", {"native_reminders": True}, "native_reminders"),
     ],
 )
