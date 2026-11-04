@@ -215,3 +215,26 @@ def done_to_archive(
         if done_at is not None and done_at <= limit:
             found.append(idea[ATTR_ID])
     return found
+
+
+BRING_MESSAGES = ("going_shopping", "changed_list", "shopping_done", "urgent_message")
+
+
+def bring_message_target(
+    hass: HomeAssistant, store: BrainstormStore, idea: dict[str, Any]
+) -> tuple[str, str | None] | None:
+    """Return the Bring list a note stands for or sits on, with its item.
+
+    A list note gives its list; an item gives the list it is linked to, or
+    the list of its parent note, together with its text for urgent messages.
+    """
+    if note := idea.get(ATTR_BRING_LIST):
+        return note["entity"], None
+    lists = {bring.entity_id for bring in bring_lists(hass)}
+    linked = (idea.get(ATTR_TODO_LINK) or {}).get("entity")
+    if linked in lists:
+        return linked, idea[ATTR_TEXT]
+    parent = store.get_idea(idea.get(ATTR_PARENT_ID) or "")
+    if parent and (note := parent.get(ATTR_BRING_LIST)):
+        return note["entity"], idea[ATTR_TEXT]
+    return None

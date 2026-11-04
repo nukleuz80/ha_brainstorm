@@ -45,6 +45,9 @@
     "import_json": {
       "service": "mdi:database-import"
     },
+    "bring_message": {
+      "service": "mdi:cart-arrow-right"
+    },
     "reorder_ideas": {
       "service": "mdi:sort"
     },

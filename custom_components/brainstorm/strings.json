@@ -482,6 +482,14 @@
         "notify": "Notifications only (private)",
         "none": "Nothing, event only"
       }
+    },
+    "bring_message": {
+      "options": {
+        "going_shopping": "I'm going shopping",
+        "changed_list": "List changed",
+        "shopping_done": "Shopping done",
+        "urgent_message": "Urgently needed"
+      }
     }
   },
   "entity": {
@@ -589,6 +597,12 @@
     },
     "json_source_missing": {
       "message": "Give either data or a path to import, not both."
+    },
+    "bring_not_linked": {
+      "message": "This note is not on a Bring list."
+    },
+    "bring_urgent_needs_item": {
+      "message": "An urgent message needs an item. Choose an item on the list, not the list itself."
     }
   },
   "services": {
@@ -841,6 +855,20 @@
         "path": {
           "name": "File",
           "description": "A file written by `brainstorm.export_json`, such as `brainstorm/backup.json` (relative to `/config`)."
+        }
+      }
+    },
+    "bring_message": {
+      "name": "Send Bring! message",
+      "description": "Tells everyone on a Bring list that you go shopping, are done or changed the list, or that an item is urgent.",
+      "fields": {
+        "id": {
+          "name": "Note",
+          "description": "ID of a Bring list note, or of an item on such a list for an urgent message."
+        },
+        "message": {
+          "name": "Message",
+          "description": "What Bring should tell the others."
         }
       }
     },

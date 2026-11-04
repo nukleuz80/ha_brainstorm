@@ -18,6 +18,7 @@ from homeassistant.loader import async_get_integration
 from homeassistant.util import dt as dt_util
 
 from .alexa_skill import AlexaSkill
+from .bring import BRING_MESSAGES, bring_message_target
 from .const import (
     ATTR_CATEGORY,
     ATTR_COLOR,
@@ -73,6 +74,14 @@ SERVICE_EXPORT_MARKDOWN = "export_markdown"
 SERVICE_GET_ANNOUNCEMENT = "get_announcement"
 SERVICE_EXPORT_JSON = "export_json"
 SERVICE_IMPORT_JSON = "import_json"
+SERVICE_BRING_MESSAGE = "bring_message"
+
+SERVICE_BRING_MESSAGE_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_ID): cv.string,
+        vol.Required("message"): vol.In(BRING_MESSAGES),
+    }
+)
 
 SERVICE_EXPORT_JSON_SCHEMA = vol.Schema(
     {
@@ -470,6 +479,41 @@ def _register_services(hass: HomeAssistant) -> None:
         )
         return {"success": True}
 
+    async def handle_bring_message(call: ServiceCall) -> dict[str, Any]:
+        """Tell the others on a Bring list, for example who goes shopping."""
+        store = _require_store(hass)
+        idea_id = call.data[ATTR_ID]
+        idea = store.get_idea(idea_id)
+        if idea is None or store.access_level(idea, call.context.user_id) is None:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="idea_not_found",
+                translation_placeholders={"id": idea_id},
+            )
+        target = bring_message_target(hass, store, idea)
+        if target is None:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="bring_not_linked"
+            )
+        entity_id, item = target
+        message = call.data["message"]
+        data: dict[str, Any] = {"message": message}
+        if message == "urgent_message":
+            if item is None:
+                raise ServiceValidationError(
+                    translation_domain=DOMAIN, translation_key="bring_urgent_needs_item"
+                )
+            data["item"] = item
+        await hass.services.async_call(
+            "bring",
+            "send_message",
+            data,
+            target={"entity_id": entity_id},
+            blocking=True,
+            context=call.context,
+        )
+        return {"entity_id": entity_id, "message": message}
+
     async def handle_restore_idea(call: ServiceCall) -> dict[str, Any]:
         """Handle bringing back a deleted idea."""
         store = _require_store(hass)
@@ -723,6 +767,14 @@ def _register_services(hass: HomeAssistant) -> None:
         SERVICE_REMOVE_CATEGORY,
         handle_remove_category,
         schema=SERVICE_REMOVE_CATEGORY_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_BRING_MESSAGE,
+        handle_bring_message,
+        schema=SERVICE_BRING_MESSAGE_SCHEMA,
         supports_response=SupportsResponse.OPTIONAL,
     )
 

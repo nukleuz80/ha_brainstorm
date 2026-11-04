@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.7.1-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.7.2-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -178,8 +178,8 @@ HACS installiert nur die Integration. Die Karten kopierst du anschließend wie u
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` und `www/brainstorm-i18n.js` in `/config/www/`. Die dritte Datei enthält die Texte und braucht keinen Ressourcen-Eintrag.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.7.1` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.7.1` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.7.2` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.7.2` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ### Integration entfernen
@@ -831,6 +831,15 @@ Fügt die Ideen eines JSON-Exports hinzu, die es hier noch nicht gibt. Ideen mit
 
 Besitzer und Freigaben bleiben nur für Benutzer dieses Home Assistant erhalten, Besitzer nur, wenn ein Admin importiert. Sonst gehören die Ideen dem, der importiert. Die Antwort nennt, wie viele Ideen hinzugefügt (`added`) und übersprungen (`skipped`) wurden und welche Kategorien neu sind.
 
+### `brainstorm.bring_message`
+
+Sagt allen auf einer Bring-Liste etwas, über die Benachrichtigungen von Bring selbst. In der Karte bietet der 🛒-Knopf einer Listen-Notiz *Ich gehe einkaufen*, *Einkauf erledigt* und *Liste geändert*; das Menü eines Eintrags auf einer Liste bietet *Dringend in Bring melden*.
+
+| Feld | Pflicht | Bedeutung |
+| :--- | :--- | :--- |
+| `id` | Ja | ID einer Bring-Listen-Notiz oder eines Eintrags auf so einer Liste. |
+| `message` | Ja | `going_shopping`, `changed_list`, `shopping_done` oder `urgent_message`. Eine dringende Nachricht braucht einen Eintrag, dessen Text Bring mitschickt. |
+
 ### `brainstorm.reorder_ideas`
 
 Aktualisiert die benutzerdefinierte Sortierreihenfolge der Notizen anhand einer Liste von IDs.
@@ -913,6 +922,7 @@ Weitere Beispiele für Assist und Alexa liegen im Ordner [`examples/`](examples/
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.7.2`** | 04.11.2026 | **Bring!-Nachrichten:**<br>• **🛒-Knopf an jeder Bring-Listen-Notiz:** *Ich gehe einkaufen*, *Einkauf erledigt* oder *Liste geändert* benachrichtigt alle auf der Liste über Bring.<br>• **Dringend in Bring melden** im Menü eines Eintrags schickt den Eintrag mit.<br>• Neue Aktion `brainstorm.bring_message` für Automationen, etwa wenn jemand zum Supermarkt aufbricht. |
 | **`v1.7.1`** | 04.11.2026 | **Gekauftes ausblenden:**<br>• Neue Einstellung *Gekauftes ausblenden nach (Tagen)* auf der Seite 🛒 Bring!, Standard 3 Tage, 0 behält alles.<br>• Abgehakte Einträge der Bring-Kategorie werden danach archiviert und verschwinden aus der Erledigt-Ansicht; in Bring bleiben sie in den zuletzt gekauften Einträgen.<br>• Erneut notiert, kommt der früher gekaufte Eintrag zurück statt eines Duplikats. |
 | **`v1.7.0`** | 04.11.2026 | **Native Bring!-Unterstützung:**<br>• **Alle Bring-Listen in einer Kategorie** unter *Konfigurieren ➔ 🛒 Bring!*: einschalten, Kategorie wählen oder anlegen, Standardliste festlegen.<br>• **Eine Hauptnotiz pro Liste**, ihre Einträge als Unteraufgaben; eine gelöschte Listen-Notiz kommt zurück, eine abgewählte Liste wird archiviert und behält ihre Einträge in Bring.<br>• **Unteraufgabe verschieben** unter eine andere Listen-Notiz verschiebt den Eintrag zwischen den Bring-Listen.<br>• **Bring-Eigenheiten berücksichtigt:** Umbenennen behält den Eintrag, obwohl Bring eine neue ID vergibt, erneut Gekauftes holt den alten Eintrag zurück statt eines Duplikats, und die Bring-Spezifikation erscheint als Notiz.<br>• Bring-Listen verlassen die allgemeine To-do-Kopplung, damit nichts doppelt synchronisiert wird. |
 | **`v1.6.31`** | 04.11.2026 | **To-do-Listen koppeln, JSON-Export und -Import:**<br>• **Eine Kategorie mit einer To-do-Liste koppeln**, etwa Bring!, Google Tasks oder Todoist, unter *Konfigurieren ➔ To-do-Listen koppeln*. Neue Einträge, Umbenennen und Abhaken gehen in beide Richtungen. Eine gelöschte Notiz entfernt ihren Eintrag, ein von der Liste entfernter Eintrag hakt seine Notiz ab. Fälligkeiten gehen auf die Liste, wenn sie welche kennt.<br>• **Sicher mit Privatsphäre:** Nur mit allen geteilte Notizen kommen auf die andere Liste. Entkoppeln lässt ihre Einträge stehen.<br>• **Neue Aktionen `brainstorm.export_json` und `brainstorm.import_json`:** Deine Ideen samt Kategorien, Icons und Farben als JSON, auf Wunsch als Datei. Der Import überspringt Vorhandenes, hält Unteraufgaben zusammen und behält Besitzer nur für Benutzer dieses Home Assistant.<br>• Tests für beides, gegen die eigene Einkaufsliste von Home Assistant. |

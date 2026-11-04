@@ -267,6 +267,24 @@ import_json:
       selector:
         text:
 
+bring_message:
+  fields:
+    id:
+      required: true
+      selector:
+        text:
+    message:
+      required: true
+      default: going_shopping
+      selector:
+        select:
+          translation_key: bring_message
+          options:
+            - going_shopping
+            - changed_list
+            - shopping_done
+            - urgent_message
+
 reorder_ideas:
   fields:
     idea_ids:

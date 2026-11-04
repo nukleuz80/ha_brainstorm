@@ -16,6 +16,7 @@ from homeassistant.components.todo import (
 from homeassistant.config_entries import ConfigEntry, ConfigFlow
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
@@ -23,6 +24,7 @@ from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
     MockModule,
     MockPlatform,
+    async_mock_service,
     mock_config_flow,
     mock_integration,
     mock_platform,
@@ -534,3 +536,54 @@ async def test_zero_days_keeps_bought_items(
     assert store.get_idea(milk["id"])["status"] == "completed"
     assert await store.async_archive_ideas([milk["id"], "unknown"]) == 1
     assert await store.async_archive_ideas([milk["id"]]) == 0
+
+
+async def test_messages_go_to_the_right_list(
+    hass: HomeAssistant, setup_entry: SetupEntry, bring: dict[str, FakeBringList]
+) -> None:
+    """Test that a list note and its items send their messages through Bring."""
+    calls = async_mock_service(hass, "bring", "send_message")
+    store = await _setup(setup_entry)
+    await _sync(hass, store)
+    camper = _note(store, CAMPER)
+    gas = await store.async_add_idea(
+        "Gas", category="Einkauf", source="dashboard", parent_id=camper["id"]
+    )
+
+    async def send(idea_id: str, message: str) -> dict[str, Any]:
+        return await hass.services.async_call(
+            DOMAIN,
+            "bring_message",
+            {"id": idea_id, "message": message},
+            blocking=True,
+            return_response=True,
+        )
+
+    assert await send(camper["id"], "going_shopping") == {
+        "entity_id": CAMPER,
+        "message": "going_shopping",
+    }
+    # Not yet linked, the item still finds its list through its note
+    await send(gas["id"], "urgent_message")
+    await _sync(hass, store)
+    await send(gas["id"], "urgent_message")
+    assert [(c.data["message"], c.data.get("item"), c.data["entity_id"]) for c in calls] == [
+        ("going_shopping", None, CAMPER),
+        ("urgent_message", "Gas", CAMPER),
+        ("urgent_message", "Gas", CAMPER),
+    ]
+
+    # The card learns which notes stand for a list
+    details = {i["id"]: i for i in store.get_overview_attributes()["ideas"]}
+    assert details[camper["id"]]["bring_list"] == CAMPER
+    assert "bring_list" not in details[gas["id"]]
+
+    other = await store.async_add_idea("Rasen mähen", category="Alltag", source="dashboard")
+    for idea_id, message, key in (
+        (camper["id"], "urgent_message", "bring_urgent_needs_item"),
+        (other["id"], "going_shopping", "bring_not_linked"),
+        ("unknown", "going_shopping", "idea_not_found"),
+    ):
+        with pytest.raises(ServiceValidationError) as err:
+            await send(idea_id, message)
+        assert err.value.translation_key == key

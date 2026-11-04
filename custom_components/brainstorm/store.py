@@ -390,6 +390,8 @@ class BrainstormStore:
                 "parent_id": idea.get(ATTR_PARENT_ID),
                 "order": idea.get(ATTR_ORDER),
             }
+            if note := idea.get(ATTR_BRING_LIST):
+                result[ATTR_BRING_LIST] = note.get("entity")
             if self._privacy_enabled:
                 access = self.access_level(idea, user_id)
                 result["access"] = access

@@ -482,6 +482,14 @@
         "notify": "Nur Benachrichtigungen (privat)",
         "none": "Nichts, nur Ereignis"
       }
+    },
+    "bring_message": {
+      "options": {
+        "going_shopping": "Ich gehe einkaufen",
+        "changed_list": "Liste geändert",
+        "shopping_done": "Einkauf erledigt",
+        "urgent_message": "Dringend benötigt"
+      }
     }
   },
   "entity": {
@@ -589,6 +597,12 @@
     },
     "json_source_missing": {
       "message": "Gib zum Importieren entweder Daten oder einen Pfad an, nicht beides."
+    },
+    "bring_not_linked": {
+      "message": "Diese Notiz steht auf keiner Bring-Liste."
+    },
+    "bring_urgent_needs_item": {
+      "message": "Eine dringende Nachricht braucht einen Eintrag. Wähle einen Eintrag der Liste, nicht die Liste selbst."
     }
   },
   "services": {
@@ -841,6 +855,20 @@
         "path": {
           "name": "Datei",
           "description": "Eine von `brainstorm.export_json` geschriebene Datei, etwa `brainstorm/sicherung.json` (relativ zu `/config`)."
+        }
+      }
+    },
+    "bring_message": {
+      "name": "Bring!-Nachricht senden",
+      "description": "Sagt allen auf einer Bring-Liste, dass du einkaufen gehst, fertig bist oder die Liste geändert hast, oder dass ein Eintrag dringend ist.",
+      "fields": {
+        "id": {
+          "name": "Notiz",
+          "description": "ID einer Bring-Listen-Notiz oder, für eine dringende Nachricht, eines Eintrags auf so einer Liste."
+        },
+        "message": {
+          "name": "Nachricht",
+          "description": "Was Bring den anderen sagen soll."
         }
       }
     },

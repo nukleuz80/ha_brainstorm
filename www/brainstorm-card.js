@@ -1,9 +1,9 @@
-import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.7.1";
+import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.7.2";
 
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.7.1 - Skill, Reminders, Privacy and Sharing
+ * Version 1.7.2 - Skill, Reminders, Privacy and Sharing
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",
@@ -1839,6 +1839,50 @@ class BrainstormCard extends HTMLElement {
     });
   }
 
+  _openBringMenu(item) {
+    const backdrop = this.shadowRoot.getElementById("appleContextMenu");
+    const titleEl = this.shadowRoot.getElementById("appleMenuTitle");
+    const actionsEl = this.shadowRoot.getElementById("appleMenuActions");
+    if (!backdrop || !titleEl || !actionsEl) return;
+    titleEl.textContent = `🛒 ${item.text}`;
+    const messages = [
+      ["going_shopping", "🚶", t("Ich gehe einkaufen")],
+      ["shopping_done", "✅", t("Einkauf erledigt")],
+      ["changed_list", "📝", t("Liste geändert")],
+    ];
+    actionsEl.innerHTML = messages
+      .map(
+        ([message, icon, label]) => `
+        <button class="apple-menu-btn" data-message="${message}">
+          <span class="btn-icon">${icon}</span>
+          <div class="btn-content"><span>${label}</span></div>
+        </button>`
+      )
+      .join("");
+    actionsEl.querySelectorAll(".apple-menu-btn").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this._closeContextMenu();
+        this._sendBringMessage(item, btn.getAttribute("data-message"));
+      });
+    });
+    backdrop.style.display = "flex";
+  }
+
+  async _sendBringMessage(item, message) {
+    let text;
+    try {
+      await this._hass.callService("brainstorm", "bring_message", { id: item.id, message });
+      text = t("Bring-Nachricht gesendet");
+    } catch (err) {
+      console.error("Failed to send Bring message", err);
+      text = t("Bring-Nachricht fehlgeschlagen: {error}", { error: (err && err.message) || err });
+    }
+    this.dispatchEvent(
+      new CustomEvent("hass-notification", { detail: { message: text }, bubbles: true, composed: true })
+    );
+  }
+
   _openContextMenu(item, prevTopLevelItem, nextItem, prevItem, activeIdeas) {
     if (this._selectionMode) return;
     const backdrop = this.shadowRoot.getElementById("appleContextMenu");
@@ -1932,6 +1976,27 @@ class BrainstormCard extends HTMLElement {
       <div class="apple-menu-separator"></div>
     `;
 
+    // Bring: tell the others on the list
+    const bringParent = isSub && item.parentTask && item.parentTask.bring_list;
+    if (item.bring_list) {
+      actionsHtml += `
+        <button class="apple-menu-btn" data-act="bring">
+          <span class="btn-icon">🛒</span>
+          <div class="btn-content"><span>${t("Bring-Nachricht senden")}</span></div>
+        </button>
+      `;
+    } else if (bringParent) {
+      actionsHtml += `
+        <button class="apple-menu-btn" data-act="bring-urgent">
+          <span class="btn-icon">❗</span>
+          <div class="btn-content">
+            <span>${t("Dringend in Bring melden")}</span>
+            <span class="btn-sublabel">${t("Alle auf der Liste bekommen eine Nachricht")}</span>
+          </div>
+        </button>
+      `;
+    }
+
     // A new subtask right under a main task
     if (!isSub) {
       actionsHtml += `
@@ -1984,6 +2049,16 @@ class BrainstormCard extends HTMLElement {
 
         if (act === "suggest") {
           this._showSubtaskSuggestions(item);
+          return;
+        }
+
+        if (act === "bring") {
+          this._openBringMenu(item);
+          return;
+        }
+
+        if (act === "bring-urgent") {
+          this._sendBringMessage(item, "urgent_message");
           return;
         }
 
@@ -2993,6 +3068,7 @@ class BrainstormCard extends HTMLElement {
           }
           .indent-btn,
           .branch-btn,
+          .bring-btn,
           .suggest-btn,
           .edit-btn,
           .delete-btn {
@@ -3447,6 +3523,7 @@ class BrainstormCard extends HTMLElement {
         }
         .indent-btn,
         .branch-btn,
+        .bring-btn,
         .suggest-btn,
         .edit-btn,
         .delete-btn {
@@ -3466,6 +3543,7 @@ class BrainstormCard extends HTMLElement {
         }
         .idea-item:hover .indent-btn,
         .idea-item:hover .branch-btn,
+        .idea-item:hover .bring-btn,
         .idea-item:hover .suggest-btn,
         .idea-item:hover .edit-btn,
         .idea-item:hover .delete-btn {
@@ -3477,6 +3555,7 @@ class BrainstormCard extends HTMLElement {
           background: var(--secondary-background-color, rgba(0,0,0,0.05));
         }
         .branch-btn:hover,
+        .bring-btn:hover,
         .suggest-btn:hover {
           opacity: 1 !important;
           background: var(--secondary-background-color, rgba(0,0,0,0.05));
@@ -4353,6 +4432,7 @@ class BrainstormCard extends HTMLElement {
                       : ""
                     : ""
                 }
+                ${item.bring_list && !isCompletedView ? `<button class="bring-btn" title="${t("Bring-Nachricht senden")}" data-id="${item.id}">🛒</button>` : ""}
                 ${itemEdit && !isSub && !isCompletedView ? `<button class="branch-btn" title="${t("Unteridee anlegen")}" data-id="${item.id}">🌿</button>` : ""}
                 ${itemEdit && aiSubtasks && !isSub && !isCompletedView ? `<button class="suggest-btn" title="${t("Unteraufgaben von der KI vorschlagen lassen")}" data-id="${item.id}">✨</button>` : ""}
                 ${itemEdit ? `<button class="edit-btn" title="${t("Bearbeiten")}" data-id="${item.id}">✎</button>` : ""}
@@ -4446,6 +4526,14 @@ class BrainstormCard extends HTMLElement {
             e.stopPropagation();
             const item = activeIdeas.find((i) => i.id === btn.getAttribute("data-id"));
             if (item) this._showSubtaskSuggestions(item);
+          });
+        });
+
+        ideasList.querySelectorAll(".bring-btn").forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const item = this._ideasById[btn.getAttribute("data-id")];
+            if (item) this._openBringMenu(item);
           });
         });
 
@@ -5229,7 +5317,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.7.1 ",
+  "%c BRAINSTORM-CARD %c v1.7.2 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );
