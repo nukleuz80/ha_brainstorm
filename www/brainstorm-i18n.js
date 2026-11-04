@@ -258,6 +258,18 @@ const DICTIONARIES = {
     "🗑️ {count} Einträge löschen?": "🗑️ Delete entries: {count}?",
     "🟡 Mittel": "🟡 Medium",
     "🟢 Niedrig": "🟢 Low",
+    "Abhaken": "Done",
+    "Alle abhaken": "Mark all as done",
+    "Auswahl": "Selection",
+    "Auswahl aufheben (ESC)": "Clear selection (ESC)",
+    "Auswählen: Rahmen um mehrere Notizen ziehen (oder Umschalt+Ziehen)": "Select: drag a frame around several notes (or Shift+drag)",
+    "Möchtest du diese Notizen wirklich aus Brainstorm entfernen?": "Do you really want to remove these notes from Brainstorm?",
+    "Rahmen ziehen oder Notizen antippen": "Drag a frame or tap notes",
+    "{count} Notizen": "{count} notes",
+    "{count} Notizen erledigt": "{count} notes done",
+    "{count} Notizen gelöscht": "{count} notes deleted",
+    "🗑️ {count} Notizen löschen?": "🗑️ Delete {count} notes?",
+    "… und {count} weitere": "… and {count} more",
   },
 };
 

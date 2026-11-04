@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.6.24-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.6.25-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -86,6 +86,7 @@ Brainstorm Hub turns every **Amazon Echo** device in your home into an instant, 
   - **Tree layout:** Every branch gets its own slice of the circle, so lines do not cross. 🪄 puts notes placed by hand back to their automatic place.
   - **Keyboard:** A click selects a note. **Tab** adds a subtask, **Enter** a note beside it, **Delete** removes it after asking, **F2** or a double click edits the text. The arrow keys walk along the branches: left to the parent, right to the first subtask, up and down to the neighbours.
   - **Edit in place:** A click on the text opens it right in the cloud. **Enter** saves, **Shift+Enter** adds a line, **Esc** cancels. Due date, priority and Echos stay in the dialog behind ✏️.
+  - **Pick several notes:** **Shift+drag** on the empty map draws a frame, **Shift+click** or **Ctrl+click** adds a note or takes it out again. On a phone or tablet, tap ⬚ at the bottom right, then drag a frame or tap notes. Dragging one picked note moves all of them, with their subtasks. The bar above the map ticks them off, moves them to another category or deletes them after asking, and one undo takes back the whole step. **Esc** or ✕ clears the selection.
   - **Undo:** **Ctrl+Z** or the ↶ button at the bottom right takes back the last steps of this session: new notes, text changes, done, priority, category, moving, arranging again and deleting too. Home Assistant keeps deleted notes until its next restart.
   - **Templates and picture export:** Four templates (Standard, Clean, Sketch, Neon) set shape, lines and colors. 🖼️ at the top right saves the map as SVG or PNG.
 - 🎴 **Quick Capture Card (`custom:brainstorm-card`):**
@@ -147,8 +148,8 @@ HACS only installs the integration, so continue with [Install the cards](#instal
 
 1. Copy `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` and `www/brainstorm-i18n.js` from the release to `/config/www/`. The third file holds the texts and needs no resource entry.
 2. Add both under **Settings ➔ Dashboards ➔ Resources** as **JavaScript module**:
-   - `/local/brainstorm-card.js?v=1.6.24`
-   - `/local/brainstorm-mindmap-card.js?v=1.6.24`
+   - `/local/brainstorm-card.js?v=1.6.25`
+   - `/local/brainstorm-mindmap-card.js?v=1.6.25`
 3. Reload the page in your browser.
 
 ### Removing the Integration
@@ -342,9 +343,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.6.24
+  - url: /local/brainstorm-card.js?v=1.6.25
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.6.24
+  - url: /local/brainstorm-mindmap-card.js?v=1.6.25
     type: module
 ```
 
@@ -769,6 +770,7 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.6.25`** | 2026-11-04 | **Mind map: pick several notes with the lasso:**<br>• **Shift+drag** on the empty map draws a frame around several notes, **Shift+click** or **Ctrl+click** adds single notes or takes them out. On touch screens the new ⬚ button at the bottom right switches to selecting: drag a frame or tap notes.<br>• **Together:** Dragging one picked note moves all picked ones with their subtasks. A bar above the map ticks them off, moves them to another category or deletes them after one question; **Delete** works too.<br>• **One undo for all:** Ctrl+Z takes back the whole step. Deleted subtasks come back on their parent.<br>• **Esc** or ✕ clears the selection and leaves the select mode. |
 | **`v1.6.24`** | 2026-11-04 | **Coding AIs: admin rights for ha-mcp clarified:**<br>• The chapter *Brainstorm as a task list for coding AIs* now says when the AI user needs admin rights: standalone ha-mcp works with a user without admin rights (its admin-only tools fail, Brainstorm's actions work), the HA-MCP custom component always runs with an administrator's token. Checked in the code of ha-mcp 9.1.0.<br>• The Claude Code skill names the same rule in its setup. |
 | **`v1.6.23`** | 2026-11-04 | **Mindmap: the time stays inside the cloud:**<br>• With long device names (*"Jans Echo Dot - Garten"*), the time (*"14m ago"*) stuck out of the cloud on narrow screens. Now the device name is shortened with "…" and the time always stays visible. |
 | **`v1.6.22`** | 2026-11-04 | **The skill answers free sentences at once:**<br>• Alexa writes a sentence to its history only together with the skill's answer, so waiting for it was in vain and cost about 4 seconds of silence. Now the skill answers at once with *"Okay, noted"*, and the idea appears a few seconds later.<br>• Home Assistant finds the right history entry by exactly this answer (the `response` field of Alexa Media), so other questions on the same Echo are no longer stored by mistake. Older Alexa Media versions without this field keep matching by Echo.<br>• If no history entry arrives within a minute, Home Assistant shows a notification instead of losing the sentence silently. |

@@ -1,8 +1,8 @@
-import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.24";
+import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.25";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.6.24 - Skill, Reminders, Privacy and Sharing
+ * Version: 1.6.25 - Skill, Reminders, Privacy and Sharing
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -82,6 +82,10 @@ class BrainstormMindmapCard extends HTMLElement {
     this._selectedId = null;
     this._inlineEdit = null;
     this._dragEndedAt = 0;
+    // Several notes picked with the lasso or Shift+click, and the lasso itself
+    this._multi = new Set();
+    this._lassoMode = false;
+    this._lasso = null;
     // Steps of this session that Ctrl+Z takes back, newest last
     this._undoStack = [];
   }
@@ -1315,6 +1319,102 @@ class BrainstormMindmapCard extends HTMLElement {
           box-shadow: 0 0 0 3px color-mix(in srgb, var(--cat-color, var(--primary-color, #03a9f4)) 40%, transparent);
           z-index: 12;
         }
+        .note-cloud.multi-selected {
+          border-color: var(--primary-color, #03a9f4);
+          box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color, #03a9f4) 45%, transparent);
+          z-index: 12;
+        }
+        .note-cloud.multi-selected::after {
+          content: "✓";
+          position: absolute;
+          top: -9px;
+          left: -9px;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: var(--primary-color, #03a9f4);
+          color: var(--text-primary-color, #ffffff);
+          font-size: 12px;
+          line-height: 20px;
+          text-align: center;
+          pointer-events: none;
+        }
+        .canvas-area.lasso-mode {
+          cursor: crosshair;
+          touch-action: none;
+        }
+        .lasso-rect {
+          position: absolute;
+          display: none;
+          border: 1.5px dashed var(--primary-color, #03a9f4);
+          background: color-mix(in srgb, var(--primary-color, #03a9f4) 12%, transparent);
+          border-radius: 6px;
+          pointer-events: none;
+          z-index: 35;
+        }
+        .control-btn.active {
+          background: var(--primary-color, #03a9f4);
+          color: var(--text-primary-color, #ffffff);
+          border-color: var(--primary-color, #03a9f4);
+        }
+        .selection-bar {
+          position: absolute;
+          top: 10px;
+          left: 12px;
+          right: 12px;
+          width: fit-content;
+          margin: 0 auto;
+          display: none;
+          align-items: center;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 6px;
+          box-sizing: border-box;
+          padding: 6px 8px 6px 14px;
+          border-radius: 22px;
+          background: var(--ha-card-background, var(--card-background-color, #ffffff));
+          border: 1px solid var(--primary-color, #03a9f4);
+          box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+          color: var(--primary-text-color, #212121);
+          font-size: 0.85rem;
+          z-index: 38;
+        }
+        .selection-bar.visible {
+          display: flex;
+        }
+        .selection-count {
+          font-weight: 600;
+          margin-right: 4px;
+          white-space: nowrap;
+        }
+        .selection-btn {
+          min-width: 36px;
+          height: 36px;
+          padding: 0 10px;
+          border-radius: 18px;
+          border: 1px solid var(--divider-color, rgba(127, 127, 127, 0.2));
+          background: var(--secondary-background-color, rgba(127, 127, 127, 0.08));
+          color: var(--primary-text-color, #212121);
+          font-size: 0.85rem;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
+        }
+        .selection-btn:hover {
+          border-color: var(--primary-color, #03a9f4);
+          color: var(--primary-color, #03a9f4);
+        }
+        .selection-btn.danger:hover {
+          border-color: var(--error-color, #db4437);
+          color: var(--error-color, #db4437);
+        }
+        @container (max-width: 480px) {
+          .selection-btn .selection-label {
+            display: none;
+          }
+        }
         .note-cloud.draft {
           z-index: 30;
           cursor: text;
@@ -2004,6 +2104,14 @@ class BrainstormMindmapCard extends HTMLElement {
 
         <!-- Interactive Canvas Area -->
         <div class="canvas-area" id="canvasArea" tabindex="0">
+          <div class="lasso-rect" id="lassoRect"></div>
+          <div class="selection-bar" id="selectionBar" role="toolbar" aria-label="${t("Auswahl")}">
+            <span class="selection-count" id="selectionCount"></span>
+            <button class="selection-btn" data-multi="done" title="${t("Alle abhaken")}">✓<span class="selection-label">${t("Abhaken")}</span></button>
+            <button class="selection-btn" data-multi="move" title="${t("Kategorie ändern")}">📁<span class="selection-label">${t("Kategorie")}</span></button>
+            <button class="selection-btn danger" data-multi="delete" title="${t("Löschen")}">🗑️<span class="selection-label">${t("Löschen")}</span></button>
+            <button class="selection-btn" data-multi="clear" title="${t("Auswahl aufheben (ESC)")}">✕</button>
+          </div>
           <div class="grid-bg" id="gridBg" style="display: ${this._config.show_grid !== false ? 'block' : 'none'};"></div>
           <div class="viewport" id="viewport">
             <svg class="connectors" id="connectorsLayer"></svg>
@@ -2035,6 +2143,7 @@ class BrainstormMindmapCard extends HTMLElement {
           <button class="control-btn" id="zoomInBtn" title="${t("Vergrößern")}">+</button>
           <button class="control-btn" id="zoomOutBtn" title="${t("Verkleinern")}">−</button>
           <button class="control-btn" id="resetViewBtn" title="${t("Zentrieren / Anordnen")}">⟲</button>
+          <button class="control-btn" id="lassoBtn" title="${t("Auswählen: Rahmen um mehrere Notizen ziehen (oder Umschalt+Ziehen)")}" aria-pressed="false">⬚</button>
           <button class="control-btn" id="arrangeBtn" title="${t("Neu ordnen: von Hand verschobene Notizen wieder automatisch platzieren")}">🪄</button>
           <button class="control-btn" id="undoBtn" title="${t("Rückgängig (Strg+Z)")}" disabled>↶</button>
         </div>
@@ -2127,16 +2236,28 @@ class BrainstormMindmapCard extends HTMLElement {
         e.target.closest(".note-cloud") ||
         e.target.closest(".center-node") ||
         e.target.closest(".action-btn") ||
+        e.target.closest(".control-btn") ||
+        e.target.closest(".selection-bar") ||
         e.target.closest(".dialog-box")
       ) {
         return;
       }
       if (e.button !== 0) return;
+      // Shift+drag or the select button draws a frame instead of moving the map
+      if (e.shiftKey || this._lassoMode) {
+        e.preventDefault();
+        this._startLasso(e.clientX, e.clientY, e.shiftKey);
+        return;
+      }
       this._isPanning = true;
       this._startPan = { x: e.clientX - this._panX, y: e.clientY - this._panY };
     });
 
     window.addEventListener("mousemove", (e) => {
+      if (this._lasso) {
+        this._moveLasso(e.clientX, e.clientY);
+        return;
+      }
       // 1. Canvas Pan
       if (this._isPanning) {
         this._panX = e.clientX - this._startPan.x;
@@ -2165,6 +2286,7 @@ class BrainstormMindmapCard extends HTMLElement {
     });
 
     window.addEventListener("mouseup", () => {
+      if (this._lasso) this._finishLasso();
       if (this._isPanning) this._isPanning = false;
       if (this._activeDrag) this._finishDrag();
       this._pendingDrag = null;
@@ -2182,6 +2304,13 @@ class BrainstormMindmapCard extends HTMLElement {
     let touchStartPan = null;
 
     canvasArea.addEventListener("touchstart", (e) => {
+      const onBackground = !e.target.closest(".note-cloud") && !e.target.closest(".dialog-box") &&
+        !e.target.closest(".control-btn") && !e.target.closest(".selection-bar");
+      if (e.touches.length === 1 && this._lassoMode && onBackground) {
+        this._startLasso(e.touches[0].clientX, e.touches[0].clientY, true);
+        return;
+      }
+      if (this._lasso) this._cancelLasso();
       if (e.touches.length === 1 && !e.target.closest(".note-cloud") && !e.target.closest(".dialog-box")) {
         touchStartPan = {
           x: e.touches[0].clientX - this._panX,
@@ -2196,6 +2325,11 @@ class BrainstormMindmapCard extends HTMLElement {
     });
 
     canvasArea.addEventListener("touchmove", (e) => {
+      if (this._lasso && e.touches.length === 1) {
+        e.preventDefault();
+        this._moveLasso(e.touches[0].clientX, e.touches[0].clientY);
+        return;
+      }
       // Check touch drag threshold for pending node
       if (this._pendingDrag && !this._activeDrag && e.touches.length === 1) {
         const touch = e.touches[0];
@@ -2236,6 +2370,7 @@ class BrainstormMindmapCard extends HTMLElement {
     });
 
     canvasArea.addEventListener("touchend", () => {
+      if (this._lasso) this._finishLasso();
       touchStartPan = null;
       lastTouchDist = null;
       if (this._activeDrag) this._finishDrag();
@@ -2265,6 +2400,10 @@ class BrainstormMindmapCard extends HTMLElement {
       if (e.key === "Escape") {
         if (this._isModalOpen) {
           this._closeDialog();
+        } else if (this._lasso || this._multi.size || this._lassoMode) {
+          if (this._lasso) this._cancelLasso();
+          this._clearMulti();
+          this._setLassoMode(false);
         } else if (cardRoot && cardRoot.classList.contains("is-fullscreen")) {
           toggleFullscreen();
         }
@@ -2276,6 +2415,18 @@ class BrainstormMindmapCard extends HTMLElement {
     zoomOutBtn.addEventListener("click", () => this._zoomAtPoint(0.8));
     resetViewBtn.addEventListener("click", () => {
       this._centerLayout(true);
+    });
+    const lassoBtn = this.shadowRoot.getElementById("lassoBtn");
+    if (lassoBtn) lassoBtn.addEventListener("click", () => this._setLassoMode(!this._lassoMode));
+    this.shadowRoot.querySelectorAll(".selection-btn").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const act = btn.getAttribute("data-multi");
+        if (act === "done") this._completeSelected();
+        else if (act === "move") this._showCategoryPicker([...this._multi]);
+        else if (act === "delete") this._confirmDeleteSelected();
+        else if (act === "clear") this._clearMulti();
+      });
     });
     const arrangeBtn = this.shadowRoot.getElementById("arrangeBtn");
     if (arrangeBtn) arrangeBtn.addEventListener("click", () => this._arrangeAgain());
@@ -2789,6 +2940,195 @@ class BrainstormMindmapCard extends HTMLElement {
     if (id) this._focusMap();
   }
 
+  // --- Picking several notes: lasso, Shift+click and the bar above the map ---
+
+  _setLassoMode(on) {
+    this._lassoMode = Boolean(on);
+    const canvasArea = this.shadowRoot.getElementById("canvasArea");
+    if (canvasArea) canvasArea.classList.toggle("lasso-mode", this._lassoMode);
+    const btn = this.shadowRoot.getElementById("lassoBtn");
+    if (btn) {
+      btn.classList.toggle("active", this._lassoMode);
+      btn.setAttribute("aria-pressed", String(this._lassoMode));
+    }
+    if (this._lassoMode) this._showToast(t("Rahmen ziehen oder Notizen antippen"));
+  }
+
+  _startLasso(clientX, clientY, additive) {
+    const canvasArea = this.shadowRoot.getElementById("canvasArea");
+    const rectEl = this.shadowRoot.getElementById("lassoRect");
+    if (!canvasArea || !rectEl) return;
+    this._lasso = { startX: clientX, startY: clientY, endX: clientX, endY: clientY, additive, rectEl, canvasArea };
+    this._drawLasso();
+  }
+
+  _moveLasso(clientX, clientY) {
+    if (!this._lasso) return;
+    this._lasso.endX = clientX;
+    this._lasso.endY = clientY;
+    this._drawLasso();
+  }
+
+  _lassoBox() {
+    const l = this._lasso;
+    return {
+      left: Math.min(l.startX, l.endX),
+      top: Math.min(l.startY, l.endY),
+      right: Math.max(l.startX, l.endX),
+      bottom: Math.max(l.startY, l.endY),
+    };
+  }
+
+  _drawLasso() {
+    const { rectEl, canvasArea } = this._lasso;
+    const box = this._lassoBox();
+    const area = canvasArea.getBoundingClientRect();
+    rectEl.style.display = "block";
+    rectEl.style.left = `${box.left - area.left}px`;
+    rectEl.style.top = `${box.top - area.top}px`;
+    rectEl.style.width = `${box.right - box.left}px`;
+    rectEl.style.height = `${box.bottom - box.top}px`;
+  }
+
+  _cancelLasso() {
+    if (this._lasso) this._lasso.rectEl.style.display = "none";
+    this._lasso = null;
+  }
+
+  _finishLasso() {
+    const lasso = this._lasso;
+    if (!lasso) return;
+    const box = this._lassoBox();
+    this._cancelLasso();
+    // A plain click on the empty map lets go of the selection
+    if (box.right - box.left < 6 && box.bottom - box.top < 6) {
+      if (!lasso.additive) this._clearMulti();
+      return;
+    }
+    const hits = [];
+    this.shadowRoot.querySelectorAll("#notesContainer .note-cloud:not(.draft)").forEach((cloud) => {
+      const r = cloud.getBoundingClientRect();
+      if (r.right >= box.left && r.left <= box.right && r.bottom >= box.top && r.top <= box.bottom) {
+        hits.push(cloud.dataset.id);
+      }
+    });
+    if (!lasso.additive) this._multi.clear();
+    hits.forEach((id) => this._multi.add(id));
+    this._dragEndedAt = Date.now();
+    this._refreshMultiClasses();
+  }
+
+  _toggleMulti(id) {
+    if (this._multi.has(id)) this._multi.delete(id);
+    else this._multi.add(id);
+    this._refreshMultiClasses();
+  }
+
+  _clearMulti() {
+    if (!this._multi.size) return;
+    this._multi.clear();
+    this._refreshMultiClasses();
+  }
+
+  _refreshMultiClasses() {
+    this.shadowRoot.querySelectorAll("#notesContainer .note-cloud").forEach((cloud) => {
+      cloud.classList.toggle("multi-selected", this._multi.has(cloud.dataset.id));
+    });
+    this._updateSelectionBar();
+  }
+
+  _updateSelectionBar() {
+    const bar = this.shadowRoot.getElementById("selectionBar");
+    if (!bar) return;
+    bar.classList.toggle("visible", this._multi.size > 0);
+    const count = this.shadowRoot.getElementById("selectionCount");
+    if (count) count.textContent = t("{count} ausgewählt", { count: this._multi.size });
+  }
+
+  // Deepest notes first, so a subtask still knows its parent when it goes
+  _byDepth(ids, deepestFirst) {
+    const ideas = new Map(this._categoryIdeas().map((i) => [i.id, i]));
+    const depth = (id) => {
+      let d = 0;
+      let cur = ideas.get(id);
+      const seen = new Set();
+      while (cur && cur.parent_id && ideas.has(cur.parent_id) && !seen.has(cur.id)) {
+        seen.add(cur.id);
+        cur = ideas.get(cur.parent_id);
+        d += 1;
+      }
+      return d;
+    };
+    return [...ids].sort((a, b) => (deepestFirst ? depth(b) - depth(a) : depth(a) - depth(b)));
+  }
+
+  async _completeSelected() {
+    const ids = [...this._multi];
+    if (!ids.length || !this._hass) return;
+    const done = [];
+    for (const id of ids) {
+      try {
+        await this._hass.callService("brainstorm", "update_idea", { id, status: "completed" });
+        done.push(id);
+      } catch (err) {
+        console.error("[BrainstormMindmap] Failed to complete idea:", err);
+      }
+    }
+    this._clearMulti();
+    if (!done.length) return;
+    this._showToast(t("{count} Notizen erledigt", { count: done.length }));
+    this._pushUndo(t("{count} Notizen", { count: done.length }), async () => {
+      for (const id of done) {
+        await this._hass.callService("brainstorm", "update_idea", { id, status: "active" });
+      }
+    });
+  }
+
+  _confirmDeleteSelected() {
+    const ids = [...this._multi];
+    if (!ids.length) return;
+    this._openDialog(t("🗑️ {count} Notizen löschen?", { count: ids.length }), (body) => {
+      const preview = ids
+        .slice(0, 5)
+        .map((id) => `<div class="dialog-note-preview">"${this._escapeHtml(this._ideaText(id))}"</div>`)
+        .join("");
+      const more = ids.length > 5 ? `<div class="dialog-label">${t("… und {count} weitere", { count: ids.length - 5 })}</div>` : "";
+      body.innerHTML = `
+        ${preview}${more}
+        <p style="margin: 8px 0; font-size: 0.88rem; color: var(--secondary-text-color, #64748b);">
+          ${t("Möchtest du diese Notizen wirklich aus Brainstorm entfernen?")}
+        </p>
+        <div class="dialog-footer">
+          <button class="dialog-btn dialog-btn-cancel" id="cancelDelBtn">${t("Abbrechen")}</button>
+          <button class="dialog-btn dialog-btn-primary" id="confirmDelBtn" style="background: var(--error-color, #db4437);">${t("Löschen")}</button>
+        </div>
+      `;
+      body.querySelector("#cancelDelBtn").addEventListener("click", () => this._closeDialog());
+      body.querySelector("#confirmDelBtn").addEventListener("click", async () => {
+        this._closeDialog();
+        const deleted = [];
+        for (const id of this._byDepth(ids, true)) {
+          try {
+            await this._hass.callService("brainstorm", "delete_idea", { id });
+            deleted.push(id);
+            if (this._selectedId === id) this._selectedId = null;
+          } catch (err) {
+            console.error("[BrainstormMindmap] Failed to delete idea:", err);
+          }
+        }
+        this._clearMulti();
+        if (!deleted.length) return;
+        this._showToast(t("{count} Notizen gelöscht", { count: deleted.length }));
+        // Parents come back first, so their subtasks hang on them again
+        this._pushUndo(t("{count} Notizen", { count: deleted.length }), async () => {
+          for (const id of [...deleted].reverse()) {
+            await this._hass.callService("brainstorm", "restore_idea", { id });
+          }
+        });
+      });
+    });
+  }
+
   // Keys on the map: Tab adds a subtask, Enter a note beside it, Delete removes
   // it after asking, F2 edits it, the arrows walk along the branches
   _onMapKey(e) {
@@ -2801,6 +3141,12 @@ class BrainstormMindmapCard extends HTMLElement {
       return;
     }
     if (e.ctrlKey || e.metaKey || e.altKey) return;
+    // With several notes picked, Delete asks once for all of them
+    if (this._multi.size && (e.key === "Delete" || e.key === "Backspace")) {
+      e.preventDefault();
+      this._confirmDeleteSelected();
+      return;
+    }
     const ideas = this._mapIdeas();
     const ids = new Set(ideas.map((i) => i.id));
     const idea = ideas.find((i) => i.id === this._selectedId);
@@ -3703,7 +4049,7 @@ class BrainstormMindmapCard extends HTMLElement {
           : "";
 
         html += `
-          <div class="note-cloud ${prioClass}${idea.id === this._selectedId ? " selected" : ""}" id="cloud_${idea.id}" data-id="${idea.id}" style="--cat-color: ${color};">
+          <div class="note-cloud ${prioClass}${idea.id === this._selectedId ? " selected" : ""}${this._multi.has(idea.id) ? " multi-selected" : ""}" id="cloud_${idea.id}" data-id="${idea.id}" style="--cat-color: ${color};">
             ${branchToggle}
             <div class="cloud-meta">
               <span class="cat-tag" data-cat="${this._escapeHtml(idea.category)}" title="${t("Kategorie ändern")}">
@@ -3730,6 +4076,12 @@ class BrainstormMindmapCard extends HTMLElement {
         `;
       });
       container.innerHTML = html;
+      // Notes that are done, deleted or filtered away leave the selection
+      const shownIds = new Set(shownIdeas.map((i) => i.id));
+      [...this._multi].forEach((id) => {
+        if (!shownIds.has(id)) this._multi.delete(id);
+      });
+      this._updateSelectionBar();
 
       // Ensure nodes have positions
       const canvasArea = this.shadowRoot.getElementById("canvasArea");
@@ -3790,15 +4142,21 @@ class BrainstormMindmapCard extends HTMLElement {
         const id = cloud.getAttribute("data-id");
         const idea = shownIdeas.find((i) => i.id === id);
         if (!idea) return;
-        // A parent takes its subtasks along
-        const dragGroup = () => this._descendantIds(id, filteredIdeas)
-          .map((childId) => {
-            // A folded subtask has no note on the map, only its saved place
-            const child = filteredIdeas.find((i) => i.id === childId);
-            const pos = this._nodePositions.get(childId) || (child && this._savedPosition(child));
-            return pos ? { id: childId, x: pos.x, y: pos.y } : null;
-          })
-          .filter(Boolean);
+        // A parent takes its subtasks along, a picked note all other picked ones
+        const dragGroup = () => {
+          const roots = this._multi.has(id) ? [...this._multi] : [id];
+          const ids = new Set(roots);
+          roots.forEach((rootId) => this._descendantIds(rootId, filteredIdeas).forEach((d) => ids.add(d)));
+          ids.delete(id);
+          return [...ids]
+            .map((otherId) => {
+              // A folded subtask has no note on the map, only its saved place
+              const other = filteredIdeas.find((i) => i.id === otherId);
+              const pos = this._nodePositions.get(otherId) || (other && this._savedPosition(other));
+              return pos ? { id: otherId, x: pos.x, y: pos.y } : null;
+            })
+            .filter(Boolean);
+        };
 
         // Mouse down records pending drag - only moves if threshold > 5px (prevents click jitter!)
         cloud.addEventListener("mousedown", (e) => {
@@ -3864,15 +4222,23 @@ class BrainstormMindmapCard extends HTMLElement {
         // A click selects the note, a click on its text edits it right there
         cloud.addEventListener("click", (e) => {
           if (Date.now() - this._dragEndedAt < 300 || e.target.closest(".cloud-inline-editor")) return;
+          // Shift or Ctrl+click, or a tap while selecting, adds or removes the note
+          if (e.shiftKey || e.ctrlKey || e.metaKey || this._lassoMode) {
+            if (e.target.closest(".action-btn") || e.target.closest("a")) return;
+            this._toggleMulti(idea.id);
+            return;
+          }
           this._selectIdea(idea.id);
         });
         cloud.addEventListener("dblclick", (e) => {
+          if (e.shiftKey || e.ctrlKey || e.metaKey || this._lassoMode) return;
           if (e.target.closest(".action-btn") || e.target.closest("a") || e.target.closest(".cloud-inline-editor")) return;
           this._startInlineEdit(idea.id);
         });
         const textEl = cloud.querySelector(".cloud-text");
         if (textEl) {
           textEl.addEventListener("click", (e) => {
+            if (e.shiftKey || e.ctrlKey || e.metaKey || this._lassoMode) return;
             e.stopPropagation();
             if (e.target.closest("a")) return;
             if (Date.now() - this._dragEndedAt < 300) return;
@@ -3942,14 +4308,46 @@ class BrainstormMindmapCard extends HTMLElement {
     if (this._selectedId) this._focusMap();
   }
 
+  // One note (id) or several picked ones (an array of ids)
   _showCategoryPicker(id, currentCategory, noteText) {
     const sensor = this._getSensorEntity();
     const categories = sensor ? (sensor.attributes.categories || ["Inbox"]) : ["Inbox"];
     const counts = sensor ? (sensor.attributes.category_counts || {}) : {};
+    const ids = Array.isArray(id) ? id : [id];
+    if (!ids.length) return;
+    const ideasById = new Map(this._categoryIdeas().map((i) => [i.id, i]));
+    const previous = {};
+    ids.forEach((ideaId) => {
+      const idea = ideasById.get(ideaId);
+      previous[ideaId] = idea ? idea.category : currentCategory;
+    });
+    if (Array.isArray(id)) {
+      const cats = new Set(Object.values(previous));
+      currentCategory = cats.size === 1 ? [...cats][0] : null;
+    }
+    const undoText = ids.length > 1 ? t("{count} Notizen", { count: ids.length }) : noteText;
+    // Moves the notes, and undo puts each back into its own category
+    const apply = async (newCat) => {
+      const moved = [];
+      for (const ideaId of ids) {
+        if (previous[ideaId] === newCat) continue;
+        await this._hass.callService("brainstorm", "update_idea", { id: ideaId, category: newCat });
+        moved.push(ideaId);
+      }
+      if (Array.isArray(id)) this._clearMulti();
+      if (!moved.length) return;
+      this._pushUndo(undoText, async () => {
+        for (const ideaId of moved) {
+          await this._hass.callService("brainstorm", "update_idea", { id: ideaId, category: previous[ideaId] });
+        }
+      });
+    };
 
     this._openDialog(t("🏷️ Kategorie auswählen"), (body) => {
       let previewHtml = "";
-      if (noteText) {
+      if (ids.length > 1) {
+        previewHtml = `<div class="dialog-note-preview">${this._escapeHtml(t("{count} Notizen", { count: ids.length }))}</div>`;
+      } else if (noteText) {
         previewHtml = `<div class="dialog-note-preview">"${this._escapeHtml(noteText)}"</div>`;
       }
 
@@ -3987,13 +4385,7 @@ class BrainstormMindmapCard extends HTMLElement {
           this._closeDialog();
           if (newCat && newCat !== currentCategory) {
             try {
-              await this._hass.callService("brainstorm", "update_idea", {
-                id: id,
-                category: newCat,
-              });
-              this._pushUndo(noteText, () =>
-                this._hass.callService("brainstorm", "update_idea", { id, category: currentCategory })
-              );
+              await apply(newCat);
             } catch (err) {
               console.error("[BrainstormMindmap] Failed to change category:", err);
             }
@@ -4039,10 +4431,7 @@ class BrainstormMindmapCard extends HTMLElement {
         this._closeDialog();
         try {
           await this._hass.callService("brainstorm", "add_category", { name: val });
-          await this._hass.callService("brainstorm", "update_idea", { id: id, category: val });
-          this._pushUndo(noteText, () =>
-            this._hass.callService("brainstorm", "update_idea", { id, category: currentCategory })
-          );
+          await apply(val);
         } catch (err) {
           console.error("[BrainstormMindmap] Failed to create category:", err);
         }
@@ -4925,7 +5314,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.6.24 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.6.25 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );
