@@ -8,11 +8,13 @@ stands for each of them.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 import logging
 from typing import Any
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr, entity_registry as er
+from homeassistant.util import dt as dt_util
 
 from .const import (
     ATTR_BRING_LIST,
@@ -22,10 +24,13 @@ from .const import (
     ATTR_STATUS,
     ATTR_TEXT,
     ATTR_TODO_LINK,
+    ATTR_UPDATED_AT,
     CONF_BRING_CATEGORY,
     CONF_BRING_DEFAULT_LIST,
+    CONF_BRING_DONE_DAYS,
     CONF_BRING_ENABLED,
     CONF_BRING_LISTS,
+    DEFAULT_BRING_DONE_DAYS,
     SHARE_ALL,
     SHARE_EDIT,
     SOURCE_BRING,
@@ -53,6 +58,7 @@ class BringSettings:
     category: str
     lists: tuple[str, ...]
     default_list: str | None
+    done_days: int = DEFAULT_BRING_DONE_DAYS
 
 
 def bring_settings(options: dict[str, Any]) -> BringSettings | None:
@@ -64,6 +70,7 @@ def bring_settings(options: dict[str, Any]) -> BringSettings | None:
         category=category,
         lists=tuple(options.get(CONF_BRING_LISTS) or ()),
         default_list=options.get(CONF_BRING_DEFAULT_LIST) or None,
+        done_days=max(0, int(options.get(CONF_BRING_DONE_DAYS, DEFAULT_BRING_DONE_DAYS))),
     )
 
 
@@ -183,3 +190,28 @@ async def async_ensure_list_notes(
                 idea[ATTR_ID], parent_id=parent, update_parent=True
             )
     return notes
+
+
+def done_to_archive(
+    store: BrainstormStore, settings: BringSettings, now: datetime
+) -> list[str]:
+    """Return the bought items that were ticked off long enough ago.
+
+    They leave the completed view of Brainstorm and stay in Bring, where its
+    recent list keeps them for buying again.
+    """
+    if settings.done_days <= 0:
+        return []
+    limit = now - timedelta(days=settings.done_days)
+    found: list[str] = []
+    for idea in store.ideas:
+        if (
+            idea.get(ATTR_STATUS) != "completed"
+            or idea.get(ATTR_CATEGORY) != settings.category
+            or idea.get(ATTR_BRING_LIST)
+        ):
+            continue
+        done_at = dt_util.parse_datetime(idea.get(ATTR_UPDATED_AT) or "")
+        if done_at is not None and done_at <= limit:
+            found.append(idea[ATTR_ID])
+    return found

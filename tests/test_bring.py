@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
+from datetime import timedelta
 from typing import Any
 import uuid
 
@@ -17,6 +18,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
     MockModule,
@@ -430,12 +432,14 @@ async def test_options_set_up_bring_in_one_page(
             "bring_enabled": True,
             "bring_category": "Einkaufen",
             "bring_default_list": HOME,
+            "bring_done_days": 5,
             "bring_share_all": True,
         },
     )
     assert result["type"] is FlowResultType.MENU
     await hass.async_block_till_done()
     assert entry.options["bring_category"] == "Einkaufen"
+    assert entry.options["bring_done_days"] == 5
     assert entry.options["todo_sync"] == {}
     store = entry.runtime_data
     assert "Einkaufen" in store.categories
@@ -472,3 +476,61 @@ async def test_list_notes_are_put_back_in_place(
     assert "Einkauf" in store.categories
     assert home["category"] == "Einkauf"
     assert home["parent_id"] is None
+
+
+async def test_bought_items_are_hidden_after_some_days(
+    hass: HomeAssistant, setup_entry: SetupEntry, bring: dict[str, FakeBringList]
+) -> None:
+    """Test that old ticked off items leave Brainstorm and stay in Bring."""
+    store = await _setup(setup_entry, bring_done_days=2)
+    await _sync(hass, store)
+    home = _note(store, HOME)["id"]
+    milk = await store.async_add_idea(
+        "Milch", category="Einkauf", source="dashboard", parent_id=home
+    )
+    bread = await store.async_add_idea(
+        "Brot", category="Einkauf", source="dashboard", parent_id=home
+    )
+    other = await store.async_add_idea("Rasen mähen", category="Alltag", source="dashboard")
+    await _sync(hass, store)
+    for idea in (milk, bread, other):
+        await store.async_update_idea(idea["id"], status="completed")
+    await _sync(hass, store)
+
+    # Only what was ticked off long enough ago goes
+    old = (dt_util.now() - timedelta(days=3)).isoformat()
+    store.get_idea(milk["id"])["updated_at"] = old
+    store.get_idea(other["id"])["updated_at"] = old
+    await _sync(hass, store)
+    assert store.get_idea(milk["id"])["status"] == "archived"
+    assert ATTR_TODO_LINK not in store.get_idea(milk["id"])
+    assert store.get_idea(bread["id"])["status"] == "completed"
+    assert store.get_idea(other["id"])["status"] == "completed"
+    assert _note(store, HOME)["status"] == "active"
+    assert _summaries(bring[HOME], TodoItemStatus.COMPLETED) == {"Milch", "Brot"}
+
+    # Noted again, the item bought before comes back for the new note
+    again = await store.async_add_idea(
+        "Milch", category="Einkauf", source="dashboard", parent_id=home
+    )
+    await _sync(hass, store)
+    assert _summaries(bring[HOME], TodoItemStatus.NEEDS_ACTION) == {"Milch"}
+    assert len(bring[HOME].items) == 2
+    assert store.get_idea(again["id"])[ATTR_TODO_LINK]["uid"] is not None
+
+
+async def test_zero_days_keeps_bought_items(
+    hass: HomeAssistant, setup_entry: SetupEntry, bring: dict[str, FakeBringList]
+) -> None:
+    """Test that 0 days switches hiding off."""
+    store = await _setup(setup_entry, bring_done_days=0)
+    await _sync(hass, store)
+    milk = await store.async_add_idea(
+        "Milch", category="Einkauf", source="dashboard", parent_id=_note(store, HOME)["id"]
+    )
+    await store.async_update_idea(milk["id"], status="completed")
+    store.get_idea(milk["id"])["updated_at"] = "2020-01-01T00:00:00+00:00"
+    await _sync(hass, store)
+    assert store.get_idea(milk["id"])["status"] == "completed"
+    assert await store.async_archive_ideas([milk["id"], "unknown"]) == 1
+    assert await store.async_archive_ideas([milk["id"]]) == 0

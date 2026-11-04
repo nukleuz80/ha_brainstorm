@@ -376,6 +376,7 @@
           "bring_category": "Kategorie",
           "bring_lists": "Listen",
           "bring_default_list": "Standardliste",
+          "bring_done_days": "Gekauftes ausblenden nach (Tagen)",
           "bring_share_all": "Kategorie mit allen teilen",
           "go_back": "⬅️ Zurück ohne Speichern"
         },
@@ -384,6 +385,7 @@
           "bring_category": "Wähle eine Kategorie oder tippe einen neuen Namen, sie wird beim Speichern angelegt.",
           "bring_lists": "Leer lassen, um alle Listen abzugleichen, auch später hinzugefügte.",
           "bring_default_list": "Notizen, die ohne Liste in die Kategorie kommen, etwa per Sprache, landen auf dieser Liste.",
+          "bring_done_days": "Abgehakte Einträge verschwinden nach so vielen Tagen aus der Erledigt-Ansicht von Brainstorm; in Bring bleiben sie zum erneuten Kaufen. 0 behält sie.",
           "bring_share_all": "Mit Privatsphäre werden nur Notizen abgeglichen, die mit allen geteilt sind, denn jeder mit Zugriff auf Bring sieht sie. Das teilt die ganze Kategorie mit allen.",
           "go_back": "Kehrt zur vorherigen Seite zurück, ohne dieses Formular zu speichern."
         }

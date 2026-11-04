@@ -1254,6 +1254,28 @@ class BrainstormStore:
         if visible:
             self._notify_listeners()
 
+    async def async_archive_ideas(self, idea_ids: list[str]) -> int:
+        """Archive several ideas at once, unlinked from their lists.
+
+        Archived ideas leave every view of the cards. The item on a linked
+        list stays where it is.
+        """
+        now_iso = dt_util.now().isoformat()
+        archived = 0
+        for idea_id in idea_ids:
+            idea = self._ideas.get(idea_id)
+            if idea is None or idea.get(ATTR_STATUS) == "archived":
+                continue
+            idea[ATTR_STATUS] = "archived"
+            idea[ATTR_UPDATED_AT] = now_iso
+            idea.pop(ATTR_TODO_LINK, None)
+            idea.pop(ATTR_SPEC, None)
+            archived += 1
+        if archived:
+            await self.async_save()
+            self._notify_listeners()
+        return archived
+
     def deleted_idea(self, idea_id: str) -> dict[str, Any] | None:
         """Return an idea deleted since the start, as it would come back."""
         deleted = self._deleted.get(idea_id)

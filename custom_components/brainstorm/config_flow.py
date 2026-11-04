@@ -25,6 +25,7 @@ from .const import (
     CONF_AUTO_EXPORT_MARKDOWN,
     CONF_BRING_CATEGORY,
     CONF_BRING_DEFAULT_LIST,
+    CONF_BRING_DONE_DAYS,
     CONF_BRING_ENABLED,
     CONF_BRING_LISTS,
     CONF_BRING_SHARE_ALL,
@@ -68,6 +69,7 @@ from .const import (
     CONF_VOICE_DUE,
     CONF_GLOSSARY,
     CONF_VOICE_MODE,
+    DEFAULT_BRING_DONE_DAYS,
     DEFAULT_HIDE_EMPTY_CATEGORIES,
     DEFAULT_MARKDOWN_PATH,
     DEFAULT_REVIEW_DAYS,
@@ -1483,6 +1485,9 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                         CONF_BRING_CATEGORY: category,
                         CONF_BRING_LISTS: chosen,
                         CONF_BRING_DEFAULT_LIST: default,
+                        CONF_BRING_DONE_DAYS: int(
+                            user_input.get(CONF_BRING_DONE_DAYS, DEFAULT_BRING_DONE_DAYS)
+                        ),
                     }
                 )
                 return await self._async_saved(options, "init")
@@ -1527,6 +1532,18 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             ): selector.SelectSelector(
                 selector.SelectSelectorConfig(
                     options=list_options, mode=selector.SelectSelectorMode.DROPDOWN
+                )
+            ),
+            vol.Required(
+                CONF_BRING_DONE_DAYS,
+                default=int(current.get(CONF_BRING_DONE_DAYS, DEFAULT_BRING_DONE_DAYS)),
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=0,
+                    max=90,
+                    step=1,
+                    mode=selector.NumberSelectorMode.BOX,
+                    unit_of_measurement="d",
                 )
             ),
         }

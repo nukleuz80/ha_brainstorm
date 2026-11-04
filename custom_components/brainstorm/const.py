@@ -62,6 +62,8 @@ CONF_BRING_CATEGORY = "bring_category"
 CONF_BRING_LISTS = "bring_lists"
 CONF_BRING_DEFAULT_LIST = "bring_default_list"
 CONF_BRING_SHARE_ALL = "bring_share_all"
+CONF_BRING_DONE_DAYS = "bring_done_days"
+DEFAULT_BRING_DONE_DAYS = 3
 
 DEFAULT_CATEGORIES = [
     "Inbox",

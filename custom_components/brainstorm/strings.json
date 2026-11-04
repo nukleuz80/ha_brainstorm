@@ -376,6 +376,7 @@
           "bring_category": "Category",
           "bring_lists": "Lists",
           "bring_default_list": "Default list",
+          "bring_done_days": "Hide bought items after (days)",
           "bring_share_all": "Share the category with everyone",
           "go_back": "⬅️ Back without saving"
         },
@@ -384,6 +385,7 @@
           "bring_category": "Pick a category or type a new name, which is created when you save.",
           "bring_lists": "Leave empty to sync all lists, including lists added later.",
           "bring_default_list": "Notes added to the category without a list, for example by voice, go to this list.",
+          "bring_done_days": "Ticked off items leave the completed view of Brainstorm after this many days; they stay in Bring for buying again. 0 keeps them.",
           "bring_share_all": "With privacy on, only notes shared with everyone are synced, as everyone with access to Bring sees them. This shares the whole category with everyone.",
           "go_back": "Returns to the previous page without saving this form."
         }

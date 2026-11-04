@@ -46,6 +46,7 @@ from .bring import (
     bring_settings,
     chosen_lists,
     default_list,
+    done_to_archive,
 )
 from .const import (
     ATTR_BRING_LIST,
@@ -312,6 +313,10 @@ class TodoSyncManager:
             removals, self._pending_removals = self._pending_removals, []
             for entity_id, uid in removals:
                 await self._async_call(entity_id, "remove_item", {"item": [uid]})
+            if self.bring is not None:
+                done = done_to_archive(self.store, self.bring, dt_util.now())
+                if done:
+                    await self.store.async_archive_ideas(done)
             targets = await self._async_build_targets()
             entities = {target.entity_id for target in targets}
             self._watch(entities)
