@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.6.22-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.6.23-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -147,8 +147,8 @@ HACS only installs the integration, so continue with [Install the cards](#instal
 
 1. Copy `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` and `www/brainstorm-i18n.js` from the release to `/config/www/`. The third file holds the texts and needs no resource entry.
 2. Add both under **Settings ➔ Dashboards ➔ Resources** as **JavaScript module**:
-   - `/local/brainstorm-card.js?v=1.6.22`
-   - `/local/brainstorm-mindmap-card.js?v=1.6.22`
+   - `/local/brainstorm-card.js?v=1.6.23`
+   - `/local/brainstorm-mindmap-card.js?v=1.6.23`
 3. Reload the page in your browser.
 
 ### Removing the Integration
@@ -339,9 +339,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.6.22
+  - url: /local/brainstorm-card.js?v=1.6.23
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.6.22
+  - url: /local/brainstorm-mindmap-card.js?v=1.6.23
     type: module
 ```
 
@@ -766,6 +766,7 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.6.23`** | 2026-11-04 | **Mindmap: the time stays inside the cloud:**<br>• With long device names (*"Jans Echo Dot - Garten"*), the time (*"14m ago"*) stuck out of the cloud on narrow screens. Now the device name is shortened with "…" and the time always stays visible. |
 | **`v1.6.22`** | 2026-11-04 | **The skill answers free sentences at once:**<br>• Alexa writes a sentence to its history only together with the skill's answer, so waiting for it was in vain and cost about 4 seconds of silence. Now the skill answers at once with *"Okay, noted"*, and the idea appears a few seconds later.<br>• Home Assistant finds the right history entry by exactly this answer (the `response` field of Alexa Media), so other questions on the same Echo are no longer stored by mistake. Older Alexa Media versions without this field keep matching by Echo.<br>• If no history entry arrives within a minute, Home Assistant shows a notification instead of losing the sentence silently. |
 | **`v1.6.21`** | 2026-11-04 | **Links and Markdown in notes:**<br>• Both cards show web addresses and `[text](https://…)` as clickable links, plus `**bold**`, `*italic*`, `~~struck out~~` and `` `code` ``, also in the result note.<br>• Safe escaping: the whole text is escaped, only the tags the card makes are HTML. Links only go to `http`, `https` and `mailto`, with `rel="noopener noreferrer"`. Tested against injected HTML and `javascript:` links.<br>• A click on a link neither opens the editor nor starts moving a cloud. |
 | **`v1.6.20`** | 2026-11-04 | **The skill saves free sentences without a command word:**<br>• When the skill does not understand a sentence (*"ask Brainstorm the shower gel is empty"*), it asks Home Assistant. Home Assistant takes the sentence from the Echo's Alexa history, removes *"ask Brainstorm"* and saves it like a note.<br>• In an open skill session, only a sentence from the same Echo counts, so other Echos in the house are not mixed up.<br>• If the history comes too late, Alexa answers *"Okay, I will save that in a moment"* and the idea is added for up to 60 seconds.<br>• **Copy the skill code again** (Brainstorm Hub ➔ Configure ➔ Alexa Voice Input & Skill), otherwise the old hint stays. |

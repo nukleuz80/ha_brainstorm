@@ -1,8 +1,8 @@
-import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.22";
+import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.23";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.6.22 - Skill, Reminders, Privacy and Sharing
+ * Version: 1.6.23 - Skill, Reminders, Privacy and Sharing
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -1458,11 +1458,25 @@ class BrainstormMindmapCard extends HTMLElement {
           white-space: nowrap;
           font-size: 0.72rem;
           color: var(--secondary-text-color, #64748b);
+          /* Stay inside the cloud: the device name gives way, the time does not */
+          min-width: 0;
+          max-width: 100%;
+        }
+        .cloud-source > span {
+          flex-shrink: 0;
+        }
+        .cloud-source > span:first-child {
+          display: inline-flex;
+          align-items: center;
+          flex-shrink: 1;
+          min-width: 0;
+          overflow: hidden;
         }
         .cloud-device {
           font-size: 0.68rem;
           opacity: 0.85;
           max-width: 110px;
+          min-width: 0;
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
@@ -4911,7 +4925,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.6.22 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.6.23 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

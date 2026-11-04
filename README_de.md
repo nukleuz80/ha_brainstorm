@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.6.22-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.6.23-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -167,8 +167,8 @@ HACS installiert nur die Integration. Die Karten kopierst du anschließend wie u
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` und `www/brainstorm-i18n.js` in `/config/www/`. Die dritte Datei enthält die Texte und braucht keinen Ressourcen-Eintrag.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.6.22` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.6.22` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.6.23` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.6.23` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ### Integration entfernen
@@ -817,6 +817,7 @@ Weitere Beispiele für Assist und Alexa liegen im Ordner [`examples/`](examples/
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.6.23`** | 04.11.2026 | **Mindmap: Zeitangabe bleibt in der Wolke:**<br>• Bei langen Gerätenamen (*„Jans Echo Dot - Garten“*) ragte die Zeit (*„vor 14m“*) auf schmalen Bildschirmen über den Rand der Wolke. Jetzt wird der Gerätename mit „…“ gekürzt, die Zeit bleibt immer sichtbar. |
 | **`v1.6.22`** | 04.11.2026 | **Skill antwortet bei freien Sätzen sofort:**<br>• Alexa schreibt einen Satz erst zusammen mit der Antwort des Skills in den Verlauf. Das Warten darauf war deshalb vergeblich und kostete gut 4 Sekunden Stille. Jetzt antwortet der Skill sofort mit *„Okay, notiert“*, der Eintrag erscheint wenige Sekunden später.<br>• Home Assistant erkennt den passenden Verlaufseintrag an genau dieser Antwort (Feld `response` von Alexa Media). Andere Fragen am selben Echo werden nicht mehr versehentlich gespeichert. Ältere Alexa-Media-Versionen ohne dieses Feld nutzen weiter die Zuordnung über das Echo.<br>• Kommt innerhalb einer Minute kein Verlaufseintrag, erscheint eine Benachrichtigung in Home Assistant, statt den Satz still zu verlieren. |
 | **`v1.6.21`** | 04.11.2026 | **Links und Markdown in Notizen:**<br>• Beide Karten zeigen Webadressen und `[Text](https://…)` als anklickbare Links, dazu `**fett**`, `*kursiv*`, `~~durchgestrichen~~` und `` `Code` ``, auch in der Ergebnisnotiz.<br>• Sichere Maskierung: Der Text wird vollständig maskiert, nur die selbst erzeugten Tags sind HTML. Links nur zu `http`, `https` und `mailto`, mit `rel="noopener noreferrer"`. Gegen eingeschleustes HTML und `javascript:`-Links getestet.<br>• Ein Klick auf einen Link öffnet weder den Editor noch startet er das Verschieben einer Wolke. |
 | **`v1.6.20`** | 04.11.2026 | **Skill speichert freie Sätze ohne Befehlswort:**<br>• Versteht der Skill einen Satz nicht (*„sage Brainstorm Duschgel ist alle“*), fragt er Home Assistant. Das nimmt den Satz aus dem Alexa-Verlauf des Echos, entfernt *„sage Brainstorm“* und speichert ihn wie eine Notiz.<br>• Im offenen Skill (*„öffne Brainstorm“*) zählt nur ein Satz vom selben Echo, Sätze anderer Echos im Haus werden nicht verwechselt.<br>• Kommt der Verlauf zu spät, antwortet Alexa *„Okay, ich speichere das gleich“* und der Eintrag wird bis zu 60 Sekunden lang nachgetragen.<br>• **Skill-Code neu kopieren** (Brainstorm Hub ➔ Konfigurieren ➔ Alexa-Spracheingabe & Skill), sonst bleibt der alte Hinweis. |
