@@ -69,6 +69,13 @@ def _at(day_offset: int, hour: int, minute: int = 0) -> datetime:
         ("am 25. november an den termin", _at(25, 9), "den termin"),
         ("an den termin am 1.2.2027 um 17 uhr", datetime(2027, 2, 1, 17, tzinfo=dt_util.UTC), "den termin"),
         ("die tonnen morgen früh", _at(1, 8), "die tonnen"),
+        # Spoken ordinal days, as Alexa transcribes "am zweiten Dezember"
+        ("am zweiten dezember um zwölf uhr an die feier", datetime(2026, 12, 2, 12, tzinfo=dt_util.UTC), "die feier"),
+        ("am zweiten zwölften um 12 an die feier", datetime(2026, 12, 2, 12, tzinfo=dt_util.UTC), "die feier"),
+        ("der zweite dezember geburtstag oma", datetime(2026, 12, 2, 9, tzinfo=dt_util.UTC), "geburtstag oma"),
+        ("den dritten november an den arzt", _at(3, 9), "den arzt"),
+        ("am einunddreißigsten dezember abends an die raketen", datetime(2026, 12, 31, 19, tzinfo=dt_util.UTC), "die raketen"),
+        ("am ersten ersten an neujahr", datetime(2027, 1, 1, 9, tzinfo=dt_util.UTC), "neujahr"),
     ],
 )
 def test_parse_due(spoken: str, due: datetime, text: str) -> None:
@@ -77,7 +84,14 @@ def test_parse_due(spoken: str, due: datetime, text: str) -> None:
 
 
 @pytest.mark.parametrize(
-    "spoken", ["die tonnen rausstellen", "wir brauchen 8 neue stühle", "kaffee kaufen"]
+    "spoken",
+    [
+        "die tonnen rausstellen",
+        "wir brauchen 8 neue stühle",
+        "kaffee kaufen",
+        "zum zweiten mal rasen mähen",
+        "am dreißigsten februar an die steuer",
+    ],
 )
 def test_parse_due_without_time(spoken: str) -> None:
     """Test that a text without a time stays as it is."""

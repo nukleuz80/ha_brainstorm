@@ -636,6 +636,35 @@ _NUMBER_WORDS: dict[str, int] = {
 _NUMBER = r"\d{1,2}|" + "|".join(
     sorted(_NUMBER_WORDS, key=len, reverse=True)
 )
+
+
+def _build_ordinals() -> dict[str, int]:
+    """Spell the days of a month as ordinal numbers: erste, zweiten, einunddreißigster."""
+    stems = {
+        1: ["erst"], 2: ["zweit"], 3: ["dritt"], 4: ["viert"], 5: ["fünft"],
+        6: ["sechst"], 7: ["siebt", "siebent"], 8: ["acht"], 9: ["neunt"],
+        10: ["zehnt"], 11: ["elft"], 12: ["zwölft"], 13: ["dreizehnt"],
+        14: ["vierzehnt"], 15: ["fünfzehnt"], 16: ["sechzehnt"], 17: ["siebzehnt"],
+        18: ["achtzehnt"], 19: ["neunzehnt"], 20: ["zwanzigst"], 30: ["dreißigst"],
+    }
+    units = {1: "ein", 2: "zwei", 3: "drei", 4: "vier", 5: "fünf", 6: "sechs",
+             7: "sieben", 8: "acht", 9: "neun"}
+    for unit, word in units.items():
+        stems[20 + unit] = [f"{word}undzwanzigst"]
+    stems[31] = ["einunddreißigst"]
+    return {
+        stem + ending: number
+        for number, words in stems.items()
+        for stem in words
+        for ending in ("e", "en", "er", "em", "es")
+    }
+
+
+_ORDINALS = _build_ordinals()
+_ORDINAL = "|".join(sorted(_ORDINALS, key=len, reverse=True))
+_ORDINAL_MONTH = "|".join(
+    sorted((word for word, number in _ORDINALS.items() if number <= 12), key=len, reverse=True)
+)
 _WEEKDAYS = (
     "montag",
     "dienstag",
@@ -686,7 +715,13 @@ _RE_WEEKDAY = re.compile(
 )
 _RE_DATE = re.compile(r"\b(?:am\s+)?(\d{1,2})\.\s?(\d{1,2})\.(?:\s?(\d{2,4}))?", re.I)
 _RE_MONTH_DATE = re.compile(
-    r"\b(?:am\s+)?(\d{1,2})\.?\s+(" + "|".join(_MONTHS) + r")\b", re.I
+    rf"\b(?:am\s+|den\s+|der\s+)?(\d{{1,2}}(?=\.?\s)|{_ORDINAL})\.?\s+(" + "|".join(_MONTHS) + r")\b",
+    re.I,
+)
+# 'am zweiten zwölften': both day and month spoken as ordinal numbers
+_RE_ORDINAL_DATE = re.compile(
+    rf"\b(?:am\s+|den\s+|der\s+)?({_ORDINAL})\s+({_ORDINAL_MONTH})\b(?!\s+(?:{_ORDINAL}))",
+    re.I,
 )
 _RE_HALF = re.compile(rf"\b(?:um\s+)?halb\s+({_NUMBER})\b", re.I)
 _RE_QUARTER = re.compile(rf"\b(?:um\s+)?viertel\s+(vor|nach)\s+({_NUMBER})\b", re.I)
@@ -706,6 +741,12 @@ def _number(value: str) -> int:
     if lowered == "ner":
         return 1
     return int(lowered) if lowered.isdigit() else _NUMBER_WORDS[lowered]
+
+
+def _day_number(value: str) -> int:
+    """Turn '2', '2.' or 'zweiten' into the day of the month."""
+    lowered = value.lower().rstrip(".")
+    return int(lowered) if lowered.isdigit() else _ORDINALS[lowered]
 
 
 def parse_due(text: str, now: datetime) -> tuple[datetime | None, str]:
@@ -742,7 +783,10 @@ def parse_due(text: str, now: datetime) -> tuple[datetime | None, str]:
             day = _date_in_future(now, int(match.group(1)), int(match.group(2)), match.group(3))
         elif match := take(_RE_MONTH_DATE):
             month = _MONTHS.index(match.group(2).lower()) + 1
-            day = _date_in_future(now, int(match.group(1)), month, None)
+            day = _date_in_future(now, _day_number(match.group(1)), month, None)
+        elif match := take(_RE_ORDINAL_DATE):
+            month = _ORDINALS[match.group(2).lower()]
+            day = _date_in_future(now, _ORDINALS[match.group(1).lower()], month, None)
         elif match := take(_RE_DAY):
             offset = {"heute": 0, "morgen": 1, "übermorgen": 2}[match.group(1).lower()]
             day = now.date() + timedelta(days=offset)
@@ -841,7 +885,8 @@ _RE_SPOKEN_DATE = re.compile(
     rf"|{_RE_NEXT_WEEK.pattern}"
     rf"|\b(?:{'|'.join(_WEEKDAYS)})\b"
     r"|\b\d{1,2}\.\s?\d{1,2}\.(?:\s?\d{2,4})?(?![\d.])"
-    rf"|{_RE_MONTH_DATE.pattern}",
+    rf"|{_RE_MONTH_DATE.pattern}"
+    rf"|{_RE_ORDINAL_DATE.pattern}",
     re.IGNORECASE,
 )
 _RE_NO_DUE_DATE = re.compile(

@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.6.29-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.6.30-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -172,8 +172,8 @@ HACS installiert nur die Integration. Die Karten kopierst du anschließend wie u
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` und `www/brainstorm-i18n.js` in `/config/www/`. Die dritte Datei enthält die Texte und braucht keinen Ressourcen-Eintrag.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.6.29` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.6.29` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.6.30` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.6.30` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ### Integration entfernen
@@ -195,7 +195,7 @@ Je nachdem, was du genutzt hast, entferne auch:
 Brainstorm erinnert dich von selbst an fällige Einträge, und zwar über die Dienste, die du in Home Assistant ohnehin eingerichtet hast. Alles ist optional und läuft lokal.
 
 **Termin festlegen**
-- **Per Sprache (Skill):** *„Alexa, sage Brainstorm erinnere mich morgen um 8 an die Mülltonnen“*. Verstanden werden z. B. *heute Abend*, *morgen früh*, *übermorgen*, *am Freitag*, *nächste Woche*, *am 25.11.*, *in zwei Stunden*, *um halb neun*.
+- **Per Sprache (Skill):** *„Alexa, sage Brainstorm erinnere mich morgen um 8 an die Mülltonnen“*. Verstanden werden z. B. *heute Abend*, *morgen früh*, *übermorgen*, *am Freitag*, *nächste Woche*, *am 25.11.*, *in zwei Stunden*, *um halb neun*. Auch ausgesprochene Tage klappen: *„am zweiten Dezember um zwölf Uhr“* oder *„am zweiten Zwölften um zwölf“* speichern den 02.12. um 12:00 Uhr. Liegt das Datum dieses Jahr schon hinter dir, nimmt Brainstorm das nächste Jahr.
 - **Per Sprache (nativ):** *„Alexa, erinnere mich morgen um 8 an …“*. Amazon legt dabei eventuell zusätzlich eine eigene Erinnerung an.
 - **In den Listen:** Fälligkeitsdatum in den To-do-Listen von Home Assistant setzen. Ein reines Datum bedeutet 9:00 Uhr.
 - **Auf der Karte:** Eintrag lange drücken ➔ *Erinnern: heute Abend / morgen früh / nächste Woche / Zeitpunkt wählen*.
@@ -833,6 +833,7 @@ Weitere Beispiele für Assist und Alexa liegen im Ordner [`examples/`](examples/
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.6.30`** | 04.11.2026 | **Ausgesprochene Tage als Datum:**<br>• *„am zweiten Dezember um zwölf Uhr“*, *„den dritten November“* und *„am zweiten Zwölften“* werden jetzt als Termin verstanden (1. bis 31., Monat als Name oder als Ordnungszahl).<br>• Wendungen wie *„zum zweiten Mal“* bleiben Text, ein *„dreißigster Februar“* wird kein Termin. |
 | **`v1.6.29`** | 04.11.2026 | **🌿 in der Listenkarte, klarere KI-Fehler:**<br>• **🌿 neben ✨** an jeder Hauptaufgabe und im Menü bei langem Drücken: Die Unteraufgabe landet direkt darunter, in ihrer Kategorie. Enter speichert.<br>• **Überlastete KI:** Lehnt der Anbieter ab (etwa Googles *503 high demand*), fragt Brainstorm nach 2 Sekunden einmal nach. Ein Timeout wird nicht wiederholt, damit du nicht doppelt wartest.<br>• **Klare Meldung:** Ist die KI nicht erreichbar, sagen beide Karten das, statt zu behaupten, sie habe keine Unteraufgaben geliefert. Neuer WebSocket-Fehlercode `ai_unavailable`. |
 | **`v1.6.28`** | 04.11.2026 | **KI-Unteraufgaben auch in der Listenkarte:**<br>• **✨ neben ✎** an jeder Hauptaufgabe, die du ändern darfst, und **im Menü** bei langem Drücken oder Rechtsklick. Derselbe Dialog wie in der Mindmap: Haken weg, Texte ändern, übernehmen.<br>• Die neuen Unteraufgaben bekommen die Kategorie ihrer Hauptaufgabe. Unteraufgaben selbst haben kein ✨, weil die Liste eine Ebene Unteraufgaben zeigt.<br>• Nur sichtbar, wenn unter *Konfigurieren ➔ KI* eine KI-Aufgaben-Entität gewählt ist. |
 | **`v1.6.27`** | 04.11.2026 | **Eigener Menüpunkt für die KI:**<br>• Die KI-Einstellungen sind von *Erinnerungen ➔ Kalender, KI & Alexa-Erinnerungen* in einen eigenen Punkt **KI** im Hauptmenü gezogen: KI-Aufgaben-Entität, gesprochene Einträge verbessern, Briefing und Rückblick kürzen. Gespeicherte Einstellungen bleiben, wie sie sind.<br>• Der Erinnerungs-Bereich heißt jetzt *Kalender & Alexa-Erinnerungen*.<br>• Der ✨-Dialog der Mindmap nennt den neuen Ort, wenn noch keine KI gewählt ist.<br>• **Neuer Abschnitt *Feedback & Mitmachen*:** Rückmeldungen, Ideen und Pull Requests sind sehr willkommen. |

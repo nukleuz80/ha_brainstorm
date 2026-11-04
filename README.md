@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.6.29-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.6.30-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -152,8 +152,8 @@ HACS only installs the integration, so continue with [Install the cards](#instal
 
 1. Copy `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` and `www/brainstorm-i18n.js` from the release to `/config/www/`. The third file holds the texts and needs no resource entry.
 2. Add both under **Settings ➔ Dashboards ➔ Resources** as **JavaScript module**:
-   - `/local/brainstorm-card.js?v=1.6.29`
-   - `/local/brainstorm-mindmap-card.js?v=1.6.29`
+   - `/local/brainstorm-card.js?v=1.6.30`
+   - `/local/brainstorm-mindmap-card.js?v=1.6.30`
 3. Reload the page in your browser.
 
 ### Removing the Integration
@@ -349,9 +349,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.6.29
+  - url: /local/brainstorm-card.js?v=1.6.30
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.6.29
+  - url: /local/brainstorm-mindmap-card.js?v=1.6.30
     type: module
 ```
 
@@ -783,6 +783,7 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.6.30`** | 2026-11-04 | **Spoken ordinal days in German:**<br>• *„am zweiten Dezember um zwölf Uhr“*, *„den dritten November“* and *„am zweiten Zwölften“* are now understood as due dates (1st to 31st, with the month as a name or as an ordinal).<br>• Phrases like *„zum zweiten Mal“* stay text, and a 30th of February does not become a due date. |
 | **`v1.6.29`** | 2026-11-04 | **🌿 in the list card, clearer AI errors:**<br>• **🌿 next to ✨** on every main task, and in the long-press menu: a subtask lands right under it, in its category. Enter saves.<br>• **An overloaded AI:** If the provider refuses (for example Google's *503 high demand*), Brainstorm asks once more after 2 seconds. A timeout is not repeated, so you do not wait twice.<br>• **Clear message:** If the AI cannot be reached, both cards say so instead of claiming that it gave no subtasks. New WebSocket error code `ai_unavailable`. |
 | **`v1.6.28`** | 2026-11-04 | **AI subtasks in the list card too:**<br>• **✨ next to ✎** on every main task you may edit, and **in the menu** on a long press or right click. The same dialog as on the mind map: untick, edit, then add.<br>• The new subtasks get the category of their main task. Subtasks themselves have no ✨, since the list shows one level of subtasks.<br>• Only shown when an AI task entity is set under *Configure ➔ AI*. |
 | **`v1.6.27`** | 2026-11-04 | **Own menu entry for the AI:**<br>• The AI settings moved from *Reminders ➔ Calendar, AI & Alexa Reminders* to their own entry **AI** in the main menu: AI task entity, improving spoken entries, shortening briefing and review. Stored settings stay as they are.<br>• The reminder section is now called *Calendar & Alexa Reminders*.<br>• The mind map's ✨ dialog names the new place when no AI is chosen.<br>• **New section *Feedback & Contributing*:** Feedback, ideas and pull requests are very welcome. |
