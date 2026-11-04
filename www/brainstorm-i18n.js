@@ -270,6 +270,18 @@ const DICTIONARIES = {
     "{count} Notizen gelöscht": "{count} notes deleted",
     "🗑️ {count} Notizen löschen?": "🗑️ Delete {count} notes?",
     "… und {count} weitere": "… and {count} more",
+    "Unteraufgaben von der KI vorschlagen lassen": "Let the AI suggest subtasks",
+    "✨ Unteraufgaben vorschlagen": "✨ Suggest subtasks",
+    "Die KI denkt nach …": "The AI is thinking …",
+    "Nochmal versuchen": "Try again",
+    "Haken weg bei allem, was du nicht willst. Du kannst die Texte noch ändern.": "Untick what you do not want. You can still change the texts.",
+    "Neue Vorschläge": "New suggestions",
+    "{count} übernehmen": "Add {count}",
+    "{count} Unteraufgaben angelegt": "{count} subtasks added",
+    "{count} Unteraufgaben": "{count} subtasks",
+    "Die KI hat keine Unteraufgaben geliefert.": "The AI gave no subtasks.",
+    "Wähle zuerst eine KI-Aufgaben-Entität in den Brainstorm-Einstellungen.": "First choose an AI task entity in the Brainstorm settings.",
+    "Du darfst diese Notiz nicht ändern.": "You may not change this note.",
   },
 };
 

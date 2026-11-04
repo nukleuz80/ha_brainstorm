@@ -1,8 +1,8 @@
-import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.25";
+import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.26";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.6.25 - Skill, Reminders, Privacy and Sharing
+ * Version: 1.6.26 - Skill, Reminders, Privacy and Sharing
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -1319,6 +1319,34 @@ class BrainstormMindmapCard extends HTMLElement {
           box-shadow: 0 0 0 3px color-mix(in srgb, var(--cat-color, var(--primary-color, #03a9f4)) 40%, transparent);
           z-index: 12;
         }
+        .suggest-list {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          margin: 6px 0 4px;
+          max-height: 50vh;
+          overflow-y: auto;
+        }
+        .suggest-row {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .suggest-check {
+          width: 22px;
+          height: 22px;
+          flex: 0 0 auto;
+          accent-color: var(--primary-color, #03a9f4);
+          cursor: pointer;
+        }
+        .suggest-text {
+          flex: 1 1 auto;
+          min-width: 0;
+        }
+        .suggest-status {
+          padding: 14px 0;
+          text-align: center;
+        }
         .note-cloud.multi-selected {
           border-color: var(--primary-color, #03a9f4);
           box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color, #03a9f4) 45%, transparent);
@@ -2058,6 +2086,12 @@ class BrainstormMindmapCard extends HTMLElement {
           filter: brightness(1.08);
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
         }
+        .dialog-btn-primary:disabled {
+          opacity: 0.45;
+          cursor: default;
+          filter: none;
+          box-shadow: none;
+        }
         .dialog-error {
           color: var(--error-color, #db4437);
           font-size: 0.8rem;
@@ -2621,7 +2655,7 @@ class BrainstormMindmapCard extends HTMLElement {
   }
 
   // Adds a note typed on the dashboard and gives back its ID
-  async _addIdea(data) {
+  async _addIdea(data, { undo = true } = {}) {
     const result = await this._hass.callWS({
       type: "call_service",
       domain: "brainstorm",
@@ -2631,8 +2665,115 @@ class BrainstormMindmapCard extends HTMLElement {
     });
     const created = result && result.response && result.response.idea;
     if (!created || !created.id) return null;
-    this._pushUndo(data.text, () => this._hass.callService("brainstorm", "delete_idea", { id: created.id }));
+    if (undo) this._pushUndo(data.text, () => this._hass.callService("brainstorm", "delete_idea", { id: created.id }));
     return created.id;
+  }
+
+  // The AI suggests subtasks; nothing is stored until the person picks and saves
+  _showSubtaskSuggestions(idea) {
+    if (!this._hass) return;
+    this._openDialog(t("✨ Unteraufgaben vorschlagen"), (body) => {
+      const render = (state, suggestions = []) => {
+        if (!this._isModalOpen) return;
+        const preview = `<div class="dialog-note-preview">${formatText(idea.text)}</div>`;
+        if (state === "loading") {
+          body.innerHTML = `${preview}<div class="dialog-label suggest-status">${t("Die KI denkt nach …")}</div>`;
+          return;
+        }
+        if (state === "error") {
+          body.innerHTML = `
+            ${preview}
+            <div class="dialog-error" style="display: flex;">${suggestions}</div>
+            <div class="dialog-footer">
+              <button class="dialog-btn dialog-btn-cancel" id="cancelSuggestBtn">${t("Abbrechen")}</button>
+              <button class="dialog-btn dialog-btn-primary" id="retrySuggestBtn">${t("Nochmal versuchen")}</button>
+            </div>
+          `;
+          body.querySelector("#cancelSuggestBtn").addEventListener("click", () => this._closeDialog());
+          body.querySelector("#retrySuggestBtn").addEventListener("click", load);
+          return;
+        }
+        body.innerHTML = `
+          ${preview}
+          <div class="dialog-label">${t("Haken weg bei allem, was du nicht willst. Du kannst die Texte noch ändern.")}</div>
+          <div class="suggest-list">
+            ${suggestions
+              .map(
+                (text, index) => `
+              <label class="suggest-row">
+                <input type="checkbox" class="suggest-check" data-index="${index}" checked />
+                <input type="text" class="dialog-input suggest-text" data-index="${index}" maxlength="200" value="${this._escapeHtml(text)}" />
+              </label>`
+              )
+              .join("")}
+          </div>
+          <div class="dialog-footer">
+            <button class="dialog-btn dialog-btn-cancel" id="retrySuggestBtn">${t("Neue Vorschläge")}</button>
+            <button class="dialog-btn dialog-btn-primary" id="saveSuggestBtn"></button>
+          </div>
+        `;
+        const saveBtn = body.querySelector("#saveSuggestBtn");
+        const picked = () =>
+          [...body.querySelectorAll(".suggest-check")]
+            .filter((box) => box.checked)
+            .map((box) => body.querySelector(`.suggest-text[data-index="${box.dataset.index}"]`).value.trim())
+            .filter(Boolean);
+        const updateSave = () => {
+          const count = picked().length;
+          saveBtn.textContent = t("{count} übernehmen", { count });
+          saveBtn.disabled = count === 0;
+        };
+        body.querySelectorAll(".suggest-check, .suggest-text").forEach((el) => el.addEventListener("input", updateSave));
+        updateSave();
+        body.querySelector("#retrySuggestBtn").addEventListener("click", load);
+        saveBtn.addEventListener("click", async () => {
+          const texts = picked();
+          if (!texts.length) return;
+          this._closeDialog();
+          if (this._collapsed.has(idea.id)) this._toggleBranch(idea.id);
+          const created = [];
+          for (const text of texts) {
+            try {
+              const id = await this._addIdea({ text, category: idea.category, parent_id: idea.id }, { undo: false });
+              if (id) created.push(id);
+            } catch (err) {
+              console.error("[BrainstormMindmap] Failed to add subtask:", err);
+            }
+          }
+          if (!created.length) return;
+          this._showToast(t("{count} Unteraufgaben angelegt", { count: created.length }));
+          this._pushUndo(t("{count} Unteraufgaben", { count: created.length }), async () => {
+            for (const id of [...created].reverse()) {
+              await this._hass.callService("brainstorm", "delete_idea", { id });
+            }
+          });
+        });
+      };
+      const load = async () => {
+        render("loading");
+        try {
+          const result = await this._hass.callWS({
+            type: "brainstorm/suggest_subtasks",
+            idea_id: idea.id,
+            ...(this._hass.language ? { language: this._hass.language } : {}),
+          });
+          const suggestions = (result && result.suggestions) || [];
+          if (!suggestions.length) render("error", t("Die KI hat keine Unteraufgaben geliefert."));
+          else render("list", suggestions);
+        } catch (err) {
+          const code = err && err.code;
+          render(
+            "error",
+            code === "ai_not_configured"
+              ? t("Wähle zuerst eine KI-Aufgaben-Entität in den Brainstorm-Einstellungen.")
+              : code === "unauthorized"
+                ? t("Du darfst diese Notiz nicht ändern.")
+                : t("Die KI hat keine Unteraufgaben geliefert.")
+          );
+        }
+      };
+      load();
+    });
   }
 
   _pushUndo(text, run) {
@@ -4034,6 +4175,7 @@ class BrainstormMindmapCard extends HTMLElement {
       const shownIdeas = this._mapIdeas(filteredIdeas);
       const listIds = new Set(filteredIdeas.map((i) => i.id));
       let html = "";
+      const aiSubtasks = Boolean(sensor && sensor.attributes && sensor.attributes.ai_subtasks);
       shownIdeas.forEach((idea) => {
         const color = this._getCategoryColor(idea.category);
         const sourceBadge = this._getSourceBadge(idea.source, idea.device);
@@ -4068,6 +4210,7 @@ class BrainstormMindmapCard extends HTMLElement {
             <div class="cloud-actions">
               <button class="action-btn done-btn" data-act="done" data-id="${idea.id}" title="${t("Als erledigt markieren")}">✓</button>
               <button class="action-btn" data-act="branch" data-id="${idea.id}" title="${t("Unteridee anlegen")}">🌿</button>
+              ${aiSubtasks ? `<button class="action-btn" data-act="suggest" data-id="${idea.id}" title="${t("Unteraufgaben von der KI vorschlagen lassen")}">✨</button>` : ""}
               <button class="action-btn" data-act="edit" data-id="${idea.id}" title="${t("Bearbeiten")}">✏️</button>
               <button class="action-btn" data-act="move" data-id="${idea.id}" title="${t("Kategorie ändern")}">📁</button>
               <button class="action-btn del-btn" data-act="delete" data-id="${idea.id}" title="${t("Löschen")}">🗑️</button>
@@ -4264,6 +4407,7 @@ class BrainstormMindmapCard extends HTMLElement {
             this._selectIdea(idea.id);
             if (act === "done") this._completeIdea(idea.id);
             else if (act === "branch") this._showAddDialog(idea);
+            else if (act === "suggest") this._showSubtaskSuggestions(idea);
             else if (act === "edit") this._showEditDialog(idea.id, idea.text, idea.category, idea.priority);
             else if (act === "move") this._showCategoryPicker(idea.id, idea.category, idea.text);
             else if (act === "delete") this._showDeleteConfirm(idea.id, idea.text);
@@ -5314,7 +5458,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.6.25 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.6.26 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

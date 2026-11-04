@@ -1470,6 +1470,17 @@ MESSAGES: dict[str, str] = {
         "Wochenrückblick: {count} Einträge sind seit über {days} Tagen offen. "
         "Die ältesten sind: {items}. Kann davon etwas weg?"
     ),
+    "subtasks_prompt": (
+        "Zerlege diese Aufgabe aus einer Aufgabenliste in drei bis sechs kurze, "
+        "konkrete Unteraufgaben in sinnvoller Reihenfolge. Antworte nur mit den "
+        "Unteraufgaben, eine pro Zeile, ohne Nummern und ohne Einleitung. Schreibe "
+        "sie als knappe deutsche Stichpunkte, die mit dem Verb im Infinitiv enden. "
+        "Wiederhole keine vorhandene Unteraufgabe und erfinde keine Namen, Zahlen "
+        "oder Termine.\n"
+        "Aufgabe: {text}\n"
+        "Kategorie: {category}\n"
+        "Vorhandene Unteraufgaben: {existing}"
+    ),
     "summarize_prompt": (
         "Fasse diese Erinnerung als kurzen, natürlichen deutschen Satz zum "
         "Vorlesen zusammen. Erfinde nichts dazu und lasse keinen Eintrag weg: "

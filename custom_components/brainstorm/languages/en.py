@@ -955,6 +955,16 @@ MESSAGES: dict[str, str] = {
         "Weekly review: {count} entries have been open for more than {days} days. "
         "The oldest are: {items}. Can any of them go?"
     ),
+    "subtasks_prompt": (
+        "Break this task from a to-do list down into three to six short, concrete "
+        "subtasks in a sensible order. Answer only with the subtasks, one per "
+        "line, without numbers and without an introduction. Write them as brief "
+        "English to-do items that start with a verb. Do not repeat an existing "
+        "subtask and do not make up names, numbers or dates.\n"
+        "Task: {text}\n"
+        "Category: {category}\n"
+        "Existing subtasks: {existing}"
+    ),
     "summarize_prompt": (
         "Summarize this reminder as a short, natural English sentence to read aloud. "
         "Do not add anything and do not leave out any entry: {message}"

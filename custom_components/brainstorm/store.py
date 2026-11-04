@@ -80,7 +80,7 @@ from .const import (
     TYPED_SOURCES,
     VOICE_MODE_NATIVE,
 )
-from .ai import async_generate_text
+from .ai import async_generate_text, parse_subtask_suggestions
 from .languages import CATEGORY_KEYS, get_pack
 from .languages.common import CATEGORY_PROJECTS, LanguagePack
 
@@ -320,6 +320,7 @@ class BrainstormStore:
             "hide_empty_categories": self.hide_empty_categories,
             "allowed_echos": self.allowed_echos,
             "voice_mode": self.voice_mode,
+            "ai_subtasks": self.ai_subtasks_available,
         }
 
     def get_overview_attributes(self, user_id: str | None = None) -> dict[str, Any]:
@@ -391,6 +392,7 @@ class BrainstormStore:
             "hide_empty_categories": self.hide_empty_categories,
             "allowed_echos": self.allowed_echos,
             "voice_mode": self.voice_mode,
+            "ai_subtasks": self.ai_subtasks_available,
             "category_counts": counts_by_cat,
             "priority_counts": counts_by_prio,
             "latest_idea": summary(active_ideas[0]) if active_ideas else None,
@@ -618,6 +620,40 @@ class BrainstormStore:
             return
         if improved != rule_text:
             await self.async_mark_fields(idea_id, {ATTR_TEXT: improved})
+
+    @property
+    def ai_subtasks_available(self) -> bool:
+        """Return whether an AI task entity can suggest subtasks."""
+        return bool(self.options.get(CONF_AI_ENTITY))
+
+    async def async_suggest_subtasks(
+        self, idea: dict[str, Any], language: str | None = None
+    ) -> list[str] | None:
+        """Ask the AI for subtasks of an idea, None when it gave nothing usable.
+
+        Nothing is stored: the person picks what to keep first.
+        """
+        entity = self.options.get(CONF_AI_ENTITY)
+        if not entity:
+            return None
+        pack = self._pack(language)
+        children = [
+            item.get(ATTR_TEXT) or ""
+            for item in self._ideas.values()
+            if item.get(ATTR_PARENT_ID) == idea.get(ATTR_ID)
+            and item.get(ATTR_STATUS) == "active"
+        ]
+        instructions = pack.msg(
+            "subtasks_prompt",
+            text=idea.get(ATTR_TEXT) or "",
+            category=idea.get(ATTR_CATEGORY) or "",
+            existing=", ".join(children) if children else "–",
+        )
+        answer = await async_generate_text(self.hass, entity, instructions)
+        suggestions = parse_subtask_suggestions(
+            answer, [idea.get(ATTR_TEXT) or "", *children]
+        )
+        return suggestions or None
 
     def async_cancel_ai_tasks(self) -> None:
         """Stop AI work that is still running when the integration unloads."""

@@ -343,7 +343,7 @@
           "ai_text_cleanup": "Each spoken entry is stored first and improved a few seconds later. The result is dropped if it adds words or changes a negation. The text is sent to the provider of the chosen AI.",
           "native_reminders": "In the Alexa console, also switch on Reminders under Build ➔ Permissions. Alexa then rings itself and Home Assistant does not speak as well.",
           "calendar_entity": "The calendar that receives the reminders.",
-          "ai_entity": "The AI task entity that shortens and improves the texts.",
+          "ai_entity": "The AI task entity that shortens and improves the texts. With it, the ✨ button on a mind map note also suggests subtasks; only that note and its subtasks are sent, and only when you press the button.",
           "go_back": "Returns to the previous page without saving this form."
         }
       },

@@ -343,7 +343,7 @@
           "ai_text_cleanup": "Jeder gesprochene Eintrag wird zuerst gespeichert und wenige Sekunden später verbessert. Das Ergebnis wird verworfen, wenn es Wörter hinzufügt oder eine Verneinung ändert. Der Text geht an den Anbieter der gewählten KI.",
           "native_reminders": "Schalte in der Alexa-Konsole zusätzlich Reminders unter Build ➔ Permissions ein. Alexa klingelt dann selbst, und Home Assistant spricht nicht zusätzlich.",
           "calendar_entity": "Der Kalender, der die Erinnerungen erhält.",
-          "ai_entity": "Die KI-Aufgaben-Entität, die die Texte kürzt und verbessert.",
+          "ai_entity": "Die KI-Aufgaben-Entität, die die Texte kürzt und verbessert. Ist sie gewählt, schlägt der Knopf ✨ an einer Notiz der Mindmap auch Unteraufgaben vor; gesendet werden nur diese Notiz und ihre Unteraufgaben, und nur, wenn du den Knopf drückst.",
           "go_back": "Kehrt zur vorigen Seite zurück, ohne dieses Formular zu speichern."
         }
       },

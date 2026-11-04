@@ -12,12 +12,17 @@ import homeassistant.helpers.config_validation as cv
 from .const import CONF_SHARE_USERS
 from .store import get_loaded_store
 
+# Error codes the cards translate for the person
+ERR_AI_NOT_CONFIGURED = "ai_not_configured"
+ERR_AI_FAILED = "ai_failed"
+
 
 @callback
 def async_register_commands(hass: HomeAssistant) -> None:
     """Register the WebSocket commands."""
     websocket_api.async_register_command(hass, websocket_get_ideas)
     websocket_api.async_register_command(hass, websocket_set_map_positions)
+    websocket_api.async_register_command(hass, websocket_suggest_subtasks)
 
 
 @websocket_api.websocket_command({vol.Required("type"): "brainstorm/ideas"})
@@ -97,3 +102,44 @@ async def websocket_set_map_positions(
         msg["positions"], connection.user.id
     )
     connection.send_result(msg["id"], {"changed": changed})
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "brainstorm/suggest_subtasks",
+        vol.Required("idea_id"): cv.string,
+        vol.Optional("language"): vol.All(cv.string, vol.Length(max=10)),
+    }
+)
+@websocket_api.async_response
+async def websocket_suggest_subtasks(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Let the AI suggest subtasks for an idea the user may change."""
+    store = get_loaded_store(hass)
+    if store is None:
+        connection.send_error(
+            msg["id"], websocket_api.ERR_NOT_FOUND, "Brainstorm is not loaded"
+        )
+        return
+    idea = store.get_idea(msg["idea_id"])
+    if idea is None or not store.can_access(idea, connection.user.id):
+        connection.send_error(msg["id"], websocket_api.ERR_NOT_FOUND, "Unknown idea")
+        return
+    if not store.can_edit(idea, connection.user.id):
+        connection.send_error(
+            msg["id"], websocket_api.ERR_UNAUTHORIZED, "No right to change this idea"
+        )
+        return
+    if not store.ai_subtasks_available:
+        connection.send_error(
+            msg["id"], ERR_AI_NOT_CONFIGURED, "No AI task entity is set up"
+        )
+        return
+    suggestions = await store.async_suggest_subtasks(idea, msg.get("language"))
+    if suggestions is None:
+        connection.send_error(msg["id"], ERR_AI_FAILED, "The AI gave no subtasks")
+        return
+    connection.send_result(msg["id"], {"suggestions": suggestions})
