@@ -368,6 +368,26 @@
           "go_back": "Returns to the previous page without saving this form."
         }
       },
+      "bring": {
+        "title": "Brainstorm › 🛒 Bring!",
+        "description": "Syncs your Bring! lists into one category. Each list becomes a main note, and its items become its subtasks. New items, ticks and deletions go both ways, and new Bring lists show up on their own.\n\nFound lists: {lists}",
+        "data": {
+          "bring_enabled": "Sync Bring!",
+          "bring_category": "Category",
+          "bring_lists": "Lists",
+          "bring_default_list": "Default list",
+          "bring_share_all": "Share the category with everyone",
+          "go_back": "⬅️ Back without saving"
+        },
+        "data_description": {
+          "bring_enabled": "Switching it off stops the sync. Notes and items stay where they are.",
+          "bring_category": "Pick a category or type a new name, which is created when you save.",
+          "bring_lists": "Leave empty to sync all lists, including lists added later.",
+          "bring_default_list": "Notes added to the category without a list, for example by voice, go to this list.",
+          "bring_share_all": "With privacy on, only notes shared with everyone are synced, as everyone with access to Bring sees them. This shares the whole category with everyone.",
+          "go_back": "Returns to the previous page without saving this form."
+        }
+      },
       "reminder_test": {
         "title": "Brainstorm › Reminders › Test Channels",
         "description": "Brainstorm will now send a real test message. An Echo speaks out loud.\n\n{targets}",
@@ -418,7 +438,9 @@
     "error": {
       "no_public_url": "Home Assistant has no public HTTPS address, for example through Home Assistant Cloud. The skill cannot reach it, so use Native mode.",
       "owner_required": "Please choose the main user.",
-      "todo_sync_duplicate": "Each to-do list can only be linked to one category."
+      "todo_sync_duplicate": "Each to-do list can only be linked to one category.",
+      "bring_category_missing": "Please choose or type a category.",
+      "bring_default_not_chosen": "The default list must be one of the chosen lists."
     },
     "abort": {
       "store_not_ready": "Brainstorm is reloading. Please open the settings again in a few seconds."

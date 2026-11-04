@@ -368,6 +368,26 @@
           "go_back": "Kehrt zur vorherigen Seite zurück, ohne dieses Formular zu speichern."
         }
       },
+      "bring": {
+        "title": "Brainstorm › 🛒 Bring!",
+        "description": "Holt deine Bring!-Listen in eine Kategorie. Jede Liste wird eine Hauptnotiz, ihre Artikel werden zu Unteraufgaben. Neue Artikel, Abhaken und Löschen gehen in beide Richtungen, und neue Bring-Listen erscheinen von selbst.\n\nGefundene Listen: {lists}",
+        "data": {
+          "bring_enabled": "Bring! synchronisieren",
+          "bring_category": "Kategorie",
+          "bring_lists": "Listen",
+          "bring_default_list": "Standardliste",
+          "bring_share_all": "Kategorie mit allen teilen",
+          "go_back": "⬅️ Zurück ohne Speichern"
+        },
+        "data_description": {
+          "bring_enabled": "Ausschalten beendet den Abgleich. Notizen und Artikel bleiben, wo sie sind.",
+          "bring_category": "Wähle eine Kategorie oder tippe einen neuen Namen, sie wird beim Speichern angelegt.",
+          "bring_lists": "Leer lassen, um alle Listen abzugleichen, auch später hinzugefügte.",
+          "bring_default_list": "Notizen, die ohne Liste in die Kategorie kommen, etwa per Sprache, landen auf dieser Liste.",
+          "bring_share_all": "Mit Privatsphäre werden nur Notizen abgeglichen, die mit allen geteilt sind, denn jeder mit Zugriff auf Bring sieht sie. Das teilt die ganze Kategorie mit allen.",
+          "go_back": "Kehrt zur vorherigen Seite zurück, ohne dieses Formular zu speichern."
+        }
+      },
       "reminder_test": {
         "title": "Brainstorm › Erinnerungen › Kanäle testen",
         "description": "Brainstorm sendet jetzt eine echte Testnachricht. Ein Echo spricht dabei laut.\n\n{targets}",
@@ -418,7 +438,9 @@
     "error": {
       "no_public_url": "Home Assistant hat keine öffentliche HTTPS-Adresse, zum Beispiel über Home Assistant Cloud. Der Skill kann es nicht erreichen, nutze daher den Modus Nativ.",
       "owner_required": "Bitte wähle den Hauptbenutzer aus.",
-      "todo_sync_duplicate": "Jede To-do-Liste kann nur mit einer Kategorie gekoppelt werden."
+      "todo_sync_duplicate": "Jede To-do-Liste kann nur mit einer Kategorie gekoppelt werden.",
+      "bring_category_missing": "Bitte wähle oder tippe eine Kategorie.",
+      "bring_default_not_chosen": "Die Standardliste muss eine der gewählten Listen sein."
     },
     "abort": {
       "store_not_ready": "Brainstorm wird gerade neu geladen. Bitte öffne die Einstellungen in ein paar Sekunden noch einmal."

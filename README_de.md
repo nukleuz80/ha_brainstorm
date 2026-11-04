@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.6.31-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.7.0-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -130,6 +130,8 @@ Brainstorm Hub verwandelt alle deine **Amazon Echo**-Geräte im Haus in sekunden
   - Jede Brainstorm-Kategorie wird als echte Home Assistant To-do-Liste bereitgestellt (`todo.brainstorm_hub_haus_garten`, `todo.brainstorm_hub_inbox`, usw.).
 - 🔁 **Gekoppelte To-do-Listen (v1.6.31):**
   - Koppelt eine Kategorie mit einer To-do-Liste einer anderen Integration, etwa **Bring!**, **Google Tasks**, **Todoist** oder einer lokalen To-do-Liste. Neue Einträge, Umbenennen und Abhaken gehen in beide Richtungen, so bleiben *Einkauf* in Brainstorm und deine Einkaufs-App gleich. Siehe *Konfigurieren ➔ To-do-Listen koppeln*.
+- 🛒 **Native Bring!-Unterstützung (v1.7.0):**
+  - Bring! unter *Konfigurieren ➔ 🛒 Bring!* einschalten, Kategorie wählen oder anlegen, fertig. Jede Bring-Liste wird eine Hauptnotiz, ihre Einträge werden Unteraufgaben. Notizen ohne Liste landen in der Standardliste, das Verschieben einer Unteraufgabe verschiebt den Eintrag, und die Bring-Spezifikation erscheint als Notiz. Umbenennen, Abhaken und neue Einträge gehen in beide Richtungen.
 - 💾 **JSON-Export und -Import (v1.6.31):**
   - `brainstorm.export_json` gibt deine Ideen samt Kategorien, Icons und Farben als JSON zurück, auf Wunsch als Datei. `brainstorm.import_json` holt sie zurück, auf demselben oder einem anderen Home Assistant, und überspringt Vorhandenes.
 - 🏛️ **100% Home Assistant Standard-konform:**
@@ -176,8 +178,8 @@ HACS installiert nur die Integration. Die Karten kopierst du anschließend wie u
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` und `www/brainstorm-i18n.js` in `/config/www/`. Die dritte Datei enthält die Texte und braucht keinen Ressourcen-Eintrag.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.6.31` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.6.31` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.7.0` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.7.0` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ### Integration entfernen
@@ -631,6 +633,34 @@ Ein Feld pro Kategorie. Wähle eine To-do-Liste einer anderen Integration, etwa 
 - **Entkoppeln:** Ein geleertes Feld entkoppelt die Liste. Ihre Einträge bleiben, wo sie sind.
 - Jede Liste lässt sich nur mit einer Kategorie koppeln, und die eigenen Listen von Brainstorm stehen nicht zur Wahl.
 
+#### Brainstorm › 🛒 Bring!
+
+Erscheint nur, wenn die Integration [Bring!](https://www.home-assistant.io/integrations/bring/) eingerichtet ist. Alle Bring-Listen landen in einer Kategorie: Jede Liste wird eine Hauptnotiz, ihre Artikel werden zu Unteraufgaben.
+
+```
+🛒 Einkauf
+├─ 🏠 Zu Hause
+│   ├─ Milch
+│   └─ Brot
+└─ 🚐 Camper
+    └─ Gas
+```
+
+| Feld | Was es bewirkt |
+| :--- | :--- |
+| Bring! synchronisieren | Schaltet den Abgleich ein oder aus. Ausgeschaltet bleiben Notizen und Artikel, wo sie sind. |
+| Kategorie | Wähle eine Kategorie oder tippe einen neuen Namen, sie wird beim Speichern angelegt. |
+| Listen | Leer lassen, um alle Listen abzugleichen, auch später hinzugefügte. |
+| Standardliste | Notizen, die ohne Liste in die Kategorie kommen, etwa *„wir brauchen Milch“* per Sprache, landen auf dieser Liste und hängen unter ihrer Notiz. |
+| Kategorie mit allen teilen | Nur mit Privatsphäre sichtbar. Abgeglichen werden nur Notizen, die mit allen geteilt sind, denn jeder mit Zugriff auf Bring sieht sie. |
+
+- **Beide Richtungen:** Neue Artikel, Abhaken und Löschen gehen zwischen Brainstorm und Bring hin und her. Abhaken schiebt den Artikel in Bring unter *Zuletzt verwendet*.
+- **Verschieben:** Hängst du eine Unteraufgabe unter eine andere Listen-Notiz, wandert der Artikel auf diese Liste.
+- **Schon mal gekauft:** Eine Notiz mit dem Namen eines Artikels aus *Zuletzt verwendet* holt diesen zurück, statt ihn doppelt anzulegen, denn Bring erlaubt jeden Namen nur einmal pro Liste.
+- **Mengen:** Die Spezifikation eines Bring-Artikels, etwa *1,5 l*, wird an der Notiz gespeichert (Feld `spec`).
+- **Listen-Notizen** übernehmen ihren Namen von Bring. Eine gelöschte Listen-Notiz kommt mit ihren Artikeln zurück, die Notiz einer nicht mehr abgeglichenen Liste wird archiviert.
+- **Schnell:** Änderungen anderer werden über die Aktivitäts-Ereignisse von Bring erkannt, zusätzlich wird alle 5 Minuten verglichen.
+
 #### Brainstorm › Privatsphäre & Benutzer
 
 | Feld | Was es bewirkt |
@@ -882,6 +912,7 @@ Weitere Beispiele für Assist und Alexa liegen im Ordner [`examples/`](examples/
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.7.0`** | 04.11.2026 | **Native Bring!-Unterstützung:**<br>• **Alle Bring-Listen in einer Kategorie** unter *Konfigurieren ➔ 🛒 Bring!*: einschalten, Kategorie wählen oder anlegen, Standardliste festlegen.<br>• **Eine Hauptnotiz pro Liste**, ihre Einträge als Unteraufgaben; eine gelöschte Listen-Notiz kommt zurück, eine abgewählte Liste wird archiviert und behält ihre Einträge in Bring.<br>• **Unteraufgabe verschieben** unter eine andere Listen-Notiz verschiebt den Eintrag zwischen den Bring-Listen.<br>• **Bring-Eigenheiten berücksichtigt:** Umbenennen behält den Eintrag, obwohl Bring eine neue ID vergibt, erneut Gekauftes holt den alten Eintrag zurück statt eines Duplikats, und die Bring-Spezifikation erscheint als Notiz.<br>• Bring-Listen verlassen die allgemeine To-do-Kopplung, damit nichts doppelt synchronisiert wird. |
 | **`v1.6.31`** | 04.11.2026 | **To-do-Listen koppeln, JSON-Export und -Import:**<br>• **Eine Kategorie mit einer To-do-Liste koppeln**, etwa Bring!, Google Tasks oder Todoist, unter *Konfigurieren ➔ To-do-Listen koppeln*. Neue Einträge, Umbenennen und Abhaken gehen in beide Richtungen. Eine gelöschte Notiz entfernt ihren Eintrag, ein von der Liste entfernter Eintrag hakt seine Notiz ab. Fälligkeiten gehen auf die Liste, wenn sie welche kennt.<br>• **Sicher mit Privatsphäre:** Nur mit allen geteilte Notizen kommen auf die andere Liste. Entkoppeln lässt ihre Einträge stehen.<br>• **Neue Aktionen `brainstorm.export_json` und `brainstorm.import_json`:** Deine Ideen samt Kategorien, Icons und Farben als JSON, auf Wunsch als Datei. Der Import überspringt Vorhandenes, hält Unteraufgaben zusammen und behält Besitzer nur für Benutzer dieses Home Assistant.<br>• Tests für beides, gegen die eigene Einkaufsliste von Home Assistant. |
 | **`v1.6.30`** | 04.11.2026 | **Ausgesprochene Tage als Datum:**<br>• *„am zweiten Dezember um zwölf Uhr“*, *„den dritten November“* und *„am zweiten Zwölften“* werden jetzt als Termin verstanden (1. bis 31., Monat als Name oder als Ordnungszahl).<br>• Wendungen wie *„zum zweiten Mal“* bleiben Text, ein *„dreißigster Februar“* wird kein Termin. |
 | **`v1.6.29`** | 04.11.2026 | **🌿 in der Listenkarte, klarere KI-Fehler:**<br>• **🌿 neben ✨** an jeder Hauptaufgabe und im Menü bei langem Drücken: Die Unteraufgabe landet direkt darunter, in ihrer Kategorie. Enter speichert.<br>• **Überlastete KI:** Lehnt der Anbieter ab (etwa Googles *503 high demand*), fragt Brainstorm nach 2 Sekunden einmal nach. Ein Timeout wird nicht wiederholt, damit du nicht doppelt wartest.<br>• **Klare Meldung:** Ist die KI nicht erreichbar, sagen beide Karten das, statt zu behaupten, sie habe keine Unteraufgaben geliefert. Neuer WebSocket-Fehlercode `ai_unavailable`. |

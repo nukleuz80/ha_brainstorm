@@ -23,6 +23,11 @@ from .const import (
     CONF_ALLOWED_ECHOS,
     CONF_ARRIVAL_ENABLED,
     CONF_AUTO_EXPORT_MARKDOWN,
+    CONF_BRING_CATEGORY,
+    CONF_BRING_DEFAULT_LIST,
+    CONF_BRING_ENABLED,
+    CONF_BRING_LISTS,
+    CONF_BRING_SHARE_ALL,
     CONF_CALENDAR_ENABLED,
     CONF_CALENDAR_ENTITY,
     CONF_DEFAULT_PERSON,
@@ -79,10 +84,13 @@ from .const import (
     RULE_SCHEDULE_WEEKDAYS,
     RULE_ZONE,
     RULE_ZONE_ENABLED,
+    SHARE_ALL,
+    SHARE_EDIT,
     VOICE_MODE_NATIVE,
     VOICE_MODES,
 )
 
+from .bring import bring_lists
 from .languages import get_pack
 from .reminders import format_due, phone_service_for
 from .store import BrainstormStore, get_loaded_store
@@ -230,6 +238,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "reminders": "Erinnerungen & Benachrichtigungen",
                 "ai": "KI",
                 "todo_sync": "To-do-Listen koppeln",
+                "bring": "🛒 Bring!",
                 "privacy": "Privatsphäre & Benutzer",
                 "privacy_voice": "Echos & Apps Personen zuordnen",
                 "close": "✅ Fertig",
@@ -260,6 +269,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "reminders": "Reminders & Notifications",
                 "ai": "AI",
                 "todo_sync": "Link To-do Lists",
+                "bring": "🛒 Bring!",
                 "privacy": "Privacy & Users",
                 "privacy_voice": "Assign Echos & Apps to People",
                 "close": "✅ Done",
@@ -287,9 +297,13 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Show options menu."""
+        menu = self._get_localized_menu("init")
+        if not bring_lists(self.hass):
+            # Only offered where the Bring! integration has lists
+            menu = {key: label for key, label in menu.items() if key != "bring"}
         return self.async_show_menu(
             step_id="init",
-            menu_options=self._get_localized_menu("init"),
+            menu_options=menu,
             description_placeholders={"notice": self._take_notice()},
         )
 
@@ -1409,6 +1423,9 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             for entity_id, source in entity_sources(self.hass).items()
             if source.get("domain") == DOMAIN and entity_id.startswith("todo.")
         ]
+        if options.get(CONF_BRING_ENABLED):
+            # Bring lists are synced by their own setting
+            own_lists.extend(bring.entity_id for bring in bring_lists(self.hass))
         field = selector.EntitySelector(
             selector.EntitySelectorConfig(domain="todo", exclude_entities=own_lists)
         )
@@ -1426,6 +1443,131 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             ),
             errors=errors,
         )
+
+    async def async_step_bring(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Sync all Bring! lists into one category, each list a main note."""
+        if user_input is not None and user_input.pop(BACK_FIELD, False):
+            return await self.async_step_init()
+        store = await self._async_store()
+        lists = bring_lists(self.hass)
+        options = dict(self.config_entry.options or self.config_entry.data)
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            enabled = bool(user_input.get(CONF_BRING_ENABLED))
+            category = (user_input.get(CONF_BRING_CATEGORY) or "").strip()
+            chosen = list(user_input.get(CONF_BRING_LISTS) or [])
+            default = user_input.get(CONF_BRING_DEFAULT_LIST)
+            if enabled and not category:
+                errors[CONF_BRING_CATEGORY] = "bring_category_missing"
+            elif enabled and chosen and default not in chosen:
+                errors[CONF_BRING_DEFAULT_LIST] = "bring_default_not_chosen"
+            else:
+                if enabled:
+                    category = await self._async_bring_category(
+                        store,
+                        options,
+                        category,
+                        bool(user_input.get(CONF_BRING_SHARE_ALL)),
+                    )
+                    bring_ids = {bring.entity_id for bring in lists}
+                    options[CONF_TODO_SYNC] = {
+                        name: entity
+                        for name, entity in (options.get(CONF_TODO_SYNC) or {}).items()
+                        if entity not in bring_ids and name != category
+                    }
+                options.update(
+                    {
+                        CONF_BRING_ENABLED: enabled,
+                        CONF_BRING_CATEGORY: category,
+                        CONF_BRING_LISTS: chosen,
+                        CONF_BRING_DEFAULT_LIST: default,
+                    }
+                )
+                return await self._async_saved(options, "init")
+
+        current = {**options, **(user_input or {})}
+        list_options = [
+            selector.SelectOptionDict(value=bring.entity_id, label=bring.name)
+            for bring in lists
+        ]
+        categories = list(store.categories)
+        default_category = current.get(CONF_BRING_CATEGORY) or next(
+            (c for c in categories if c.casefold() in ("einkauf", "shopping")),
+            self._text("Einkauf", "Shopping"),
+        )
+        schema: dict[Any, Any] = {
+            vol.Required(
+                CONF_BRING_ENABLED,
+                default=bool(current.get(CONF_BRING_ENABLED, True)),
+            ): selector.BooleanSelector(),
+            vol.Required(
+                CONF_BRING_CATEGORY, default=default_category
+            ): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=categories,
+                    custom_value=True,
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                )
+            ),
+            vol.Optional(
+                CONF_BRING_LISTS, description=_suggested(current, CONF_BRING_LISTS)
+            ): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=list_options,
+                    multiple=True,
+                    mode=selector.SelectSelectorMode.LIST,
+                )
+            ),
+            vol.Required(
+                CONF_BRING_DEFAULT_LIST,
+                default=current.get(CONF_BRING_DEFAULT_LIST)
+                or (lists[0].entity_id if lists else ""),
+            ): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=list_options, mode=selector.SelectSelectorMode.DROPDOWN
+                )
+            ),
+        }
+        if store.privacy_enabled:
+            schema[
+                vol.Required(
+                    CONF_BRING_SHARE_ALL,
+                    default=bool(current.get(CONF_BRING_SHARE_ALL, True)),
+                )
+            ] = selector.BooleanSelector()
+        return self.async_show_form(
+            step_id="bring",
+            data_schema=vol.Schema(_with_back(schema)),
+            errors=errors,
+            description_placeholders={
+                "lists": ", ".join(bring.name for bring in lists),
+            },
+        )
+
+    async def _async_bring_category(
+        self,
+        store: BrainstormStore,
+        options: dict[str, Any],
+        category: str,
+        share_all: bool,
+    ) -> str:
+        """Create the Bring category if needed and share it with everyone."""
+        existing = next(
+            (c for c in store.categories if c.casefold() == category.casefold()), None
+        )
+        if existing is None:
+            await store.async_add_category(category)
+        else:
+            category = existing
+        owner = options.get(CONF_PRIVACY_OWNER)
+        if store.privacy_enabled and share_all and owner:
+            # Only ideas everyone may see reach a list everyone can open
+            await store.async_set_category_shares(
+                owner, category, {SHARE_ALL: SHARE_EDIT}
+            )
+        return category
 
     async def async_step_reminder_extras(
         self, user_input: dict[str, Any] | None = None

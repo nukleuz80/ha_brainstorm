@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.6.31-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.7.0-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -107,6 +107,8 @@ Brainstorm Hub turns every **Amazon Echo** device in your home into an instant, 
   - Synchronizes all active categories as native Home Assistant To-do entities (`todo.brainstorm_hub_*`).
 - 🔁 **Linked to-do lists (v1.6.31):**
   - Link a category to a to-do list of another integration, such as **Bring!**, **Google Tasks**, **Todoist** or a local to-do list. New entries, renames and ticks travel both ways, so *Einkauf* in Brainstorm and your shopping app stay the same. See *Configure ➔ Link To-do Lists*.
+- 🛒 **Native Bring! support (v1.7.0):**
+  - Switch on Bring! under *Configure ➔ 🛒 Bring!*, pick or create a category, done. Every Bring list becomes a main note, its items become subtasks. Notes without a list go to your default list, moving a subtask moves the item, and the Bring specification shows as a note. Renames, ticks and new items travel both ways.
 - 💾 **JSON export and import (v1.6.31):**
   - `brainstorm.export_json` returns your ideas with categories, icons and colors as JSON, optionally into a file. `brainstorm.import_json` brings them back, on the same or another Home Assistant, and skips what exists already.
 
@@ -156,8 +158,8 @@ HACS only installs the integration, so continue with [Install the cards](#instal
 
 1. Copy `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` and `www/brainstorm-i18n.js` from the release to `/config/www/`. The third file holds the texts and needs no resource entry.
 2. Add both under **Settings ➔ Dashboards ➔ Resources** as **JavaScript module**:
-   - `/local/brainstorm-card.js?v=1.6.31`
-   - `/local/brainstorm-mindmap-card.js?v=1.6.31`
+   - `/local/brainstorm-card.js?v=1.7.0`
+   - `/local/brainstorm-mindmap-card.js?v=1.7.0`
 3. Reload the page in your browser.
 
 ### Removing the Integration
@@ -353,9 +355,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.6.31
+  - url: /local/brainstorm-card.js?v=1.7.0
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.6.31
+  - url: /local/brainstorm-mindmap-card.js?v=1.7.0
     type: module
 ```
 
@@ -580,6 +582,34 @@ One field per category. Pick a to-do list of another integration, such as Bring!
 - **Privacy:** With privacy on, only notes shared with everyone are synced, as everyone with access to the other list sees them. Items from the list are shared with everyone.
 - **Unlinking:** Clearing a field unlinks the list. Its items stay where they are.
 - Each list can be linked to one category only, and Brainstorm's own lists cannot be chosen.
+
+#### Brainstorm › 🛒 Bring!
+
+Only shown when the [Bring!](https://www.home-assistant.io/integrations/bring/) integration is set up. All your Bring lists land in one category: each list becomes a main note, and its items become its subtasks.
+
+```
+🛒 Einkauf
+├─ 🏠 Zu Hause
+│   ├─ Milch
+│   └─ Brot
+└─ 🚐 Camper
+    └─ Gas
+```
+
+| Field | What it does |
+| :--- | :--- |
+| Sync Bring! | Switches the sync on or off. Switched off, notes and items stay where they are. |
+| Category | Pick a category or type a new name, which is created when you save. |
+| Lists | Leave empty to sync all lists, including lists added later. |
+| Default list | Notes that land in the category without a list, for example *"we need milk"* by voice, go to this list and hang under its note. |
+| Share the category with everyone | Only shown with privacy on. Only notes shared with everyone are synced, as everyone with access to Bring sees them. |
+
+- **Both ways:** New items, ticks and deletions travel between Brainstorm and Bring. Ticking off moves the item to *Recently used* in Bring.
+- **Moving:** Hang a subtask under another list note, and the item moves to that list.
+- **Bought before:** A note with the name of an item in *Recently used* brings that item back instead of adding it twice, as Bring allows each name only once per list.
+- **Amounts:** The specification of a Bring item, such as *1.5 l*, is kept with the note (field `spec`).
+- **List notes** take their name from Bring. A deleted list note comes back with its items, and the note of a list that is no longer synced is archived.
+- **Fast:** Changes by others are picked up through Bring's activity events, and everything is compared every 5 minutes as well.
 
 #### Brainstorm › Privacy & Users
 
@@ -832,6 +862,7 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.7.0`** | 2026-11-04 | **Native Bring! support:**<br>• **All Bring lists in one category** under *Configure ➔ 🛒 Bring!*: switch on, pick or create a category, choose the default list.<br>• **One main note per list**, its items as subtasks; a deleted list note comes back, a list left out is archived and keeps its items in Bring.<br>• **Moving a subtask** to another list note moves the item between the Bring lists.<br>• **Bring's quirks handled:** a rename keeps the item although Bring gives it a new ID, buying something again brings back the old item instead of a duplicate, and the Bring specification shows as a note.<br>• Bring lists leave the general to-do linking, so nothing is synced twice. |
 | **`v1.6.31`** | 2026-11-04 | **Linked to-do lists, JSON export and import:**<br>• **Link a category to a to-do list** of another integration under *Configure ➔ Link To-do Lists*, such as Bring!, Google Tasks or Todoist. New entries, renames and ticks go both ways. Deleting a note removes its item, and an item removed from the list ticks off its note. Due times go to the list if it supports them.<br>• **Safe with privacy:** Only notes shared with everyone reach the other list. Unlinking leaves its items alone.<br>• **New actions `brainstorm.export_json` and `brainstorm.import_json`:** Your ideas with categories, icons and colors as JSON, optionally as a file. The import skips what exists, keeps subtasks together and only keeps owners for users of this Home Assistant.<br>• Tests for both, against Home Assistant's own shopping list. |
 | **`v1.6.30`** | 2026-11-04 | **Spoken ordinal days in German:**<br>• *„am zweiten Dezember um zwölf Uhr“*, *„den dritten November“* and *„am zweiten Zwölften“* are now understood as due dates (1st to 31st, with the month as a name or as an ordinal).<br>• Phrases like *„zum zweiten Mal“* stay text, and a 30th of February does not become a due date. |
 | **`v1.6.29`** | 2026-11-04 | **🌿 in the list card, clearer AI errors:**<br>• **🌿 next to ✨** on every main task, and in the long-press menu: a subtask lands right under it, in its category. Enter saves.<br>• **An overloaded AI:** If the provider refuses (for example Google's *503 high demand*), Brainstorm asks once more after 2 seconds. A timeout is not repeated, so you do not wait twice.<br>• **Clear message:** If the AI cannot be reached, both cards say so instead of claiming that it gave no subtasks. New WebSocket error code `ai_unavailable`. |

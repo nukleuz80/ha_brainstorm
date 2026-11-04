@@ -56,6 +56,12 @@ CONF_REVIEW_TIME = "review_time"
 CONF_REVIEW_DAYS = "review_days"
 # Category name -> to-do entity of another integration kept in step with it
 CONF_TODO_SYNC = "todo_sync"
+# Bring!: all lists in one category, each list a main note with its items below
+CONF_BRING_ENABLED = "bring_enabled"
+CONF_BRING_CATEGORY = "bring_category"
+CONF_BRING_LISTS = "bring_lists"
+CONF_BRING_DEFAULT_LIST = "bring_default_list"
+CONF_BRING_SHARE_ALL = "bring_share_all"
 
 DEFAULT_CATEGORIES = [
     "Inbox",
@@ -157,6 +163,11 @@ ATTR_CALENDAR_SYNCED = "calendar_synced"
 ATTR_TODO_LINK = "todo_link"
 # Ideas taken over from a linked to-do list
 SOURCE_TODO_SYNC = "todo_sync"
+# The main note that stands for a Bring! list, and where it came from
+ATTR_BRING_LIST = "bring_list"
+SOURCE_BRING = "bring"
+# The amount or note of an item on a linked list, such as "1,5 l"
+ATTR_SPEC = "spec"
 # Format of the JSON export, raised when its layout changes incompatibly
 JSON_EXPORT_FORMAT = "brainstorm_hub"
 JSON_EXPORT_VERSION = 1

@@ -49,6 +49,8 @@ from .const import (
     ATTR_RAW_TEXT,
     ATTR_TEXT,
     ATTR_TODO_LINK,
+    ATTR_SPEC,
+    ATTR_BRING_LIST,
     ATTR_UPDATED_AT,
     ATTR_CALENDAR_SYNCED,
     CONF_ALLOWED_ECHOS,
@@ -118,7 +120,12 @@ IMPORT_FIELDS = (
     ATTR_CREATED_BY,
 )
 # Fields that belong to this Home Assistant and stay out of a JSON export
-EXPORT_SKIPPED_FIELDS = (ATTR_TODO_LINK, ATTR_CALENDAR_SYNCED, ATTR_ALEXA_NATIVE)
+EXPORT_SKIPPED_FIELDS = (
+    ATTR_TODO_LINK,
+    ATTR_BRING_LIST,
+    ATTR_CALENDAR_SYNCED,
+    ATTR_ALEXA_NATIVE,
+)
 IMPORT_STATUSES = ("active", "completed", "archived")
 
 
@@ -1217,22 +1224,35 @@ class BrainstormStore:
         self._notify_listeners()
 
     async def async_set_links(self, links: dict[str, dict[str, Any] | None]) -> None:
-        """Store the to-do list items ideas are linked to, saving only once.
+        """Store the to-do list items ideas are linked to, saving only once."""
+        await self.async_set_fields(
+            {idea_id: {ATTR_TODO_LINK: link} for idea_id, link in links.items()}
+        )
 
-        Nobody sees these links, so the cards and lists are not told about them.
+    async def async_set_fields(self, updates: dict[str, dict[str, Any]]) -> None:
+        """Store sync details of several ideas, saving only once.
+
+        None removes a field. Only a changed amount is shown in the cards, so
+        the cards are only told when one changed.
         """
-        changed = False
-        for idea_id, link in links.items():
+        changed = visible = False
+        for idea_id, fields in updates.items():
             idea = self._ideas.get(idea_id)
-            if idea is None or idea.get(ATTR_TODO_LINK) == link:
+            if idea is None:
                 continue
-            if link is None:
-                idea.pop(ATTR_TODO_LINK, None)
-            else:
-                idea[ATTR_TODO_LINK] = link
-            changed = True
+            for key, value in fields.items():
+                if idea.get(key) == value:
+                    continue
+                if value is None:
+                    idea.pop(key, None)
+                else:
+                    idea[key] = value
+                changed = True
+                visible = visible or key == ATTR_SPEC
         if changed:
             await self.async_save()
+        if visible:
+            self._notify_listeners()
 
     def deleted_idea(self, idea_id: str) -> dict[str, Any] | None:
         """Return an idea deleted since the start, as it would come back."""

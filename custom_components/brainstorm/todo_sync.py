@@ -1,8 +1,9 @@
 """Keep categories in step with to-do lists of other integrations.
 
-A category can be linked to one to-do entity, such as a Bring!, Google Tasks or
-Alexa shopping list. Both sides are compared on every change and every few
-minutes:
+A category can be linked to one to-do entity, such as a Google Tasks or
+Todoist list. With Bring! switched on, every Bring list is linked to one main
+note of a category instead, and its items are the subtasks of that note.
+Both sides are compared on every change and every few minutes:
 
 - Active ideas go to the list, and items added there come back as ideas.
 - Renaming or ticking off an item on one side does the same on the other.
@@ -17,6 +18,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 import logging
 from typing import Any
@@ -27,6 +29,7 @@ from homeassistant.components.todo import TodoListEntityFeature
 from homeassistant.const import ATTR_SUPPORTED_FEATURES
 from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.debounce import Debouncer
 from homeassistant.helpers.event import (
     async_track_state_change_event,
@@ -35,10 +38,22 @@ from homeassistant.helpers.event import (
 from homeassistant.helpers.start import async_at_started
 from homeassistant.util import dt as dt_util
 
+from .bring import (
+    BringSettings,
+    async_ensure_list_notes,
+    bring_activity_entities,
+    bring_lists,
+    bring_settings,
+    chosen_lists,
+    default_list,
+)
 from .const import (
+    ATTR_BRING_LIST,
     ATTR_CATEGORY,
     ATTR_DUE,
     ATTR_ID,
+    ATTR_PARENT_ID,
+    ATTR_SPEC,
     ATTR_STATUS,
     ATTR_TEXT,
     ATTR_TODO_LINK,
@@ -65,6 +80,21 @@ LINK_STATUS = "status"
 LINK_DUE = "due"
 
 
+@dataclass(frozen=True)
+class SyncTarget:
+    """A to-do list and the ideas that belong on it.
+
+    Without a parent, all ideas of the category belong on the list. With a
+    parent, only its direct subtasks do, and the list that adopts takes in
+    the ideas of the category that hang on nothing.
+    """
+
+    category: str
+    entity_id: str
+    parent_id: str | None = None
+    adopts: bool = False
+
+
 def sync_targets(options: dict[str, Any]) -> dict[str, str]:
     """Return the linked to-do entity of each category from the options."""
     targets = options.get(CONF_TODO_SYNC) or {}
@@ -86,7 +116,7 @@ def _same_text(first: str | None, second: str | None) -> bool:
 
 
 class TodoSyncManager:
-    """Keeps every linked category in step with its to-do entity."""
+    """Keeps every linked category in step with its to-do entities."""
 
     def __init__(
         self, hass: HomeAssistant, store: BrainstormStore, options: dict[str, Any]
@@ -94,9 +124,20 @@ class TodoSyncManager:
         """Initialize the manager."""
         self.hass = hass
         self.store = store
+        self.bring: BringSettings | None = bring_settings(options)
         self.targets = sync_targets(options)
+        if self.bring is not None:
+            # A Bring list is synced by the Bring setting, never twice
+            bring_entities = {bring.entity_id for bring in bring_lists(hass)}
+            self.targets = {
+                category: entity
+                for category, entity in self.targets.items()
+                if entity not in bring_entities and category != self.bring.category
+            }
         self._lock = asyncio.Lock()
         self._unsubs: list[Callable[[], None]] = []
+        self._unsub_watch: Callable[[], None] | None = None
+        self._watched: frozenset[str] = frozenset()
         self._pending_removals: list[tuple[str, str]] = []
         self._started = False
         self._failed: set[str] = set()
@@ -108,23 +149,38 @@ class TodoSyncManager:
             function=self.async_sync,
         )
 
+    @property
+    def active(self) -> bool:
+        """Return whether anything is linked."""
+        return bool(self.targets) or self.bring is not None
+
+    def _target_entities(self) -> set[str]:
+        """Return the lists that may be synced now, read without changing anything."""
+        entities = set(self.targets.values())
+        if self.bring is not None:
+            entities.update(b.entity_id for b in chosen_lists(self.hass, self.bring))
+        return entities
+
     async def async_start(self) -> None:
         """Forget links of lists no longer chosen and start watching both sides."""
         await self._async_drop_stale_links()
-        if not self.targets:
+        if not self.active:
             return
         self._unsubs.append(self.store.register_listener(self._schedule))
         self._unsubs.append(
             self.hass.bus.async_listen(EVENT_IDEA_DELETED, self._on_deleted)
         )
-        self._unsubs.append(
-            async_track_state_change_event(
-                self.hass, list(set(self.targets.values())), self._on_list_changed
+        if self.bring is not None:
+            # A new or removed Bring list shows up in the entity registry
+            self._unsubs.append(
+                self.hass.bus.async_listen(
+                    er.EVENT_ENTITY_REGISTRY_UPDATED, self._on_registry_changed
+                )
             )
-        )
         self._unsubs.append(
             async_track_time_interval(self.hass, self._on_interval, SYNC_INTERVAL)
         )
+        self._watch(self._target_entities())
         # The other integration may still be loading while Brainstorm starts
         self._unsubs.append(async_at_started(self.hass, self._on_started))
 
@@ -134,18 +190,41 @@ class TodoSyncManager:
         for unsub in self._unsubs:
             unsub()
         self._unsubs.clear()
+        if self._unsub_watch is not None:
+            self._unsub_watch()
+            self._unsub_watch = None
         self._debouncer.async_shutdown()
 
+    @callback
+    def _watch(self, entities: set[str]) -> None:
+        """Follow the state of the linked lists and of Bring's activity events."""
+        watched = set(entities)
+        if self.bring is not None:
+            watched.update(
+                bring_activity_entities(self.hass, chosen_lists(self.hass, self.bring))
+            )
+        if frozenset(watched) == self._watched:
+            return
+        if self._unsub_watch is not None:
+            self._unsub_watch()
+            self._unsub_watch = None
+        self._watched = frozenset(watched)
+        if watched:
+            self._unsub_watch = async_track_state_change_event(
+                self.hass, sorted(watched), self._on_list_changed
+            )
+
     async def _async_drop_stale_links(self) -> None:
-        """Remove links to lists that are no longer linked to their category.
+        """Remove links to lists that are no longer linked.
 
         Unlinking a list in the settings leaves its items alone.
         """
+        entities = self._target_entities()
         stale = {
             idea[ATTR_ID]: None
             for idea in self.store.ideas
             if (link := idea.get(ATTR_TODO_LINK))
-            and link.get(LINK_ENTITY) not in self.targets.values()
+            and link.get(LINK_ENTITY) not in entities
         }
         if stale:
             await self.store.async_set_links(stale)
@@ -168,6 +247,12 @@ class TodoSyncManager:
         self._schedule()
 
     @callback
+    def _on_registry_changed(self, event: Event) -> None:
+        """React to a Bring list that was added or removed."""
+        if (event.data.get("entity_id") or "").startswith(f"{TODO_DOMAIN}."):
+            self._schedule()
+
+    @callback
     def _on_interval(self, _now: datetime) -> None:
         """Catch renames, which do not change the state of a list."""
         self._schedule()
@@ -185,35 +270,65 @@ class TodoSyncManager:
             deleted.pop(ATTR_TODO_LINK, None)
         self._schedule()
 
-    def _eligible(self, idea: dict[str, Any], category: str) -> bool:
-        """Return whether an idea belongs on the list of its category."""
-        if idea.get(ATTR_CATEGORY) != category or idea.get(ATTR_STATUS) == "archived":
+    def _eligible(self, idea: dict[str, Any], target: SyncTarget) -> bool:
+        """Return whether an idea belongs on the list of a target."""
+        if (
+            idea.get(ATTR_CATEGORY) != target.category
+            or idea.get(ATTR_STATUS) == "archived"
+            or idea.get(ATTR_BRING_LIST)
+        ):
+            return False
+        if target.parent_id is not None and idea.get(ATTR_PARENT_ID) != target.parent_id:
             return False
         # Everyone who can open the other list sees it, like the to-do lists here
         return not self.store.privacy_enabled or self.store.is_shared_with_all(idea)
 
+    async def _async_build_targets(self) -> list[SyncTarget]:
+        """Return all targets, keeping the notes of the Bring lists up to date."""
+        targets = [
+            SyncTarget(category, entity_id)
+            for category, entity_id in self.targets.items()
+            if category in self.store.categories
+        ]
+        if self.bring is not None:
+            lists = chosen_lists(self.hass, self.bring)
+            notes = await async_ensure_list_notes(self.store, self.bring, lists)
+            fallback = default_list(lists, self.bring)
+            targets.extend(
+                SyncTarget(
+                    self.bring.category,
+                    bring.entity_id,
+                    notes[bring.entity_id],
+                    adopts=fallback is not None
+                    and bring.entity_id == fallback.entity_id,
+                )
+                for bring in lists
+            )
+        return targets
+
     async def async_sync(self) -> None:
-        """Compare every linked category with its list once."""
+        """Compare every linked list with Brainstorm once."""
         async with self._lock:
             removals, self._pending_removals = self._pending_removals, []
             for entity_id, uid in removals:
                 await self._async_call(entity_id, "remove_item", {"item": [uid]})
-            for category, entity_id in self.targets.items():
-                if category not in self.store.categories:
-                    continue
+            targets = await self._async_build_targets()
+            entities = {target.entity_id for target in targets}
+            self._watch(entities)
+            for target in targets:
                 try:
-                    await self._async_sync_one(category, entity_id)
+                    await self._async_sync_one(target, entities)
                 except HomeAssistantError as err:
-                    if entity_id not in self._failed:
+                    if target.entity_id not in self._failed:
                         _LOGGER.warning(
                             "Could not sync category %s with %s: %s",
-                            category,
-                            entity_id,
+                            target.category,
+                            target.entity_id,
                             err,
                         )
-                    self._failed.add(entity_id)
+                    self._failed.add(target.entity_id)
                 else:
-                    self._failed.discard(entity_id)
+                    self._failed.discard(target.entity_id)
 
     async def _async_get_items(self, entity_id: str) -> dict[str, dict[str, Any]]:
         """Return the items of a list by their ID."""
@@ -259,17 +374,37 @@ class TodoSyncManager:
             return {"due_date": dt_util.as_local(when).date().isoformat()}
         return {}
 
-    async def _async_sync_one(self, category: str, entity_id: str) -> None:
-        """Compare one category with its list and settle the differences."""
+    async def _async_adopt(self, target: SyncTarget) -> None:
+        """Hang the open ideas of the category that hang on nothing on this list."""
+        for idea in list(self.store.ideas):
+            if (
+                idea.get(ATTR_CATEGORY) == target.category
+                and not idea.get(ATTR_PARENT_ID)
+                and not idea.get(ATTR_BRING_LIST)
+                and idea.get(ATTR_STATUS) == "active"
+            ):
+                await self.store.async_update_idea(
+                    idea[ATTR_ID], parent_id=target.parent_id, update_parent=True
+                )
+
+    async def _async_sync_one(self, target: SyncTarget, entities: set[str]) -> None:
+        """Compare one list with its ideas and settle the differences."""
+        entity_id = target.entity_id
+        if target.adopts:
+            await self._async_adopt(target)
         items = await self._async_get_items(entity_id)
         links: dict[str, dict[str, Any] | None] = {}
+        specs: dict[str, str | None] = {}
         claimed: set[str] = set()
         to_add: list[dict[str, Any]] = []
+        renamed: list[str] = []
+        # Items of ideas ticked off, which a new idea with the same text takes over
+        bought: dict[str, tuple[str, str]] = {}
 
         for idea in list(self.store.ideas):
             link = idea.get(ATTR_TODO_LINK)
             linked_here = bool(link) and link.get(LINK_ENTITY) == entity_id
-            if not self._eligible(idea, category):
+            if not self._eligible(idea, target):
                 if linked_here:
                     # Moved to another list, made private or archived
                     if link.get(LINK_UID) in items:
@@ -279,6 +414,11 @@ class TodoSyncManager:
                     links[idea[ATTR_ID]] = None
                 continue
             if link and not linked_here:
+                # Moved over from another linked list, which must let it go
+                if link.get(LINK_ENTITY) in entities and link.get(LINK_UID):
+                    await self._async_call(
+                        link[LINK_ENTITY], "remove_item", {"item": [link[LINK_UID]]}
+                    )
                 links[idea[ATTR_ID]] = link = None
             if not link:
                 if idea.get(ATTR_STATUS) == "active":
@@ -301,12 +441,24 @@ class TodoSyncManager:
                 links[idea[ATTR_ID]] = None
                 continue
             claimed.add(uid)
-            links[idea[ATTR_ID]] = await self._async_settle(
-                entity_id, idea, link, items[uid]
-            )
+            if idea.get(ATTR_STATUS) != "active":
+                bought.setdefault(idea[ATTR_TEXT].strip().casefold(), (idea[ATTR_ID], uid))
+            new_link = await self._async_settle(entity_id, idea, link, items[uid])
+            links[idea[ATTR_ID]] = new_link
+            specs[idea[ATTR_ID]] = items[uid].get("description")
+            if new_link[LINK_SUMMARY] != (items[uid].get("summary") or ""):
+                renamed.append(idea[ATTR_ID])
 
         for idea in to_add:
-            match = self._find_unclaimed(items, claimed, idea[ATTR_TEXT], NEEDS_ACTION)
+            # An item bought before comes back instead of being added twice
+            match = self._find_unclaimed(
+                items, claimed, idea[ATTR_TEXT], NEEDS_ACTION
+            ) or self._find_unclaimed(items, claimed, idea[ATTR_TEXT], COMPLETED)
+            previous = bought.pop(idea[ATTR_TEXT].strip().casefold(), None)
+            if match is None and previous is not None:
+                # The new idea takes the item over, the old one stays ticked off
+                links[previous[0]] = None
+                match = previous[1]
             if match is not None:
                 claimed.add(match)
                 # Coupled for the first time, the spelling on the list wins
@@ -315,6 +467,7 @@ class TodoSyncManager:
                 links[idea[ATTR_ID]] = await self._async_settle(
                     entity_id, idea, link, items[match]
                 )
+                specs[idea[ATTR_ID]] = items[match].get("description")
                 continue
             await self._async_call(
                 entity_id,
@@ -334,17 +487,20 @@ class TodoSyncManager:
             for idea_id, link in links.items()
             if link and link.get(LINK_UID) is None
         ]
-        if pending:
-            # Most lists show a new item at once, which gives it its ID now
+        if pending or renamed:
+            # Most lists show a new item at once, which gives it its ID now.
+            # Bring! gives a renamed item a new ID, found the same way; its
+            # old ID stays claimed, so the old name is not taken in as new.
             fresh = await self._async_get_items(entity_id)
-            known = set(items)
+            new_items = {u: i for u, i in fresh.items() if u not in items}
+            for idea_id in renamed:
+                link = links[idea_id]
+                if link and link[LINK_UID] not in fresh:
+                    link[LINK_UID] = None
+                    pending.append(idea_id)
             for idea_id in pending:
                 link = links[idea_id]
-                match = self._find_unclaimed(
-                    {u: i for u, i in fresh.items() if u not in known},
-                    claimed,
-                    link[LINK_SUMMARY],
-                )
+                match = self._find_unclaimed(new_items, claimed, link[LINK_SUMMARY])
                 if match is not None:
                     claimed.add(match)
                     link[LINK_UID] = match
@@ -357,20 +513,25 @@ class TodoSyncManager:
                 continue
             idea = await self.store.async_add_idea(
                 text=item["summary"],
-                category=category,
+                category=target.category,
+                parent_id=target.parent_id,
                 source=SOURCE_TODO_SYNC,
                 verbatim=True,
                 shares={SHARE_ALL: SHARE_EDIT} if self.store.privacy_enabled else None,
             )
             links[idea[ATTR_ID]] = self._link(entity_id, item, idea.get(ATTR_DUE))
+            specs[idea[ATTR_ID]] = item.get("description")
 
-        await self.store.async_set_links(
-            {
-                idea_id: link
-                for idea_id, link in links.items()
-                if self.store.get_idea(idea_id) is not None
-            }
-        )
+        fields: dict[str, dict[str, Any]] = {}
+        for idea_id, link in links.items():
+            if self.store.get_idea(idea_id) is None:
+                continue
+            fields[idea_id] = {ATTR_TODO_LINK: link}
+            if link is None:
+                fields[idea_id][ATTR_SPEC] = None
+            elif idea_id in specs:
+                fields[idea_id][ATTR_SPEC] = (specs[idea_id] or "").strip() or None
+        await self.store.async_set_fields(fields)
 
     @staticmethod
     def _find_unclaimed(
