@@ -349,3 +349,68 @@ export function alexaEchos(hass) {
     })
     .sort((a, b) => a.name.localeCompare(b.name));
 }
+
+const ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" };
+
+function escapeHtml(text) {
+  return String(text).replace(/[&<>"']/g, (char) => ESCAPES[char]);
+}
+
+/** Return the link target if it is a web or mail address, otherwise null. */
+function safeHref(url) {
+  try {
+    const parsed = new URL(url);
+    return ["http:", "https:", "mailto:"].includes(parsed.protocol) ? parsed.href : null;
+  } catch (err) {
+    return null;
+  }
+}
+
+function link(url, label) {
+  const href = safeHref(url);
+  if (!href) return escapeHtml(label);
+  return `<a class="bs-link" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>`;
+}
+
+// `code`, [label](url), bare http(s) addresses, **bold**, ~~strike~~, *italic*
+const MARKDOWN =
+  /`([^`\n]+)`|\[([^\]\n]+)\]\(((?:https?:\/\/|mailto:)[^\s()]+)\)|(https?:\/\/[^\s<>"']+)|\*\*(?=\S)([^*\n]*?\S)\*\*|~~(?=\S)([^~\n]*?\S)~~|\*(?=[^\s*])([^*\n]*?[^\s*])\*/g;
+
+/**
+ * Turn the text of an idea into safe HTML with links and a little Markdown.
+ *
+ * Everything is escaped; only the tags made here are HTML, and links only go
+ * to web or mail addresses.
+ */
+export function formatText(text) {
+  if (text === null || text === undefined) return "";
+  const raw = String(text);
+  let html = "";
+  let last = 0;
+  for (const match of raw.matchAll(MARKDOWN)) {
+    const [whole, code, label, target, bare, bold, strike, italic] = match;
+    html += escapeHtml(raw.slice(last, match.index));
+    last = match.index + whole.length;
+    if (code !== undefined) {
+      html += `<code>${escapeHtml(code)}</code>`;
+    } else if (label !== undefined) {
+      html += link(target, label);
+    } else if (bare !== undefined) {
+      // Punctuation after an address belongs to the sentence, and so does a
+      // closing bracket without an opening one in the address.
+      let url = bare.replace(/[.,;:!?]+$/, "");
+      while (url.endsWith(")") && (url.match(/\(/g) || []).length < (url.match(/\)/g) || []).length) {
+        url = url.slice(0, -1).replace(/[.,;:!?]+$/, "");
+      }
+      html += link(url, url);
+      last = match.index + url.length;
+    } else if (bold !== undefined) {
+      html += `<strong>${formatText(bold)}</strong>`;
+    } else if (strike !== undefined) {
+      html += `<s>${formatText(strike)}</s>`;
+    } else {
+      html += `<em>${formatText(italic)}</em>`;
+    }
+  }
+  return html + escapeHtml(raw.slice(last));
+}

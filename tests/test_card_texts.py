@@ -53,3 +53,23 @@ def test_cards_load_the_texts_of_their_own_version() -> None:
     version = json.loads(MANIFEST.read_text("utf-8"))["version"]
     for card in ("brainstorm-card.js", "brainstorm-mindmap-card.js"):
         assert f'"./brainstorm-i18n.js?v={version}"' in (WWW / card).read_text("utf-8")
+
+
+def test_cards_show_idea_texts_only_through_the_safe_formatter() -> None:
+    """Texts and result notes are escaped and formatted in one place."""
+    for card, name in (
+        ("brainstorm-card.js", "item"),
+        ("brainstorm-mindmap-card.js", "idea"),
+    ):
+        source = (WWW / card).read_text("utf-8")
+        assert f"formatText({name}.text)" in source
+        assert f"formatText({name}.result)" in source
+        assert f"_escapeHtml({name}.result)" not in source
+        assert f"_escapeHtml({name}.text)" not in source
+
+
+def test_formatter_only_links_web_and_mail_addresses() -> None:
+    """A javascript: or data: link must never become a link."""
+    source = (WWW / "brainstorm-i18n.js").read_text("utf-8")
+    assert '["http:", "https:", "mailto:"].includes(parsed.protocol)' in source
+    assert 'rel="noopener noreferrer"' in source

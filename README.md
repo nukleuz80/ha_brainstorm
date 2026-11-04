@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.6.20-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.6.21-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -92,6 +92,9 @@ Brainstorm Hub turns every **Amazon Echo** device in your home into an instant, 
   - Two-tiered sleek design with quick-input bar, priority selector, category pills, and full edit/delete modal dialogs.
   - View switcher (`🧠 Mindmap` ⇄ `📋 List`) in card header.
   - Automatically hides empty categories (`hide_empty_categories: true`) to keep dashboards clutter-free.
+- 🔗 **Links and a little Markdown in notes (both cards):**
+  - Web addresses become clickable, and so does `[text](https://…)`. `**bold**`, `*italic*`, `~~struck out~~` and `` `code` `` are shown formatted, in the note and in its result note.
+  - Safe by design: everything else is shown as plain text, HTML in a note is never run, and links only go to `http`, `https` and `mailto` addresses. They open in a new tab, and a click on a link does not open the editor.
 - 📝 **Markdown Synchronization:**
   - Auto-export to structured markdown files with YAML frontmatter, timestamps, and priority tags.
   - Plug-and-play with **Obsidian**, **Logseq**, or **Nextcloud Notes**.
@@ -144,8 +147,8 @@ HACS only installs the integration, so continue with [Install the cards](#instal
 
 1. Copy `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` and `www/brainstorm-i18n.js` from the release to `/config/www/`. The third file holds the texts and needs no resource entry.
 2. Add both under **Settings ➔ Dashboards ➔ Resources** as **JavaScript module**:
-   - `/local/brainstorm-card.js?v=1.6.20`
-   - `/local/brainstorm-mindmap-card.js?v=1.6.20`
+   - `/local/brainstorm-card.js?v=1.6.21`
+   - `/local/brainstorm-mindmap-card.js?v=1.6.21`
 3. Reload the page in your browser.
 
 ### Removing the Integration
@@ -336,9 +339,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.6.20
+  - url: /local/brainstorm-card.js?v=1.6.21
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.6.20
+  - url: /local/brainstorm-mindmap-card.js?v=1.6.21
     type: module
 ```
 
@@ -763,6 +766,7 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.6.21`** | 2026-11-04 | **Links and Markdown in notes:**<br>• Both cards show web addresses and `[text](https://…)` as clickable links, plus `**bold**`, `*italic*`, `~~struck out~~` and `` `code` ``, also in the result note.<br>• Safe escaping: the whole text is escaped, only the tags the card makes are HTML. Links only go to `http`, `https` and `mailto`, with `rel="noopener noreferrer"`. Tested against injected HTML and `javascript:` links.<br>• A click on a link neither opens the editor nor starts moving a cloud. |
 | **`v1.6.20`** | 2026-11-04 | **The skill saves free sentences without a command word:**<br>• When the skill does not understand a sentence (*"ask Brainstorm the shower gel is empty"*), it asks Home Assistant. Home Assistant takes the sentence from the Echo's Alexa history, removes *"ask Brainstorm"* and saves it like a note.<br>• In an open skill session, only a sentence from the same Echo counts, so other Echos in the house are not mixed up.<br>• If the history comes too late, Alexa answers *"Okay, I will save that in a moment"* and the idea is added for up to 60 seconds.<br>• **Copy the skill code again** (Brainstorm Hub ➔ Configure ➔ Alexa Voice Input & Skill), otherwise the old hint stays. |
 | **`v1.6.19`** | 2026-11-03 | **Brainstorm as a task list for coding AIs:**<br>• New chapter “🤖 Brainstorm as a task list for coding AIs”: a user of its own for the AI, token, sharing the backlog category, working rules.<br>• New Claude Code skill in `examples/claude-code/skills/brainstorm-backlog`: reads the backlog over `brainstorm.get_ideas`, keeps order and conditions and ticks off only finished work with a result note.<br>• Note on which actions need admin rights and why a user without them is safer. |
 | **`v1.6.18`** | 2026-11-03 | **Result note when ticking off:**<br>• `brainstorm.update_idea` has the new field `result`. It records what came of an entry, for example “Done in v1.6.18, tested”.<br>• Both cards show the note with a green edge below the text, the list also in the “Done” view.<br>• The note stays when the entry is reopened; an empty `result` removes it. |

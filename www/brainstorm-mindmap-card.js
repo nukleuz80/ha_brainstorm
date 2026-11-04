@@ -1,8 +1,8 @@
-import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.20";
+import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.21";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.6.20 - Skill, Reminders, Privacy and Sharing
+ * Version: 1.6.21 - Skill, Reminders, Privacy and Sharing
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -1470,6 +1470,18 @@ class BrainstormMindmapCard extends HTMLElement {
           vertical-align: middle;
         }
 
+        .bs-link {
+          color: var(--primary-color, #03a9f4);
+          text-decoration: underline;
+          overflow-wrap: anywhere;
+        }
+        .idea-text code, .idea-result code, .cloud-text code, .cloud-result code {
+          font-family: var(--code-font-family, monospace);
+          font-size: 0.9em;
+          padding: 0 3px;
+          border-radius: 4px;
+          background: var(--secondary-background-color, rgba(127, 127, 127, 0.15));
+        }
         /* Cloud Text */
         .cloud-text {
           font-size: 0.88rem;
@@ -2893,7 +2905,7 @@ class BrainstormMindmapCard extends HTMLElement {
       (text) => {
         close();
         if (text === (idea.text || "").trim()) return;
-        textEl.textContent = text;
+        textEl.innerHTML = formatText(text);
         const oldText = idea.text || "";
         this._hass
           .callService("brainstorm", "update_idea", { id, text })
@@ -2902,7 +2914,7 @@ class BrainstormMindmapCard extends HTMLElement {
           )
           .catch((err) => {
             console.error("[BrainstormMindmap] Failed to update idea:", err);
-            textEl.textContent = idea.text || "";
+            textEl.innerHTML = formatText(idea.text);
           });
       },
       close
@@ -3691,8 +3703,8 @@ class BrainstormMindmapCard extends HTMLElement {
                 <span>${timeAgo}</span>
               </span>
             </div>
-            <div class="cloud-text" title="${t("Klicken zum Bearbeiten")}">${this._escapeHtml(idea.text)}</div>
-            ${idea.result ? `<div class="cloud-result" title="${t("Ergebnis")}">${this._escapeHtml(idea.result)}</div>` : ""}
+            <div class="cloud-text" title="${t("Klicken zum Bearbeiten")}">${formatText(idea.text)}</div>
+            ${idea.result ? `<div class="cloud-result" title="${t("Ergebnis")}">${formatText(idea.result)}</div>` : ""}
             <div class="cloud-actions">
               <button class="action-btn done-btn" data-act="done" data-id="${idea.id}" title="${t("Als erledigt markieren")}">✓</button>
               <button class="action-btn" data-act="branch" data-id="${idea.id}" title="${t("Unteridee anlegen")}">🌿</button>
@@ -3776,7 +3788,7 @@ class BrainstormMindmapCard extends HTMLElement {
 
         // Mouse down records pending drag - only moves if threshold > 5px (prevents click jitter!)
         cloud.addEventListener("mousedown", (e) => {
-          if (e.target.closest(".action-btn") || e.target.closest(".cat-tag") || e.target.closest(".prio-tag") || e.target.closest(".branch-toggle") || e.target.closest(".cloud-inline-editor")) return;
+          if (e.target.closest(".action-btn") || e.target.closest("a") || e.target.closest(".cat-tag") || e.target.closest(".prio-tag") || e.target.closest(".branch-toggle") || e.target.closest(".cloud-inline-editor")) return;
           if (e.button !== 0) return;
           const pos = this._nodePositions.get(id) || { x: 0, y: 0 };
           this._pendingDrag = {
@@ -3792,7 +3804,7 @@ class BrainstormMindmapCard extends HTMLElement {
 
         // Touch start records pending drag
         cloud.addEventListener("touchstart", (e) => {
-          if (e.target.closest(".action-btn") || e.target.closest(".cat-tag") || e.target.closest(".prio-tag") || e.target.closest(".branch-toggle") || e.target.closest(".cloud-inline-editor")) return;
+          if (e.target.closest(".action-btn") || e.target.closest("a") || e.target.closest(".cat-tag") || e.target.closest(".prio-tag") || e.target.closest(".branch-toggle") || e.target.closest(".cloud-inline-editor")) return;
           if (e.touches.length === 1) {
             const touch = e.touches[0];
             const pos = this._nodePositions.get(id) || { x: 0, y: 0 };
@@ -3841,13 +3853,14 @@ class BrainstormMindmapCard extends HTMLElement {
           this._selectIdea(idea.id);
         });
         cloud.addEventListener("dblclick", (e) => {
-          if (e.target.closest(".action-btn") || e.target.closest(".cloud-inline-editor")) return;
+          if (e.target.closest(".action-btn") || e.target.closest("a") || e.target.closest(".cloud-inline-editor")) return;
           this._startInlineEdit(idea.id);
         });
         const textEl = cloud.querySelector(".cloud-text");
         if (textEl) {
           textEl.addEventListener("click", (e) => {
             e.stopPropagation();
+            if (e.target.closest("a")) return;
             if (Date.now() - this._dragEndedAt < 300) return;
             this._selectIdea(idea.id);
             this._startInlineEdit(idea.id);
@@ -4898,7 +4911,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.6.20 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.6.21 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

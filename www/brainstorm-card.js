@@ -1,9 +1,9 @@
-import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.20";
+import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.21";
 
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.6.20 - Skill, Reminders, Privacy and Sharing
+ * Version 1.6.21 - Skill, Reminders, Privacy and Sharing
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",
@@ -3053,6 +3053,18 @@ class BrainstormCard extends HTMLElement {
           word-break: break-word;
           color: var(--primary-text-color, #212121);
         }
+        .bs-link {
+          color: var(--primary-color, #03a9f4);
+          text-decoration: underline;
+          overflow-wrap: anywhere;
+        }
+        .idea-text code, .idea-result code, .cloud-text code, .cloud-result code {
+          font-family: var(--code-font-family, monospace);
+          font-size: 0.9em;
+          padding: 0 3px;
+          border-radius: 4px;
+          background: var(--secondary-background-color, rgba(127, 127, 127, 0.15));
+        }
         .idea-result {
           margin-top: 3px;
           padding-left: 8px;
@@ -4089,9 +4101,9 @@ class BrainstormCard extends HTMLElement {
               >${isCompletedView ? "✓" : ""}</button>
               <div class="idea-content">
                 <div class="idea-text" title="${itemEdit ? t("Klicken zum Bearbeiten (Lange drücken für Kontextmenü)") : ""}" data-id="${item.id}" style="${itemEdit ? "" : "cursor: default;"}">
-                  ${isSub ? `<span class="subtask-indicator" title="${t("Unteraufgabe")}">↳</span>` : ""}${this._escapeHtml(item.text)}
+                  ${isSub ? `<span class="subtask-indicator" title="${t("Unteraufgabe")}">↳</span>` : ""}${formatText(item.text)}
                 </div>
-                ${item.result ? `<div class="idea-result" title="${t("Ergebnis")}">${this._escapeHtml(item.result)}</div>` : ""}
+                ${item.result ? `<div class="idea-result" title="${t("Ergebnis")}">${formatText(item.result)}</div>` : ""}
                 <div class="idea-meta">
                   ${isSub ? `<span class="subtask-badge" title="${t("Unteraufgabe")}">${t("Unteraufgabe")}</span>` : ""}
                   <span class="category-tag ${itemEdit ? "clickable" : ""}" title="${itemEdit ? t("Kategorie ändern") : t("Kategorie")}" data-id="${item.id}" data-cat="${this._escapeHtml(item.category)}" style="color: ${this._getCategoryColor(item.category)}; background: color-mix(in srgb, ${this._getCategoryColor(item.category)} 12%, var(--secondary-background-color, rgba(0,0,0,0.06))); border: 1px solid color-mix(in srgb, ${this._getCategoryColor(item.category)} 25%, transparent);"><ha-icon icon="${this._getCategoryIcon(item.category)}" style="--mdc-icon-size: 11px; width: 11px; height: 11px; margin-right: 3px; display: inline-flex; align-items: center; vertical-align: middle;"></ha-icon>${this._escapeHtml(item.category)}</span>
@@ -4164,7 +4176,8 @@ class BrainstormCard extends HTMLElement {
         });
 
         ideasList.querySelectorAll(".idea-text").forEach((el) => {
-          el.addEventListener("click", () => {
+          el.addEventListener("click", (e) => {
+            if (e.target.closest("a")) return;
             if (!canEdit) return;
             const id = el.getAttribute("data-id");
             if (isCompletedView) return;
@@ -4231,7 +4244,7 @@ class BrainstormCard extends HTMLElement {
             el.addEventListener(
               "touchstart",
               (e) => {
-                if (e.target.closest("button") || e.target.closest(".drag-handle") || e.target.closest(".category-tag") || e.target.closest(".prio-tag")) return;
+                if (e.target.closest("button") || e.target.closest("a") || e.target.closest(".drag-handle") || e.target.closest(".category-tag") || e.target.closest(".prio-tag")) return;
                 touchMoved = false;
                 touchStartX = e.touches[0].clientX;
                 touchStartY = e.touches[0].clientY;
@@ -4972,7 +4985,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.6.20 ",
+  "%c BRAINSTORM-CARD %c v1.6.21 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );
