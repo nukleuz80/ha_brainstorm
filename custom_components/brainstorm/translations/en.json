@@ -384,7 +384,7 @@
           "bring_enabled": "Switching it off stops the sync. Notes and items stay where they are.",
           "bring_category": "Pick a category or type a new name, which is created when you save.",
           "bring_lists": "Leave empty to sync all lists, including lists added later.",
-          "bring_default_list": "Notes added to the category without a list, for example by voice, go to this list.",
+          "bring_default_list": "Notes added to the category without a list, for example by voice, go to this list. If it is not one of the chosen lists, the first chosen list is used.",
           "bring_done_days": "Ticked off items leave the completed view of Brainstorm after this many days; they stay in Bring for buying again. 0 keeps them.",
           "bring_share_all": "With privacy on, only notes shared with everyone are synced, as everyone with access to Bring sees them. This shares the whole category with everyone.",
           "go_back": "Returns to the previous page without saving this form."
@@ -441,8 +441,7 @@
       "no_public_url": "Home Assistant has no public HTTPS address, for example through Home Assistant Cloud. The skill cannot reach it, so use Native mode.",
       "owner_required": "Please choose the main user.",
       "todo_sync_duplicate": "Each to-do list can only be linked to one category.",
-      "bring_category_missing": "Please choose or type a category.",
-      "bring_default_not_chosen": "The default list must be one of the chosen lists."
+      "bring_category_missing": "Please choose or type a category."
     },
     "abort": {
       "store_not_ready": "Brainstorm is reloading. Please open the settings again in a few seconds."

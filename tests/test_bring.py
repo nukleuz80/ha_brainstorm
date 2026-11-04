@@ -427,7 +427,14 @@ async def test_options_set_up_bring_in_one_page(
             "bring_default_list": HOME,
         },
     )
-    assert result["errors"] == {"bring_default_list": "bring_default_not_chosen"}
+    # A default outside the chosen lists falls back to the first chosen one
+    assert result["type"] is FlowResultType.MENU
+    await hass.async_block_till_done()
+    assert entry.options["bring_default_list"] == CAMPER
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "bring"}
+    )
     result = await hass.config_entries.options.async_configure(
         result["flow_id"],
         {

@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.7.2-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.7.3-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -158,8 +158,8 @@ HACS only installs the integration, so continue with [Install the cards](#instal
 
 1. Copy `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` and `www/brainstorm-i18n.js` from the release to `/config/www/`. The third file holds the texts and needs no resource entry.
 2. Add both under **Settings ➔ Dashboards ➔ Resources** as **JavaScript module**:
-   - `/local/brainstorm-card.js?v=1.7.2`
-   - `/local/brainstorm-mindmap-card.js?v=1.7.2`
+   - `/local/brainstorm-card.js?v=1.7.3`
+   - `/local/brainstorm-mindmap-card.js?v=1.7.3`
 3. Reload the page in your browser.
 
 ### Removing the Integration
@@ -355,9 +355,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.7.2
+  - url: /local/brainstorm-card.js?v=1.7.3
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.7.2
+  - url: /local/brainstorm-mindmap-card.js?v=1.7.3
     type: module
 ```
 
@@ -872,6 +872,7 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.7.3`** | 2026-11-05 | **Bring! settings save again:** if the default list is not one of the chosen lists, the first chosen list is used instead of blocking the form. |
 | **`v1.7.2`** | 2026-11-04 | **Bring! messages:**<br>• **🛒 button on every Bring list note:** *I'm going shopping*, *Shopping done* or *List changed* notifies everyone on the list through Bring.<br>• **Report as urgent in Bring!** in the menu of an item on a list sends the item along.<br>• New action `brainstorm.bring_message` for automations, for example when someone leaves for the supermarket. |
 | **`v1.7.1`** | 2026-11-04 | **Hide bought items:**<br>• New setting *Hide bought items after (days)* on the 🛒 Bring! page, default 3 days, 0 keeps them.<br>• Ticked off items of the Bring category are archived after that time and leave the completed view; in Bring they stay in the recent list.<br>• Noted again, the item bought before comes back instead of a duplicate. |
 | **`v1.7.0`** | 2026-11-04 | **Native Bring! support:**<br>• **All Bring lists in one category** under *Configure ➔ 🛒 Bring!*: switch on, pick or create a category, choose the default list.<br>• **One main note per list**, its items as subtasks; a deleted list note comes back, a list left out is archived and keeps its items in Bring.<br>• **Moving a subtask** to another list note moves the item between the Bring lists.<br>• **Bring's quirks handled:** a rename keeps the item although Bring gives it a new ID, buying something again brings back the old item instead of a duplicate, and the Bring specification shows as a note.<br>• Bring lists leave the general to-do linking, so nothing is synced twice. |

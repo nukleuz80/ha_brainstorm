@@ -1461,10 +1461,11 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             category = (user_input.get(CONF_BRING_CATEGORY) or "").strip()
             chosen = list(user_input.get(CONF_BRING_LISTS) or [])
             default = user_input.get(CONF_BRING_DEFAULT_LIST)
+            if chosen and default not in chosen:
+                # A default outside the chosen lists would never sync
+                default = chosen[0]
             if enabled and not category:
                 errors[CONF_BRING_CATEGORY] = "bring_category_missing"
-            elif enabled and chosen and default not in chosen:
-                errors[CONF_BRING_DEFAULT_LIST] = "bring_default_not_chosen"
             else:
                 if enabled:
                     category = await self._async_bring_category(
