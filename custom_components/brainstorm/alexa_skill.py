@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any
 
 from aiohttp import hdrs, web
 
-from homeassistant.components import webhook
+from homeassistant.components import persistent_notification, webhook
 from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.network import get_url
@@ -58,12 +58,10 @@ MIN_IDEA_LENGTH = 3
 # The skill code gives up after 6 seconds, so an unknown Echo must not take longer
 DEVICE_WAIT_SECONDS = 3.5
 ALEXA_EVENT_MAX_AGE_SECONDS = 30
-# The skill gives up after 6 seconds, so Home Assistant has to answer before
-FALLBACK_WAIT_SECONDS = 4.5
-# How old a history entry may be to belong to a sentence Alexa could not place
-FALLBACK_EVENT_MAX_AGE_SECONDS = 15
-# How long a sentence that came too late for the answer is still stored
+# Alexa writes a sentence to its history only after the skill answered, so a
+# sentence Alexa could not place is stored when that entry arrives, up to this long
 FALLBACK_LATE_SECONDS = 60
+FALLBACK_NOTIFICATION_ID = "brainstorm_skill_lost_sentence"
 EVENT_LAST_CALLED = "alexa_media_last_called_event"
 
 ACTION_CAPTURE = "capture"
@@ -318,6 +316,7 @@ class _FallbackRequest:
     """A sentence Alexa could not place, waiting for its Alexa history entry."""
 
     echo_name: str | None
+    answer: str
     future: asyncio.Future[tuple[str, str]]
     created: float = field(default_factory=time.monotonic)
 
@@ -479,6 +478,7 @@ class AlexaSkill:
         """Match an Alexa history entry to a skill request."""
         name = event.data.get("name")
         summary = str(event.data.get("summary") or "")
+        response = str(event.data.get("response") or "")
         if not name:
             return
         mentions_skill = "brainstorm" in _normalize(summary)
@@ -495,7 +495,9 @@ class AlexaSkill:
             else None
         )
         if pending is None:
-            answered = self._async_answer_fallback(str(name), summary, mentions_skill)
+            answered = self._async_answer_fallback(
+                str(name), summary, response, mentions_skill
+            )
             if mentions_skill and not answered:
                 self._recent_events.append((now, name, summary))
             return
@@ -525,7 +527,7 @@ class AlexaSkill:
 
     @callback
     def _async_answer_fallback(
-        self, name: str, summary: str, mentions_skill: bool
+        self, name: str, summary: str, response: str, mentions_skill: bool
     ) -> bool:
         """Hand a history entry to a sentence Alexa could not place."""
         now = time.monotonic()
@@ -536,26 +538,24 @@ class AlexaSkill:
             and now - fallback.created < FALLBACK_LATE_SECONDS
         ]
         for fallback in self._fallbacks:
-            # Within an open session the sentence does not name the skill again,
-            # so only an entry from the same Echo can belong to it
-            if fallback.echo_name == name or (
-                fallback.echo_name is None and mentions_skill
-            ):
+            if response:
+                # The entry carries Alexa's answer, so it must be the answer
+                # given to this sentence, from the same Echo if that is known
+                matches = _normalize(response) == _normalize(fallback.answer) and (
+                    fallback.echo_name in (None, name)
+                )
+            else:
+                # Older Alexa Media leaves the answer out. Within an open session
+                # the sentence does not name the skill again, so only an entry
+                # from the same Echo can belong to it
+                matches = fallback.echo_name == name or (
+                    fallback.echo_name is None and mentions_skill
+                )
+            if matches:
                 self._fallbacks.remove(fallback)
                 fallback.future.set_result((name, summary))
                 return True
         return False
-
-    def _recent_fallback_sentence(self, echo_name: str | None) -> tuple[str, str] | None:
-        """Return a history entry that came before the skill's request."""
-        now = time.monotonic()
-        for entry in reversed(self._recent_events):
-            if now - entry[0] < FALLBACK_EVENT_MAX_AGE_SECONDS and (
-                echo_name is None or entry[1] == echo_name
-            ):
-                self._recent_events.remove(entry)
-                return entry[1], entry[2]
-        return None
 
     async def _async_fallback(
         self, device_id: str | None, echo: EchoDevice | None, pack: LanguagePack
@@ -566,48 +566,44 @@ class AlexaSkill:
         if known is not None and known.get("custom"):
             return self._speech(pack.msg("skill_fallback"), end_session=False)
 
-        echo_name = echo.name if echo else None
-        found = self._recent_fallback_sentence(echo_name)
-        if found is None:
-            request = _FallbackRequest(echo_name, self.hass.loop.create_future())
-            self._fallbacks.append(request)
-            try:
-                found = await asyncio.wait_for(
-                    asyncio.shield(request.future), FALLBACK_WAIT_SECONDS
-                )
-            except TimeoutError:
-                task = self.hass.async_create_background_task(
-                    self._async_store_late_fallback(request, pack),
-                    "brainstorm_skill_late_sentence",
-                )
-                self._fallback_tasks.add(task)
-                task.add_done_callback(self._fallback_tasks.discard)
-                return self._speech(pack.msg("skill_fallback_later"))
-        return await self._async_store_fallback(found, pack)
+        # Waiting would only keep the person waiting: Alexa adds the sentence to
+        # its history together with this answer
+        answer = pack.msg("skill_fallback_later")
+        request = _FallbackRequest(
+            echo.name if echo else None, answer, self.hass.loop.create_future()
+        )
+        self._fallbacks.append(request)
+        task = self.hass.async_create_background_task(
+            self._async_store_fallback(request, pack),
+            "brainstorm_skill_late_sentence",
+        )
+        self._fallback_tasks.add(task)
+        task.add_done_callback(self._fallback_tasks.discard)
+        return self._speech(answer)
 
     async def _async_store_fallback(
-        self, found: tuple[str, str], pack: LanguagePack
-    ) -> web.Response:
-        """Store the sentence from a history entry as an idea."""
-        name, summary = found
-        return await self._async_capture(
-            sentence_after_invocation(summary), self._echo_from_name(name), None, pack
-        )
-
-    async def _async_store_late_fallback(
         self, request: _FallbackRequest, pack: LanguagePack
     ) -> None:
-        """Store a sentence whose history entry came after the answer."""
-        remaining = FALLBACK_LATE_SECONDS - (time.monotonic() - request.created)
+        """Store a sentence once its Alexa history entry arrives."""
         try:
-            found = await asyncio.wait_for(request.future, max(remaining, 0))
+            name, summary = await asyncio.wait_for(
+                request.future, FALLBACK_LATE_SECONDS
+            )
         except TimeoutError:
             _LOGGER.warning(
                 "Alexa reported no sentence for a skill request it could not place, "
                 "so nothing was stored"
             )
+            persistent_notification.async_create(
+                self.hass,
+                pack.msg("skill_fallback_lost"),
+                title="Brainstorm Hub",
+                notification_id=FALLBACK_NOTIFICATION_ID,
+            )
             return
-        await self._async_store_fallback(found, pack)
+        await self._async_capture(
+            sentence_after_invocation(summary), self._echo_from_name(name), None, pack
+        )
 
     async def _async_resolve_echo(
         self, device_id: str | None, text: str

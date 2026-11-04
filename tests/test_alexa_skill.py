@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
+from homeassistant.components import persistent_notification
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.exceptions import HomeAssistantError
@@ -383,11 +384,17 @@ def _add_echo(hass: HomeAssistant, entity_id: str = ECHO_ENTITY, name: str = ECH
     }
 
 
-def _alexa_event(hass: HomeAssistant, summary: str, name: str = ECHO_NAME) -> None:
+def _alexa_event(
+    hass: HomeAssistant,
+    summary: str,
+    name: str = ECHO_NAME,
+    response: str | None = None,
+) -> None:
     """Fire the event Alexa Media sends for a spoken sentence."""
-    hass.bus.async_fire(
-        "alexa_media_last_called_event", {"name": name, "summary": summary}
-    )
+    data = {"name": name, "summary": summary}
+    if response is not None:
+        data["response"] = response
+    hass.bus.async_fire("alexa_media_last_called_event", data)
 
 
 def _capture_payload(text: str = "kellerlicht dimmen", **extra: Any) -> dict[str, Any]:
@@ -1073,89 +1080,94 @@ def test_sentence_after_invocation(summary: str, expected: str) -> None:
     assert alexa_skill.sentence_after_invocation(summary) == expected
 
 
-async def test_unplaced_sentence_from_history_before_request(
+LATER = GERMAN.messages["skill_fallback_later"]
+
+
+async def test_unplaced_sentence_is_answered_at_once_and_stored_later(
     hass: HomeAssistant,
     setup_entry: SetupEntry,
     hass_client_no_auth: ClientSessionGenerator,
 ) -> None:
-    """Test that a free sentence is taken from an earlier history entry."""
+    """Test that Alexa answers at once and the history entry is stored after."""
     entry = await _setup_skill(hass, setup_entry)
     _add_echo(hass)
-    _alexa_event(hass, "sage brainstorm duschgel kaufen")
 
     response = await _post(hass_client_no_auth, entry, _fallback_payload())
+    assert (await response.json())["speech"] == LATER
+    assert not entry.runtime_data.ideas
 
-    assert (await response.json())["speech"].startswith("Gespeichert")
+    _alexa_event(hass, "sage brainstorm duschgel ist alle", response=LATER)
+    await hass.async_block_till_done()
     idea = entry.runtime_data.ideas[0]
-    assert idea["text"].lower().startswith("duschgel kaufen")
+    assert idea["text"].lower().startswith("duschgel")
     assert idea["device"] == ECHO_NAME
     assert idea["source"] == "alexa_skill"
 
 
-async def test_unplaced_sentence_waits_for_history(
+async def test_unplaced_sentence_in_open_session_uses_its_own_answer(
     hass: HomeAssistant,
     setup_entry: SetupEntry,
     hass_client_no_auth: ClientSessionGenerator,
 ) -> None:
-    """Test that the answer waits for a history entry that comes shortly after."""
-    entry = await _setup_skill(hass, setup_entry)
-    _add_echo(hass)
-    client = await hass_client_no_auth()
-    url = f"/api/webhook/{entry.runtime_data.alexa_skill._webhook_id}"  # noqa: SLF001
-
-    request = asyncio.create_task(client.post(url, json=_fallback_payload()))
-    await asyncio.sleep(0.05)
-    assert not entry.runtime_data.ideas
-    _alexa_event(hass, "sage brainstorm rosen schneiden")
-
-    assert (await (await request).json())["speech"].startswith("Gespeichert")
-    assert entry.runtime_data.ideas[0]["text"].lower().startswith("rosen schneiden")
-
-
-async def test_unplaced_sentence_is_stored_when_history_is_late(
-    hass: HomeAssistant,
-    setup_entry: SetupEntry,
-    hass_client_no_auth: ClientSessionGenerator,
-) -> None:
-    """Test that a slow history entry is stored after the answer."""
-    entry = await _setup_skill(hass, setup_entry)
-    _add_echo(hass)
-
-    with patch.object(alexa_skill, "FALLBACK_WAIT_SECONDS", 0):
-        response = await _post(hass_client_no_auth, entry, _fallback_payload())
-    assert (await response.json())["speech"] == GERMAN.messages["skill_fallback_later"]
-    assert not entry.runtime_data.ideas
-
-    _alexa_event(hass, "sage brainstorm fenster putzen")
-    await hass.async_block_till_done()
-    assert entry.runtime_data.ideas[0]["text"].lower().startswith("fenster putzen")
-
-
-async def test_unplaced_sentence_in_open_session_uses_the_same_echo(
-    hass: HomeAssistant,
-    setup_entry: SetupEntry,
-    hass_client_no_auth: ClientSessionGenerator,
-) -> None:
-    """Test a sentence without the skill's name, said in an open session."""
+    """Test that only the history entry with the skill's answer is stored."""
     entry = await _setup_skill(hass, setup_entry)
     _add_echo(hass)
     _add_echo(hass, "media_player.echo_bad", "Echo Bad")
     skill = entry.runtime_data.alexa_skill
     skill._devices[DEVICE_ID] = {"name": ECHO_NAME, "entity_id": ECHO_ENTITY}  # noqa: SLF001
-    client = await hass_client_no_auth()
-    url = f"/api/webhook/{skill._webhook_id}"  # noqa: SLF001
 
-    request = asyncio.create_task(client.post(url, json=_fallback_payload()))
-    await asyncio.sleep(0.05)
-    # Another Echo in the house is no answer to this request
-    _alexa_event(hass, "licht im bad an", name="Echo Bad")
-    _alexa_event(hass, "keller aufräumen")
+    await _post(hass_client_no_auth, entry, _fallback_payload())
+    # Another Echo, and another question on the same Echo, are no answer to it
+    _alexa_event(hass, "licht im bad an", name="Echo Bad", response=LATER)
+    _alexa_event(hass, "wie spät", response="Es ist 12:01.")
+    _alexa_event(hass, "keller aufräumen", response=LATER)
+    await hass.async_block_till_done()
 
-    assert (await (await request).json())["speech"].startswith("Gespeichert")
     ideas = entry.runtime_data.ideas
     assert len(ideas) == 1
     assert ideas[0]["text"].lower().startswith("keller aufräumen")
     assert ideas[0]["device"] == ECHO_NAME
+
+
+async def test_unplaced_sentence_without_answer_in_history_uses_the_echo(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_client_no_auth: ClientSessionGenerator,
+) -> None:
+    """Test older Alexa Media versions, whose history has no answer."""
+    entry = await _setup_skill(hass, setup_entry)
+    _add_echo(hass)
+    _add_echo(hass, "media_player.echo_bad", "Echo Bad")
+    skill = entry.runtime_data.alexa_skill
+    skill._devices[DEVICE_ID] = {"name": ECHO_NAME, "entity_id": ECHO_ENTITY}  # noqa: SLF001
+
+    await _post(hass_client_no_auth, entry, _fallback_payload())
+    _alexa_event(hass, "licht im bad an", name="Echo Bad")
+    _alexa_event(hass, "fenster putzen")
+    await hass.async_block_till_done()
+
+    ideas = entry.runtime_data.ideas
+    assert len(ideas) == 1
+    assert ideas[0]["text"].lower().startswith("fenster putzen")
+
+
+async def test_unplaced_sentence_without_history_is_reported(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_client_no_auth: ClientSessionGenerator,
+) -> None:
+    """Test that a sentence Alexa never reports is not lost silently."""
+    entry = await _setup_skill(hass, setup_entry)
+    _add_echo(hass)
+
+    with patch.object(alexa_skill, "FALLBACK_LATE_SECONDS", 0.01):
+        await _post(hass_client_no_auth, entry, _fallback_payload())
+        await asyncio.sleep(0.05)
+        await hass.async_block_till_done()
+
+    assert not entry.runtime_data.ideas
+    notifications = persistent_notification._async_get_or_create_notifications(hass)  # noqa: SLF001
+    assert alexa_skill.FALLBACK_NOTIFICATION_ID in notifications
 
 
 async def test_unplaced_sentence_from_named_sender_asks_for_command(
@@ -1186,8 +1198,7 @@ async def test_unplaced_sentence_is_dropped_on_unload(
     _add_echo(hass)
     skill = entry.runtime_data.alexa_skill
 
-    with patch.object(alexa_skill, "FALLBACK_WAIT_SECONDS", 0):
-        await _post(hass_client_no_auth, entry, _fallback_payload())
+    await _post(hass_client_no_auth, entry, _fallback_payload())
     assert skill._fallback_tasks  # noqa: SLF001
 
     assert await hass.config_entries.async_unload(entry.entry_id)
