@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.6.19-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.6.20-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -144,8 +144,8 @@ HACS only installs the integration, so continue with [Install the cards](#instal
 
 1. Copy `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` and `www/brainstorm-i18n.js` from the release to `/config/www/`. The third file holds the texts and needs no resource entry.
 2. Add both under **Settings ➔ Dashboards ➔ Resources** as **JavaScript module**:
-   - `/local/brainstorm-card.js?v=1.6.19`
-   - `/local/brainstorm-mindmap-card.js?v=1.6.19`
+   - `/local/brainstorm-card.js?v=1.6.20`
+   - `/local/brainstorm-mindmap-card.js?v=1.6.20`
 3. Reload the page in your browser.
 
 ### Removing the Integration
@@ -233,7 +233,7 @@ The skill belongs to you and only talks to your own Home Assistant. **Requiremen
 5. In the **Test** tab, set the stage to **Development**.
 6. Click **Submit** in Home Assistant and say *"Alexa, ask Brainstorm to note test idea."* The first request links your skill, other skills are rejected afterwards. **Configure** shows the link and the last request.
 
-**Notes:** Keep the skill code private, it contains your secret address. If it leaks, create a new one there and copy the skill code again. The Echo selection and device display apply to the skill too. For this, Home Assistant learns each Echo from the Alexa history on its first sentence (this needs the Alexa Media integration), which can take up to 3.5 seconds longer. If the history entry arrives later, the idea is still saved and the Echo is added afterwards. In the menu you need a command word such as *"note ..."*, plain free text is not possible in a skill. For **Skill** mode to turn off the existing capture, your automation has to check the `voice_mode` attribute:
+**Notes:** Keep the skill code private, it contains your secret address. If it leaks, create a new one there and copy the skill code again. The Echo selection and device display apply to the skill too. For this, Home Assistant learns each Echo from the Alexa history on its first sentence (this needs the Alexa Media integration), which can take up to 3.5 seconds longer. If the history entry arrives later, the idea is still saved and the Echo is added afterwards. In the menu you need a command word such as *"note ..."*. Alexa does not pass **free sentences without a command word** to a skill. Since v1.6.20, Home Assistant takes such sentences from the Echo's Alexa history (through Alexa Media) and saves them anyway. If the history does not arrive within about 4 seconds, Alexa says *"Okay, I will save that in a moment"*, and the idea appears once the history is there. The Alexa app reports no history, so it keeps asking for a command word. This needs the skill code to be copied once more. For **Skill** mode to turn off the existing capture, your automation has to check the `voice_mode` attribute:
 
 ```yaml
 - condition: template
@@ -336,9 +336,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.6.19
+  - url: /local/brainstorm-card.js?v=1.6.20
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.6.19
+  - url: /local/brainstorm-mindmap-card.js?v=1.6.20
     type: module
 ```
 
@@ -763,6 +763,7 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.6.20`** | 2026-11-04 | **The skill saves free sentences without a command word:**<br>• When the skill does not understand a sentence (*"ask Brainstorm the shower gel is empty"*), it asks Home Assistant. Home Assistant takes the sentence from the Echo's Alexa history, removes *"ask Brainstorm"* and saves it like a note.<br>• In an open skill session, only a sentence from the same Echo counts, so other Echos in the house are not mixed up.<br>• If the history comes too late, Alexa answers *"Okay, I will save that in a moment"* and the idea is added for up to 60 seconds.<br>• **Copy the skill code again** (Brainstorm Hub ➔ Configure ➔ Alexa Voice Input & Skill), otherwise the old hint stays. |
 | **`v1.6.19`** | 2026-11-03 | **Brainstorm as a task list for coding AIs:**<br>• New chapter “🤖 Brainstorm as a task list for coding AIs”: a user of its own for the AI, token, sharing the backlog category, working rules.<br>• New Claude Code skill in `examples/claude-code/skills/brainstorm-backlog`: reads the backlog over `brainstorm.get_ideas`, keeps order and conditions and ticks off only finished work with a result note.<br>• Note on which actions need admin rights and why a user without them is safer. |
 | **`v1.6.18`** | 2026-11-03 | **Result note when ticking off:**<br>• `brainstorm.update_idea` has the new field `result`. It records what came of an entry, for example “Done in v1.6.18, tested”.<br>• Both cards show the note with a green edge below the text, the list also in the “Done” view.<br>• The note stays when the entry is reopened; an empty `result` removes it. |
 | **`v1.6.17`** | 2026-11-03 | **Mind map: export as a picture:**<br>• The new 🖼️ button at the top right saves the map as **SVG** (vector, sharp at any size) or **PNG** (at twice the resolution).<br>• The picture shows lines, notes and the center in the colors of the chosen template, without buttons and badges. Folded branches stay out.<br>• The file name holds the list and the date, such as `brainstorm-haus-garten-2026-11-03.png`. `show_export_btn: false` hides the button. |

@@ -996,6 +996,7 @@ MESSAGES: dict[str, str] = {
         "I did not get that. Start with note, for example: note buy shower gel. Or say: "
         "remind me tomorrow at 8 to take out the bins."
     ),
+    "skill_fallback_later": "Okay, I will save that in a moment.",
     "skill_launch": "Brainstorm is ready. Say note and your idea, or say read.",
     "skill_save_failed": "I could not save that.",
     "skill_saved_no_time": "Saved, but without a reminder. I did not understand a time.",

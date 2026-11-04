@@ -1512,6 +1512,7 @@ MESSAGES: dict[str, str] = {
         "Das habe ich nicht verstanden. Fang mit notiere an, zum Beispiel: notiere "
         "Duschgel kaufen. Oder sage: erinnere mich morgen um 8 an die Tonnen."
     ),
+    "skill_fallback_later": "Okay, ich speichere das gleich.",
     "skill_launch": "Brainstorm bereit. Sage notiere und deine Notiz, oder sage Ansage.",
     "skill_save_failed": "Das konnte ich nicht speichern.",
     "skill_saved_no_time": "Gespeichert, aber ohne Erinnerung. Ich habe keinen Zeitpunkt verstanden.",
