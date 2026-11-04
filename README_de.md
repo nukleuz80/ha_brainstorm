@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.6.27-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.6.28-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -107,7 +107,7 @@ Brainstorm Hub verwandelt alle deine **Amazon Echo**-Geräte im Haus in sekunden
     - Organische Bézier-Verbindungslinien, die beim Überfahren aufleuchten.
     - Frei verschiebbare Notizen per Drag & Drop (auf Desktop und Touchscreens).
     - **Äste:** Unteraufgaben hängen an ihrer Elternidee, ihre Linien gehen von dort statt von der Mitte aus. 🌿 an einer Notiz legt eine Unteridee an.
-    - **Unteraufgaben von der KI (v1.6.26):** Ist unter *Konfigurieren ➔ KI* eine KI-Aufgaben-Entität gewählt, fragt ✨ an einer Notiz sie nach bis zu 8 Unteraufgaben. Du nimmst den Haken bei allem weg, was du nicht willst, kannst die Texte ändern, und nur was du übernimmst, landet unter der Notiz. Zur KI geht nur diese Notiz mit ihren Unteraufgaben, und nur wenn du den Knopf drückst. Ein Rückgängig entfernt alle wieder.
+    - **Unteraufgaben von der KI (v1.6.26):** Ist unter *Konfigurieren ➔ KI* eine KI-Aufgaben-Entität gewählt, fragt ✨ an einer Notiz sie nach bis zu 8 Unteraufgaben. Du nimmst den Haken bei allem weg, was du nicht willst, kannst die Texte ändern, und nur was du übernimmst, landet unter der Notiz. Zur KI geht nur diese Notiz mit ihren Unteraufgaben, und nur wenn du den Knopf drückst. Ein Rückgängig entfernt alle wieder. Auch die Listenkarte hat ✨ (v1.6.28): neben ✎ an jeder Hauptaufgabe und im Menü bei langem Drücken oder Rechtsklick.
     - **Gespeicherte Anordnung:** In einer einzelnen Liste behalten verschobene Notizen ihren Platz auf allen Geräten. Eine Elternidee nimmt ihre Unteraufgaben mit. Die Übersicht aller Listen ordnet sich selbst.
     - **Zweige einklappen:** Der runde Knopf an einer Notiz mit Unteraufgaben klappt ihren Zweig zu und zeigt, wie viele Notizen darin stecken. Jedes Gerät merkt sich, was eingeklappt ist.
     - **Anordnung als Baum:** Jeder Zweig bekommt seinen eigenen Ausschnitt des Kreises, Linien kreuzen sich nicht. 🪄 setzt von Hand platzierte Notizen wieder an ihren automatischen Platz.
@@ -171,8 +171,8 @@ HACS installiert nur die Integration. Die Karten kopierst du anschließend wie u
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` und `www/brainstorm-i18n.js` in `/config/www/`. Die dritte Datei enthält die Texte und braucht keinen Ressourcen-Eintrag.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.6.27` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.6.27` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.6.28` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.6.28` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ### Integration entfernen
@@ -832,6 +832,7 @@ Weitere Beispiele für Assist und Alexa liegen im Ordner [`examples/`](examples/
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.6.28`** | 04.11.2026 | **KI-Unteraufgaben auch in der Listenkarte:**<br>• **✨ neben ✎** an jeder Hauptaufgabe, die du ändern darfst, und **im Menü** bei langem Drücken oder Rechtsklick. Derselbe Dialog wie in der Mindmap: Haken weg, Texte ändern, übernehmen.<br>• Die neuen Unteraufgaben bekommen die Kategorie ihrer Hauptaufgabe. Unteraufgaben selbst haben kein ✨, weil die Liste eine Ebene Unteraufgaben zeigt.<br>• Nur sichtbar, wenn unter *Konfigurieren ➔ KI* eine KI-Aufgaben-Entität gewählt ist. |
 | **`v1.6.27`** | 04.11.2026 | **Eigener Menüpunkt für die KI:**<br>• Die KI-Einstellungen sind von *Erinnerungen ➔ Kalender, KI & Alexa-Erinnerungen* in einen eigenen Punkt **KI** im Hauptmenü gezogen: KI-Aufgaben-Entität, gesprochene Einträge verbessern, Briefing und Rückblick kürzen. Gespeicherte Einstellungen bleiben, wie sie sind.<br>• Der Erinnerungs-Bereich heißt jetzt *Kalender & Alexa-Erinnerungen*.<br>• Der ✨-Dialog der Mindmap nennt den neuen Ort, wenn noch keine KI gewählt ist.<br>• **Neuer Abschnitt *Feedback & Mitmachen*:** Rückmeldungen, Ideen und Pull Requests sind sehr willkommen. |
 | **`v1.6.26`** | 04.11.2026 | **Mindmap: Unteraufgaben von der KI vorschlagen lassen:**<br>• **✨ an einer Notiz** fragt die KI-Aufgaben-Entität aus den Einstellungen nach bis zu 8 Unteraufgaben. Gespeichert wird erst, wenn du auswählst: Haken weg, Texte ändern, übernehmen. Die neuen Unteraufgaben bekommen die Kategorie der Notiz, der Ast klappt auf, und ein Rückgängig entfernt alle.<br>• **Wenig Daten:** Zur KI gehen nur die Notiz, ihre Kategorie und ihre vorhandenen Unteraufgaben, und nur auf Knopfdruck. Fragen kannst du nur für Notizen, die du ändern darfst.<br>• **Neuer WebSocket-Befehl** `brainstorm/suggest_subtasks`; das Sensor-Attribut `ai_subtasks` sagt den Karten, ob eine KI-Aufgaben-Entität gewählt ist. Tests für den Parser, die Rechte und den Dialog. |
 | **`v1.6.25`** | 04.11.2026 | **Mindmap: mehrere Notizen per Lasso auswählen:**<br>• **Umschalt+Ziehen** auf der leeren Map zieht einen Rahmen um mehrere Notizen, **Umschalt+Klick** oder **Strg+Klick** nimmt einzelne dazu oder heraus. Auf Touch-Geräten schaltet der neue Knopf ⬚ unten rechts aufs Auswählen um: Rahmen ziehen oder Notizen antippen.<br>• **Gemeinsam:** Ziehst du eine ausgewählte Notiz, wandern alle ausgewählten samt Unteraufgaben mit. Eine Leiste über der Map hakt sie ab, verschiebt sie in eine andere Kategorie oder löscht sie nach einer Rückfrage; **Entf** geht auch.<br>• **Ein Rückgängig für alle:** Strg+Z nimmt den ganzen Schritt zurück. Gelöschte Unteraufgaben hängen danach wieder an ihrem Oberpunkt.<br>• **Esc** oder ✕ hebt die Auswahl auf und beendet das Auswählen. |

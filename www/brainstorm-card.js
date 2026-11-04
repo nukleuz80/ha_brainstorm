@@ -1,9 +1,9 @@
-import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.27";
+import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.6.28";
 
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.6.27 - Skill, Reminders, Privacy and Sharing
+ * Version 1.6.28 - Skill, Reminders, Privacy and Sharing
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",
@@ -1127,6 +1127,108 @@ class BrainstormCard extends HTMLElement {
     }
   }
 
+  // The AI suggests subtasks; nothing is stored until the person picks and saves
+  _showSubtaskSuggestions(item) {
+    if (!this._hass) return;
+    this._openDialog(t("✨ Unteraufgaben vorschlagen"), (body) => {
+      const render = (state, suggestions = []) => {
+        if (!this._isDialogOpen) return;
+        const preview = `<div class="action-dialog-note-preview">${formatText(item.text)}</div>`;
+        if (state === "loading") {
+          body.innerHTML = `${preview}<div class="action-dialog-label suggest-status">${t("Die KI denkt nach …")}</div>`;
+          return;
+        }
+        if (state === "error") {
+          body.innerHTML = `
+            ${preview}
+            <div class="action-dialog-error" style="display: block;">${suggestions}</div>
+            <div class="action-dialog-footer">
+              <button class="action-dialog-btn action-dialog-btn-cancel" id="cancelSuggestBtn">${t("Abbrechen")}</button>
+              <button class="action-dialog-btn action-dialog-btn-primary" id="retrySuggestBtn">${t("Nochmal versuchen")}</button>
+            </div>
+          `;
+          body.querySelector("#cancelSuggestBtn").addEventListener("click", () => this._closeDialog());
+          body.querySelector("#retrySuggestBtn").addEventListener("click", load);
+          return;
+        }
+        body.innerHTML = `
+          ${preview}
+          <div class="action-dialog-label">${t("Haken weg bei allem, was du nicht willst. Du kannst die Texte noch ändern.")}</div>
+          <div class="suggest-list">
+            ${suggestions
+              .map(
+                (text, index) => `
+              <label class="suggest-row">
+                <input type="checkbox" class="suggest-check" data-index="${index}" checked />
+                <input type="text" class="action-dialog-input suggest-text" data-index="${index}" maxlength="200" value="${this._escapeHtml(text)}" />
+              </label>`
+              )
+              .join("")}
+          </div>
+          <div class="action-dialog-footer">
+            <button class="action-dialog-btn action-dialog-btn-cancel" id="retrySuggestBtn">${t("Neue Vorschläge")}</button>
+            <button class="action-dialog-btn action-dialog-btn-primary" id="saveSuggestBtn"></button>
+          </div>
+        `;
+        const saveBtn = body.querySelector("#saveSuggestBtn");
+        const picked = () =>
+          [...body.querySelectorAll(".suggest-check")]
+            .filter((box) => box.checked)
+            .map((box) => body.querySelector(`.suggest-text[data-index="${box.dataset.index}"]`).value.trim())
+            .filter(Boolean);
+        const updateSave = () => {
+          const count = picked().length;
+          saveBtn.textContent = t("{count} übernehmen", { count });
+          saveBtn.disabled = count === 0;
+        };
+        body.querySelectorAll(".suggest-check, .suggest-text").forEach((el) => el.addEventListener("input", updateSave));
+        updateSave();
+        body.querySelector("#retrySuggestBtn").addEventListener("click", load);
+        saveBtn.addEventListener("click", async () => {
+          const texts = picked();
+          if (!texts.length) return;
+          this._closeDialog();
+          for (const text of texts) {
+            try {
+              await this._hass.callService("brainstorm", "add_idea", {
+                text,
+                category: item.category,
+                parent_id: item.id,
+                source: "dashboard",
+              });
+            } catch (err) {
+              console.error("Failed to add subtask", err);
+            }
+          }
+        });
+      };
+      const load = async () => {
+        render("loading");
+        try {
+          const result = await this._hass.callWS({
+            type: "brainstorm/suggest_subtasks",
+            idea_id: item.id,
+            ...(this._hass.language ? { language: this._hass.language } : {}),
+          });
+          const suggestions = (result && result.suggestions) || [];
+          if (!suggestions.length) render("error", t("Die KI hat keine Unteraufgaben geliefert."));
+          else render("list", suggestions);
+        } catch (err) {
+          const code = err && err.code;
+          render(
+            "error",
+            code === "ai_not_configured"
+              ? t("Wähle zuerst eine KI-Aufgaben-Entität unter Brainstorm Hub ➔ Konfigurieren ➔ KI.")
+              : code === "unauthorized"
+                ? t("Du darfst diese Notiz nicht ändern.")
+                : t("Die KI hat keine Unteraufgaben geliefert.")
+          );
+        }
+      };
+      load();
+    });
+  }
+
   _openDialog(title, renderFn) {
     const dialog = this.shadowRoot.getElementById("cardDialog");
     const titleEl = this.shadowRoot.getElementById("cardDialogTitle");
@@ -1781,6 +1883,16 @@ class BrainstormCard extends HTMLElement {
       <div class="apple-menu-separator"></div>
     `;
 
+    // The AI suggests subtasks for a main task
+    if (this._aiSubtasks && !isSub) {
+      actionsHtml += `
+        <button class="apple-menu-btn" data-act="suggest">
+          <span class="btn-icon">✨</span>
+          <div class="btn-content"><span>${t("Unteraufgaben von der KI vorschlagen lassen")}</span></div>
+        </button>
+      `;
+    }
+
     // Edit
     actionsHtml += `
       <button class="apple-menu-btn" data-act="edit">
@@ -1808,6 +1920,11 @@ class BrainstormCard extends HTMLElement {
 
         if (act === "share") {
           this._showShareDialog([item.id], null, item.shares || {});
+          return;
+        }
+
+        if (act === "suggest") {
+          this._showSubtaskSuggestions(item);
           return;
         }
 
@@ -2811,6 +2928,7 @@ class BrainstormCard extends HTMLElement {
             margin-left: 2px !important;
           }
           .indent-btn,
+          .suggest-btn,
           .edit-btn,
           .delete-btn {
             opacity: 0.75 !important;
@@ -3263,6 +3381,7 @@ class BrainstormCard extends HTMLElement {
           margin-left: 4px;
         }
         .indent-btn,
+        .suggest-btn,
         .edit-btn,
         .delete-btn {
           background: transparent;
@@ -3280,6 +3399,7 @@ class BrainstormCard extends HTMLElement {
           line-height: 1;
         }
         .idea-item:hover .indent-btn,
+        .idea-item:hover .suggest-btn,
         .idea-item:hover .edit-btn,
         .idea-item:hover .delete-btn {
           opacity: 0.85;
@@ -3288,6 +3408,41 @@ class BrainstormCard extends HTMLElement {
           color: var(--primary-color, #03a9f4) !important;
           opacity: 1 !important;
           background: var(--secondary-background-color, rgba(0,0,0,0.05));
+        }
+        .suggest-btn:hover {
+          opacity: 1 !important;
+          background: var(--secondary-background-color, rgba(0,0,0,0.05));
+        }
+        .suggest-list {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          margin: 8px 0 4px;
+        }
+        .suggest-row {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+        .suggest-check {
+          width: 22px;
+          height: 22px;
+          flex: 0 0 auto;
+          accent-color: var(--primary-color, #03a9f4);
+          cursor: pointer;
+        }
+        .suggest-row .suggest-text {
+          flex: 1 1 auto;
+          min-width: 0;
+          margin: 0;
+        }
+        .suggest-status {
+          text-align: center;
+          padding: 16px 0;
+        }
+        .action-dialog-btn-primary:disabled {
+          opacity: 0.5;
+          cursor: default;
         }
         .edit-btn:hover {
           color: var(--primary-color, #03a9f4) !important;
@@ -4081,6 +4236,9 @@ class BrainstormCard extends HTMLElement {
         const canDelete = this._config.allow_delete === true;
         const showSource = this._config.show_source_icons === true;
         const showTime = this._config.show_timestamps === true;
+        const aiSensor = this._getSensorEntity();
+        const aiSubtasks = Boolean(aiSensor && aiSensor.attributes && aiSensor.attributes.ai_subtasks);
+        this._aiSubtasks = aiSubtasks;
 
         this._ideasById = Object.fromEntries(orderedIdeas.map((item) => [item.id, item]));
         ideasList.innerHTML = orderedIdeas
@@ -4127,6 +4285,7 @@ class BrainstormCard extends HTMLElement {
                       : ""
                     : ""
                 }
+                ${itemEdit && aiSubtasks && !isSub ? `<button class="suggest-btn" title="${t("Unteraufgaben von der KI vorschlagen lassen")}" data-id="${item.id}">✨</button>` : ""}
                 ${itemEdit ? `<button class="edit-btn" title="${t("Bearbeiten")}" data-id="${item.id}">✎</button>` : ""}
                 ${itemDelete ? `<button class="delete-btn" title="${t("Löschen")}" data-id="${item.id}">✕</button>` : ""}
               </div>
@@ -4202,6 +4361,14 @@ class BrainstormCard extends HTMLElement {
             const currentCat = el.getAttribute("data-cat");
             const item = activeIdeas.find((i) => i.id === id);
             this._changeCategory(id, currentCat, item ? item.text : "");
+          });
+        });
+
+        ideasList.querySelectorAll(".suggest-btn").forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const item = activeIdeas.find((i) => i.id === btn.getAttribute("data-id"));
+            if (item) this._showSubtaskSuggestions(item);
           });
         });
 
@@ -4985,7 +5152,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.6.27 ",
+  "%c BRAINSTORM-CARD %c v1.6.28 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );
