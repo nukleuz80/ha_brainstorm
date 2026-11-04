@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.6.30-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.6.31-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -128,6 +128,10 @@ Brainstorm Hub verwandelt alle deine **Amazon Echo**-Geräte im Haus in sekunden
   - Ideal für Personal Knowledge Management (Obsidian, Logseq, Foam, SilverBullet).
 - 📋 **Native Home Assistant To-do Plattform:**
   - Jede Brainstorm-Kategorie wird als echte Home Assistant To-do-Liste bereitgestellt (`todo.brainstorm_hub_haus_garten`, `todo.brainstorm_hub_inbox`, usw.).
+- 🔁 **Gekoppelte To-do-Listen (v1.6.31):**
+  - Koppelt eine Kategorie mit einer To-do-Liste einer anderen Integration, etwa **Bring!**, **Google Tasks**, **Todoist** oder einer lokalen To-do-Liste. Neue Einträge, Umbenennen und Abhaken gehen in beide Richtungen, so bleiben *Einkauf* in Brainstorm und deine Einkaufs-App gleich. Siehe *Konfigurieren ➔ To-do-Listen koppeln*.
+- 💾 **JSON-Export und -Import (v1.6.31):**
+  - `brainstorm.export_json` gibt deine Ideen samt Kategorien, Icons und Farben als JSON zurück, auf Wunsch als Datei. `brainstorm.import_json` holt sie zurück, auf demselben oder einem anderen Home Assistant, und überspringt Vorhandenes.
 - 🏛️ **100% Home Assistant Standard-konform:**
   - Entwickelt nach den offiziellen Richtlinien von [contributors.home-assistant.io](https://contributors.home-assistant.io/) (strikte Typisierung, non-blocking Event-Loop, `DeviceInfo`, saubere Translation-Keys).
 
@@ -172,8 +176,8 @@ HACS installiert nur die Integration. Die Karten kopierst du anschließend wie u
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` und `www/brainstorm-i18n.js` in `/config/www/`. Die dritte Datei enthält die Texte und braucht keinen Ressourcen-Eintrag.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.6.30` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.6.30` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.6.31` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.6.31` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ### Integration entfernen
@@ -609,6 +613,24 @@ Brainstorm nutzt eine KI-Aufgaben-Entität von Home Assistant, etwa Google Gemin
 | Gesprochene Einträge per KI verbessern | Jeder gesprochene Eintrag wird zuerst gespeichert und wenige Sekunden später verbessert. Das Ergebnis wird verworfen, wenn es Wörter hinzufügt oder eine Verneinung ändert. Der Text geht an den Anbieter der gewählten KI. |
 | Briefing und Rückblick per KI kürzen | Morgen-Briefing und Wochenrückblick der Erinnerungen werden gekürzt. Deine Einträge gehen dafür an den Anbieter der gewählten KI. |
 
+#### Brainstorm › To-do-Listen koppeln
+
+Ein Feld pro Kategorie. Wähle eine To-do-Liste einer anderen Integration, etwa Bring!, Google Tasks, Todoist oder eine lokale To-do-Liste, und beide bleiben gleich:
+
+| Was passiert | Auf der Liste | In Brainstorm |
+| :--- | :--- | :--- |
+| Etwas kommt dazu | wird zur Notiz in der Kategorie | eine aktive Notiz landet auf der Liste |
+| Etwas wird umbenannt oder abgehakt | die Notiz zieht mit | der Eintrag zieht mit |
+| Etwas wird gelöscht | ein entfernter Eintrag hakt seine Notiz ab | eine gelöschte Notiz entfernt ihren Eintrag |
+
+- **Wann:** sofort nach einer Änderung in Brainstorm oder einem neuen Eintrag auf der Liste, und alle 5 Minuten für Umbenennungen, die Listen nicht melden.
+- **Beide geändert:** Wurde derselbe Eintrag zwischen zwei Abgleichen auf beiden Seiten umbenannt, gewinnt der Name auf der Liste.
+- **Erstes Koppeln:** Offene Einträge mit gleichem Text werden verbunden statt verdoppelt, und die Schreibweise der Liste gewinnt. Erledigte Notizen kommen nicht auf die Liste.
+- **Fälligkeiten** gehen auf die Liste, wenn sie welche kennt, als Datum mit Uhrzeit oder als Datum. Geänderte Fälligkeiten auf der Liste werden nicht übernommen.
+- **Privatsphäre:** Ist sie an, werden nur Notizen abgeglichen, die mit allen geteilt sind, denn jeder mit Zugriff auf die andere Liste sieht sie. Einträge von der Liste sind mit allen geteilt.
+- **Entkoppeln:** Ein geleertes Feld entkoppelt die Liste. Ihre Einträge bleiben, wo sie sind.
+- Jede Liste lässt sich nur mit einer Kategorie koppeln, und die eigenen Listen von Brainstorm stehen nicht zur Wahl.
+
 #### Brainstorm › Privatsphäre & Benutzer
 
 | Feld | Was es bewirkt |
@@ -751,6 +773,33 @@ Schreibt alle Kategorien und Ideen als Markdown-Dateien ins Dateisystem.
 | :--- | :--- | :--- |
 | `path` | Nein | Zielordner (Standard: /config/brainstorm). |
 
+### `brainstorm.export_json`
+
+Gibt die Ideen, die du sehen darfst, samt Kategorien, Icons und Farben als JSON zurück. Zum Sichern, für den Umzug auf ein anderes Home Assistant oder zum Teilen einer Kategorie.
+
+| Feld | Pflicht | Bedeutung |
+| :--- | :--- | :--- |
+| `category` | Nein | Nur diese Kategorie exportieren. Standard: alle Kategorien. |
+| `path` | Nein | Den Export zusätzlich in diese Datei schreiben, etwa `brainstorm/sicherung.json` (relativ zu `/config`). Der Name muss auf `.json` enden; `www`, `custom_components` und versteckte Ordner sind gesperrt. Mit Privatsphäre dürfen nur Admins Dateien schreiben. |
+
+```yaml
+action: brainstorm.export_json
+data:
+  path: brainstorm/sicherung.json
+response_variable: sicherung
+```
+
+### `brainstorm.import_json`
+
+Fügt die Ideen eines JSON-Exports hinzu, die es hier noch nicht gibt. Ideen mit vorhandener ID werden übersprungen, zweimal dieselbe Datei zu importieren ändert also nichts. Fehlende Kategorien werden angelegt, Icons und Farben übernommen, wo eine Kategorie noch keine hat.
+
+| Feld | Pflicht | Bedeutung |
+| :--- | :--- | :--- |
+| `data` | Eins von beiden | Die Antwort von `brainstorm.export_json`. |
+| `path` | Eins von beiden | Eine von `brainstorm.export_json` geschriebene Datei, relativ zu `/config`. Mit Privatsphäre dürfen nur Admins Dateien lesen. |
+
+Besitzer und Freigaben bleiben nur für Benutzer dieses Home Assistant erhalten, Besitzer nur, wenn ein Admin importiert. Sonst gehören die Ideen dem, der importiert. Die Antwort nennt, wie viele Ideen hinzugefügt (`added`) und übersprungen (`skipped`) wurden und welche Kategorien neu sind.
+
 ### `brainstorm.reorder_ideas`
 
 Aktualisiert die benutzerdefinierte Sortierreihenfolge der Notizen anhand einer Liste von IDs.
@@ -833,6 +882,7 @@ Weitere Beispiele für Assist und Alexa liegen im Ordner [`examples/`](examples/
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.6.31`** | 04.11.2026 | **To-do-Listen koppeln, JSON-Export und -Import:**<br>• **Eine Kategorie mit einer To-do-Liste koppeln**, etwa Bring!, Google Tasks oder Todoist, unter *Konfigurieren ➔ To-do-Listen koppeln*. Neue Einträge, Umbenennen und Abhaken gehen in beide Richtungen. Eine gelöschte Notiz entfernt ihren Eintrag, ein von der Liste entfernter Eintrag hakt seine Notiz ab. Fälligkeiten gehen auf die Liste, wenn sie welche kennt.<br>• **Sicher mit Privatsphäre:** Nur mit allen geteilte Notizen kommen auf die andere Liste. Entkoppeln lässt ihre Einträge stehen.<br>• **Neue Aktionen `brainstorm.export_json` und `brainstorm.import_json`:** Deine Ideen samt Kategorien, Icons und Farben als JSON, auf Wunsch als Datei. Der Import überspringt Vorhandenes, hält Unteraufgaben zusammen und behält Besitzer nur für Benutzer dieses Home Assistant.<br>• Tests für beides, gegen die eigene Einkaufsliste von Home Assistant. |
 | **`v1.6.30`** | 04.11.2026 | **Ausgesprochene Tage als Datum:**<br>• *„am zweiten Dezember um zwölf Uhr“*, *„den dritten November“* und *„am zweiten Zwölften“* werden jetzt als Termin verstanden (1. bis 31., Monat als Name oder als Ordnungszahl).<br>• Wendungen wie *„zum zweiten Mal“* bleiben Text, ein *„dreißigster Februar“* wird kein Termin. |
 | **`v1.6.29`** | 04.11.2026 | **🌿 in der Listenkarte, klarere KI-Fehler:**<br>• **🌿 neben ✨** an jeder Hauptaufgabe und im Menü bei langem Drücken: Die Unteraufgabe landet direkt darunter, in ihrer Kategorie. Enter speichert.<br>• **Überlastete KI:** Lehnt der Anbieter ab (etwa Googles *503 high demand*), fragt Brainstorm nach 2 Sekunden einmal nach. Ein Timeout wird nicht wiederholt, damit du nicht doppelt wartest.<br>• **Klare Meldung:** Ist die KI nicht erreichbar, sagen beide Karten das, statt zu behaupten, sie habe keine Unteraufgaben geliefert. Neuer WebSocket-Fehlercode `ai_unavailable`. |
 | **`v1.6.28`** | 04.11.2026 | **KI-Unteraufgaben auch in der Listenkarte:**<br>• **✨ neben ✎** an jeder Hauptaufgabe, die du ändern darfst, und **im Menü** bei langem Drücken oder Rechtsklick. Derselbe Dialog wie in der Mindmap: Haken weg, Texte ändern, übernehmen.<br>• Die neuen Unteraufgaben bekommen die Kategorie ihrer Hauptaufgabe. Unteraufgaben selbst haben kein ✨, weil die Liste eine Ebene Unteraufgaben zeigt.<br>• Nur sichtbar, wenn unter *Konfigurieren ➔ KI* eine KI-Aufgaben-Entität gewählt ist. |

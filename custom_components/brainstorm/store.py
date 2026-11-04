@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import os
 import re
@@ -47,7 +48,9 @@ from .const import (
     ATTR_TAGS,
     ATTR_RAW_TEXT,
     ATTR_TEXT,
+    ATTR_TODO_LINK,
     ATTR_UPDATED_AT,
+    ATTR_CALENDAR_SYNCED,
     CONF_ALLOWED_ECHOS,
     CONF_PRIVACY_ENABLED,
     CONF_PRIVACY_EXPORT,
@@ -69,6 +72,8 @@ from .const import (
     EVENT_IDEA_COMPLETED,
     EVENT_IDEA_DELETED,
     EVENT_IDEA_UPDATED,
+    JSON_EXPORT_FORMAT,
+    JSON_EXPORT_VERSION,
     OVERVIEW_ENTITY_ID,
     PRIORITY_HIGH,
     PRIORITY_LOW,
@@ -91,6 +96,7 @@ from .languages.common import CATEGORY_PROJECTS, LanguagePack
 if TYPE_CHECKING:
     from .alexa_skill import AlexaSkill
     from .reminders import ReminderManager
+    from .todo_sync import TodoSyncManager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -100,6 +106,20 @@ ICON_PATTERN = re.compile(r"^[a-zA-Z0-9_-]+:[a-zA-Z0-9_-]+$")
 EXPORT_BLOCKED_DIRS = {"custom_components", "www"}
 # How many deleted ideas can be brought back until the next start
 MAX_RESTORABLE = 50
+# Fields of an idea a JSON import takes over, everything else is left out
+IMPORT_FIELDS = (
+    ATTR_RAW_TEXT,
+    ATTR_SOURCE,
+    ATTR_DEVICE,
+    ATTR_RESULT,
+    ATTR_ASSIGNEE,
+    ATTR_TRIGGER,
+    ATTR_MAP_POS,
+    ATTR_CREATED_BY,
+)
+# Fields that belong to this Home Assistant and stay out of a JSON export
+EXPORT_SKIPPED_FIELDS = (ATTR_TODO_LINK, ATTR_CALENDAR_SYNCED, ATTR_ALEXA_NATIVE)
+IMPORT_STATUSES = ("active", "completed", "archived")
 
 
 def _validate_category_style(icon: str | None, color: str | None) -> None:
@@ -166,6 +186,7 @@ class BrainstormStore:
         self.integration_version: str | None = None
         self.alexa_skill: AlexaSkill | None = None
         self.reminders: ReminderManager | None = None
+        self.todo_sync: TodoSyncManager | None = None
 
     @property
     def last_action(self) -> dict[str, Any] | None:
@@ -901,8 +922,13 @@ class BrainstormStore:
         shares: dict[str, str] | None = None,
         language: str | None = None,
         spoken: bool | None = None,
+        verbatim: bool = False,
     ) -> dict[str, Any]:
-        """Add a new brainstorm idea."""
+        """Add a new brainstorm idea.
+
+        A verbatim idea keeps its text and category exactly as given, as an
+        item taken over from another list must not be renamed there.
+        """
         pack = self._pack(language)
         raw_check = (text or "").strip().lower()
         if not raw_check or raw_check in {
@@ -920,7 +946,9 @@ class BrainstormStore:
             translation_domain=DOMAIN, translation_key="invalid_text", translation_placeholders={"text": str(text)}
         )
 
-        if spoken is None:
+        if verbatim:
+            spoken = False
+        elif spoken is None:
             spoken = source not in TYPED_SOURCES
         if (
             spoken
@@ -938,9 +966,18 @@ class BrainstormStore:
         else:
             raw_text = text.strip()
 
-        clean_text, resolved_cat, parsed_tags, resolved_prio = self.parse_text_and_category(
-            text, category, priority, spoken=spoken, language=language
-        )
+        if verbatim:
+            resolved_cat = (category or "").strip() or self._fallback_category
+            if resolved_cat not in self._categories:
+                self._categories.append(resolved_cat)
+            clean_text, parsed_tags = raw_text, []
+            resolved_prio = self.parse_priority("", priority, language)[1]
+        else:
+            clean_text, resolved_cat, parsed_tags, resolved_prio = (
+                self.parse_text_and_category(
+                    text, category, priority, spoken=spoken, language=language
+                )
+            )
 
         all_tags = list(set((tags or []) + parsed_tags))
         now_iso = dt_util.now().isoformat()
@@ -1178,6 +1215,29 @@ class BrainstormStore:
         idea.update(fields)
         await self.async_save()
         self._notify_listeners()
+
+    async def async_set_links(self, links: dict[str, dict[str, Any] | None]) -> None:
+        """Store the to-do list items ideas are linked to, saving only once.
+
+        Nobody sees these links, so the cards and lists are not told about them.
+        """
+        changed = False
+        for idea_id, link in links.items():
+            idea = self._ideas.get(idea_id)
+            if idea is None or idea.get(ATTR_TODO_LINK) == link:
+                continue
+            if link is None:
+                idea.pop(ATTR_TODO_LINK, None)
+            else:
+                idea[ATTR_TODO_LINK] = link
+            changed = True
+        if changed:
+            await self.async_save()
+
+    def deleted_idea(self, idea_id: str) -> dict[str, Any] | None:
+        """Return an idea deleted since the start, as it would come back."""
+        deleted = self._deleted.get(idea_id)
+        return deleted["idea"] if deleted else None
 
     async def async_set_map_positions(
         self,
@@ -1645,3 +1705,226 @@ class BrainstormStore:
 
         await self.hass.async_add_executor_job(_do_export)
 
+
+    def export_json(
+        self, user_id: str | None = None, category: str | None = None
+    ) -> dict[str, Any]:
+        """Return the ideas this user may see, with their categories, as JSON data."""
+        ideas = [
+            {k: v for k, v in idea.items() if k not in EXPORT_SKIPPED_FIELDS}
+            for idea in self.visible_ideas(user_id)
+            if category is None
+            or (idea.get(ATTR_CATEGORY) or "").lower() == category.strip().lower()
+        ]
+        if category is None:
+            categories = list(self._categories)
+        else:
+            categories = [
+                c for c in self._categories if c.lower() == category.strip().lower()
+            ] or [category.strip()]
+        return {
+            "format": JSON_EXPORT_FORMAT,
+            "version": JSON_EXPORT_VERSION,
+            "integration_version": self.integration_version,
+            "exported_at": dt_util.now().isoformat(),
+            "categories": categories,
+            "category_icons": {
+                c: i for c, i in self._category_icons.items() if c in categories
+            },
+            "category_colors": {
+                c: v for c, v in self._category_colors.items() if c in categories
+            },
+            "ideas": ideas,
+        }
+
+    def resolve_json_path(self, path: str, must_exist: bool = False) -> str:
+        """Check a JSON file path like an export folder (blocking I/O)."""
+        target = Path(path)
+        if not target.is_absolute():
+            target = Path(self.hass.config.config_dir) / target
+        if target.suffix.lower() != ".json":
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="json_path_invalid",
+                translation_placeholders={"path": path},
+            )
+        self._validate_export_dir(str(target.parent))
+        if must_exist and not target.is_file():
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="json_file_missing",
+                translation_placeholders={"path": path},
+            )
+        return str(target)
+
+    async def async_write_json(self, path: str, data: dict[str, Any]) -> str:
+        """Write JSON export data to a file below the config folder."""
+        text = json.dumps(data, ensure_ascii=False, indent=2)
+
+        def _write() -> str:
+            target = self.resolve_json_path(path)
+            os.makedirs(os.path.dirname(target), exist_ok=True)
+            with open(target, "w", encoding="utf-8") as file:
+                file.write(text)
+            return target
+
+        return await self.hass.async_add_executor_job(_write)
+
+    async def async_read_json(self, path: str) -> Any:
+        """Read JSON export data from a file below the config folder."""
+
+        def _read() -> Any:
+            target = self.resolve_json_path(path, must_exist=True)
+            with open(target, encoding="utf-8") as file:
+                return json.load(file)
+
+        try:
+            return await self.hass.async_add_executor_job(_read)
+        except ValueError as err:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="json_invalid",
+                translation_placeholders={"error": str(err)},
+            ) from err
+
+    async def async_import_json(
+        self,
+        data: Any,
+        user_id: str | None,
+        known_users: set[str],
+        keep_owners: bool,
+    ) -> dict[str, Any]:
+        """Add the ideas of a JSON export that are not here yet.
+
+        Ideas whose ID exists are skipped, so importing the same file twice
+        changes nothing. Owners and shares only stay for users of this Home
+        Assistant, and owners only when the importing user may keep them.
+        """
+        if (
+            not isinstance(data, dict)
+            or data.get("format") != JSON_EXPORT_FORMAT
+            or not isinstance(data.get("ideas"), list)
+        ):
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="json_not_brainstorm"
+            )
+        if int(data.get("version") or 0) > JSON_EXPORT_VERSION:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="json_too_new",
+                translation_placeholders={"version": str(data.get("version"))},
+            )
+
+        added_categories: list[str] = []
+
+        def _ensure_category(name: Any) -> str | None:
+            if not isinstance(name, str) or not name.strip():
+                return None
+            name = name.strip()
+            for existing in self._categories:
+                if existing.lower() == name.lower():
+                    return existing
+            self._categories.append(name)
+            added_categories.append(name)
+            return name
+
+        for name in data.get("categories") or []:
+            _ensure_category(name)
+
+        now_iso = dt_util.now().isoformat()
+        new_ideas: dict[str, dict[str, Any]] = {}
+        skipped = 0
+        for item in data["ideas"]:
+            text = item.get(ATTR_TEXT) if isinstance(item, dict) else None
+            if not isinstance(text, str) or not text.strip():
+                skipped += 1
+                continue
+            idea_id = str(item.get(ATTR_ID) or "").strip() or uuid.uuid4().hex[:8]
+            if idea_id in self._ideas or idea_id in new_ideas:
+                skipped += 1
+                continue
+            category = _ensure_category(item.get(ATTR_CATEGORY)) or self._fallback_category
+            status = item.get(ATTR_STATUS)
+            due = dt_util.parse_datetime(str(item.get(ATTR_DUE) or ""))
+            owner = item.get(ATTR_OWNER)
+            if not (keep_owners and owner in known_users):
+                owner = user_id
+            raw_shares = item.get(ATTR_SHARES)
+            shares = {
+                who: level
+                for who, level in (
+                    raw_shares.items() if isinstance(raw_shares, dict) else []
+                )
+                if (who == SHARE_ALL or who in known_users)
+                and level in (SHARE_VIEW, SHARE_EDIT)
+            }
+            tags = item.get(ATTR_TAGS)
+            order = item.get(ATTR_ORDER)
+            idea: dict[str, Any] = {
+                ATTR_ID: idea_id,
+                ATTR_TEXT: text.strip(),
+                ATTR_CATEGORY: category,
+                ATTR_PRIORITY: self.parse_priority(
+                    "", str(item.get(ATTR_PRIORITY) or DEFAULT_PRIORITY)
+                )[1],
+                ATTR_PARENT_ID: item.get(ATTR_PARENT_ID) or None,
+                ATTR_ORDER: order if isinstance(order, int) else None,
+                ATTR_SOURCE: "manual",
+                ATTR_DEVICE: None,
+                ATTR_TAGS: [t for t in tags if isinstance(t, str)]
+                if isinstance(tags, list)
+                else [],
+                ATTR_STATUS: status if status in IMPORT_STATUSES else "active",
+                ATTR_CREATED_AT: str(item.get(ATTR_CREATED_AT) or now_iso),
+                ATTR_UPDATED_AT: str(item.get(ATTR_UPDATED_AT) or now_iso),
+                ATTR_DUE: due.isoformat() if due else None,
+                ATTR_ASSIGNEE: None,
+                ATTR_TRIGGER: None,
+                ATTR_OWNER: owner,
+                ATTR_SHARES: shares,
+            }
+            for field in IMPORT_FIELDS:
+                if item.get(field) is not None:
+                    idea[field] = item[field]
+            new_ideas[idea_id] = idea
+
+        for name, value in (data.get("category_icons") or {}).items():
+            if name in self._categories and name not in self._category_icons:
+                try:
+                    _validate_category_style(value, None)
+                except ServiceValidationError:
+                    continue
+                self._category_icons[name] = value
+        for name, value in (data.get("category_colors") or {}).items():
+            if name in self._categories and name not in self._category_colors:
+                try:
+                    _validate_category_style(None, value)
+                except ServiceValidationError:
+                    continue
+                self._category_colors[name] = value
+
+        self._ideas.update(new_ideas)
+        # A parent that came neither with the file nor exists here is dropped
+        for idea_id, idea in new_ideas.items():
+            parent = idea.get(ATTR_PARENT_ID)
+            if parent and (
+                parent not in self._ideas
+                or self._creates_parent_cycle(idea_id, parent)
+            ):
+                idea[ATTR_PARENT_ID] = None
+
+        if new_ideas or added_categories:
+            pack = self._pack()
+            self._last_action = {
+                "action": "imported",
+                "count": len(new_ideas),
+                "timestamp": now_iso,
+                "description": pack.msg("log_imported", count=len(new_ideas)),
+            }
+            await self.async_save()
+            self._notify_listeners()
+        return {
+            "added": len(new_ideas),
+            "skipped": skipped,
+            "categories_added": added_categories,
+        }

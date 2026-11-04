@@ -365,7 +365,7 @@ async def test_all_errors_and_aborts_have_a_text() -> None:
     errors = set(re.findall(r'errors\[[^\]]+\] = "(\w+)"', source))
     aborts = set(re.findall(r'reason="(\w+)"|AbortFlow\("(\w+)"\)', source))
     aborts = {reason for pair in aborts for reason in pair if reason}
-    assert errors == {"no_public_url", "owner_required"}
+    assert errors == {"no_public_url", "owner_required", "todo_sync_duplicate"}
     assert aborts == {"reconfigure_successful", "store_not_ready"}
     for name in ("strings.json", "translations/en.json", "translations/de.json"):
         texts = json.loads((root / name).read_text("utf-8"))

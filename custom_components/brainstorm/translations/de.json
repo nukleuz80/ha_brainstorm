@@ -358,6 +358,16 @@
           "go_back": "Kehrt zur vorigen Seite zurück, ohne dieses Formular zu speichern."
         }
       },
+      "todo_sync": {
+        "title": "Brainstorm › To-do-Listen koppeln",
+        "description": "Koppelt eine Kategorie mit einer To-do-Liste einer anderen Integration, etwa Bring!, Google Tasks, Todoist oder einer lokalen To-do-Liste. Beide bleiben gleich:\n\n• Aktive Notizen landen auf der Liste, und was dort dazukommt, wird zur Notiz.\n• Umbenennen und Abhaken auf einer Seite passiert auch auf der anderen.\n• Wird eine Notiz gelöscht, verschwindet ihr Eintrag. Wird ein Eintrag von der Liste entfernt, wird seine Notiz abgehakt.\n• Fälligkeiten gehen auf die Liste, wenn sie welche kennt.\n\nMit Privatsphäre werden nur Notizen abgeglichen, die mit allen geteilt sind, denn jeder mit Zugriff auf die andere Liste sieht sie. Ein geleertes Feld entkoppelt die Liste und lässt ihre Einträge stehen.",
+        "data": {
+          "go_back": "⬅️ Zurück ohne Speichern"
+        },
+        "data_description": {
+          "go_back": "Kehrt zur vorherigen Seite zurück, ohne dieses Formular zu speichern."
+        }
+      },
       "reminder_test": {
         "title": "Brainstorm › Erinnerungen › Kanäle testen",
         "description": "Brainstorm sendet jetzt eine echte Testnachricht. Ein Echo spricht dabei laut.\n\n{targets}",
@@ -407,7 +417,8 @@
     },
     "error": {
       "no_public_url": "Home Assistant hat keine öffentliche HTTPS-Adresse, zum Beispiel über Home Assistant Cloud. Der Skill kann es nicht erreichen, nutze daher den Modus Nativ.",
-      "owner_required": "Bitte wähle den Hauptbenutzer aus."
+      "owner_required": "Bitte wähle den Hauptbenutzer aus.",
+      "todo_sync_duplicate": "Jede To-do-Liste kann nur mit einer Kategorie gekoppelt werden."
     },
     "abort": {
       "store_not_ready": "Brainstorm wird gerade neu geladen. Bitte öffne die Einstellungen in ein paar Sekunden noch einmal."
@@ -530,6 +541,30 @@
     },
     "store_not_readable": {
       "message": "Brainstorm Hub konnte seine gespeicherten Daten nicht lesen: {error}"
+    },
+    "json_write_failed": {
+      "message": "Die JSON-Datei konnte nicht geschrieben werden: {error}"
+    },
+    "import_failed": {
+      "message": "Die JSON-Datei konnte nicht gelesen werden: {error}"
+    },
+    "json_path_invalid": {
+      "message": "{path} ist keine JSON-Datei. Der Dateiname muss auf .json enden."
+    },
+    "json_file_missing": {
+      "message": "Die Datei {path} gibt es nicht."
+    },
+    "json_invalid": {
+      "message": "Die Datei ist kein gültiges JSON: {error}"
+    },
+    "json_not_brainstorm": {
+      "message": "Das ist kein Export von Brainstorm Hub."
+    },
+    "json_too_new": {
+      "message": "Dieser Export hat die Formatversion {version}, die neuer ist als diese Version von Brainstorm Hub. Bitte aktualisiere zuerst Brainstorm Hub."
+    },
+    "json_source_missing": {
+      "message": "Gib zum Importieren entweder Daten oder einen Pfad an, nicht beides."
     }
   },
   "services": {
@@ -754,6 +789,34 @@
         "path": {
           "name": "Pfad",
           "description": "Zielordner (Standard: /config/brainstorm)."
+        }
+      }
+    },
+    "export_json": {
+      "name": "Als JSON exportieren",
+      "description": "Gibt die Ideen, die du sehen darfst, samt Kategorien als JSON zurück. Zum Sichern, für den Umzug auf ein anderes Home Assistant oder zum Teilen einer Kategorie.",
+      "fields": {
+        "category": {
+          "name": "Kategorie",
+          "description": "Nur diese Kategorie exportieren. Standard: alle Kategorien."
+        },
+        "path": {
+          "name": "Datei",
+          "description": "Den Export zusätzlich in diese Datei schreiben, etwa `brainstorm/sicherung.json` (relativ zu `/config`). Der Name muss auf .json enden."
+        }
+      }
+    },
+    "import_json": {
+      "name": "Aus JSON importieren",
+      "description": "Fügt die Ideen eines JSON-Exports hinzu, die es hier noch nicht gibt. Vorhandene Ideen werden übersprungen, zweimal dieselbe Datei zu importieren ändert also nichts.",
+      "fields": {
+        "data": {
+          "name": "Daten",
+          "description": "Die Antwort von `brainstorm.export_json`."
+        },
+        "path": {
+          "name": "Datei",
+          "description": "Eine von `brainstorm.export_json` geschriebene Datei, etwa `brainstorm/sicherung.json` (relativ zu `/config`)."
         }
       }
     },

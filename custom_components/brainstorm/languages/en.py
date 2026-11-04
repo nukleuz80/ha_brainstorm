@@ -988,6 +988,7 @@ MESSAGES: dict[str, str] = {
     "log_updated": "Idea changed",
     "log_deleted": "Idea deleted",
     "log_restored": "Idea restored",
+    "log_imported": "{count} ideas imported from JSON",
     "export_active": "## Active ideas",
     "export_none": "_No active ideas_",
     "export_done": "## Completed / Archived",

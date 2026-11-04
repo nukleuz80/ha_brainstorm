@@ -39,6 +39,12 @@
     "export_markdown": {
       "service": "mdi:file-export-outline"
     },
+    "export_json": {
+      "service": "mdi:code-json"
+    },
+    "import_json": {
+      "service": "mdi:database-import"
+    },
     "reorder_ideas": {
       "service": "mdi:sort"
     },

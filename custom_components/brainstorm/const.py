@@ -54,6 +54,8 @@ CONF_REVIEW_ENABLED = "review_enabled"
 CONF_REVIEW_WEEKDAY = "review_weekday"
 CONF_REVIEW_TIME = "review_time"
 CONF_REVIEW_DAYS = "review_days"
+# Category name -> to-do entity of another integration kept in step with it
+CONF_TODO_SYNC = "todo_sync"
 
 DEFAULT_CATEGORIES = [
     "Inbox",
@@ -151,6 +153,13 @@ ATTR_ECHOS = "echos"
 ATTR_URGENT_SENT = "urgent_sent"
 ATTR_ALEXA_NATIVE = "alexa_native"
 ATTR_CALENDAR_SYNCED = "calendar_synced"
+# Item of a linked to-do list, with what that list said at the last sync
+ATTR_TODO_LINK = "todo_link"
+# Ideas taken over from a linked to-do list
+SOURCE_TODO_SYNC = "todo_sync"
+# Format of the JSON export, raised when its layout changes incompatibly
+JSON_EXPORT_FORMAT = "brainstorm_hub"
+JSON_EXPORT_VERSION = 1
 
 SERVICE_REORDER_IDEAS = "reorder_ideas"
 SERVICE_SET_CATEGORY_STYLE = "set_category_style"

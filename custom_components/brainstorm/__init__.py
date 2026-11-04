@@ -54,6 +54,7 @@ from .llm import async_register_llm_api
 from .reminders import ReminderManager, build_reminder_request
 from .repairs import async_check_issues, async_delete_issues
 from .store import BrainstormConfigEntry, BrainstormStore, get_loaded_store
+from .todo_sync import TodoSyncManager
 from .websocket import async_register_commands
 
 _LOGGER = logging.getLogger(__name__)
@@ -70,6 +71,22 @@ SERVICE_ADD_CATEGORY = "add_category"
 SERVICE_REMOVE_CATEGORY = "remove_category"
 SERVICE_EXPORT_MARKDOWN = "export_markdown"
 SERVICE_GET_ANNOUNCEMENT = "get_announcement"
+SERVICE_EXPORT_JSON = "export_json"
+SERVICE_IMPORT_JSON = "import_json"
+
+SERVICE_EXPORT_JSON_SCHEMA = vol.Schema(
+    {
+        vol.Optional(ATTR_CATEGORY): cv.string,
+        vol.Optional("path"): cv.string,
+    }
+)
+
+SERVICE_IMPORT_JSON_SCHEMA = vol.Schema(
+    {
+        vol.Optional("data"): dict,
+        vol.Optional("path"): cv.string,
+    }
+)
 
 SERVICE_GET_ANNOUNCEMENT_SCHEMA = vol.Schema(
     {
@@ -218,6 +235,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) -
     store.reminders = reminders
     await reminders.async_start()
     entry.async_on_unload(reminders.async_stop)
+
+    todo_sync = TodoSyncManager(hass, store, {**entry.data, **entry.options})
+    store.todo_sync = todo_sync
+    await todo_sync.async_start()
+    entry.async_on_unload(todo_sync.async_stop)
 
     # Settings are checked on every setup, and changing them reloads the entry
     async_check_issues(hass, {**entry.data, **entry.options})
@@ -555,6 +577,52 @@ def _register_services(hass: HomeAssistant) -> None:
         ) from err
         return {"success": True}
 
+    async def handle_export_json(call: ServiceCall) -> dict[str, Any]:
+        """Return the ideas the caller may see as JSON, optionally into a file."""
+        store = _require_store(hass)
+        path = call.data.get("path")
+        data = store.export_json(call.context.user_id, call.data.get(ATTR_CATEGORY))
+        if not path:
+            return data
+        # A file can be read by everyone with access to the config folder
+        await _check_shared_setting_access(hass, store, call)
+        try:
+            written = await store.async_write_json(path, data)
+        except OSError as err:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="json_write_failed",
+                translation_placeholders={"error": str(err)},
+            ) from err
+        return {**data, "path": written}
+
+    async def handle_import_json(call: ServiceCall) -> dict[str, Any]:
+        """Add the ideas of a JSON export that are not here yet."""
+        store = _require_store(hass)
+        data = call.data.get("data")
+        path = call.data.get("path")
+        if (data is None) == (path is None):
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="json_source_missing"
+            )
+        user_id = call.context.user_id
+        user = await hass.auth.async_get_user(user_id) if user_id else None
+        is_admin = user_id is None or (user is not None and user.is_admin)
+        if path is not None:
+            await _check_shared_setting_access(hass, store, call)
+            try:
+                data = await store.async_read_json(path)
+            except OSError as err:
+                raise HomeAssistantError(
+                    translation_domain=DOMAIN,
+                    translation_key="import_failed",
+                    translation_placeholders={"error": str(err)},
+                ) from err
+        known_users = {u.id for u in await hass.auth.async_get_users()}
+        return await store.async_import_json(
+            data, user_id, known_users, keep_owners=is_admin
+        )
+
     async def handle_get_announcement(call: ServiceCall) -> dict[str, Any]:
         """Handle generating spoken announcement text."""
         store = _require_store(hass)
@@ -663,6 +731,22 @@ def _register_services(hass: HomeAssistant) -> None:
         SERVICE_REORDER_IDEAS,
         handle_reorder_ideas,
         schema=SERVICE_REORDER_IDEAS_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_EXPORT_JSON,
+        handle_export_json,
+        schema=SERVICE_EXPORT_JSON_SCHEMA,
+        supports_response=SupportsResponse.ONLY,
+    )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_IMPORT_JSON,
+        handle_import_json,
+        schema=SERVICE_IMPORT_JSON_SCHEMA,
         supports_response=SupportsResponse.OPTIONAL,
     )
 

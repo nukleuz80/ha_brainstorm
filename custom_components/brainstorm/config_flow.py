@@ -59,6 +59,7 @@ from .const import (
     CONF_HIDE_EMPTY_CATEGORIES,
     CONF_MARKDOWN_PATH,
     CONF_SMART_FORMATTING,
+    CONF_TODO_SYNC,
     CONF_VOICE_DUE,
     CONF_GLOSSARY,
     CONF_VOICE_MODE,
@@ -228,6 +229,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "alexa_skill": "Alexa-Spracheingabe & Skill",
                 "reminders": "Erinnerungen & Benachrichtigungen",
                 "ai": "KI",
+                "todo_sync": "To-do-Listen koppeln",
                 "privacy": "Privatsphäre & Benutzer",
                 "privacy_voice": "Echos & Apps Personen zuordnen",
                 "close": "✅ Fertig",
@@ -257,6 +259,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "alexa_skill": "Alexa Voice Input & Skill",
                 "reminders": "Reminders & Notifications",
                 "ai": "AI",
+                "todo_sync": "Link To-do Lists",
                 "privacy": "Privacy & Users",
                 "privacy_voice": "Assign Echos & Apps to People",
                 "close": "✅ Done",
@@ -1376,6 +1379,52 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                     ): selector.BooleanSelector(),
                 })
             ),
+        )
+
+    async def async_step_todo_sync(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Link categories to to-do lists of other integrations."""
+        if user_input is not None and user_input.pop(BACK_FIELD, False):
+            return await self.async_step_init()
+        store = await self._async_store()
+        categories = list(store.categories)
+        options = dict(self.config_entry.options or self.config_entry.data)
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            targets = {
+                category: entity
+                for category, entity in user_input.items()
+                if category in categories and entity
+            }
+            if len(set(targets.values())) < len(targets):
+                errors["base"] = "todo_sync_duplicate"
+            else:
+                options[CONF_TODO_SYNC] = targets
+                return await self._async_saved(options, "init")
+        current = user_input if user_input is not None else options.get(CONF_TODO_SYNC) or {}
+        # Its own lists would mirror Brainstorm into itself
+        own_lists = [
+            entity_id
+            for entity_id, source in entity_sources(self.hass).items()
+            if source.get("domain") == DOMAIN and entity_id.startswith("todo.")
+        ]
+        field = selector.EntitySelector(
+            selector.EntitySelectorConfig(domain="todo", exclude_entities=own_lists)
+        )
+        return self.async_show_form(
+            step_id="todo_sync",
+            data_schema=vol.Schema(
+                _with_back(
+                    {
+                        vol.Optional(
+                            category, description=_suggested(current, category)
+                        ): field
+                        for category in categories
+                    }
+                )
+            ),
+            errors=errors,
         )
 
     async def async_step_reminder_extras(

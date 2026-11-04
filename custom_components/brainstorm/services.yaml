@@ -245,6 +245,28 @@ export_markdown:
       selector:
         text:
 
+export_json:
+  fields:
+    category:
+      required: false
+      selector:
+        text:
+    path:
+      required: false
+      selector:
+        text:
+
+import_json:
+  fields:
+    data:
+      required: false
+      selector:
+        object:
+    path:
+      required: false
+      selector:
+        text:
+
 reorder_ideas:
   fields:
     idea_ids:

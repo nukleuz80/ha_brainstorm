@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.6.30-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.6.31-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -105,6 +105,10 @@ Brainstorm Hub turns every **Amazon Echo** device in your home into an instant, 
   - Plug-and-play with **Obsidian**, **Logseq**, or **Nextcloud Notes**.
 - 🛠️ **Home Assistant To-do Platform:**
   - Synchronizes all active categories as native Home Assistant To-do entities (`todo.brainstorm_hub_*`).
+- 🔁 **Linked to-do lists (v1.6.31):**
+  - Link a category to a to-do list of another integration, such as **Bring!**, **Google Tasks**, **Todoist** or a local to-do list. New entries, renames and ticks travel both ways, so *Einkauf* in Brainstorm and your shopping app stay the same. See *Configure ➔ Link To-do Lists*.
+- 💾 **JSON export and import (v1.6.31):**
+  - `brainstorm.export_json` returns your ideas with categories, icons and colors as JSON, optionally into a file. `brainstorm.import_json` brings them back, on the same or another Home Assistant, and skips what exists already.
 
 ---
 
@@ -152,8 +156,8 @@ HACS only installs the integration, so continue with [Install the cards](#instal
 
 1. Copy `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` and `www/brainstorm-i18n.js` from the release to `/config/www/`. The third file holds the texts and needs no resource entry.
 2. Add both under **Settings ➔ Dashboards ➔ Resources** as **JavaScript module**:
-   - `/local/brainstorm-card.js?v=1.6.30`
-   - `/local/brainstorm-mindmap-card.js?v=1.6.30`
+   - `/local/brainstorm-card.js?v=1.6.31`
+   - `/local/brainstorm-mindmap-card.js?v=1.6.31`
 3. Reload the page in your browser.
 
 ### Removing the Integration
@@ -349,9 +353,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.6.30
+  - url: /local/brainstorm-card.js?v=1.6.31
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.6.30
+  - url: /local/brainstorm-mindmap-card.js?v=1.6.31
     type: module
 ```
 
@@ -559,6 +563,24 @@ Brainstorm uses an AI task entity of Home Assistant, such as Google Gemini, Open
 | Improve spoken entries with AI | Each spoken entry is stored first and improved a few seconds later. The result is dropped if it adds words or changes a negation. The text is sent to the provider of the chosen AI. |
 | Shorten the briefing and review with AI | The morning briefing and weekly review of the reminders are shortened. Your ideas are sent to the provider of the chosen AI. |
 
+#### Brainstorm › Link To-do Lists
+
+One field per category. Pick a to-do list of another integration, such as Bring!, Google Tasks, Todoist or a local to-do list, and both stay the same:
+
+| What happens | On the list | In Brainstorm |
+| :--- | :--- | :--- |
+| Something is added | becomes a note in the category | an active note is added to the list |
+| Something is renamed or ticked off | the note follows | the item follows |
+| Something is deleted | removing an item ticks off its note | deleting a note removes its item |
+
+- **When:** at once after a change in Brainstorm or a new item on the list, and every 5 minutes for renames, which lists do not announce.
+- **Both changed:** If the same entry was renamed on both sides between two syncs, the name on the list wins.
+- **First link:** Open items with the same text are linked instead of doubled, and the spelling on the list wins. Notes that are done already are not added.
+- **Due times** go to the list if it supports them, as a date and time or as a date. Changes of due dates on the list are not taken over.
+- **Privacy:** With privacy on, only notes shared with everyone are synced, as everyone with access to the other list sees them. Items from the list are shared with everyone.
+- **Unlinking:** Clearing a field unlinks the list. Its items stay where they are.
+- Each list can be linked to one category only, and Brainstorm's own lists cannot be chosen.
+
 #### Brainstorm › Privacy & Users
 
 | Field | What it does |
@@ -701,6 +723,33 @@ Writes all categories and ideas as Markdown files.
 | :--- | :--- | :--- |
 | `path` | No | Target folder. Default: `/config/brainstorm`. |
 
+### `brainstorm.export_json`
+
+Returns the ideas you may see, with their categories, icons and colors, as JSON. Use it as a backup, to move to another Home Assistant or to share a category.
+
+| Field | Required | Meaning |
+| :--- | :--- | :--- |
+| `category` | No | Only export this category. Default: all categories. |
+| `path` | No | Also write the export to this file, such as `brainstorm/backup.json` (relative to `/config`). The name must end in `.json`; `www`, `custom_components` and hidden folders are refused. With privacy on, only admins may write files. |
+
+```yaml
+action: brainstorm.export_json
+data:
+  path: brainstorm/backup.json
+response_variable: backup
+```
+
+### `brainstorm.import_json`
+
+Adds the ideas of a JSON export that are not here yet. Ideas whose ID exists are skipped, so importing the same file twice changes nothing. Missing categories are created, and icons and colors are taken over where a category has none.
+
+| Field | Required | Meaning |
+| :--- | :--- | :--- |
+| `data` | One of both | The response of `brainstorm.export_json`. |
+| `path` | One of both | A file written by `brainstorm.export_json`, relative to `/config`. With privacy on, only admins may read files. |
+
+Owners and shares only stay for users of this Home Assistant, and owners only when an admin imports. Otherwise the ideas belong to whoever imports them. The response says how many ideas were `added` and `skipped`, and which categories were added.
+
 ### `brainstorm.reorder_ideas`
 
 Saves the custom order of the ideas.
@@ -783,6 +832,7 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.6.31`** | 2026-11-04 | **Linked to-do lists, JSON export and import:**<br>• **Link a category to a to-do list** of another integration under *Configure ➔ Link To-do Lists*, such as Bring!, Google Tasks or Todoist. New entries, renames and ticks go both ways. Deleting a note removes its item, and an item removed from the list ticks off its note. Due times go to the list if it supports them.<br>• **Safe with privacy:** Only notes shared with everyone reach the other list. Unlinking leaves its items alone.<br>• **New actions `brainstorm.export_json` and `brainstorm.import_json`:** Your ideas with categories, icons and colors as JSON, optionally as a file. The import skips what exists, keeps subtasks together and only keeps owners for users of this Home Assistant.<br>• Tests for both, against Home Assistant's own shopping list. |
 | **`v1.6.30`** | 2026-11-04 | **Spoken ordinal days in German:**<br>• *„am zweiten Dezember um zwölf Uhr“*, *„den dritten November“* and *„am zweiten Zwölften“* are now understood as due dates (1st to 31st, with the month as a name or as an ordinal).<br>• Phrases like *„zum zweiten Mal“* stay text, and a 30th of February does not become a due date. |
 | **`v1.6.29`** | 2026-11-04 | **🌿 in the list card, clearer AI errors:**<br>• **🌿 next to ✨** on every main task, and in the long-press menu: a subtask lands right under it, in its category. Enter saves.<br>• **An overloaded AI:** If the provider refuses (for example Google's *503 high demand*), Brainstorm asks once more after 2 seconds. A timeout is not repeated, so you do not wait twice.<br>• **Clear message:** If the AI cannot be reached, both cards say so instead of claiming that it gave no subtasks. New WebSocket error code `ai_unavailable`. |
 | **`v1.6.28`** | 2026-11-04 | **AI subtasks in the list card too:**<br>• **✨ next to ✎** on every main task you may edit, and **in the menu** on a long press or right click. The same dialog as on the mind map: untick, edit, then add.<br>• The new subtasks get the category of their main task. Subtasks themselves have no ✨, since the list shows one level of subtasks.<br>• Only shown when an AI task entity is set under *Configure ➔ AI*. |

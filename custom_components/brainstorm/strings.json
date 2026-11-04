@@ -358,6 +358,16 @@
           "go_back": "Returns to the previous page without saving this form."
         }
       },
+      "todo_sync": {
+        "title": "Brainstorm › Link To-do Lists",
+        "description": "Link a category to a to-do list of another integration, such as Bring!, Google Tasks, Todoist or a local to-do list. Both stay in step:\n\n• Active notes are added to the list, and items added there become notes.\n• Renaming or ticking off on one side does the same on the other.\n• Deleting a note removes its item. An item removed from the list ticks off its note.\n• Due times go to the list if it supports them.\n\nWith privacy on, only notes shared with everyone are synced, as everyone with access to the other list sees them. Clearing a field unlinks the list and leaves its items alone.",
+        "data": {
+          "go_back": "⬅️ Back without saving"
+        },
+        "data_description": {
+          "go_back": "Returns to the previous page without saving this form."
+        }
+      },
       "reminder_test": {
         "title": "Brainstorm › Reminders › Test Channels",
         "description": "Brainstorm will now send a real test message. An Echo speaks out loud.\n\n{targets}",
@@ -407,7 +417,8 @@
     },
     "error": {
       "no_public_url": "Home Assistant has no public HTTPS address, for example through Home Assistant Cloud. The skill cannot reach it, so use Native mode.",
-      "owner_required": "Please choose the main user."
+      "owner_required": "Please choose the main user.",
+      "todo_sync_duplicate": "Each to-do list can only be linked to one category."
     },
     "abort": {
       "store_not_ready": "Brainstorm is reloading. Please open the settings again in a few seconds."
@@ -530,6 +541,30 @@
     },
     "store_not_readable": {
       "message": "Brainstorm Hub could not read its stored data: {error}"
+    },
+    "json_write_failed": {
+      "message": "The JSON file could not be written: {error}"
+    },
+    "import_failed": {
+      "message": "The JSON file could not be read: {error}"
+    },
+    "json_path_invalid": {
+      "message": "{path} is not a JSON file. The file name must end in .json."
+    },
+    "json_file_missing": {
+      "message": "The file {path} does not exist."
+    },
+    "json_invalid": {
+      "message": "The file is not valid JSON: {error}"
+    },
+    "json_not_brainstorm": {
+      "message": "This is not an export of Brainstorm Hub."
+    },
+    "json_too_new": {
+      "message": "This export has format version {version}, which is newer than this version of Brainstorm Hub. Please update Brainstorm Hub first."
+    },
+    "json_source_missing": {
+      "message": "Give either data or a path to import, not both."
     }
   },
   "services": {
@@ -754,6 +789,34 @@
         "path": {
           "name": "Path",
           "description": "Target folder. Default: `/config/brainstorm`."
+        }
+      }
+    },
+    "export_json": {
+      "name": "Export as JSON",
+      "description": "Returns the ideas you may see, with their categories, as JSON. Use it as a backup, to move to another Home Assistant or to share a category.",
+      "fields": {
+        "category": {
+          "name": "Category",
+          "description": "Only export this category. Default: all categories."
+        },
+        "path": {
+          "name": "File",
+          "description": "Also write the export to this file, such as `brainstorm/backup.json` (relative to `/config`). The name must end in .json."
+        }
+      }
+    },
+    "import_json": {
+      "name": "Import from JSON",
+      "description": "Adds the ideas of a JSON export that are not here yet. Ideas that exist already are skipped, so importing the same file twice changes nothing.",
+      "fields": {
+        "data": {
+          "name": "Data",
+          "description": "The response of `brainstorm.export_json`."
+        },
+        "path": {
+          "name": "File",
+          "description": "A file written by `brainstorm.export_json`, such as `brainstorm/backup.json` (relative to `/config`)."
         }
       }
     },
