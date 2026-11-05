@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.7.6-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.7.7-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -159,8 +159,8 @@ HACS only installs the integration, so continue with [Install the cards](#instal
 
 1. Copy `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` and `www/brainstorm-i18n.js` from the release to `/config/www/`. The third file holds the texts and needs no resource entry.
 2. Add both under **Settings ➔ Dashboards ➔ Resources** as **JavaScript module**:
-   - `/local/brainstorm-card.js?v=1.7.6`
-   - `/local/brainstorm-mindmap-card.js?v=1.7.6`
+   - `/local/brainstorm-card.js?v=1.7.7`
+   - `/local/brainstorm-mindmap-card.js?v=1.7.7`
 3. Reload the page in your browser.
 
 ### Removing the Integration
@@ -356,9 +356,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.7.6
+  - url: /local/brainstorm-card.js?v=1.7.7
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.7.6
+  - url: /local/brainstorm-mindmap-card.js?v=1.7.7
     type: module
 ```
 
@@ -612,6 +612,29 @@ Only shown when the [Bring!](https://www.home-assistant.io/integrations/bring/) 
 - **Amounts:** The specification of a Bring item, such as *1.5 l*, is kept with the note (field `spec`).
 - **List notes** take their name from Bring. A deleted list note comes back with its items, and the note of a list that is no longer synced is archived.
 - **Fast:** Changes by others are picked up through Bring's activity events, and everything is compared every 5 minutes as well.
+
+#### Brainstorm › Reminders › Lock times per Echo
+
+Keeps single Echos silent for Brainstorm at set times, such as nights in the children's room (v1.7.7). Up to three lock times, each for one or more Echos, and they may span midnight.
+
+| Field | What it does |
+| :--- | :--- |
+| Echos 1 | The Echos of lock time 1. Empty removes it. |
+| From 1 | Start of lock time 1. |
+| Until 1 | End of lock time 1. Earlier than the start means the next morning. |
+| Also Do not disturb 1 | Switches Do not disturb of these Echos on at the start and off at the end, so Alexa itself is silent too. Needs Alexa Media Player. |
+| Echos 2 | The Echos of lock time 2. Empty removes it. |
+| From 2 | Start of lock time 2. |
+| Until 2 | End of lock time 2. Earlier than the start means the next morning. |
+| Also Do not disturb 2 | Switches Do not disturb of these Echos on at the start and off at the end, so Alexa itself is silent too. Needs Alexa Media Player. |
+| Echos 3 | The Echos of lock time 3. Empty removes it. |
+| From 3 | Start of lock time 3. |
+| Until 3 | End of lock time 3. Earlier than the start means the next morning. |
+| Also Do not disturb 3 | Switches Do not disturb of these Echos on at the start and off at the end, so Alexa itself is silent too. Needs Alexa Media Player. |
+
+- **Other Echos keep speaking:** A reminder still goes to the Echos of the reminder that are not locked.
+- **Phone as fallback:** If no Echo is left, the reminder goes to the phone right away instead of after the waiting time.
+- **Test:** *🧪 Test channels now* speaks in a lock time too, as you start it yourself.
 
 #### Brainstorm › 🔋 Batteries
 
@@ -890,6 +913,7 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.7.7`** | 2026-11-05 | **Lock times per Echo:** under *Reminders ➔ Lock times per Echo*, up to three lock times keep chosen Echos silent for Brainstorm, e.g. nights in the children's room. Other Echos still speak, and with none left the reminder goes to the phone at once. Optionally Do not disturb is switched on and off with the lock time. |
 | **`v1.7.6`** | 2026-11-05 | **Battery tasks per device:** extra sensors for the same battery (e.g. Battery Notes) no longer make a second task, and the task only ticks itself off once no sensor of the device reports weak. Phones and tablets of the Companion app are left out unless switched on, and leaving out one sensor leaves out its device. |
 | **`v1.7.5`** | 2026-11-05 | **Battery tasks:** a battery below the threshold (default 20 %) or reporting weak creates a task like *Replace the battery: Motion sensor hall (18 %)*, which ticks itself off once the battery is replaced. Set up under *Configure ➔ 🔋 Batteries*, with batteries to leave out. |
 | **`v1.7.4`** | 2026-11-05 | **Fold subtasks in the list:** ▾ with the number of subtasks on every main task folds them away, ▸ unfolds them. Each browser remembers it per card. |

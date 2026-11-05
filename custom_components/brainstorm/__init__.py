@@ -52,6 +52,7 @@ from .const import (
     SHARE_VIEW,
     VOICE_MODE_NATIVE,
 )
+from .echo_locks import EchoLockManager
 from .llm import async_register_llm_api
 from .reminders import ReminderManager, build_reminder_request
 from .repairs import async_check_issues, async_delete_issues
@@ -254,6 +255,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) -
     battery = BatteryWatcher(hass, store, {**entry.data, **entry.options})
     await battery.async_start()
     entry.async_on_unload(battery.async_stop)
+
+    echo_locks = EchoLockManager(hass, {**entry.data, **entry.options})
+    await echo_locks.async_start()
+    entry.async_on_unload(echo_locks.async_stop)
 
     # Settings are checked on every setup, and changing them reloads the entry
     async_check_issues(hass, {**entry.data, **entry.options})

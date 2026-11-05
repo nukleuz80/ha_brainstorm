@@ -172,7 +172,8 @@
           "reminder_lists": "{status_lists}",
           "reminder_places": "{status_places}",
           "reminder_persons": "{status_persons}",
-          "reminder_extras": "{status_extras}"
+          "reminder_extras": "{status_extras}",
+          "reminder_locks": "{status_locks}"
         },
         "menu_options": {
           "reminder_general": "Ein/Aus & Kanäle",
@@ -181,6 +182,7 @@
           "reminder_places": "Orte & Heimkommen",
           "reminder_persons": "Personen",
           "reminder_extras": "Kalender & Alexa-Erinnerungen",
+          "reminder_locks": "Sperrzeiten pro Echo",
           "reminder_test": "🧪 Kanäle jetzt testen",
           "init": "⬅️ Zurück",
           "close": "✅ Fertig"
@@ -455,6 +457,40 @@
           "battery_phones": "Geräte der Companion-App werden täglich geladen und bleiben deshalb außen vor, außer du schaltest es hier ein.",
           "go_back": "Kehrt zur vorherigen Seite zurück, ohne dieses Formular zu speichern."
         }
+      },
+      "reminder_locks": {
+        "title": "Brainstorm › Erinnerungen › Sperrzeiten pro Echo",
+        "description": "Echos in ihrer Sperrzeit bleiben für Brainstorm still: Andere Echos einer Erinnerung sprechen weiter, und ist keines mehr übrig, geht sie sofort aufs Handy. Bis zu drei Sperrzeiten, jede für ein oder mehrere Echos. Eine Sperrzeit darf über Mitternacht gehen. Echos leeren entfernt eine Sperrzeit.",
+        "data": {
+          "lock_1_echos": "Echos 1",
+          "lock_1_start": "Von 1",
+          "lock_1_end": "Bis 1",
+          "lock_1_dnd": "Auch „Nicht stören“ 1",
+          "lock_2_echos": "Echos 2",
+          "lock_2_start": "Von 2",
+          "lock_2_end": "Bis 2",
+          "lock_2_dnd": "Auch „Nicht stören“ 2",
+          "lock_3_echos": "Echos 3",
+          "lock_3_start": "Von 3",
+          "lock_3_end": "Bis 3",
+          "lock_3_dnd": "Auch „Nicht stören“ 3",
+          "go_back": "⬅️ Zurück ohne Speichern"
+        },
+        "data_description": {
+          "lock_1_echos": "Die Echos dieser Sperrzeit. Leer entfernt sie.",
+          "lock_1_start": "Beginn der Sperrzeit.",
+          "lock_1_end": "Ende der Sperrzeit. Früher als der Beginn heißt am nächsten Morgen.",
+          "lock_1_dnd": "Schaltet „Nicht stören“ dieser Echos zu Beginn ein und am Ende aus, dann ist auch Alexa selbst still. Braucht Alexa Media Player.",
+          "lock_2_echos": "Die Echos dieser Sperrzeit. Leer entfernt sie.",
+          "lock_2_start": "Beginn der Sperrzeit.",
+          "lock_2_end": "Ende der Sperrzeit. Früher als der Beginn heißt am nächsten Morgen.",
+          "lock_2_dnd": "Schaltet „Nicht stören“ dieser Echos zu Beginn ein und am Ende aus, dann ist auch Alexa selbst still. Braucht Alexa Media Player.",
+          "lock_3_echos": "Die Echos dieser Sperrzeit. Leer entfernt sie.",
+          "lock_3_start": "Beginn der Sperrzeit.",
+          "lock_3_end": "Ende der Sperrzeit. Früher als der Beginn heißt am nächsten Morgen.",
+          "lock_3_dnd": "Schaltet „Nicht stören“ dieser Echos zu Beginn ein und am Ende aus, dann ist auch Alexa selbst still. Braucht Alexa Media Player.",
+          "go_back": "Kehrt zur vorherigen Seite zurück, ohne dieses Formular zu speichern."
+        }
       }
     },
     "error": {
@@ -462,7 +498,8 @@
       "owner_required": "Bitte wähle den Hauptbenutzer aus.",
       "todo_sync_duplicate": "Jede To-do-Liste kann nur mit einer Kategorie gekoppelt werden.",
       "bring_category_missing": "Bitte wähle oder tippe eine Kategorie.",
-      "battery_category_missing": "Bitte wähle oder tippe eine Kategorie."
+      "battery_category_missing": "Bitte wähle oder tippe eine Kategorie.",
+      "lock_time_missing": "Bitte beide Zeiten für diese Echos setzen, und zwar verschieden."
     },
     "abort": {
       "store_not_ready": "Brainstorm wird gerade neu geladen. Bitte öffne die Einstellungen in ein paar Sekunden noch einmal."

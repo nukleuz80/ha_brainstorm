@@ -29,6 +29,7 @@ from .const import (
     CONF_BATTERY_PHONES,
     CONF_BATTERY_THRESHOLD,
     CONF_BRING_CATEGORY,
+    CONF_ECHO_LOCKS,
     CONF_BRING_DEFAULT_LIST,
     CONF_BRING_DONE_DAYS,
     CONF_BRING_ENABLED,
@@ -99,6 +100,7 @@ from .const import (
 )
 
 from .bring import bring_lists
+from .echo_locks import LOCK_DND, LOCK_ECHOS, LOCK_END, LOCK_SLOTS, LOCK_START
 from .languages import get_pack
 from .reminders import format_due, phone_service_for
 from .store import BrainstormStore, get_loaded_store
@@ -259,6 +261,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "reminder_places": "Orte & Heimkommen",
                 "reminder_persons": "Personen",
                 "reminder_extras": "Kalender & Alexa-Erinnerungen",
+                "reminder_locks": "Sperrzeiten pro Echo",
                 "reminder_test": "🧪 Kanäle jetzt testen",
                 "init": "⬅️ Zurück",
                 "close": "✅ Fertig",
@@ -291,6 +294,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "reminder_places": "Places & Coming Home",
                 "reminder_persons": "People",
                 "reminder_extras": "Calendar & Alexa Reminders",
+                "reminder_locks": "Lock times per Echo",
                 "reminder_test": "🧪 Test channels now",
                 "init": "⬅️ Back",
                 "close": "✅ Done",
@@ -909,7 +913,20 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             else ""
         )
         rules = len(options.get(CONF_LIST_RULES) or {})
+        locks = options.get(CONF_ECHO_LOCKS) or []
         sections = {
+            "status_locks": [
+                item(
+                    bool(locks),
+                    "Sperrzeiten",
+                    "Lock times",
+                    ", ".join(
+                        f"{str(lock[LOCK_START])[:5]}–{str(lock[LOCK_END])[:5]}"
+                        + (" 🔕" if lock.get(LOCK_DND) else "")
+                        for lock in locks
+                    ),
+                )
+            ],
             "status_general": [
                 item(
                     options.get(CONF_REMINDERS_ENABLED, True),
@@ -1685,6 +1702,76 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 owner, category, {SHARE_ALL: SHARE_EDIT}
             )
         return category
+
+    async def async_step_reminder_locks(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Keep single Echos silent at set times, like nights for the children."""
+        if user_input is not None and user_input.pop(BACK_FIELD, False):
+            return await self.async_step_reminders()
+        errors: dict[str, str] = {}
+        options = dict(self.config_entry.options or self.config_entry.data)
+        if user_input is not None:
+            locks: list[dict[str, Any]] = []
+            for slot in range(1, LOCK_SLOTS + 1):
+                echos = list(user_input.get(f"lock_{slot}_echos") or [])
+                start = user_input.get(f"lock_{slot}_start")
+                end = user_input.get(f"lock_{slot}_end")
+                if not echos:
+                    continue
+                if not start or not end or start == end:
+                    errors[f"lock_{slot}_echos"] = "lock_time_missing"
+                    continue
+                locks.append(
+                    {
+                        LOCK_ECHOS: echos,
+                        LOCK_START: start,
+                        LOCK_END: end,
+                        LOCK_DND: bool(user_input.get(f"lock_{slot}_dnd")),
+                    }
+                )
+            if not errors:
+                options[CONF_ECHO_LOCKS] = locks
+                return await self._async_saved(options, "reminders")
+            current: dict[str, Any] = dict(user_input)
+        else:
+            current = {}
+            for slot, lock in enumerate(options.get(CONF_ECHO_LOCKS) or [], start=1):
+                current[f"lock_{slot}_echos"] = lock.get(LOCK_ECHOS)
+                current[f"lock_{slot}_start"] = lock.get(LOCK_START)
+                current[f"lock_{slot}_end"] = lock.get(LOCK_END)
+                current[f"lock_{slot}_dnd"] = lock.get(LOCK_DND, False)
+        schema: dict[Any, Any] = {}
+        for slot in range(1, LOCK_SLOTS + 1):
+            schema[
+                vol.Optional(
+                    f"lock_{slot}_echos",
+                    description=_suggested(current, f"lock_{slot}_echos"),
+                )
+            ] = _echo_field(multiple=True)
+            schema[
+                vol.Optional(
+                    f"lock_{slot}_start",
+                    description=_suggested(current, f"lock_{slot}_start"),
+                )
+            ] = selector.TimeSelector()
+            schema[
+                vol.Optional(
+                    f"lock_{slot}_end",
+                    description=_suggested(current, f"lock_{slot}_end"),
+                )
+            ] = selector.TimeSelector()
+            schema[
+                vol.Required(
+                    f"lock_{slot}_dnd",
+                    default=bool(current.get(f"lock_{slot}_dnd", False)),
+                )
+            ] = selector.BooleanSelector()
+        return self.async_show_form(
+            step_id="reminder_locks",
+            data_schema=vol.Schema(_with_back(schema)),
+            errors=errors,
+        )
 
     async def async_step_reminder_extras(
         self, user_input: dict[str, Any] | None = None

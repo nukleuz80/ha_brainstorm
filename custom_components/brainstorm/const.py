@@ -64,6 +64,7 @@ CONF_BRING_DEFAULT_LIST = "bring_default_list"
 CONF_BRING_SHARE_ALL = "bring_share_all"
 CONF_BRING_DONE_DAYS = "bring_done_days"
 DEFAULT_BRING_DONE_DAYS = 3
+CONF_ECHO_LOCKS = "echo_locks"
 CONF_BATTERY_ENABLED = "battery_enabled"
 CONF_BATTERY_THRESHOLD = "battery_threshold"
 CONF_BATTERY_CATEGORY = "battery_category"

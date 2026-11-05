@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.7.6-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.7.7-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -179,8 +179,8 @@ HACS installiert nur die Integration. Die Karten kopierst du anschließend wie u
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` und `www/brainstorm-i18n.js` in `/config/www/`. Die dritte Datei enthält die Texte und braucht keinen Ressourcen-Eintrag.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.7.6` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.7.6` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.7.7` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.7.7` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ### Integration entfernen
@@ -663,6 +663,29 @@ Erscheint nur, wenn die Integration [Bring!](https://www.home-assistant.io/integ
 - **Listen-Notizen** übernehmen ihren Namen von Bring. Eine gelöschte Listen-Notiz kommt mit ihren Artikeln zurück, die Notiz einer nicht mehr abgeglichenen Liste wird archiviert.
 - **Schnell:** Änderungen anderer werden über die Aktivitäts-Ereignisse von Bring erkannt, zusätzlich wird alle 5 Minuten verglichen.
 
+#### Brainstorm › Erinnerungen › Sperrzeiten pro Echo
+
+Hält einzelne Echos zu festen Zeiten für Brainstorm still, etwa nachts im Kinderzimmer (v1.7.7). Bis zu drei Sperrzeiten, jede für ein oder mehrere Echos, auch über Mitternacht.
+
+| Feld | Was es bewirkt |
+| :--- | :--- |
+| Echos 1 | Die Echos von Sperrzeit 1. Leer entfernt sie. |
+| Von 1 | Beginn von Sperrzeit 1. |
+| Bis 1 | Ende von Sperrzeit 1. Früher als der Beginn heißt am nächsten Morgen. |
+| Auch „Nicht stören“ 1 | Schaltet „Nicht stören“ dieser Echos zu Beginn ein und am Ende aus, dann ist auch Alexa selbst still. Braucht Alexa Media Player. |
+| Echos 2 | Die Echos von Sperrzeit 2. Leer entfernt sie. |
+| Von 2 | Beginn von Sperrzeit 2. |
+| Bis 2 | Ende von Sperrzeit 2. Früher als der Beginn heißt am nächsten Morgen. |
+| Auch „Nicht stören“ 2 | Schaltet „Nicht stören“ dieser Echos zu Beginn ein und am Ende aus, dann ist auch Alexa selbst still. Braucht Alexa Media Player. |
+| Echos 3 | Die Echos von Sperrzeit 3. Leer entfernt sie. |
+| Von 3 | Beginn von Sperrzeit 3. |
+| Bis 3 | Ende von Sperrzeit 3. Früher als der Beginn heißt am nächsten Morgen. |
+| Auch „Nicht stören“ 3 | Schaltet „Nicht stören“ dieser Echos zu Beginn ein und am Ende aus, dann ist auch Alexa selbst still. Braucht Alexa Media Player. |
+
+- **Andere Echos sprechen weiter:** Eine Erinnerung geht weiter an die Echos der Erinnerung, die nicht gesperrt sind.
+- **Handy als Ersatz:** Ist kein Echo mehr übrig, geht die Erinnerung sofort aufs Handy statt erst nach der Wartezeit.
+- **Test:** *🧪 Kanäle jetzt testen* spricht auch in einer Sperrzeit, weil du ihn selbst startest.
+
 #### Brainstorm › 🔋 Batterien
 
 Macht aus schwachen Batterien Aufgaben (v1.7.5). Jeder Batterie-Sensor zählt: ein Stand in Prozent oder ein Sensor, der nur „Batterie schwach“ meldet.
@@ -940,6 +963,7 @@ Weitere Beispiele für Assist und Alexa liegen im Ordner [`examples/`](examples/
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.7.7`** | 05.11.2026 | **Sperrzeiten pro Echo:** Unter *Erinnerungen ➔ Sperrzeiten pro Echo* halten bis zu drei Sperrzeiten gewählte Echos für Brainstorm still, etwa nachts im Kinderzimmer. Andere Echos sprechen weiter, ist keines übrig, geht die Erinnerung sofort aufs Handy. Auf Wunsch wird „Nicht stören“ mit der Sperrzeit ein- und ausgeschaltet. |
 | **`v1.7.6`** | 05.11.2026 | **Batterie-Aufgaben pro Gerät:** Weitere Sensoren für dieselbe Batterie (z. B. Battery Notes) legen keine zweite Aufgabe mehr an, und abgehakt wird erst, wenn kein Sensor des Geräts mehr „schwach“ meldet. Handys und Tablets der Companion-App bleiben außen vor, außer du schaltest sie ein, und ein ausgelassener Sensor lässt sein Gerät aus. |
 | **`v1.7.5`** | 05.11.2026 | **Batterie-Aufgaben:** Eine Batterie unter der Schwelle (Standard 20 %) oder mit „schwach“ legt eine Aufgabe wie *Batterie wechseln: Bewegungsmelder Flur (18 %)* an, die sich nach dem Wechsel selbst abhakt. Einrichten unter *Konfigurieren ➔ 🔋 Batterien*, mit Batterien zum Auslassen. |
 | **`v1.7.4`** | 05.11.2026 | **Unteraufgaben in der Liste einklappen:** ▾ mit der Zahl der Unteraufgaben an jeder Hauptaufgabe klappt sie zu, ▸ wieder auf. Jeder Browser merkt es sich pro Karte. |

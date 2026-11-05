@@ -172,7 +172,8 @@
           "reminder_lists": "{status_lists}",
           "reminder_places": "{status_places}",
           "reminder_persons": "{status_persons}",
-          "reminder_extras": "{status_extras}"
+          "reminder_extras": "{status_extras}",
+          "reminder_locks": "{status_locks}"
         },
         "menu_options": {
           "reminder_general": "On/Off & Channels",
@@ -181,6 +182,7 @@
           "reminder_places": "Places & Coming Home",
           "reminder_persons": "People",
           "reminder_extras": "Calendar & Alexa Reminders",
+          "reminder_locks": "Lock times per Echo",
           "reminder_test": "🧪 Test channels now",
           "init": "⬅️ Back",
           "close": "✅ Done"
@@ -455,6 +457,40 @@
           "battery_phones": "Devices of the Companion app are charged every day, so they are left out unless switched on here.",
           "go_back": "Returns to the previous page without saving this form."
         }
+      },
+      "reminder_locks": {
+        "title": "Brainstorm › Reminders › Lock times per Echo",
+        "description": "Echos in their lock time stay silent for Brainstorm: other Echos of a reminder still speak, and if none is left it goes to the phone right away. Up to three lock times, each for one or more Echos. A lock time may span midnight. Leave the Echos empty to remove one.",
+        "data": {
+          "lock_1_echos": "Echos 1",
+          "lock_1_start": "From 1",
+          "lock_1_end": "Until 1",
+          "lock_1_dnd": "Also Do not disturb 1",
+          "lock_2_echos": "Echos 2",
+          "lock_2_start": "From 2",
+          "lock_2_end": "Until 2",
+          "lock_2_dnd": "Also Do not disturb 2",
+          "lock_3_echos": "Echos 3",
+          "lock_3_start": "From 3",
+          "lock_3_end": "Until 3",
+          "lock_3_dnd": "Also Do not disturb 3",
+          "go_back": "⬅️ Back without saving"
+        },
+        "data_description": {
+          "lock_1_echos": "The Echos of this lock time. Empty removes it.",
+          "lock_1_start": "Start of the lock time.",
+          "lock_1_end": "End of the lock time. Earlier than the start means the next morning.",
+          "lock_1_dnd": "Switches Do not disturb of these Echos on at the start and off at the end, so Alexa itself is silent too. Needs Alexa Media Player.",
+          "lock_2_echos": "The Echos of this lock time. Empty removes it.",
+          "lock_2_start": "Start of the lock time.",
+          "lock_2_end": "End of the lock time. Earlier than the start means the next morning.",
+          "lock_2_dnd": "Switches Do not disturb of these Echos on at the start and off at the end, so Alexa itself is silent too. Needs Alexa Media Player.",
+          "lock_3_echos": "The Echos of this lock time. Empty removes it.",
+          "lock_3_start": "Start of the lock time.",
+          "lock_3_end": "End of the lock time. Earlier than the start means the next morning.",
+          "lock_3_dnd": "Switches Do not disturb of these Echos on at the start and off at the end, so Alexa itself is silent too. Needs Alexa Media Player.",
+          "go_back": "Returns to the previous page without saving this form."
+        }
       }
     },
     "error": {
@@ -462,7 +498,8 @@
       "owner_required": "Please choose the main user.",
       "todo_sync_duplicate": "Each to-do list can only be linked to one category.",
       "bring_category_missing": "Please choose or type a category.",
-      "battery_category_missing": "Please choose or type a category."
+      "battery_category_missing": "Please choose or type a category.",
+      "lock_time_missing": "Please set both times for these Echos, and make them differ."
     },
     "abort": {
       "store_not_ready": "Brainstorm is reloading. Please open the settings again in a few seconds."

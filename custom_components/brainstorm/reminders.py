@@ -86,6 +86,7 @@ from .const import (
     RULE_ZONE_ENABLED,
 )
 from .ai import async_generate_text
+from .echo_locks import locked_echos
 from .languages import get_pack
 from .languages.common import LanguagePack
 
@@ -507,8 +508,17 @@ class ReminderManager:
             return list(person_rule.get("notify") or [])
         return list(rule.get(RULE_NOTIFY) or self._options.get(CONF_REMINDER_NOTIFY) or [])
 
-    async def _async_speak(self, targets: list[str], message: str) -> bool:
-        """Speak a message on Echos and report whether that worked."""
+    async def _async_speak(
+        self, targets: list[str], message: str, respect_locks: bool = True
+    ) -> bool:
+        """Speak a message on Echos and report whether that worked.
+
+        Echos in their lock time are left out. When none is left, this counts
+        as not spoken, so a reminder goes to the phone right away instead.
+        """
+        if respect_locks:
+            locked = locked_echos(self._options, dt_util.now())
+            targets = [target for target in targets if target not in locked]
         if not targets or not self.hass.services.has_service("notify", "alexa_media"):
             return False
         try:
@@ -779,7 +789,10 @@ class ReminderManager:
         """Send a real test message and report how each channel did."""
         results: list[tuple[str, bool]] = []
         for echo in self._alexa_targets(None):
-            worked = await self._async_speak([echo], "Das ist ein Test von Brainstorm.")
+            # A test someone starts by hand also speaks in a lock time
+            worked = await self._async_speak(
+                [echo], "Das ist ein Test von Brainstorm.", respect_locks=False
+            )
             results.append((self._entity_name(echo), worked))
         if not self._options.get(CONF_NOTIFY_ENABLED, True):
             return results
