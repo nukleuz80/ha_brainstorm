@@ -1,9 +1,9 @@
-import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.7.8";
+import { alexaEchos, attachmentBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, parseDueInput, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.7.9";
 
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.7.8 - Skill, Reminders, Privacy and Sharing
+ * Version 1.7.9 - Skill, Reminders, Privacy and Sharing
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",
@@ -1322,9 +1322,32 @@ class BrainstormCard extends HTMLElement {
 
     this._isDialogOpen = true;
     titleEl.innerHTML = title;
+    if (bodyEl._bsAttachments) bodyEl._bsAttachments.abort();
+    bodyEl._bsAttachments = null;
     bodyEl.innerHTML = "";
     renderFn(bodyEl);
     dialog.style.display = "flex";
+  }
+
+  _showAttachments(id) {
+    const item = (this._ideasById && this._ideasById[id]) || null;
+    if (!item) return;
+    const canEdit = this._config.allow_edit === true && item.access !== "view";
+    this._openDialog(t("📎 Anhänge: {title}", { title: this._escapeHtml(item.text || "") }), (body) => {
+      body.innerHTML = `
+        <div id="attachmentsView"></div>
+        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px;">
+          <button class="action-dialog-btn action-dialog-btn-cancel" id="closeAttachmentsBtn">${t("Schließen")}</button>
+        </div>
+      `;
+      renderAttachments(body.querySelector("#attachmentsView"), {
+        hass: this._hass,
+        idea: item,
+        canEdit,
+        dropTarget: body,
+      });
+      body.querySelector("#closeAttachmentsBtn").addEventListener("click", () => this._closeDialog());
+    });
   }
 
   _closeDialog() {
@@ -1354,6 +1377,8 @@ class BrainstormCard extends HTMLElement {
         <div class="action-dialog-error" id="editTextError" style="display: none;"></div>
         <div class="action-dialog-label">${t("Beschreibung:")}</div>
         <textarea class="action-dialog-textarea" id="editDescription" rows="4" placeholder="${t("Optional: Details, Links, Notizen …")}">${this._escapeHtml(idea.description || "")}</textarea>
+        <div class="action-dialog-label">${t("Anhänge:")}</div>
+        <div id="editAttachments"></div>
         ${rawText && rawText !== currentText ? `
           <div class="action-dialog-label">${t("Original gesprochen:")}</div>
           <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
@@ -1437,6 +1462,12 @@ class BrainstormCard extends HTMLElement {
       `;
 
       const textarea = body.querySelector("#editTextarea");
+      renderAttachments(body.querySelector("#editAttachments"), {
+        hass: this._hass,
+        idea: { ...idea, id },
+        canEdit: true,
+        dropTarget: body,
+      });
       const useOriginal = body.querySelector("#editUseOriginal");
       if (useOriginal) {
         useOriginal.addEventListener("click", () => {
@@ -3568,6 +3599,16 @@ class BrainstormCard extends HTMLElement {
         .due-badge.overdue {
           color: var(--error-color);
         }
+        .attachment-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 3px;
+          padding: 2px 6px;
+          border-radius: 6px;
+          cursor: pointer;
+          color: var(--primary-text-color);
+          background: var(--secondary-background-color, rgba(127, 127, 127, 0.12));
+        }
         .source-badge {
           display: inline-flex;
           align-items: center;
@@ -4513,6 +4554,7 @@ class BrainstormCard extends HTMLElement {
                   ${this._formatTargetBadges(item)}
                   ${this._formatShareBadge(item)}
                   ${this._formatAuthorBadge(item)}
+                  ${attachmentBadge(item)}
                   ${showSource ? `${this._getSourceBadge(item.source, item.device)}` : ""}
                   ${showSource && showTime ? `<span>•</span>` : ""}
                   ${showTime ? `<span>${this._formatTime(item.created_at)}</span>` : ""}
@@ -4627,6 +4669,13 @@ class BrainstormCard extends HTMLElement {
             e.stopPropagation();
             const item = activeIdeas.find((i) => i.id === btn.getAttribute("data-id"));
             if (item) this._showSubtaskSuggestions(item);
+          });
+        });
+
+        ideasList.querySelectorAll(".attachment-badge").forEach((el) => {
+          el.addEventListener("click", (e) => {
+            e.stopPropagation();
+            this._showAttachments(el.dataset.id);
           });
         });
 
@@ -5433,7 +5482,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.7.8 ",
+  "%c BRAINSTORM-CARD %c v1.7.9 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

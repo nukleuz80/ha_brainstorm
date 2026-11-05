@@ -153,6 +153,32 @@ RESULT_MAX_LENGTH = 1000
 # A longer text below the title of an idea
 ATTR_DESCRIPTION = "description"
 DESCRIPTION_MAX_LENGTH = 4000
+# Files attached to an idea, kept below the config folder
+ATTR_ATTACHMENTS = "attachments"
+# When an idea was ticked off, so its attachments can go after a while
+ATTR_COMPLETED_AT = "completed_at"
+ATTACHMENT_DIR = "brainstorm_attachments"
+ATTACHMENT_MAX_SIZE = 10 * 1024 * 1024
+ATTACHMENT_MAX_COUNT = 20
+ATTACHMENT_RETENTION_DAYS = 30
+# Only types a browser shows safely; SVG and HTML could run scripts
+ATTACHMENT_TYPES: dict[str, str] = {
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".gif": "image/gif",
+    ".webp": "image/webp",
+    ".heic": "image/heic",
+    ".pdf": "application/pdf",
+    ".txt": "text/plain",
+    ".log": "text/plain",
+    ".md": "text/plain",
+    ".csv": "text/csv",
+    ".json": "application/json",
+    ".yaml": "text/plain",
+    ".yml": "text/plain",
+    ".zip": "application/zip",
+}
 ATTR_REMINDED_AT = "reminded_at"
 ATTR_ESCALATED = "escalated"
 ATTR_PARSE_DUE = "parse_due"

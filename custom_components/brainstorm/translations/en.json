@@ -660,6 +660,21 @@
     },
     "bring_urgent_needs_item": {
       "message": "An urgent message needs an item. Choose an item on the list, not the list itself."
+    },
+    "attachment_type": {
+      "message": "'{name}' cannot be attached. Allowed are images, PDF, text, log, CSV, JSON, YAML and ZIP files."
+    },
+    "attachment_empty": {
+      "message": "'{name}' is empty."
+    },
+    "attachment_too_large": {
+      "message": "'{name}' is larger than {max} MB."
+    },
+    "attachment_too_many": {
+      "message": "An idea can hold at most {max} attachments."
+    },
+    "attachment_write_failed": {
+      "message": "The attachment could not be saved: {error}"
     }
   },
   "services": {

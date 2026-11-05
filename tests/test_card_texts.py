@@ -21,7 +21,7 @@ def _dictionary() -> dict[str, str]:
 def _used_texts() -> set[str]:
     """Return every text the cards ask for."""
     used: set[str] = set()
-    for card in ("brainstorm-card.js", "brainstorm-mindmap-card.js"):
+    for card in ("brainstorm-card.js", "brainstorm-mindmap-card.js", "brainstorm-i18n.js"):
         source = (WWW / card).read_text("utf-8")
         for double, single in USED.findall(source):
             used.add(double.replace('\\"', '"') if double else single)

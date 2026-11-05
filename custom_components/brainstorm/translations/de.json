@@ -660,6 +660,21 @@
     },
     "bring_urgent_needs_item": {
       "message": "Eine dringende Nachricht braucht einen Eintrag. Wähle einen Eintrag der Liste, nicht die Liste selbst."
+    },
+    "attachment_type": {
+      "message": "„{name}“ kann nicht angehängt werden. Erlaubt sind Bilder, PDF, Text, Log, CSV, JSON, YAML und ZIP."
+    },
+    "attachment_empty": {
+      "message": "„{name}“ ist leer."
+    },
+    "attachment_too_large": {
+      "message": "„{name}“ ist größer als {max} MB."
+    },
+    "attachment_too_many": {
+      "message": "Eine Idee kann höchstens {max} Anhänge haben."
+    },
+    "attachment_write_failed": {
+      "message": "Der Anhang konnte nicht gespeichert werden: {error}"
     }
   },
   "services": {

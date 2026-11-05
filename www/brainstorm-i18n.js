@@ -58,6 +58,17 @@ const DICTIONARIES = {
     "Eingetragen von {name}": "Added by {name}",
     "Unteridee anlegen": "Add a subidea",
     "Bring-Nachricht senden": "Send Bring! message",
+    "Anhänge:": "Attachments:",
+    "Anhänge anzeigen": "Show attachments",
+    "Anhang löschen": "Delete attachment",
+    "Keine Anhänge.": "No attachments.",
+    "Wird hochgeladen …": "Uploading …",
+    "📎 Datei anhängen": "📎 Attach file",
+    "Bilder auch per Einfügen oder Ziehen. Nach dem Erledigen bleiben Anhänge 30 Tage.": "Images can also be pasted or dropped. Attachments stay for 30 days after an idea is done.",
+    "„{name}“ löschen?": "Delete “{name}”?",
+    "Der Anhang konnte nicht gespeichert werden ({status}).": "The attachment could not be saved ({status}).",
+    "📎 Anhänge: {title}": "📎 Attachments: {title}",
+    "Schließen": "Close",
     "Unteraufgaben einklappen": "Collapse subtasks",
     "Batterie": "Battery",
     "Titel:": "Title:",
@@ -452,4 +463,197 @@ export function formatText(text) {
     }
   }
   return html + escapeHtml(raw.slice(last));
+}
+
+const ATTACHMENT_URL = "/api/brainstorm/attachments";
+const ATTACHMENT_ACCEPT = "image/*,.pdf,.txt,.log,.md,.csv,.json,.yaml,.yml,.zip";
+const signedUrls = new Map();
+
+/** Return a signed address, so an image tag can load a file without a token. */
+async function signedAttachmentUrl(hass, ideaId, attachmentId) {
+  const path = `${ATTACHMENT_URL}/${encodeURIComponent(ideaId)}/${encodeURIComponent(attachmentId)}`;
+  const cached = signedUrls.get(path);
+  if (cached && cached.until > Date.now()) return cached.url;
+  const result = await hass.callWS({ type: "auth/sign_path", path, expires: 3600 });
+  signedUrls.set(path, { url: result.path, until: Date.now() + 50 * 60 * 1000 });
+  return result.path;
+}
+
+async function attachmentRequest(hass, path, init) {
+  const response = await hass.fetchWithAuth(path, init);
+  let body = {};
+  try {
+    body = await response.json();
+  } catch (_err) {
+    body = {};
+  }
+  if (!response.ok) {
+    throw new Error(body.message || t("Der Anhang konnte nicht gespeichert werden ({status}).", { status: response.status }));
+  }
+  return body;
+}
+
+function formatSize(bytes) {
+  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1).replace(".", code() === "de" ? "," : ".")} MB`;
+  return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+}
+
+/** Return the 📎 badge of an idea with files, or nothing. */
+export function attachmentBadge(idea) {
+  const count = (idea && idea.attachments && idea.attachments.length) || 0;
+  if (!count) return "";
+  return `<span class="attachment-badge" data-id="${escapeHtml(idea.id)}" title="${t("Anhänge anzeigen")}">📎 ${count}</span>`;
+}
+
+/**
+ * Show the files of an idea in a container, with adding and removing for people
+ * who may edit it. Images can also be pasted or dropped onto `dropTarget`.
+ */
+export function renderAttachments(container, { hass, idea, canEdit, dropTarget, onChange }) {
+  let attachments = [...((idea && idea.attachments) || [])];
+  let busy = false;
+
+  const draw = () => {
+    container.innerHTML = `
+      <style>
+        .bs-att { display: flex; flex-direction: column; gap: 8px; }
+        .bs-att-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+        .bs-att-item { position: relative; width: 84px; height: 84px; border-radius: 10px; overflow: hidden;
+          border: 1px solid var(--divider-color, rgba(127,127,127,0.3)); background: var(--secondary-background-color, rgba(127,127,127,0.1));
+          display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .bs-att-item img { width: 100%; height: 100%; object-fit: cover; }
+        .bs-att-file { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px; text-align: center;
+          font-size: 0.68rem; line-height: 1.2; color: var(--primary-text-color); word-break: break-all; }
+        .bs-att-file span:first-child { font-size: 1.5rem; }
+        .bs-att-del { position: absolute; top: 2px; right: 2px; width: 26px; height: 26px; border-radius: 50%; border: none;
+          background: rgba(0,0,0,0.6); color: #fff; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .bs-att-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+        .bs-att-add { min-height: 40px; padding: 0 14px; border-radius: 10px; cursor: pointer; font: inherit;
+          border: 1px dashed var(--primary-color, #03a9f4); background: transparent; color: var(--primary-color, #03a9f4); }
+        .bs-att-add:disabled { opacity: 0.5; cursor: progress; }
+        .bs-att-hint { font-size: 0.75rem; color: var(--secondary-text-color); }
+        .bs-att-error { font-size: 0.8rem; color: var(--error-color, #db4437); }
+        .bs-att-empty { font-size: 0.8rem; color: var(--secondary-text-color); }
+      </style>
+      <div class="bs-att">
+        ${attachments.length ? `<div class="bs-att-grid">${attachments.map((a) => `
+          <div class="bs-att-item" data-att="${escapeHtml(a.id)}" title="${escapeHtml(a.name)} · ${formatSize(a.size || 0)}">
+            ${String(a.type || "").startsWith("image/") && a.type !== "image/heic"
+              ? `<img alt="${escapeHtml(a.name)}" data-img="${escapeHtml(a.id)}">`
+              : `<div class="bs-att-file"><span>${a.type === "application/pdf" ? "📕" : a.type === "application/zip" ? "🗜️" : "📄"}</span><span>${escapeHtml(a.name.length > 24 ? `${a.name.slice(0, 21)}…` : a.name)}</span></div>`}
+            ${canEdit ? `<button class="bs-att-del" data-del="${escapeHtml(a.id)}" title="${t("Anhang löschen")}" aria-label="${t("Anhang löschen")}">✕</button>` : ""}
+          </div>`).join("")}</div>` : canEdit ? "" : `<div class="bs-att-empty">${t("Keine Anhänge.")}</div>`}
+        ${canEdit ? `
+          <div class="bs-att-actions">
+            <button type="button" class="bs-att-add" ${busy ? "disabled" : ""}>${busy ? t("Wird hochgeladen …") : t("📎 Datei anhängen")}</button>
+            <span class="bs-att-hint">${t("Bilder auch per Einfügen oder Ziehen. Nach dem Erledigen bleiben Anhänge 30 Tage.")}</span>
+            <input type="file" multiple accept="${ATTACHMENT_ACCEPT}" style="display: none;">
+          </div>` : ""}
+        <div class="bs-att-error" style="display: none;"></div>
+      </div>`;
+
+    container.querySelectorAll("img[data-img]").forEach(async (img) => {
+      try {
+        img.src = await signedAttachmentUrl(hass, idea.id, img.dataset.img);
+      } catch (err) {
+        console.error("[Brainstorm] Could not load attachment", err);
+      }
+    });
+    container.querySelectorAll(".bs-att-item").forEach((el) => {
+      el.addEventListener("click", async (e) => {
+        if (e.target.closest(".bs-att-del")) return;
+        // Open the window first, so pop-up blockers see the tap
+        const win = window.open("", "_blank");
+        try {
+          const url = await signedAttachmentUrl(hass, idea.id, el.dataset.att);
+          if (win) win.location.href = url;
+          else window.location.href = url;
+        } catch (err) {
+          if (win) win.close();
+          showError(err.message);
+        }
+      });
+    });
+    container.querySelectorAll(".bs-att-del").forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const att = attachments.find((a) => a.id === btn.dataset.del);
+        if (!att || !window.confirm(t("„{name}“ löschen?", { name: att.name }))) return;
+        try {
+          const body = await attachmentRequest(hass, `${ATTACHMENT_URL}/${encodeURIComponent(idea.id)}/${encodeURIComponent(att.id)}`, { method: "DELETE" });
+          attachments = body.attachments || [];
+          draw();
+          if (onChange) onChange(attachments);
+        } catch (err) {
+          showError(err.message);
+        }
+      });
+    });
+    const input = container.querySelector('input[type="file"]');
+    const addBtn = container.querySelector(".bs-att-add");
+    if (input && addBtn) {
+      addBtn.addEventListener("click", () => input.click());
+      input.addEventListener("change", () => upload([...input.files]));
+    }
+  };
+
+  const showError = (message) => {
+    const el = container.querySelector(".bs-att-error");
+    if (!el) return;
+    el.textContent = `⚠️ ${message}`;
+    el.style.display = "block";
+  };
+
+  const upload = async (files) => {
+    if (!canEdit || busy || !files.length) return;
+    const form = new FormData();
+    files.forEach((file, idx) => {
+      // Pasted screenshots are all called image.png
+      const name = file.name && file.name !== "image.png"
+        ? file.name
+        : `Screenshot ${new Date().toISOString().slice(0, 19).replace("T", " ").replace(/:/g, "-")}${idx ? `-${idx + 1}` : ""}.png`;
+      form.append("file", file, name);
+    });
+    busy = true;
+    draw();
+    try {
+      const body = await attachmentRequest(hass, `${ATTACHMENT_URL}/${encodeURIComponent(idea.id)}`, { method: "POST", body: form });
+      attachments = body.attachments || attachments;
+      busy = false;
+      draw();
+      if (onChange) onChange(attachments);
+    } catch (err) {
+      busy = false;
+      draw();
+      showError(err.message);
+    }
+  };
+
+  if (dropTarget) {
+    // The dialog body is reused, so the listeners of the last idea must go
+    if (dropTarget._bsAttachments) dropTarget._bsAttachments.abort();
+    dropTarget._bsAttachments = null;
+  }
+  if (canEdit && dropTarget) {
+    const controller = new AbortController();
+    dropTarget._bsAttachments = controller;
+    const { signal } = controller;
+    dropTarget.addEventListener("paste", (e) => {
+      const files = [...((e.clipboardData && e.clipboardData.files) || [])];
+      if (!files.length) return;
+      e.preventDefault();
+      upload(files);
+    }, { signal });
+    dropTarget.addEventListener("dragover", (e) => {
+      if (e.dataTransfer && [...e.dataTransfer.types].includes("Files")) e.preventDefault();
+    }, { signal });
+    dropTarget.addEventListener("drop", (e) => {
+      const files = [...((e.dataTransfer && e.dataTransfer.files) || [])];
+      if (!files.length) return;
+      e.preventDefault();
+      upload(files);
+    }, { signal });
+  }
+
+  draw();
 }

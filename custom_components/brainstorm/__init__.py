@@ -18,6 +18,7 @@ from homeassistant.loader import async_get_integration
 from homeassistant.util import dt as dt_util
 
 from .alexa_skill import AlexaSkill
+from .attachments import AttachmentCleaner, async_register_views
 from .battery import BatteryWatcher
 from .bring import BRING_MESSAGES, bring_message_target
 from .const import (
@@ -217,6 +218,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up the Brainstorm component and register its services."""
     _register_services(hass)
     async_register_commands(hass)
+    async_register_views(hass)
     return True
 
 
@@ -263,6 +265,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) -
     battery = BatteryWatcher(hass, store, {**entry.data, **entry.options})
     await battery.async_start()
     entry.async_on_unload(battery.async_stop)
+
+    attachment_cleaner = AttachmentCleaner(hass, store)
+    attachment_cleaner.async_start()
+    entry.async_on_unload(attachment_cleaner.async_stop)
 
     echo_locks = EchoLockManager(hass, {**entry.data, **entry.options})
     await echo_locks.async_start()

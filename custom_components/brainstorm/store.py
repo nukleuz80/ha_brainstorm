@@ -2,13 +2,16 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
+import hashlib
 import json
 import logging
 import os
 import re
+import shutil
 import uuid
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 from difflib import SequenceMatcher
 from typing import Any, Callable, TYPE_CHECKING
 
@@ -45,7 +48,14 @@ from .const import (
     ATTR_RESULT,
     ATTR_DESCRIPTION,
     ATTR_BATTERY,
+    ATTR_ATTACHMENTS,
     ATTR_BATTERY_DONE,
+    ATTR_COMPLETED_AT,
+    ATTACHMENT_DIR,
+    ATTACHMENT_MAX_COUNT,
+    ATTACHMENT_MAX_SIZE,
+    ATTACHMENT_RETENTION_DAYS,
+    ATTACHMENT_TYPES,
     ATTR_SOURCE,
     ATTR_STATUS,
     ATTR_TAGS,
@@ -125,6 +135,8 @@ IMPORT_FIELDS = (
 )
 # Fields that belong to this Home Assistant and stay out of a JSON export
 EXPORT_SKIPPED_FIELDS = (
+    # The files themselves are not part of an export
+    ATTR_ATTACHMENTS,
     ATTR_TODO_LINK,
     ATTR_BRING_LIST,
     ATTR_BATTERY,
@@ -151,6 +163,36 @@ def _validate_category_style(icon: str | None, color: str | None) -> None:
 
 
 type BrainstormConfigEntry = ConfigEntry[BrainstormStore]
+
+
+def attachment_name(name: str) -> str:
+    """Return a file name without folders or characters that cause trouble."""
+    base = Path(str(name or "").replace("\\", "/")).name
+    base = re.sub(r"[\x00-\x1f\x7f<>:\"/\\|?*]", "_", base).strip(" .")
+    if len(base) > 120:
+        stem, suffix = os.path.splitext(base)
+        base = stem[: 120 - len(suffix)] + suffix
+    return base or "file"
+
+
+def attachment_folder(idea_id: str) -> str:
+    """Return a safe folder name for an idea; imported IDs can be anything."""
+    if re.fullmatch(r"[A-Za-z0-9_-]{1,64}", idea_id):
+        return idea_id
+    return "id-" + hashlib.sha256(idea_id.encode()).hexdigest()[:32]
+
+
+def _remove_files(paths: list[Path]) -> None:
+    """Delete files and the folders they leave empty (blocking I/O)."""
+    for path in paths:
+        try:
+            path.unlink(missing_ok=True)
+        except OSError as err:
+            _LOGGER.warning("Could not delete attachment %s: %s", path, err)
+            continue
+        # The folder stays while other files are still in it
+        with contextlib.suppress(OSError):
+            path.parent.rmdir()
 
 
 def get_loaded_store(hass: HomeAssistant) -> BrainstormStore | None:
@@ -413,6 +455,8 @@ class BrainstormStore:
                 result[ATTR_RESULT] = note
             if description := idea.get(ATTR_DESCRIPTION):
                 result[ATTR_DESCRIPTION] = description
+            if attachments := idea.get(ATTR_ATTACHMENTS):
+                result[ATTR_ATTACHMENTS] = [dict(a) for a in attachments]
             return result
 
         last_action = self.last_action
@@ -1154,6 +1198,10 @@ class BrainstormStore:
             idea[ATTR_PRIORITY] = normalized_prio
         if status is not None:
             idea[ATTR_STATUS] = status
+            if newly_completed:
+                idea[ATTR_COMPLETED_AT] = dt_util.now().isoformat()
+            elif status == "active":
+                idea.pop(ATTR_COMPLETED_AT, None)
         if device is not None:
             idea[ATTR_DEVICE] = device.strip() if device else None
         if order is not None:
@@ -1288,6 +1336,7 @@ class BrainstormStore:
                 continue
             idea[ATTR_STATUS] = "archived"
             idea[ATTR_UPDATED_AT] = now_iso
+            idea.setdefault(ATTR_COMPLETED_AT, now_iso)
             idea.pop(ATTR_TODO_LINK, None)
             idea.pop(ATTR_SPEC, None)
             archived += 1
@@ -1295,6 +1344,185 @@ class BrainstormStore:
             await self.async_save()
             self._notify_listeners()
         return archived
+
+    # Attachments
+
+    @property
+    def attachment_root(self) -> Path:
+        """Return the folder that holds the attachments of all ideas."""
+        return Path(self.hass.config.path(ATTACHMENT_DIR))
+
+    def attachment_file(self, idea_id: str, attachment_id: str) -> Path | None:
+        """Return the file of an attachment the store knows, or None."""
+        idea = self._ideas.get(idea_id)
+        if idea is None:
+            return None
+        for attachment in idea.get(ATTR_ATTACHMENTS) or []:
+            if attachment.get(ATTR_ID) == attachment_id:
+                return self._attachment_path(idea_id, attachment)
+        return None
+
+    def _attachment_path(self, idea_id: str, attachment: dict[str, Any]) -> Path:
+        """Return where an attachment lies; names come only from the store."""
+        suffix = Path(str(attachment.get("name") or "")).suffix.lower()
+        if suffix not in ATTACHMENT_TYPES:
+            suffix = ""
+        return (
+            self.attachment_root
+            / attachment_folder(idea_id)
+            / f"{attachment[ATTR_ID]}{suffix}"
+        )
+
+    async def async_add_attachment(
+        self,
+        idea_id: str,
+        name: str,
+        data: bytes,
+        user_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Store a file with an idea and return its entry."""
+        idea = self._ideas.get(idea_id)
+        if idea is None:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="idea_not_found",
+                translation_placeholders={"id": idea_id},
+            )
+        clean_name = attachment_name(name)
+        suffix = Path(clean_name).suffix.lower()
+        if suffix not in ATTACHMENT_TYPES:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="attachment_type",
+                translation_placeholders={"name": clean_name},
+            )
+        if not data:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="attachment_empty",
+                translation_placeholders={"name": clean_name},
+            )
+        if len(data) > ATTACHMENT_MAX_SIZE:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="attachment_too_large",
+                translation_placeholders={
+                    "name": clean_name,
+                    "max": str(ATTACHMENT_MAX_SIZE // (1024 * 1024)),
+                },
+            )
+        attachments = list(idea.get(ATTR_ATTACHMENTS) or [])
+        if len(attachments) >= ATTACHMENT_MAX_COUNT:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="attachment_too_many",
+                translation_placeholders={"max": str(ATTACHMENT_MAX_COUNT)},
+            )
+        attachment = {
+            ATTR_ID: uuid.uuid4().hex,
+            "name": clean_name,
+            "type": ATTACHMENT_TYPES[suffix],
+            "size": len(data),
+            "added_at": dt_util.now().isoformat(),
+        }
+        if user_id:
+            attachment["added_by"] = user_id
+        path = self._attachment_path(idea_id, attachment)
+
+        def _write() -> None:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(data)
+
+        try:
+            await self.hass.async_add_executor_job(_write)
+        except OSError as err:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="attachment_write_failed",
+                translation_placeholders={"error": str(err)},
+            ) from err
+        # The idea may have changed while the file was written
+        idea = self._ideas.get(idea_id)
+        if idea is None:
+            await self.hass.async_add_executor_job(_remove_files, [path])
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="idea_not_found",
+                translation_placeholders={"id": idea_id},
+            )
+        idea[ATTR_ATTACHMENTS] = [*(idea.get(ATTR_ATTACHMENTS) or []), attachment]
+        idea[ATTR_UPDATED_AT] = dt_util.now().isoformat()
+        await self.async_save()
+        self._notify_listeners()
+        return attachment
+
+    async def async_remove_attachment(self, idea_id: str, attachment_id: str) -> bool:
+        """Delete one attachment of an idea, with its file."""
+        idea = self._ideas.get(idea_id)
+        if idea is None:
+            return False
+        attachments = idea.get(ATTR_ATTACHMENTS) or []
+        found = next((a for a in attachments if a.get(ATTR_ID) == attachment_id), None)
+        if found is None:
+            return False
+        remaining = [a for a in attachments if a is not found]
+        if remaining:
+            idea[ATTR_ATTACHMENTS] = remaining
+        else:
+            idea.pop(ATTR_ATTACHMENTS, None)
+        idea[ATTR_UPDATED_AT] = dt_util.now().isoformat()
+        await self.hass.async_add_executor_job(
+            _remove_files, [self._attachment_path(idea_id, found)]
+        )
+        await self.async_save()
+        self._notify_listeners()
+        return True
+
+    async def async_cleanup_attachments(self) -> int:
+        """Delete the attachments of ideas done for a while, and orphaned files.
+
+        Ideas deleted since the start keep their files, so undo brings them
+        back complete. Returns the number of attachments removed from ideas.
+        """
+        limit = dt_util.now() - timedelta(days=ATTACHMENT_RETENTION_DAYS)
+        expired: list[Path] = []
+        removed = 0
+        for idea_id, idea in self._ideas.items():
+            attachments = idea.get(ATTR_ATTACHMENTS)
+            if not attachments or idea.get(ATTR_STATUS) not in ("completed", "archived"):
+                continue
+            done_at = dt_util.parse_datetime(
+                str(idea.get(ATTR_COMPLETED_AT) or idea.get(ATTR_UPDATED_AT) or "")
+            )
+            if done_at is None or dt_util.as_local(done_at) > limit:
+                continue
+            expired.extend(self._attachment_path(idea_id, a) for a in attachments)
+            removed += len(attachments)
+            idea.pop(ATTR_ATTACHMENTS)
+        keep = {
+            attachment_folder(idea_id)
+            for idea_id, idea in (
+                *self._ideas.items(),
+                *((i, d["idea"]) for i, d in self._deleted.items()),
+            )
+            if idea.get(ATTR_ATTACHMENTS)
+        }
+        root = self.attachment_root
+
+        def _cleanup() -> None:
+            _remove_files(expired)
+            if not root.is_dir():
+                return
+            for folder in root.iterdir():
+                if folder.is_dir() and folder.name not in keep:
+                    shutil.rmtree(folder, ignore_errors=True)
+
+        await self.hass.async_add_executor_job(_cleanup)
+        if removed:
+            _LOGGER.debug("Removed %d attachments of ideas done long ago", removed)
+            await self.async_save()
+            self._notify_listeners()
+        return removed
 
     def deleted_idea(self, idea_id: str) -> dict[str, Any] | None:
         """Return an idea deleted since the start, as it would come back."""
@@ -1760,6 +1988,8 @@ class BrainstormStore:
                             if description := item.get(ATTR_DESCRIPTION):
                                 for line in str(description).splitlines():
                                     f.write(f"  > {line}\n")
+                            for attachment in item.get(ATTR_ATTACHMENTS) or []:
+                                f.write(f"  - 📎 {attachment.get('name')}\n")
                         f.write("\n")
 
                     if completed:
