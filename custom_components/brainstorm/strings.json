@@ -671,6 +671,10 @@
           "name": "Text",
           "description": "The content of the idea."
         },
+        "description": {
+          "name": "Description",
+          "description": "A longer text below the title of the idea. Shown in the list card and in the to-do lists."
+        },
         "category": {
           "name": "Category",
           "description": "Category. If empty, it is detected from the text or set to `Inbox`."
@@ -728,6 +732,10 @@
         "text": {
           "name": "Text",
           "description": "New text."
+        },
+        "description": {
+          "name": "Description",
+          "description": "A longer text below the title of the idea. Shown in the list card and in the to-do lists. Empty removes it."
         },
         "category": {
           "name": "Category",

@@ -1,8 +1,8 @@
-import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.7.7";
+import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.7.8";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.7.7 - Skill, Reminders, Privacy and Sharing
+ * Version: 1.7.8 - Skill, Reminders, Privacy and Sharing
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -4604,9 +4604,11 @@ class BrainstormMindmapCard extends HTMLElement {
 
     this._openDialog(t("✏️ Notiz bearbeiten"), (body) => {
       body.innerHTML = `
-        <div class="dialog-label">${t("Notiztext:")}</div>
-        <textarea class="dialog-textarea" id="editTextarea" rows="3">${this._escapeHtml(currentText)}</textarea>
+        <div class="dialog-label">${t("Titel:")}</div>
+        <textarea class="dialog-textarea" id="editTextarea" rows="2">${this._escapeHtml(currentText)}</textarea>
         <div class="dialog-error" id="editTextError" style="display: none;"></div>
+        <div class="dialog-label">${t("Beschreibung:")}</div>
+        <textarea class="dialog-textarea" id="editDescription" rows="4" placeholder="${t("Optional: Details, Links, Notizen …")}">${this._escapeHtml(idea.description || "")}</textarea>
 
         <div class="dialog-label">${t("Priorität:")}</div>
         <div class="dialog-prio-grid" id="editPrioGrid">
@@ -4762,12 +4764,17 @@ class BrainstormMindmapCard extends HTMLElement {
         if ([...selectedEchos].sort().join() !== [...currentEchos].sort().join()) {
           payload.echos = selectedEchos.length ? selectedEchos : null;
         }
+        const newDescription = (body.querySelector("#editDescription").value || "").trim();
+        if (newDescription !== (idea.description || "")) {
+          payload.description = newDescription;
+        }
 
         // Everything this save changes, as it was before
         const before = { id, text: currentText, priority: currentPriority || "medium" };
         if ("category" in payload) before.category = currentCategory;
         if ("due" in payload) before.due = idea.due || null;
         if ("echos" in payload) before.echos = currentEchos.length ? currentEchos : null;
+        if ("description" in payload) before.description = idea.description || "";
         try {
           await this._hass.callService("brainstorm", "update_idea", payload);
           this._pushUndo(currentText, () => this._hass.callService("brainstorm", "update_idea", before));
@@ -5460,7 +5467,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.7.7 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.7.8 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

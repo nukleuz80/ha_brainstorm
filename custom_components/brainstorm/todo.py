@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime, time
 import logging
+from typing import Any
 
 from homeassistant.components.todo import (
     TodoItem,
@@ -18,6 +19,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    ATTR_DESCRIPTION,
     ATTR_DEVICE,
     ATTR_DUE,
     SHARE_ALL,
@@ -111,6 +113,7 @@ class BrainstormTodoList(TodoListEntity):
         | TodoListEntityFeature.DELETE_TODO_ITEM
         | TodoListEntityFeature.SET_DUE_DATETIME_ON_ITEM
         | TodoListEntityFeature.SET_DUE_DATE_ON_ITEM
+        | TodoListEntityFeature.SET_DESCRIPTION_ON_ITEM
     )
 
     def __init__(self, store: BrainstormStore, category: str, entry_id: str) -> None:
@@ -140,43 +143,46 @@ class BrainstormTodoList(TodoListEntity):
         if self._store.privacy_enabled:
             items = [item for item in items if self._store.is_shared_with_all(item)]
         todo_items = []
-        pack = get_pack(self.hass.config.language)
         for item in items:
             if item.get(ATTR_STATUS) == "archived":
                 continue
             is_done = item.get(ATTR_STATUS) == "completed"
             status = TodoItemStatus.COMPLETED if is_done else TodoItemStatus.NEEDS_ACTION
-            src = item.get(ATTR_SOURCE)
-            dev = item.get(ATTR_DEVICE)
-            prio = item.get(ATTR_PRIORITY, "medium")
-
-            parts = []
-            if prio == "urgent":
-                parts.append(pack.msg("todo_priority", label=pack.msg("prio_urgent")))
-            elif prio == "high":
-                parts.append(pack.msg("todo_priority", label=pack.msg("prio_high")))
-            elif prio == "low":
-                parts.append(pack.msg("todo_priority", label=pack.msg("prio_low")))
-
-            if dev and src:
-                parts.append(pack.msg("todo_source", value=f"{src} ({dev})"))
-            elif dev:
-                parts.append(pack.msg("todo_device", value=dev))
-            elif src:
-                parts.append(pack.msg("todo_source", value=src))
-
-            desc = " • ".join(parts) if parts else None
-
             todo_items.append(
                 TodoItem(
                     uid=item[ATTR_ID],
                     summary=item.get(ATTR_TEXT, ""),
                     status=status,
-                    description=desc,
+                    # The idea's own description, otherwise where it came from
+                    description=item.get(ATTR_DESCRIPTION) or self._meta(item),
                     due=dt_util.parse_datetime(item[ATTR_DUE]) if item.get(ATTR_DUE) else None,
                 )
             )
         return todo_items
+
+    def _meta(self, item: dict[str, Any]) -> str | None:
+        """Return the priority and source of an idea as a line of text."""
+        pack = get_pack(self.hass.config.language)
+        src = item.get(ATTR_SOURCE)
+        dev = item.get(ATTR_DEVICE)
+        prio = item.get(ATTR_PRIORITY, "medium")
+
+        parts = []
+        if prio == "urgent":
+            parts.append(pack.msg("todo_priority", label=pack.msg("prio_urgent")))
+        elif prio == "high":
+            parts.append(pack.msg("todo_priority", label=pack.msg("prio_high")))
+        elif prio == "low":
+            parts.append(pack.msg("todo_priority", label=pack.msg("prio_low")))
+
+        if dev and src:
+            parts.append(pack.msg("todo_source", value=f"{src} ({dev})"))
+        elif dev:
+            parts.append(pack.msg("todo_device", value=dev))
+        elif src:
+            parts.append(pack.msg("todo_source", value=src))
+
+        return " • ".join(parts) if parts else None
 
     @property
     def _user_id(self) -> str | None:
@@ -188,6 +194,7 @@ class BrainstormTodoList(TodoListEntity):
         await self._store.async_add_idea(
             text=item.summary,
             category=self._category,
+            description=item.description,
             source="todo_list",
             context=self._context,
             due=_due_from_item(item),
@@ -207,6 +214,10 @@ class BrainstormTodoList(TodoListEntity):
             if item.status == TodoItemStatus.COMPLETED
             else "active"
         )
+        # The line about the source is shown in place of a missing description
+        description_changed = idea is not None and (item.description or None) not in (
+            idea.get(ATTR_DESCRIPTION) or self._meta(idea),
+        )
         updated = await self._store.async_update_idea(
             idea_id=item.uid,
             text=item.summary,
@@ -215,6 +226,8 @@ class BrainstormTodoList(TodoListEntity):
             context=self._context,
             due=_due_from_item(item),
             update_due=True,
+            description=item.description,
+            update_description=description_changed,
         )
         if updated is None:
             raise ServiceValidationError(

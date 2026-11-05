@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.7.7-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.7.8-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -98,6 +98,7 @@ Brainstorm Hub verwandelt alle deine **Amazon Echo**-Geräte im Haus in sekunden
     - Integrierter Ansichts-Umschalter (`🧠 Mindmap` ⇄ `📋 Liste`) direkt in der Kopfzeile.
     - Erledigt-Verwaltung mit Durchstreich-Animation, Bearbeitungsfunktion und Quellen-Badges.
     - **Unteraufgaben direkt anlegen (v1.6.29):** 🌿 an einer Hauptaufgabe oder in ihrem Menü bei langem Drücken legt eine Unteraufgabe direkt darunter an, in derselben Kategorie. Mit einer KI-Aufgaben-Entität schlägt ✨ daneben Unteraufgaben vor (v1.6.28).
+    - **Titel und Beschreibung (v1.7.8):** ✎ bearbeitet den Titel und darunter eine optionale Beschreibung für Details, Links oder Notizen. Die Liste zeigt bis zu drei Zeilen davon unter dem Titel, Antippen zeigt den Rest. Der Bearbeiten-Dialog der Mindmap hat sie auch, und die To-do-Listen von Home Assistant zeigen und bearbeiten sie als Beschreibung des Eintrags. Aktionen: `description` in `brainstorm.add_idea` und `brainstorm.update_idea` (leer entfernt sie).
     - **Unteraufgaben einklappen (v1.7.4):** Eine Hauptaufgabe mit Unteraufgaben zeigt ▾ und deren Anzahl. Antippen klappt sie zu, ▸ klappt sie wieder auf. Praktisch bei langen Bring-Listen. Jeder Browser merkt sich pro Karte, was eingeklappt ist.
   - **Links und etwas Markdown in Notizen (beide Karten, v1.6.21):**
     - Webadressen werden anklickbar, ebenso `[Text](https://…)`. `**fett**`, `*kursiv*`, `~~durchgestrichen~~` und `` `Code` `` erscheinen formatiert, in der Notiz und in ihrer Ergebnisnotiz.
@@ -179,8 +180,8 @@ HACS installiert nur die Integration. Die Karten kopierst du anschließend wie u
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` und `www/brainstorm-i18n.js` in `/config/www/`. Die dritte Datei enthält die Texte und braucht keinen Ressourcen-Eintrag.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.7.7` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.7.7` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.7.8` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.7.8` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ### Integration entfernen
@@ -963,6 +964,7 @@ Weitere Beispiele für Assist und Alexa liegen im Ordner [`examples/`](examples/
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.7.8`** | 05.11.2026 | **Titel und Beschreibung:** Jede Notiz kann unter dem Titel eine Beschreibung haben, bearbeitet mit ✎ in beiden Karten. Die Liste zeigt drei Zeilen, Antippen zeigt alles. Die To-do-Listen von Home Assistant zeigen und bearbeiten sie, die Aktionen nehmen `description`. Markdown- und JSON-Export enthalten sie. |
 | **`v1.7.7`** | 05.11.2026 | **Sperrzeiten pro Echo:** Unter *Erinnerungen ➔ Sperrzeiten pro Echo* halten bis zu drei Sperrzeiten gewählte Echos für Brainstorm still, etwa nachts im Kinderzimmer. Andere Echos sprechen weiter, ist keines übrig, geht die Erinnerung sofort aufs Handy. Auf Wunsch wird „Nicht stören“ mit der Sperrzeit ein- und ausgeschaltet. |
 | **`v1.7.6`** | 05.11.2026 | **Batterie-Aufgaben pro Gerät:** Weitere Sensoren für dieselbe Batterie (z. B. Battery Notes) legen keine zweite Aufgabe mehr an, und abgehakt wird erst, wenn kein Sensor des Geräts mehr „schwach“ meldet. Handys und Tablets der Companion-App bleiben außen vor, außer du schaltest sie ein, und ein ausgelassener Sensor lässt sein Gerät aus. |
 | **`v1.7.5`** | 05.11.2026 | **Batterie-Aufgaben:** Eine Batterie unter der Schwelle (Standard 20 %) oder mit „schwach“ legt eine Aufgabe wie *Batterie wechseln: Bewegungsmelder Flur (18 %)* an, die sich nach dem Wechsel selbst abhakt. Einrichten unter *Konfigurieren ➔ 🔋 Batterien*, mit Batterien zum Auslassen. |

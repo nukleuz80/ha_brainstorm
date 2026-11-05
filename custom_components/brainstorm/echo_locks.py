@@ -56,7 +56,11 @@ def dnd_switch(hass: HomeAssistant, echo: str) -> str | None:
     if entry is None or not entry.device_id:
         return None
     for other in er.async_entries_for_device(registry, entry.device_id):
-        if other.domain == "switch" and "do_not_disturb" in other.entity_id:
+        if (
+            other.domain == "switch"
+            and "do_not_disturb" in other.entity_id
+            and other.disabled_by is None
+        ):
             return other.entity_id
     return None
 

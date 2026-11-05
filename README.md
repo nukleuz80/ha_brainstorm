@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.7.7-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.7.8-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -78,6 +78,7 @@ Brainstorm Hub turns every **Amazon Echo** device in your home into an instant, 
   - **Intuitive Reordering:** Reorder items in the list view smoothly via drag handle (`⠿`). Order is preserved persistently via `brainstorm.reorder_ideas`.
   - **Drag & Drop Subtasks:** Drag a note onto another note to instantly nest it as a subtask.
   - **New subtask with 🌿:** 🌿 on a main task, or in its long-press menu, adds a subtask right under it, in the same category (v1.6.29).
+  - **Title and description (v1.7.8):** ✎ edits the title and, below it, an optional description for details, links or notes. The list shows up to three lines of it under the title; tapping it shows the rest. The mind map's edit dialog has it too, and the to-do lists of Home Assistant show and edit it as the item's description. Actions: `description` in `brainstorm.add_idea` and `brainstorm.update_idea` (empty removes it).
   - **Fold subtasks (v1.7.4):** A main task with subtasks shows ▾ and their number. Tap it to fold them away; ▸ unfolds them again. Handy for long Bring lists. Each browser remembers what is folded, per card.
   - **Apple Reminders Context Menu:** Long-press on mobile (~420ms) or right-click on desktop triggers haptic feedback and opens a quick menu for indenting, unindenting, moving, editing, or deleting.
 - 🧠 **Dynamic Mindmap Card (`custom:brainstorm-mindmap-card`):**
@@ -159,8 +160,8 @@ HACS only installs the integration, so continue with [Install the cards](#instal
 
 1. Copy `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` and `www/brainstorm-i18n.js` from the release to `/config/www/`. The third file holds the texts and needs no resource entry.
 2. Add both under **Settings ➔ Dashboards ➔ Resources** as **JavaScript module**:
-   - `/local/brainstorm-card.js?v=1.7.7`
-   - `/local/brainstorm-mindmap-card.js?v=1.7.7`
+   - `/local/brainstorm-card.js?v=1.7.8`
+   - `/local/brainstorm-mindmap-card.js?v=1.7.8`
 3. Reload the page in your browser.
 
 ### Removing the Integration
@@ -356,9 +357,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.7.7
+  - url: /local/brainstorm-card.js?v=1.7.8
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.7.7
+  - url: /local/brainstorm-mindmap-card.js?v=1.7.8
     type: module
 ```
 
@@ -913,6 +914,7 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.7.8`** | 2026-11-05 | **Title and description:** every note can have a description below its title, edited with ✎ in both cards. The list shows three lines, a tap shows all. Home Assistant's to-do lists show and edit it, and the actions take `description`. Markdown and JSON exports include it. |
 | **`v1.7.7`** | 2026-11-05 | **Lock times per Echo:** under *Reminders ➔ Lock times per Echo*, up to three lock times keep chosen Echos silent for Brainstorm, e.g. nights in the children's room. Other Echos still speak, and with none left the reminder goes to the phone at once. Optionally Do not disturb is switched on and off with the lock time. |
 | **`v1.7.6`** | 2026-11-05 | **Battery tasks per device:** extra sensors for the same battery (e.g. Battery Notes) no longer make a second task, and the task only ticks itself off once no sensor of the device reports weak. Phones and tablets of the Companion app are left out unless switched on, and leaving out one sensor leaves out its device. |
 | **`v1.7.5`** | 2026-11-05 | **Battery tasks:** a battery below the threshold (default 20 %) or reporting weak creates a task like *Replace the battery: Motion sensor hall (18 %)*, which ticks itself off once the battery is replaced. Set up under *Configure ➔ 🔋 Batteries*, with batteries to leave out. |

@@ -1,9 +1,9 @@
-import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.7.7";
+import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.7.8";
 
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.7.7 - Skill, Reminders, Privacy and Sharing
+ * Version 1.7.8 - Skill, Reminders, Privacy and Sharing
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",
@@ -1349,9 +1349,11 @@ class BrainstormCard extends HTMLElement {
 
     this._openDialog(t("✏️ Notiz bearbeiten"), (body) => {
       body.innerHTML = `
-        <div class="action-dialog-label">${t("Notiztext:")}</div>
-        <textarea class="action-dialog-textarea" id="editTextarea" rows="3">${this._escapeHtml(currentText)}</textarea>
+        <div class="action-dialog-label">${t("Titel:")}</div>
+        <textarea class="action-dialog-textarea" id="editTextarea" rows="2">${this._escapeHtml(currentText)}</textarea>
         <div class="action-dialog-error" id="editTextError" style="display: none;"></div>
+        <div class="action-dialog-label">${t("Beschreibung:")}</div>
+        <textarea class="action-dialog-textarea" id="editDescription" rows="4" placeholder="${t("Optional: Details, Links, Notizen …")}">${this._escapeHtml(idea.description || "")}</textarea>
         ${rawText && rawText !== currentText ? `
           <div class="action-dialog-label">${t("Original gesprochen:")}</div>
           <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
@@ -1524,6 +1526,10 @@ class BrainstormCard extends HTMLElement {
         this._closeDialog();
 
         const payload = { id: id, text: newText, priority: selectedPrio };
+        const newDescription = (body.querySelector("#editDescription").value || "").trim();
+        if (newDescription !== (idea.description || "")) {
+          payload.description = newDescription;
+        }
         if (selectedCat && selectedCat !== currentCategory) {
           payload.category = selectedCat;
         }
@@ -3360,6 +3366,26 @@ class BrainstormCard extends HTMLElement {
           border-radius: 4px;
           background: var(--secondary-background-color, rgba(127, 127, 127, 0.15));
         }
+        .idea-description {
+          margin-top: 2px;
+          font-size: 0.82rem;
+          line-height: 1.35;
+          color: var(--secondary-text-color, #727272);
+          white-space: pre-line;
+          word-break: break-word;
+          cursor: pointer;
+          display: -webkit-box;
+          -webkit-line-clamp: 3;
+          line-clamp: 3;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+        .idea-description.expanded {
+          display: block;
+          -webkit-line-clamp: unset;
+          line-clamp: unset;
+          overflow: visible;
+        }
         .idea-result {
           margin-top: 3px;
           padding-left: 8px;
@@ -4477,6 +4503,7 @@ class BrainstormCard extends HTMLElement {
                 <div class="idea-text" title="${itemEdit ? t("Klicken zum Bearbeiten (Lange drücken für Kontextmenü)") : ""}" data-id="${item.id}" style="${itemEdit ? "" : "cursor: default;"}">
                   ${isSub ? `<span class="subtask-indicator" title="${t("Unteraufgabe")}">↳</span>` : ""}${formatText(item.text)}
                 </div>
+                ${item.description ? `<div class="idea-description" title="${t("Antippen zum Auf- und Zuklappen")}" data-id="${item.id}">${formatText(item.description)}</div>` : ""}
                 ${item.result ? `<div class="idea-result" title="${t("Ergebnis")}">${formatText(item.result)}</div>` : ""}
                 <div class="idea-meta">
                   ${isSub ? `<span class="subtask-badge" title="${t("Unteraufgabe")}">${t("Unteraufgabe")}</span>` : ""}
@@ -4600,6 +4627,14 @@ class BrainstormCard extends HTMLElement {
             e.stopPropagation();
             const item = activeIdeas.find((i) => i.id === btn.getAttribute("data-id"));
             if (item) this._showSubtaskSuggestions(item);
+          });
+        });
+
+        ideasList.querySelectorAll(".idea-description").forEach((el) => {
+          el.addEventListener("click", (e) => {
+            if (e.target.closest("a")) return;
+            e.stopPropagation();
+            el.classList.toggle("expanded");
           });
         });
 
@@ -5398,7 +5433,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.7.7 ",
+  "%c BRAINSTORM-CARD %c v1.7.8 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

@@ -6,6 +6,12 @@ add_idea:
       selector:
         text:
           multiline: true
+    description:
+      required: false
+      example: "Im Baumarkt nach 5 m mit Netzteil schauen"
+      selector:
+        text:
+          multiline: true
     category:
       required: false
       example: "Smarthome"
@@ -76,6 +82,12 @@ update_idea:
       required: false
       selector:
         text:
+    description:
+      required: false
+      example: "Im Baumarkt nach 5 m mit Netzteil schauen"
+      selector:
+        text:
+          multiline: true
     category:
       required: false
       selector:

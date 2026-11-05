@@ -671,6 +671,10 @@
           "name": "Text / Idee",
           "description": "Der Inhalt des Gedankens oder der Idee."
         },
+        "description": {
+          "name": "Beschreibung",
+          "description": "Ein längerer Text unter dem Titel der Idee. Erscheint in der Listenkarte und in den To-do-Listen."
+        },
         "category": {
           "name": "Kategorie (Optional)",
           "description": "Thema/Kategorie. Bleibt dies leer, wird sie aus dem Text ermittelt oder 'Inbox' zugewiesen."
@@ -728,6 +732,10 @@
         "text": {
           "name": "Neuer Text",
           "description": "Geänderter Text."
+        },
+        "description": {
+          "name": "Beschreibung",
+          "description": "Ein längerer Text unter dem Titel der Idee. Erscheint in der Listenkarte und in den To-do-Listen. Leer entfernt sie."
         },
         "category": {
           "name": "Kategorie",

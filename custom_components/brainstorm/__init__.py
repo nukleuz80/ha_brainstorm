@@ -35,6 +35,7 @@ from .const import (
     ATTR_PARSE_DUE,
     ATTR_PRIORITY,
     ATTR_RESULT,
+    ATTR_DESCRIPTION,
     ATTR_REMINDED_AT,
     ATTR_RESET,
     ATTR_SOURCE,
@@ -46,6 +47,7 @@ from .const import (
     DOMAIN,
     PLATFORMS,
     RESULT_MAX_LENGTH,
+    DESCRIPTION_MAX_LENGTH,
     SERVICE_REORDER_IDEAS,
     SERVICE_SET_CATEGORY_STYLE,
     SHARE_EDIT,
@@ -120,6 +122,9 @@ SERVICE_ADD_IDEA_SCHEMA = vol.Schema(
         vol.Optional(ATTR_ASSIGNEE): vol.Any(None, cv.entity_id),
         vol.Optional(ATTR_ZONE): vol.Any(None, cv.entity_id),
         vol.Optional(ATTR_LANGUAGE): vol.Any(None, cv.string),
+        vol.Optional(ATTR_DESCRIPTION): vol.Any(
+            None, vol.All(cv.string, vol.Length(max=DESCRIPTION_MAX_LENGTH))
+        ),
     },
     extra=vol.ALLOW_EXTRA,
 )
@@ -140,6 +145,9 @@ SERVICE_UPDATE_IDEA_SCHEMA = vol.Schema(
         vol.Optional(ATTR_ECHOS): vol.Any(None, cv.entity_ids),
         vol.Optional(ATTR_RESULT): vol.Any(
             None, vol.All(cv.string, vol.Length(max=RESULT_MAX_LENGTH))
+        ),
+        vol.Optional(ATTR_DESCRIPTION): vol.Any(
+            None, vol.All(cv.string, vol.Length(max=DESCRIPTION_MAX_LENGTH))
         ),
     },
     extra=vol.ALLOW_EXTRA,
@@ -375,6 +383,7 @@ def _register_services(hass: HomeAssistant) -> None:
             owner=call.context.user_id or store.voice_user_for(device),
             language=language,
             spoken=spoken,
+            description=call.data.get(ATTR_DESCRIPTION),
         )
         return {"success": True, "idea": idea}
 
@@ -408,6 +417,8 @@ def _register_services(hass: HomeAssistant) -> None:
             update_due=ATTR_DUE in call.data,
             result=call.data.get(ATTR_RESULT),
             update_result=ATTR_RESULT in call.data,
+            description=call.data.get(ATTR_DESCRIPTION),
+            update_description=ATTR_DESCRIPTION in call.data,
         )
         if updated is not None and (
             ATTR_ASSIGNEE in call.data

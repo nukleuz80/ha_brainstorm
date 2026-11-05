@@ -43,6 +43,9 @@ from .const import (
     ATTR_PARENT_ID,
     ATTR_PRIORITY,
     ATTR_RESULT,
+    ATTR_DESCRIPTION,
+    ATTR_BATTERY,
+    ATTR_BATTERY_DONE,
     ATTR_SOURCE,
     ATTR_STATUS,
     ATTR_TAGS,
@@ -111,6 +114,7 @@ MAX_RESTORABLE = 50
 # Fields of an idea a JSON import takes over, everything else is left out
 IMPORT_FIELDS = (
     ATTR_RAW_TEXT,
+    ATTR_DESCRIPTION,
     ATTR_SOURCE,
     ATTR_DEVICE,
     ATTR_RESULT,
@@ -123,6 +127,8 @@ IMPORT_FIELDS = (
 EXPORT_SKIPPED_FIELDS = (
     ATTR_TODO_LINK,
     ATTR_BRING_LIST,
+    ATTR_BATTERY,
+    ATTR_BATTERY_DONE,
     ATTR_CALENDAR_SYNCED,
     ATTR_ALEXA_NATIVE,
 )
@@ -405,6 +411,8 @@ class BrainstormStore:
                 result[ATTR_MAP_POS] = position
             if note := idea.get(ATTR_RESULT):
                 result[ATTR_RESULT] = note
+            if description := idea.get(ATTR_DESCRIPTION):
+                result[ATTR_DESCRIPTION] = description
             return result
 
         last_action = self.last_action
@@ -932,6 +940,7 @@ class BrainstormStore:
         language: str | None = None,
         spoken: bool | None = None,
         verbatim: bool = False,
+        description: str | None = None,
     ) -> dict[str, Any]:
         """Add a new brainstorm idea.
 
@@ -1024,6 +1033,8 @@ class BrainstormStore:
             ),
             ATTR_SHARES: shares or {},
         }
+        if description and description.strip():
+            idea[ATTR_DESCRIPTION] = description.strip()
         # Keeps what was really said, so a bad shortening can be undone
         if raw_text != clean_text:
             idea[ATTR_RAW_TEXT] = raw_text
@@ -1097,6 +1108,8 @@ class BrainstormStore:
         update_due: bool = False,
         result: str | None = None,
         update_result: bool = False,
+        description: str | None = None,
+        update_description: bool = False,
     ) -> dict[str, Any] | None:
         """Update an existing idea.
 
@@ -1158,6 +1171,11 @@ class BrainstormStore:
                 idea[ATTR_RESULT] = result.strip()
             else:
                 idea.pop(ATTR_RESULT, None)
+        if update_description:
+            if description and description.strip():
+                idea[ATTR_DESCRIPTION] = description.strip()
+            else:
+                idea.pop(ATTR_DESCRIPTION, None)
         if update_parent:
             if not parent_id or parent_id.strip() in ("", "none"):
                 idea[ATTR_PARENT_ID] = None
@@ -1739,6 +1757,9 @@ class BrainstormStore:
                             else:
                                 prio_str = ""
                             f.write(f"- [ ] {item.get(ATTR_TEXT)}{prio_str}{src_str} _({created})_\n")
+                            if description := item.get(ATTR_DESCRIPTION):
+                                for line in str(description).splitlines():
+                                    f.write(f"  > {line}\n")
                         f.write("\n")
 
                     if completed:

@@ -150,6 +150,9 @@ ATTR_UPDATED_AT = "updated_at"
 ATTR_DUE = "due"
 ATTR_RESULT = "result"
 RESULT_MAX_LENGTH = 1000
+# A longer text below the title of an idea
+ATTR_DESCRIPTION = "description"
+DESCRIPTION_MAX_LENGTH = 4000
 ATTR_REMINDED_AT = "reminded_at"
 ATTR_ESCALATED = "escalated"
 ATTR_PARSE_DUE = "parse_due"
