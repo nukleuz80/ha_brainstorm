@@ -51,6 +51,7 @@ from .const import (
     ATTR_ATTACHMENTS,
     ATTR_BATTERY_DONE,
     ATTR_COMPLETED_AT,
+    ATTR_IN_PROGRESS,
     ATTACHMENT_DIR,
     ATTACHMENT_MAX_COUNT,
     ATTACHMENT_MAX_SIZE,
@@ -137,6 +138,7 @@ IMPORT_FIELDS = (
 EXPORT_SKIPPED_FIELDS = (
     # The files themselves are not part of an export
     ATTR_ATTACHMENTS,
+    ATTR_IN_PROGRESS,
     ATTR_TODO_LINK,
     ATTR_BRING_LIST,
     ATTR_BATTERY,
@@ -457,6 +459,8 @@ class BrainstormStore:
                 result[ATTR_DESCRIPTION] = description
             if attachments := idea.get(ATTR_ATTACHMENTS):
                 result[ATTR_ATTACHMENTS] = [dict(a) for a in attachments]
+            if working := idea.get(ATTR_IN_PROGRESS):
+                result[ATTR_IN_PROGRESS] = dict(working)
             return result
 
         last_action = self.last_action
@@ -1154,6 +1158,7 @@ class BrainstormStore:
         update_result: bool = False,
         description: str | None = None,
         update_description: bool = False,
+        in_progress: bool | None = None,
     ) -> dict[str, Any] | None:
         """Update an existing idea.
 
@@ -1202,6 +1207,16 @@ class BrainstormStore:
                 idea[ATTR_COMPLETED_AT] = dt_util.now().isoformat()
             elif status == "active":
                 idea.pop(ATTR_COMPLETED_AT, None)
+        if in_progress and not idea.get(ATTR_IN_PROGRESS):
+            mark: dict[str, Any] = {"since": dt_util.now().isoformat()}
+            if context is not None and context.user_id:
+                mark["by"] = context.user_id
+            idea[ATTR_IN_PROGRESS] = mark
+        elif in_progress is False:
+            idea.pop(ATTR_IN_PROGRESS, None)
+        # Work on an idea ends when it is done
+        if idea.get(ATTR_STATUS) in ("completed", "archived"):
+            idea.pop(ATTR_IN_PROGRESS, None)
         if device is not None:
             idea[ATTR_DEVICE] = device.strip() if device else None
         if order is not None:
@@ -1337,6 +1352,7 @@ class BrainstormStore:
             idea[ATTR_STATUS] = "archived"
             idea[ATTR_UPDATED_AT] = now_iso
             idea.setdefault(ATTR_COMPLETED_AT, now_iso)
+            idea.pop(ATTR_IN_PROGRESS, None)
             idea.pop(ATTR_TODO_LINK, None)
             idea.pop(ATTR_SPEC, None)
             archived += 1

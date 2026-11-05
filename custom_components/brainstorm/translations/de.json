@@ -795,6 +795,10 @@
         "result": {
           "name": "Ergebnis",
           "description": "Was aus dem Eintrag geworden ist, meist beim Abhaken notiert. Beide Karten zeigen es an. Leer entfernt es."
+        },
+        "in_progress": {
+          "name": "In Arbeit",
+          "description": "Zeigt an, dass gerade jemand, etwa eine Coding-KI, an dem Eintrag arbeitet. Beide Karten zeigen ein Abzeichen. Beim Abhaken verschwindet die Markierung."
         }
       }
     },

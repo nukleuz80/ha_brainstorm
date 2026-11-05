@@ -53,6 +53,21 @@ in the house, and Home Assistant overwrites changes to it.
 3. An entry that is too vague to implement gets one clarifying question,
    not a guess.
 
+## Marking the entry you work on
+
+When you start on an entry, mark it so the person sees it in the cards
+(🔧 In progress, with your user's name):
+
+```json
+{"domain": "brainstorm", "service": "update_idea",
+ "data": {"id": "<id>", "in_progress": true}}
+```
+
+Ticking the entry off removes the mark by itself. If you stop without
+finishing, remove it with `"in_progress": false` and say what is missing.
+Mark only the entry you are actually working on. It needs Brainstorm 1.7.10
+or later; leave it out on older versions.
+
 ## Ticking off
 
 Only tick off what is implemented, tested and committed (and pushed or

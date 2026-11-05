@@ -795,6 +795,10 @@
         "result": {
           "name": "Result",
           "description": "What came of the idea, usually written when ticking it off. Shown in both cards. Empty removes it."
+        },
+        "in_progress": {
+          "name": "In progress",
+          "description": "Marks that someone, for example a coding AI, is working on the idea now. Both cards show it with a badge. Ticking the idea off removes the mark."
         }
       }
     },

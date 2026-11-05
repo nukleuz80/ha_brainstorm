@@ -69,6 +69,11 @@ const DICTIONARIES = {
     "Der Anhang konnte nicht gespeichert werden ({status}).": "The attachment could not be saved ({status}).",
     "📎 Anhänge: {title}": "📎 Attachments: {title}",
     "Schließen": "Close",
+    "In Arbeit": "In progress",
+    "In Arbeit seit {time}": "In progress since {time}",
+    "{name} arbeitet daran seit {time}": "{name} has been working on it since {time}",
+    "Als „In Arbeit“ markieren": "Mark as “in progress”",
+    "Markierung „In Arbeit“ entfernen": "Remove the “in progress” mark",
     "Unteraufgaben einklappen": "Collapse subtasks",
     "Batterie": "Battery",
     "Titel:": "Title:",
@@ -496,6 +501,19 @@ async function attachmentRequest(hass, path, init) {
 function formatSize(bytes) {
   if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1).replace(".", code() === "de" ? "," : ".")} MB`;
   return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+}
+
+/** Return the 🔧 badge of an idea someone is working on, or nothing. */
+export function inProgressBadge(idea) {
+  const mark = idea && idea.in_progress;
+  if (!mark) return "";
+  const since = mark.since ? new Date(mark.since) : null;
+  const when = since && !Number.isNaN(since.getTime())
+    ? since.toLocaleString(dateLocale(), { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
+    : "";
+  const name = mark.name ? escapeHtml(mark.name) : "";
+  const title = name ? t("{name} arbeitet daran seit {time}", { name, time: when }) : t("In Arbeit seit {time}", { time: when });
+  return `<span class="in-progress-badge" title="${title}">🔧 ${t("In Arbeit")}${name ? ` · ${name}` : ""}</span>`;
 }
 
 /** Return the 📎 badge of an idea with files, or nothing. */

@@ -1,9 +1,9 @@
-import { alexaEchos, attachmentBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, parseDueInput, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.7.9";
+import { alexaEchos, attachmentBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, inProgressBadge, parseDueInput, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.7.10";
 
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.7.9 - Skill, Reminders, Privacy and Sharing
+ * Version 1.7.10 - Skill, Reminders, Privacy and Sharing
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",
@@ -2023,6 +2023,14 @@ class BrainstormCard extends HTMLElement {
       `;
     }
 
+    // Someone is working on it, often a coding AI
+    actionsHtml += `
+      <button class="apple-menu-btn" data-act="in-progress">
+        <span class="btn-icon">🔧</span>
+        <div class="btn-content"><span>${item.in_progress ? t("Markierung „In Arbeit“ entfernen") : t("Als „In Arbeit“ markieren")}</span></div>
+      </button>
+    `;
+
     // Reminder
     actionsHtml += `
       <button class="apple-menu-btn" data-act="due-evening">
@@ -2117,6 +2125,15 @@ class BrainstormCard extends HTMLElement {
 
         if (act === "share") {
           this._showShareDialog([item.id], null, item.shares || {});
+          return;
+        }
+
+        if (act === "in-progress") {
+          try {
+            await this._hass.callService("brainstorm", "update_idea", { id: item.id, in_progress: !item.in_progress });
+          } catch (err) {
+            console.error("Failed to change the in progress mark", err);
+          }
           return;
         }
 
@@ -3599,6 +3616,16 @@ class BrainstormCard extends HTMLElement {
         .due-badge.overdue {
           color: var(--error-color);
         }
+        .in-progress-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 3px;
+          padding: 2px 6px;
+          border-radius: 6px;
+          font-weight: 600;
+          color: var(--warning-color, #ff9800);
+          background: color-mix(in srgb, var(--warning-color, #ff9800) 14%, transparent);
+        }
         .attachment-badge {
           display: inline-flex;
           align-items: center;
@@ -4555,6 +4582,7 @@ class BrainstormCard extends HTMLElement {
                   ${this._formatShareBadge(item)}
                   ${this._formatAuthorBadge(item)}
                   ${attachmentBadge(item)}
+                  ${inProgressBadge(item)}
                   ${showSource ? `${this._getSourceBadge(item.source, item.device)}` : ""}
                   ${showSource && showTime ? `<span>•</span>` : ""}
                   ${showTime ? `<span>${this._formatTime(item.created_at)}</span>` : ""}
@@ -5482,7 +5510,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.7.9 ",
+  "%c BRAINSTORM-CARD %c v1.7.10 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

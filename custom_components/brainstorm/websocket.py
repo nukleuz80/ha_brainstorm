@@ -56,6 +56,8 @@ async def websocket_get_ideas(
     }
     for idea in (*result["ideas"], *result["completed_ideas"]):
         idea["owner_name"] = names.get(idea.get("owner"), "")
+        if worker := (idea.get("in_progress") or {}).get("by"):
+            idea["in_progress"]["name"] = names.get(worker, "")
         if author := idea.get("created_by"):
             idea["author_name"] = names.get(author, "")
             idea["author_picture"] = pictures.get(author)

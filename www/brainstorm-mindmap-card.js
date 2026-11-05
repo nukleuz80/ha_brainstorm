@@ -1,8 +1,8 @@
-import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, parseDueInput, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.7.9";
+import { alexaEchos, attachmentBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, inProgressBadge, parseDueInput, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.7.10";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.7.9 - Skill, Reminders, Privacy and Sharing
+ * Version: 1.7.10 - Skill, Reminders, Privacy and Sharing
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -1633,6 +1633,21 @@ class BrainstormMindmapCard extends HTMLElement {
           margin-bottom: 8px;
           user-select: text;
           cursor: pointer;
+        }
+        .in-progress-badge,
+        .attachment-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 3px;
+          padding: 1px 5px;
+          border-radius: 6px;
+          font-size: 0.68rem;
+          background: var(--secondary-background-color, rgba(127, 127, 127, 0.12));
+        }
+        .in-progress-badge {
+          font-weight: 600;
+          color: var(--warning-color, #ff9800);
+          background: color-mix(in srgb, var(--warning-color, #ff9800) 14%, transparent);
         }
         .cloud-result {
           margin: -4px 0 8px;
@@ -4201,6 +4216,8 @@ class BrainstormMindmapCard extends HTMLElement {
               </span>
               ${prioBadge}
               ${this._getReminderBadges(idea)}
+              ${inProgressBadge(idea)}
+              ${attachmentBadge(idea)}
               <span class="cloud-source" title="${t("Quelle")}: ${this._escapeHtml(idea.source || 'Dashboard')}${idea.device ? ` • ${t("Gerät")}: ` + this._escapeHtml(idea.device) : ''}">
                 <span>${sourceBadge}</span>
                 <span>•</span>
@@ -5477,7 +5494,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.7.9 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.7.10 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

@@ -37,6 +37,7 @@ from .const import (
     ATTR_PRIORITY,
     ATTR_RESULT,
     ATTR_DESCRIPTION,
+    ATTR_IN_PROGRESS,
     ATTR_REMINDED_AT,
     ATTR_RESET,
     ATTR_SOURCE,
@@ -150,6 +151,7 @@ SERVICE_UPDATE_IDEA_SCHEMA = vol.Schema(
         vol.Optional(ATTR_DESCRIPTION): vol.Any(
             None, vol.All(cv.string, vol.Length(max=DESCRIPTION_MAX_LENGTH))
         ),
+        vol.Optional(ATTR_IN_PROGRESS): cv.boolean,
     },
     extra=vol.ALLOW_EXTRA,
 )
@@ -425,6 +427,7 @@ def _register_services(hass: HomeAssistant) -> None:
             update_result=ATTR_RESULT in call.data,
             description=call.data.get(ATTR_DESCRIPTION),
             update_description=ATTR_DESCRIPTION in call.data,
+            in_progress=call.data.get(ATTR_IN_PROGRESS),
         )
         if updated is not None and (
             ATTR_ASSIGNEE in call.data

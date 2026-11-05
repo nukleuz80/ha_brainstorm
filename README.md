@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.7.9-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.7.10-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -161,8 +161,8 @@ HACS only installs the integration, so continue with [Install the cards](#instal
 
 1. Copy `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` and `www/brainstorm-i18n.js` from the release to `/config/www/`. The third file holds the texts and needs no resource entry.
 2. Add both under **Settings ➔ Dashboards ➔ Resources** as **JavaScript module**:
-   - `/local/brainstorm-card.js?v=1.7.9`
-   - `/local/brainstorm-mindmap-card.js?v=1.7.9`
+   - `/local/brainstorm-card.js?v=1.7.10`
+   - `/local/brainstorm-mindmap-card.js?v=1.7.10`
 3. Reload the page in your browser.
 
 ### Removing the Integration
@@ -311,6 +311,7 @@ A category can be the backlog of a programming project: you collect tasks by Ale
 
 - It reads only over `brainstorm.get_ideas`, never the file in `.storage`. This way the AI only sees what is shared.
 - Subtasks are done in their order, conditions in the text ("check first whether …") come first.
+- When it starts on an idea, it marks it with `in_progress: true`. Both cards then show **🔧 In progress** with the AI user's name, and hovering over the badge shows since when. Ticking off removes the mark; if the AI stops early, it removes it with `in_progress: false`. You can set and remove the mark yourself in the long-press menu (v1.7.10).
 - It ticks off only what is implemented, tested and committed, with `status: completed` and a short `result` (version, change, test, open points). The reply names every idea it ticked off.
 - Deleting, shares and settings stay with you. When an action is refused, the AI tells you which share is missing instead of trying another way.
 
@@ -358,9 +359,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.7.9
+  - url: /local/brainstorm-card.js?v=1.7.10
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.7.9
+  - url: /local/brainstorm-mindmap-card.js?v=1.7.10
     type: module
 ```
 
@@ -915,6 +916,7 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.7.10`** | 2026-11-05 | **In progress:** `brainstorm.update_idea` takes `in_progress`. Both cards show 🔧 In progress with the name of who started, the long-press menu sets and removes it, and ticking off removes it. The Claude Code skill marks the entry it works on. The mind map also shows the 📎 badge. |
 | **`v1.7.9`** | 2026-11-05 | **Attachments:** screenshots, photos, PDFs and logs on a note, added in the edit dialog of both cards, pasted with Ctrl+V or dropped. The list shows 📎 with the number. Files of notes done for 30 days are deleted. Only people who may see a note get its files. |
 | **`v1.7.8`** | 2026-11-05 | **Title and description:** every note can have a description below its title, edited with ✎ in both cards. The list shows three lines, a tap shows all. Home Assistant's to-do lists show and edit it, and the actions take `description`. Markdown and JSON exports include it. |
 | **`v1.7.7`** | 2026-11-05 | **Lock times per Echo:** under *Reminders ➔ Lock times per Echo*, up to three lock times keep chosen Echos silent for Brainstorm, e.g. nights in the children's room. Other Echos still speak, and with none left the reminder goes to the phone at once. Optionally Do not disturb is switched on and off with the lock time. |

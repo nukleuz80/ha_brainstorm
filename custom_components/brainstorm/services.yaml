@@ -151,6 +151,10 @@ update_idea:
       selector:
         text:
           multiline: true
+    in_progress:
+      required: false
+      selector:
+        boolean:
 
 delete_idea:
   fields:

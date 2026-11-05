@@ -157,6 +157,8 @@ DESCRIPTION_MAX_LENGTH = 4000
 ATTR_ATTACHMENTS = "attachments"
 # When an idea was ticked off, so its attachments can go after a while
 ATTR_COMPLETED_AT = "completed_at"
+# Someone, often a coding AI, is working on an idea right now
+ATTR_IN_PROGRESS = "in_progress"
 ATTACHMENT_DIR = "brainstorm_attachments"
 ATTACHMENT_MAX_SIZE = 10 * 1024 * 1024
 ATTACHMENT_MAX_COUNT = 20
