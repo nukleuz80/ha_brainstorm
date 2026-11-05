@@ -26,6 +26,7 @@ from .const import (
     CONF_BATTERY_CATEGORY,
     CONF_BATTERY_ENABLED,
     CONF_BATTERY_EXCLUDE,
+    CONF_BATTERY_PHONES,
     CONF_BATTERY_THRESHOLD,
     CONF_BRING_CATEGORY,
     CONF_BRING_DEFAULT_LIST,
@@ -1602,6 +1603,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                         CONF_BATTERY_EXCLUDE: list(
                             user_input.get(CONF_BATTERY_EXCLUDE) or []
                         ),
+                        CONF_BATTERY_PHONES: bool(user_input.get(CONF_BATTERY_PHONES)),
                     }
                 )
                 return await self._async_saved(options, "init")
@@ -1650,6 +1652,10 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                     multiple=True,
                 )
             ),
+            vol.Required(
+                CONF_BATTERY_PHONES,
+                default=bool(current.get(CONF_BATTERY_PHONES, False)),
+            ): selector.BooleanSelector(),
         }
         return self.async_show_form(
             step_id="battery",

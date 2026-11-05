@@ -438,19 +438,21 @@
       },
       "battery": {
         "title": "Brainstorm › 🔋 Batterien",
-        "description": "Legt eine Aufgabe an, sobald eine Batterie schwach wird: unter der Schwelle, oder wenn ein Sensor eine schwache Batterie meldet. Ist die Batterie gewechselt, hakt sich die Aufgabe selbst ab.",
+        "description": "Legt pro Gerät eine Aufgabe an, sobald seine Batterie schwach wird: unter der Schwelle, oder wenn ein Sensor eine schwache Batterie meldet. Ist die Batterie gewechselt, hakt sich die Aufgabe selbst ab.",
         "data": {
           "battery_enabled": "Batterie-Aufgaben anlegen",
           "battery_threshold": "Schwelle",
           "battery_category": "Kategorie",
           "battery_exclude": "Auslassen",
+          "battery_phones": "Handys und Tablets einbeziehen",
           "go_back": "⬅️ Zurück ohne Speichern"
         },
         "data_description": {
           "battery_enabled": "Ausschalten verhindert neue Aufgaben. Vorhandene bleiben.",
           "battery_threshold": "Bei diesem Stand oder darunter entsteht eine Aufgabe. Als gewechselt gilt die Batterie, sobald sie 10 Punkte darüber liegt.",
           "battery_category": "Wähle eine Kategorie oder tippe einen neuen Namen, sie wird beim Speichern angelegt.",
-          "battery_exclude": "Batterien, die nie eine Aufgabe anlegen sollen, etwa Handys.",
+          "battery_exclude": "Batterien, die nie eine Aufgabe anlegen sollen, etwa ein Hausakku. Ein ausgelassener Sensor lässt sein ganzes Gerät aus.",
+          "battery_phones": "Geräte der Companion-App werden täglich geladen und bleiben deshalb außen vor, außer du schaltest es hier ein.",
           "go_back": "Kehrt zur vorherigen Seite zurück, ohne dieses Formular zu speichern."
         }
       }

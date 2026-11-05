@@ -6,6 +6,8 @@ from typing import Any
 
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.helpers import device_registry as dr, entity_registry as er
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.brainstorm.store import BrainstormStore
 
@@ -201,3 +203,77 @@ async def test_options_battery_page(
     assert entry.options["battery_threshold"] == 15
     assert entry.options["battery_exclude"] == [BINARY]
     assert "Batterien" in entry.runtime_data.categories
+
+
+def _register(
+    hass: HomeAssistant, entity_id: str, platform: str, device_id: str
+) -> None:
+    domain, object_id = entity_id.split(".", 1)
+    er.async_get(hass).async_get_or_create(
+        domain, platform, object_id, suggested_object_id=object_id, device_id=device_id
+    )
+
+
+def _device(hass: HomeAssistant, name: str) -> str:
+    entry = MockConfigEntry(domain="test")
+    entry.add_to_hass(hass)
+    return dr.async_get(hass).async_get_or_create(
+        config_entry_id=entry.entry_id, identifiers={("test", name)}, name=name
+    ).id
+
+
+async def test_one_task_per_device(hass: HomeAssistant, setup_entry: SetupEntry) -> None:
+    """Test that extra sensors for the same battery make no second task."""
+    device = _device(hass, "Thermometer Bad")
+    _register(hass, "sensor.bad_batterie", "switchbot", device)
+    _register(hass, "sensor.bad_batterie_plus", "battery_notes", device)
+    _register(hass, "binary_sensor.bad_batterie_low", "battery_notes", device)
+    store = await _setup(setup_entry)
+    key = f"device:{device}"
+    _set_level(hass, "8", "sensor.bad_batterie")
+    _set_level(hass, "8", "sensor.bad_batterie_plus")
+    hass.states.async_set("binary_sensor.bad_batterie_low", "on", {"device_class": "battery"})
+    await hass.async_block_till_done()
+    tasks = _tasks(store, key)
+    assert len(tasks) == 1
+    assert tasks[0]["text"] == "Batterie wechseln: Thermometer Bad (8 %)"
+
+    # One sensor with the new level is not enough while another still says weak
+    _set_level(hass, "100", "sensor.bad_batterie")
+    _set_level(hass, "100", "sensor.bad_batterie_plus")
+    await hass.async_block_till_done()
+    assert _tasks(store, key)[0]["status"] == "active"
+    hass.states.async_set("binary_sensor.bad_batterie_low", "off", {"device_class": "battery"})
+    await hass.async_block_till_done()
+    assert _tasks(store, key)[0]["status"] == "completed"
+
+
+async def test_phones_and_left_out_devices(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that phones are skipped unless wanted, and a left out sensor skips its device."""
+    phone = _device(hass, "Handy")
+    _register(hass, "sensor.handy_batterie", "mobile_app", phone)
+    _register(hass, "sensor.handy_batterie_plus", "battery_notes", phone)
+    solar = _device(hass, "Solarbank")
+    _register(hass, "sensor.solarbank_ladestand", "anker", solar)
+    _register(hass, "sensor.solarbank_ladestand_plus", "battery_notes", solar)
+    for entity_id in (
+        "sensor.handy_batterie",
+        "sensor.handy_batterie_plus",
+        "sensor.solarbank_ladestand",
+        "sensor.solarbank_ladestand_plus",
+    ):
+        _set_level(hass, "10", entity_id)
+    store = await _setup(setup_entry, battery_exclude=["sensor.solarbank_ladestand"])
+    assert _tasks(store, f"device:{phone}") == []
+    assert _tasks(store, f"device:{solar}") == []
+
+
+async def test_phones_when_wanted(hass: HomeAssistant, setup_entry: SetupEntry) -> None:
+    """Test that phones can be included."""
+    phone = _device(hass, "Handy")
+    _register(hass, "sensor.handy_batterie", "mobile_app", phone)
+    _set_level(hass, "10", "sensor.handy_batterie")
+    store = await _setup(setup_entry, battery_phones=True)
+    assert len(_tasks(store, f"device:{phone}")) == 1

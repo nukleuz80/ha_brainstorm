@@ -438,19 +438,21 @@
       },
       "battery": {
         "title": "Brainstorm › 🔋 Batteries",
-        "description": "Creates a task as soon as a battery runs low: below the threshold, or when a sensor reports a weak battery. Once the battery is replaced, the task ticks itself off.",
+        "description": "Creates one task per device as soon as its battery runs low: below the threshold, or when a sensor reports a weak battery. Once the battery is replaced, the task ticks itself off.",
         "data": {
           "battery_enabled": "Create battery tasks",
           "battery_threshold": "Threshold",
           "battery_category": "Category",
           "battery_exclude": "Leave out",
+          "battery_phones": "Include phones and tablets",
           "go_back": "⬅️ Back without saving"
         },
         "data_description": {
           "battery_enabled": "Switching off stops new tasks. Existing tasks stay.",
           "battery_threshold": "A task is created at this level or below. It counts as replaced once the level is 10 points above it.",
           "battery_category": "Choose a category or type a new name, it is created on saving.",
-          "battery_exclude": "Batteries that should never create a task, such as phones.",
+          "battery_exclude": "Batteries that should never create a task, such as a home battery. Leaving out one sensor leaves out its whole device.",
+          "battery_phones": "Devices of the Companion app are charged every day, so they are left out unless switched on here.",
           "go_back": "Returns to the previous page without saving this form."
         }
       }

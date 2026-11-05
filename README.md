@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.7.5-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.7.6-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -159,8 +159,8 @@ HACS only installs the integration, so continue with [Install the cards](#instal
 
 1. Copy `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` and `www/brainstorm-i18n.js` from the release to `/config/www/`. The third file holds the texts and needs no resource entry.
 2. Add both under **Settings ➔ Dashboards ➔ Resources** as **JavaScript module**:
-   - `/local/brainstorm-card.js?v=1.7.5`
-   - `/local/brainstorm-mindmap-card.js?v=1.7.5`
+   - `/local/brainstorm-card.js?v=1.7.6`
+   - `/local/brainstorm-mindmap-card.js?v=1.7.6`
 3. Reload the page in your browser.
 
 ### Removing the Integration
@@ -356,9 +356,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.7.5
+  - url: /local/brainstorm-card.js?v=1.7.6
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.7.5
+  - url: /local/brainstorm-mindmap-card.js?v=1.7.6
     type: module
 ```
 
@@ -622,10 +622,11 @@ Turns low batteries into tasks (v1.7.5). Every battery sensor counts: a level in
 | Create battery tasks | Switches battery tasks on or off. Switched off, no new tasks are made and existing ones stay. |
 | Threshold | A task is created at this level or below (default 20 %). |
 | Category | Pick a category or type a new name, which is created when you save. Suggested is *Smarthome*. |
-| Leave out | Batteries that should never create a task, such as phones. |
+| Leave out | Batteries that should never create a task, such as a home battery. Leaving out one sensor leaves out its whole device. |
+| Include phones and tablets | Devices of the Companion app are charged every day, so they are left out unless switched on. |
 
-- **One task per battery**, named after its device, e.g. *Replace the battery: Motion sensor hall (18 %)*.
-- **Ticks itself off:** Once the level is 10 points above the threshold, or the sensor no longer reports a weak battery, the task is ticked off. The gap keeps a battery around the threshold from creating and closing tasks.
+- **One task per device**, even if integrations like Battery Notes add more sensors for the same battery. It is named after its device, e.g. *Replace the battery: Motion sensor hall (18 %)*.
+- **Ticks itself off:** Once no sensor of the device reports a weak battery and the level is 10 points above the threshold, the task is ticked off. The gap keeps a battery around the threshold from creating and closing tasks.
 - **Ticked off by hand** before the battery is replaced, the task does not come back. The next weak battery makes a new one.
 - **After a restart**, all batteries are checked once.
 
@@ -889,6 +890,7 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.7.6`** | 2026-11-05 | **Battery tasks per device:** extra sensors for the same battery (e.g. Battery Notes) no longer make a second task, and the task only ticks itself off once no sensor of the device reports weak. Phones and tablets of the Companion app are left out unless switched on, and leaving out one sensor leaves out its device. |
 | **`v1.7.5`** | 2026-11-05 | **Battery tasks:** a battery below the threshold (default 20 %) or reporting weak creates a task like *Replace the battery: Motion sensor hall (18 %)*, which ticks itself off once the battery is replaced. Set up under *Configure ➔ 🔋 Batteries*, with batteries to leave out. |
 | **`v1.7.4`** | 2026-11-05 | **Fold subtasks in the list:** ▾ with the number of subtasks on every main task folds them away, ▸ unfolds them. Each browser remembers it per card. |
 | **`v1.7.3`** | 2026-11-05 | **Bring! settings save again:** if the default list is not one of the chosen lists, the first chosen list is used instead of blocking the form. |

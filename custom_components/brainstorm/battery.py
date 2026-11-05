@@ -32,6 +32,7 @@ from .const import (
     CONF_BATTERY_CATEGORY,
     CONF_BATTERY_ENABLED,
     CONF_BATTERY_EXCLUDE,
+    CONF_BATTERY_PHONES,
     CONF_BATTERY_THRESHOLD,
     DEFAULT_BATTERY_THRESHOLD,
     SHARE_ALL,
@@ -105,6 +106,7 @@ class BatteryWatcher:
         )
         self.category = (options.get(CONF_BATTERY_CATEGORY) or "").strip()
         self.exclude = set(options.get(CONF_BATTERY_EXCLUDE) or [])
+        self.phones = bool(options.get(CONF_BATTERY_PHONES, False))
         self._unsubs: list[CALLBACK_TYPE] = []
         self._unsub_started: CALLBACK_TYPE | None = None
 
@@ -145,29 +147,53 @@ class BatteryWatcher:
     @callback
     def _is_watched_event(self, data: EventStateChangedData) -> bool:
         """Only let battery sensors through, as this runs for every change."""
-        state = data["new_state"]
-        return is_battery_state(state) and state.entity_id not in self.exclude
+        return is_battery_state(data["new_state"])
 
     async def _handle_state_change(self, event: Event[EventStateChangedData]) -> None:
         """React to a battery sensor that changed."""
-        state = event.data["new_state"]
-        if state is not None:
-            await self._async_check(state)
+        groups = self._groups()
+        key = self._key(event.data["entity_id"])
+        if key in groups:
+            await self._async_check(key, groups[key])
+
+    def _key(self, entity_id: str) -> str:
+        """Return the device a battery sensor belongs to, or the sensor itself.
+
+        Integrations like Battery Notes add more sensors for the same battery,
+        and one device must not get a task per sensor.
+        """
+        entry = er.async_get(self.hass).async_get(entity_id)
+        if entry is not None and entry.device_id:
+            return f"device:{entry.device_id}"
+        return entity_id
+
+    def _groups(self) -> dict[str, list[State]]:
+        """Return the battery sensors per device, without the devices left out."""
+        registry = er.async_get(self.hass)
+        groups: dict[str, list[State]] = {}
+        skipped: set[str] = set()
+        for state in self.hass.states.async_all(BATTERY_DOMAINS):
+            if not is_battery_state(state):
+                continue
+            key = self._key(state.entity_id)
+            groups.setdefault(key, []).append(state)
+            entry = registry.async_get(state.entity_id)
+            # Leaving out one sensor leaves out its whole device
+            if state.entity_id in self.exclude or (
+                # Phones and tablets are charged every day, not replaced
+                not self.phones and entry is not None and entry.platform == "mobile_app"
+            ):
+                skipped.add(key)
+        return {key: states for key, states in groups.items() if key not in skipped}
 
     async def async_check_all(self) -> None:
-        """Check every battery sensor, for example after a restart."""
-        for state in self.hass.states.async_all(BATTERY_DOMAINS):
-            if is_battery_state(state) and state.entity_id not in self.exclude:
-                await self._async_check(state)
-        # A task for a sensor that was excluded or removed has no one to close it
-        known = {
-            state.entity_id
-            for state in self.hass.states.async_all(BATTERY_DOMAINS)
-            if is_battery_state(state)
-        }
+        """Check every battery, for example after a restart."""
+        groups = self._groups()
+        for key, states in groups.items():
+            await self._async_check(key, states)
+        # A task for a battery left out or removed has no one to close it
         for idea in self._open_tasks():
-            entity_id = idea[ATTR_BATTERY]
-            if entity_id in self.exclude or entity_id not in known:
+            if idea[ATTR_BATTERY] not in groups:
                 await self.store.async_set_fields({idea[ATTR_ID]: {ATTR_BATTERY_DONE: True}})
 
     def _open_tasks(self) -> list[dict[str, Any]]:
@@ -178,24 +204,37 @@ class BatteryWatcher:
             if idea.get(ATTR_BATTERY) and not idea.get(ATTR_BATTERY_DONE)
         ]
 
-    async def _async_check(self, state: State) -> None:
-        """Create or close the task for one battery."""
-        low = battery_status(state, self.threshold)
-        if low is None:
+    async def _async_check(self, key: str, states: list[State]) -> None:
+        """Create or close the task for one battery.
+
+        A device is low while any of its sensors says so, and only counts as
+        having a new battery when none does and at least one says it is good.
+        """
+        statuses = [battery_status(state, self.threshold) for state in states]
+        low_states = [state for state, low in zip(states, statuses) if low]
+        if low_states:
+            low = True
+        elif False in statuses:
+            low = False
+        else:
             return
         task = next(
-            (idea for idea in self._open_tasks() if idea[ATTR_BATTERY] == state.entity_id),
-            None,
+            (idea for idea in self._open_tasks() if idea[ATTR_BATTERY] == key), None
         )
         if low and task is None:
-            await self._async_create(state)
+            # A level says more than a weak flag
+            state = min(
+                low_states,
+                key=lambda item: (battery_level(item) is None, battery_level(item) or 0),
+            )
+            await self._async_create(key, state)
         elif not low and task is not None:
             # A new battery: tick the task off, or just close the case if done
             if task.get(ATTR_STATUS) == "active":
                 await self.store.async_update_idea(task[ATTR_ID], status="completed")
             await self.store.async_set_fields({task[ATTR_ID]: {ATTR_BATTERY_DONE: True}})
 
-    async def _async_create(self, state: State) -> None:
+    async def _async_create(self, key: str, state: State) -> None:
         """Add the task for a low battery."""
         pack = get_pack(self.hass.config.language)
         name = self.device_name(state)
@@ -212,7 +251,7 @@ class BatteryWatcher:
             verbatim=True,
             shares={SHARE_ALL: SHARE_EDIT} if self.store.privacy_enabled else None,
         )
-        await self.store.async_set_fields({idea[ATTR_ID]: {ATTR_BATTERY: state.entity_id}})
+        await self.store.async_set_fields({idea[ATTR_ID]: {ATTR_BATTERY: key}})
         _LOGGER.info("Battery task added for %s", state.entity_id)
 
     def device_name(self, state: State) -> str:

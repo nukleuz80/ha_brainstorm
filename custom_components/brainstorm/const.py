@@ -68,6 +68,7 @@ CONF_BATTERY_ENABLED = "battery_enabled"
 CONF_BATTERY_THRESHOLD = "battery_threshold"
 CONF_BATTERY_CATEGORY = "battery_category"
 CONF_BATTERY_EXCLUDE = "battery_exclude"
+CONF_BATTERY_PHONES = "battery_phones"
 DEFAULT_BATTERY_THRESHOLD = 20
 
 DEFAULT_CATEGORIES = [
@@ -172,7 +173,7 @@ ATTR_TODO_LINK = "todo_link"
 SOURCE_TODO_SYNC = "todo_sync"
 # The main note that stands for a Bring! list, and where it came from
 ATTR_BRING_LIST = "bring_list"
-# The battery sensor a task is for, and whether its battery was replaced
+# The device (or sensor) a battery task is for, and whether it got a new battery
 ATTR_BATTERY = "battery"
 ATTR_BATTERY_DONE = "battery_done"
 SOURCE_BRING = "bring"
