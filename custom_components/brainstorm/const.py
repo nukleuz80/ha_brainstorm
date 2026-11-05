@@ -64,6 +64,11 @@ CONF_BRING_DEFAULT_LIST = "bring_default_list"
 CONF_BRING_SHARE_ALL = "bring_share_all"
 CONF_BRING_DONE_DAYS = "bring_done_days"
 DEFAULT_BRING_DONE_DAYS = 3
+CONF_BATTERY_ENABLED = "battery_enabled"
+CONF_BATTERY_THRESHOLD = "battery_threshold"
+CONF_BATTERY_CATEGORY = "battery_category"
+CONF_BATTERY_EXCLUDE = "battery_exclude"
+DEFAULT_BATTERY_THRESHOLD = 20
 
 DEFAULT_CATEGORIES = [
     "Inbox",
@@ -167,7 +172,11 @@ ATTR_TODO_LINK = "todo_link"
 SOURCE_TODO_SYNC = "todo_sync"
 # The main note that stands for a Bring! list, and where it came from
 ATTR_BRING_LIST = "bring_list"
+# The battery sensor a task is for, and whether its battery was replaced
+ATTR_BATTERY = "battery"
+ATTR_BATTERY_DONE = "battery_done"
 SOURCE_BRING = "bring"
+SOURCE_BATTERY = "battery"
 # The amount or note of an item on a linked list, such as "1,5 l"
 ATTR_SPEC = "spec"
 # Format of the JSON export, raised when its layout changes incompatibly

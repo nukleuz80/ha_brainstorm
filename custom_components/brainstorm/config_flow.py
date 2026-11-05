@@ -23,6 +23,10 @@ from .const import (
     CONF_ALLOWED_ECHOS,
     CONF_ARRIVAL_ENABLED,
     CONF_AUTO_EXPORT_MARKDOWN,
+    CONF_BATTERY_CATEGORY,
+    CONF_BATTERY_ENABLED,
+    CONF_BATTERY_EXCLUDE,
+    CONF_BATTERY_THRESHOLD,
     CONF_BRING_CATEGORY,
     CONF_BRING_DEFAULT_LIST,
     CONF_BRING_DONE_DAYS,
@@ -69,6 +73,7 @@ from .const import (
     CONF_VOICE_DUE,
     CONF_GLOSSARY,
     CONF_VOICE_MODE,
+    DEFAULT_BATTERY_THRESHOLD,
     DEFAULT_BRING_DONE_DAYS,
     DEFAULT_HIDE_EMPTY_CATEGORIES,
     DEFAULT_MARKDOWN_PATH,
@@ -241,6 +246,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "ai": "KI",
                 "todo_sync": "To-do-Listen koppeln",
                 "bring": "🛒 Bring!",
+                "battery": "🔋 Batterien",
                 "privacy": "Privatsphäre & Benutzer",
                 "privacy_voice": "Echos & Apps Personen zuordnen",
                 "close": "✅ Fertig",
@@ -272,6 +278,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "ai": "AI",
                 "todo_sync": "Link To-do Lists",
                 "bring": "🛒 Bring!",
+                "battery": "🔋 Batteries",
                 "privacy": "Privacy & Users",
                 "privacy_voice": "Assign Echos & Apps to People",
                 "close": "✅ Done",
@@ -1562,6 +1569,92 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             description_placeholders={
                 "lists": ", ".join(bring.name for bring in lists),
             },
+        )
+
+    async def async_step_battery(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Turn low batteries into tasks that tick themselves off."""
+        if user_input is not None and user_input.pop(BACK_FIELD, False):
+            return await self.async_step_init()
+        store = await self._async_store()
+        options = dict(self.config_entry.options or self.config_entry.data)
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            enabled = bool(user_input.get(CONF_BATTERY_ENABLED))
+            category = (user_input.get(CONF_BATTERY_CATEGORY) or "").strip()
+            if enabled and not category:
+                errors[CONF_BATTERY_CATEGORY] = "battery_category_missing"
+            else:
+                if enabled and not any(
+                    c.casefold() == category.casefold() for c in store.categories
+                ):
+                    await store.async_add_category(category)
+                options.update(
+                    {
+                        CONF_BATTERY_ENABLED: enabled,
+                        CONF_BATTERY_CATEGORY: category,
+                        CONF_BATTERY_THRESHOLD: int(
+                            user_input.get(
+                                CONF_BATTERY_THRESHOLD, DEFAULT_BATTERY_THRESHOLD
+                            )
+                        ),
+                        CONF_BATTERY_EXCLUDE: list(
+                            user_input.get(CONF_BATTERY_EXCLUDE) or []
+                        ),
+                    }
+                )
+                return await self._async_saved(options, "init")
+
+        current = {**options, **(user_input or {})}
+        categories = list(store.categories)
+        default_category = current.get(CONF_BATTERY_CATEGORY) or next(
+            (c for c in categories if c.casefold() == "smarthome"),
+            categories[0] if categories else "Inbox",
+        )
+        schema: dict[Any, Any] = {
+            vol.Required(
+                CONF_BATTERY_ENABLED,
+                default=bool(current.get(CONF_BATTERY_ENABLED, False)),
+            ): selector.BooleanSelector(),
+            vol.Required(
+                CONF_BATTERY_THRESHOLD,
+                default=int(
+                    current.get(CONF_BATTERY_THRESHOLD, DEFAULT_BATTERY_THRESHOLD)
+                ),
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=1,
+                    max=90,
+                    step=1,
+                    mode=selector.NumberSelectorMode.BOX,
+                    unit_of_measurement="%",
+                )
+            ),
+            vol.Required(
+                CONF_BATTERY_CATEGORY, default=default_category
+            ): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=categories,
+                    custom_value=True,
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                )
+            ),
+            vol.Optional(
+                CONF_BATTERY_EXCLUDE,
+                description=_suggested(current, CONF_BATTERY_EXCLUDE),
+            ): selector.EntitySelector(
+                selector.EntitySelectorConfig(
+                    domain=["sensor", "binary_sensor"],
+                    device_class="battery",
+                    multiple=True,
+                )
+            ),
+        }
+        return self.async_show_form(
+            step_id="battery",
+            data_schema=vol.Schema(_with_back(schema)),
+            errors=errors,
         )
 
     async def _async_bring_category(

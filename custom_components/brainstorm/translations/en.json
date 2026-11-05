@@ -435,13 +435,32 @@
           "device": "The Echo or Alexa app you want to assign. You can also type a name.",
           "go_back": "Returns to the previous page without saving this form."
         }
+      },
+      "battery": {
+        "title": "Brainstorm › 🔋 Batteries",
+        "description": "Creates a task as soon as a battery runs low: below the threshold, or when a sensor reports a weak battery. Once the battery is replaced, the task ticks itself off.",
+        "data": {
+          "battery_enabled": "Create battery tasks",
+          "battery_threshold": "Threshold",
+          "battery_category": "Category",
+          "battery_exclude": "Leave out",
+          "go_back": "⬅️ Back without saving"
+        },
+        "data_description": {
+          "battery_enabled": "Switching off stops new tasks. Existing tasks stay.",
+          "battery_threshold": "A task is created at this level or below. It counts as replaced once the level is 10 points above it.",
+          "battery_category": "Choose a category or type a new name, it is created on saving.",
+          "battery_exclude": "Batteries that should never create a task, such as phones.",
+          "go_back": "Returns to the previous page without saving this form."
+        }
       }
     },
     "error": {
       "no_public_url": "Home Assistant has no public HTTPS address, for example through Home Assistant Cloud. The skill cannot reach it, so use Native mode.",
       "owner_required": "Please choose the main user.",
       "todo_sync_duplicate": "Each to-do list can only be linked to one category.",
-      "bring_category_missing": "Please choose or type a category."
+      "bring_category_missing": "Please choose or type a category.",
+      "battery_category_missing": "Please choose or type a category."
     },
     "abort": {
       "store_not_ready": "Brainstorm is reloading. Please open the settings again in a few seconds."

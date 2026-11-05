@@ -370,6 +370,7 @@ async def test_all_errors_and_aborts_have_a_text() -> None:
         "owner_required",
         "todo_sync_duplicate",
         "bring_category_missing",
+        "battery_category_missing",
     }
     assert aborts == {"reconfigure_successful", "store_not_ready"}
     for name in ("strings.json", "translations/en.json", "translations/de.json"):

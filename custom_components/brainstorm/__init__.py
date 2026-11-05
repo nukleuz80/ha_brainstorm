@@ -18,6 +18,7 @@ from homeassistant.loader import async_get_integration
 from homeassistant.util import dt as dt_util
 
 from .alexa_skill import AlexaSkill
+from .battery import BatteryWatcher
 from .bring import BRING_MESSAGES, bring_message_target
 from .const import (
     ATTR_CATEGORY,
@@ -249,6 +250,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) -
     store.todo_sync = todo_sync
     await todo_sync.async_start()
     entry.async_on_unload(todo_sync.async_stop)
+
+    battery = BatteryWatcher(hass, store, {**entry.data, **entry.options})
+    await battery.async_start()
+    entry.async_on_unload(battery.async_stop)
 
     # Settings are checked on every setup, and changing them reloads the entry
     async_check_issues(hass, {**entry.data, **entry.options})

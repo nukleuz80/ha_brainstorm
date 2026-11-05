@@ -943,6 +943,8 @@ INTERACTION_MODEL: dict = {
 MESSAGES: dict[str, str] = {
     "and": "and",
     "reminder_spoken": "Reminder: {text}.",
+    "battery_task": "Replace the battery: {name}",
+    "battery_task_level": "Replace the battery: {name} ({level} %)",
     "reminder_title": "Brainstorm: Reminder",
     "action_done": "Done",
     "action_snooze": "1 hour later",
