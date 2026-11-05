@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.7.3-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.7.4-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -98,6 +98,7 @@ Brainstorm Hub verwandelt alle deine **Amazon Echo**-Geräte im Haus in sekunden
     - Integrierter Ansichts-Umschalter (`🧠 Mindmap` ⇄ `📋 Liste`) direkt in der Kopfzeile.
     - Erledigt-Verwaltung mit Durchstreich-Animation, Bearbeitungsfunktion und Quellen-Badges.
     - **Unteraufgaben direkt anlegen (v1.6.29):** 🌿 an einer Hauptaufgabe oder in ihrem Menü bei langem Drücken legt eine Unteraufgabe direkt darunter an, in derselben Kategorie. Mit einer KI-Aufgaben-Entität schlägt ✨ daneben Unteraufgaben vor (v1.6.28).
+    - **Unteraufgaben einklappen (v1.7.4):** Eine Hauptaufgabe mit Unteraufgaben zeigt ▾ und deren Anzahl. Antippen klappt sie zu, ▸ klappt sie wieder auf. Praktisch bei langen Bring-Listen. Jeder Browser merkt sich pro Karte, was eingeklappt ist.
   - **Links und etwas Markdown in Notizen (beide Karten, v1.6.21):**
     - Webadressen werden anklickbar, ebenso `[Text](https://…)`. `**fett**`, `*kursiv*`, `~~durchgestrichen~~` und `` `Code` `` erscheinen formatiert, in der Notiz und in ihrer Ergebnisnotiz.
     - Sicher gebaut: Alles andere bleibt reiner Text, HTML in einer Notiz wird nie ausgeführt, und Links führen nur zu `http`-, `https`- und `mailto`-Adressen. Sie öffnen sich in einem neuen Tab, und ein Klick auf einen Link öffnet nicht den Editor.
@@ -178,8 +179,8 @@ HACS installiert nur die Integration. Die Karten kopierst du anschließend wie u
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` und `www/brainstorm-i18n.js` in `/config/www/`. Die dritte Datei enthält die Texte und braucht keinen Ressourcen-Eintrag.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.7.3` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.7.3` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.7.4` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.7.4` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ### Integration entfernen
@@ -922,6 +923,7 @@ Weitere Beispiele für Assist und Alexa liegen im Ordner [`examples/`](examples/
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.7.4`** | 05.11.2026 | **Unteraufgaben in der Liste einklappen:** ▾ mit der Zahl der Unteraufgaben an jeder Hauptaufgabe klappt sie zu, ▸ wieder auf. Jeder Browser merkt es sich pro Karte. |
 | **`v1.7.3`** | 05.11.2026 | **Bring!-Einstellungen speichern wieder:** Gehört die Standardliste nicht zu den gewählten Listen, gilt die erste gewählte, statt das Formular zu blockieren. |
 | **`v1.7.2`** | 04.11.2026 | **Bring!-Nachrichten:**<br>• **🛒-Knopf an jeder Bring-Listen-Notiz:** *Ich gehe einkaufen*, *Einkauf erledigt* oder *Liste geändert* benachrichtigt alle auf der Liste über Bring.<br>• **Dringend in Bring melden** im Menü eines Eintrags schickt den Eintrag mit.<br>• Neue Aktion `brainstorm.bring_message` für Automationen, etwa wenn jemand zum Supermarkt aufbricht. |
 | **`v1.7.1`** | 04.11.2026 | **Gekauftes ausblenden:**<br>• Neue Einstellung *Gekauftes ausblenden nach (Tagen)* auf der Seite 🛒 Bring!, Standard 3 Tage, 0 behält alles.<br>• Abgehakte Einträge der Bring-Kategorie werden danach archiviert und verschwinden aus der Erledigt-Ansicht; in Bring bleiben sie in den zuletzt gekauften Einträgen.<br>• Erneut notiert, kommt der früher gekaufte Eintrag zurück statt eines Duplikats. |

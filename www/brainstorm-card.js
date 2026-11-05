@@ -1,9 +1,9 @@
-import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.7.3";
+import { alexaEchos, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, parseDueInput, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.7.4";
 
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.7.3 - Skill, Reminders, Privacy and Sharing
+ * Version 1.7.4 - Skill, Reminders, Privacy and Sharing
  */
 const BRAINSTORM_CARD_DEFAULTS = {
   title: "Brainstorm Hub",
@@ -125,6 +125,39 @@ class BrainstormCard extends HTMLElement {
     } catch (e) {
       // Without browser storage the card simply starts with its default
     }
+  }
+
+  _collapsedStorageKey() {
+    const title = (this._config && this._config.title) || "default";
+    return `brainstorm_collapsed_${title}`;
+  }
+
+  // Main tasks whose subtasks are folded away, remembered per card and browser
+  _collapsedIds() {
+    if (!this._collapsed) {
+      this._collapsed = new Set();
+      try {
+        const saved = JSON.parse(localStorage.getItem(this._collapsedStorageKey()) || "[]");
+        if (Array.isArray(saved)) saved.forEach((id) => this._collapsed.add(String(id)));
+      } catch (e) {
+        // Without browser storage every main task starts unfolded
+      }
+    }
+    return this._collapsed;
+  }
+
+  _toggleCollapsed(id) {
+    const collapsed = this._collapsedIds();
+    if (collapsed.has(id)) collapsed.delete(id);
+    else collapsed.add(id);
+    try {
+      localStorage.setItem(this._collapsedStorageKey(), JSON.stringify([...collapsed]));
+    } catch (e) {
+      // Without browser storage the folding only lasts until the next reload
+    }
+    // The list is only redrawn on changes, so ask for it explicitly
+    this._lastUpdated = null;
+    this._updateContent();
   }
 
   _saveSelectedCategory() {
@@ -3521,6 +3554,34 @@ class BrainstormCard extends HTMLElement {
           gap: 2px;
           margin-left: 4px;
         }
+        .collapse-btn {
+          background: transparent;
+          border: 1px solid var(--divider-color, rgba(0,0,0,0.12));
+          color: var(--secondary-text-color, #9e9e9e);
+          cursor: pointer;
+          font-size: 0.85rem;
+          min-width: 36px;
+          min-height: 28px;
+          padding: 2px 6px;
+          border-radius: 14px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 3px;
+          line-height: 1;
+          opacity: 0.85;
+          transition: color 0.2s, background 0.2s, border-color 0.2s;
+        }
+        .collapse-btn .collapse-count {
+          font-size: 0.72rem;
+          font-weight: 600;
+        }
+        .collapse-btn:hover,
+        .collapse-btn.is-collapsed {
+          color: var(--primary-color, #03a9f4);
+          border-color: color-mix(in srgb, var(--primary-color, #03a9f4) 40%, transparent);
+          opacity: 1;
+        }
         .indent-btn,
         .branch-btn,
         .bring-btn,
@@ -4344,6 +4405,7 @@ class BrainstormCard extends HTMLElement {
     });
 
     const orderedIdeas = [];
+    const collapsedIds = this._collapsedIds();
     let lastTopLevelId = null;
 
     topLevelIdeas.forEach((topItem) => {
@@ -4355,6 +4417,10 @@ class BrainstormCard extends HTMLElement {
       lastTopLevelId = topItem.id;
 
       const children = parentMap.get(topItem.id) || [];
+      const folded = children.length > 0 && collapsedIds.has(topItem.id);
+      orderedIdeas[orderedIdeas.length - 1].childCount = children.length;
+      orderedIdeas[orderedIdeas.length - 1].collapsed = folded;
+      if (folded) return;
       children.forEach((child) => {
         orderedIdeas.push({
           ...child,
@@ -4423,6 +4489,11 @@ class BrainstormCard extends HTMLElement {
                 </div>
               </div>
               <div class="item-actions">
+                ${
+                  item.childCount
+                    ? `<button class="collapse-btn ${item.collapsed ? "is-collapsed" : ""}" title="${item.collapsed ? t("Unteraufgaben ausklappen") : t("Unteraufgaben einklappen")}" aria-expanded="${item.collapsed ? "false" : "true"}" data-id="${item.id}">${item.collapsed ? "▸" : "▾"}<span class="collapse-count">${item.childCount}</span></button>`
+                    : ""
+                }
                 ${
                   itemEdit
                     ? isSub
@@ -4526,6 +4597,13 @@ class BrainstormCard extends HTMLElement {
             e.stopPropagation();
             const item = activeIdeas.find((i) => i.id === btn.getAttribute("data-id"));
             if (item) this._showSubtaskSuggestions(item);
+          });
+        });
+
+        ideasList.querySelectorAll(".collapse-btn").forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            this._toggleCollapsed(btn.getAttribute("data-id"));
           });
         });
 
@@ -5317,7 +5395,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.7.3 ",
+  "%c BRAINSTORM-CARD %c v1.7.4 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

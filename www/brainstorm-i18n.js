@@ -58,6 +58,8 @@ const DICTIONARIES = {
     "Eingetragen von {name}": "Added by {name}",
     "Unteridee anlegen": "Add a subidea",
     "Bring-Nachricht senden": "Send Bring! message",
+    "Unteraufgaben einklappen": "Collapse subtasks",
+    "Unteraufgaben ausklappen": "Expand subtasks",
     "Dringend in Bring melden": "Report as urgent in Bring!",
     "Alle auf der Liste bekommen eine Nachricht": "Everyone on the list gets a message",
     "Ich gehe einkaufen": "I'm going shopping",

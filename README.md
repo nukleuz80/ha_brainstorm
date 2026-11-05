@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.7.3-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.7.4-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -78,6 +78,7 @@ Brainstorm Hub turns every **Amazon Echo** device in your home into an instant, 
   - **Intuitive Reordering:** Reorder items in the list view smoothly via drag handle (`⠿`). Order is preserved persistently via `brainstorm.reorder_ideas`.
   - **Drag & Drop Subtasks:** Drag a note onto another note to instantly nest it as a subtask.
   - **New subtask with 🌿:** 🌿 on a main task, or in its long-press menu, adds a subtask right under it, in the same category (v1.6.29).
+  - **Fold subtasks (v1.7.4):** A main task with subtasks shows ▾ and their number. Tap it to fold them away; ▸ unfolds them again. Handy for long Bring lists. Each browser remembers what is folded, per card.
   - **Apple Reminders Context Menu:** Long-press on mobile (~420ms) or right-click on desktop triggers haptic feedback and opens a quick menu for indenting, unindenting, moving, editing, or deleting.
 - 🧠 **Dynamic Mindmap Card (`custom:brainstorm-mindmap-card`):**
   - Interactive radial synapse layout with glowing central category hub and floating idea clouds.
@@ -158,8 +159,8 @@ HACS only installs the integration, so continue with [Install the cards](#instal
 
 1. Copy `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` and `www/brainstorm-i18n.js` from the release to `/config/www/`. The third file holds the texts and needs no resource entry.
 2. Add both under **Settings ➔ Dashboards ➔ Resources** as **JavaScript module**:
-   - `/local/brainstorm-card.js?v=1.7.3`
-   - `/local/brainstorm-mindmap-card.js?v=1.7.3`
+   - `/local/brainstorm-card.js?v=1.7.4`
+   - `/local/brainstorm-mindmap-card.js?v=1.7.4`
 3. Reload the page in your browser.
 
 ### Removing the Integration
@@ -355,9 +356,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.7.3
+  - url: /local/brainstorm-card.js?v=1.7.4
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.7.3
+  - url: /local/brainstorm-mindmap-card.js?v=1.7.4
     type: module
 ```
 
@@ -872,6 +873,7 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.7.4`** | 2026-11-05 | **Fold subtasks in the list:** ▾ with the number of subtasks on every main task folds them away, ▸ unfolds them. Each browser remembers it per card. |
 | **`v1.7.3`** | 2026-11-05 | **Bring! settings save again:** if the default list is not one of the chosen lists, the first chosen list is used instead of blocking the form. |
 | **`v1.7.2`** | 2026-11-04 | **Bring! messages:**<br>• **🛒 button on every Bring list note:** *I'm going shopping*, *Shopping done* or *List changed* notifies everyone on the list through Bring.<br>• **Report as urgent in Bring!** in the menu of an item on a list sends the item along.<br>• New action `brainstorm.bring_message` for automations, for example when someone leaves for the supermarket. |
 | **`v1.7.1`** | 2026-11-04 | **Hide bought items:**<br>• New setting *Hide bought items after (days)* on the 🛒 Bring! page, default 3 days, 0 keeps them.<br>• Ticked off items of the Bring category are archived after that time and leave the completed view; in Bring they stay in the recent list.<br>• Noted again, the item bought before comes back instead of a duplicate. |
