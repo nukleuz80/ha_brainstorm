@@ -1,8 +1,8 @@
-import { alexaEchos, attachmentBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, inProgressBadge, parseDueInput, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.7.13";
+import { alexaEchos, attachmentBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, inProgressBadge, parseDueInput, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.7.14";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.7.13 - Skill, Reminders, Privacy and Sharing
+ * Version: 1.7.14 - Skill, Reminders, Privacy and Sharing
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -44,9 +44,36 @@ const MAP_TEMPLATES = {
   sketch: { shape: "pill", lines: "dashed", scheme: "pastel" },
   neon: { shape: "pill", lines: "curve", scheme: "neon" },
 };
-const NODE_SHAPES = ["card", "cloud", "bubble", "pill", "rect"];
+const NODE_SHAPES = ["card", "cloud", "bubble", "thought", "pill", "rect", "ellipse", "hexagon", "note", "underline"];
 // Shapes CSS cannot draw get an SVG outline behind the note
-const SVG_SHAPES = ["cloud", "bubble"];
+const SVG_SHAPES = ["cloud", "bubble", "thought", "ellipse", "hexagon", "note"];
+// Shapes that point to their parent and need a new outline when it moves
+const POINTING_SHAPES = ["bubble", "thought"];
+// The name of a shape in the language of the user
+function shapeLabel(shape) {
+  return {
+    card: t("Karte"),
+    cloud: t("Wolke"),
+    bubble: t("Sprechblase"),
+    thought: t("Gedankenblase"),
+    pill: t("Kapsel"),
+    rect: t("Rechteck"),
+    ellipse: t("Ellipse"),
+    hexagon: t("Sechseck"),
+    note: t("Notizzettel"),
+    underline: t("Unterstrichen"),
+  }[shape];
+}
+
+// Where a ray from the middle of a w × h box leaves it along `angle`
+function boxExit(w, h, angle) {
+  const c = Math.cos(angle);
+  const s = Math.sin(angle);
+  if (Math.abs(c) * h > Math.abs(s) * w) {
+    return { side: "x", x: c > 0 ? w : 0, y: h / 2 + ((w / 2) * s) / Math.abs(c) };
+  }
+  return { side: "y", x: w / 2 + ((h / 2) * c) / Math.abs(s), y: s > 0 ? h : 0 };
+}
 
 // Said aloud to Alexa, Siri or Assist, so it can show as a speech bubble
 export function isVoiceSource(source) {
@@ -108,6 +135,47 @@ export function shapeParts(shape, w, h, { angle = Math.PI / 2, seed = "" } = {})
     }
     return parts;
   }
+  if (shape === "thought") {
+    // A cloud and two small puffs on the way to the parent
+    const parts = shapeParts("cloud", w, h, { seed });
+    const exit = boxExit(w, h, angle);
+    const c = Math.cos(angle);
+    const s = Math.sin(angle);
+    [
+      [15, 6],
+      [29, 3.5],
+    ].forEach(([dist, r]) => {
+      parts.push(`<circle cx="${f(exit.x + c * dist)}" cy="${f(exit.y + s * dist)}" r="${r}"/>`);
+    });
+    return parts;
+  }
+  if (shape === "ellipse") {
+    // Big enough that the text corners stay inside
+    const rx = Math.max(w / 2 + 2, (w / 2 - 16) * Math.SQRT2);
+    const ry = Math.max(h / 2 + 2, (h / 2 - 10) * Math.SQRT2);
+    return [`<ellipse cx="${f(w / 2)}" cy="${f(h / 2)}" rx="${f(rx)}" ry="${f(ry)}"/>`];
+  }
+  if (shape === "hexagon") {
+    // The points stick out left and right, the text keeps the full box
+    const d = Math.min(h * 0.35, 22);
+    const pts = [
+      [0, 0],
+      [w, 0],
+      [w + d, h / 2],
+      [w, h],
+      [0, h],
+      [-d, h / 2],
+    ];
+    return [`<path d="M ${pts.map((p) => `${f(p[0])} ${f(p[1])}`).join(" L ")} Z"/>`];
+  }
+  if (shape === "note") {
+    // A slip of paper with its lower right corner folded over
+    const k = Math.min(16, h / 3, w / 3);
+    return [
+      `<path d="M 0 0 H ${f(w)} V ${f(h - k)} L ${f(w - k)} ${f(h)} H 0 Z"/>`,
+      `<path class="shape-fold" d="M ${f(w - k)} ${f(h)} V ${f(h - k)} H ${f(w)} Z"/>`,
+    ];
+  }
   if (shape === "bubble") {
     const r = Math.min(16, h / 2, w / 2);
     const half = 9;
@@ -115,20 +183,21 @@ export function shapeParts(shape, w, h, { angle = Math.PI / 2, seed = "" } = {})
     const c = Math.cos(angle);
     const s = Math.sin(angle);
     const clamp = (v, lo, hi) => (lo > hi ? (lo + hi) / 2 : Math.max(lo, Math.min(hi, v)));
+    const exit = boxExit(w, h, angle);
     let b1;
     let b2;
     let mid;
-    if (Math.abs(c) * h > Math.abs(s) * w) {
+    if (exit.side === "x") {
       // Leaves through the left or right side
-      const x = c > 0 ? w : 0;
-      const y = clamp(h / 2 + ((w / 2) * s) / Math.abs(c), r + half, h - r - half);
+      const x = exit.x;
+      const y = clamp(exit.y, r + half, h - r - half);
       const back = c > 0 ? -2 : 2;
       b1 = [x + back, y - half];
       b2 = [x + back, y + half];
       mid = [x, y];
     } else {
-      const y = s > 0 ? h : 0;
-      const x = clamp(w / 2 + ((h / 2) * c) / Math.abs(s), r + half, w - r - half);
+      const y = exit.y;
+      const x = clamp(exit.x, r + half, w - r - half);
       const back = s > 0 ? -2 : 2;
       b1 = [x - half, y + back];
       b2 = [x + half, y + back];
@@ -1060,6 +1129,15 @@ class BrainstormMindmapCard extends HTMLElement {
           #notesContainer .note-cloud.nshape-bubble {
             padding: 8px 12px !important;
           }
+          #notesContainer .note-cloud.nshape-thought {
+            padding: 12px 16px !important;
+          }
+          #notesContainer .note-cloud.nshape-ellipse {
+            padding: 9px 18px !important;
+          }
+          #notesContainer .note-cloud.nshape-underline {
+            padding: 5px 3px !important;
+          }
           .cloud-device {
             max-width: 72px;
           }
@@ -1355,6 +1433,42 @@ class BrainstormMindmapCard extends HTMLElement {
         .note-cloud.nshape-bubble {
           padding: 12px 16px !important;
         }
+        .note-cloud.nshape-thought {
+          padding: 16px 22px !important;
+        }
+        .note-cloud.nshape-ellipse {
+          padding: 12px 26px !important;
+        }
+        .note-cloud.nshape-hexagon,
+        .note-cloud.nshape-note {
+          padding: 12px 14px !important;
+        }
+        /* Underlined: only the text, a line in the category color below it,
+           and the lines to and from the note meet at its ends */
+        #notesContainer .note-cloud.nshape-underline {
+          /* Nearly see-through, but lines behind the text fade away */
+          background: color-mix(in srgb, var(--ha-card-background, var(--card-background-color, #ffffff)) 85%, transparent) !important;
+          border: none !important;
+          border-bottom: 3px solid var(--cat-color, var(--primary-color, #03a9f4)) !important;
+          border-radius: 0 !important;
+          box-shadow: none !important;
+          padding: 6px 4px 6px !important;
+        }
+        ha-card.scheme-neon #notesContainer .note-cloud.nshape-underline {
+          background: color-mix(in srgb, #0b1020 80%, transparent) !important;
+          box-shadow: 0 6px 8px -6px var(--cat-color, #22d3ee) !important;
+        }
+        #notesContainer .note-cloud.nshape-underline.cloud-high {
+          border-bottom-color: #f97316 !important;
+        }
+        #notesContainer .note-cloud.nshape-underline.cloud-urgent {
+          border-bottom-color: #ef4444 !important;
+        }
+        #notesContainer .note-cloud.nshape-underline.selected,
+        #notesContainer .note-cloud.nshape-underline.multi-selected {
+          background: color-mix(in srgb, var(--cat-color, var(--primary-color, #03a9f4)) 10%, transparent) !important;
+          border-radius: 6px 6px 0 0 !important;
+        }
         .node-shape {
           position: absolute;
           left: 0;
@@ -1377,6 +1491,14 @@ class BrainstormMindmapCard extends HTMLElement {
         .node-shape .shape-fill > * {
           fill: var(--shape-fill);
           stroke: none;
+        }
+        .node-shape .shape-fill > .shape-fold {
+          fill: var(--shape-stroke);
+          fill-opacity: 0.35;
+        }
+        /* A note slip is tinted like paper in the category color */
+        .note-cloud.nshape-note .node-shape {
+          --shape-fill: color-mix(in srgb, var(--cat-color, var(--primary-color, #03a9f4)) 14%, var(--card-background-color, #ffffff));
         }
         .note-cloud.has-shape:hover .node-shape {
           --shape-stroke: var(--cat-color, var(--primary-color, #03a9f4));
@@ -3201,6 +3323,13 @@ class BrainstormMindmapCard extends HTMLElement {
         node.stroke = outline ? getComputedStyle(outline).stroke : node.stroke;
         node.strokeWidth = outline ? px(getComputedStyle(outline).strokeWidth) : 3;
       }
+      // Underlined: just the line, where the lines on the map meet it
+      if (el.classList.contains("nshape-underline")) {
+        const node = nodes[nodes.length - 1];
+        node.underline = { y: pos.y + el.offsetHeight / 2 - 1.5, color: style.borderBottomColor };
+        // The picture leaves out the buttons, so the text moves down onto its line
+        node.y = node.underline.y - node.height + 1.5;
+      }
     });
 
     const centerNode = sr.getElementById("centerNode");
@@ -3269,15 +3398,20 @@ class BrainstormMindmapCard extends HTMLElement {
         const parts = shapeParts(n.shape, n.width, n.height, { angle: n.angle, seed: n.seed }).join("");
         body += `<g transform="translate(${n.x} ${n.y})">`;
         body += `<g fill="none" stroke="${xml(n.stroke)}" stroke-width="${n.strokeWidth}" stroke-linejoin="round">${parts}</g>`;
-        body += `<g fill="${xml(pageColor)}">${parts}</g><g fill="${xml(n.fill)}">${parts}</g></g>`;
+        // The folded corner of a note slip is a shade of its outline
+        const fillParts = parts.replace('class="shape-fold"', `class="shape-fold" fill="${xml(n.stroke)}" fill-opacity="0.35"`);
+        body += `<g fill="${xml(pageColor)}">${parts}</g><g fill="${xml(n.fill)}">${fillParts}</g></g>`;
       }
       body += `<g>`;
       // See-through notes would show the lines behind them
-      if (!n.shape) {
+      if (n.underline) {
+        body += `<rect x="${n.x}" y="${n.y}" width="${n.width}" height="${n.height}" fill="${xml(pageColor)}" fill-opacity="0.85"/>`;
+        body += `<line x1="${n.x}" y1="${n.underline.y}" x2="${n.x + n.width}" y2="${n.underline.y}" stroke="${xml(n.underline.color)}" stroke-width="3"/>`;
+      } else if (!n.shape) {
         body += `<rect x="${n.x}" y="${n.y}" width="${n.width}" height="${n.height}" rx="${n.radius}" fill="${xml(pageColor)}"/>`;
         body += `<rect x="${n.x}" y="${n.y}" width="${n.width}" height="${n.height}" rx="${n.radius}" fill="${xml(n.fill)}" stroke="${xml(n.stroke)}" stroke-width="${n.strokeWidth || 1}"/>`;
       }
-      if (!n.shape && n.accentWidth > n.strokeWidth + 0.5) {
+      if (!n.shape && !n.underline && n.accentWidth > n.strokeWidth + 0.5) {
         body += `<rect x="${n.x}" y="${n.y}" width="${n.accentWidth}" height="${n.height}" fill="${xml(n.accent)}" clip-path="url(#${clipId})"/>`;
       }
       const textX = n.x + n.padX;
@@ -4206,12 +4340,21 @@ class BrainstormMindmapCard extends HTMLElement {
       // A subtask's line starts at its parent instead of the center
       const parentId = this._branchParent(idea, ids);
       const from = (parentId && this._nodePositions.get(parentId)) || null;
-      const x1 = from ? from.x : this._centerPos.x;
-      const y1 = from ? from.y : this._centerPos.y;
-      const x2 = pos.x;
-      const y2 = pos.y;
+      let x1 = from ? from.x : this._centerPos.x;
+      let y1 = from ? from.y : this._centerPos.y;
+      let x2 = pos.x;
+      let y2 = pos.y;
 
       this._drawNodeShape(el, Math.atan2(y1 - y2, x1 - x2));
+
+      // An underlined note takes its lines at the end of its underline
+      const parentEl = from && this.shadowRoot.getElementById(`cloud_${parentId}`);
+      if (parentEl && parentEl.classList.contains("nshape-underline")) {
+        [x1, y1] = this._underlineEnd(parentEl, from, x2);
+      }
+      if (el.classList.contains("nshape-underline")) {
+        [x2, y2] = this._underlineEnd(el, pos, x1);
+      }
 
       const pathData = this._linePath(lines, x1, y1, x2, y2);
       svgHtml += `
@@ -4220,6 +4363,12 @@ class BrainstormMindmapCard extends HTMLElement {
     });
 
     svg.innerHTML = svgHtml;
+  }
+
+  // The end of a note's underline that faces towards x
+  _underlineEnd(el, pos, x) {
+    const half = el.offsetWidth / 2;
+    return [x < pos.x ? pos.x - half : pos.x + half, pos.y + el.offsetHeight / 2];
   }
 
   // Remembers where a note's parent lies and paints its outline; a size
@@ -4245,7 +4394,7 @@ class BrainstormMindmapCard extends HTMLElement {
     const shape = el.dataset.shape;
     const angle = el._shapeAngle ?? Math.PI / 2;
     // Small turns of the tail are not worth a new outline
-    const key = `${w}x${h}:${shape === "bubble" ? Math.round(angle * 20) : ""}`;
+    const key = `${w}x${h}:${POINTING_SHAPES.includes(shape) ? Math.round(angle * 20) : ""}`;
     if (svg.dataset.key === key) return;
     svg.dataset.key = key;
     svg.setAttribute("width", w);
@@ -4879,14 +5028,7 @@ class BrainstormMindmapCard extends HTMLElement {
     let selectedEchos = [...currentEchos];
     const currentShape = NODE_SHAPES.includes(idea.shape) ? idea.shape : "";
     let selectedShape = currentShape;
-    const shapeChoices = [
-      ["", t("Automatisch")],
-      ["card", t("Karte")],
-      ["cloud", t("Wolke")],
-      ["bubble", t("Sprechblase")],
-      ["pill", t("Kapsel")],
-      ["rect", t("Rechteck")],
-    ];
+    const shapeChoices = [["", t("Automatisch")], ...NODE_SHAPES.map((shape) => [shape, shapeLabel(shape)])];
 
     this._openDialog(t("✏️ Notiz bearbeiten"), (body) => {
       body.innerHTML = `
@@ -5442,11 +5584,7 @@ class BrainstormMindmapCardEditor extends HTMLElement {
             mode: "dropdown",
             options: [
               { value: "template", label: t("Wie die Vorlage") },
-              { value: "card", label: t("Karte") },
-              { value: "cloud", label: t("Wolke") },
-              { value: "bubble", label: t("Sprechblase") },
-              { value: "pill", label: t("Kapsel") },
-              { value: "rect", label: t("Rechteck") },
+              ...NODE_SHAPES.map((shape) => ({ value: shape, label: shapeLabel(shape) })),
             ],
           },
         },
@@ -5789,7 +5927,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.7.13 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.7.14 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

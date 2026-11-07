@@ -34,6 +34,30 @@ const corner = shapeParts("bubble", 200, 80, { angle: Math.atan2(40, 100.5) })[1
 const ys = [...corner.matchAll(/(-?[\d.]+) (-?[\d.]+)/g)].map((m) => Number(m[2]));
 check(Math.max(...ys.slice(0, 1), ...ys.slice(2)) <= 80 - 16, `tail base off the corner: ${corner}`);
 
+// Thought bubble: a cloud plus two puffs on the side of the parent
+const thought = shapeParts("thought", 220, 90, { seed: "abc", angle: 0 });
+check(thought.length === cloud.length + 2, `thought adds two puffs: ${thought.length}`);
+const puffs = thought.slice(-2).map((c) => c.match(/cx="(-?[\d.]+)" cy="(-?[\d.]+)" r="([\d.]+)"/).slice(1).map(Number));
+check(puffs[0][0] > 220 && puffs[1][0] > puffs[0][0] && puffs[1][2] < puffs[0][2], `puffs go right and shrink: ${thought.slice(-2)}`);
+const upPuff = shapeParts("thought", 220, 90, { seed: "abc", angle: -Math.PI / 2 }).at(-1).match(/cy="(-?[\d.]+)"/)[1];
+check(Number(upPuff) < 0, `puffs go up: ${upPuff}`);
+
+// Ellipse: the corners of the text, inset by the padding, stay inside
+for (const [w, h] of [[220, 90], [250, 150], [170, 60]]) {
+  const [rx, ry] = shapeParts("ellipse", w, h)[0].match(/rx="([\d.]+)" ry="([\d.]+)"/).slice(1).map(Number);
+  const inside = ((w / 2 - 26) / rx) ** 2 + ((h / 2 - 12) / ry) ** 2;
+  check(inside <= 1.0001 && rx >= w / 2 && ry >= h / 2, `ellipse ${w}x${h} holds the text: ${inside}`);
+}
+
+// Hexagon: points left and right of the box
+const hex = [...shapeParts("hexagon", 200, 80)[0].matchAll(/(-?[\d.]+) (-?[\d.]+)/g)].map((m) => Number(m[1]));
+check(Math.min(...hex) < 0 && Math.max(...hex) > 200, `hexagon points stick out: ${hex}`);
+
+// Note slip: a body and a folded corner at the lower right
+const note = shapeParts("note", 200, 80);
+check(note.length === 2 && note[1].includes('class="shape-fold"') && note[1].includes("M 184 80"), `note has a fold: ${note}`);
+
 check(shapeParts("card", 100, 50).length === 0, "CSS shapes have no SVG parts");
+check(shapeParts("underline", 100, 50).length === 0, "underline is drawn by CSS");
 document.getElementById("out").textContent = fails.length ? "FAIL\n" + fails.join("\n") : "PASS";
 </script>

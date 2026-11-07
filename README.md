@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.7.13-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.7.14-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -96,7 +96,7 @@ Brainstorm Hub turns every **Amazon Echo** device in your home into an instant, 
   - **Edit in place:** A click on the text opens it right in the cloud. **Enter** saves, **Shift+Enter** adds a line, **Esc** cancels. Due date, priority and Echos stay in the dialog behind ✏️.
   - **Pick several notes:** **Shift+drag** on the empty map draws a frame, **Shift+click** or **Ctrl+click** adds a note or takes it out again. On a phone or tablet, tap ⬚ at the bottom right, then drag a frame or tap notes. Dragging one picked note moves all of them, with their subtasks. The bar above the map ticks them off, moves them to another category or deletes them after asking, and one undo takes back the whole step. **Esc** or ✕ clears the selection.
   - **Undo:** **Ctrl+Z** or the ↶ button at the bottom right takes back the last steps of this session: new notes, text changes, done, priority, category, moving, arranging again and deleting too. Home Assistant keeps deleted notes until its next restart.
-  - **Templates and picture export:** Four templates (Standard, Clean, Sketch, Neon) set shape, lines and colors. 🖼️ at the top right saves the map as SVG or PNG.
+  - **Templates and picture export:** Four templates (Standard, Clean, Sketch, Neon) set shape, lines and colors. Ten shapes are available, from card, cloud, speech and thought bubble to ellipse, hexagon, note slip and underlined text, for the whole map or per note. 🖼️ at the top right saves the map as SVG or PNG.
 - 🎴 **Quick Capture Card (`custom:brainstorm-card`):**
   - Two-tiered sleek design with quick-input bar, priority selector, category pills, and full edit/delete modal dialogs.
   - View switcher (`🧠 Mindmap` ⇄ `📋 List`) in card header.
@@ -162,8 +162,8 @@ HACS only installs the integration, so continue with [Install the cards](#instal
 
 1. Copy `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` and `www/brainstorm-i18n.js` from the release to `/config/www/`. The third file holds the texts and needs no resource entry.
 2. Add both under **Settings ➔ Dashboards ➔ Resources** as **JavaScript module**:
-   - `/local/brainstorm-card.js?v=1.7.13`
-   - `/local/brainstorm-mindmap-card.js?v=1.7.13`
+   - `/local/brainstorm-card.js?v=1.7.14`
+   - `/local/brainstorm-mindmap-card.js?v=1.7.14`
 3. Reload the page in your browser.
 
 ### Removing the Integration
@@ -360,9 +360,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.7.13
+  - url: /local/brainstorm-card.js?v=1.7.14
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.7.13
+  - url: /local/brainstorm-mindmap-card.js?v=1.7.14
     type: module
 ```
 
@@ -396,7 +396,7 @@ show_export_btn: true
 | Option | Values | Meaning |
 | :--- | :--- | :--- |
 | `map_template` | `standard`, `clean`, `sketch`, `neon` | **Standard:** cards, curves, category colors. **Clean:** rectangles, angled lines. **Sketch:** pills, dashed, pastel. **Neon:** dark background with glowing edges. |
-| `node_shape` | `template`, `card`, `cloud`, `bubble`, `pill`, `rect` | Shape of the notes: card, cloud, speech bubble, pill or rectangle. The speech bubble's tail points to the parent note or to the center. A note can have its own shape (edit dialog or `shape` of `brainstorm.update_idea`). |
+| `node_shape` | `template`, `card`, `cloud`, `bubble`, `thought`, `pill`, `rect`, `ellipse`, `hexagon`, `note`, `underline` | Shape of the notes: card, cloud, speech bubble, thought bubble, pill, rectangle, ellipse, hexagon, note slip or underlined text. The tail of the speech bubble and the puffs of the thought bubble point to the parent note or to the center; the lines meet an underlined note at the end of its underline. A note can have its own shape (edit dialog or `shape` of `brainstorm.update_idea`). |
 | `voice_bubbles` | `true`, `false` | Notes said to Alexa, Siri or Assist show as speech bubbles, unless they have their own shape. Default `true`. |
 | `line_style` | `template`, `curve`, `straight`, `angled`, `dashed` | Lines: curve, straight, angled or dashed. |
 | `color_scheme` | `template`, `category`, `pastel`, `mono`, `neon` | Colors: category colors, pastel (softly tinted), single color or neon. |
@@ -736,7 +736,7 @@ Changes an existing idea.
 | `zone` | No | Reminds when entering this zone. |
 | `echos` | No | The Echos that speak the reminder of this idea, as a list. `null` goes back to the reminder settings. |
 | `result` | No | What came of the idea, usually written when ticking it off (at most 1000 characters). Both cards show it below the text. It stays when the idea is reopened; empty or `null` removes it. |
-| `shape` | No | Shape of the note on the mind map: `card`, `cloud`, `bubble`, `pill` or `rect`. Empty or `null` goes back to the look of the map. |
+| `shape` | No | Shape of the note on the mind map: `card`, `cloud`, `bubble`, `thought`, `pill`, `rect`, `ellipse`, `hexagon`, `note` or `underline`. Empty or `null` goes back to the look of the map. |
 
 ### `brainstorm.delete_idea`
 
@@ -936,6 +936,7 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.7.14`** | 2026-11-07 | **Mind map: five more shapes:** thought bubble (a cloud with two small puffs towards the parent note), ellipse, hexagon, note slip (tinted paper with a folded corner) and underlined (only the text over a line in the category color, the lines of the map meet it at the ends of the line). They can be chosen for the whole map (`node_shape`), per note in the edit dialog and with `shape` of `brainstorm.update_idea`, and show up in the image export. |
 | **`v1.7.13`** | 2026-11-07 | **Delete done entries:** Settings › 🧹 Delete done entries deletes done entries after a number of days by themselves (checked every six hours, 0 = off) and has a switch to delete all of them right away. Open subtasks of a deleted entry stay as main tasks, items of linked to-do lists and attachments go with it. New action `brainstorm.delete_done` with `older_than_days`. |
 | **`v1.7.12`** | 2026-11-07 | **Mind map: a shape per note:** the edit dialog of the mind map chooses card, cloud, speech bubble, pill or rectangle for a single note; "Automatic" follows the map. `brainstorm.update_idea` takes the new field `shape`, and JSON export and import keep it. Notes said to Alexa, Siri or Assist show as speech bubbles on their own; the new option `voice_bubbles` turns that off. |
 | **`v1.7.11`** | 2026-11-07 | **Mind map: real clouds and speech bubbles:** two new note shapes, drawn as SVG outlines that keep their bumps at any size. The speech bubble's tail points to the parent note or to the center and follows while dragging. The old "cloud" was a rounded card and is now called **Card** (`card`), the standard template keeps it; `node_shape: cloud` now draws the real cloud. Both shapes follow the color templates, priority and selection, and show up in the image export. |

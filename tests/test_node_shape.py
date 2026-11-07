@@ -76,3 +76,46 @@ async def test_import_keeps_known_shapes_only(
     )
     assert store.get_idea("a")["shape"] == "bubble"
     assert "shape" not in store.get_idea("b")
+
+
+@pytest.mark.parametrize(
+    "shape", ["thought", "ellipse", "hexagon", "note", "underline"]
+)
+async def test_new_shapes_are_taken(
+    hass: HomeAssistant, setup_entry: SetupEntry, shape: str
+) -> None:
+    """Test that the shapes added in 1.7.14 are taken like the others."""
+    entry = await setup_entry()
+    store = entry.runtime_data
+    idea = await store.async_add_idea("Neue Form", category="Inbox")
+    await _update(hass, id=idea["id"], shape=shape)
+    assert store.get_idea(idea["id"])["shape"] == shape
+
+
+def test_shapes_match_card_and_services() -> None:
+    """Test that backend, action selector and card know the same shapes."""
+    import json
+    import re
+    from pathlib import Path
+
+    from custom_components.brainstorm.const import NODE_SHAPES
+
+    root = Path(__file__).parent.parent
+    card = (root / "www" / "brainstorm-mindmap-card.js").read_text(encoding="utf-8")
+    match = re.search(r"const NODE_SHAPES = \[([^\]]*)\]", card)
+    assert match
+    assert tuple(re.findall(r'"(\w+)"', match.group(1))) == NODE_SHAPES
+    for lang in ("en", "de"):
+        translations = json.loads(
+            (
+                root / "custom_components" / "brainstorm" / "translations" / f"{lang}.json"
+            ).read_text(encoding="utf-8")
+        )
+        assert set(translations["selector"]["node_shape"]["options"]) == set(
+            NODE_SHAPES
+        )
+    services = (root / "custom_components" / "brainstorm" / "services.yaml").read_text(
+        encoding="utf-8"
+    )
+    for shape in NODE_SHAPES:
+        assert f"            - {shape}\n" in services

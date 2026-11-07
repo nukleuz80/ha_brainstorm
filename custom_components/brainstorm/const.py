@@ -163,7 +163,18 @@ ATTR_COMPLETED_AT = "completed_at"
 ATTR_IN_PROGRESS = "in_progress"
 # How a note looks on the mind map; none means the look of the map
 ATTR_SHAPE = "shape"
-NODE_SHAPES = ("card", "cloud", "bubble", "pill", "rect")
+NODE_SHAPES = (
+    "card",
+    "cloud",
+    "bubble",
+    "thought",
+    "pill",
+    "rect",
+    "ellipse",
+    "hexagon",
+    "note",
+    "underline",
+)
 ATTACHMENT_DIR = "brainstorm_attachments"
 ATTACHMENT_MAX_SIZE = 10 * 1024 * 1024
 ATTACHMENT_MAX_COUNT = 20

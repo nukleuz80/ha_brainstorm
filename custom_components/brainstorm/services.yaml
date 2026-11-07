@@ -164,8 +164,13 @@ update_idea:
             - card
             - cloud
             - bubble
+            - thought
             - pill
             - rect
+            - ellipse
+            - hexagon
+            - note
+            - underline
 
 delete_idea:
   fields:

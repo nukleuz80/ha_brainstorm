@@ -526,8 +526,13 @@
         "card": "Card",
         "cloud": "Cloud",
         "bubble": "Speech bubble",
+        "thought": "Thought bubble",
         "pill": "Pill",
-        "rect": "Rectangle"
+        "rect": "Rectangle",
+        "ellipse": "Ellipse",
+        "hexagon": "Hexagon",
+        "note": "Note slip",
+        "underline": "Underlined"
       }
     },
     "voice_mode": {
@@ -826,7 +831,7 @@
         },
         "shape": {
           "name": "Shape",
-          "description": "How the note looks on the mind map: card, cloud, speech bubble, pill or rectangle. Empty uses the look of the map, where voice notes become speech bubbles."
+          "description": "How the note looks on the mind map: card, cloud, speech bubble, thought bubble, pill, rectangle, ellipse, hexagon, note slip or underlined text. Empty uses the look of the map, where voice notes become speech bubbles."
         }
       }
     },

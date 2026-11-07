@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.7.13-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.7.14-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -120,7 +120,7 @@ Brainstorm Hub verwandelt alle deine **Amazon Echo**-Geräte im Haus in sekunden
     - **Direkt bearbeiten:** Ein Klick auf den Text öffnet ihn gleich in der Wolke. **Enter** speichert, **Umschalt+Enter** macht eine neue Zeile, **Esc** bricht ab. Termin, Priorität und Echos stellst du weiter mit ✏️ im Dialog ein.
     - **Mehrere Notizen auswählen:** **Umschalt+Ziehen** auf der leeren Map zieht einen Rahmen, **Umschalt+Klick** oder **Strg+Klick** nimmt eine Notiz dazu oder wieder heraus. Am Handy oder Tablet tippst du unten rechts auf ⬚ und ziehst dann einen Rahmen oder tippst Notizen an. Ziehst du eine ausgewählte Notiz, wandern alle mit, samt Unteraufgaben. Die Leiste über der Map hakt sie ab, verschiebt sie in eine andere Kategorie oder löscht sie nach Rückfrage, ein Rückgängig nimmt den ganzen Schritt zurück. **Esc** oder ✕ hebt die Auswahl auf.
     - **Rückgängig:** **Strg+Z** oder der Knopf ↶ unten rechts nimmt die letzten Schritte dieser Sitzung zurück: neue Notizen, Textänderungen, Erledigt, Priorität, Kategorie, Verschieben, Neu ordnen und auch Löschen. Gelöschte Notizen hält Home Assistant bis zum nächsten Neustart bereit.
-    - **Vorlagen und Bild-Export:** Vier Vorlagen (Standard, Klar, Skizze, Neon) bestimmen Form, Linien und Farben. 🖼️ oben rechts speichert die Map als SVG oder PNG.
+    - **Vorlagen und Bild-Export:** Vier Vorlagen (Standard, Klar, Skizze, Neon) bestimmen Form, Linien und Farben. Zehn Formen stehen bereit, von Karte, Wolke, Sprech- und Gedankenblase bis Ellipse, Sechseck, Notizzettel und unterstrichenem Text, für die ganze Map oder pro Notiz. 🖼️ oben rechts speichert die Map als SVG oder PNG.
     - Stufenloser Zoom & Pan per Mausrad, Pinch-Geste oder Steuerungsbuttons.
     - **Vollbild-Modus (`⛶`):** Per Knopfdruck oder Dashboard-Einbindung als beeindruckendes Vollbild-Erlebnis (ESC zum Schließen).
     - Direkte Aktionen an jeder Gedankenwolke (Erledigen, Text editieren, Kategorie wechseln, Löschen).
@@ -182,8 +182,8 @@ HACS installiert nur die Integration. Die Karten kopierst du anschließend wie u
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` und `www/brainstorm-i18n.js` in `/config/www/`. Die dritte Datei enthält die Texte und braucht keinen Ressourcen-Eintrag.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.7.13` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.7.13` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.7.14` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.7.14` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ### Integration entfernen
@@ -290,7 +290,7 @@ show_export_btn: true       # 🖼️ Map als SVG oder PNG speichern
 | Option | Werte | Bedeutung |
 | :--- | :--- | :--- |
 | `map_template` | `standard`, `clean`, `sketch`, `neon` | **Standard:** Karten, Kurven, Kategoriefarben. **Klar:** Rechtecke, eckige Linien. **Skizze:** Kapseln, gestrichelt, Pastell. **Neon:** dunkler Hintergrund mit leuchtenden Rändern. |
-| `node_shape` | `template`, `card`, `cloud`, `bubble`, `pill`, `rect` | Form der Notizen: Karte, Wolke, Sprechblase, Kapsel oder Rechteck. Der Zipfel der Sprechblase zeigt zur übergeordneten Notiz oder zur Mitte. Eine Notiz kann ihre eigene Form haben (Bearbeiten-Dialog oder `shape` von `brainstorm.update_idea`). |
+| `node_shape` | `template`, `card`, `cloud`, `bubble`, `thought`, `pill`, `rect`, `ellipse`, `hexagon`, `note`, `underline` | Form der Notizen: Karte, Wolke, Sprechblase, Gedankenblase, Kapsel, Rechteck, Ellipse, Sechseck, Notizzettel oder unterstrichener Text. Der Zipfel der Sprechblase und die Bläschen der Gedankenblase zeigen zur übergeordneten Notiz oder zur Mitte; die Linien treffen eine unterstrichene Notiz am Ende ihres Strichs. Eine Notiz kann ihre eigene Form haben (Bearbeiten-Dialog oder `shape` von `brainstorm.update_idea`). |
 | `voice_bubbles` | `true`, `false` | Notizen, die Alexa, Siri oder Assist gesagt wurden, erscheinen als Sprechblase, außer sie haben eine eigene Form. Standard `true`. |
 | `line_style` | `template`, `curve`, `straight`, `angled`, `dashed` | Linien: Kurve, gerade, eckig oder gestrichelt. |
 | `color_scheme` | `template`, `category`, `pastel`, `mono`, `neon` | Farben: Kategoriefarben, Pastell (zart eingefärbt), einfarbig oder Neon. |
@@ -786,7 +786,7 @@ Aktualisiert Text, Kategorie oder Status einer bestehenden Idee.
 | `zone` | Nein | Erinnert beim Betreten dieser Zone. |
 | `echos` | Nein | Die Echos, die die Erinnerung an diesen Eintrag sprechen, als Liste. `null` gilt wieder die Erinnerungs-Einstellungen. |
 | `result` | Nein | Was aus dem Eintrag geworden ist, meist beim Abhaken notiert (höchstens 1000 Zeichen). Beide Karten zeigen es unter dem Text. Bleibt beim Wiederöffnen erhalten, leer oder `null` entfernt es. |
-| `shape` | Nein | Form der Notiz auf der Mindmap: `card`, `cloud`, `bubble`, `pill` oder `rect`. Leer oder `null` nimmt wieder das Aussehen der Map. |
+| `shape` | Nein | Form der Notiz auf der Mindmap: `card`, `cloud`, `bubble`, `thought`, `pill`, `rect`, `ellipse`, `hexagon`, `note` oder `underline`. Leer oder `null` nimmt wieder das Aussehen der Map. |
 
 ### `brainstorm.delete_idea`
 
@@ -986,6 +986,7 @@ Weitere Beispiele für Assist und Alexa liegen im Ordner [`examples/`](examples/
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.7.14`** | 07.11.2026 | **Mindmap: fünf weitere Formen:** Gedankenblase (eine Wolke mit zwei kleinen Bläschen zur übergeordneten Notiz), Ellipse, Sechseck, Notizzettel (getöntes Papier mit umgeknickter Ecke) und Unterstrichen (nur der Text über einem Strich in der Kategoriefarbe, die Linien der Map treffen ihn an den Enden des Strichs). Wählbar für die ganze Map (`node_shape`), pro Notiz im Bearbeiten-Dialog und mit `shape` von `brainstorm.update_idea`, und mit im Bild-Export. |
 | **`v1.7.13`** | 07.11.2026 | **Erledigte Einträge löschen:** Einstellungen › 🧹 Erledigte Einträge löschen löscht erledigte Einträge nach einer Anzahl Tage von selbst (geprüft alle sechs Stunden, 0 = aus) und hat einen Schalter, der alle sofort löscht. Offene Unteraufgaben eines gelöschten Eintrags bleiben als Hauptaufgaben, Einträge verknüpfter To-do-Listen und Anhänge gehen mit. Neue Aktion `brainstorm.delete_done` mit `older_than_days`. |
 | **`v1.7.12`** | 07.11.2026 | **Mindmap: Form pro Notiz:** Der Bearbeiten-Dialog der Mindmap wählt für eine einzelne Notiz Karte, Wolke, Sprechblase, Kapsel oder Rechteck; „Automatisch“ folgt der Map. `brainstorm.update_idea` nimmt das neue Feld `shape`, JSON-Export und -Import behalten es. Notizen, die Alexa, Siri oder Assist gesagt wurden, erscheinen von selbst als Sprechblase; die neue Option `voice_bubbles` schaltet das ab. |
 | **`v1.7.11`** | 07.11.2026 | **Mindmap: echte Wolken und Sprechblasen:** zwei neue Formen für Notizen, als SVG-Umriss gezeichnet, der seine Bögen bei jeder Größe behält. Der Zipfel der Sprechblase zeigt zur übergeordneten Notiz oder zur Mitte und wandert beim Ziehen mit. Die bisherige „Wolke“ war eine abgerundete Karte und heißt jetzt **Karte** (`card`), die Standard-Vorlage behält sie; `node_shape: cloud` zeichnet jetzt die echte Wolke. Beide Formen folgen den Farbvorlagen, der Priorität und der Auswahl und kommen mit in den Bild-Export. |
