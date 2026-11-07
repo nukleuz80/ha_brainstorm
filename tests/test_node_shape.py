@@ -101,7 +101,9 @@ def test_shapes_match_card_and_services() -> None:
     from custom_components.brainstorm.const import NODE_SHAPES
 
     root = Path(__file__).parent.parent
-    card = (root / "www" / "brainstorm-mindmap-card.js").read_text(encoding="utf-8")
+    card = (
+        root / "custom_components" / "brainstorm" / "cards" / "brainstorm-mindmap-card.js"
+    ).read_text(encoding="utf-8")
     match = re.search(r"const NODE_SHAPES = \[([^\]]*)\]", card)
     assert match
     assert tuple(re.findall(r'"(\w+)"', match.group(1))) == NODE_SHAPES

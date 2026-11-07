@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import re
 
-WWW = Path(__file__).parents[1] / "www"
+WWW = Path(__file__).parents[1] / "custom_components/brainstorm/cards"
 MANIFEST = Path(__file__).parents[1] / "custom_components/brainstorm/manifest.json"
 USED = re.compile(r"""\bt\(\s*(?:"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)')""")
 CHOICE = re.compile(r"""t\(item\.access === "view" \? "([^"]+)" : "([^"]+)\"""")

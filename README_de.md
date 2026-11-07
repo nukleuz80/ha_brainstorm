@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.7.14-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.7.15-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -174,23 +174,21 @@ Klicke einfach auf diesen Button, um das Repository direkt in deiner Home Assist
 6. Starte Home Assistant neu.
 </details>
 
-HACS installiert nur die Integration. Die Karten kopierst du anschließend wie unter Methode 2 in den Schritten 3 und 4 beschrieben.
+Die Karten kommen mit der Integration: Nach dem Neustart lädt Home Assistant sie selbst, ohne Kopieren und ohne Ressourcen-Eintrag.
 
 ### Methode 2: Manuelle Installation
 
 1. Lade das neueste Release herunter.
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
-3. Kopiere die Dateien `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` und `www/brainstorm-i18n.js` in `/config/www/`. Die dritte Datei enthält die Texte und braucht keinen Ressourcen-Eintrag.
-4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.7.14` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.7.14` (Typ: `JavaScript-Modul`)
-5. Starte Home Assistant neu.
+3. Starte Home Assistant neu. Die Karten liegen im Ordner der Integration (`cards/`) und werden von selbst geladen.
+
+> **Update von einer Version vor 1.7.15:** Entferne die alten Ressourcen `/local/brainstorm-card.js` und `/local/brainstorm-mindmap-card.js` unter *Einstellungen ➔ Dashboards ➔ Ressourcen* (oder aus `resources:` im YAML-Modus) und lösche die Karten-Dateien in `/config/www/`. Sonst kann der Browser noch die alten Karten laden.
 
 ### Integration entfernen
 
 1. Öffne **Einstellungen ➔ Geräte & Dienste ➔ Brainstorm Hub**, klicke auf die drei Punkte und wähle **Löschen**.
-2. Über HACS installiert: Öffne Brainstorm Hub in HACS und wähle **Entfernen**. Manuell installiert: Lösche `/config/custom_components/brainstorm` und die drei Karten-Dateien in `/config/www/`.
-3. Entferne die beiden Karten-Ressourcen unter **Einstellungen ➔ Dashboards ➔ Ressourcen** und alle Brainstorm-Karten aus deinen Dashboards.
+2. Über HACS installiert: Öffne Brainstorm Hub in HACS und wähle **Entfernen**. Manuell installiert: Lösche `/config/custom_components/brainstorm`.
+3. Entferne alle Brainstorm-Karten aus deinen Dashboards.
 4. Starte Home Assistant neu.
 
 Je nachdem, was du genutzt hast, entferne auch:
@@ -986,6 +984,7 @@ Weitere Beispiele für Assist und Alexa liegen im Ordner [`examples/`](examples/
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.7.15`** | 07.11.2026 | **Karten kommen mit der Integration:** Die Karten liegen jetzt im Ordner der Integration und Home Assistant lädt sie beim Start selbst, auch im YAML-Modus. Eine Installation über HACS bringt damit alles mit; Kopieren nach `/config/www/` und Ressourcen-Einträge entfallen. Nach dem Update die alten `/local/brainstorm-…`-Ressourcen entfernen. Dazu prüfen GitHub Actions jetzt jede Änderung mit der HACS Action und hassfest, als Vorbereitung für die Aufnahme in die HACS-Standardliste. |
 | **`v1.7.14`** | 07.11.2026 | **Mindmap: fünf weitere Formen:** Gedankenblase (eine Wolke mit zwei kleinen Bläschen zur übergeordneten Notiz), Ellipse, Sechseck, Notizzettel (getöntes Papier mit umgeknickter Ecke) und Unterstrichen (nur der Text über einem Strich in der Kategoriefarbe, die Linien der Map treffen ihn an den Enden des Strichs). Wählbar für die ganze Map (`node_shape`), pro Notiz im Bearbeiten-Dialog und mit `shape` von `brainstorm.update_idea`, und mit im Bild-Export. |
 | **`v1.7.13`** | 07.11.2026 | **Erledigte Einträge löschen:** Einstellungen › 🧹 Erledigte Einträge löschen löscht erledigte Einträge nach einer Anzahl Tage von selbst (geprüft alle sechs Stunden, 0 = aus) und hat einen Schalter, der alle sofort löscht. Offene Unteraufgaben eines gelöschten Eintrags bleiben als Hauptaufgaben, Einträge verknüpfter To-do-Listen und Anhänge gehen mit. Neue Aktion `brainstorm.delete_done` mit `older_than_days`. |
 | **`v1.7.12`** | 07.11.2026 | **Mindmap: Form pro Notiz:** Der Bearbeiten-Dialog der Mindmap wählt für eine einzelne Notiz Karte, Wolke, Sprechblase, Kapsel oder Rechteck; „Automatisch“ folgt der Map. `brainstorm.update_idea` nimmt das neue Feld `shape`, JSON-Export und -Import behalten es. Notizen, die Alexa, Siri oder Assist gesagt wurden, erscheinen von selbst als Sprechblase; die neue Option `voice_bubbles` schaltet das ab. |

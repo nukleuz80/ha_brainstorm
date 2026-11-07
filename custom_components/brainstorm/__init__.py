@@ -60,6 +60,7 @@ from .const import (
     VOICE_MODE_NATIVE,
 )
 from .echo_locks import EchoLockManager
+from .frontend import async_register_frontend
 from .llm import async_register_llm_api
 from .reminders import ReminderManager, build_reminder_request
 from .repairs import async_check_issues, async_delete_issues
@@ -233,6 +234,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     _register_services(hass)
     async_register_commands(hass)
     async_register_views(hass)
+    await async_register_frontend(hass)
     return True
 
 

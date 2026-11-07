@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.7.14-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.7.15-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -142,7 +142,7 @@ Or manually:
 4. Search for **Brainstorm Hub** and click **Download**.
 5. Restart Home Assistant.
 
-HACS only installs the integration, so continue with [Install the cards](#install-the-cards), then add the integration as shown in the next option.
+The cards come with the integration: after the restart Home Assistant loads them by itself. Then add the integration as shown in the next option.
 
 ### Option 2: Add Integration (Config Flow)
 
@@ -155,22 +155,19 @@ HACS only installs the integration, so continue with [Install the cards](#instal
 
 1. Download the latest release.
 2. Copy the folder `custom_components/brainstorm` to `/config/custom_components/`.
-3. Continue with [Install the cards](#install-the-cards).
-4. Restart Home Assistant and add the integration as shown in option 2.
+3. Restart Home Assistant and add the integration as shown in option 2.
 
-### Install the Cards
+### The Cards
 
-1. Copy `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` and `www/brainstorm-i18n.js` from the release to `/config/www/`. The third file holds the texts and needs no resource entry.
-2. Add both under **Settings ➔ Dashboards ➔ Resources** as **JavaScript module**:
-   - `/local/brainstorm-card.js?v=1.7.14`
-   - `/local/brainstorm-mindmap-card.js?v=1.7.14`
-3. Reload the page in your browser.
+The cards live in the folder of the integration (`cards/`), and Home Assistant loads them on every dashboard by itself, in storage and YAML mode alike. There is nothing to copy and no resource to add.
+
+> **Updating from a version before 1.7.15:** Remove the old resources `/local/brainstorm-card.js` and `/local/brainstorm-mindmap-card.js` under **Settings ➔ Dashboards ➔ Resources** (or from `resources:` in YAML mode) and delete the card files in `/config/www/`. Otherwise the browser may still load the old cards.
 
 ### Removing the Integration
 
 1. Go to **Settings ➔ Devices & Services ➔ Brainstorm Hub**, open the three dots and choose **Delete**.
-2. Installed through HACS: open Brainstorm Hub in HACS and choose **Remove**. Installed manually: delete `/config/custom_components/brainstorm` and the three card files in `/config/www/`.
-3. Remove the two card resources under **Settings ➔ Dashboards ➔ Resources**, and any Brainstorm cards from your dashboards.
+2. Installed through HACS: open Brainstorm Hub in HACS and choose **Remove**. Installed manually: delete `/config/custom_components/brainstorm`.
+3. Remove any Brainstorm cards from your dashboards.
 4. Restart Home Assistant.
 
 Depending on what you used, also remove:
@@ -356,15 +353,7 @@ To set this up, open **Build ➔ Interfaces** in the Alexa developer console, sw
 
 ## 🎴 Lovelace Cards Configuration
 
-Add the custom cards to your Lovelace dashboard resources:
-
-```yaml
-resources:
-  - url: /local/brainstorm-card.js?v=1.7.14
-    type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.7.14
-    type: module
-```
+The integration loads both cards by itself, no resources needed.
 
 ### 1. List View (`brainstorm-card`)
 ```yaml
@@ -936,6 +925,7 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.7.15`** | 2026-11-07 | **The cards come with the integration:** the cards now live in the folder of the integration, and Home Assistant loads them at start, in YAML mode too. An install through HACS brings everything; copying to `/config/www/` and resource entries are gone. After the update, remove the old `/local/brainstorm-…` resources. GitHub Actions now check every change with the HACS Action and hassfest, to prepare for the HACS default list. |
 | **`v1.7.14`** | 2026-11-07 | **Mind map: five more shapes:** thought bubble (a cloud with two small puffs towards the parent note), ellipse, hexagon, note slip (tinted paper with a folded corner) and underlined (only the text over a line in the category color, the lines of the map meet it at the ends of the line). They can be chosen for the whole map (`node_shape`), per note in the edit dialog and with `shape` of `brainstorm.update_idea`, and show up in the image export. |
 | **`v1.7.13`** | 2026-11-07 | **Delete done entries:** Settings › 🧹 Delete done entries deletes done entries after a number of days by themselves (checked every six hours, 0 = off) and has a switch to delete all of them right away. Open subtasks of a deleted entry stay as main tasks, items of linked to-do lists and attachments go with it. New action `brainstorm.delete_done` with `older_than_days`. |
 | **`v1.7.12`** | 2026-11-07 | **Mind map: a shape per note:** the edit dialog of the mind map chooses card, cloud, speech bubble, pill or rectangle for a single note; "Automatic" follows the map. `brainstorm.update_idea` takes the new field `shape`, and JSON export and import keep it. Notes said to Alexa, Siri or Assist show as speech bubbles on their own; the new option `voice_bubbles` turns that off. |

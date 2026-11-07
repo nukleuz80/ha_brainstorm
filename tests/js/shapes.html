@@ -3,7 +3,7 @@
      open http://localhost:8000/tests/js/shapes.html, it shows PASS or the failures. --><meta charset="utf-8"><body><pre id="out">running</pre>
 <script type="module">
 customElements.define("ha-card", class extends HTMLElement {});
-const { shapeParts } = await import("../../www/brainstorm-mindmap-card.js");
+const { shapeParts } = await import("../../custom_components/brainstorm/cards/brainstorm-mindmap-card.js");
 const fails = [];
 const check = (ok, text) => { if (!ok) fails.push(text); };
 const tip = (parts) => parts[1].match(/L (-?[\d.]+) (-?[\d.]+)/).slice(1).map(Number);

@@ -1,8 +1,8 @@
-import { alexaEchos, attachmentBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, inProgressBadge, parseDueInput, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.7.14";
+import { alexaEchos, attachmentBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, inProgressBadge, parseDueInput, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.7.15";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.7.14 - Skill, Reminders, Privacy and Sharing
+ * Version: 1.7.15 - Skill, Reminders, Privacy and Sharing
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -11,6 +11,9 @@ import { alexaEchos, attachmentBadge, dateLocale, dueFromInputValues, dueInputFo
 // Folded branches of the mind map, kept per device
 const COLLAPSED_KEY = "brainstorm_mindmap_collapsed";
 const UNDO_LIMIT = 30;
+
+// The bulb lies next to this file, wherever Home Assistant serves it from
+const BULB_URL = new URL("./brainstorm-bulb.svg", import.meta.url).href;
 
 const BRAINSTORM_MINDMAP_DEFAULTS = {
   title: "Brainstorm Mindmap",
@@ -2483,7 +2486,7 @@ class BrainstormMindmapCard extends HTMLElement {
             <svg class="connectors" id="connectorsLayer"></svg>
             <div class="center-node" id="centerNode">
               <div class="center-bulb-wrapper" style="display: ${this._config.show_bulb_watermark === true ? 'block' : 'none'};">
-                <img src="/local/brainstorm-bulb.svg" class="center-bulb-img" alt="Brainstorm" />
+                <img src="${BULB_URL}" class="center-bulb-img" alt="Brainstorm" />
               </div>
               <div class="center-content">
                 <div class="center-icon" id="centerIcon" style="display: flex; justify-content: center; margin-bottom: 2px;"></div>
@@ -5779,7 +5782,7 @@ class BrainstormMindmapCardEditor extends HTMLElement {
       </style>
       <div class="editor-container">
         <div class="editor-header">
-          <img src="/local/brainstorm-bulb.svg" alt="Brainstorm" onerror="this.style.display='none'" />
+          <img src="${BULB_URL}" alt="Brainstorm" onerror="this.style.display='none'" />
           <span>${t("Brainstorm Mindmap – Visuelle Kartenkonfiguration")}</span>
         </div>
         <div id="formContainer"></div>
@@ -5927,7 +5930,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.7.14 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.7.15 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

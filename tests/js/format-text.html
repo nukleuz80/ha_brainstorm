@@ -2,7 +2,7 @@
 <!-- Browser test for formatText. Run: python3 -m http.server in the repo root,
      open http://localhost:8000/tests/js/format-text.html, it shows PASS or the failures. --><meta charset="utf-8"><body><pre id="out">running</pre>
 <script type="module">
-import { formatText } from "../../www/brainstorm-i18n.js";
+import { formatText } from "../../custom_components/brainstorm/cards/brainstorm-i18n.js";
 const cases = [
  ["plain <b>x</b> & 'y'", "plain &lt;b&gt;x&lt;/b&gt; &amp; &#039;y&#039;"],
  ["see https://example.com/a?b=1&c=2.", 'see <a class="bs-link" href="https://example.com/a?b=1&amp;c=2" target="_blank" rel="noopener noreferrer">https://example.com/a?b=1&amp;c=2</a>.'],
