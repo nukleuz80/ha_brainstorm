@@ -155,6 +155,17 @@ update_idea:
       required: false
       selector:
         boolean:
+    shape:
+      required: false
+      selector:
+        select:
+          translation_key: node_shape
+          options:
+            - card
+            - cloud
+            - bubble
+            - pill
+            - rect
 
 delete_idea:
   fields:

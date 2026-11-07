@@ -1,8 +1,8 @@
-import { alexaEchos, attachmentBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, inProgressBadge, parseDueInput, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.7.11";
+import { alexaEchos, attachmentBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, inProgressBadge, parseDueInput, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.7.12";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.7.11 - Skill, Reminders, Privacy and Sharing
+ * Version: 1.7.12 - Skill, Reminders, Privacy and Sharing
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -32,6 +32,7 @@ const BRAINSTORM_MINDMAP_DEFAULTS = {
   hide_empty_categories: true,
   map_template: "standard",
   node_shape: "template",
+  voice_bubbles: true,
   line_style: "template",
   color_scheme: "template",
 };
@@ -46,6 +47,11 @@ const MAP_TEMPLATES = {
 const NODE_SHAPES = ["card", "cloud", "bubble", "pill", "rect"];
 // Shapes CSS cannot draw get an SVG outline behind the note
 const SVG_SHAPES = ["cloud", "bubble"];
+
+// Said aloud to Alexa, Siri or Assist, so it can show as a speech bubble
+export function isVoiceSource(source) {
+  return /alexa|siri|assist|voice|speech/.test(String(source || "").toLowerCase());
+}
 
 // The same note always gets the same bumps
 function seededRandom(seed) {
@@ -255,15 +261,19 @@ class BrainstormMindmapCard extends HTMLElement {
       .forEach((name) => cardRoot.classList.remove(name));
     classes.forEach((name) => cardRoot.classList.add(name));
     // Every note carries its own shape, so a new one needs fresh notes
-    if (this._shownShape && this._shownShape !== style.shape) {
+    const shapeKey = `${style.shape}:${this._config.voice_bubbles !== false}`;
+    if (this._shownShape && this._shownShape !== shapeKey) {
       this._lastDataSignature = null;
       if (this._hass) this.hass = this._hass;
     }
-    this._shownShape = style.shape;
+    this._shownShape = shapeKey;
   }
 
-  // The shape of one note; for now the shape of the whole map
-  _nodeShape() {
+  // The shape of one note: its own, a speech bubble for voice notes, or the
+  // shape of the whole map
+  _nodeShape(idea) {
+    if (idea && NODE_SHAPES.includes(idea.shape)) return idea.shape;
+    if (idea && this._config.voice_bubbles !== false && isVoiceSource(idea.source)) return "bubble";
     return this._mapStyle().shape;
   }
 
@@ -2104,6 +2114,13 @@ class BrainstormMindmapCard extends HTMLElement {
           grid-template-columns: repeat(auto-fit, minmax(75px, 1fr));
           gap: 6px;
           margin-bottom: 14px;
+        }
+        .dialog-shape-grid {
+          grid-template-columns: repeat(3, 1fr);
+          margin-bottom: 4px;
+        }
+        .dialog-shape-hint {
+          margin-bottom: 12px;
         }
         .dialog-prio-chip {
           display: flex;
@@ -4860,6 +4877,16 @@ class BrainstormMindmapCard extends HTMLElement {
     const echos = alexaEchos(this._hass);
     const currentEchos = idea.echos || [];
     let selectedEchos = [...currentEchos];
+    const currentShape = NODE_SHAPES.includes(idea.shape) ? idea.shape : "";
+    let selectedShape = currentShape;
+    const shapeChoices = [
+      ["", t("Automatisch")],
+      ["card", t("Karte")],
+      ["cloud", t("Wolke")],
+      ["bubble", t("Sprechblase")],
+      ["pill", t("Kapsel")],
+      ["rect", t("Rechteck")],
+    ];
 
     this._openDialog(t("✏️ Notiz bearbeiten"), (body) => {
       body.innerHTML = `
@@ -4878,6 +4905,14 @@ class BrainstormMindmapCard extends HTMLElement {
           <div class="dialog-prio-chip ${selectedPrio === "high" ? "selected" : ""}" data-prio="high">${t("🔴 Hoch")}</div>
           <div class="dialog-prio-chip ${selectedPrio === "urgent" ? "selected" : ""}" data-prio="urgent">${t("🔥 Dringend")}</div>
         </div>
+
+        <div class="dialog-label">${t("Form auf der Mindmap:")}</div>
+        <div class="dialog-prio-grid dialog-shape-grid" id="editShapeGrid">
+          ${shapeChoices
+            .map(([value, label]) => `<div class="dialog-prio-chip ${value === selectedShape ? "selected" : ""}" data-shape="${value}">${label}</div>`)
+            .join("")}
+        </div>
+        <div class="dialog-hint dialog-shape-hint">${t("Automatisch: Sprachnotizen als Sprechblase, sonst die Form der Map.")}</div>
 
         <div class="dialog-label" style="margin-top: 10px;">${t("Kategorie:")}</div>
         <div class="dialog-categories-grid" id="editCatGrid">
@@ -4943,6 +4978,14 @@ class BrainstormMindmapCard extends HTMLElement {
       const cancelBtn = body.querySelector("#cancelEditBtn");
       const catChips = body.querySelectorAll("#editCatGrid .dialog-cat-chip");
       const prioChips = body.querySelectorAll("#editPrioGrid .dialog-prio-chip");
+      const shapeChips = body.querySelectorAll("#editShapeGrid .dialog-prio-chip");
+      shapeChips.forEach((chip) => {
+        chip.addEventListener("click", () => {
+          shapeChips.forEach((c) => c.classList.remove("selected"));
+          chip.classList.add("selected");
+          selectedShape = chip.getAttribute("data-shape") || "";
+        });
+      });
       const dueDate = body.querySelector("#editDueDate");
       const dueTime = body.querySelector("#editDueTime");
 
@@ -5035,6 +5078,9 @@ class BrainstormMindmapCard extends HTMLElement {
         if (newDescription !== (idea.description || "")) {
           payload.description = newDescription;
         }
+        if (selectedShape !== currentShape) {
+          payload.shape = selectedShape || null;
+        }
 
         // Everything this save changes, as it was before
         const before = { id, text: currentText, priority: currentPriority || "medium" };
@@ -5042,6 +5088,7 @@ class BrainstormMindmapCard extends HTMLElement {
         if ("due" in payload) before.due = idea.due || null;
         if ("echos" in payload) before.echos = currentEchos.length ? currentEchos : null;
         if ("description" in payload) before.description = idea.description || "";
+        if ("shape" in payload) before.shape = currentShape || null;
         try {
           await this._hass.callService("brainstorm", "update_idea", payload);
           this._pushUndo(currentText, () => this._hass.callService("brainstorm", "update_idea", before));
@@ -5405,6 +5452,12 @@ class BrainstormMindmapCardEditor extends HTMLElement {
         },
       },
       {
+        name: "voice_bubbles",
+        label: t("Sprachnotizen als Sprechblase zeigen"),
+        default: true,
+        selector: { boolean: {} },
+      },
+      {
         name: "line_style",
         label: t("Linien"),
         default: "template",
@@ -5736,7 +5789,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.7.11 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.7.12 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

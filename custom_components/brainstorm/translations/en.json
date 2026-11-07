@@ -506,6 +506,15 @@
     }
   },
   "selector": {
+    "node_shape": {
+      "options": {
+        "card": "Card",
+        "cloud": "Cloud",
+        "bubble": "Speech bubble",
+        "pill": "Pill",
+        "rect": "Rectangle"
+      }
+    },
     "voice_mode": {
       "options": {
         "native": "Native (without skill)",
@@ -799,6 +808,10 @@
         "in_progress": {
           "name": "In progress",
           "description": "Marks that someone, for example a coding AI, is working on the idea now. Both cards show it with a badge. Ticking the idea off removes the mark."
+        },
+        "shape": {
+          "name": "Shape",
+          "description": "How the note looks on the mind map: card, cloud, speech bubble, pill or rectangle. Empty uses the look of the map, where voice notes become speech bubbles."
         }
       }
     },

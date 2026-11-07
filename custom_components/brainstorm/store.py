@@ -52,6 +52,8 @@ from .const import (
     ATTR_BATTERY_DONE,
     ATTR_COMPLETED_AT,
     ATTR_IN_PROGRESS,
+    ATTR_SHAPE,
+    NODE_SHAPES,
     ATTACHMENT_DIR,
     ATTACHMENT_MAX_COUNT,
     ATTACHMENT_MAX_SIZE,
@@ -133,6 +135,7 @@ IMPORT_FIELDS = (
     ATTR_TRIGGER,
     ATTR_MAP_POS,
     ATTR_CREATED_BY,
+    ATTR_SHAPE,
 )
 # Fields that belong to this Home Assistant and stay out of a JSON export
 EXPORT_SKIPPED_FIELDS = (
@@ -453,6 +456,8 @@ class BrainstormStore:
                     result[ATTR_CREATED_BY] = author
             if position := idea.get(ATTR_MAP_POS):
                 result[ATTR_MAP_POS] = position
+            if shape := idea.get(ATTR_SHAPE):
+                result[ATTR_SHAPE] = shape
             if note := idea.get(ATTR_RESULT):
                 result[ATTR_RESULT] = note
             if description := idea.get(ATTR_DESCRIPTION):
@@ -1159,6 +1164,8 @@ class BrainstormStore:
         description: str | None = None,
         update_description: bool = False,
         in_progress: bool | None = None,
+        shape: str | None = None,
+        update_shape: bool = False,
     ) -> dict[str, Any] | None:
         """Update an existing idea.
 
@@ -1239,6 +1246,11 @@ class BrainstormStore:
                 idea[ATTR_DESCRIPTION] = description.strip()
             else:
                 idea.pop(ATTR_DESCRIPTION, None)
+        if update_shape:
+            if shape in NODE_SHAPES:
+                idea[ATTR_SHAPE] = shape
+            else:
+                idea.pop(ATTR_SHAPE, None)
         if update_parent:
             if not parent_id or parent_id.strip() in ("", "none"):
                 idea[ATTR_PARENT_ID] = None
@@ -2197,6 +2209,8 @@ class BrainstormStore:
             for field in IMPORT_FIELDS:
                 if item.get(field) is not None:
                     idea[field] = item[field]
+            if idea.get(ATTR_SHAPE) not in (None, *NODE_SHAPES):
+                idea.pop(ATTR_SHAPE)
             new_ideas[idea_id] = idea
 
         for name, value in (data.get("category_icons") or {}).items():

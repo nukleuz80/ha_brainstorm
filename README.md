@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.7.11-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.7.12-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -161,8 +161,8 @@ HACS only installs the integration, so continue with [Install the cards](#instal
 
 1. Copy `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` and `www/brainstorm-i18n.js` from the release to `/config/www/`. The third file holds the texts and needs no resource entry.
 2. Add both under **Settings ➔ Dashboards ➔ Resources** as **JavaScript module**:
-   - `/local/brainstorm-card.js?v=1.7.11`
-   - `/local/brainstorm-mindmap-card.js?v=1.7.11`
+   - `/local/brainstorm-card.js?v=1.7.12`
+   - `/local/brainstorm-mindmap-card.js?v=1.7.12`
 3. Reload the page in your browser.
 
 ### Removing the Integration
@@ -359,9 +359,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.7.11
+  - url: /local/brainstorm-card.js?v=1.7.12
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.7.11
+  - url: /local/brainstorm-mindmap-card.js?v=1.7.12
     type: module
 ```
 
@@ -395,7 +395,8 @@ show_export_btn: true
 | Option | Values | Meaning |
 | :--- | :--- | :--- |
 | `map_template` | `standard`, `clean`, `sketch`, `neon` | **Standard:** cards, curves, category colors. **Clean:** rectangles, angled lines. **Sketch:** pills, dashed, pastel. **Neon:** dark background with glowing edges. |
-| `node_shape` | `template`, `card`, `cloud`, `bubble`, `pill`, `rect` | Shape of the notes: card, cloud, speech bubble, pill or rectangle. The speech bubble's tail points to the parent note or to the center. |
+| `node_shape` | `template`, `card`, `cloud`, `bubble`, `pill`, `rect` | Shape of the notes: card, cloud, speech bubble, pill or rectangle. The speech bubble's tail points to the parent note or to the center. A note can have its own shape (edit dialog or `shape` of `brainstorm.update_idea`). |
+| `voice_bubbles` | `true`, `false` | Notes said to Alexa, Siri or Assist show as speech bubbles, unless they have their own shape. Default `true`. |
 | `line_style` | `template`, `curve`, `straight`, `angled`, `dashed` | Lines: curve, straight, angled or dashed. |
 | `color_scheme` | `template`, `category`, `pastel`, `mono`, `neon` | Colors: category colors, pastel (softly tinted), single color or neon. |
 
@@ -725,6 +726,7 @@ Changes an existing idea.
 | `zone` | No | Reminds when entering this zone. |
 | `echos` | No | The Echos that speak the reminder of this idea, as a list. `null` goes back to the reminder settings. |
 | `result` | No | What came of the idea, usually written when ticking it off (at most 1000 characters). Both cards show it below the text. It stays when the idea is reopened; empty or `null` removes it. |
+| `shape` | No | Shape of the note on the mind map: `card`, `cloud`, `bubble`, `pill` or `rect`. Empty or `null` goes back to the look of the map. |
 
 ### `brainstorm.delete_idea`
 
@@ -916,6 +918,7 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.7.12`** | 2026-11-07 | **Mind map: a shape per note:** the edit dialog of the mind map chooses card, cloud, speech bubble, pill or rectangle for a single note; "Automatic" follows the map. `brainstorm.update_idea` takes the new field `shape`, and JSON export and import keep it. Notes said to Alexa, Siri or Assist show as speech bubbles on their own; the new option `voice_bubbles` turns that off. |
 | **`v1.7.11`** | 2026-11-07 | **Mind map: real clouds and speech bubbles:** two new note shapes, drawn as SVG outlines that keep their bumps at any size. The speech bubble's tail points to the parent note or to the center and follows while dragging. The old "cloud" was a rounded card and is now called **Card** (`card`), the standard template keeps it; `node_shape: cloud` now draws the real cloud. Both shapes follow the color templates, priority and selection, and show up in the image export. |
 | **`v1.7.10`** | 2026-11-05 | **In progress:** `brainstorm.update_idea` takes `in_progress`. Both cards show 🔧 In progress with the name of who started, the long-press menu sets and removes it, and ticking off removes it. The Claude Code skill marks the entry it works on. The mind map also shows the 📎 badge. |
 | **`v1.7.9`** | 2026-11-05 | **Attachments:** screenshots, photos, PDFs and logs on a note, added in the edit dialog of both cards, pasted with Ctrl+V or dropped. The list shows 📎 with the number. Files of notes done for 30 days are deleted. Only people who may see a note get its files. |

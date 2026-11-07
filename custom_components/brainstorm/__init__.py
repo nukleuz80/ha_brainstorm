@@ -38,6 +38,7 @@ from .const import (
     ATTR_RESULT,
     ATTR_DESCRIPTION,
     ATTR_IN_PROGRESS,
+    ATTR_SHAPE,
     ATTR_REMINDED_AT,
     ATTR_RESET,
     ATTR_SOURCE,
@@ -50,6 +51,7 @@ from .const import (
     PLATFORMS,
     RESULT_MAX_LENGTH,
     DESCRIPTION_MAX_LENGTH,
+    NODE_SHAPES,
     SERVICE_REORDER_IDEAS,
     SERVICE_SET_CATEGORY_STYLE,
     SHARE_EDIT,
@@ -152,6 +154,7 @@ SERVICE_UPDATE_IDEA_SCHEMA = vol.Schema(
             None, vol.All(cv.string, vol.Length(max=DESCRIPTION_MAX_LENGTH))
         ),
         vol.Optional(ATTR_IN_PROGRESS): cv.boolean,
+        vol.Optional(ATTR_SHAPE): vol.Any(None, "", vol.In(NODE_SHAPES)),
     },
     extra=vol.ALLOW_EXTRA,
 )
@@ -428,6 +431,8 @@ def _register_services(hass: HomeAssistant) -> None:
             description=call.data.get(ATTR_DESCRIPTION),
             update_description=ATTR_DESCRIPTION in call.data,
             in_progress=call.data.get(ATTR_IN_PROGRESS),
+            shape=call.data.get(ATTR_SHAPE),
+            update_shape=ATTR_SHAPE in call.data,
         )
         if updated is not None and (
             ATTR_ASSIGNEE in call.data

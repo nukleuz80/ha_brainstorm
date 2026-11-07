@@ -506,6 +506,15 @@
     }
   },
   "selector": {
+    "node_shape": {
+      "options": {
+        "card": "Karte",
+        "cloud": "Wolke",
+        "bubble": "Sprechblase",
+        "pill": "Kapsel",
+        "rect": "Rechteck"
+      }
+    },
     "voice_mode": {
       "options": {
         "native": "Nativ (ohne Skill)",
@@ -799,6 +808,10 @@
         "in_progress": {
           "name": "In Arbeit",
           "description": "Zeigt an, dass gerade jemand, etwa eine Coding-KI, an dem Eintrag arbeitet. Beide Karten zeigen ein Abzeichen. Beim Abhaken verschwindet die Markierung."
+        },
+        "shape": {
+          "name": "Form",
+          "description": "Wie die Notiz auf der Mindmap aussieht: Karte, Wolke, Sprechblase, Kapsel oder Rechteck. Leer nimmt das Aussehen der Map, dort werden Sprachnotizen zu Sprechblasen."
         }
       }
     },
