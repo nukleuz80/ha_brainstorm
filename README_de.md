@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.7.10-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.7.11-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -181,8 +181,8 @@ HACS installiert nur die Integration. Die Karten kopierst du anschließend wie u
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` und `www/brainstorm-i18n.js` in `/config/www/`. Die dritte Datei enthält die Texte und braucht keinen Ressourcen-Eintrag.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.7.10` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.7.10` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.7.11` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.7.11` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ### Integration entfernen
@@ -288,8 +288,8 @@ show_export_btn: true       # 🖼️ Map als SVG oder PNG speichern
 
 | Option | Werte | Bedeutung |
 | :--- | :--- | :--- |
-| `map_template` | `standard`, `clean`, `sketch`, `neon` | **Standard:** Wolken, Kurven, Kategoriefarben. **Klar:** Rechtecke, eckige Linien. **Skizze:** Kapseln, gestrichelt, Pastell. **Neon:** dunkler Hintergrund mit leuchtenden Rändern. |
-| `node_shape` | `template`, `cloud`, `pill`, `rect` | Form der Notizen: Wolke, Kapsel oder Rechteck. |
+| `map_template` | `standard`, `clean`, `sketch`, `neon` | **Standard:** Karten, Kurven, Kategoriefarben. **Klar:** Rechtecke, eckige Linien. **Skizze:** Kapseln, gestrichelt, Pastell. **Neon:** dunkler Hintergrund mit leuchtenden Rändern. |
+| `node_shape` | `template`, `card`, `cloud`, `bubble`, `pill`, `rect` | Form der Notizen: Karte, Wolke, Sprechblase, Kapsel oder Rechteck. Der Zipfel der Sprechblase zeigt zur übergeordneten Notiz oder zur Mitte. |
 | `line_style` | `template`, `curve`, `straight`, `angled`, `dashed` | Linien: Kurve, gerade, eckig oder gestrichelt. |
 | `color_scheme` | `template`, `category`, `pastel`, `mono`, `neon` | Farben: Kategoriefarben, Pastell (zart eingefärbt), einfarbig oder Neon. |
 
@@ -966,6 +966,7 @@ Weitere Beispiele für Assist und Alexa liegen im Ordner [`examples/`](examples/
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.7.11`** | 07.11.2026 | **Mindmap: echte Wolken und Sprechblasen:** zwei neue Formen für Notizen, als SVG-Umriss gezeichnet, der seine Bögen bei jeder Größe behält. Der Zipfel der Sprechblase zeigt zur übergeordneten Notiz oder zur Mitte und wandert beim Ziehen mit. Die bisherige „Wolke“ war eine abgerundete Karte und heißt jetzt **Karte** (`card`), die Standard-Vorlage behält sie; `node_shape: cloud` zeichnet jetzt die echte Wolke. Beide Formen folgen den Farbvorlagen, der Priorität und der Auswahl und kommen mit in den Bild-Export. |
 | **`v1.7.10`** | 05.11.2026 | **In Arbeit:** `brainstorm.update_idea` nimmt `in_progress`. Beide Karten zeigen 🔧 In Arbeit mit dem Namen dessen, der angefangen hat, das Menü bei langem Drücken setzt und entfernt die Markierung, Abhaken entfernt sie. Der Claude-Code-Skill markiert den Eintrag, an dem er arbeitet. Die Mindmap zeigt auch das 📎-Abzeichen. |
 | **`v1.7.9`** | 05.11.2026 | **Anhänge:** Screenshots, Fotos, PDFs und Logs an einer Notiz, angehängt im Bearbeiten-Dialog beider Karten, per Strg+V eingefügt oder hineingezogen. Die Liste zeigt 📎 mit der Anzahl. Dateien von Notizen, die seit 30 Tagen erledigt sind, werden gelöscht. Nur wer eine Notiz sehen darf, bekommt ihre Dateien. |
 | **`v1.7.8`** | 05.11.2026 | **Titel und Beschreibung:** Jede Notiz kann unter dem Titel eine Beschreibung haben, bearbeitet mit ✎ in beiden Karten. Die Liste zeigt drei Zeilen, Antippen zeigt alles. Die To-do-Listen von Home Assistant zeigen und bearbeiten sie, die Aktionen nehmen `description`. Markdown- und JSON-Export enthalten sie. |

@@ -1,8 +1,8 @@
-import { alexaEchos, attachmentBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, inProgressBadge, parseDueInput, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.7.10";
+import { alexaEchos, attachmentBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, inProgressBadge, parseDueInput, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.7.11";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.7.10 - Skill, Reminders, Privacy and Sharing
+ * Version: 1.7.11 - Skill, Reminders, Privacy and Sharing
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -38,12 +38,104 @@ const BRAINSTORM_MINDMAP_DEFAULTS = {
 
 // Ready-made looks; shape, lines and colors can each be chosen on their own
 const MAP_TEMPLATES = {
-  standard: { shape: "cloud", lines: "curve", scheme: "category" },
+  standard: { shape: "card", lines: "curve", scheme: "category" },
   clean: { shape: "rect", lines: "angled", scheme: "category" },
   sketch: { shape: "pill", lines: "dashed", scheme: "pastel" },
   neon: { shape: "pill", lines: "curve", scheme: "neon" },
 };
-const NODE_SHAPES = ["cloud", "pill", "rect"];
+const NODE_SHAPES = ["card", "cloud", "bubble", "pill", "rect"];
+// Shapes CSS cannot draw get an SVG outline behind the note
+const SVG_SHAPES = ["cloud", "bubble"];
+
+// The same note always gets the same bumps
+function seededRandom(seed) {
+  let h = 2166136261;
+  for (const ch of String(seed)) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
+  return () => {
+    h = Math.imul(h ^ (h >>> 15), 2246822507);
+    h = Math.imul(h ^ (h >>> 13), 3266489909);
+    h ^= h >>> 16;
+    return (h >>> 0) / 4294967296;
+  };
+}
+
+// SVG pieces of a note outline, w × h is the note box. Drawn twice by the
+// caller, stroked and then filled on top, so overlapping pieces show one
+// outline. The bubble's tail points along `angle`, towards the parent.
+export function shapeParts(shape, w, h, { angle = Math.PI / 2, seed = "" } = {}) {
+  const f = (n) => Math.round(n * 10) / 10;
+  if (shape === "cloud") {
+    const rand = seededRandom(seed);
+    const inset = 5;
+    const a = Math.max(w / 2 - inset, 8);
+    const b = Math.max(h / 2 - inset, 8);
+    // Bump centers sit on a squircle inside the box, evenly spaced
+    const pts = [];
+    const samples = 160;
+    for (let i = 0; i < samples; i++) {
+      const t = (i / samples) * 2 * Math.PI;
+      const c = Math.cos(t);
+      const s = Math.sin(t);
+      pts.push([w / 2 + a * Math.sign(c) * Math.sqrt(Math.abs(c)), h / 2 + b * Math.sign(s) * Math.sqrt(Math.abs(s))]);
+    }
+    const lengths = pts.map((p, i) => {
+      const q = pts[(i + 1) % samples];
+      return Math.hypot(q[0] - p[0], q[1] - p[1]);
+    });
+    const total = lengths.reduce((sum, l) => sum + l, 0);
+    const base = Math.min(15, Math.max(10, Math.min(w, h) / 5));
+    const count = Math.max(8, Math.round(total / (base * 1.45)));
+    const step = total / count;
+    const parts = [`<path d="M ${pts.map((p) => `${f(p[0])} ${f(p[1])}`).join(" L ")} Z"/>`];
+    let target = rand() * step;
+    let walked = 0;
+    for (let i = 0; i < samples && parts.length <= count; i++) {
+      while (target <= walked + lengths[i] && parts.length <= count) {
+        const k = (target - walked) / lengths[i];
+        const p = pts[i];
+        const q = pts[(i + 1) % samples];
+        const r = base * (0.85 + rand() * 0.3);
+        parts.push(`<circle cx="${f(p[0] + (q[0] - p[0]) * k)}" cy="${f(p[1] + (q[1] - p[1]) * k)}" r="${f(r)}"/>`);
+        target += step;
+      }
+      walked += lengths[i];
+    }
+    return parts;
+  }
+  if (shape === "bubble") {
+    const r = Math.min(16, h / 2, w / 2);
+    const half = 9;
+    const len = 16;
+    const c = Math.cos(angle);
+    const s = Math.sin(angle);
+    const clamp = (v, lo, hi) => (lo > hi ? (lo + hi) / 2 : Math.max(lo, Math.min(hi, v)));
+    let b1;
+    let b2;
+    let mid;
+    if (Math.abs(c) * h > Math.abs(s) * w) {
+      // Leaves through the left or right side
+      const x = c > 0 ? w : 0;
+      const y = clamp(h / 2 + ((w / 2) * s) / Math.abs(c), r + half, h - r - half);
+      const back = c > 0 ? -2 : 2;
+      b1 = [x + back, y - half];
+      b2 = [x + back, y + half];
+      mid = [x, y];
+    } else {
+      const y = s > 0 ? h : 0;
+      const x = clamp(w / 2 + ((h / 2) * c) / Math.abs(s), r + half, w - r - half);
+      const back = s > 0 ? -2 : 2;
+      b1 = [x - half, y + back];
+      b2 = [x + half, y + back];
+      mid = [x, y];
+    }
+    const tip = [mid[0] + c * len, mid[1] + s * len];
+    return [
+      `<rect x="0" y="0" width="${f(w)}" height="${f(h)}" rx="${f(r)}"/>`,
+      `<path d="M ${f(b1[0])} ${f(b1[1])} L ${f(tip[0])} ${f(tip[1])} L ${f(b2[0])} ${f(b2[1])} Z"/>`,
+    ];
+  }
+  return [];
+}
 const LINE_STYLES = ["curve", "straight", "angled", "dashed"];
 const COLOR_SCHEMES = ["category", "pastel", "mono", "neon"];
 
@@ -162,6 +254,17 @@ class BrainstormMindmapCard extends HTMLElement {
       .filter((name) => /^(shape|lines|scheme)-/.test(name) && !classes.includes(name))
       .forEach((name) => cardRoot.classList.remove(name));
     classes.forEach((name) => cardRoot.classList.add(name));
+    // Every note carries its own shape, so a new one needs fresh notes
+    if (this._shownShape && this._shownShape !== style.shape) {
+      this._lastDataSignature = null;
+      if (this._hass) this.hass = this._hass;
+    }
+    this._shownShape = style.shape;
+  }
+
+  // The shape of one note; for now the shape of the whole map
+  _nodeShape() {
+    return this._mapStyle().shape;
   }
 
   _applyConfigUpdates() {
@@ -941,6 +1044,12 @@ class BrainstormMindmapCard extends HTMLElement {
             max-width: min(190px, calc(50cqw - 16px)) !important;
             border-radius: 12px !important;
           }
+          #notesContainer .note-cloud.nshape-cloud {
+            padding: 12px 16px !important;
+          }
+          #notesContainer .note-cloud.nshape-bubble {
+            padding: 8px 12px !important;
+          }
           .cloud-device {
             max-width: 72px;
           }
@@ -1212,16 +1321,85 @@ class BrainstormMindmapCard extends HTMLElement {
           user-select: none;
           transition: border-color 0.15s ease, box-shadow 0.15s ease;
         }
-        /* Templates: shapes */
-        ha-card.shape-pill .note-cloud {
+        /* Shapes, chosen per note */
+        .note-cloud.nshape-pill {
           border-radius: 26px !important;
           border-left-width: 1px;
           border-color: color-mix(in srgb, var(--cat-color, var(--primary-color, #03a9f4)) 55%, transparent);
           padding-left: 18px !important;
           padding-right: 18px !important;
         }
-        ha-card.shape-rect .note-cloud {
+        .note-cloud.nshape-rect {
           border-radius: 3px !important;
+        }
+        /* Cloud and bubble: the note box is see-through, an SVG draws the outline */
+        #notesContainer .note-cloud.has-shape {
+          background: transparent !important;
+          border: none !important;
+          border-radius: 0 !important;
+          box-shadow: none !important;
+        }
+        .note-cloud.nshape-cloud {
+          padding: 16px 22px !important;
+        }
+        .note-cloud.nshape-bubble {
+          padding: 12px 16px !important;
+        }
+        .node-shape {
+          position: absolute;
+          left: 0;
+          top: 0;
+          z-index: -1;
+          overflow: visible;
+          pointer-events: none;
+          --shape-fill: var(--ha-card-background, var(--card-background-color, #ffffff));
+          --shape-stroke: color-mix(in srgb, var(--cat-color, var(--primary-color, #03a9f4)) 60%, var(--card-background-color, #ffffff));
+          --shape-width: 1.5px;
+          filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.08));
+          transition: filter 0.15s ease;
+        }
+        .node-shape .shape-outline > * {
+          fill: none;
+          stroke: var(--shape-stroke);
+          stroke-width: calc(var(--shape-width) * 2);
+          stroke-linejoin: round;
+        }
+        .node-shape .shape-fill > * {
+          fill: var(--shape-fill);
+          stroke: none;
+        }
+        .note-cloud.has-shape:hover .node-shape {
+          --shape-stroke: var(--cat-color, var(--primary-color, #03a9f4));
+          filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.14));
+        }
+        .note-cloud.has-shape.dragging .node-shape {
+          filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.2));
+        }
+        .note-cloud.has-shape.cloud-high .node-shape {
+          --shape-stroke: #f97316;
+        }
+        .note-cloud.has-shape.cloud-urgent .node-shape {
+          --shape-stroke: #ef4444;
+          filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.35));
+        }
+        .note-cloud.has-shape.selected .node-shape {
+          --shape-stroke: var(--cat-color, var(--primary-color, #03a9f4));
+          --shape-width: 2.5px;
+          filter: drop-shadow(0 0 5px color-mix(in srgb, var(--cat-color, var(--primary-color, #03a9f4)) 55%, transparent));
+        }
+        .note-cloud.has-shape.multi-selected .node-shape {
+          --shape-stroke: var(--primary-color, #03a9f4);
+          --shape-width: 2.5px;
+        }
+        ha-card.scheme-pastel .node-shape {
+          --shape-fill: color-mix(in srgb, var(--cat-color, var(--primary-color, #03a9f4)) 15%, var(--card-background-color, #ffffff));
+          --shape-stroke: color-mix(in srgb, var(--cat-color, var(--primary-color, #03a9f4)) 45%, var(--card-background-color, #ffffff));
+          filter: none;
+        }
+        ha-card.scheme-neon .node-shape {
+          --shape-fill: #0f172a;
+          --shape-stroke: var(--cat-color, #22d3ee);
+          filter: drop-shadow(0 0 8px color-mix(in srgb, var(--cat-color, #22d3ee) 55%, transparent));
         }
         ha-card.shape-rect .center-node {
           border-radius: 14px !important;
@@ -2991,7 +3169,21 @@ class BrainstormMindmapCard extends HTMLElement {
         accent: style.borderLeftColor,
         accentWidth: px(style.borderLeftWidth),
         radius: Math.min(px(style.borderTopLeftRadius), height / 2),
+        shape: null,
       });
+      // Cloud and bubble take their outline and its colors along
+      const shapeEl = el.classList.contains("has-shape") && el.querySelector(":scope > .node-shape");
+      if (shapeEl) {
+        const outline = shapeEl.querySelector(".shape-outline > *");
+        const fill = shapeEl.querySelector(".shape-fill > *");
+        const node = nodes[nodes.length - 1];
+        node.shape = el.dataset.shape;
+        node.seed = el.dataset.id;
+        node.angle = el._shapeAngle ?? Math.PI / 2;
+        node.fill = fill ? getComputedStyle(fill).fill : node.fill;
+        node.stroke = outline ? getComputedStyle(outline).stroke : node.stroke;
+        node.strokeWidth = outline ? px(getComputedStyle(outline).strokeWidth) : 3;
+      }
     });
 
     const centerNode = sr.getElementById("centerNode");
@@ -3056,11 +3248,19 @@ class BrainstormMindmapCard extends HTMLElement {
     nodes.forEach((n) => {
       const clipId = `clip${n.index}`;
       defs += `<clipPath id="${clipId}"><rect x="${n.x}" y="${n.y}" width="${n.width}" height="${n.height}" rx="${n.radius}"/></clipPath>`;
+      if (n.shape) {
+        const parts = shapeParts(n.shape, n.width, n.height, { angle: n.angle, seed: n.seed }).join("");
+        body += `<g transform="translate(${n.x} ${n.y})">`;
+        body += `<g fill="none" stroke="${xml(n.stroke)}" stroke-width="${n.strokeWidth}" stroke-linejoin="round">${parts}</g>`;
+        body += `<g fill="${xml(pageColor)}">${parts}</g><g fill="${xml(n.fill)}">${parts}</g></g>`;
+      }
       body += `<g>`;
       // See-through notes would show the lines behind them
-      body += `<rect x="${n.x}" y="${n.y}" width="${n.width}" height="${n.height}" rx="${n.radius}" fill="${xml(pageColor)}"/>`;
-      body += `<rect x="${n.x}" y="${n.y}" width="${n.width}" height="${n.height}" rx="${n.radius}" fill="${xml(n.fill)}" stroke="${xml(n.stroke)}" stroke-width="${n.strokeWidth || 1}"/>`;
-      if (n.accentWidth > n.strokeWidth + 0.5) {
+      if (!n.shape) {
+        body += `<rect x="${n.x}" y="${n.y}" width="${n.width}" height="${n.height}" rx="${n.radius}" fill="${xml(pageColor)}"/>`;
+        body += `<rect x="${n.x}" y="${n.y}" width="${n.width}" height="${n.height}" rx="${n.radius}" fill="${xml(n.fill)}" stroke="${xml(n.stroke)}" stroke-width="${n.strokeWidth || 1}"/>`;
+      }
+      if (!n.shape && n.accentWidth > n.strokeWidth + 0.5) {
         body += `<rect x="${n.x}" y="${n.y}" width="${n.accentWidth}" height="${n.height}" fill="${xml(n.accent)}" clip-path="url(#${clipId})"/>`;
       }
       const textX = n.x + n.padX;
@@ -3994,6 +4194,8 @@ class BrainstormMindmapCard extends HTMLElement {
       const x2 = pos.x;
       const y2 = pos.y;
 
+      this._drawNodeShape(el, Math.atan2(y1 - y2, x1 - x2));
+
       const pathData = this._linePath(lines, x1, y1, x2, y2);
       svgHtml += `
         <path id="path_${idea.id}" class="synapse-path${from ? " branch-path" : ""}" d="${pathData}" style="--path-color: ${catColor};" />
@@ -4001,6 +4203,39 @@ class BrainstormMindmapCard extends HTMLElement {
     });
 
     svg.innerHTML = svgHtml;
+  }
+
+  // Remembers where a note's parent lies and paints its outline; a size
+  // change, like while typing, paints it again
+  _drawNodeShape(el, angle) {
+    if (!el.classList.contains("has-shape")) return;
+    el._shapeAngle = angle;
+    if (!this._shapeObserver && window.ResizeObserver) {
+      this._shapeObserver = new ResizeObserver((entries) => entries.forEach((entry) => this._paintShape(entry.target)));
+    }
+    if (this._shapeObserver && !el._shapeObserved) {
+      el._shapeObserved = true;
+      this._shapeObserver.observe(el);
+    }
+    this._paintShape(el);
+  }
+
+  _paintShape(el) {
+    const svg = el.querySelector(":scope > .node-shape");
+    const w = el.offsetWidth;
+    const h = el.offsetHeight;
+    if (!svg || !w || !h || !el.isConnected) return;
+    const shape = el.dataset.shape;
+    const angle = el._shapeAngle ?? Math.PI / 2;
+    // Small turns of the tail are not worth a new outline
+    const key = `${w}x${h}:${shape === "bubble" ? Math.round(angle * 20) : ""}`;
+    if (svg.dataset.key === key) return;
+    svg.dataset.key = key;
+    svg.setAttribute("width", w);
+    svg.setAttribute("height", h);
+    svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+    const parts = shapeParts(shape, w, h, { angle, seed: el.dataset.id }).join("");
+    svg.innerHTML = `<g class="shape-outline">${parts}</g><g class="shape-fill">${parts}</g>`;
   }
 
   _updateContent() {
@@ -4196,6 +4431,8 @@ class BrainstormMindmapCard extends HTMLElement {
       shownIdeas.forEach((idea) => {
         const color = this._getCategoryColor(idea.category);
         const sourceBadge = this._getSourceBadge(idea.source, idea.device);
+        const shape = this._nodeShape(idea);
+        const svgShape = SVG_SHAPES.includes(shape);
         const timeAgo = this._formatTime(idea.created_at);
         const prio = (idea.priority || "medium").toLowerCase();
         const prioClass = prio === "urgent" ? "cloud-urgent" : prio === "high" ? "cloud-high" : "";
@@ -4208,7 +4445,8 @@ class BrainstormMindmapCard extends HTMLElement {
           : "";
 
         html += `
-          <div class="note-cloud ${prioClass}${idea.id === this._selectedId ? " selected" : ""}${this._multi.has(idea.id) ? " multi-selected" : ""}" id="cloud_${idea.id}" data-id="${idea.id}" style="--cat-color: ${color};">
+          <div class="note-cloud ${prioClass} nshape-${shape}${svgShape ? " has-shape" : ""}${idea.id === this._selectedId ? " selected" : ""}${this._multi.has(idea.id) ? " multi-selected" : ""}" id="cloud_${idea.id}" data-id="${idea.id}" data-shape="${shape}" style="--cat-color: ${color};">
+            ${svgShape ? '<svg class="node-shape" aria-hidden="true"></svg>' : ""}
             ${branchToggle}
             <div class="cloud-meta">
               <span class="cat-tag" data-cat="${this._escapeHtml(idea.category)}" title="${t("Kategorie ändern")}">
@@ -4237,6 +4475,8 @@ class BrainstormMindmapCard extends HTMLElement {
           </div>
         `;
       });
+      // The old notes go, and with them what the observer watched
+      if (this._shapeObserver) this._shapeObserver.disconnect();
       container.innerHTML = html;
       // Notes that are done, deleted or filtered away leave the selection
       const shownIds = new Set(shownIdeas.map((i) => i.id));
@@ -5138,7 +5378,7 @@ class BrainstormMindmapCardEditor extends HTMLElement {
           select: {
             mode: "dropdown",
             options: [
-              { value: "standard", label: t("Standard: Wolken, Kurven, Kategoriefarben") },
+              { value: "standard", label: t("Standard: Karten, Kurven, Kategoriefarben") },
               { value: "clean", label: t("Klar: Rechtecke, eckige Linien") },
               { value: "sketch", label: t("Skizze: Kapseln, gestrichelt, Pastell") },
               { value: "neon", label: t("Neon: dunkel und leuchtend") },
@@ -5155,7 +5395,9 @@ class BrainstormMindmapCardEditor extends HTMLElement {
             mode: "dropdown",
             options: [
               { value: "template", label: t("Wie die Vorlage") },
+              { value: "card", label: t("Karte") },
               { value: "cloud", label: t("Wolke") },
+              { value: "bubble", label: t("Sprechblase") },
               { value: "pill", label: t("Kapsel") },
               { value: "rect", label: t("Rechteck") },
             ],
@@ -5494,7 +5736,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.7.10 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.7.11 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );
