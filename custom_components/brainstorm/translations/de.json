@@ -49,6 +49,7 @@
           "alexa_skill": "Alexa-Spracheingabe & Skill",
           "reminders": "Erinnerungen & Benachrichtigungen",
           "ai": "KI",
+          "cleanup": "🧹 Erledigte Einträge löschen",
           "close": "✅ Fertig",
           "privacy": "Privatsphäre & Benutzer",
           "privacy_voice": "Echos & Apps Personen zuordnen"
@@ -491,6 +492,20 @@
           "lock_3_dnd": "Schaltet „Nicht stören“ dieser Echos zu Beginn ein und am Ende aus, dann ist auch Alexa selbst still. Braucht Alexa Media Player.",
           "go_back": "Kehrt zur vorherigen Seite zurück, ohne dieses Formular zu speichern."
         }
+      },
+      "cleanup": {
+        "title": "Brainstorm › Erledigte Einträge löschen",
+        "description": "Zurzeit gibt es {done} erledigte Einträge. Erledigt heißt abgehakt oder archiviert. Gelöschte Einträge lassen sich nicht zurückholen, exportiere sie vorher, wenn du sie behalten willst.",
+        "data": {
+          "delete_done_days": "Erledigte Einträge löschen nach (Tagen)",
+          "delete_now": "Alle erledigten Einträge jetzt löschen",
+          "go_back": "⬅️ Zurück, ohne zu speichern"
+        },
+        "data_description": {
+          "delete_done_days": "Einträge, die so viele Tage erledigt sind, werden von selbst gelöscht, geprüft alle sechs Stunden. 0 behält sie. Ihre Anhänge gehen mit.",
+          "delete_now": "Löscht beim Speichern jeden erledigten Eintrag, egal wie lange er schon erledigt ist.",
+          "go_back": "Kehrt zur vorigen Seite zurück, ohne dieses Formular zu speichern."
+        }
       }
     },
     "error": {
@@ -822,6 +837,16 @@
         "id": {
           "name": "ID",
           "description": "ID der zu löschenden Idee."
+        }
+      }
+    },
+    "delete_done": {
+      "name": "Erledigte Einträge löschen",
+      "description": "Löscht abgehakte oder archivierte Einträge. Mit eingeschalteter Privatsphäre nur die eigenen. Gelöschte Einträge lassen sich nicht zurückholen.",
+      "fields": {
+        "older_than_days": {
+          "name": "Mindestens erledigt seit (Tagen)",
+          "description": "Nur Einträge, die mindestens so viele Tage erledigt sind. 0 löscht alle erledigten."
         }
       }
     },

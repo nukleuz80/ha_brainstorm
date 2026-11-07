@@ -41,6 +41,8 @@ CONF_CALENDAR_ENTITY = "calendar_entity"
 CONF_AI_ENABLED = "ai_enabled"
 CONF_AI_ENTITY = "ai_entity"
 CONF_AI_TEXT_CLEANUP = "ai_text_cleanup"
+# Days after which done ideas are deleted by themselves, 0 keeps them
+CONF_DELETE_DONE_DAYS = "delete_done_days"
 CONF_NATIVE_REMINDERS = "native_reminders"
 CONF_REMINDER_ALEXA = "reminder_alexa"
 CONF_REMINDER_ECHOS = "reminder_echos"
@@ -220,6 +222,7 @@ JSON_EXPORT_FORMAT = "brainstorm_hub"
 JSON_EXPORT_VERSION = 1
 
 SERVICE_REORDER_IDEAS = "reorder_ideas"
+SERVICE_DELETE_DONE = "delete_done"
 SERVICE_SET_CATEGORY_STYLE = "set_category_style"
 ATTR_ICON = "icon"
 ATTR_COLOR = "color"

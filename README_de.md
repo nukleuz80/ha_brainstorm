@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.7.12-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.7.13-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -99,6 +99,7 @@ Brainstorm Hub verwandelt alle deine **Amazon Echo**-Geräte im Haus in sekunden
     - Erledigt-Verwaltung mit Durchstreich-Animation, Bearbeitungsfunktion und Quellen-Badges.
     - **Unteraufgaben direkt anlegen (v1.6.29):** 🌿 an einer Hauptaufgabe oder in ihrem Menü bei langem Drücken legt eine Unteraufgabe direkt darunter an, in derselben Kategorie. Mit einer KI-Aufgaben-Entität schlägt ✨ daneben Unteraufgaben vor (v1.6.28).
     - **Anhänge (v1.7.9):** 📎 im Bearbeiten-Dialog beider Karten hängt Screenshots, Fotos, PDFs, Logs und andere Dateien an eine Notiz, bis 10 MB pro Datei und 20 pro Notiz. Am Rechner fügst du einen Screenshot mit Strg+V ein oder ziehst Dateien auf den Dialog, am Handy bietet der Knopf Kamera und Galerie an. Die Liste zeigt 📎 mit der Anzahl, Antippen zeigt die Dateien, Bilder als Vorschau, und öffnet sie. Ist eine Notiz erledigt (oder archiviert), werden ihre Anhänge nach 30 Tagen gelöscht, wird sie wieder geöffnet, bleiben sie. Die Dateien liegen in `/config/brainstorm_attachments/` und gehen nur an Personen, die die Notiz sehen dürfen. Erlaubt: Bilder, PDF, TXT/LOG/MD, CSV, JSON, YAML, ZIP.
+    - **Erledigte Einträge löschen (v1.7.13):** Einstellungen › 🧹 Erledigte Einträge löschen löscht erledigte (abgehakte oder archivierte) Einträge nach einer Anzahl Tage von selbst, geprüft alle sechs Stunden, und hat einen Schalter, der alle sofort löscht. Ihre Anhänge gehen mit. Standardmäßig aus (0 Tage). Aktion: `brainstorm.delete_done`.
     - **Titel und Beschreibung (v1.7.8):** ✎ bearbeitet den Titel und darunter eine optionale Beschreibung für Details, Links oder Notizen. Die Liste zeigt bis zu drei Zeilen davon unter dem Titel, Antippen zeigt den Rest. Der Bearbeiten-Dialog der Mindmap hat sie auch, und die To-do-Listen von Home Assistant zeigen und bearbeiten sie als Beschreibung des Eintrags. Aktionen: `description` in `brainstorm.add_idea` und `brainstorm.update_idea` (leer entfernt sie).
     - **Unteraufgaben einklappen (v1.7.4):** Eine Hauptaufgabe mit Unteraufgaben zeigt ▾ und deren Anzahl. Antippen klappt sie zu, ▸ klappt sie wieder auf. Praktisch bei langen Bring-Listen. Jeder Browser merkt sich pro Karte, was eingeklappt ist.
   - **Links und etwas Markdown in Notizen (beide Karten, v1.6.21):**
@@ -181,8 +182,8 @@ HACS installiert nur die Integration. Die Karten kopierst du anschließend wie u
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Kopiere die Dateien `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` und `www/brainstorm-i18n.js` in `/config/www/`. Die dritte Datei enthält die Texte und braucht keinen Ressourcen-Eintrag.
 4. Trage die Ressourcen unter *Einstellungen ➔ Dashboards ➔ Ressourcen* ein:
-   - **URL:** `/local/brainstorm-card.js?v=1.7.12` (Typ: `JavaScript-Modul`)
-   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.7.12` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-card.js?v=1.7.13` (Typ: `JavaScript-Modul`)
+   - **URL:** `/local/brainstorm-mindmap-card.js?v=1.7.13` (Typ: `JavaScript-Modul`)
 5. Starte Home Assistant neu.
 
 ### Integration entfernen
@@ -620,6 +621,15 @@ Brainstorm nutzt eine KI-Aufgaben-Entität von Home Assistant, etwa Google Gemin
 | Gesprochene Einträge per KI verbessern | Jeder gesprochene Eintrag wird zuerst gespeichert und wenige Sekunden später verbessert. Das Ergebnis wird verworfen, wenn es Wörter hinzufügt oder eine Verneinung ändert. Der Text geht an den Anbieter der gewählten KI. |
 | Briefing und Rückblick per KI kürzen | Morgen-Briefing und Wochenrückblick der Erinnerungen werden gekürzt. Deine Einträge gehen dafür an den Anbieter der gewählten KI. |
 
+#### Brainstorm › Erledigte Einträge löschen
+
+Die Seite zeigt, wie viele erledigte (abgehakte oder archivierte) Einträge es gibt. Gelöschte Einträge lassen sich nicht zurückholen, exportiere sie vorher, wenn du sie behalten willst.
+
+| Feld | Was es bewirkt |
+| :--- | :--- |
+| Erledigte Einträge löschen nach (Tagen) | Einträge, die so viele Tage erledigt sind, werden von selbst gelöscht, geprüft alle sechs Stunden und einmal direkt beim Speichern. 0 (Standard) behält sie. Offene Unteraufgaben bleiben als Hauptaufgaben, Anhänge gehen mit. |
+| Alle erledigten Einträge jetzt löschen | Löscht beim Speichern jeden erledigten Eintrag, egal wie lange er schon erledigt ist. Das Menü zeigt danach, wie viele es waren. |
+
 #### Brainstorm › To-do-Listen koppeln
 
 Ein Feld pro Kategorie. Wähle eine To-do-Liste einer anderen Integration, etwa Bring!, Google Tasks, Todoist oder eine lokale To-do-Liste, und beide bleiben gleich:
@@ -785,6 +795,14 @@ Entfernt eine Idee. Bis zum nächsten Start von Home Assistant holt `brainstorm.
 | Feld | Pflicht | Bedeutung |
 | :--- | :--- | :--- |
 | `id` | Ja | ID der zu löschenden Idee. |
+
+### `brainstorm.delete_done`
+
+Löscht erledigte (abgehakte oder archivierte) Einträge auf einmal. Mit eingeschalteter Privatsphäre nur die eigenen. Gelöschte Einträge lassen sich nicht zurückholen. Die Antwort nennt die Anzahl (`deleted`).
+
+| Feld | Pflicht | Bedeutung |
+| :--- | :--- | :--- |
+| `older_than_days` | Nein | Nur Einträge, die mindestens so viele Tage erledigt sind. `0` (Standard) löscht alle erledigten. |
 
 ### `brainstorm.restore_idea`
 
@@ -968,6 +986,7 @@ Weitere Beispiele für Assist und Alexa liegen im Ordner [`examples/`](examples/
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.7.13`** | 07.11.2026 | **Erledigte Einträge löschen:** Einstellungen › 🧹 Erledigte Einträge löschen löscht erledigte Einträge nach einer Anzahl Tage von selbst (geprüft alle sechs Stunden, 0 = aus) und hat einen Schalter, der alle sofort löscht. Offene Unteraufgaben eines gelöschten Eintrags bleiben als Hauptaufgaben, Einträge verknüpfter To-do-Listen und Anhänge gehen mit. Neue Aktion `brainstorm.delete_done` mit `older_than_days`. |
 | **`v1.7.12`** | 07.11.2026 | **Mindmap: Form pro Notiz:** Der Bearbeiten-Dialog der Mindmap wählt für eine einzelne Notiz Karte, Wolke, Sprechblase, Kapsel oder Rechteck; „Automatisch“ folgt der Map. `brainstorm.update_idea` nimmt das neue Feld `shape`, JSON-Export und -Import behalten es. Notizen, die Alexa, Siri oder Assist gesagt wurden, erscheinen von selbst als Sprechblase; die neue Option `voice_bubbles` schaltet das ab. |
 | **`v1.7.11`** | 07.11.2026 | **Mindmap: echte Wolken und Sprechblasen:** zwei neue Formen für Notizen, als SVG-Umriss gezeichnet, der seine Bögen bei jeder Größe behält. Der Zipfel der Sprechblase zeigt zur übergeordneten Notiz oder zur Mitte und wandert beim Ziehen mit. Die bisherige „Wolke“ war eine abgerundete Karte und heißt jetzt **Karte** (`card`), die Standard-Vorlage behält sie; `node_shape: cloud` zeichnet jetzt die echte Wolke. Beide Formen folgen den Farbvorlagen, der Priorität und der Auswahl und kommen mit in den Bild-Export. |
 | **`v1.7.10`** | 05.11.2026 | **In Arbeit:** `brainstorm.update_idea` nimmt `in_progress`. Beide Karten zeigen 🔧 In Arbeit mit dem Namen dessen, der angefangen hat, das Menü bei langem Drücken setzt und entfernt die Markierung, Abhaken entfernt sie. Der Claude-Code-Skill markiert den Eintrag, an dem er arbeitet. Die Mindmap zeigt auch das 📎-Abzeichen. |

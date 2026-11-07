@@ -78,6 +78,7 @@ from .const import (
     CONF_HIDE_EMPTY_CATEGORIES,
     CONF_AI_ENTITY,
     CONF_AI_TEXT_CLEANUP,
+    CONF_DELETE_DONE_DAYS,
     CONF_GLOSSARY,
     CONF_REMINDERS_ENABLED,
     CONF_SMART_FORMATTING,
@@ -1551,6 +1552,70 @@ class BrainstormStore:
             await self.async_save()
             self._notify_listeners()
         return removed
+
+    def done_ideas(
+        self, older_than_days: int = 0, user_id: str | None = None
+    ) -> list[str]:
+        """Return the IDs of ideas done at least this many days ago.
+
+        Done means ticked off or archived. With a user, only the ideas this
+        user owns count, as only the owner may delete an idea.
+        """
+        limit = dt_util.now() - timedelta(days=max(older_than_days, 0))
+        found: list[str] = []
+        for idea_id, idea in self._ideas.items():
+            if idea.get(ATTR_STATUS) not in ("completed", "archived"):
+                continue
+            if user_id is not None and not self.is_owner(idea, user_id):
+                continue
+            if older_than_days > 0:
+                done_at = dt_util.parse_datetime(
+                    str(idea.get(ATTR_COMPLETED_AT) or idea.get(ATTR_UPDATED_AT) or "")
+                )
+                if done_at is None or dt_util.as_local(done_at) > limit:
+                    continue
+            found.append(idea_id)
+        return found
+
+    async def async_delete_done(
+        self,
+        older_than_days: int = 0,
+        user_id: str | None = None,
+        context: Context | None = None,
+    ) -> int:
+        """Delete ideas done at least this many days ago, in one save.
+
+        0 days deletes everything done. Open subtasks of a deleted idea stay
+        as main tasks. Each deleted idea fires the usual event, so a linked
+        to-do list drops its item too. Returns how many were deleted.
+        """
+        idea_ids = set(self.done_ideas(older_than_days, user_id))
+        if not idea_ids:
+            return 0
+        act_context = context or Context()
+        removed = [self._ideas.pop(idea_id) for idea_id in idea_ids]
+        for item in self._ideas.values():
+            if item.get(ATTR_PARENT_ID) in idea_ids:
+                item[ATTR_PARENT_ID] = None
+        await self.async_save()
+        for idea in removed:
+            self.hass.bus.async_fire(
+                EVENT_IDEA_DELETED,
+                {**idea, "entity_id": OVERVIEW_ENTITY_ID},
+                context=act_context,
+            )
+        self._notify_listeners(context=act_context)
+        _LOGGER.info("Deleted %d Brainstorm ideas that were done", len(removed))
+        # Their attachments go with them
+        await self.async_cleanup_attachments()
+        return len(removed)
+
+    async def async_delete_done_by_setting(self) -> int:
+        """Delete what the setting says has been done long enough."""
+        days = int(self.options.get(CONF_DELETE_DONE_DAYS) or 0)
+        if days <= 0:
+            return 0
+        return await self.async_delete_done(days)
 
     def deleted_idea(self, idea_id: str) -> dict[str, Any] | None:
         """Return an idea deleted since the start, as it would come back."""

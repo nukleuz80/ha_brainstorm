@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.7.12-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.7.13-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -79,6 +79,7 @@ Brainstorm Hub turns every **Amazon Echo** device in your home into an instant, 
   - **Drag & Drop Subtasks:** Drag a note onto another note to instantly nest it as a subtask.
   - **New subtask with 🌿:** 🌿 on a main task, or in its long-press menu, adds a subtask right under it, in the same category (v1.6.29).
   - **Attachments (v1.7.9):** 📎 in the edit dialog of both cards attaches screenshots, photos, PDFs, logs and other files to a note, up to 10 MB each and 20 per note. On a computer, paste a screenshot with Ctrl+V or drop files onto the dialog; on a phone the button offers the camera and the gallery. The list shows 📎 and the number; a tap shows the files, images as thumbnails, and opens them. Attachments of a note that is done (or archived) are deleted after 30 days, and reopening it keeps them. The files live in `/config/brainstorm_attachments/` and are only served to people who may see the note. Allowed: images, PDF, TXT/LOG/MD, CSV, JSON, YAML, ZIP.
+  - **Delete done entries (v1.7.13):** Settings › 🧹 Delete done entries deletes done (ticked off or archived) entries after a number of days by themselves, checked every six hours, and has a switch to delete all of them right away. Their attachments go with them. Off (0 days) by default. Action: `brainstorm.delete_done`.
   - **Title and description (v1.7.8):** ✎ edits the title and, below it, an optional description for details, links or notes. The list shows up to three lines of it under the title; tapping it shows the rest. The mind map's edit dialog has it too, and the to-do lists of Home Assistant show and edit it as the item's description. Actions: `description` in `brainstorm.add_idea` and `brainstorm.update_idea` (empty removes it).
   - **Fold subtasks (v1.7.4):** A main task with subtasks shows ▾ and their number. Tap it to fold them away; ▸ unfolds them again. Handy for long Bring lists. Each browser remembers what is folded, per card.
   - **Apple Reminders Context Menu:** Long-press on mobile (~420ms) or right-click on desktop triggers haptic feedback and opens a quick menu for indenting, unindenting, moving, editing, or deleting.
@@ -161,8 +162,8 @@ HACS only installs the integration, so continue with [Install the cards](#instal
 
 1. Copy `www/brainstorm-card.js`, `www/brainstorm-mindmap-card.js` and `www/brainstorm-i18n.js` from the release to `/config/www/`. The third file holds the texts and needs no resource entry.
 2. Add both under **Settings ➔ Dashboards ➔ Resources** as **JavaScript module**:
-   - `/local/brainstorm-card.js?v=1.7.12`
-   - `/local/brainstorm-mindmap-card.js?v=1.7.12`
+   - `/local/brainstorm-card.js?v=1.7.13`
+   - `/local/brainstorm-mindmap-card.js?v=1.7.13`
 3. Reload the page in your browser.
 
 ### Removing the Integration
@@ -359,9 +360,9 @@ Add the custom cards to your Lovelace dashboard resources:
 
 ```yaml
 resources:
-  - url: /local/brainstorm-card.js?v=1.7.12
+  - url: /local/brainstorm-card.js?v=1.7.13
     type: module
-  - url: /local/brainstorm-mindmap-card.js?v=1.7.12
+  - url: /local/brainstorm-mindmap-card.js?v=1.7.13
     type: module
 ```
 
@@ -570,6 +571,15 @@ Brainstorm uses an AI task entity of Home Assistant, such as Google Gemini, Open
 | Improve spoken entries with AI | Each spoken entry is stored first and improved a few seconds later. The result is dropped if it adds words or changes a negation. The text is sent to the provider of the chosen AI. |
 | Shorten the briefing and review with AI | The morning briefing and weekly review of the reminders are shortened. Your ideas are sent to the provider of the chosen AI. |
 
+#### Brainstorm › Delete done entries
+
+The page shows how many done (ticked off or archived) entries there are. Deleted entries cannot be brought back, export them first if you want to keep them.
+
+| Field | What it does |
+| :--- | :--- |
+| Delete done entries after (days) | Entries done for this many days are deleted by themselves, checked every six hours and once right when saving. 0 (default) keeps them. Open subtasks stay as main tasks, attachments go with them. |
+| Delete all done entries now | Deletes every done entry when saving, no matter how long ago it was done. The menu then shows how many went. |
+
 #### Brainstorm › Link To-do Lists
 
 One field per category. Pick a to-do list of another integration, such as Bring!, Google Tasks, Todoist or a local to-do list, and both stay the same:
@@ -735,6 +745,14 @@ Removes an idea. Until the next start of Home Assistant, `brainstorm.restore_ide
 | Field | Required | Meaning |
 | :--- | :--- | :--- |
 | `id` | Yes | ID of the idea to delete. |
+
+### `brainstorm.delete_done`
+
+Deletes ideas that are done (ticked off or archived), in one go. With privacy on, only the caller's own ideas. Deleted ideas cannot be brought back. The response says how many were deleted (`deleted`).
+
+| Field | Required | Meaning |
+| :--- | :--- | :--- |
+| `older_than_days` | No | Only ideas done at least this many days ago. `0` (default) deletes all done ideas. |
 
 ### `brainstorm.restore_idea`
 
@@ -918,6 +936,7 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.7.13`** | 2026-11-07 | **Delete done entries:** Settings › 🧹 Delete done entries deletes done entries after a number of days by themselves (checked every six hours, 0 = off) and has a switch to delete all of them right away. Open subtasks of a deleted entry stay as main tasks, items of linked to-do lists and attachments go with it. New action `brainstorm.delete_done` with `older_than_days`. |
 | **`v1.7.12`** | 2026-11-07 | **Mind map: a shape per note:** the edit dialog of the mind map chooses card, cloud, speech bubble, pill or rectangle for a single note; "Automatic" follows the map. `brainstorm.update_idea` takes the new field `shape`, and JSON export and import keep it. Notes said to Alexa, Siri or Assist show as speech bubbles on their own; the new option `voice_bubbles` turns that off. |
 | **`v1.7.11`** | 2026-11-07 | **Mind map: real clouds and speech bubbles:** two new note shapes, drawn as SVG outlines that keep their bumps at any size. The speech bubble's tail points to the parent note or to the center and follows while dragging. The old "cloud" was a rounded card and is now called **Card** (`card`), the standard template keeps it; `node_shape: cloud` now draws the real cloud. Both shapes follow the color templates, priority and selection, and show up in the image export. |
 | **`v1.7.10`** | 2026-11-05 | **In progress:** `brainstorm.update_idea` takes `in_progress`. Both cards show 🔧 In progress with the name of who started, the long-press menu sets and removes it, and ticking off removes it. The Claude Code skill marks the entry it works on. The mind map also shows the 📎 badge. |

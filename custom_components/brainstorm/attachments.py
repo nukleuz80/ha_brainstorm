@@ -189,7 +189,7 @@ class AttachmentView(HomeAssistantView):
 
 
 class AttachmentCleaner:
-    """Delete the attachments of ideas that are done for a while."""
+    """Delete done ideas as the setting says, and old attachments."""
 
     def __init__(self, hass: HomeAssistant, store: BrainstormStore) -> None:
         """Initialize the cleaner."""
@@ -215,6 +215,10 @@ class AttachmentCleaner:
 
     async def _async_run(self, _now: datetime) -> None:
         """Run one cleanup; a failure waits for the next round."""
+        try:
+            await self.store.async_delete_done_by_setting()
+        except HomeAssistantError as err:
+            _LOGGER.warning("Deleting done Brainstorm ideas failed: %s", err)
         try:
             await self.store.async_cleanup_attachments()
         except (OSError, HomeAssistantError) as err:

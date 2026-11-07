@@ -21,6 +21,9 @@
     "delete_idea": {
       "service": "mdi:delete-outline"
     },
+    "delete_done": {
+      "service": "mdi:delete-sweep-outline"
+    },
     "get_ideas": {
       "service": "mdi:format-list-bulleted"
     },

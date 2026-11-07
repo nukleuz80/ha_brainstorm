@@ -53,6 +53,7 @@ from .const import (
     DESCRIPTION_MAX_LENGTH,
     NODE_SHAPES,
     SERVICE_REORDER_IDEAS,
+    SERVICE_DELETE_DONE,
     SERVICE_SET_CATEGORY_STYLE,
     SHARE_EDIT,
     SHARE_VIEW,
@@ -176,6 +177,14 @@ SERVICE_REORDER_IDEAS_SCHEMA = vol.Schema(
 SERVICE_DELETE_IDEA_SCHEMA = vol.Schema(
     {
         vol.Required(ATTR_ID): cv.string,
+    }
+)
+
+SERVICE_DELETE_DONE_SCHEMA = vol.Schema(
+    {
+        vol.Optional("older_than_days", default=0): vol.All(
+            vol.Coerce(int), vol.Range(min=0, max=3650)
+        ),
     }
 )
 
@@ -514,6 +523,16 @@ def _register_services(hass: HomeAssistant) -> None:
         )
         return {"success": True}
 
+    async def handle_delete_done(call: ServiceCall) -> dict[str, Any]:
+        """Delete ideas that are done, everything or those done long enough."""
+        store = _require_store(hass)
+        deleted = await store.async_delete_done(
+            call.data["older_than_days"],
+            user_id=call.context.user_id,
+            context=call.context,
+        )
+        return {"deleted": deleted}
+
     async def handle_bring_message(call: ServiceCall) -> dict[str, Any]:
         """Tell the others on a Bring list, for example who goes shopping."""
         store = _require_store(hass)
@@ -762,6 +781,14 @@ def _register_services(hass: HomeAssistant) -> None:
         SERVICE_DELETE_IDEA,
         handle_delete_idea,
         schema=SERVICE_DELETE_IDEA_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_DELETE_DONE,
+        handle_delete_done,
+        schema=SERVICE_DELETE_DONE_SCHEMA,
         supports_response=SupportsResponse.OPTIONAL,
     )
 

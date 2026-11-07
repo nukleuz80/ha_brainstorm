@@ -20,6 +20,7 @@ from .const import (
     CONF_AI_ENABLED,
     CONF_AI_ENTITY,
     CONF_AI_TEXT_CLEANUP,
+    CONF_DELETE_DONE_DAYS,
     CONF_ALLOWED_ECHOS,
     CONF_ARRIVAL_ENABLED,
     CONF_AUTO_EXPORT_MARKDOWN,
@@ -247,6 +248,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "alexa_skill": "Alexa-Spracheingabe & Skill",
                 "reminders": "Erinnerungen & Benachrichtigungen",
                 "ai": "KI",
+                "cleanup": "🧹 Erledigte Einträge löschen",
                 "todo_sync": "To-do-Listen koppeln",
                 "bring": "🛒 Bring!",
                 "battery": "🔋 Batterien",
@@ -280,6 +282,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "alexa_skill": "Alexa Voice Input & Skill",
                 "reminders": "Reminders & Notifications",
                 "ai": "AI",
+                "cleanup": "🧹 Delete done entries",
                 "todo_sync": "Link To-do Lists",
                 "bring": "🛒 Bring!",
                 "battery": "🔋 Batteries",
@@ -1420,6 +1423,58 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                     ): selector.BooleanSelector(),
                 })
             ),
+        )
+
+    async def async_step_cleanup(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Delete done entries after some days by themselves, or right now."""
+        if user_input is not None and user_input.pop(BACK_FIELD, False):
+            return await self.async_step_init()
+        current = dict(self.config_entry.options or self.config_entry.data)
+        store = await self._async_store()
+        if user_input is not None:
+            days = int(user_input.get(CONF_DELETE_DONE_DAYS) or 0)
+            delete_now = bool(user_input.get("delete_now"))
+            deleted = 0
+            # Delete first, new settings reload Brainstorm
+            if store is not None and (delete_now or days > 0):
+                deleted = await store.async_delete_done(0 if delete_now else days)
+            options = {**current, CONF_DELETE_DONE_DAYS: days}
+            if options != current:
+                self.hass.config_entries.async_update_entry(
+                    self.config_entry, options=options
+                )
+            self._notice = self._text("✅ Gespeichert und aktiv.", "✅ Saved and active.")
+            if deleted:
+                self._notice += self._text(
+                    f" 🗑️ {deleted} erledigte Einträge gelöscht.",
+                    f" 🗑️ Deleted {deleted} done entries.",
+                )
+            return await self.async_step_init()
+        return self.async_show_form(
+            step_id="cleanup",
+            data_schema=vol.Schema(
+                _with_back(
+                {
+                    vol.Required(
+                        CONF_DELETE_DONE_DAYS,
+                        default=int(current.get(CONF_DELETE_DONE_DAYS) or 0),
+                    ): selector.NumberSelector(
+                        selector.NumberSelectorConfig(
+                            min=0,
+                            max=3650,
+                            step=1,
+                            mode=selector.NumberSelectorMode.BOX,
+                            unit_of_measurement="d",
+                        )
+                    ),
+                    vol.Required("delete_now", default=False): selector.BooleanSelector(),
+                })
+            ),
+            description_placeholders={
+                "done": str(len(store.done_ideas()) if store else 0),
+            },
         )
 
     async def async_step_todo_sync(

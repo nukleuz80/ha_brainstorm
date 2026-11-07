@@ -49,6 +49,7 @@
           "alexa_skill": "Alexa Voice Input & Skill",
           "reminders": "Reminders & Notifications",
           "ai": "AI",
+          "cleanup": "🧹 Delete done entries",
           "close": "✅ Done",
           "privacy": "Privacy & Users",
           "privacy_voice": "Assign Echos & Apps to People"
@@ -491,6 +492,20 @@
           "lock_3_dnd": "Switches Do not disturb of these Echos on at the start and off at the end, so Alexa itself is silent too. Needs Alexa Media Player.",
           "go_back": "Returns to the previous page without saving this form."
         }
+      },
+      "cleanup": {
+        "title": "Brainstorm › Delete done entries",
+        "description": "Right now there are {done} done entries. Done means ticked off or archived. Deleted entries cannot be brought back, export them first if you want to keep them.",
+        "data": {
+          "delete_done_days": "Delete done entries after (days)",
+          "delete_now": "Delete all done entries now",
+          "go_back": "⬅️ Back without saving"
+        },
+        "data_description": {
+          "delete_done_days": "Entries done for this many days are deleted by themselves, checked every six hours. 0 keeps them. Their attachments go with them.",
+          "delete_now": "Deletes every done entry when saving, no matter how long ago it was done.",
+          "go_back": "Returns to the previous page without saving this form."
+        }
       }
     },
     "error": {
@@ -822,6 +837,16 @@
         "id": {
           "name": "ID",
           "description": "ID of the idea to delete."
+        }
+      }
+    },
+    "delete_done": {
+      "name": "Delete done ideas",
+      "description": "Deletes ideas that are ticked off or archived. With privacy on, only the caller's own ideas. Deleted ideas cannot be brought back.",
+      "fields": {
+        "older_than_days": {
+          "name": "Done for at least (days)",
+          "description": "Only ideas done at least this many days ago. 0 deletes all done ideas."
         }
       }
     },
