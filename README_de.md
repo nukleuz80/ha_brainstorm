@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.7.18-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.7.19-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -360,6 +360,8 @@ Ohne Skill antwortet Alexa auf *„Alexa, notiere …“* oft zuerst mit einer F
 > 🤖 **Alexa:** *„Gespeichert unter Smarthome.“*
 
 Der Skill gehört dir allein und spricht nur mit deinem eigenen Home Assistant. **Voraussetzungen:** ein kostenloses [Amazon-Entwicklerkonto](https://developer.amazon.com/alexa/console/ask) mit demselben Konto wie deine Echos und ein aus dem Internet per HTTPS erreichbares Home Assistant (z. B. über Home Assistant Cloud). Home Assistant zeigt das Sprachmodell in seiner eigenen Sprache an. Es gibt Deutsch und Englisch, andere Sprachen bekommen das englische. Der Skill antwortet in der Sprache der Anfrage.
+
+> 🎬 **Lieber zuschauen?** Das [Video zur Einrichtung](docs/video-alexa-skill.md) zeigt jede Einstellung in einem eigenen Kapitel (6 Minuten).
 
 1. Gehe in Home Assistant auf **Brainstorm Hub ➔ Konfigurieren ➔ Alexa-Spracheingabe & Skill**, wähle **Skill** oder **Beide** und klicke auf **Weiter**. Lass dieses Fenster offen, es zeigt die beiden Felder zum Kopieren.
 2. Klicke in der [Alexa-Entwicklerkonsole](https://developer.amazon.com/alexa/console/ask) auf **Create Skill** und wähle: Name `Brainstorm`, Sprache **German (DE)**, Typ **Custom**, Hosting **Alexa-hosted (Python)**, Vorlage **Start from Scratch**.
@@ -995,6 +997,7 @@ Weitere Beispiele für Assist und Alexa liegen im Ordner [`examples/`](examples/
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.7.19`** | 08.11.2026 | **Video zur Skill-Einrichtung:** Neues Erklärvideo [`docs/video-alexa-skill.md`](docs/video-alexa-skill.md) (6 Minuten, deutsch) mit einem Kapitel pro Einstellung in der Alexa-Entwicklerkonsole: Name, Sprache, Modell, Hosting, Vorlage, Interfaces, Permissions, JSON Editor, Aufrufname, Skill-Code, Test, Kopplung, Alexa-App und Fehlerbehebung, mit Kapitelmarken im MP4. Dazu ein wiederverwendbares animiertes Intro mit dem Brainstorm-Logo und die Werkzeuge zum Erzeugen unter `tools/video`. |
 | **`v1.7.18`** | 07.11.2026 | **Kategorie in eckigen Klammern:** `[Alltag] Oma anrufen` speichert jetzt *Oma anrufen* in *Alltag*. Bisher blieb `[Alltag]` im Text stehen, wenn kein Doppelpunkt folgte, und die Kategorie wurde nur über Stichwörter erraten. |
 | **`v1.7.17`** | 07.11.2026 | **Anleitung mit Beispielen:** Neuer Bereich [`docs/anleitung.md`](docs/anleitung.md) (englisch [`docs/guide.md`](docs/guide.md)) mit Beispielen zu allem, was man sagen, schreiben, einstellen und automatisieren kann: Alexa, Assist, Siri, KI-Assistent, Kategorie-, Prioritäts- und Terminerkennung, Markdown, Bedienung und Tastenkürzel der Karten, alle Kartenoptionen, Menüs, Dienste, Ereignisse. Aufgeräumt: alte Logo- und Icon-Dateien entfernt, die seit dem Brand-Ordner nicht mehr gebraucht werden. |
 | **`v1.7.16`** | 07.11.2026 | **MIT-Lizenzdatei:** Das Repository hat jetzt seine `LICENSE`-Datei (MIT, wie im README schon immer angegeben), die HACS zum Erkennen der Lizenz braucht. HACS Action und hassfest laufen beide durch. |

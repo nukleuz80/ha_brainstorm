@@ -58,7 +58,7 @@ Dafür brauchst du die Integration Alexa Media und eigene Automationen; Vorlagen
 
 ### 1.2 Alexa mit eigenem Skill
 
-Mit dem Skill antwortet Alexa nur einmal. Die Einrichtung steht in der [README](../README_de.md#variante-c-eigener-alexa-skill-optional-ein-satz-eine-antwort). Alle Sätze beginnen mit **„Alexa, sage Brainstorm …“**, nach *„Alexa, öffne Brainstorm“* auch ohne diesen Anfang.
+Mit dem Skill antwortet Alexa nur einmal. Die Einrichtung steht in der [README](../README_de.md#variante-c-eigener-alexa-skill-optional-ein-satz-eine-antwort) und als 🎬 [Video mit einem Kapitel pro Einstellung](video-alexa-skill.md). Alle Sätze beginnen mit **„Alexa, sage Brainstorm …“**, nach *„Alexa, öffne Brainstorm“* auch ohne diesen Anfang.
 
 | Ziel | Beispiele |
 |---|---|

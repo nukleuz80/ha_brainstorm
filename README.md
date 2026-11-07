@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.7.18-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.7.19-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -245,6 +245,8 @@ The Alexa voice flows run as automations and scripts in your own Home Assistant 
 Without a skill, Alexa often reports an error first when you say *"Alexa, note ..."*, because it does not know that command. Your own skill gives a single answer: *"Alexa, ask Brainstorm to note dim the basement light."* ➔ *"Saved under Smart Home."*
 
 The skill belongs to you and only talks to your own Home Assistant. **Requirements:** a free [Amazon developer account](https://developer.amazon.com/alexa/console/ask) on the same account as your Echos and a Home Assistant reachable over public HTTPS (for example through Home Assistant Cloud). Home Assistant offers the voice model in its own language. German and English exist, and other languages get the English one. The skill answers in the language of the request.
+
+> 🎬 **Prefer to watch?** The [setup video](docs/video-alexa-skill.md) shows every setting in its own chapter (6 minutes, German narration, English console labels on screen).
 
 1. In Home Assistant, go to **Brainstorm Hub ➔ Configure ➔ Alexa Voice Input & Skill**, choose **Skill** or **Both** and continue. Keep this window open, it shows the two fields to copy.
 2. In the [Alexa developer console](https://developer.amazon.com/alexa/console/ask), click **Create Skill** and choose: name `Brainstorm`, the language of your Echo, such as **English (US)**, type **Custom**, hosting **Alexa-hosted (Python)**, template **Start from Scratch**.
@@ -936,6 +938,7 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.7.19`** | 2026-11-08 | **Skill setup video:** New walkthrough [`docs/video-alexa-skill.md`](docs/video-alexa-skill.md) (6 minutes, German narration) with one chapter per setting in the Alexa developer console: name, language, model, hosting, template, interfaces, permissions, JSON editor, invocation name, skill code, test, pairing, Alexa app and troubleshooting, with chapter marks in the MP4. Plus a reusable animated intro with the Brainstorm logo and the tools to make it in `tools/video`. |
 | **`v1.7.18`** | 2026-11-07 | **Category in square brackets:** `[Daily Life] call grandma` now saves *Call grandma* in *Daily Life*. Before, `[Daily Life]` stayed in the text without a colon after it, and the category was only guessed from keywords. |
 | **`v1.7.17`** | 2026-11-07 | **Guide with examples:** new section [`docs/guide.md`](docs/guide.md) (German [`docs/anleitung.md`](docs/anleitung.md)) with examples of everything you can say, write, set and automate: Alexa, Assist, Siri, AI assistant, category, priority and due date detection, Markdown, card controls and shortcuts, all card options, menus, services, events. Cleanup: removed old logo and icon files that are no longer needed since the brand folder. |
 | **`v1.7.16`** | 2026-11-07 | **MIT license file:** the repository now has its `LICENSE` file (MIT, as the README always said), which HACS needs to recognise the license. The HACS Action and hassfest both pass. |

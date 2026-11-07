@@ -9,3 +9,10 @@ AGENTS.md
 .agents/
 
 
+tools/video/vv/
+tools/video/out/
+tools/video/intro_frames/
+tools/video/*.onnx*
+tools/video/*.mp4
+tools/video/*.wav
+tools/video/icon.png

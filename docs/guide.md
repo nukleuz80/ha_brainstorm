@@ -60,7 +60,7 @@ Alexa does not know these commands, so it may answer with an error first. The sk
 
 ### 1.2 Alexa with your own skill
 
-With the skill Alexa answers only once. The setup is in the [README](../README.md#️-optional-your-own-alexa-skill-one-sentence-one-answer). Start each sentence with **"Alexa, ask Brainstorm to …"**.
+With the skill Alexa answers only once. The setup is in the [README](../README.md#️-optional-your-own-alexa-skill-one-sentence-one-answer). A 🎬 [video walkthrough](video-alexa-skill.md) with one chapter per setting is available in German, the console labels on screen are in English. Start each sentence with **"Alexa, ask Brainstorm to …"**.
 
 | Goal | Examples |
 |---|---|
