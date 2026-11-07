@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.7.16-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.7.17-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -19,6 +19,9 @@
 
 **Brainstorm Hub** ist die smarte Ideen-, Gedanken- und Notizen-Sammelzentrale für dein Home Assistant Smarthome.  
 Egal ob beim Kochen, im Garten, unter der Dusche oder unterwegs: Erfasse Geistesblitze sekundenschnell per Sprache (**Amazon Alexa** oder **Home Assistant Assist**), über das Lovelace-Dashboard oder Automationen. Brainstorm ordnet deine Ideen durch intelligente Heuristiken automatisch der passenden Kategorie zu und synchronisiert sie auf Wunsch als Markdown-Dateien für Obsidian, Logseq oder Nextcloud.
+
+> [!TIP]
+> **📘 [Anleitung mit Beispielen](docs/anleitung.md):** Was du sagen, schreiben und einstellen kannst, mit Beispielen für Alexa, Assist, Siri, Karten, Tastatur und Automationen.
 
 Feedback, Ideen und Verbesserungen sind sehr willkommen, siehe [💬 Feedback & Mitmachen](#-feedback--mitmachen).
 
@@ -265,6 +268,8 @@ Klicke auf diesen Button, um die Ersteinrichtung von **Brainstorm Hub** direkt i
 
 ## 🎴 Dashboard Cards einbinden
 
+Alle Kartenoptionen, die Bedienung und die Tastenkürzel der Mindmap stehen in der [Anleitung](docs/anleitung.md#3-schreiben--karten-bedienen).
+
 ### 1. Brainstorm Card (Listenansicht mit integriertem Mindmap-Umschalter)
 ```yaml
 type: custom:brainstorm-card
@@ -302,6 +307,8 @@ Für maximale Übersicht lässt sich Brainstorm als vollwertiger Menüpunkt dire
 ---
 
 ## 🗣️ Sprachsteuerung
+
+Alle Sätze und was Brainstorm daraus liest (Kategorie, Priorität, Termin) stehen in der [Anleitung](docs/anleitung.md#1-sagen--sprachbefehle).
 
 ### 1. Amazon Alexa
 
@@ -460,6 +467,8 @@ Eine Kategorie kann das Backlog eines Programmierprojekts sein: Du sammelst Aufg
 ---
 
 ## 🎛️ Alle Einstellungen
+
+Eine Übersicht mit typischen Beispielen pro Menü steht in der [Anleitung](docs/anleitung.md#41-integration).
 
 ### Bei der Einrichtung
 
@@ -928,6 +937,8 @@ Brainstorm Hub speichert alle Ideen lokal in `.storage/brainstorm.storage` und f
 
 ## 💡 Beispiele
 
+Mehr Beispiele, auch für Ereignisse und Sensor-Attribute, stehen in der [Anleitung](docs/anleitung.md#5-automatisieren).
+
 **Jeden Morgen die offenen Ideen vorlesen:**
 ```yaml
 triggers:
@@ -984,6 +995,7 @@ Weitere Beispiele für Assist und Alexa liegen im Ordner [`examples/`](examples/
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.7.17`** | 07.11.2026 | **Anleitung mit Beispielen:** Neuer Bereich [`docs/anleitung.md`](docs/anleitung.md) (englisch [`docs/guide.md`](docs/guide.md)) mit Beispielen zu allem, was man sagen, schreiben, einstellen und automatisieren kann: Alexa, Assist, Siri, KI-Assistent, Kategorie-, Prioritäts- und Terminerkennung, Markdown, Bedienung und Tastenkürzel der Karten, alle Kartenoptionen, Menüs, Dienste, Ereignisse. Aufgeräumt: alte Logo- und Icon-Dateien entfernt, die seit dem Brand-Ordner nicht mehr gebraucht werden. |
 | **`v1.7.16`** | 07.11.2026 | **MIT-Lizenzdatei:** Das Repository hat jetzt seine `LICENSE`-Datei (MIT, wie im README schon immer angegeben), die HACS zum Erkennen der Lizenz braucht. HACS Action und hassfest laufen beide durch. |
 | **`v1.7.15`** | 07.11.2026 | **Karten kommen mit der Integration:** Die Karten liegen jetzt im Ordner der Integration und Home Assistant lädt sie beim Start selbst, auch im YAML-Modus. Eine Installation über HACS bringt damit alles mit; Kopieren nach `/config/www/` und Ressourcen-Einträge entfallen. Nach dem Update die alten `/local/brainstorm-…`-Ressourcen entfernen. Dazu prüfen GitHub Actions jetzt jede Änderung mit der HACS Action und hassfest, als Vorbereitung für die Aufnahme in die HACS-Standardliste. |
 | **`v1.7.14`** | 07.11.2026 | **Mindmap: fünf weitere Formen:** Gedankenblase (eine Wolke mit zwei kleinen Bläschen zur übergeordneten Notiz), Ellipse, Sechseck, Notizzettel (getöntes Papier mit umgeknickter Ecke) und Unterstrichen (nur der Text über einem Strich in der Kategoriefarbe, die Linien der Map treffen ihn an den Enden des Strichs). Wählbar für die ganze Map (`node_shape`), pro Notiz im Bearbeiten-Dialog und mit `shape` von `brainstorm.update_idea`, und mit im Bild-Export. |

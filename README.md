@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.7.16-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.7.17-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -19,6 +19,9 @@
 
 **Brainstorm Hub** is the ultimate smart capture center for all your thoughts, ideas, and tasks in your Home Assistant smart home.  
 Whether you are cooking, working in the workshop, relaxing in the garden, or on the go: capture sudden flashes of inspiration within seconds hands-free via voice (**Amazon Alexa** or **Home Assistant Assist**), through interactive Lovelace dashboard cards, or via automated triggers. Brainstorm categorizes your thoughts using intelligent NLP heuristics and optionally synchronizes them as clean Markdown files for Obsidian, Logseq, or Nextcloud.
+
+> [!TIP]
+> **📘 [Guide with examples](docs/guide.md):** what you can say, write and set, with examples for Alexa, Assist, Siri, the cards, the keyboard and automations.
 
 Feedback, ideas and improvements are very welcome, see [💬 Feedback & Contributing](#-feedback--contributing).
 
@@ -39,7 +42,7 @@ Brainstorm Hub works in German and English, and your existing categories and ent
 | Dashboard cards | ✅ | ✅ |
 | Reminder texts, logbook and error messages | ✅ | ✅ |
 
-The English voice commands are listed under [Voice Commands](#-voice-commands), with the German ones next to them. Text in other languages stays as you say or type it, with a capital first letter. Home Assistant's language decides which rules apply, and `brainstorm.add_idea` also accepts a `language` field.
+The English voice commands are listed under [Voice Commands](#️-voice-commands), with the German ones next to them. Text in other languages stays as you say or type it, with a capital first letter. Home Assistant's language decides which rules apply, and `brainstorm.add_idea` also accepts a `language` field.
 
 ---
 
@@ -178,6 +181,8 @@ Depending on what you used, also remove:
 ---
 
 ## 🗣️ Voice Commands
+
+All sentences and what Brainstorm reads from them (category, priority, due date) are in the [guide](docs/guide.md#1-say--voice-commands).
 
 Which language applies depends on where you speak: the skill follows the language of your Echo, everything else the language of Home Assistant. The German commands are in the [German documentation](README_de.md).
 
@@ -353,6 +358,8 @@ To set this up, open **Build ➔ Interfaces** in the Alexa developer console, sw
 
 ## 🎴 Lovelace Cards Configuration
 
+All card options, how to use the cards and the mind map shortcuts are in the [guide](docs/guide.md#3-write--using-the-cards).
+
 The integration loads both cards by itself, no resources needed.
 
 ### 1. List View (`brainstorm-card`)
@@ -401,6 +408,8 @@ Brainstorm also works as its own entry in the Home Assistant sidebar, for exampl
 ---
 
 ## 🎛️ All Settings
+
+An overview with typical examples per menu is in the [guide](docs/guide.md#41-integration).
 
 ### During Setup
 
@@ -869,6 +878,8 @@ Brainstorm Hub keeps all ideas locally in `.storage/brainstorm.storage` and does
 
 ## 💡 Examples
 
+More examples, also for events and sensor attributes, are in the [guide](docs/guide.md#5-automate).
+
 **Read the open ideas aloud every morning:**
 ```yaml
 triggers:
@@ -925,6 +936,7 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.7.17`** | 2026-11-07 | **Guide with examples:** new section [`docs/guide.md`](docs/guide.md) (German [`docs/anleitung.md`](docs/anleitung.md)) with examples of everything you can say, write, set and automate: Alexa, Assist, Siri, AI assistant, category, priority and due date detection, Markdown, card controls and shortcuts, all card options, menus, services, events. Cleanup: removed old logo and icon files that are no longer needed since the brand folder. |
 | **`v1.7.16`** | 2026-11-07 | **MIT license file:** the repository now has its `LICENSE` file (MIT, as the README always said), which HACS needs to recognise the license. The HACS Action and hassfest both pass. |
 | **`v1.7.15`** | 2026-11-07 | **The cards come with the integration:** the cards now live in the folder of the integration, and Home Assistant loads them at start, in YAML mode too. An install through HACS brings everything; copying to `/config/www/` and resource entries are gone. After the update, remove the old `/local/brainstorm-…` resources. GitHub Actions now check every change with the HACS Action and hassfest, to prepare for the HACS default list. |
 | **`v1.7.14`** | 2026-11-07 | **Mind map: five more shapes:** thought bubble (a cloud with two small puffs towards the parent note), ellipse, hexagon, note slip (tinted paper with a folded corner) and underlined (only the text over a line in the category color, the lines of the map meet it at the ends of the line). They can be chosen for the whole map (`node_shape`), per note in the edit dialog and with `shape` of `brainstorm.update_idea`, and show up in the image export. |
