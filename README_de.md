@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.7.15-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.7.16-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -984,6 +984,7 @@ Weitere Beispiele für Assist und Alexa liegen im Ordner [`examples/`](examples/
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.7.16`** | 07.11.2026 | **MIT-Lizenzdatei:** Das Repository hat jetzt seine `LICENSE`-Datei (MIT, wie im README schon immer angegeben), die HACS zum Erkennen der Lizenz braucht. HACS Action und hassfest laufen beide durch. |
 | **`v1.7.15`** | 07.11.2026 | **Karten kommen mit der Integration:** Die Karten liegen jetzt im Ordner der Integration und Home Assistant lädt sie beim Start selbst, auch im YAML-Modus. Eine Installation über HACS bringt damit alles mit; Kopieren nach `/config/www/` und Ressourcen-Einträge entfallen. Nach dem Update die alten `/local/brainstorm-…`-Ressourcen entfernen. Dazu prüfen GitHub Actions jetzt jede Änderung mit der HACS Action und hassfest, als Vorbereitung für die Aufnahme in die HACS-Standardliste. |
 | **`v1.7.14`** | 07.11.2026 | **Mindmap: fünf weitere Formen:** Gedankenblase (eine Wolke mit zwei kleinen Bläschen zur übergeordneten Notiz), Ellipse, Sechseck, Notizzettel (getöntes Papier mit umgeknickter Ecke) und Unterstrichen (nur der Text über einem Strich in der Kategoriefarbe, die Linien der Map treffen ihn an den Enden des Strichs). Wählbar für die ganze Map (`node_shape`), pro Notiz im Bearbeiten-Dialog und mit `shape` von `brainstorm.update_idea`, und mit im Bild-Export. |
 | **`v1.7.13`** | 07.11.2026 | **Erledigte Einträge löschen:** Einstellungen › 🧹 Erledigte Einträge löschen löscht erledigte Einträge nach einer Anzahl Tage von selbst (geprüft alle sechs Stunden, 0 = aus) und hat einen Schalter, der alle sofort löscht. Offene Unteraufgaben eines gelöschten Eintrags bleiben als Hauptaufgaben, Einträge verknüpfter To-do-Listen und Anhänge gehen mit. Neue Aktion `brainstorm.delete_done` mit `older_than_days`. |

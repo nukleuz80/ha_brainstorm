@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.7.15-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.7.16-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -925,6 +925,7 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.7.16`** | 2026-11-07 | **MIT license file:** the repository now has its `LICENSE` file (MIT, as the README always said), which HACS needs to recognise the license. The HACS Action and hassfest both pass. |
 | **`v1.7.15`** | 2026-11-07 | **The cards come with the integration:** the cards now live in the folder of the integration, and Home Assistant loads them at start, in YAML mode too. An install through HACS brings everything; copying to `/config/www/` and resource entries are gone. After the update, remove the old `/local/brainstorm-…` resources. GitHub Actions now check every change with the HACS Action and hassfest, to prepare for the HACS default list. |
 | **`v1.7.14`** | 2026-11-07 | **Mind map: five more shapes:** thought bubble (a cloud with two small puffs towards the parent note), ellipse, hexagon, note slip (tinted paper with a folded corner) and underlined (only the text over a line in the category color, the lines of the map meet it at the ends of the line). They can be chosen for the whole map (`node_shape`), per note in the edit dialog and with `shape` of `brainstorm.update_idea`, and show up in the image export. |
 | **`v1.7.13`** | 2026-11-07 | **Delete done entries:** Settings › 🧹 Delete done entries deletes done entries after a number of days by themselves (checked every six hours, 0 = off) and has a switch to delete all of them right away. Open subtasks of a deleted entry stay as main tasks, items of linked to-do lists and attachments go with it. New action `brainstorm.delete_done` with `older_than_days`. |
