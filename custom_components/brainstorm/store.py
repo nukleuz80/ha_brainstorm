@@ -828,13 +828,14 @@ class BrainstormStore:
         # 1. Prefix: 'Kategorie: Der eigentliche Text' or '[Kategorie] Der eigentliche Text'
         if not category:
             match_prefix = re.match(
-                r"^\[?([a-zA-Z0-9äöüÄÖÜß\s\-_&]{2,30})\]?:\s*(.+)$",
+                r"^(?:\[([a-zA-Z0-9äöüÄÖÜß\s\-_&]{2,30})\]:?|"
+                r"([a-zA-Z0-9äöüÄÖÜß\s\-_&]{2,30}):)\s*(.+)$",
                 clean_text,
                 re.IGNORECASE,
             )
             if match_prefix:
-                cand = match_prefix.group(1).strip()
-                rem_text = match_prefix.group(2).strip()
+                cand = (match_prefix.group(1) or match_prefix.group(2)).strip()
+                rem_text = match_prefix.group(3).strip()
                 for c in self._categories:
                     if c.lower() == cand.lower():
                         category = c

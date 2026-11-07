@@ -303,6 +303,23 @@ def test_parse_text_and_category_ways(
     assert words in clean.lower()
 
 
+@pytest.mark.parametrize(
+    ("text", "category", "clean"),
+    [
+        ("[Alltag] Oma anrufen", "Alltag", "Oma anrufen"),
+        ("[Projekte] Lampe löten", "Projekte", "Lampe löten"),
+        ("[Garten]: Beet umgraben", "Haus & Garten", "Beet umgraben"),
+        ("[Gibtsnicht] Oma anrufen", "Inbox", "[Gibtsnicht] Oma anrufen"),
+    ],
+)
+def test_bracket_prefix_leaves_the_text(
+    store: BrainstormStore, text: str, category: str, clean: str
+) -> None:
+    """A category in brackets is taken out of the text, with or without a colon."""
+    found_text, found, _, _ = store.parse_text_and_category(text)
+    assert (found_text, found) == (clean, category)
+
+
 def test_priority_after_a_category_prefix(store: BrainstormStore) -> None:
     """Test that a priority behind the category is found too."""
     clean, category, _, priority = store.parse_text_and_category(

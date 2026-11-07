@@ -134,6 +134,7 @@ Brainstorm checks in this order:
 | Rule | Example | Category |
 |---|---|---|
 | Prefix with a colon | "Smart Home: replace the bathroom sensor" | Smart Home |
+| Square brackets | "[Daily Life] call grandma" | Daily Life |
 | "Project / Topic / Area …" | "Project workshop build a shelf" | Projects |
 | Starts with "for / in the …" | "for the garden buy mulch", "for daily life buy descaler" | House & Garden, Daily Life |
 | Hashtag (kept as a tag) | "Scarify the lawn #garden" | House & Garden |

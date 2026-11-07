@@ -133,6 +133,7 @@ Brainstorm prüft der Reihe nach:
 | Regel | Beispiel | Kategorie |
 |---|---|---|
 | Vorsatz mit Doppelpunkt | „Smarthome: Sensor im Bad tauschen“ | Smarthome |
+| Eckige Klammern | „[Alltag] Oma anrufen“ | Alltag |
 | „Projekt / Thema / Bereich …“ | „Projekt Werkstatt Regal bauen“ | Projekte |
 | Satzanfang mit „für / im / beim / zum …“ | „Für den Garten Rindenmulch“, „Im Haushalt Entkalker kaufen“ | Haus & Garten, Alltag |
 | Hashtag (bleibt als Tag erhalten) | „Rasen vertikutieren #garten“ | Haus & Garten |

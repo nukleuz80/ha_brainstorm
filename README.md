@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.7.17-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.7.18-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -936,6 +936,7 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.7.18`** | 2026-11-07 | **Category in square brackets:** `[Daily Life] call grandma` now saves *Call grandma* in *Daily Life*. Before, `[Daily Life]` stayed in the text without a colon after it, and the category was only guessed from keywords. |
 | **`v1.7.17`** | 2026-11-07 | **Guide with examples:** new section [`docs/guide.md`](docs/guide.md) (German [`docs/anleitung.md`](docs/anleitung.md)) with examples of everything you can say, write, set and automate: Alexa, Assist, Siri, AI assistant, category, priority and due date detection, Markdown, card controls and shortcuts, all card options, menus, services, events. Cleanup: removed old logo and icon files that are no longer needed since the brand folder. |
 | **`v1.7.16`** | 2026-11-07 | **MIT license file:** the repository now has its `LICENSE` file (MIT, as the README always said), which HACS needs to recognise the license. The HACS Action and hassfest both pass. |
 | **`v1.7.15`** | 2026-11-07 | **The cards come with the integration:** the cards now live in the folder of the integration, and Home Assistant loads them at start, in YAML mode too. An install through HACS brings everything; copying to `/config/www/` and resource entries are gone. After the update, remove the old `/local/brainstorm-…` resources. GitHub Actions now check every change with the HACS Action and hassfest, to prepare for the HACS default list. |
