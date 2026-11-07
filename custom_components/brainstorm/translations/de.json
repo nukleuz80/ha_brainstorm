@@ -595,16 +595,16 @@
       "message": "Brainstorm Hub ist nicht geladen. Prüfe die Integration unter Einstellungen > Geräte & Dienste."
     },
     "no_access_idea": {
-      "message": "Kein Zugriff auf Idee '{id}'."
+      "message": "Kein Zugriff auf Idee \"{id}\"."
     },
     "admin_only": {
       "message": "Nur Administratoren dürfen das ausführen."
     },
     "idea_not_restorable": {
-      "message": "Idee '{id}' lässt sich nicht wiederherstellen. Zurück kommen nur Ideen, die seit dem letzten Start gelöscht wurden, und nur durch die Person, die sie gelöscht hat."
+      "message": "Idee \"{id}\" lässt sich nicht wiederherstellen. Zurück kommen nur Ideen, die seit dem letzten Start gelöscht wurden, und nur durch die Person, die sie gelöscht hat."
     },
     "idea_not_found": {
-      "message": "Idee '{id}' wurde nicht gefunden."
+      "message": "Idee \"{id}\" wurde nicht gefunden."
     },
     "sharing_needs_privacy": {
       "message": "Freigaben gibt es nur mit eingeschalteter Privatsphäre."
@@ -619,13 +619,13 @@
       "message": "Der Kategoriename darf nicht leer sein."
     },
     "category_exists": {
-      "message": "Die Kategorie '{name}' existiert bereits."
+      "message": "Die Kategorie \"{name}\" existiert bereits."
     },
     "category_name_required": {
       "message": "Kategoriename ist erforderlich."
     },
     "category_not_removable": {
-      "message": "Die Kategorie '{name}' gibt es nicht oder sie kann nicht entfernt werden."
+      "message": "Die Kategorie \"{name}\" gibt es nicht oder sie kann nicht entfernt werden."
     },
     "export_failed": {
       "message": "Der Markdown-Export ist fehlgeschlagen: {error}"
@@ -634,7 +634,7 @@
       "message": "Kein Zugriff auf diesen Eintrag."
     },
     "entry_not_found": {
-      "message": "Eintrag '{id}' wurde nicht gefunden."
+      "message": "Eintrag \"{id}\" wurde nicht gefunden."
     },
     "invalid_icon": {
       "message": "Ungültiges Icon: {icon}"
@@ -649,13 +649,13 @@
       "message": "Ungültiger oder leerer Notiz-Text: {text}"
     },
     "parent_not_found": {
-      "message": "Die übergeordnete Idee '{id}' wurde nicht gefunden."
+      "message": "Die übergeordnete Idee \"{id}\" wurde nicht gefunden."
     },
     "parent_cycle": {
-      "message": "Idee '{id}' kann nicht übergeordnet werden (Zyklus)."
+      "message": "Idee \"{id}\" kann nicht übergeordnet werden (Zyklus)."
     },
     "export_not_allowed": {
-      "message": "Export nach '{path}' ist nicht erlaubt. Erlaubt sind Unterordner des Config-Verzeichnisses und allowlist_external_dirs."
+      "message": "Export nach \"{path}\" ist nicht erlaubt. Erlaubt sind Unterordner des Config-Verzeichnisses und allowlist_external_dirs."
     },
     "store_not_readable": {
       "message": "Brainstorm Hub konnte seine gespeicherten Daten nicht lesen: {error}"

@@ -595,16 +595,16 @@
       "message": "Brainstorm Hub is not loaded. Check the integration under Settings > Devices & services."
     },
     "no_access_idea": {
-      "message": "No access to idea '{id}'."
+      "message": "No access to idea \"{id}\"."
     },
     "admin_only": {
       "message": "Only administrators may do this."
     },
     "idea_not_restorable": {
-      "message": "Idea '{id}' cannot be restored. Only ideas deleted since the last start can come back, and only by the person who deleted them."
+      "message": "Idea \"{id}\" cannot be restored. Only ideas deleted since the last start can come back, and only by the person who deleted them."
     },
     "idea_not_found": {
-      "message": "Idea '{id}' was not found."
+      "message": "Idea \"{id}\" was not found."
     },
     "sharing_needs_privacy": {
       "message": "Sharing is only available with privacy switched on."
@@ -619,13 +619,13 @@
       "message": "The category name must not be empty."
     },
     "category_exists": {
-      "message": "The category '{name}' already exists."
+      "message": "The category \"{name}\" already exists."
     },
     "category_name_required": {
       "message": "A category name is required."
     },
     "category_not_removable": {
-      "message": "The category '{name}' does not exist or cannot be removed."
+      "message": "The category \"{name}\" does not exist or cannot be removed."
     },
     "export_failed": {
       "message": "The Markdown export failed: {error}"
@@ -634,7 +634,7 @@
       "message": "No access to this entry."
     },
     "entry_not_found": {
-      "message": "Entry '{id}' was not found."
+      "message": "Entry \"{id}\" was not found."
     },
     "invalid_icon": {
       "message": "Invalid icon: {icon}"
@@ -649,13 +649,13 @@
       "message": "Invalid or empty note text: {text}"
     },
     "parent_not_found": {
-      "message": "The parent idea '{id}' was not found."
+      "message": "The parent idea \"{id}\" was not found."
     },
     "parent_cycle": {
-      "message": "Idea '{id}' cannot be a parent (cycle)."
+      "message": "Idea \"{id}\" cannot be a parent (cycle)."
     },
     "export_not_allowed": {
-      "message": "Export to '{path}' is not allowed. Allowed are subfolders of the config directory and allowlist_external_dirs."
+      "message": "Export to \"{path}\" is not allowed. Allowed are subfolders of the config directory and allowlist_external_dirs."
     },
     "store_not_readable": {
       "message": "Brainstorm Hub could not read its stored data: {error}"
@@ -691,13 +691,13 @@
       "message": "An urgent message needs an item. Choose an item on the list, not the list itself."
     },
     "attachment_type": {
-      "message": "'{name}' cannot be attached. Allowed are images, PDF, text, log, CSV, JSON, YAML and ZIP files."
+      "message": "\"{name}\" cannot be attached. Allowed are images, PDF, text, log, CSV, JSON, YAML and ZIP files."
     },
     "attachment_empty": {
-      "message": "'{name}' is empty."
+      "message": "\"{name}\" is empty."
     },
     "attachment_too_large": {
-      "message": "'{name}' is larger than {max} MB."
+      "message": "\"{name}\" is larger than {max} MB."
     },
     "attachment_too_many": {
       "message": "An idea can hold at most {max} attachments."
