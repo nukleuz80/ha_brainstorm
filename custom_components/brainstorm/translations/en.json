@@ -1023,7 +1023,7 @@
         },
         "shares": {
           "name": "Shares",
-          "description": "User ID (or `all`) and level, such as `{\"all\": \"view\"}`. Levels are `view` and `edit`; `null` removes a share."
+          "description": "User ID (or `all`) and level, such as `all: view`. Levels are `view` and `edit`; `null` removes a share."
         }
       }
     }

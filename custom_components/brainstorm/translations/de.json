@@ -1023,7 +1023,7 @@
         },
         "shares": {
           "name": "Freigaben",
-          "description": "Benutzer-ID (oder \"all\") und Stufe, z. B. {\"all\": \"view\"}. Stufen sind view und edit; null entfernt die Freigabe."
+          "description": "Benutzer-ID (oder \"all\") und Stufe, z. B. all: view. Stufen sind view und edit; null entfernt die Freigabe."
         }
       }
     }
