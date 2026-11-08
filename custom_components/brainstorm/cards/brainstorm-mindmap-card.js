@@ -1,8 +1,8 @@
-import { BOARDS, MARKERS, NUMBERING, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.9";
+import { BOARDS, MARKERS, NUMBERING, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.10";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.8.9 - AI Branch Summary and Sorting In
+ * Version: 1.8.10 - Presentation Mode
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -2414,6 +2414,84 @@ class BrainstormMindmapCard extends HTMLElement {
         .canvas-area.board-mode .branch-toggle {
           display: none;
         }
+        .present-bar {
+          position: absolute;
+          left: 50%;
+          bottom: 16px;
+          transform: translateX(-50%);
+          width: min(760px, calc(100% - 32px));
+          box-sizing: border-box;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 10px 12px;
+          border-radius: 18px;
+          background: var(--card-background-color, #fff);
+          color: var(--primary-text-color, #212121);
+          box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+          z-index: 30;
+        }
+        .present-info {
+          flex: 1;
+          min-width: 0;
+        }
+        .present-step {
+          font-size: 12px;
+          color: var(--secondary-text-color, #727272);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .present-text {
+          font-size: 18px;
+          font-weight: 700;
+          line-height: 1.3;
+        }
+        .present-desc {
+          font-size: 14px;
+          line-height: 1.4;
+          color: var(--secondary-text-color, #727272);
+          max-height: 4.2em;
+          overflow: auto;
+        }
+        .present-btn {
+          flex: none;
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          border: 1px solid var(--divider-color, rgba(127, 127, 127, 0.3));
+          background: var(--secondary-background-color, rgba(127, 127, 127, 0.1));
+          color: var(--primary-text-color, #212121);
+          font-size: 22px;
+          cursor: pointer;
+        }
+        .present-end {
+          font-size: 16px;
+        }
+        ha-card.presenting .top-bar,
+        ha-card.presenting .controls-panel,
+        ha-card.presenting .add-note-btn,
+        ha-card.presenting .fullscreen-btn,
+        ha-card.presenting .filter-bar,
+        ha-card.presenting .selection-bar,
+        ha-card.presenting .cloud-actions,
+        ha-card.presenting .branch-toggle {
+          display: none !important;
+        }
+        ha-card.presenting .viewport {
+          transition: transform 0.45s ease;
+        }
+        ha-card.present-spot .note-cloud {
+          opacity: 0.22;
+          transition: opacity 0.3s ease;
+        }
+        ha-card.present-spot .note-cloud.present-near {
+          opacity: 0.6;
+        }
+        ha-card.present-spot .note-cloud.present-current {
+          opacity: 1;
+          box-shadow: 0 0 0 3px var(--primary-color, #03a9f4), 0 10px 30px rgba(0, 0, 0, 0.35);
+        }
         .sortin-text {
           flex: 1;
           font-size: 14px;
@@ -3164,6 +3242,17 @@ class BrainstormMindmapCard extends HTMLElement {
 
         <div class="map-toast" id="mapToast" role="status" aria-live="polite"></div>
 
+        <div class="present-bar" id="presentBar" style="display: none;">
+          <button class="present-btn" id="presentPrev" title="${t("Zurück (←)")}">‹</button>
+          <div class="present-info">
+            <div class="present-step" id="presentStep"></div>
+            <div class="present-text" id="presentText"></div>
+            <div class="present-desc" id="presentDesc"></div>
+          </div>
+          <button class="present-btn" id="presentNext" title="${t("Weiter (→ oder Leertaste)")}">›</button>
+          <button class="present-btn present-end" id="presentEnd" title="${t("Präsentation beenden (Esc)")}">✕</button>
+        </div>
+
         <!-- In-Card Modal Dialog (Mushroom Style) -->
         <div class="dialog-backdrop" id="mindmapDialog" style="display: none;">
           <div class="dialog-box" id="dialogBox">
@@ -3395,6 +3484,7 @@ class BrainstormMindmapCard extends HTMLElement {
     const fullscreenBtn = this.shadowRoot.getElementById("fullscreenToggleBtn");
     const cardRoot = this.shadowRoot.getElementById("cardRoot");
     const toggleFullscreen = () => {
+      if (!cardRoot || !fullscreenBtn) return;
       const isFs = cardRoot.classList.toggle("is-fullscreen");
       fullscreenBtn.innerHTML = isFs ? "✕" : "⛶";
       fullscreenBtn.classList.toggle("is-fullscreen", isFs);
@@ -3407,12 +3497,21 @@ class BrainstormMindmapCard extends HTMLElement {
     if (fullscreenBtn) {
       fullscreenBtn.addEventListener("click", toggleFullscreen);
     }
+    this._toggleFullscreen = toggleFullscreen;
+    const presentBar = this.shadowRoot.getElementById("presentBar");
+    if (presentBar) {
+      this.shadowRoot.getElementById("presentPrev").addEventListener("click", () => this._presentStep(-1));
+      this.shadowRoot.getElementById("presentNext").addEventListener("click", () => this._presentStep(1));
+      this.shadowRoot.getElementById("presentEnd").addEventListener("click", () => this._endPresentation());
+    }
 
     canvasArea.addEventListener("keydown", (e) => this._onMapKey(e));
 
     window.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
-        if (this._isModalOpen) {
+        if (this._presentation && !this._isModalOpen) {
+          this._endPresentation();
+        } else if (this._isModalOpen) {
           this._closeDialog();
         } else if (this._lasso || this._multi.size || this._lassoMode) {
           if (this._lasso) this._cancelLasso();
@@ -3624,7 +3723,14 @@ class BrainstormMindmapCard extends HTMLElement {
               <span>${this._layoutName(layout)}</span>
             </button>`).join("")}
         </div>
-        <div class="dialog-hint">${t("In Kanban, Zeitleiste und Matrix ändert das Ziehen in eine andere Spalte Status, Fälligkeit oder Priorität.")}</div>`;
+        <div class="dialog-hint">${t("In Kanban, Zeitleiste und Matrix ändert das Ziehen in eine andere Spalte Status, Fälligkeit oder Priorität.")}</div>
+        <div class="dialog-footer">
+          <button class="dialog-btn dialog-btn-primary" id="presentStart">▶ ${t("Präsentieren (P)")}</button>
+        </div>`;
+      body.querySelector("#presentStart").addEventListener("click", () => {
+        this._closeDialog();
+        this._startPresentation();
+      });
       body.querySelectorAll(".layout-choice").forEach((btn) => {
         btn.addEventListener("click", () => {
           this._closeDialog();
@@ -3887,6 +3993,149 @@ class BrainstormMindmapCard extends HTMLElement {
     if (!created || !created.id) return null;
     if (undo) this._pushUndo(data.text, () => this._hass.callService("brainstorm", "delete_idea", { id: created.id }));
     return created.id;
+  }
+
+  // Presentation: the map goes through its notes one by one, branch by branch
+  _presentationOrder() {
+    const ideas = this._categoryIdeas();
+    const ids = new Set(ideas.map((i) => i.id));
+    const kids = new Map();
+    const roots = [];
+    ideas.forEach((idea) => {
+      const parent = this._branchParent(idea, ids);
+      if (parent) {
+        if (!kids.has(parent)) kids.set(parent, []);
+        kids.get(parent).push(idea);
+      } else {
+        roots.push(idea);
+      }
+    });
+    const order = [];
+    const seen = new Set();
+    const walk = (idea) => {
+      if (seen.has(idea.id)) return;
+      seen.add(idea.id);
+      order.push(idea.id);
+      (kids.get(idea.id) || []).forEach(walk);
+    };
+    roots.forEach(walk);
+    ideas.forEach(walk);
+    return order;
+  }
+
+  _startPresentation() {
+    const order = this._presentationOrder();
+    if (!order.length) {
+      this._showToast(t("Keine Notizen zum Präsentieren."));
+      return;
+    }
+    const cardRoot = this.shadowRoot.getElementById("cardRoot");
+    const wasFullscreen = Boolean(cardRoot && cardRoot.classList.contains("is-fullscreen"));
+    this._presentation = { order, index: -1, wasFullscreen, collapsed: new Set(this._collapsed) };
+    this._clearMulti();
+    if (cardRoot) cardRoot.classList.add("presenting");
+    if (!wasFullscreen && this._toggleFullscreen) this._toggleFullscreen();
+    const bar = this.shadowRoot.getElementById("presentBar");
+    if (bar) bar.style.display = "flex";
+    // The fullscreen layout settles first, then the overview shows
+    setTimeout(() => this._presentGo(-1), 120);
+    this._focusMap();
+  }
+
+  _endPresentation() {
+    const presentation = this._presentation;
+    if (!presentation) return;
+    this._presentation = null;
+    const cardRoot = this.shadowRoot.getElementById("cardRoot");
+    if (cardRoot) cardRoot.classList.remove("presenting");
+    this.shadowRoot.querySelectorAll(".present-current, .present-near").forEach((el) => el.classList.remove("present-current", "present-near"));
+    const bar = this.shadowRoot.getElementById("presentBar");
+    if (bar) bar.style.display = "none";
+    // Branches folded before the presentation fold again
+    const refold = [...presentation.collapsed].some((id) => !this._collapsed.has(id));
+    this._collapsed = new Set(presentation.collapsed);
+    if (refold) {
+      this._saveCollapsed();
+      this._lastLayoutKey = "";
+      this._updateContent();
+    }
+    if (!presentation.wasFullscreen && this._toggleFullscreen) this._toggleFullscreen();
+    else this._centerLayout(this._usesSavedPositions() || this._userMovedNodes.size === 0);
+  }
+
+  _presentStep(direction) {
+    const presentation = this._presentation;
+    if (!presentation) return;
+    const next = presentation.index + direction;
+    if (next >= presentation.order.length) {
+      this._endPresentation();
+      return;
+    }
+    this._presentGo(Math.max(-1, next));
+  }
+
+  // -1 is the overview of the whole map
+  _presentGo(index) {
+    const presentation = this._presentation;
+    if (!presentation) return;
+    presentation.index = index;
+    const total = presentation.order.length;
+    const stepEl = this.shadowRoot.getElementById("presentStep");
+    const textEl = this.shadowRoot.getElementById("presentText");
+    const descEl = this.shadowRoot.getElementById("presentDesc");
+    this.shadowRoot.querySelectorAll(".present-current, .present-near").forEach((el) => el.classList.remove("present-current", "present-near"));
+    const cardRoot = this.shadowRoot.getElementById("cardRoot");
+    if (index < 0) {
+      if (cardRoot) cardRoot.classList.remove("present-spot");
+      this._centerLayout(this._usesSavedPositions() || this._userMovedNodes.size === 0);
+      const focus = this._focusIdea();
+      if (stepEl) stepEl.textContent = t("Überblick · {total} Notizen", { total });
+      if (textEl) textEl.innerHTML = this._escapeHtml(focus ? focus.text : this._selectedCategory === "all" ? t("Alle") : this._selectedCategory);
+      if (descEl) descEl.textContent = t("→ oder Leertaste: weiter · Esc: beenden");
+      return;
+    }
+    const id = presentation.order[index];
+    const ideas = this._categoryIdeas();
+    const ids = new Set(ideas.map((i) => i.id));
+    const byId = new Map(ideas.map((i) => [i.id, i]));
+    const idea = byId.get(id);
+    if (!idea) return;
+    // A note inside a folded branch unfolds it, as the search does
+    let unfolded = false;
+    const seen = new Set([id]);
+    let parent = this._branchParent(idea, ids);
+    const path = [];
+    while (parent && !seen.has(parent)) {
+      seen.add(parent);
+      path.unshift(byId.get(parent));
+      if (this._collapsed.delete(parent)) unfolded = true;
+      parent = this._branchParent(byId.get(parent), ids);
+    }
+    if (unfolded) {
+      this._lastLayoutKey = "";
+      this._updateContent();
+    }
+    if (cardRoot) cardRoot.classList.add("present-spot");
+    const el = this.shadowRoot.getElementById(`cloud_${id}`);
+    if (el) el.classList.add("present-current");
+    ideas.forEach((other) => {
+      if (other.id !== id && (this._branchParent(other, ids) === id || other.id === this._branchParent(idea, ids))) {
+        const near = this.shadowRoot.getElementById(`cloud_${other.id}`);
+        if (near) near.classList.add("present-near");
+      }
+    });
+    const pos = this._nodePositions.get(id);
+    const canvasArea = this.shadowRoot.getElementById("canvasArea");
+    if (pos && canvasArea) {
+      const width = (el && el.offsetWidth) || 230;
+      this._scale = Math.max(0.6, Math.min(1.4, (canvasArea.clientWidth * 0.5) / width));
+      this._panX = canvasArea.clientWidth / 2 - pos.x * this._scale;
+      this._panY = (canvasArea.clientHeight - 110) / 2 - pos.y * this._scale;
+      this._applyTransform();
+    }
+    if (stepEl) stepEl.textContent = `${index + 1} / ${total}${path.length ? ` · ${path.map((p) => p.text).join(" › ")}` : ""}`;
+    if (textEl) textEl.innerHTML = formatText(idea.text);
+    if (descEl) descEl.innerHTML = idea.description ? formatText(idea.description) : "";
   }
 
   _aiAvailable() {
@@ -5105,6 +5354,20 @@ class BrainstormMindmapCard extends HTMLElement {
   // it after asking, F2 edits it, the arrows walk along the branches
   _onMapKey(e) {
     if (this._isModalOpen || this._inlineEdit) return;
+    if (this._presentation) {
+      // While presenting only the keys of a slide show count
+      if (["ArrowRight", "ArrowDown", "PageDown", " ", "Enter"].includes(e.key)) {
+        e.preventDefault();
+        this._presentStep(1);
+      } else if (["ArrowLeft", "ArrowUp", "PageUp", "Backspace"].includes(e.key)) {
+        e.preventDefault();
+        this._presentStep(-1);
+      } else if (e.key === "Home") {
+        e.preventDefault();
+        this._presentGo(-1);
+      }
+      return;
+    }
     const target = e.composedPath()[0];
     if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
     if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "z") {
@@ -5123,6 +5386,11 @@ class BrainstormMindmapCard extends HTMLElement {
       e.preventDefault();
       e.stopPropagation();
       this._cancelLink();
+      return;
+    }
+    if (e.key === "p" || e.key === "P") {
+      e.preventDefault();
+      this._startPresentation();
       return;
     }
     if ((e.key === "z" || e.key === "Z") && this._aiAvailable()) {
@@ -8420,7 +8688,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.8.9 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.8.10 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );
