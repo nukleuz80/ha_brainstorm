@@ -41,7 +41,7 @@ This project strictly adheres to the official Home Assistant developer documenta
   - Document all supported voice command variants (Alexa Dialog, Alexa Direct, Assist Sentences, To-do list intents).
   - Include up-to-date installation instructions for both HACS and manual methods, card configuration, and screenshots.
   - Keep release notes clear and informative for users.
-- **Videos** (`tools/video`): Each storyboard `script_*.py` lists the README sections it shows in `COVERS`. On every release, check whether the change touches one of them; if so, update the scenes, rebuild with `build.py <script>` and attach the new MP4 to the release. Videos are never committed, only attached to GitHub releases, and the docs link to the release asset.
+- **Videos** (`tools/video`): Each storyboard `script_*.py` lists the README sections it shows in `COVERS`. On every release, check whether the change touches one of them; if so, update the scenes, rebuild with `build.py <script>` and attach the new MP4 to the release. Videos are never committed, only attached to GitHub releases, and the docs link to the release asset. English terms in the narration get phonemes in `tools/video/pron.py`; check new ones with `ph.py` and `saytest.py`.
 
 ## 7. Add a Language
 

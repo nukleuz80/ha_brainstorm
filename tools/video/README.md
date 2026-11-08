@@ -8,10 +8,26 @@ Erzeugen die Erklärvideos in [`docs/video`](../../docs/video/) ohne Schnittprog
 | `script.py` | Drehbuch *Eigener Alexa-Skill* |
 | `script_features.py` | Drehbuch *Die wichtigsten Funktionen* |
 | `script_install.py` | Drehbuch *Installation* |
+| `script_reminders.py` | Drehbuch *Erinnerungen & Benachrichtigungen* |
+| `script_iphone.py` | Drehbuch *iPhone-Kurzbefehl* |
+| `script_privacy.py` | Drehbuch *Privatsphäre, Freigaben & KI-Backlog* |
+| `pron.py` | Aussprache englischer Begriffe als Lautschrift, gemeinsam für alle neuen Drehbücher |
+| `ph.py` | Zeigt, welche Laute eSpeak für einen Text erzeugt: `ph.py de "iPhone"` |
+| `saytest.py` | Spricht jede Zeile einer Textdatei und schreibt sie per Whisper wieder auf, zum Prüfen der Aussprache |
 | `build.py` | `build.py <drehbuch>` rendert ein Drehbuch, setzt `intro.mp4` davor (`--no-intro` lässt es weg), `--frames` erzeugt nur die Folienbilder |
 | `cards/` | Echte Karten mit Beispieldaten für Screenshots, siehe [`cards/README.md`](cards/README.md) |
 
-Jede Szene hat `v` (Folie) und `say` (Untertitel und Sprechertext). Weicht die Aussprache ab, steht der gesprochene Text in `speak`, und `SPOKEN` ersetzt englische Begriffe durch eine Lautschrift. Die Stimme wird nach dem Text zwischengespeichert, nach einer Änderung wird nur die geänderte Szene neu gesprochen. `COVERS` nennt die README-Abschnitte, die ein Video zeigt.
+Jede Szene hat `v` (Folie) und `say` (Untertitel und Sprechertext). Weicht die Aussprache ab, steht der gesprochene Text in `speak`, und `SPOKEN` ersetzt englische Begriffe durch eine Lautschrift. 
+
+**Englische Begriffe:** Die deutsche Stimme liest englische Wörter nach deutschen Regeln, aus *iPhone* wird „ih-fohne“, aus *JSON* „jotzohn“. Piper versteht Text in `[[ ]]` als Lautschrift, deshalb steht jeder englische Begriff in `pron.py` mit seinen Lauten, nur aus dem deutschen Lautinventar (kein ɹ, æ oder θ, die die Stimme nie gelernt hat). Neue Begriffe prüfst du so:
+
+```bash
+vv/bin/python ph.py de "Pushover"              # was eSpeak daraus macht
+echo 'Wichtiges geht an [[pˈʊʃoʊvɐ]].' > t.txt
+WM=small vv/bin/python saytest.py t.txt        # was Whisper hört (vv/bin/pip install faster-whisper)
+```
+
+Die Stimme wird nach dem Text zwischengespeichert, nach einer Änderung wird nur die geänderte Szene neu gesprochen. `COVERS` nennt die README-Abschnitte, die ein Video zeigt.
 
 ## Bei einem Release
 

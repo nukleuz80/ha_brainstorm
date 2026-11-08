@@ -53,6 +53,59 @@ Alle Videos sind deutsch gesprochen, mit dem Text als Untertitel im Bild. Die MP
 
 Ein Kapitel pro Einstellung in der Alexa-Entwicklerkonsole, mit Kapitelliste auf der [eigenen Seite](video-alexa-skill.md).
 
+## Erinnerungen & Benachrichtigungen
+
+[![Erinnerungen & Benachrichtigungen](video/poster-erinnerungen.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.21/brainstorm-erinnerungen.mp4)
+
+**[▶️ Video ansehen](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.21/brainstorm-erinnerungen.mp4)** (3½ Minuten) · 📄 [Schriftlich in der README](../README_de.md#-erinnerungen--benachrichtigungen)
+
+| Zeit | Kapitel |
+| :--- | :--- |
+| 0:00 | Einleitung |
+| 0:19 | Termin per Sprache: was Brainstorm versteht |
+| 0:44 | Termin auf der Karte |
+| 0:56 | Einschalten: Alexa-Ansage, Benachrichtigungen, Wartezeit |
+| 1:23 | Aufs Handy: Erledigt, 1 Stunde später, Morgen |
+| 1:37 | Ruhezeit, Briefing, Rückblick und Sperrzeiten pro Echo |
+| 2:05 | Regeln pro Liste |
+| 2:17 | Orte & Heimkommen |
+| 2:30 | Für andere Personen |
+| 2:43 | Antworten per Sprache: erledigt, später |
+| 2:53 | Kalender & echte Alexa-Erinnerungen |
+| 3:07 | Eigene Automationen |
+| 3:18 | Zusammenfassung |
+
+## iPhone-Kurzbefehl
+
+[![iPhone-Kurzbefehl](video/poster-iphone.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.21/brainstorm-iphone.mp4)
+
+**[▶️ Video ansehen](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.21/brainstorm-iphone.mp4)** (2 Minuten) · 📄 [Schriftlich in der README](../README_de.md#3-iphone-kurzbefehl-mit-siri-action-taste-oder-rückseite)
+
+| Zeit | Kapitel |
+| :--- | :--- |
+| 0:00 | Einleitung und Voraussetzungen |
+| 0:23 | Kurzbefehl anlegen, Text diktieren |
+| 0:38 | Home Assistant aufrufen: Idee hinzufügen, Datenfeld, Anführungszeichen |
+| 1:12 | Auslöser: Action-Taste, Rückseite, Siri |
+| 1:26 | Ausprobieren |
+| 1:48 | Zusammenfassung |
+
+## Privatsphäre, Freigaben & KI-Backlog
+
+[![Privatsphäre, Freigaben & KI-Backlog](video/poster-privatsphaere.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.21/brainstorm-privatsphaere.mp4)
+
+**[▶️ Video ansehen](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.21/brainstorm-privatsphaere.mp4)** (2 Minuten) · 📄 [Schriftlich in der README](../README_de.md#-privatsphäre--freigaben)
+
+| Zeit | Kapitel |
+| :--- | :--- |
+| 0:00 | Einleitung |
+| 0:16 | Einschalten und Hauptbenutzer |
+| 0:33 | Freigeben, in fremde Listen schreiben |
+| 0:58 | Echos Personen zuordnen |
+| 1:12 | Was Privatsphäre nicht kann |
+| 1:24 | Backlog für Coding-KIs wie Claude Code |
+| 2:02 | Zusammenfassung |
+
 ## Selbst erzeugen
 
 Drehbuch, Intro und Werkzeuge liegen unter [`tools/video`](../tools/video/README.md).

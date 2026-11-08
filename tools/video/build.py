@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 import html
 import json
+import re
 import subprocess
 import sys
 import wave
@@ -110,6 +111,18 @@ body{width:1280px;height:720px;overflow:hidden;font-family:'Noto Sans','DejaVu S
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
 .tile{background:#13283d;border:1px solid #2b4057;border-radius:14px;padding:14px 18px;display:flex;flex-direction:column;gap:4px;min-height:118px}
 .tile .ti{font-size:28px}.tile b{font-size:21px}.tile span{font-size:17px;color:#b9cde0;line-height:1.35}
+/* ha options menu */
+.ha .mi{display:flex;align-items:center;gap:12px;padding:6px 6px;border-bottom:1px solid #eee;font-size:18px}
+.ha .mi::after{content:'›';margin-left:auto;color:#9e9e9e;font-size:22px}
+.ha .sw{display:flex;align-items:center;justify-content:space-between;padding:7px 0;font-size:19px}
+.ha .sw small{display:block;font-size:14px;color:#757575;max-width:600px}
+/* generic phone */
+.ph2{position:absolute;left:60px;top:0;width:300px;height:460px;border-radius:36px;background:#0f1a24;border:8px solid #2a3a4a;padding:24px 14px;color:#fff;overflow:hidden}
+.ph2 .t{font-size:15px;color:#9fb3c8;margin-bottom:10px;text-align:center}
+.ph2 .it{background:#1c2c3c;border-radius:12px;padding:10px 12px;margin-bottom:8px;font-size:15px;line-height:1.3}
+.ph2 .it small{display:block;color:#9fb3c8;font-size:12px}
+.ph2 .act{display:flex;gap:6px;margin-top:8px}.ph2 .act span{flex:1;background:#2b4057;border-radius:8px;padding:6px 4px;text-align:center;font-size:12px}
+.ph2side{position:absolute;left:420px;top:10px;right:0}
 """
 
 TABS = ["Build", "Code", "Test", "Distribution", "Certification", "Analytics"]
@@ -247,6 +260,27 @@ def stage(v: tuple) -> str:
         tiles = "".join(f'<div class="tile"><div class="ti">{i}</div><b>{esc(a)}</b><span>{b}</span></div>'
                         for i, a, b in v[2])
         return f'<div class="bl"><h2>{esc(v[1])}</h2></div><div class="grid">{tiles}</div><div class="note">{esc(v[3])}</div>'
+    if kind == "menu":
+        # ("menu", dialog title, [(item, highlighted)], path, note)
+        items = "".join(f'<div class="mi{" hl" if hl else ""}">{esc(t)}</div>' for t, hl in v[2])
+        return (f'<div class="path">{esc(v[3])}</div><div class="ha" style="top:20px"><div class="hd">{esc(v[1])}</div>'
+                f'<div class="bd" style="padding:8px 24px">{items}</div></div><div class="note">{esc(v[4])}</div>')
+    if kind == "switches":
+        # ("switches", dialog title, [(label, value, highlighted, description)], path, note)
+        rows = ""
+        for lb, val, hl, ds in v[2]:
+            val_html = ('<span class="tog"></span>' if val is True else '<span class="tog off"></span>'
+                        if val is False else f'<b style="color:#03a9f4">{esc(val)}</b>')
+            rows += (f'<div class="sw{" hl" if hl else ""}"><span>{esc(lb)}<small>{esc(ds)}</small></span>'
+                     f'{val_html}</div>')
+        return (f'<div class="path">{esc(v[3])}</div><div class="ha" style="top:20px"><div class="hd">{esc(v[1])}</div>'
+                f'<div class="bd" style="padding:10px 24px">{rows}</div></div><div class="note">{esc(v[4])}</div>')
+    if kind == "phone":
+        # ("phone", screen title, [(html, highlighted)], [(icon, text)], note)
+        items = "".join(f'<div class="it{" hl" if hl else ""}">{h}</div>' for h, hl in v[2])
+        bullets = "".join(f'<li><span class="ic">{i}</span><span>{t}</span></li>' for i, t in v[3])
+        return (f'<div class="ph2"><div class="t">{esc(v[1])}</div>{items}</div>'
+                f'<div class="ph2side bl"><ul>{bullets}</ul></div><div class="note">{esc(v[4])}</div>')
     if kind == "alexa_app":
         return ('<div class="phone"><div class="t">Alexa-App ➔ Mehr ➔ Skills &amp; Spiele</div>'
                 '<div class="it">Meine Skills</div><div class="it hl">Dev · <b>Brainstorm</b></div>'
@@ -275,7 +309,9 @@ def page(chapter_no: int, total: int, title: str, v: tuple, caption: str) -> str
 def spoken(text: str) -> str:
     for src, dst in SPOKEN:
         text = text.replace(src, dst)
-    return text
+    # Piper drops punctuation right after a [[phoneme]] block and glues the next
+    # word on, so move it into the block: "[[x]], y" -> "[[x,]] y"
+    return re.sub(r"\]\]([.,;:!?])", r"\1]]", text)
 
 
 def run(cmd: list[str], **kw) -> None:

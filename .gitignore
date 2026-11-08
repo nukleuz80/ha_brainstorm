@@ -19,3 +19,4 @@ tools/video/icon.png
 tools/video/cards/brainstorm-*.js
 tools/video/cards/*.png
 tools/video/out_*/
+tools/video/tmp/
