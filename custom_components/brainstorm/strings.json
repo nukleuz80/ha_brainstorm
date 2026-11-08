@@ -613,6 +613,16 @@
         "opml": "OPML",
         "freemind": "FreeMind / Freeplane (.mm)"
       }
+    },
+    "repeat": {
+      "options": {
+        "daily": "Every day",
+        "weekdays": "Every weekday (Mon–Fri)",
+        "weekly": "Every week",
+        "biweekly": "Every 2 weeks",
+        "monthly": "Every month",
+        "yearly": "Every year"
+      }
     }
   },
   "entity": {
@@ -905,6 +915,10 @@
         "numbering": {
           "name": "Numbering",
           "description": "Numbers the subtasks below the note and all their subtasks: decimal (1, 1.1), alpha (a, b) or roman (I, II). Empty removes it."
+        },
+        "repeat": {
+          "name": "Repeat",
+          "description": "When the idea is ticked off, a new one with the same text, details and subtasks is added, due at the next date of the rule. Empty stops repeating."
         }
       }
     },

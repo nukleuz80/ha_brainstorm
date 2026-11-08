@@ -60,10 +60,15 @@ from .const import (
     ATTR_BLOCKED_BY,
     ATTR_FRAME,
     ATTR_NUMBERING,
+    ATTR_REPEAT,
+    ATTR_REPEATED_AS,
+    ATTR_REPEAT_CLOSED,
     ATTR_CALLOUT,
     CALLOUT_MAX_LENGTH,
     FRAME_MAX_LENGTH,
     NUMBERING_STYLES,
+    REPEAT_MAX_SUBTASKS,
+    REPEAT_RULES,
     LINK_LABEL_MAX_LENGTH,
     LINKS_MAX_COUNT,
     ATTR_SHAPE,
@@ -171,6 +176,7 @@ IMPORT_FIELDS = (
     ATTR_FRAME,
     ATTR_CALLOUT,
     ATTR_NUMBERING,
+    ATTR_REPEAT,
 )
 # Fields that belong to this Home Assistant and stay out of a JSON export
 EXPORT_SKIPPED_FIELDS = (
@@ -527,6 +533,8 @@ class BrainstormStore:
                 result[ATTR_CALLOUT] = callout
             if numbering := idea.get(ATTR_NUMBERING):
                 result[ATTR_NUMBERING] = numbering
+            if repeat := idea.get(ATTR_REPEAT):
+                result[ATTR_REPEAT] = repeat
             return result
 
         last_action = self.last_action
@@ -1369,6 +1377,8 @@ class BrainstormStore:
         update_callout: bool = False,
         numbering: str | None = None,
         update_numbering: bool = False,
+        repeat: str | None = None,
+        update_repeat: bool = False,
     ) -> dict[str, Any] | None:
         """Update an existing idea.
 
@@ -1398,6 +1408,7 @@ class BrainstormStore:
 
         idea = self._ideas[idea_id]
         newly_completed = status == "completed" and idea.get(ATTR_STATUS) != "completed"
+        reopened = status == "active" and idea.get(ATTR_STATUS) in ("completed", "archived")
         if text is not None:
             idea[ATTR_TEXT] = text.strip()
         if category is not None:
@@ -1484,6 +1495,16 @@ class BrainstormStore:
                 idea[ATTR_NUMBERING] = numbering
             else:
                 idea.pop(ATTR_NUMBERING, None)
+        if update_repeat:
+            if repeat in REPEAT_RULES:
+                idea[ATTR_REPEAT] = repeat
+            else:
+                idea.pop(ATTR_REPEAT, None)
+        repeated: dict[str, Any] | None = None
+        if newly_completed and idea.get(ATTR_REPEAT) in REPEAT_RULES:
+            repeated = self._repeat_idea(idea)
+        elif reopened and idea.get(ATTR_REPEATED_AS):
+            self._take_back_repeat(idea)
         if update_parent:
             if not parent_id or parent_id.strip() in ("", "none"):
                 idea[ATTR_PARENT_ID] = None
@@ -1520,8 +1541,117 @@ class BrainstormStore:
             "entity_id": OVERVIEW_ENTITY_ID,
         }
         self.hass.bus.async_fire(event_name, event_data, context=act_context)
+        if repeated is not None:
+            self.hass.bus.async_fire(
+                EVENT_IDEA_ADDED,
+                {**repeated, "entity_id": OVERVIEW_ENTITY_ID},
+                context=act_context,
+            )
         self._notify_listeners(context=act_context)
         return idea
+
+    def _repeat_idea(self, idea: dict[str, Any]) -> dict[str, Any]:
+        """Add the next round of a repeating idea that was just ticked off.
+
+        The new idea is due at the next date of the rule, after now, and its
+        subtasks come along open again. The done idea remembers it and gives
+        the rule to it, so reopening the done one can take the new one back.
+        """
+        now = dt_util.now()
+        old_due = dt_util.parse_datetime(str(idea.get(ATTR_DUE) or ""))
+        if old_due is not None:
+            old_due = dt_util.as_local(old_due)
+        new_due = next_repeat_due(old_due, idea[ATTR_REPEAT], now)
+        shift = new_due - (old_due or new_due)
+        now_iso = now.isoformat()
+        copied = (
+            ATTR_TEXT, ATTR_CATEGORY, ATTR_PRIORITY, ATTR_SOURCE, ATTR_DEVICE,
+            ATTR_TAGS, ATTR_ASSIGNEE, ATTR_TRIGGER, ATTR_OWNER, ATTR_DESCRIPTION,
+            ATTR_SHAPE, ATTR_MARKERS, ATTR_FRAME, ATTR_CALLOUT, ATTR_NUMBERING,
+            ATTR_MAP_POS, ATTR_ORDER, ATTR_CREATED_BY,
+        )
+
+        def clone(source: dict[str, Any], parent: str | None, due: datetime | None) -> dict[str, Any]:
+            new_id = uuid.uuid4().hex[:8]
+            while new_id in self._ideas:
+                new_id = uuid.uuid4().hex[:8]
+            new = {key: source[key] for key in copied if key in source}
+            new.update(
+                {
+                    ATTR_ID: new_id,
+                    ATTR_PARENT_ID: parent,
+                    ATTR_STATUS: "active",
+                    ATTR_CREATED_AT: now_iso,
+                    ATTR_UPDATED_AT: now_iso,
+                    ATTR_DUE: due.isoformat() if due else None,
+                    ATTR_SHARES: dict(source.get(ATTR_SHARES) or {}),
+                }
+            )
+            self._ideas[new_id] = new
+            return new
+
+        parent = idea.get(ATTR_PARENT_ID)
+        if parent and self._ideas.get(parent, {}).get(ATTR_STATUS) not in (None, "active"):
+            parent = None
+        first = clone(idea, parent, new_due)
+        first[ATTR_REPEAT] = idea.pop(ATTR_REPEAT)
+        idea[ATTR_REPEATED_AS] = first[ATTR_ID]
+        # The subtasks, all levels, open again and moved by the same time
+        queue = [(idea[ATTR_ID], first[ATTR_ID])]
+        count = 0
+        closed: list[str] = []
+        while queue and count < REPEAT_MAX_SUBTASKS:
+            old_parent, new_parent = queue.pop(0)
+            for child in list(self._ideas.values()):
+                if child.get(ATTR_PARENT_ID) != old_parent or child.get(ATTR_STATUS) == "archived":
+                    continue
+                if count >= REPEAT_MAX_SUBTASKS:
+                    break
+                child_due = dt_util.parse_datetime(str(child.get(ATTR_DUE) or ""))
+                moved = dt_util.as_local(child_due) + shift if child_due else None
+                new_child = clone(child, new_parent, moved)
+                queue.append((child[ATTR_ID], new_child[ATTR_ID]))
+                count += 1
+                # The open subtasks of this round end with it, the new round has its own
+                if child.get(ATTR_STATUS) == "active":
+                    child[ATTR_STATUS] = "completed"
+                    child[ATTR_COMPLETED_AT] = now_iso
+                    child.pop(ATTR_IN_PROGRESS, None)
+                    closed.append(child[ATTR_ID])
+        if closed:
+            idea[ATTR_REPEAT_CLOSED] = closed
+        _LOGGER.info(
+            "Brainstorm idea [%s] repeats %s as [%s], due %s",
+            idea[ATTR_ID],
+            first[ATTR_REPEAT],
+            first[ATTR_ID],
+            first[ATTR_DUE],
+        )
+        return first
+
+    def _take_back_repeat(self, idea: dict[str, Any]) -> None:
+        """Remove the next round of a reopened idea, unless work began on it."""
+        new_id = idea.pop(ATTR_REPEATED_AS, None)
+        closed = idea.pop(ATTR_REPEAT_CLOSED, None) or []
+        new = self._ideas.get(new_id) if new_id else None
+        if new is None or new.get(ATTR_STATUS) != "active":
+            return
+        for child_id in closed:
+            child = self._ideas.get(child_id)
+            if child is not None and child.get(ATTR_STATUS) == "completed":
+                child[ATTR_STATUS] = "active"
+                child.pop(ATTR_COMPLETED_AT, None)
+        idea[ATTR_REPEAT] = new.get(ATTR_REPEAT, idea.get(ATTR_REPEAT))
+        removed = {new_id}
+        changed = True
+        while changed:
+            changed = False
+            for other_id, other in list(self._ideas.items()):
+                if other_id not in removed and other.get(ATTR_PARENT_ID) in removed:
+                    removed.add(other_id)
+                    changed = True
+        for other_id in removed:
+            self._ideas.pop(other_id, None)
 
     async def async_set_due(
         self, idea_id: str, due: datetime | None, context: Context | None = None
@@ -2680,6 +2810,8 @@ class BrainstormStore:
                         idea.pop(field)
             if ATTR_NUMBERING in idea and idea[ATTR_NUMBERING] not in NUMBERING_STYLES:
                 idea.pop(ATTR_NUMBERING)
+            if ATTR_REPEAT in idea and idea[ATTR_REPEAT] not in REPEAT_RULES:
+                idea.pop(ATTR_REPEAT)
             new_ideas[idea_id] = idea
         known = set(new_ideas) | set(self._ideas)
         for idea_id, idea in new_ideas.items():
@@ -2736,6 +2868,47 @@ def _clean_markers(markers: Any) -> list[str]:
     if not isinstance(markers, list):
         return []
     return [marker for marker in MARKERS if marker in markers]
+
+
+def next_repeat_due(due: datetime | None, rule: str, now: datetime) -> datetime:
+    """Return when a repeating idea is due next, always after now.
+
+    Without a due date the idea comes back on the next day of the rule at
+    09:00. A monthly or yearly date that does not exist in the next month,
+    such as the 31st, falls on its last day.
+    """
+    if due is None:
+        due = now.replace(hour=9, minute=0, second=0, microsecond=0)
+    anchor_day = due.day
+
+    def step(current: datetime, times: int) -> datetime:
+        if rule == "daily":
+            return current + timedelta(days=times)
+        if rule == "weekly":
+            return current + timedelta(weeks=times)
+        if rule == "biweekly":
+            return current + timedelta(weeks=2 * times)
+        if rule == "weekdays":
+            result = current
+            for _ in range(times):
+                result += timedelta(days=1)
+                while result.weekday() >= 5:
+                    result += timedelta(days=1)
+            return result
+        months = times * (12 if rule == "yearly" else 1)
+        index = current.year * 12 + current.month - 1 + months
+        year, month = divmod(index, 12)
+        month += 1
+        last = (datetime(year + month // 12, month % 12 + 1, 1) - timedelta(days=1)).day
+        return current.replace(year=year, month=month, day=min(anchor_day, last))
+
+    result = step(due, 1)
+    # A late tick jumps over the rounds that passed meanwhile
+    for _ in range(4000):
+        if result > now:
+            break
+        result = step(result, 1)
+    return result
 
 
 def _clean_progress(progress: Any) -> int | None:

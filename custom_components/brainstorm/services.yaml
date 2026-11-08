@@ -223,6 +223,18 @@ update_idea:
             - decimal
             - alpha
             - roman
+    repeat:
+      required: false
+      selector:
+        select:
+          translation_key: repeat
+          options:
+            - daily
+            - weekdays
+            - weekly
+            - biweekly
+            - monthly
+            - yearly
 
 delete_idea:
   fields:

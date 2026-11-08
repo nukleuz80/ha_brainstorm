@@ -209,6 +209,15 @@ CALLOUT_MAX_LENGTH = 200
 # How the subtasks below a note are numbered: 1. 1.1, a. b. or I. II.
 ATTR_NUMBERING = "numbering"
 NUMBERING_STYLES = ("decimal", "alpha", "roman")
+# How often a note comes back after it is ticked off
+ATTR_REPEAT = "repeat"
+REPEAT_RULES = ("daily", "weekdays", "weekly", "biweekly", "monthly", "yearly")
+# The new note a repeating one was followed by, so reopening can take it back
+ATTR_REPEATED_AS = "repeated_as"
+# Open subtasks that were ticked off together with a repeating note
+ATTR_REPEAT_CLOSED = "repeat_closed"
+# At most this many subtasks come along with a repeating note
+REPEAT_MAX_SUBTASKS = 100
 # What the subtasks of a note can be sorted by
 SORT_KEYS = ("text", "priority", "due", "created")
 ATTACHMENT_DIR = "brainstorm_attachments"

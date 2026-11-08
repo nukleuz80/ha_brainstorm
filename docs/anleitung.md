@@ -163,6 +163,8 @@ Ohne Angabe gilt **Mittel**. Verneinungen und Fragen zählen nicht: *„nicht so
 
 ### 2.3 Erinnerung und Termin
 
+**Wiederholen:** *Wiederholen* im Bearbeiten-Dialog lässt eine Notiz jeden Tag, Werktag, jede Woche, alle 2 Wochen, jeden Monat oder jedes Jahr wiederkommen. Beim Abhaken erscheint sofort die nächste Runde mit dem nächsten Termin und wieder offenen Unteraufgaben; die erledigte bleibt unter *Erledigt*. Spät abgehakt überspringt sie verpasste Termine. Wird die erledigte wieder aktiviert, verschwindet die neue Runde, solange sie noch offen ist. 🔁 kennzeichnet solche Notizen.
+
 Ein gesprochener Satz mit einem Zeitpunkt bekommt eine Fälligkeit, z. B. nach **„erinnere mich (daran)“**, **„vergiss nicht“**, **„denk dran“** oder bei einem **„Termin“**. Abschalten kannst du das unter **Allgemeine Einstellungen ➔ Datum aus gesprochenem Text als Termin übernehmen**. Liegt der Zeitpunkt schon in der Vergangenheit, bleibt der Satz unverändert.
 
 | Du sagst | Fällig am |

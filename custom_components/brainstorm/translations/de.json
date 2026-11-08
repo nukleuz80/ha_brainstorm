@@ -613,6 +613,16 @@
         "opml": "OPML",
         "freemind": "FreeMind / Freeplane (.mm)"
       }
+    },
+    "repeat": {
+      "options": {
+        "daily": "Jeden Tag",
+        "weekdays": "Jeden Werktag (Mo–Fr)",
+        "weekly": "Jede Woche",
+        "biweekly": "Alle 2 Wochen",
+        "monthly": "Jeden Monat",
+        "yearly": "Jedes Jahr"
+      }
     }
   },
   "entity": {
@@ -905,6 +915,10 @@
         "numbering": {
           "name": "Nummerierung",
           "description": "Nummeriert die Unteraufgaben der Notiz und deren Unteraufgaben: decimal (1, 1.1), alpha (a, b) oder roman (I, II). Leer entfernt sie."
+        },
+        "repeat": {
+          "name": "Wiederholen",
+          "description": "Wird die Idee abgehakt, kommt eine neue mit gleichem Text, gleichen Angaben und Unteraufgaben dazu, fällig zum nächsten Termin der Regel. Leer beendet das Wiederholen."
         }
       }
     },

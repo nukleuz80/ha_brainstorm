@@ -43,10 +43,12 @@ from .const import (
     ATTR_LINKS,
     ATTR_FRAME,
     ATTR_NUMBERING,
+    ATTR_REPEAT,
     ATTR_CALLOUT,
     CALLOUT_MAX_LENGTH,
     FRAME_MAX_LENGTH,
     NUMBERING_STYLES,
+    REPEAT_RULES,
     SORT_KEYS,
     LINK_LABEL_MAX_LENGTH,
     LINKS_MAX_COUNT,
@@ -206,6 +208,7 @@ SERVICE_UPDATE_IDEA_SCHEMA = vol.Schema(
             None, vol.All(cv.string, vol.Length(max=CALLOUT_MAX_LENGTH))
         ),
         vol.Optional(ATTR_NUMBERING): vol.Any(None, "", vol.In(NUMBERING_STYLES)),
+        vol.Optional(ATTR_REPEAT): vol.Any(None, "", vol.In(REPEAT_RULES)),
     },
     extra=vol.ALLOW_EXTRA,
 )
@@ -524,6 +527,8 @@ def _register_services(hass: HomeAssistant) -> None:
             update_callout=ATTR_CALLOUT in call.data,
             numbering=call.data.get(ATTR_NUMBERING),
             update_numbering=ATTR_NUMBERING in call.data,
+            repeat=call.data.get(ATTR_REPEAT),
+            update_repeat=ATTR_REPEAT in call.data,
         )
         if updated is not None and (
             ATTR_ASSIGNEE in call.data

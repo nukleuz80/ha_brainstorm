@@ -462,6 +462,16 @@ const DICTIONARIES = {
     "🔧 In Arbeit": "🔧 In progress",
     "🗑️ Später oder gar nicht": "🗑️ Later or never",
     "Gliederung": "Outline",
+    "Jeden Tag": "Every day",
+    "Jeden Werktag (Mo–Fr)": "Every weekday (Mon–Fri)",
+    "Jede Woche": "Every week",
+    "Alle 2 Wochen": "Every 2 weeks",
+    "Jeden Monat": "Every month",
+    "Jedes Jahr": "Every year",
+    "Nicht wiederholen": "Do not repeat",
+    "Wiederholt sich: {rule}": "Repeats: {rule}",
+    "Wiederholen:": "Repeat:",
+    "Abgehakt kommt die Notiz mit ihren Unteraufgaben zum nächsten Termin wieder.": "When ticked off, the note comes back with its subtasks at the next date.",
     "Als PDF:": "As PDF:",
     "Zum Drucken oder Weitergeben: das Bild der Map und danach alle Notizen als Gliederung mit Beschreibung.": "For printing or passing on: the picture of the map, then all notes as an outline with their descriptions.",
     "PDF (Map und Gliederung)": "PDF (map and outline)",
@@ -840,6 +850,35 @@ export function ideaMatches(idea, filter, now = new Date()) {
     if (!markers.includes(marker)) return false;
   }
   return true;
+}
+
+/** How often a note can come back after it is ticked off. */
+export const REPEATS = ["daily", "weekdays", "weekly", "biweekly", "monthly", "yearly"];
+
+/** Return the name of a repeat rule in the language of the user. */
+export function repeatLabel(rule) {
+  const labels = {
+    daily: t("Jeden Tag"),
+    weekdays: t("Jeden Werktag (Mo–Fr)"),
+    weekly: t("Jede Woche"),
+    biweekly: t("Alle 2 Wochen"),
+    monthly: t("Jeden Monat"),
+    yearly: t("Jedes Jahr"),
+  };
+  return labels[rule] || "";
+}
+
+/** The options of the repeat field in the edit dialogs. */
+export function repeatOptions(current) {
+  return [`<option value="">${t("Nicht wiederholen")}</option>`]
+    .concat(REPEATS.map((rule) => `<option value="${rule}"${rule === current ? " selected" : ""}>🔁 ${repeatLabel(rule)}</option>`))
+    .join("");
+}
+
+/** A small 🔁 for notes that come back. */
+export function repeatBadge(idea) {
+  const label = repeatLabel(idea && idea.repeat);
+  return label ? `<span class="repeat-badge" title="${t("Wiederholt sich: {rule}", { rule: label })}">🔁</span>` : "";
 }
 
 /** Colors a rule can paint a note with. */

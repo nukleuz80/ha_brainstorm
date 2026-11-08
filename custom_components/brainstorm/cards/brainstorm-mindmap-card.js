@@ -1,8 +1,8 @@
-import { BOARDS, MARKERS, NUMBERING, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.14";
+import { BOARDS, MARKERS, NUMBERING, repeatBadge, repeatOptions, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.15";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.8.14 - PDF Export
+ * Version: 1.8.15 - Repeating Tasks
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -2159,6 +2159,11 @@ class BrainstormMindmapCard extends HTMLElement {
         }
         #notesContainer .note-cloud.rule-hit {
           border-left-color: var(--rule-color) !important;
+        }
+        .repeat-badge {
+          display: inline-flex;
+          align-items: center;
+          font-size: 0.7rem;
         }
         .cloud-image {
           height: 110px;
@@ -7608,7 +7613,7 @@ class BrainstormMindmapCard extends HTMLElement {
                 <ha-icon icon="${this._getCategoryIcon(idea.category)}" style="--mdc-icon-size: 12px; width: 12px; height: 12px; display: inline-flex; align-items: center; vertical-align: middle;"></ha-icon> ${this._escapeHtml(idea.category)}
               </span>
               ${prioBadge}
-              ${this._getReminderBadges(idea)}
+              ${this._getReminderBadges(idea)}${repeatBadge(idea)}
               ${inProgressBadge(idea)}
               ${blockedBadge(idea)}
               ${attachmentBadge(idea)}
@@ -8158,6 +8163,8 @@ class BrainstormMindmapCard extends HTMLElement {
           <button class="dialog-btn dialog-btn-cancel dialog-due-clear" id="editDueClear" title="${t("Termin entfernen")}" aria-label="${t("Termin entfernen")}">✕</button>
         </div>
         <div class="dialog-hint">${t("Ohne Uhrzeit erinnert Brainstorm um 9:00.")}</div>
+        <div class="dialog-label">${t("Wiederholen:")}</div>
+        <select class="dialog-input" id="editRepeat" title="${t("Abgehakt kommt die Notiz mit ihren Unteraufgaben zum nächsten Termin wieder.")}">${repeatOptions(idea.repeat)}</select>
 
         ${echos.length ? `
           <details class="dialog-echo-details">
@@ -8321,6 +8328,10 @@ class BrainstormMindmapCard extends HTMLElement {
         }
         if ([...selectedEchos].sort().join() !== [...currentEchos].sort().join()) {
           payload.echos = selectedEchos.length ? selectedEchos : null;
+        }
+        const newRepeat = body.querySelector("#editRepeat").value || "";
+        if (newRepeat !== (idea.repeat || "")) {
+          payload.repeat = newRepeat;
         }
         const newDescription = (body.querySelector("#editDescription").value || "").trim();
         if (newDescription !== (idea.description || "")) {
@@ -9083,7 +9094,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.8.14 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.8.15 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

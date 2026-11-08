@@ -164,6 +164,8 @@ Without any of these, **Medium** applies. Negations and questions do not count: 
 
 ### 2.3 Reminders and due dates
 
+**Repeating:** *Repeat* in the edit dialog lets a note come back every day, weekday, week, 2 weeks, month or year. When you tick it off, the next round appears at once with the next due date and its subtasks open again; the done one stays under *Done*. Ticked off late, it skips the dates that passed. Reopening the done one removes the new round while it is still open. 🔁 marks such notes.
+
 A spoken sentence with a point in time gets a due date, for example after **"remind me (to)"**, **"don't forget (to)"** or **"remember to"**. Turn this off under **General Settings ➔ Take dates from spoken text as a due date**. A time that has already passed leaves the sentence unchanged.
 
 | You say | Due |
