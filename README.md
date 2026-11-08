@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.7.19-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.7.20-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -22,6 +22,8 @@ Whether you are cooking, working in the workshop, relaxing in the garden, or on 
 
 > [!TIP]
 > **📘 [Guide with examples](docs/guide.md):** what you can say, write and set, with examples for Alexa, Assist, Siri, the cards, the keyboard and automations.
+>
+> **🎬 [Videos](docs/videos.md):** the main features in 3 minutes, installation and setting up your own Alexa skill (German narration with on-screen captions).
 
 Feedback, ideas and improvements are very welcome, see [💬 Feedback & Contributing](#-feedback--contributing).
 
@@ -938,6 +940,7 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.7.20`** | 2026-11-08 | **Two new videos:** [*Main features*](docs/videos.md#die-wichtigsten-funktionen-3-minuten) (3 minutes, with real screenshots of the cards) and [*Installation*](docs/videos.md#installation-3-minuten) (3 minutes, from HACS to the first idea), both with the intro and chapter marks, German narration. New overview [`docs/videos.md`](docs/videos.md), linked at the top of the README. From now on videos are only attached to releases and no longer stored in the repository. The tools in `tools/video` render the real cards with sample data and only voice changed scenes again. |
 | **`v1.7.19`** | 2026-11-08 | **Skill setup video:** New walkthrough [`docs/video-alexa-skill.md`](docs/video-alexa-skill.md) (6 minutes, German narration) with one chapter per setting in the Alexa developer console: name, language, model, hosting, template, interfaces, permissions, JSON editor, invocation name, skill code, test, pairing, Alexa app and troubleshooting, with chapter marks in the MP4. Plus a reusable animated intro with the Brainstorm logo and the tools to make it in `tools/video`. |
 | **`v1.7.18`** | 2026-11-07 | **Category in square brackets:** `[Daily Life] call grandma` now saves *Call grandma* in *Daily Life*. Before, `[Daily Life]` stayed in the text without a colon after it, and the category was only guessed from keywords. |
 | **`v1.7.17`** | 2026-11-07 | **Guide with examples:** new section [`docs/guide.md`](docs/guide.md) (German [`docs/anleitung.md`](docs/anleitung.md)) with examples of everything you can say, write, set and automate: Alexa, Assist, Siri, AI assistant, category, priority and due date detection, Markdown, card controls and shortcuts, all card options, menus, services, events. Cleanup: removed old logo and icon files that are no longer needed since the brand folder. |

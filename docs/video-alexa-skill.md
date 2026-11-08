@@ -1,10 +1,10 @@
 # 🎬 Video: Eigenen Alexa-Skill für Brainstorm einrichten
 
-⬅️ [Zurück zur Anleitung](anleitung.md#12-alexa-mit-eigenem-skill) · 📄 [Schriftliche Anleitung in der README](../README_de.md#variante-c-eigener-alexa-skill-optional-ein-satz-eine-antwort)
+⬅️ [Alle Videos](videos.md) · [Anleitung](anleitung.md#12-alexa-mit-eigenem-skill) · 📄 [Schriftliche Anleitung in der README](../README_de.md#variante-c-eigener-alexa-skill-optional-ein-satz-eine-antwort)
 
-[![Video starten](video/poster.jpg)](video/brainstorm-alexa-skill.mp4)
+[![Video starten](video/poster-alexa-skill.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.19/brainstorm-alexa-skill.mp4)
 
-**[▶️ Video ansehen (MP4, 6 Minuten, deutsch mit Untertiteln im Bild)](video/brainstorm-alexa-skill.mp4)**
+**[▶️ Video ansehen (MP4, 6 Minuten, deutsch mit Untertiteln im Bild)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.19/brainstorm-alexa-skill.mp4)**
 
 Das Video führt in 18 Kapiteln durch die Alexa-Entwicklerkonsole, ein Kapitel pro Einstellung. Die markierten Felder zeigen, was du einstellen musst. Die Konsole ist schematisch nachgezeichnet, Amazon ändert ihre Oberfläche gelegentlich, die Bezeichnungen bleiben aber gleich. Die MP4-Datei enthält Kapitelmarken, die die meisten Player (VLC, QuickTime, Plex) anzeigen.
 
@@ -34,4 +34,4 @@ Das Video führt in 18 Kapiteln durch die Alexa-Entwicklerkonsole, ein Kapitel p
 
 ## Intro für weitere Videos
 
-Das animierte Intro mit dem Brainstorm-Logo liegt einzeln unter [`video/brainstorm-intro.mp4`](video/brainstorm-intro.mp4) (5 Sekunden, 1280×720, 25 fps, AAC mono). Mit anderem Titel erzeugst du es neu, siehe [`tools/video`](../tools/video/README.md).
+Das animierte Intro mit dem Brainstorm-Logo hängt einzeln am Release v1.7.19 ([`brainstorm-intro.mp4`](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.19/brainstorm-intro.mp4)) (5 Sekunden, 1280×720, 25 fps, AAC mono). Mit anderem Titel erzeugst du es neu, siehe [`tools/video`](../tools/video/README.md).

@@ -1,0 +1,40 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>
+:root{--primary-color:#03a9f4;--accent-color:#ff9800;--card-background-color:#1c1c1c;--ha-card-background:#1c1c1c;
+--primary-text-color:#e1e1e1;--secondary-text-color:#9b9b9b;--divider-color:rgba(225,225,225,.12);
+--primary-background-color:#111111;--secondary-background-color:#202020;--ha-card-border-radius:12px;--error-color:#db4437;
+--success-color:#43a047;--warning-color:#ffa600;--state-icon-color:#44739e;--mdc-theme-primary:#03a9f4;color-scheme:dark}
+body{margin:0;background:#111;font-family:Roboto,'Noto Sans',sans-serif;color:#e1e1e1}
+#wrap{padding:24px;display:flex;gap:24px;align-items:flex-start;justify-content:center}
+</style>
+<script>
+class HaCard extends HTMLElement{constructor(){super();const s=this.attachShadow({mode:"open"});
+s.innerHTML='<style>:host{display:block;background:var(--ha-card-background);border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,.5);color:var(--primary-text-color)}</style><slot></slot>'}}
+customElements.define("ha-card",HaCard);
+class HaIcon extends HTMLElement{static get observedAttributes(){return["icon"]}
+constructor(){super();this.attachShadow({mode:"open"})}
+attributeChangedCallback(){this.r()}connectedCallback(){this.r()}
+set icon(v){this.setAttribute("icon",v)}get icon(){return this.getAttribute("icon")}
+r(){const i=(this.getAttribute("icon")||"").replace("mdi:","");
+this.shadowRoot.innerHTML='<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css"><style>:host{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle}i{font-size:var(--mdc-icon-size,24px);line-height:1}</style><i class="mdi mdi-'+i+'"></i>'}}
+customElements.define("ha-icon",HaIcon);
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css">
+<script src="demo.js"></script>
+</head><body><div id="wrap"></div>
+<script type="module">
+const p=new URLSearchParams(location.search);
+const kind=p.get("card")||"list";
+await import(kind==="list"?"./brainstorm-card.js":"./brainstorm-mindmap-card.js");
+const el=document.createElement(kind==="list"?"brainstorm-card":"brainstorm-mindmap-card");
+el.style.width=(p.get("w")||"560")+"px";
+const cfg=JSON.parse(p.get("cfg")||"{}");
+el.setConfig(cfg);
+document.getElementById("wrap").appendChild(el);
+el.hass=window.demoHass;
+setTimeout(()=>{el.hass={...window.demoHass}},300);
+const clicks=(p.get("click")||"").split("|").filter(Boolean);
+const findText=(root,txt)=>{for(const e of root.querySelectorAll("*")){if(e.shadowRoot){const r=findText(e.shadowRoot,txt);if(r)return r}
+ if(e.children.length<=3&&(e.textContent||"").trim().startsWith(txt)&&e.offsetParent!==null)return e}return null};
+let delay=900;for(const c of clicks){setTimeout(()=>{const e=findText(el.shadowRoot,c);if(e)e.click();else console.log("nf "+c)},delay);delay+=700}
+</script></body></html>

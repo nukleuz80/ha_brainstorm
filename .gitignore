@@ -16,3 +16,6 @@ tools/video/*.onnx*
 tools/video/*.mp4
 tools/video/*.wav
 tools/video/icon.png
+tools/video/cards/brainstorm-*.js
+tools/video/cards/*.png
+tools/video/out_*/

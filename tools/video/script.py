@@ -1,6 +1,11 @@
 """Storyboard of the Brainstorm Alexa skill video (German)."""
 from __future__ import annotations
 
+# README sections this video covers, check them on every release
+COVERS = ["Variante C: Eigener Alexa-Skill", "Listen auf dem Echo Show", "Echte Alexa-Erinnerungen"]
+TITLE = "Brainstorm: Eigenen Alexa-Skill einrichten"
+OUT_NAME = "brainstorm-alexa-skill"
+
 # Every chapter is one setting. Visual kinds: title, bullets, wizard, console, ha,
 # speech, code, alexa_app.
 CHAPTERS: list[dict] = [

@@ -1,6 +1,7 @@
 """Render the storyboard into an MP4 with German narration and chapters."""
 from __future__ import annotations
 
+import hashlib
 import html
 import json
 import subprocess
@@ -8,10 +9,16 @@ import sys
 import wave
 from pathlib import Path
 
-from script import CHAPTERS, SPOKEN
+import importlib
+
+SCRIPT = next((a for a in sys.argv[1:] if not a.startswith("--")), "script")
+_mod = importlib.import_module(SCRIPT)
+CHAPTERS, SPOKEN = _mod.CHAPTERS, _mod.SPOKEN
+VIDEO_TITLE = getattr(_mod, "TITLE", "Brainstorm: Eigenen Alexa-Skill einrichten")
+OUT_NAME = getattr(_mod, "OUT_NAME", "brainstorm-alexa-skill")
 
 ROOT = Path(__file__).parent
-OUT = ROOT / "out"
+OUT = ROOT / ("out" if SCRIPT == "script" else f"out_{SCRIPT}")
 FFMPEG = str(next((ROOT / "vv/lib").glob("python*/site-packages/imageio_ffmpeg/binaries/ffmpeg-*")))
 PIPER = str(ROOT / "vv/bin/piper")
 VOICE = str(ROOT / "de_DE-thorsten-high.onnx")
@@ -91,6 +98,18 @@ body{width:1280px;height:720px;overflow:hidden;font-family:'Noto Sans','DejaVu S
 .phone{position:absolute;left:120px;top:0;width:300px;height:450px;border-radius:34px;background:#0f1a24;border:8px solid #2a3a4a;padding:22px 16px;color:#fff}
 .phone .t{font-size:17px;color:#9fb3c8;margin-bottom:10px}.phone .it{background:#1c2c3c;border-radius:10px;padding:12px;margin-bottom:10px;font-size:16px}
 .side2{position:absolute;left:500px;top:30px;right:0}
+.shot{position:absolute;left:0;top:0;height:470px;display:flex;align-items:flex-start}
+.shot img{border-radius:14px;box-shadow:0 14px 40px rgba(0,0,0,.55);border:1px solid #2b4057}
+.shotside{position:absolute;right:0;top:20px;width:520px}.shotside li{font-size:23px}
+.tf{display:flex;flex-direction:column;align-items:center;gap:14px;padding-top:10px}
+.tfin{background:#2f80ed;border-radius:22px;padding:18px 28px;font-size:28px;max-width:1000px}
+.tfarrow{font-size:34px;color:#ffb703}
+.tfout{background:#1c1c1c;border:1px solid #2b4057;border-left:6px solid #03a9f4;border-radius:14px;padding:16px 26px;min-width:560px}
+.tftext{font-size:30px;font-weight:700;margin-bottom:12px}
+.chip{display:inline-block;border-radius:8px;padding:4px 12px;margin:0 8px 6px 0;font-size:19px;background:#1f3b57;font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.tile{background:#13283d;border:1px solid #2b4057;border-radius:14px;padding:14px 18px;display:flex;flex-direction:column;gap:4px;min-height:118px}
+.tile .ti{font-size:28px}.tile b{font-size:21px}.tile span{font-size:17px;color:#b9cde0;line-height:1.35}
 """
 
 TABS = ["Build", "Code", "Test", "Distribution", "Certification", "Analytics"]
@@ -208,6 +227,26 @@ def stage(v: tuple) -> str:
         who = {"du": "Du", "alexa": "Alexa", "ha": "Home Assistant"}
         bubs = "".join(f'<div class="bub {w if w != "ha" else "hab"}"><span class="who">{who[w]}</span>{esc(t)}</div>' for w, t in v[1])
         return f'<div class="sph">{esc(v[2])}</div><div class="sp">{bubs}</div>'
+    if kind == "shot":
+        # Real card screenshot with bullets: ("shot", file, img_height, bullets, note)
+        items = "".join(f'<li><span class="ic">{i}</span><span>{t}</span></li>' for i, t in v[3])
+        return (f'<div class="shot"><img src="{v[1]}" style="height:{v[2]}px"></div>'
+                f'<div class="shotside bl"><ul>{items}</ul></div><div class="note">{esc(v[4])}</div>')
+    if kind == "yaml":
+        # ("yaml", heading, code, note)
+        return (f'<div class="bl"><h2>{esc(v[1])}</h2></div><div class="pre" style="font-size:22px;'
+                f'padding:22px 28px;max-width:900px">{esc(v[2])}</div><div class="note">{esc(v[3])}</div>')
+    if kind == "transform":
+        # ("transform", spoken sentence, result text, chips, note)
+        chips = "".join(f'<span class="chip">{c}</span>' for c in v[3])
+        return (f'<div class="tf"><div class="tfin">🗣️ „{esc(v[1])}“</div><div class="tfarrow">⬇</div>'
+                f'<div class="tfout"><div class="tftext">{esc(v[2])}</div><div>{chips}</div></div></div>'
+                f'<div class="note">{esc(v[4])}</div>')
+    if kind == "grid":
+        # ("grid", heading, [(icon, title, text)], note)
+        tiles = "".join(f'<div class="tile"><div class="ti">{i}</div><b>{esc(a)}</b><span>{b}</span></div>'
+                        for i, a, b in v[2])
+        return f'<div class="bl"><h2>{esc(v[1])}</h2></div><div class="grid">{tiles}</div><div class="note">{esc(v[3])}</div>'
     if kind == "alexa_app":
         return ('<div class="phone"><div class="t">Alexa-App ➔ Mehr ➔ Skills &amp; Spiele</div>'
                 '<div class="it">Meine Skills</div><div class="it hl">Dev · <b>Brainstorm</b></div>'
@@ -247,6 +286,8 @@ def main() -> None:
     only_frames = "--frames" in sys.argv
     OUT.mkdir(exist_ok=True)
     (OUT / "icon.png").write_bytes((ROOT / "icon.png").read_bytes())
+    for shot in (ROOT / "cards").glob("crop_*.png"):
+        (OUT / shot.name).write_bytes(shot.read_bytes())
     segments, chapters, t = [], [], 0.0
     intro = ROOT / "intro.mp4"  # made by intro.py, reusable for other videos
     if intro.exists() and "--no-intro" not in sys.argv:
@@ -263,10 +304,12 @@ def main() -> None:
                  f"--window-size={W},{H}", f"--screenshot={OUT / name}.png", f"file://{OUT / name}.html"])
             if only_frames:
                 continue
-            wav = OUT / f"{name}.wav"
+            # Keyed by the spoken text, so only changed scenes are voiced again
+            key = hashlib.sha1(spoken(sc.get("speak", sc["say"])).encode()).hexdigest()[:10]
+            wav = OUT / f"{name}_{key}.wav"
             if not wav.exists():
                 run([PIPER, "-m", VOICE, "-f", str(wav), "--sentence-silence", "0.35"],
-                    input=spoken(sc["say"]).encode())
+                    input=spoken(sc.get("speak", sc["say"])).encode())
             with wave.open(str(wav)) as w:
                 dur = w.getnframes() / w.getframerate() + PAD_BEFORE + PAD_AFTER
             seg = OUT / f"{name}.mp4"
@@ -282,15 +325,15 @@ def main() -> None:
     if only_frames:
         return
     (OUT / "list.txt").write_text("".join(f"file '{s}'\n" for s in segments))
-    meta = [";FFMETADATA1", "title=Brainstorm: Eigenen Alexa-Skill einrichten", "artist=Brainstorm Hub"]
+    meta = [";FFMETADATA1", f"title={VIDEO_TITLE}", "artist=Brainstorm Hub"]
     for i, (title, a, b) in enumerate(chapters):
         label = "Einleitung" if i == 0 else f"{i}. {title}"
         meta += ["[CHAPTER]", "TIMEBASE=1/1000", f"START={int(a * 1000)}", f"END={int(b * 1000)}", f"title={label}"]
     (OUT / "meta.txt").write_text("\n".join(meta) + "\n")
-    final = ROOT / "brainstorm-alexa-skill.mp4"
+    final = ROOT / f"{OUT_NAME}.mp4"
     run([FFMPEG, "-y", "-f", "concat", "-safe", "0", "-i", str(OUT / "list.txt"), "-i", str(OUT / "meta.txt"),
          "-map_metadata", "1", "-map_chapters", "1", "-c", "copy", "-movflags", "+faststart", str(final)])
-    (ROOT / "chapters.json").write_text(json.dumps(chapters, ensure_ascii=False, indent=1))
+    (ROOT / f"chapters_{OUT_NAME}.json").write_text(json.dumps(chapters, ensure_ascii=False, indent=1))
     print(final, f"{t:.1f}s", final.stat().st_size // 1024, "KB")
 
 
