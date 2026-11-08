@@ -388,6 +388,35 @@ reorder_ideas:
       selector:
         object:
 
+import_outline:
+  fields:
+    text:
+      required: true
+      example: "# Umzug\n- Kartons\n  - Küche\n- Transporter"
+      selector:
+        text:
+          multiline: true
+    format:
+      required: false
+      default: auto
+      selector:
+        select:
+          translation_key: outline_format
+          options:
+            - auto
+            - markdown
+            - opml
+            - freemind
+    category:
+      required: false
+      example: "Projekte"
+      selector:
+        text:
+    parent_id:
+      required: false
+      selector:
+        text:
+
 sort_children:
   fields:
     parent_id:

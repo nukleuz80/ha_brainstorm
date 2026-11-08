@@ -605,6 +605,14 @@
         "due": "Fälligkeit (früheste zuerst)",
         "created": "Erstellt (älteste zuerst)"
       }
+    },
+    "outline_format": {
+      "options": {
+        "auto": "Automatisch",
+        "markdown": "Markdown oder eingerückter Text",
+        "opml": "OPML",
+        "freemind": "FreeMind / Freeplane (.mm)"
+      }
     }
   },
   "entity": {
@@ -640,6 +648,12 @@
     },
     "sort_needs_key": {
       "message": "Gib an, wonach sortiert wird, oder eine feste Reihenfolge."
+    },
+    "outline_unreadable": {
+      "message": "Die Gliederung lässt sich nicht lesen ({error})."
+    },
+    "outline_empty": {
+      "message": "Die Gliederung enthält keine Notizen."
     },
     "sharing_needs_privacy": {
       "message": "Freigaben gibt es nur mit eingeschalteter Privatsphäre."
@@ -1065,6 +1079,28 @@
         "idea_ids": {
           "name": "Notiz-IDs",
           "description": "Geordnete Liste der Notiz-IDs."
+        }
+      }
+    },
+    "import_outline": {
+      "name": "Gliederung importieren",
+      "description": "Legt einen Baum von Notizen aus einer Markdown-Gliederung, eingerücktem Text, OPML oder einer FreeMind-/Freeplane-Map (.mm) an. Höchstens 300 Notizen.",
+      "fields": {
+        "text": {
+          "name": "Gliederung",
+          "description": "Der Inhalt der Datei oder der eingefügte Text."
+        },
+        "format": {
+          "name": "Format",
+          "description": "Automatisch erkennt XML-Dateien am Wurzelelement, alles andere wird als Markdown gelesen."
+        },
+        "category": {
+          "name": "Kategorie",
+          "description": "Wohin die Notizen kommen. Ohne Angabe die Standardkategorie."
+        },
+        "parent_id": {
+          "name": "Übergeordnete ID",
+          "description": "Hängt die Gliederung unter diese Notiz, in deren Kategorie."
         }
       }
     },

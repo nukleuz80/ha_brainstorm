@@ -54,6 +54,9 @@
     "reorder_ideas": {
       "service": "mdi:sort"
     },
+    "import_outline": {
+      "service": "mdi:file-tree-outline"
+    },
     "sort_children": {
       "service": "mdi:sort-alphabetical-ascending"
     },

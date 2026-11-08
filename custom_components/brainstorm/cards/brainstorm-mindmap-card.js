@@ -1,8 +1,8 @@
-import { MARKERS, NUMBERING, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.3";
+import { MARKERS, NUMBERING, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.4";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.8.3 - Numbering and Sorting
+ * Version: 1.8.4 - Outline Export and Import
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -2176,6 +2176,40 @@ class BrainstormMindmapCard extends HTMLElement {
           color: var(--warning-color, #ff9800);
           background: color-mix(in srgb, var(--warning-color, #ff9800) 14%, transparent);
         }
+        .export-row {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 8px;
+          margin: 6px 0 12px;
+        }
+        .export-row .dialog-btn {
+          min-height: 40px;
+        }
+        .outline-file {
+          position: relative;
+          overflow: hidden;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .outline-file input {
+          position: absolute;
+          inset: 0;
+          opacity: 0;
+          cursor: pointer;
+        }
+        .outline-target {
+          flex: 1 1 160px;
+          margin: 0;
+        }
+        .dialog-textarea {
+          width: 100%;
+          box-sizing: border-box;
+          resize: vertical;
+          font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+          font-size: 0.8rem;
+        }
         .cloud-number {
           font-weight: 700;
           color: var(--primary-color, #03a9f4);
@@ -2882,7 +2916,7 @@ class BrainstormMindmapCard extends HTMLElement {
               ${this._colorMode === 'theme' ? '🎨' : '🌈'}
             </button>
             <button class="top-tool-btn" id="filterBtn" style="display: ${this._config.show_filter === true ? 'inline-flex' : 'none'};" title="${t("Suchen und filtern (/)")}" aria-pressed="false">🔍</button>
-            <button class="top-tool-btn" id="exportBtn" style="display: ${this._config.show_export_btn === true ? 'inline-flex' : 'none'};" title="${t("Map als Bild speichern")}">🖼️</button>
+            <button class="top-tool-btn" id="exportBtn" style="display: ${this._config.show_export_btn === true ? 'inline-flex' : 'none'};" title="${t("Map speichern oder Gliederung einfügen")}">🖼️</button>
             <button class="fullscreen-btn" id="fullscreenToggleBtn" style="display: ${this._config.show_fullscreen_btn === true ? 'inline-flex' : 'none'};" title="${t("Vollbild umschalten (ESC zum Beenden)")}">⛶</button>
           </div>
         </div>
@@ -3746,23 +3780,125 @@ class BrainstormMindmapCard extends HTMLElement {
   }
 
   _showExportDialog() {
-    this._openDialog(t("🖼️ Map als Bild speichern"), (body) => {
+    const focus = this._focusIdea();
+    const inAll = this._selectedCategory === "all";
+    const target = focus
+      ? t("Landet unter „{text}“.", { text: this._escapeHtml(focus.text) })
+      : inAll
+        ? t("Landet in der Standardkategorie.")
+        : t("Landet als Hauptnotizen in „{category}“.", { category: this._escapeHtml(this._selectedCategory) });
+    this._openDialog(t("🖼️ Map speichern und einfügen"), (body) => {
       body.innerHTML = `
-        <div class="dialog-label">${t("Gespeichert wird, was gerade auf der Map steht, ohne eingeklappte Zweige.")}</div>
+        <div class="dialog-label">${t("Als Bild:")}</div>
+        <div class="dialog-hint">${t("Gespeichert wird, was gerade auf der Map steht, ohne eingeklappte Zweige.")}</div>
+        <div class="export-row">
+          <button class="dialog-btn dialog-btn-cancel" data-export="svg">${t("SVG (Vektor)")}</button>
+          <button class="dialog-btn dialog-btn-cancel" data-export="png">${t("PNG (Bild)")}</button>
+        </div>
+        <div class="dialog-label">${t("Als Gliederung:")}</div>
+        <div class="dialog-hint">${t("Alle Notizen dieser Map, auch eingeklappte, für andere Mindmap- und Gliederungsprogramme.")}</div>
+        <div class="export-row">
+          <button class="dialog-btn dialog-btn-cancel" data-export="md">${t("Markdown")}</button>
+          <button class="dialog-btn dialog-btn-cancel" data-export="opml">${t("OPML")}</button>
+          <button class="dialog-btn dialog-btn-cancel" data-export="mm">${t("FreeMind (.mm)")}</button>
+        </div>
+        <div class="dialog-label">${t("Gliederung einfügen:")}</div>
+        <textarea class="dialog-input dialog-textarea" id="outlineText" rows="5" placeholder="${t("Eine Zeile pro Notiz, Unterpunkte eingerückt oder als Markdown-Liste. Oder eine Datei wählen.")}"></textarea>
+        <div class="export-row">
+          <label class="dialog-btn dialog-btn-cancel outline-file">📂 ${t("Datei wählen")}<input type="file" id="outlineFile" accept=".md,.markdown,.txt,.opml,.mm,.xml,text/plain,text/markdown,text/xml"></label>
+          <span class="dialog-hint outline-target">${target}</span>
+        </div>
+        <div class="dialog-error" id="outlineError"></div>
         <div class="dialog-footer">
-          <button class="dialog-btn dialog-btn-cancel" id="exportSvgBtn">${t("SVG (Vektor)")}</button>
-          <button class="dialog-btn dialog-btn-primary" id="exportPngBtn">${t("PNG (Bild)")}</button>
+          <button class="dialog-btn dialog-btn-cancel" id="outlineCancel">${t("Schließen")}</button>
+          <button class="dialog-btn dialog-btn-primary" id="outlineImport" disabled>${t("Einfügen")}</button>
         </div>
       `;
-      body.querySelector("#exportSvgBtn").addEventListener("click", () => {
-        this._closeDialog();
-        this._exportMap("svg");
+      body.querySelectorAll("[data-export]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const kind = btn.getAttribute("data-export");
+          this._closeDialog();
+          if (kind === "svg" || kind === "png") this._exportMap(kind);
+          else this._exportOutline(kind);
+        });
       });
-      body.querySelector("#exportPngBtn").addEventListener("click", () => {
-        this._closeDialog();
-        this._exportMap("png");
+      const text = body.querySelector("#outlineText");
+      const importBtn = body.querySelector("#outlineImport");
+      const error = body.querySelector("#outlineError");
+      text.addEventListener("input", () => {
+        importBtn.disabled = !text.value.trim();
+      });
+      body.querySelector("#outlineFile").addEventListener("change", (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        if (file.size > 200000) {
+          error.textContent = t("Die Datei ist zu groß (höchstens 200 KB).");
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => {
+          text.value = String(reader.result || "");
+          importBtn.disabled = !text.value.trim();
+          error.textContent = "";
+        };
+        reader.readAsText(file);
+      });
+      body.querySelector("#outlineCancel").addEventListener("click", () => this._closeDialog());
+      importBtn.addEventListener("click", async () => {
+        importBtn.disabled = true;
+        error.textContent = "";
+        const ok = await this._importOutline(text.value, (message) => {
+          error.textContent = message;
+        });
+        if (ok) this._closeDialog();
+        else importBtn.disabled = false;
       });
     });
+  }
+
+  // Download the notes of this map, or of the focused branch, as an outline
+  _exportOutline(kind) {
+    const sensor = this._getSensorEntity();
+    const focus = this._focusIdea();
+    const ideas = this._categoryIdeas();
+    if (!sensor || !ideas.length) {
+      this._showToast(t("Auf der Map ist nichts zum Speichern"));
+      return;
+    }
+    const title = focus ? focus.text : this._selectedCategory === "all" ? t("Alle") : this._selectedCategory;
+    const files = {
+      md: [outlineMarkdown, "text/markdown"],
+      opml: [outlineOpml, "text/x-opml"],
+      mm: [outlineFreemind, "application/x-freemind"],
+    };
+    const [build, type] = files[kind];
+    this._downloadBlob(new Blob([build(ideas, title)], { type: `${type};charset=utf-8` }), this._exportFileName(kind));
+  }
+
+  async _importOutline(text, onError) {
+    const data = { text };
+    if (this._focusId) data.parent_id = this._focusId;
+    else if (this._selectedCategory !== "all") data.category = this._selectedCategory;
+    try {
+      const result = await this._hass.callWS({
+        type: "call_service",
+        domain: "brainstorm",
+        service: "import_outline",
+        service_data: data,
+        return_response: true,
+      });
+      const response = (result && result.response) || {};
+      const ids = response.ids || [];
+      this._pushUndo(t("{count} Notizen", { count: ids.length }), () =>
+        Promise.all(ids.map((id) => this._hass.callService("brainstorm", "delete_idea", { id }))),
+      );
+      this._showToast(t("{count} Notizen eingefügt.", { count: ids.length }));
+      return true;
+    } catch (err) {
+      console.error("[BrainstormMindmap] Import failed:", err);
+      onError(err && err.message ? err.message : t("Einfügen hat nicht geklappt."));
+      return false;
+    }
   }
 
   _exportFileName(extension) {
@@ -7262,7 +7398,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.8.3 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.8.4 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

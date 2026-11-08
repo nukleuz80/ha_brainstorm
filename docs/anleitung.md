@@ -230,7 +230,7 @@ Mit **Intelligente Formatierung** (Allgemeine Einstellungen) werden gesprochene 
 | Zoomen | Mausrad oder zwei Finger |
 | Fläche bewegen | leere Fläche ziehen |
 | Zweig ein-/ausklappen | Knopf am Ast, oder **→** auf einem eingeklappten Punkt |
-| Als Bild speichern | 🖼️ |
+| Als Bild oder Gliederung speichern, Gliederung einfügen | 🖼️ |
 | Vollbild | ⛶ |
 | Suchen und filtern | 🔍, oder **/** bzw. **Strg+F** auf der Map |
 | Nach einem Tag filtern | auf ein #Tag in einer Notiz tippen |
@@ -258,6 +258,8 @@ Mit **Intelligente Formatierung** (Allgemeine Einstellungen) werden gesprochene 
 **Querverbindungen:** Die Linien der Map zeigen, was wozu gehört. Eine Querverbindung verbindet zwei beliebige Notizen, auch aus verschiedenen Zweigen, mit einem gebogenen, gestrichelten Pfeil. 🔗 an der Notiz (oder **L**) startet, ein Tipp auf das Ziel beendet, **Esc** bricht ab. Ein Tipp auf die Linie öffnet einen Dialog für eine Beschriftung wie *braucht* oder *siehe auch*. Mit dem Haken *blockiert* wird die Verbindung rot: Die Ziel-Notiz wird grau und zeigt ⛔ *Wartet*, bis die erste Notiz erledigt ist. Das Abzeichen erscheint auch in der Listenkarte.
 
 **Nummerierung und Sortieren:** Im Bearbeiten-Dialog einer Notiz mit Unteraufgaben nummeriert *Unterpunkte nummerieren* alles darunter, wie in MindManager: 1., 1.1, 1.2 … oder a), b) oder I., II. Eine Unteraufgabe kann eine eigene Art wählen, die dann für ihren Zweig gilt. Die Nummern stehen in beiden Karten vor dem Text und passen sich an, wenn Punkte dazukommen oder wandern. *Unterpunkte sortieren* ordnet sofort nach Titel (A → Z oder Z → A), Priorität, Fälligkeit oder Alter. Die übrigen Notizen bleiben an ihrem Platz, ↶ macht es rückgängig. Auf der Map öffnet **S** dieselbe Auswahl, ohne ausgewählte Notiz für die Hauptnotizen der Kategorie. Bei frei verschobenen Notizen ordnet 🪄 die Map danach passend neu.
+
+**Export und Import:** 🖼️ speichert die Map als Bild (SVG, PNG) oder als Gliederung: **Markdown** (eine verschachtelte Liste, Beschreibungen als `>`-Zeile), **OPML** (für Gliederungsprogramme wie Workflowy, OmniOutliner oder Logseq) und **FreeMind** (`.mm`, öffnet sich in Freeplane, XMind und MindManager). Die Gliederung enthält alle Notizen der Map, auch eingeklappte; im Fokus nur den Zweig. Unter *Gliederung einfügen* tippst oder kopierst du eine Liste hinein, eine Zeile pro Notiz, Unterpunkte eingerückt oder mit `-`, `*`, `1.` und Überschriften `#`. Oder du wählst eine Datei (`.md`, `.txt`, `.opml`, `.mm`). `- [x]` legt den Punkt gleich als erledigt an. Die Notizen landen als Hauptnotizen der Kategorie, im Fokus unter der Fokus-Notiz. Höchstens 300 Notizen auf einmal, ↶ nimmt alle wieder heraus. Für Automationen gibt es den Dienst `brainstorm.import_outline`.
 
 **Rahmen und Callouts:** Ein Rahmen ist ein gestricheltes Rechteck mit Namen um mehrere Notizen, etwa *Phase 1* oder *Erdgeschoss*. Notizen mit demselben Rahmennamen teilen sich einen Rahmen. Ein Callout ist eine kurze Anmerkung in einer Sprechblase über der Notiz, für Dinge wie *Farbe noch offen*. Die Listenkarte zeigt den Rahmen als Chip und den Callout unter dem Text.
 
@@ -391,7 +393,7 @@ Pro Notiz kannst du die Form auch im Bearbeiten-Dialog wählen oder per Dienst s
 | `show_grid` | `true` | Punktraster |
 | `show_controls` | `true` | Zoom und Zentrieren |
 | `show_add_btn` | `true` | „+ Idee“ |
-| `show_export_btn` | `true` | 🖼️ Als Bild speichern |
+| `show_export_btn` | `true` | 🖼️ Als Bild oder Gliederung speichern, Gliederung einfügen |
 | `show_filter` | `true` | 🔍 Suchen und filtern |
 | `show_fullscreen_btn` | `true` | ⛶ Vollbild |
 | `show_color_toggle` | `true` | 🎨/🌈 |
@@ -420,6 +422,7 @@ Alle Parameter stehen in der [README](../README_de.md#️-dienste-services) und 
 | `brainstorm.export_markdown` / `export_json` / `import_json` | Sichern und Übertragen |
 | `brainstorm.bring_message` | Nachricht an Bring! |
 | `brainstorm.reorder_ideas` | Reihenfolge setzen |
+| `brainstorm.import_outline` | Gliederung anlegen: `text: …`, `category: …` oder `parent_id: …`, `format: auto` |
 | `brainstorm.sort_children` | Unterpunkte sortieren: `parent_id: …`, `by: text`, `priority`, `due` oder `created` |
 | `brainstorm.share` | Liste mit Personen teilen |
 

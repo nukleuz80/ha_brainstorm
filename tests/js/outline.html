@@ -1,0 +1,30 @@
+<!doctype html>
+<!-- Browser test for the outline exports. Run: python3 -m http.server in the repo root,
+     open http://localhost:8000/tests/js/outline.html, it shows PASS or the failures. --><meta charset="utf-8"><body><pre id="out">running</pre>
+<script type="module">
+import { outlineFreemind, outlineMarkdown, outlineOpml } from "../../custom_components/brainstorm/cards/brainstorm-i18n.js";
+const ideas = [
+  { id: "a", text: "Dach & Rinne" },
+  { id: "b", text: "Ziegel <rot>", parent_id: "a", description: "Angebot \"B\"\nabwarten" },
+  { id: "c", text: "Löten", parent_id: "b" },
+  { id: "d", text: "Keller" },
+  { id: "e", text: "Waise", parent_id: "fehlt" },
+];
+const fails = [];
+const check = (name, got, want) => { if (JSON.stringify(got) !== JSON.stringify(want)) fails.push(`${name}: want ${JSON.stringify(want)}, got ${JSON.stringify(got)}`); };
+check("markdown", outlineMarkdown(ideas, "Haus"), "# Haus\n\n- Dach & Rinne\n  - Ziegel <rot>\n    > Angebot \"B\" abwarten\n    - Löten\n- Keller\n- Waise\n");
+const opml = new DOMParser().parseFromString(outlineOpml(ideas, "Haus"), "text/xml");
+check("opml parses", opml.querySelector("parsererror"), null);
+check("opml title", opml.querySelector("head > title").textContent, "Haus");
+check("opml tree", [...opml.querySelectorAll("body outline")].map((o) => [o.getAttribute("text"), o.parentNode.getAttribute("text")]), [["Dach & Rinne", null], ["Ziegel <rot>", "Dach & Rinne"], ["Löten", "Ziegel <rot>"], ["Keller", null], ["Waise", null]]);
+check("opml note keeps the line break", opml.querySelectorAll("outline")[1].getAttribute("_note"), "Angebot \"B\"\nabwarten");
+const mm = new DOMParser().parseFromString(outlineFreemind(ideas, "Haus"), "text/xml");
+check("freemind parses", mm.querySelector("parsererror"), null);
+check("freemind root", mm.querySelector("map > node").getAttribute("TEXT"), "Haus");
+check("freemind tree", [...mm.querySelectorAll("node node")].map((n) => [n.getAttribute("TEXT"), n.parentNode.getAttribute("TEXT")]), [["Dach & Rinne", "Haus"], ["Ziegel <rot>", "Dach & Rinne"], ["Löten", "Ziegel <rot>"], ["Keller", "Haus"], ["Waise", "Haus"]]);
+check("freemind note", mm.querySelector('richcontent[TYPE="NOTE"]').textContent.includes("Angebot"), true);
+check("empty", outlineMarkdown([], "Leer"), "# Leer\n\n");
+const loop = [{ id: "x", text: "X", parent_id: "y" }, { id: "y", text: "Y", parent_id: "x" }];
+check("cycle is skipped, no hang", outlineMarkdown(loop, "L"), "# L\n\n");
+document.getElementById("out").textContent = fails.length ? "FAIL\n" + fails.join("\n") : "PASS";
+</script>

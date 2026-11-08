@@ -270,6 +270,7 @@ JSON_EXPORT_VERSION = 1
 
 SERVICE_REORDER_IDEAS = "reorder_ideas"
 SERVICE_SORT_CHILDREN = "sort_children"
+SERVICE_IMPORT_OUTLINE = "import_outline"
 SERVICE_DELETE_DONE = "delete_done"
 SERVICE_SET_CATEGORY_STYLE = "set_category_style"
 ATTR_ICON = "icon"

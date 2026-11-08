@@ -96,8 +96,6 @@ const DICTIONARIES = {
     "↶ Rückgängig": "↶ Undone",
     "Rückgängig ging nicht": "Could not undo",
     "Rückgängig (Strg+Z)": "Undo (Ctrl+Z)",
-    "Map als Bild speichern": "Save the map as a picture",
-    "🖼️ Map als Bild speichern": "🖼️ Save the map as a picture",
     "Gespeichert wird, was gerade auf der Map steht, ohne eingeklappte Zweige.": "The picture shows what is on the map right now, without folded branches.",
     "SVG (Vektor)": "SVG (vector)",
     "PNG (Bild)": "PNG (image)",
@@ -407,6 +405,24 @@ const DICTIONARIES = {
     "Älteste zuerst": "Oldest first",
     "↕ Hauptnotizen sortieren": "↕ Sort the main notes",
     "↕ Unterpunkte von „{text}“ sortieren": "↕ Sort the subtasks of “{text}”",
+    "Alle Notizen dieser Map, auch eingeklappte, für andere Mindmap- und Gliederungsprogramme.": "All notes of this map, folded ones too, for other mind map and outline apps.",
+    "Als Bild:": "As a picture:",
+    "Als Gliederung:": "As an outline:",
+    "Datei wählen": "Choose a file",
+    "Die Datei ist zu groß (höchstens 200 KB).": "The file is too big (200 KB at most).",
+    "Eine Zeile pro Notiz, Unterpunkte eingerückt oder als Markdown-Liste. Oder eine Datei wählen.": "One line per note, subtasks indented or as a Markdown list. Or choose a file.",
+    "Einfügen": "Insert",
+    "Einfügen hat nicht geklappt.": "Inserting did not work.",
+    "FreeMind (.mm)": "FreeMind (.mm)",
+    "Gliederung einfügen:": "Insert an outline:",
+    "Landet als Hauptnotizen in „{category}“.": "Goes in as main notes of “{category}”.",
+    "Landet in der Standardkategorie.": "Goes into the default category.",
+    "Landet unter „{text}“.": "Goes below “{text}”.",
+    "Map speichern oder Gliederung einfügen": "Save the map or insert an outline",
+    "Markdown": "Markdown",
+    "OPML": "OPML",
+    "{count} Notizen eingefügt.": "{count} notes inserted.",
+    "🖼️ Map speichern und einfügen": "🖼️ Save and insert",
   },
 };
 
@@ -790,6 +806,83 @@ export function numberLabels(ideas) {
   };
   walk(null, null, "");
   return labels;
+}
+
+// The notes as a tree in list order; notes whose parent is not in the list are roots
+function outlineTree(ideas) {
+  const list = ideas || [];
+  const ids = new Set(list.map((i) => i.id));
+  const byParent = new Map();
+  list.forEach((idea) => {
+    const parent = idea.parent_id && ids.has(idea.parent_id) && idea.parent_id !== idea.id ? idea.parent_id : null;
+    if (!byParent.has(parent)) byParent.set(parent, []);
+    byParent.get(parent).push(idea);
+  });
+  const seen = new Set();
+  const build = (parentId) =>
+    (byParent.get(parentId) || [])
+      .filter((idea) => !seen.has(idea.id) && seen.add(idea.id))
+      .map((idea) => ({ idea, children: build(idea.id) }));
+  return build(null);
+}
+
+const oneLine = (text) => String(text || "").replace(/\s+/g, " ").trim();
+const xmlText = (text) =>
+  String(text || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/\r?\n/g, "&#10;");
+
+/** The notes as a Markdown outline: the title as heading, the notes as a nested list. */
+export function outlineMarkdown(ideas, title) {
+  const lines = [`# ${oneLine(title)}`, ""];
+  const walk = (nodes, depth) =>
+    nodes.forEach(({ idea, children }) => {
+      const pad = "  ".repeat(depth);
+      lines.push(`${pad}- ${oneLine(idea.text)}`);
+      if (idea.description) lines.push(`${pad}  > ${oneLine(idea.description)}`);
+      walk(children, depth + 1);
+    });
+  walk(outlineTree(ideas), 0);
+  return `${lines.join("\n")}\n`;
+}
+
+/** The notes as OPML 2.0, for outliners such as Workflowy, OmniOutliner or Logseq. */
+export function outlineOpml(ideas, title) {
+  const walk = (nodes, depth) =>
+    nodes
+      .map(({ idea, children }) => {
+        const pad = "  ".repeat(depth + 2);
+        const note = idea.description ? ` _note="${xmlText(idea.description)}"` : "";
+        const attrs = `text="${xmlText(oneLine(idea.text))}"${note}`;
+        return children.length
+          ? `${pad}<outline ${attrs}>\n${walk(children, depth + 1)}\n${pad}</outline>`
+          : `${pad}<outline ${attrs}/>`;
+      })
+      .join("\n");
+  const body = walk(outlineTree(ideas), 0);
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<opml version="2.0">\n  <head><title>${xmlText(oneLine(title))}</title></head>\n  <body>\n${body}\n  </body>\n</opml>\n`;
+}
+
+/** The notes as a FreeMind map (.mm), which Freeplane, XMind and MindManager open. */
+export function outlineFreemind(ideas, title) {
+  const walk = (nodes, depth) =>
+    nodes
+      .map(({ idea, children }) => {
+        const pad = "  ".repeat(depth + 1);
+        const note = idea.description
+          ? `\n${pad}  <richcontent TYPE="NOTE"><html><head/><body><p>${xmlText(idea.description)}</p></body></html></richcontent>`
+          : "";
+        const inner = `${note}${children.length ? `\n${walk(children, depth + 1)}` : ""}`;
+        return inner
+          ? `${pad}<node TEXT="${xmlText(oneLine(idea.text))}">${inner}\n${pad}</node>`
+          : `${pad}<node TEXT="${xmlText(oneLine(idea.text))}"/>`;
+      })
+      .join("\n");
+  const body = walk(outlineTree(ideas), 1);
+  return `<map version="1.0.1">\n  <node TEXT="${xmlText(oneLine(title))}">\n${body}\n  </node>\n</map>\n`;
 }
 
 /** Return the label of a numbering style for chips and menus. */

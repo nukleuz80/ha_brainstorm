@@ -605,6 +605,14 @@
         "due": "Due date (earliest first)",
         "created": "Created (oldest first)"
       }
+    },
+    "outline_format": {
+      "options": {
+        "auto": "Automatic",
+        "markdown": "Markdown or indented text",
+        "opml": "OPML",
+        "freemind": "FreeMind / Freeplane (.mm)"
+      }
     }
   },
   "entity": {
@@ -640,6 +648,12 @@
     },
     "sort_needs_key": {
       "message": "Say what to sort by, or give a fixed order."
+    },
+    "outline_unreadable": {
+      "message": "The outline cannot be read ({error})."
+    },
+    "outline_empty": {
+      "message": "The outline has no notes."
     },
     "sharing_needs_privacy": {
       "message": "Sharing is only available with privacy switched on."
@@ -1065,6 +1079,28 @@
         "idea_ids": {
           "name": "IDea IDs",
           "description": "Ordered list of idea IDs."
+        }
+      }
+    },
+    "import_outline": {
+      "name": "Import outline",
+      "description": "Adds a tree of notes from a Markdown outline, indented text, OPML or a FreeMind/Freeplane map (.mm). At most 300 notes.",
+      "fields": {
+        "text": {
+          "name": "Outline",
+          "description": "The content of the file or the pasted text."
+        },
+        "format": {
+          "name": "Format",
+          "description": "Auto tells XML files apart by their root element, everything else is read as Markdown."
+        },
+        "category": {
+          "name": "Category",
+          "description": "Where the notes go. Without one, the default category."
+        },
+        "parent_id": {
+          "name": "Parent ID",
+          "description": "Puts the outline below this note, in its category."
         }
       }
     },

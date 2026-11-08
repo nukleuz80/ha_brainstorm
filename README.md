@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.8.3-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.8.4-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -106,6 +106,7 @@ Brainstorm Hub turns every **Amazon Echo** device in your home into an instant, 
   - **Focus and levels (v1.8.2):** 🎯 on a note with subtasks, or **F4**, shows only that branch with the note in the middle; a breadcrumb above the map leads back, **Shift+F4** or **Esc** go up one step. ∞ at the bottom right, or the keys **1–9**, fold the map down to that many levels, **0** shows all again.
   - **Links, frames and callouts (v1.8.2):** 🔗 on a note, or **L**, and then a tap on another note draws a dashed arrow between them, also across branches. A tap on the line gives it a label or marks it as *blocking*: the target turns grey with ⛔ *Waiting* until the first note is done. Pick some notes and tap ▢ *Frame* to draw a named frame around them. A *callout* is a short remark in a speech bubble above the note. Both are set in the edit dialog too, and the list card shows them as well.
   - **Numbering and sorting (v1.8.3):** in ✏️ Edit of a note with subtasks, *Number the subtasks* puts 1., 1.1 … or a), b) or I., II. in front of them, in both cards. *Sort the subtasks* orders them by title, priority, due date or age right away; **S** on the map opens the same choice, without a selection for the main notes. ↶ undoes it.
+  - **Outline export and import (v1.8.4):** 🖼️ also saves the map as a Markdown outline, OPML or FreeMind `.mm` (opens in Freeplane, XMind, MindManager). *Insert an outline* turns pasted lists or a file (`.md`, `.txt`, `.opml`, `.mm`) into a branch of notes, below the focused note if there is one.
   - **Templates and picture export:** Four templates (Standard, Clean, Sketch, Neon) set shape, lines and colors. Ten shapes are available, from card, cloud, speech and thought bubble to ellipse, hexagon, note slip and underlined text, for the whole map or per note. 🖼️ at the top right saves the map as SVG or PNG.
 - 🎴 **Quick Capture Card (`custom:brainstorm-card`):**
   - Two-tiered sleek design with quick-input bar, priority selector, category pills, and full edit/delete modal dialogs.
@@ -875,6 +876,17 @@ Saves the custom order of the ideas.
 | :--- | :--- | :--- |
 | `idea_ids` | Yes | Ordered list of idea IDs. |
 
+### `brainstorm.import_outline`
+
+Adds a tree of notes from a Markdown outline, indented text, OPML or a FreeMind/Freeplane map (`.mm`), at most 300 notes. Returns `added` and the new `ids`.
+
+| Field | Required | Meaning |
+| :--- | :--- | :--- |
+| `text` | Yes | The outline: headings, `-`/`*`/`1.` lists or indented lines; `- [x]` adds an item as done, a `>` line below an item is its description. Or the content of an OPML or `.mm` file. |
+| `format` | No | `auto` (default), `markdown`, `opml` or `freemind`. |
+| `category` | No | Where the notes go; without it, the default category. |
+| `parent_id` | No | Puts the outline below this note, in its category. |
+
 ### `brainstorm.sort_children`
 
 Sorts the subtasks of a note, or the main notes of a category, within the places they already take. Other notes keep their place.
@@ -963,6 +975,7 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.8.4`** | 2026-11-08 | **Outline export and import:** the 🖼️ dialog of the mind map saves all notes of the map (or of the focused branch) as Markdown, OPML or FreeMind `.mm`, and inserts an outline typed, pasted or read from a file. New service `brainstorm.import_outline` reads Markdown headings, lists and indented text (`- [x]` as done, `>` lines as description), OPML (`_note`, `_complete`) and FreeMind/Freeplane maps with notes; up to 300 notes in one save, in their order, at the top of the list. XML with a DOCTYPE or entities is refused. ↶ removes an insert again. |
 | **`v1.8.3`** | 2026-11-08 | **Numbering and sorting:** a note can number its subtasks and all below them (`numbering`: decimal 1., 1.1, alpha a), roman I.), shown in both cards and kept when they move. New service `brainstorm.sort_children` sorts the subtasks of a note, or the main notes of a category, by title, priority, due date or creation time, only among their own places; `ids` gives a fixed order, which the cards use for undo. In the mind map: the edit dialog and the **S** key. |
 | **`v1.8.2`** | 2026-11-08 | **Focus and levels:** 🎯 or **F4** shows one branch alone with a breadcrumb back, **Shift+F4**/**Esc** go up; ∞ or the keys **1–9** fold the map to that many levels, **0** shows all. **Links:** 🔗 or **L** draws a curved, dashed arrow to any other note, with an optional label; a *blocking* link greys out its target with ⛔ *Waiting* until the first note is done (`blocked_by` in the overview). **Frames:** pick notes and tap ▢ to draw a named frame around them. **Callouts:** a short remark in a speech bubble above the note. New fields `links`, `frame` and `callout` in `brainstorm.update_idea`, kept by the JSON import and export; frames and links are in the image export too. |
 | **`v1.8.1`** | 2026-11-08 | **Markers and progress:** ten markers (❓ question, 💡 idea, ⚠️ warning, 💰 money, ⭐ star, 🚩 flag, ✅ check, ⛔ blocked, ⏳ waiting, ❤️ heart) show on the note in both cards. Set them in the edit dialog or with `markers` in `brainstorm.update_idea`; the search bar of the mind map filters by them, and so does a tap on a marker. **Progress:** notes with subtasks show a ring with *done/total* that fills like in MindManager (done = 100 %, a subtask with subtasks counts their mean). Without subtasks the progress goes in quarters, by tapping the ring, in the dialog or with `progress`. Markers and progress are in the image export and the JSON export too. |

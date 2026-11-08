@@ -229,7 +229,7 @@ With **Smart Text Optimization** (General Settings) spoken notes are tidied up a
 | Zoom | mouse wheel or two fingers |
 | Pan | drag the empty area |
 | Fold/unfold a branch | button on the branch, or **→** on a folded note |
-| Save as image | 🖼️ |
+| Save as image or outline, insert an outline | 🖼️ |
 | Full screen | ⛶ |
 | Search and filter | 🔍, or **/** or **Ctrl+F** on the map |
 | Filter by a tag | tap a #tag in a note |
@@ -257,6 +257,8 @@ With **Smart Text Optimization** (General Settings) spoken notes are tidied up a
 **Links:** the lines of the map show what belongs where. A link joins any two notes, also from different branches, with a curved, dashed arrow. 🔗 on the note (or **L**) starts it, a tap on the target ends it, **Esc** cancels. A tap on the line opens a dialog for a label such as *needs* or *see also*. Tick *blocks* and the link turns red: the target note turns grey and shows ⛔ *Waiting* until the first note is done. The badge shows in the list card too.
 
 **Numbering and sorting:** in the edit dialog of a note with subtasks, *Number the subtasks* numbers everything below it, as in MindManager: 1., 1.1, 1.2 … or a), b) or I., II. A subtask can pick a style of its own, which then applies to its branch. The numbers show in front of the text in both cards and follow along when notes are added or moved. *Sort the subtasks* orders them right away by title (A → Z or Z → A), priority, due date or age. All other notes keep their place, and ↶ undoes it. On the map, **S** opens the same choice, without a selected note for the main notes of the category. If notes were moved by hand, 🪄 arranges the map to match afterwards.
+
+**Export and import:** 🖼️ saves the map as a picture (SVG, PNG) or as an outline: **Markdown** (a nested list, descriptions as a `>` line), **OPML** (for outliners such as Workflowy, OmniOutliner or Logseq) and **FreeMind** (`.mm`, opens in Freeplane, XMind and MindManager). The outline holds all notes of the map, folded ones too; in focus only the branch. Under *Insert an outline* you type or paste a list, one line per note, subtasks indented or with `-`, `*`, `1.` and `#` headings. Or you choose a file (`.md`, `.txt`, `.opml`, `.mm`). `- [x]` adds the item as done. The notes go in as main notes of the category, in focus below the focused note. At most 300 notes at once, and ↶ takes them all out again. Automations can use the service `brainstorm.import_outline`.
 
 **Frames and callouts:** a frame is a dashed, named rectangle around several notes, such as *Phase 1* or *Ground floor*. Notes with the same frame name share one frame. A callout is a short remark in a speech bubble above the note, for things like *colour still open*. The list card shows the frame as a chip and the callout below the text.
 
@@ -390,7 +392,7 @@ A single note can get its own shape in the edit dialog or through a service (`no
 | `show_grid` | `true` | dot grid |
 | `show_controls` | `true` | zoom and center |
 | `show_add_btn` | `true` | "+ Idea" |
-| `show_export_btn` | `true` | 🖼️ save as image |
+| `show_export_btn` | `true` | 🖼️ save as image or outline, insert an outline |
 | `show_filter` | `true` | 🔍 search and filter |
 | `show_fullscreen_btn` | `true` | ⛶ full screen |
 | `show_color_toggle` | `true` | 🎨/🌈 |
@@ -419,6 +421,7 @@ All parameters are in the [README](../README.md#️-services) and under **Develo
 | `brainstorm.export_markdown` / `export_json` / `import_json` | back up and transfer |
 | `brainstorm.bring_message` | message to Bring! |
 | `brainstorm.reorder_ideas` | set the order |
+| `brainstorm.import_outline` | add an outline: `text: …`, `category: …` or `parent_id: …`, `format: auto` |
 | `brainstorm.sort_children` | sort subtasks: `parent_id: …`, `by: text`, `priority`, `due` or `created` |
 | `brainstorm.share` | share a list with people |
 

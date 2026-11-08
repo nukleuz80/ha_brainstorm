@@ -1834,6 +1834,83 @@ class BrainstormStore:
             return pack.msg("overview_empty")
         return pack.msg("overview", total=total, parts=", ".join(parts))
 
+    async def async_import_outline(
+        self,
+        nodes: list[Any],
+        category: str | None,
+        parent_id: str | None = None,
+        context: Context | None = None,
+    ) -> list[dict[str, Any]]:
+        """Add a tree of notes from an outline in one go, in its order.
+
+        Each node has text, depth, description and done; a node hangs below
+        the last node before it with a smaller depth, depth 0 below parent_id.
+        """
+        if not nodes:
+            return []
+        parent = self._ideas.get(parent_id) if parent_id else None
+        resolved_cat = (
+            parent.get(ATTR_CATEGORY)
+            if parent
+            else (category or "").strip() or self._fallback_category
+        )
+        if resolved_cat not in self._categories:
+            self._categories.append(resolved_cat)
+        author = context.user_id if context else None
+        ordered_vals = [
+            i.get(ATTR_ORDER) for i in self._ideas.values() if i.get(ATTR_ORDER) is not None
+        ]
+        start = (min(ordered_vals) if ordered_vals else 0) - len(nodes)
+        now_iso = dt_util.now().isoformat()
+        added: list[dict[str, Any]] = []
+        chain: list[dict[str, Any]] = []
+        for index, node in enumerate(nodes):
+            del chain[node.depth :]
+            above = chain[-1] if chain else parent
+            idea: dict[str, Any] = {
+                ATTR_ID: uuid.uuid4().hex[:8],
+                ATTR_TEXT: node.text,
+                ATTR_CATEGORY: resolved_cat,
+                ATTR_PRIORITY: DEFAULT_PRIORITY,
+                ATTR_PARENT_ID: above[ATTR_ID] if above else None,
+                ATTR_ORDER: start + index,
+                ATTR_SOURCE: "import",
+                ATTR_DEVICE: None,
+                ATTR_TAGS: [],
+                ATTR_STATUS: "completed" if node.done else "active",
+                ATTR_CREATED_AT: now_iso,
+                ATTR_UPDATED_AT: now_iso,
+                ATTR_DUE: None,
+                ATTR_ASSIGNEE: None,
+                ATTR_TRIGGER: None,
+                ATTR_OWNER: self.owner_for_new_idea(author, resolved_cat, above),
+                ATTR_SHARES: {},
+            }
+            if node.done:
+                idea[ATTR_COMPLETED_AT] = now_iso
+            if node.description:
+                idea[ATTR_DESCRIPTION] = node.description
+            if author and idea[ATTR_OWNER] != author:
+                idea[ATTR_CREATED_BY] = author
+            self._ideas[idea[ATTR_ID]] = idea
+            chain.append(idea)
+            added.append(idea)
+        await self.async_save()
+        act_context = context or Context()
+        for idea in added:
+            self.hass.bus.async_fire(
+                EVENT_IDEA_ADDED,
+                {**idea, "entity_id": OVERVIEW_ENTITY_ID},
+                context=act_context,
+            )
+        self._notify_listeners(context=act_context)
+        _LOGGER.info(
+            "Brainstorm imported %d notes from an outline into '%s'",
+            len(added),
+            resolved_cat,
+        )
+        return added
+
     def children_of(
         self, parent_id: str | None, category: str | None = None
     ) -> list[dict[str, Any]]:

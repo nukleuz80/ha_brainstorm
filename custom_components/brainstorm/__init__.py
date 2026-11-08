@@ -68,12 +68,14 @@ from .const import (
     PROGRESS_STEPS,
     SERVICE_REORDER_IDEAS,
     SERVICE_SORT_CHILDREN,
+    SERVICE_IMPORT_OUTLINE,
     SERVICE_DELETE_DONE,
     SERVICE_SET_CATEGORY_STYLE,
     SHARE_EDIT,
     SHARE_VIEW,
     VOICE_MODE_NATIVE,
 )
+from .outline import OUTLINE_FORMATS, OutlineError, parse_outline
 from .echo_locks import EchoLockManager
 from .frontend import async_register_frontend
 from .llm import async_register_llm_api
@@ -229,6 +231,15 @@ SERVICE_SORT_CHILDREN_SCHEMA = vol.Schema(
         vol.Optional("by"): vol.In(SORT_KEYS),
         vol.Optional("ids"): vol.All(cv.ensure_list, [cv.string]),
         vol.Optional("reverse", default=False): cv.boolean,
+    }
+)
+
+SERVICE_IMPORT_OUTLINE_SCHEMA = vol.Schema(
+    {
+        vol.Required("text"): cv.string,
+        vol.Optional("format", default="auto"): vol.In(OUTLINE_FORMATS),
+        vol.Optional(ATTR_CATEGORY): cv.string,
+        vol.Optional(ATTR_PARENT_ID): cv.string,
     }
 )
 
@@ -618,6 +629,39 @@ def _register_services(hass: HomeAssistant) -> None:
         )
         return {"success": True, "sorted": count}
 
+    async def handle_import_outline(call: ServiceCall) -> dict[str, Any]:
+        """Add a tree of notes from Markdown, indented text, OPML or FreeMind."""
+        store = _require_store(hass)
+        parent_id = call.data.get(ATTR_PARENT_ID)
+        if parent_id:
+            if store.get_idea(parent_id) is None:
+                raise ServiceValidationError(
+                    translation_domain=DOMAIN,
+                    translation_key="idea_not_found",
+                    translation_placeholders={"id": parent_id},
+                )
+            _check_idea_edit(store, parent_id, call)
+        try:
+            nodes = parse_outline(call.data["text"], call.data["format"])
+        except OutlineError as err:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="outline_unreadable",
+                translation_placeholders={"error": str(err)},
+            ) from err
+        if not nodes:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="outline_empty"
+            )
+        added = await store.async_import_outline(
+            nodes, call.data.get(ATTR_CATEGORY), parent_id, call.context
+        )
+        return {
+            "success": True,
+            "added": len(added),
+            "ids": [idea[ATTR_ID] for idea in added],
+        }
+
     async def handle_delete_idea(call: ServiceCall) -> dict[str, Any]:
         """Handle deleting an idea."""
         store = _require_store(hass)
@@ -960,6 +1004,14 @@ def _register_services(hass: HomeAssistant) -> None:
         SERVICE_SORT_CHILDREN,
         handle_sort_children,
         schema=SERVICE_SORT_CHILDREN_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_IMPORT_OUTLINE,
+        handle_import_outline,
+        schema=SERVICE_IMPORT_OUTLINE_SCHEMA,
         supports_response=SupportsResponse.OPTIONAL,
     )
 
