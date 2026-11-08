@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.8.2-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.8.3-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -129,6 +129,7 @@ Brainstorm Hub verwandelt alle deine **Amazon Echo**-Geräte im Haus in sekunden
     - **Marker und Fortschritt (v1.8.1):** ❓ 💡 ⚠️ 💰 ⭐ 🚩 ✅ ⛔ ⏳ ❤️ als kleine Zeichen an einer Notiz, in beiden Karten, wählbar im Bearbeiten-Dialog und filterbar in der Suchleiste. Notizen mit Unteraufgaben zeigen einen Ring mit *3/5*, der sich wie bei MindManager aus den Unteraufgaben füllt; ohne Unteraufgaben schaltet ein Tipp auf den Ring in Viertelschritten weiter.
     - **Fokus und Ebenen (v1.8.2):** 🎯 an einer Notiz mit Unteraufgaben, oder **F4**, zeigt nur diesen Zweig mit der Notiz in der Mitte; eine Brotkrumenleiste über der Map führt zurück, **Umschalt+F4** oder **Esc** gehen eine Stufe hoch. ∞ unten rechts, oder die Tasten **1–9**, klappen die Map bis zu so vielen Ebenen ein, **0** zeigt wieder alle.
     - **Querverbindungen, Rahmen und Callouts (v1.8.2):** 🔗 an einer Notiz, oder **L**, und dann ein Tipp auf eine andere Notiz zieht einen gestrichelten Pfeil zwischen beiden, auch über Zweige hinweg. Ein Tipp auf die Linie gibt ihr eine Beschriftung oder macht sie *blockierend*: Das Ziel wird grau mit ⛔ *Wartet*, bis die erste Notiz erledigt ist. Mehrere Notizen auswählen und ▢ *Rahmen* tippen legt einen benannten Rahmen um sie. Ein *Callout* ist eine kurze Anmerkung in einer Sprechblase über der Notiz. Beides geht auch im Bearbeiten-Dialog, und die Listenkarte zeigt es ebenfalls.
+    - **Nummerierung und Sortieren (v1.8.3):** Im ✏️ Bearbeiten-Dialog einer Notiz mit Unteraufgaben setzt *Unterpunkte nummerieren* 1., 1.1 … oder a), b) oder I., II. davor, in beiden Karten. *Unterpunkte sortieren* ordnet sie sofort nach Titel, Priorität, Fälligkeit oder Alter; **S** auf der Map öffnet dieselbe Auswahl, ohne Auswahl für die Hauptnotizen. ↶ macht es rückgängig.
     - **Vorlagen und Bild-Export:** Vier Vorlagen (Standard, Klar, Skizze, Neon) bestimmen Form, Linien und Farben. Zehn Formen stehen bereit, von Karte, Wolke, Sprech- und Gedankenblase bis Ellipse, Sechseck, Notizzettel und unterstrichenem Text, für die ganze Map oder pro Notiz. 🖼️ oben rechts speichert die Map als SVG oder PNG.
     - Stufenloser Zoom & Pan per Mausrad, Pinch-Geste oder Steuerungsbuttons.
     - **Vollbild-Modus (`⛶`):** Per Knopfdruck oder Dashboard-Einbindung als beeindruckendes Vollbild-Erlebnis (ESC zum Schließen).
@@ -807,6 +808,7 @@ Aktualisiert Text, Kategorie oder Status einer bestehenden Idee.
 | `links` | Nein | Querverbindungen zu anderen Notizen als Liste von `{to: <id>, label: <Text, bis 40>, blocks: true/false}`, höchstens 20. `blocks: true` lässt das Ziel warten, bis diese Notiz erledigt ist. Ersetzt die bisherigen, eine leere Liste oder `null` entfernt sie. |
 | `frame` | Nein | Name eines Rahmens in der Mindmap, bis 40 Zeichen. Notizen mit demselben Namen teilen sich einen Rahmen. Leer oder `null` entfernt ihn. |
 | `callout` | Nein | Kurze Anmerkung in einer Sprechblase über der Notiz, bis 200 Zeichen. Leer oder `null` entfernt sie. |
+| `numbering` | Nein | Nummeriert die Unteraufgaben der Notiz und deren Unteraufgaben: `decimal` (1., 1.1), `alpha` (a), b)) oder `roman` (I., II.). Leer oder `null` entfernt sie. |
 
 ### `brainstorm.delete_idea`
 
@@ -932,6 +934,18 @@ Aktualisiert die benutzerdefinierte Sortierreihenfolge der Notizen anhand einer 
 | :--- | :--- | :--- |
 | `idea_ids` | Ja | Geordnete Liste der Notiz-IDs. |
 
+### `brainstorm.sort_children`
+
+Sortiert die Unteraufgaben einer Notiz oder die Hauptnotizen einer Kategorie innerhalb der Plätze, die sie schon haben. Andere Notizen bleiben, wo sie sind.
+
+| Feld | Pflicht | Bedeutung |
+| :--- | :--- | :--- |
+| `parent_id` | Nein | Die Notiz, deren Unteraufgaben sortiert werden. |
+| `category` | Nein | Ohne `parent_id`: die Kategorie, deren Hauptnotizen sortiert werden. |
+| `by` | Nein | `text` (A–Z), `priority` (dringend zuerst), `due` (früheste zuerst, Notizen ohne Datum am Ende) oder `created` (älteste zuerst). |
+| `ids` | Nein | Statt `by`: die Unteraufgaben in fester Reihenfolge, etwa um ein Sortieren rückgängig zu machen. |
+| `reverse` | Nein | Sortiert andersherum. |
+
 ### `brainstorm.share`
 
 Gibt mehrere Einträge oder eine ganze Kategorie für Personen frei. Braucht eingeschaltete Privatsphäre.
@@ -1008,6 +1022,7 @@ Weitere Beispiele für Assist und Alexa liegen im Ordner [`examples/`](examples/
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.8.3`** | 08.11.2026 | **Nummerierung und Sortieren:** Eine Notiz kann ihre Unteraufgaben und alle darunter nummerieren (`numbering`: decimal 1., 1.1, alpha a), roman I.), sichtbar in beiden Karten. Neuer Dienst `brainstorm.sort_children` sortiert die Unteraufgaben einer Notiz oder die Hauptnotizen einer Kategorie nach Titel, Priorität, Fälligkeit oder Erstellzeit, nur innerhalb ihrer eigenen Plätze; `ids` gibt eine feste Reihenfolge vor, die die Karten fürs Rückgängigmachen nutzen. In der Mindmap: Bearbeiten-Dialog und Taste **S**. |
 | **`v1.8.2`** | 08.11.2026 | **Fokus und Ebenen:** 🎯 oder **F4** zeigt einen Zweig allein mit Brotkrumen zurück, **Umschalt+F4**/**Esc** gehen hoch; ∞ oder die Tasten **1–9** klappen die Map bis zu so vielen Ebenen ein, **0** zeigt alle. **Querverbindungen:** 🔗 oder **L** zieht einen gebogenen, gestrichelten Pfeil zu einer beliebigen anderen Notiz, auf Wunsch beschriftet; eine *blockierende* Verbindung graut ihr Ziel mit ⛔ *Wartet* aus, bis die erste Notiz erledigt ist (`blocked_by` in der Übersicht). **Rahmen:** Notizen auswählen und ▢ tippen legt einen benannten Rahmen um sie. **Callouts:** eine kurze Anmerkung in einer Sprechblase über der Notiz. Neue Felder `links`, `frame` und `callout` bei `brainstorm.update_idea`, JSON-Import und -Export behalten sie; Rahmen und Verbindungen stehen auch im Bild-Export. |
 | **`v1.8.1`** | 08.11.2026 | **Marker und Fortschritt:** Zehn Marker (❓ Frage, 💡 Idee, ⚠️ Achtung, 💰 Geld, ⭐ Stern, 🚩 Flagge, ✅ Haken, ⛔ Blockiert, ⏳ Wartet, ❤️ Herz) erscheinen in beiden Karten an der Notiz. Gesetzt werden sie im Bearbeiten-Dialog oder mit `markers` bei `brainstorm.update_idea`; die Suchleiste der Mindmap filtert nach ihnen, ein Tipp auf einen Marker auch. **Fortschritt:** Notizen mit Unteraufgaben zeigen einen Ring mit *erledigt/gesamt*, der sich wie bei MindManager füllt (erledigt = 100 %, eine Unteraufgabe mit Unteraufgaben zählt deren Durchschnitt). Ohne Unteraufgaben gibt es den Fortschritt in Viertelschritten, per Tipp auf den Ring, im Dialog oder mit `progress`. Marker und Fortschritt stehen auch im Bild-Export und im JSON-Export. |
 | **`v1.8.0`** | 08.11.2026 | **Suchen, Filtern und Tags in der Mindmap:** 🔍 (oder **/**, **Strg+F**) öffnet eine Leiste über der Map. Wörter, Prioritäten, *Überfällig*, *7 Tage*, *In Arbeit* und Tags grenzen sie ein; Treffer bleiben hell, ihre übergeordneten Punkte halb, der Rest tritt zurück, und **Enter** geht von Treffer zu Treffer und klappt den Zweig auf. **Tags:** `#wort` in Titel oder Beschreibung erscheint in beiden Karten als Chip, ein Tipp filtert die Map. Gesprochen wird *„Hashtag Garten“* zu `#garten` am Ende der Notiz, ohne den Satz zu zerreißen. Tags brauchen einen Buchstaben, `#1` und Farben wie `#ff7800` sind also keine, und Tags werden klein gespeichert. Tags aus `tags:` erreichen jetzt auch die Karten. Neue Kartenoption `show_filter`. |

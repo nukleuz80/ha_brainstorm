@@ -1,9 +1,9 @@
-import { MARKERS, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.2";
+import { MARKERS, alexaEchos, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.3";
 
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.8.2 - Links, Frames and Callouts
+ * Version 1.8.3 - Numbering and Sorting
  */
 // The bulb lies next to this file, wherever Home Assistant serves it from
 const BULB_URL = new URL("./brainstorm-bulb.svg", import.meta.url).href;
@@ -3502,6 +3502,11 @@ class BrainstormCard extends HTMLElement {
           white-space: pre-line;
           word-break: break-word;
         }
+        .idea-number {
+          font-weight: 700;
+          color: var(--primary-color, #03a9f4);
+          font-variant-numeric: tabular-nums;
+        }
         .idea-callout {
           display: inline-block;
           margin-top: 3px;
@@ -4674,6 +4679,7 @@ class BrainstormCard extends HTMLElement {
         this._aiSubtasks = aiSubtasks;
 
         this._ideasById = Object.fromEntries(orderedIdeas.map((item) => [item.id, item]));
+        const numbers = isCompletedView ? new Map() : numberLabels(activeIdeas);
         ideasList.innerHTML = orderedIdeas
           .map((item, idx) => {
             const isSub = item.isSubtask === true;
@@ -4692,7 +4698,7 @@ class BrainstormCard extends HTMLElement {
               >${isCompletedView ? "✓" : ""}</button>
               <div class="idea-content">
                 <div class="idea-text" title="${itemEdit ? t("Klicken zum Bearbeiten (Lange drücken für Kontextmenü)") : ""}" data-id="${item.id}" style="${itemEdit ? "" : "cursor: default;"}">
-                  ${isSub ? `<span class="subtask-indicator" title="${t("Unteraufgabe")}">↳</span>` : ""}${formatText(item.text)}
+                  ${isSub ? `<span class="subtask-indicator" title="${t("Unteraufgabe")}">↳</span>` : ""}${numbers.has(item.id) ? `<span class="idea-number">${numbers.get(item.id)}</span> ` : ""}${formatText(item.text)}
                 </div>
                 ${item.description ? `<div class="idea-description" title="${t("Antippen zum Auf- und Zuklappen")}" data-id="${item.id}">${formatText(item.description)}</div>` : ""}
                 ${item.result ? `<div class="idea-result" title="${t("Ergebnis")}">${formatText(item.result)}</div>` : ""}
@@ -5652,7 +5658,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.8.2 ",
+  "%c BRAINSTORM-CARD %c v1.8.3 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

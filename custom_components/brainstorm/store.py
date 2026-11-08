@@ -58,9 +58,11 @@ from .const import (
     ATTR_LINKS,
     ATTR_BLOCKED_BY,
     ATTR_FRAME,
+    ATTR_NUMBERING,
     ATTR_CALLOUT,
     CALLOUT_MAX_LENGTH,
     FRAME_MAX_LENGTH,
+    NUMBERING_STYLES,
     LINK_LABEL_MAX_LENGTH,
     LINKS_MAX_COUNT,
     ATTR_SHAPE,
@@ -162,6 +164,7 @@ IMPORT_FIELDS = (
     ATTR_LINKS,
     ATTR_FRAME,
     ATTR_CALLOUT,
+    ATTR_NUMBERING,
 )
 # Fields that belong to this Home Assistant and stay out of a JSON export
 EXPORT_SKIPPED_FIELDS = (
@@ -516,6 +519,8 @@ class BrainstormStore:
                 result[ATTR_FRAME] = frame
             if callout := idea.get(ATTR_CALLOUT):
                 result[ATTR_CALLOUT] = callout
+            if numbering := idea.get(ATTR_NUMBERING):
+                result[ATTR_NUMBERING] = numbering
             return result
 
         last_action = self.last_action
@@ -1245,6 +1250,8 @@ class BrainstormStore:
         update_frame: bool = False,
         callout: str | None = None,
         update_callout: bool = False,
+        numbering: str | None = None,
+        update_numbering: bool = False,
     ) -> dict[str, Any] | None:
         """Update an existing idea.
 
@@ -1355,6 +1362,11 @@ class BrainstormStore:
                 idea[ATTR_CALLOUT] = cleaned_callout
             else:
                 idea.pop(ATTR_CALLOUT, None)
+        if update_numbering:
+            if numbering in NUMBERING_STYLES:
+                idea[ATTR_NUMBERING] = numbering
+            else:
+                idea.pop(ATTR_NUMBERING, None)
         if update_parent:
             if not parent_id or parent_id.strip() in ("", "none"):
                 idea[ATTR_PARENT_ID] = None
@@ -1821,6 +1833,83 @@ class BrainstormStore:
         if not parts:
             return pack.msg("overview_empty")
         return pack.msg("overview", total=total, parts=", ".join(parts))
+
+    def children_of(
+        self, parent_id: str | None, category: str | None = None
+    ) -> list[dict[str, Any]]:
+        """Return the subtasks of a note, or the main notes of a category, in order.
+
+        Archived notes stay where they are.
+        """
+        result = []
+        for idea in self.ideas:
+            if idea.get(ATTR_STATUS) == "archived":
+                continue
+            parent = idea.get(ATTR_PARENT_ID)
+            if parent_id:
+                if parent == parent_id:
+                    result.append(idea)
+            elif idea.get(ATTR_CATEGORY) == category and (
+                not parent or parent not in self._ideas
+            ):
+                result.append(idea)
+        return result
+
+    async def async_sort_ideas(
+        self,
+        idea_ids: list[str],
+        by: str,
+        reverse: bool = False,
+        manual: list[str] | None = None,
+    ) -> int:
+        """Sort notes among the places they already take in the order.
+
+        Notes before, after or between them keep their place. Ties keep
+        their order, notes without a due date come last either way. A manual
+        order puts the notes it names first, in its order, the others after.
+        """
+        ids = [i for i in idea_ids if i in self._ideas]
+        if len(ids) < 2:
+            return len(ids)
+        if any(self._ideas[i].get(ATTR_ORDER) is None for i in ids):
+            # Give every note a place first, as the cards show them now
+            for index, idea in enumerate(self.ideas):
+                idea[ATTR_ORDER] = index
+        slots = sorted(int(self._ideas[i][ATTR_ORDER]) for i in ids)
+        current = sorted(ids, key=lambda i: int(self._ideas[i][ATTR_ORDER]))
+        rank = {
+            PRIORITY_URGENT: 0,
+            PRIORITY_HIGH: 1,
+            PRIORITY_MEDIUM: 2,
+            PRIORITY_LOW: 3,
+        }
+
+        def key(idea_id: str) -> Any:
+            idea = self._ideas[idea_id]
+            if by == "priority":
+                return rank.get(str(idea.get(ATTR_PRIORITY)), 2)
+            if by == "created":
+                return str(idea.get(ATTR_CREATED_AT) or "")
+            return str(idea.get(ATTR_TEXT) or "").casefold()
+
+        if manual is not None:
+            place = {idea_id: index for index, idea_id in enumerate(manual)}
+            ordered = sorted(current, key=lambda i: place.get(i, len(place)))
+        elif by == "due":
+            dated = [i for i in current if self._ideas[i].get(ATTR_DUE)]
+            undated = [i for i in current if not self._ideas[i].get(ATTR_DUE)]
+            dated.sort(key=lambda i: str(self._ideas[i][ATTR_DUE]), reverse=reverse)
+            ordered = dated + undated
+        else:
+            ordered = sorted(current, key=key, reverse=reverse)
+        now_iso = dt_util.now().isoformat()
+        for slot, idea_id in zip(slots, ordered, strict=True):
+            if self._ideas[idea_id].get(ATTR_ORDER) != slot:
+                self._ideas[idea_id][ATTR_ORDER] = slot
+                self._ideas[idea_id][ATTR_UPDATED_AT] = now_iso
+        await self.async_save()
+        self._notify_listeners()
+        return len(ids)
 
     async def async_reorder_ideas(self, idea_ids: list[str]) -> bool:
         """Update order of ideas based on the provided list of IDs."""
@@ -2395,6 +2484,8 @@ class BrainstormStore:
                         idea[field] = cleaned_text
                     else:
                         idea.pop(field)
+            if ATTR_NUMBERING in idea and idea[ATTR_NUMBERING] not in NUMBERING_STYLES:
+                idea.pop(ATTR_NUMBERING)
             new_ideas[idea_id] = idea
         known = set(new_ideas) | set(self._ideas)
         for idea_id, idea in new_ideas.items():

@@ -242,6 +242,8 @@ Mit **Intelligente Formatierung** (Allgemeine Einstellungen) werden gesprochene 
 | Verbindung beschriften oder löschen | auf die gestrichelte Linie tippen |
 | Rahmen um Notizen | Notizen auswählen ➔ ▢ *Rahmen*, oder ✏️ Bearbeiten ➔ *Rahmen*; ein Tipp auf den Rahmennamen benennt um |
 | Callout | ✏️ Bearbeiten ➔ *Callout* |
+| Unterpunkte nummerieren | ✏️ Bearbeiten ➔ *Unterpunkte nummerieren*: 1., 1.1 · a) · I. |
+| Unterpunkte sortieren | ✏️ Bearbeiten ➔ *Unterpunkte sortieren*, oder **S** (ohne Auswahl: die Hauptnotizen) |
 
 **Suchen und filtern:** 🔍 öffnet eine Leiste über der Map. Alle getippten Wörter müssen im Titel, in der Beschreibung, im Ergebnis oder bei der Person vorkommen; `#gar` findet Notizen mit einem Tag, das mit *gar* beginnt. Die Chips filtern nach Priorität (🔥 🔴 🟡 🟢), nach *Überfällig* oder *7 Tage*, nach *In Arbeit* und nach den Tags der Liste, mit ihrer Anzahl. Passende Notizen bleiben hell, ihre übergeordneten Punkte halb, der Rest tritt zurück. Ein eingeklappter Zweig mit Treffern zeigt seinen Knopf farbig. **Enter** springt zum nächsten Treffer und klappt seinen Zweig auf, **Umschalt+Enter** zum vorigen, **Esc** leert die Suche und schließt danach die Leiste, das hebt auch den Filter auf.
 
@@ -254,6 +256,8 @@ Mit **Intelligente Formatierung** (Allgemeine Einstellungen) werden gesprochene 
 **Fokus und Ebenen:** Bei großen Maps zeigt 🎯 (oder **F4**) nur den Zweig einer Notiz, die Notiz rückt in die Mitte. Über der Map steht der Weg dorthin, ein Tipp auf einen Eintrag springt zurück, ✕ zeigt wieder die ganze Map. Neue Notizen landen im Fokus unter der Fokus-Notiz. ∞ unten rechts klappt alle Zweige ab der gewählten Ebene ein, die Tasten **1** bis **9** tun das direkt, **0** klappt alles wieder auf.
 
 **Querverbindungen:** Die Linien der Map zeigen, was wozu gehört. Eine Querverbindung verbindet zwei beliebige Notizen, auch aus verschiedenen Zweigen, mit einem gebogenen, gestrichelten Pfeil. 🔗 an der Notiz (oder **L**) startet, ein Tipp auf das Ziel beendet, **Esc** bricht ab. Ein Tipp auf die Linie öffnet einen Dialog für eine Beschriftung wie *braucht* oder *siehe auch*. Mit dem Haken *blockiert* wird die Verbindung rot: Die Ziel-Notiz wird grau und zeigt ⛔ *Wartet*, bis die erste Notiz erledigt ist. Das Abzeichen erscheint auch in der Listenkarte.
+
+**Nummerierung und Sortieren:** Im Bearbeiten-Dialog einer Notiz mit Unteraufgaben nummeriert *Unterpunkte nummerieren* alles darunter, wie in MindManager: 1., 1.1, 1.2 … oder a), b) oder I., II. Eine Unteraufgabe kann eine eigene Art wählen, die dann für ihren Zweig gilt. Die Nummern stehen in beiden Karten vor dem Text und passen sich an, wenn Punkte dazukommen oder wandern. *Unterpunkte sortieren* ordnet sofort nach Titel (A → Z oder Z → A), Priorität, Fälligkeit oder Alter. Die übrigen Notizen bleiben an ihrem Platz, ↶ macht es rückgängig. Auf der Map öffnet **S** dieselbe Auswahl, ohne ausgewählte Notiz für die Hauptnotizen der Kategorie. Bei frei verschobenen Notizen ordnet 🪄 die Map danach passend neu.
 
 **Rahmen und Callouts:** Ein Rahmen ist ein gestricheltes Rechteck mit Namen um mehrere Notizen, etwa *Phase 1* oder *Erdgeschoss*. Notizen mit demselben Rahmennamen teilen sich einen Rahmen. Ein Callout ist eine kurze Anmerkung in einer Sprechblase über der Notiz, für Dinge wie *Farbe noch offen*. Die Listenkarte zeigt den Rahmen als Chip und den Callout unter dem Text.
 
@@ -271,6 +275,7 @@ Mit **Intelligente Formatierung** (Allgemeine Einstellungen) werden gesprochene 
 | **F4** / **Umschalt+F4** | nur diesen Zweig zeigen / eine Ebene zurück |
 | **1**–**9** / **0** | Ebenen bis 1–9 zeigen / alle Ebenen |
 | **L** | Querverbindung zu einer anderen Notiz ziehen |
+| **S** | Unterpunkte sortieren (ohne Auswahl: Hauptnotizen) |
 | **Esc** | Auswahl aufheben, im Fokus eine Ebene zurück, beim Verbinden abbrechen |
 | **Strg+Z** | rückgängig |
 
@@ -415,6 +420,7 @@ Alle Parameter stehen in der [README](../README_de.md#️-dienste-services) und 
 | `brainstorm.export_markdown` / `export_json` / `import_json` | Sichern und Übertragen |
 | `brainstorm.bring_message` | Nachricht an Bring! |
 | `brainstorm.reorder_ideas` | Reihenfolge setzen |
+| `brainstorm.sort_children` | Unterpunkte sortieren: `parent_id: …`, `by: text`, `priority`, `due` oder `created` |
 | `brainstorm.share` | Liste mit Personen teilen |
 
 Mit `parse_due: true` wertet `add_idea` einen Zeitpunkt im Text aus wie bei Sprache:

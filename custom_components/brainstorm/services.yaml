@@ -214,6 +214,15 @@ update_idea:
       example: "Angebot von Firma B abwarten"
       selector:
         text:
+    numbering:
+      required: false
+      selector:
+        select:
+          translation_key: numbering
+          options:
+            - decimal
+            - alpha
+            - roman
 
 delete_idea:
   fields:
@@ -378,6 +387,38 @@ reorder_ideas:
       required: true
       selector:
         object:
+
+sort_children:
+  fields:
+    parent_id:
+      required: false
+      selector:
+        text:
+    category:
+      required: false
+      example: "Projekte"
+      selector:
+        text:
+    by:
+      required: false
+      default: text
+      selector:
+        select:
+          translation_key: sort_by
+          options:
+            - text
+            - priority
+            - due
+            - created
+    ids:
+      required: false
+      selector:
+        object:
+    reverse:
+      required: false
+      default: false
+      selector:
+        boolean:
 
 share:
   fields:

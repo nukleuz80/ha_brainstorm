@@ -42,9 +42,12 @@ from .const import (
     ATTR_PROGRESS,
     ATTR_LINKS,
     ATTR_FRAME,
+    ATTR_NUMBERING,
     ATTR_CALLOUT,
     CALLOUT_MAX_LENGTH,
     FRAME_MAX_LENGTH,
+    NUMBERING_STYLES,
+    SORT_KEYS,
     LINK_LABEL_MAX_LENGTH,
     LINKS_MAX_COUNT,
     ATTR_SHAPE,
@@ -64,6 +67,7 @@ from .const import (
     NODE_SHAPES,
     PROGRESS_STEPS,
     SERVICE_REORDER_IDEAS,
+    SERVICE_SORT_CHILDREN,
     SERVICE_DELETE_DONE,
     SERVICE_SET_CATEGORY_STYLE,
     SHARE_EDIT,
@@ -199,6 +203,7 @@ SERVICE_UPDATE_IDEA_SCHEMA = vol.Schema(
         vol.Optional(ATTR_CALLOUT): vol.Any(
             None, vol.All(cv.string, vol.Length(max=CALLOUT_MAX_LENGTH))
         ),
+        vol.Optional(ATTR_NUMBERING): vol.Any(None, "", vol.In(NUMBERING_STYLES)),
     },
     extra=vol.ALLOW_EXTRA,
 )
@@ -214,6 +219,16 @@ SERVICE_SHARE_SCHEMA = vol.Schema(
 SERVICE_REORDER_IDEAS_SCHEMA = vol.Schema(
     {
         vol.Required("idea_ids"): vol.All(cv.ensure_list, [cv.string]),
+    }
+)
+
+SERVICE_SORT_CHILDREN_SCHEMA = vol.Schema(
+    {
+        vol.Optional(ATTR_PARENT_ID): cv.string,
+        vol.Optional(ATTR_CATEGORY): cv.string,
+        vol.Optional("by"): vol.In(SORT_KEYS),
+        vol.Optional("ids"): vol.All(cv.ensure_list, [cv.string]),
+        vol.Optional("reverse", default=False): cv.boolean,
     }
 )
 
@@ -496,6 +511,8 @@ def _register_services(hass: HomeAssistant) -> None:
             update_frame=ATTR_FRAME in call.data,
             callout=call.data.get(ATTR_CALLOUT),
             update_callout=ATTR_CALLOUT in call.data,
+            numbering=call.data.get(ATTR_NUMBERING),
+            update_numbering=ATTR_NUMBERING in call.data,
         )
         if updated is not None and (
             ATTR_ASSIGNEE in call.data
@@ -564,6 +581,42 @@ def _register_services(hass: HomeAssistant) -> None:
             _check_idea_edit(store, idea_id, call)
         success = await store.async_reorder_ideas(idea_ids)
         return {"success": success}
+
+    async def handle_sort_children(call: ServiceCall) -> dict[str, Any]:
+        """Sort the subtasks of a note, or the main notes of a category."""
+        store = _require_store(hass)
+        parent_id = call.data.get(ATTR_PARENT_ID)
+        category = call.data.get(ATTR_CATEGORY)
+        if parent_id:
+            if store.get_idea(parent_id) is None:
+                raise ServiceValidationError(
+                    translation_domain=DOMAIN,
+                    translation_key="idea_not_found",
+                    translation_placeholders={"id": parent_id},
+                )
+        elif not category:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="sort_needs_parent"
+            )
+        if "by" not in call.data and "ids" not in call.data:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="sort_needs_key"
+            )
+        user_id = call.context.user_id
+        children = [
+            child
+            for child in store.children_of(parent_id, category)
+            if store.can_access(child, user_id)
+        ]
+        for child in children:
+            _check_idea_edit(store, child[ATTR_ID], call)
+        count = await store.async_sort_ideas(
+            [child[ATTR_ID] for child in children],
+            call.data.get("by", "text"),
+            call.data["reverse"],
+            call.data.get("ids"),
+        )
+        return {"success": True, "sorted": count}
 
     async def handle_delete_idea(call: ServiceCall) -> dict[str, Any]:
         """Handle deleting an idea."""
@@ -899,6 +952,14 @@ def _register_services(hass: HomeAssistant) -> None:
         SERVICE_REORDER_IDEAS,
         handle_reorder_ideas,
         schema=SERVICE_REORDER_IDEAS_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_SORT_CHILDREN,
+        handle_sort_children,
+        schema=SERVICE_SORT_CHILDREN_SCHEMA,
         supports_response=SupportsResponse.OPTIONAL,
     )
 

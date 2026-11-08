@@ -206,6 +206,11 @@ FRAME_MAX_LENGTH = 40
 # A short remark in a bubble next to the note
 ATTR_CALLOUT = "callout"
 CALLOUT_MAX_LENGTH = 200
+# How the subtasks below a note are numbered: 1. 1.1, a. b. or I. II.
+ATTR_NUMBERING = "numbering"
+NUMBERING_STYLES = ("decimal", "alpha", "roman")
+# What the subtasks of a note can be sorted by
+SORT_KEYS = ("text", "priority", "due", "created")
 ATTACHMENT_DIR = "brainstorm_attachments"
 ATTACHMENT_MAX_SIZE = 10 * 1024 * 1024
 ATTACHMENT_MAX_COUNT = 20
@@ -264,6 +269,7 @@ JSON_EXPORT_FORMAT = "brainstorm_hub"
 JSON_EXPORT_VERSION = 1
 
 SERVICE_REORDER_IDEAS = "reorder_ideas"
+SERVICE_SORT_CHILDREN = "sort_children"
 SERVICE_DELETE_DONE = "delete_done"
 SERVICE_SET_CATEGORY_STYLE = "set_category_style"
 ATTR_ICON = "icon"

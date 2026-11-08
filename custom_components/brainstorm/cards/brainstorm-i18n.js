@@ -387,6 +387,26 @@ const DICTIONARIES = {
     "▢ Rahmen bearbeiten": "▢ Edit frame",
     "▢ Rahmen um {count} Notizen": "▢ Frame around {count} notes",
     "🔗 Verbindung": "🔗 Link",
+    "1, 1.1, 1.2": "1, 1.1, 1.2",
+    "A → Z": "A → Z",
+    "Die Reihenfolge gilt in beiden Karten. ↶ macht es rückgängig.": "The order applies to both cards. ↶ undoes it.",
+    "Fälligkeit": "Due date",
+    "I, II, III": "I, II, III",
+    "Keine": "None",
+    "Neueste zuerst": "Newest first",
+    "Nichts zu sortieren.": "Nothing to sort.",
+    "Priorität": "Priority",
+    "Sortieren hat nicht geklappt.": "Sorting did not work.",
+    "Sortiert sofort, ↶ macht es rückgängig.": "Sorts right away, ↶ undoes it.",
+    "Sortiert.": "Sorted.",
+    "Sortiert. 🪄 ordnet die Map passend neu.": "Sorted. 🪄 arranges the map to match.",
+    "Unterpunkte nummerieren:": "Number the subtasks:",
+    "Unterpunkte sortieren:": "Sort the subtasks:",
+    "Z → A": "Z → A",
+    "a, b, c": "a, b, c",
+    "Älteste zuerst": "Oldest first",
+    "↕ Hauptnotizen sortieren": "↕ Sort the main notes",
+    "↕ Unterpunkte von „{text}“ sortieren": "↕ Sort the subtasks of “{text}”",
   },
 };
 
@@ -710,6 +730,76 @@ export function ideaProgress(idea) {
 }
 
 /** Return the next step of a progress set by hand: 0, 25, 50, 75, 100 and back to 0. */
+/** Numbering styles a note can give its subtasks, as in MindManager. */
+export const NUMBERING = ["decimal", "alpha", "roman"];
+
+const toAlpha = (n) => {
+  let out = "";
+  for (let x = n; x > 0; x = Math.floor((x - 1) / 26)) out = String.fromCharCode(97 + ((x - 1) % 26)) + out;
+  return out;
+};
+
+const toRoman = (n) => {
+  const steps = [[1000, "M"], [900, "CM"], [500, "D"], [400, "CD"], [100, "C"], [90, "XC"], [50, "L"], [40, "XL"], [10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"]];
+  let out = "";
+  let rest = n;
+  steps.forEach(([value, sign]) => {
+    while (rest >= value) {
+      out += sign;
+      rest -= value;
+    }
+  });
+  return out;
+};
+
+/**
+ * Work out the number of every note below a numbered note, in list order.
+ * The style of a note reaches all its subtasks until one sets its own;
+ * decimal numbers carry the number of their parent (1, 1.1, 1.1.2).
+ * Returns a Map of id to the label shown in front of the text.
+ */
+export function numberLabels(ideas) {
+  const labels = new Map();
+  const list = ideas || [];
+  const ids = new Set(list.map((i) => i.id));
+  const byParent = new Map();
+  list.forEach((idea) => {
+    const parent = idea.parent_id && ids.has(idea.parent_id) && idea.parent_id !== idea.id ? idea.parent_id : null;
+    if (!byParent.has(parent)) byParent.set(parent, []);
+    byParent.get(parent).push(idea);
+  });
+  const seen = new Set();
+  const walk = (parentId, style, prefix) => {
+    (byParent.get(parentId) || []).forEach((child, index) => {
+      if (seen.has(child.id)) return;
+      seen.add(child.id);
+      let number = "";
+      if (style === "decimal") {
+        number = prefix ? `${prefix}.${index + 1}` : `${index + 1}`;
+        labels.set(child.id, prefix ? number : `${number}.`);
+      } else if (style === "alpha") {
+        labels.set(child.id, `${toAlpha(index + 1)})`);
+      } else if (style === "roman") {
+        labels.set(child.id, `${toRoman(index + 1)}.`);
+      }
+      const own = NUMBERING.includes(child.numbering) ? child.numbering : null;
+      const next = own || style;
+      const carry = next === "decimal" && style === "decimal" ? number : "";
+      walk(child.id, next, carry);
+    });
+  };
+  walk(null, null, "");
+  return labels;
+}
+
+/** Return the label of a numbering style for chips and menus. */
+export function numberingLabel(style) {
+  if (style === "decimal") return t("1, 1.1, 1.2");
+  if (style === "alpha") return t("a, b, c");
+  if (style === "roman") return t("I, II, III");
+  return t("Keine");
+}
+
 export function nextProgress(percent) {
   const steps = [0, 25, 50, 75, 100];
   const index = steps.indexOf(Number(percent) || 0);

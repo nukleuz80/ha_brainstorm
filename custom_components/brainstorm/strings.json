@@ -590,6 +590,21 @@
         "shopping_done": "Shopping done",
         "urgent_message": "Urgently needed"
       }
+    },
+    "numbering": {
+      "options": {
+        "decimal": "1, 1.1, 1.2",
+        "alpha": "a, b, c",
+        "roman": "I, II, III"
+      }
+    },
+    "sort_by": {
+      "options": {
+        "text": "Title (A–Z)",
+        "priority": "Priority (urgent first)",
+        "due": "Due date (earliest first)",
+        "created": "Created (oldest first)"
+      }
     }
   },
   "entity": {
@@ -619,6 +634,12 @@
     },
     "idea_not_found": {
       "message": "Idea \"{id}\" was not found."
+    },
+    "sort_needs_parent": {
+      "message": "Give the note whose subtasks are sorted, or a category."
+    },
+    "sort_needs_key": {
+      "message": "Say what to sort by, or give a fixed order."
     },
     "sharing_needs_privacy": {
       "message": "Sharing is only available with privacy switched on."
@@ -866,6 +887,10 @@
         "callout": {
           "name": "Callout",
           "description": "A short remark (at most 200 characters) shown in a bubble next to the note. Empty removes it."
+        },
+        "numbering": {
+          "name": "Numbering",
+          "description": "Numbers the subtasks below the note and all their subtasks: decimal (1, 1.1), alpha (a, b) or roman (I, II). Empty removes it."
         }
       }
     },
@@ -1040,6 +1065,32 @@
         "idea_ids": {
           "name": "IDea IDs",
           "description": "Ordered list of idea IDs."
+        }
+      }
+    },
+    "sort_children": {
+      "name": "Sort subtasks",
+      "description": "Sorts the subtasks of a note, or the main notes of a category, within their places in the order.",
+      "fields": {
+        "parent_id": {
+          "name": "Parent ID",
+          "description": "The note whose subtasks are sorted."
+        },
+        "category": {
+          "name": "Category",
+          "description": "Without a parent: the category whose main notes are sorted."
+        },
+        "by": {
+          "name": "Sort by",
+          "description": "Title, priority, due date or creation time."
+        },
+        "ids": {
+          "name": "Fixed order",
+          "description": "Instead of a sort key: the IDs of the subtasks in the wanted order, for example to undo a sort."
+        },
+        "reverse": {
+          "name": "Reverse",
+          "description": "Sorts the other way round. Notes without a due date stay last."
         }
       }
     },

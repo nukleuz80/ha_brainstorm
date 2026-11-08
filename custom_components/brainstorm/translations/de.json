@@ -590,6 +590,21 @@
         "shopping_done": "Einkauf erledigt",
         "urgent_message": "Dringend benötigt"
       }
+    },
+    "numbering": {
+      "options": {
+        "decimal": "1, 1.1, 1.2",
+        "alpha": "a, b, c",
+        "roman": "I, II, III"
+      }
+    },
+    "sort_by": {
+      "options": {
+        "text": "Titel (A–Z)",
+        "priority": "Priorität (dringend zuerst)",
+        "due": "Fälligkeit (früheste zuerst)",
+        "created": "Erstellt (älteste zuerst)"
+      }
     }
   },
   "entity": {
@@ -619,6 +634,12 @@
     },
     "idea_not_found": {
       "message": "Idee \"{id}\" wurde nicht gefunden."
+    },
+    "sort_needs_parent": {
+      "message": "Gib die Notiz an, deren Unteraufgaben sortiert werden, oder eine Kategorie."
+    },
+    "sort_needs_key": {
+      "message": "Gib an, wonach sortiert wird, oder eine feste Reihenfolge."
     },
     "sharing_needs_privacy": {
       "message": "Freigaben gibt es nur mit eingeschalteter Privatsphäre."
@@ -866,6 +887,10 @@
         "callout": {
           "name": "Callout",
           "description": "Eine kurze Anmerkung (höchstens 200 Zeichen) in einer Sprechblase neben der Notiz. Leer entfernt sie."
+        },
+        "numbering": {
+          "name": "Nummerierung",
+          "description": "Nummeriert die Unteraufgaben der Notiz und deren Unteraufgaben: decimal (1, 1.1), alpha (a, b) oder roman (I, II). Leer entfernt sie."
         }
       }
     },
@@ -1040,6 +1065,32 @@
         "idea_ids": {
           "name": "Notiz-IDs",
           "description": "Geordnete Liste der Notiz-IDs."
+        }
+      }
+    },
+    "sort_children": {
+      "name": "Unteraufgaben sortieren",
+      "description": "Sortiert die Unteraufgaben einer Notiz oder die Hauptnotizen einer Kategorie innerhalb ihrer Plätze in der Reihenfolge.",
+      "fields": {
+        "parent_id": {
+          "name": "Übergeordnete ID",
+          "description": "Die Notiz, deren Unteraufgaben sortiert werden."
+        },
+        "category": {
+          "name": "Kategorie",
+          "description": "Ohne übergeordnete Notiz: die Kategorie, deren Hauptnotizen sortiert werden."
+        },
+        "by": {
+          "name": "Sortieren nach",
+          "description": "Titel, Priorität, Fälligkeit oder Erstellzeit."
+        },
+        "ids": {
+          "name": "Feste Reihenfolge",
+          "description": "Statt eines Sortierschlüssels: die IDs der Unteraufgaben in der gewünschten Reihenfolge, etwa um ein Sortieren rückgängig zu machen."
+        },
+        "reverse": {
+          "name": "Umgekehrt",
+          "description": "Sortiert andersherum. Notizen ohne Fälligkeit bleiben am Ende."
         }
       }
     },

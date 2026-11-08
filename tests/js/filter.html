@@ -2,7 +2,7 @@
 <!-- Browser test for tags and the map filter. Run: python3 -m http.server in the repo root,
      open http://localhost:8000/tests/js/filter.html, it shows PASS or the failures. --><meta charset="utf-8"><body><pre id="out">running</pre>
 <script type="module">
-import { emptyFilter, filterActive, ideaMarkers, ideaMatches, ideaProgress, ideaTags, markerBadges, nextProgress, progressBadge } from "../../custom_components/brainstorm/cards/brainstorm-i18n.js";
+import { emptyFilter, filterActive, ideaMarkers, ideaMatches, ideaProgress, ideaTags, markerBadges, nextProgress, numberLabels, progressBadge } from "../../custom_components/brainstorm/cards/brainstorm-i18n.js";
 const now = new Date("2026-11-08T12:00:00Z");
 const ideas = {
   apples: { text: "Äpfel kaufen #Einkauf", category: "Haus", priority: "low", markers: ["money", "question"] },
@@ -44,5 +44,23 @@ check("next step", [0, 25, 50, 75, 100].map(nextProgress), [25, 50, 75, 100, 0])
 check("ring label auto", progressBadge({ id: "x", subtasks: { done: 3, total: 5, percent: 60 } }).includes("<span>3/5</span>"), true);
 check("ring full", progressBadge({ id: "x", progress: 100 }).includes("progress-full"), true);
 check("no ring", progressBadge({ id: "x" }), "");
+const tree = [
+  { id: "r", text: "Root", numbering: "decimal" },
+  { id: "a", text: "A", parent_id: "r" },
+  { id: "a1", text: "A1", parent_id: "a" },
+  { id: "a2", text: "A2", parent_id: "a", numbering: "alpha" },
+  { id: "x", text: "X", parent_id: "a2" },
+  { id: "b", text: "B", parent_id: "r", numbering: "roman" },
+  { id: "b1", text: "B1", parent_id: "b" },
+  { id: "loose", text: "Loose" },
+  { id: "c1", text: "C1", parent_id: "c2" },
+  { id: "c2", text: "C2", parent_id: "c1" },
+];
+check("numbers", Object.fromEntries(numberLabels(tree)), { a: "1.", a1: "1.1", a2: "1.2", x: "a)", b: "2.", b1: "I." });
+const many = [{ id: "p", numbering: "alpha" }, ...Array.from({ length: 28 }, (_, i) => ({ id: `k${i}`, parent_id: "p" }))];
+check("alpha past z", [numberLabels(many).get("k25"), numberLabels(many).get("k27")], ["z)", "ab)"]);
+const roman = [{ id: "p", numbering: "roman" }, ...Array.from({ length: 14 }, (_, i) => ({ id: `k${i}`, parent_id: "p" }))];
+check("roman", [3, 8, 13].map((i) => numberLabels(roman).get(`k${i}`)), ["IV.", "IX.", "XIV."]);
+check("no numbering", numberLabels([{ id: "q" }, { id: "w", parent_id: "q" }]).size, 0);
 document.getElementById("out").textContent = fails.length ? "FAIL\n" + fails.join("\n") : "PASS";
 </script>

@@ -241,6 +241,8 @@ With **Smart Text Optimization** (General Settings) spoken notes are tidied up a
 | Label or delete a link | tap the dashed line |
 | Frame around notes | pick notes ➔ ▢ *Frame*, or ✏️ Edit ➔ *Frame*; tapping the frame name renames it |
 | Callout | ✏️ Edit ➔ *Callout* |
+| Number the subtasks | ✏️ Edit ➔ *Number the subtasks*: 1., 1.1 · a) · I. |
+| Sort the subtasks | ✏️ Edit ➔ *Sort the subtasks*, or **S** (no selection: the main notes) |
 
 **Search and filter:** 🔍 opens a bar above the map. Words you type must all appear in the title, description, result or person; `#gar` finds notes with a tag starting with *gar*. The chips filter by priority (🔥 🔴 🟡 🟢), by *Overdue* or *7 days*, by *In progress* and by the tags of the list, with their number. Notes that fit stay bright, their parents half, the rest fades. A folded branch with hits shows its button in color. **Enter** jumps to the next hit and unfolds its branch, **Shift+Enter** to the previous one, **Esc** clears the search and then closes the bar, which also clears the filter.
 
@@ -253,6 +255,8 @@ With **Smart Text Optimization** (General Settings) spoken notes are tidied up a
 **Focus and levels:** on a big map, 🎯 (or **F4**) shows only the branch of one note, and the note moves to the middle. The way there shows above the map; tap an entry to go back, ✕ shows the whole map again. New notes land under the focused note. ∞ at the bottom right folds every branch below the chosen level, the keys **1** to **9** do that directly, **0** unfolds everything again.
 
 **Links:** the lines of the map show what belongs where. A link joins any two notes, also from different branches, with a curved, dashed arrow. 🔗 on the note (or **L**) starts it, a tap on the target ends it, **Esc** cancels. A tap on the line opens a dialog for a label such as *needs* or *see also*. Tick *blocks* and the link turns red: the target note turns grey and shows ⛔ *Waiting* until the first note is done. The badge shows in the list card too.
+
+**Numbering and sorting:** in the edit dialog of a note with subtasks, *Number the subtasks* numbers everything below it, as in MindManager: 1., 1.1, 1.2 … or a), b) or I., II. A subtask can pick a style of its own, which then applies to its branch. The numbers show in front of the text in both cards and follow along when notes are added or moved. *Sort the subtasks* orders them right away by title (A → Z or Z → A), priority, due date or age. All other notes keep their place, and ↶ undoes it. On the map, **S** opens the same choice, without a selected note for the main notes of the category. If notes were moved by hand, 🪄 arranges the map to match afterwards.
 
 **Frames and callouts:** a frame is a dashed, named rectangle around several notes, such as *Phase 1* or *Ground floor*. Notes with the same frame name share one frame. A callout is a short remark in a speech bubble above the note, for things like *colour still open*. The list card shows the frame as a chip and the callout below the text.
 
@@ -270,6 +274,7 @@ With **Smart Text Optimization** (General Settings) spoken notes are tidied up a
 | **F4** / **Shift+F4** | show only this branch / go up one level |
 | **1**–**9** / **0** | show levels up to 1–9 / all levels |
 | **L** | draw a link to another note |
+| **S** | sort the subtasks (no selection: main notes) |
 | **Esc** | clear the selection, go up one level in focus, cancel linking |
 | **Ctrl+Z** | undo |
 
@@ -414,6 +419,7 @@ All parameters are in the [README](../README.md#️-services) and under **Develo
 | `brainstorm.export_markdown` / `export_json` / `import_json` | back up and transfer |
 | `brainstorm.bring_message` | message to Bring! |
 | `brainstorm.reorder_ideas` | set the order |
+| `brainstorm.sort_children` | sort subtasks: `parent_id: …`, `by: text`, `priority`, `due` or `created` |
 | `brainstorm.share` | share a list with people |
 
 With `parse_due: true`, `add_idea` reads a point in time from the text like speech does:

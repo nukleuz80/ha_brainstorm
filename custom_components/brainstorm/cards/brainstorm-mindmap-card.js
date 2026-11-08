@@ -1,8 +1,8 @@
-import { MARKERS, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.2";
+import { MARKERS, NUMBERING, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.3";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.8.2 - Focus, Levels, Links, Frames and Callouts
+ * Version: 1.8.3 - Numbering and Sorting
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -2175,6 +2175,12 @@ class BrainstormMindmapCard extends HTMLElement {
           font-weight: 600;
           color: var(--warning-color, #ff9800);
           background: color-mix(in srgb, var(--warning-color, #ff9800) 14%, transparent);
+        }
+        .cloud-number {
+          font-weight: 700;
+          color: var(--primary-color, #03a9f4);
+          margin-right: 2px;
+          font-variant-numeric: tabular-nums;
         }
         .note-cloud.is-blocked {
           filter: grayscale(0.7);
@@ -4510,6 +4516,14 @@ class BrainstormMindmapCard extends HTMLElement {
       this._cancelLink();
       return;
     }
+    if (e.key === "s" || e.key === "S") {
+      const hasChildren = this._selectedId && this._categoryIdeas().some((i) => i.parent_id === this._selectedId);
+      if (hasChildren || (!this._selectedId && this._selectedCategory !== "all" && !this._focusId)) {
+        e.preventDefault();
+        this._showSortDialog(hasChildren ? this._selectedId : null);
+        return;
+      }
+    }
     if ((e.key === "l" || e.key === "L") && this._selectedId) {
       e.preventDefault();
       this._startLink(this._selectedId);
@@ -5336,6 +5350,63 @@ class BrainstormMindmapCard extends HTMLElement {
     return html;
   }
 
+  // The sort choices, as chips for the edit and the sort dialog
+  _sortChips() {
+    return [
+      ["text", false, t("A → Z")],
+      ["text", true, t("Z → A")],
+      ["priority", false, t("Priorität")],
+      ["due", false, t("Fälligkeit")],
+      ["created", false, t("Älteste zuerst")],
+      ["created", true, t("Neueste zuerst")],
+    ]
+      .map(([by, reverse, label]) => `<div class="dialog-prio-chip" data-sort="${by}"${reverse ? " data-reverse" : ""}>${label}</div>`)
+      .join("");
+  }
+
+  // Sort the subtasks of a note, or the main notes of the category, with undo
+  async _sortChildren(parentId, by, reverse) {
+    const sensor = this._getSensorEntity();
+    const ideas = (sensor && sensor.attributes.ideas) || [];
+    const category = this._selectedCategory;
+    const ids = new Set(ideas.map((i) => i.id));
+    const before = ideas
+      .filter((i) => (parentId ? i.parent_id === parentId : i.category === category && !(i.parent_id && ids.has(i.parent_id))))
+      .map((i) => i.id);
+    if (before.length < 2) {
+      this._showToast(t("Nichts zu sortieren."));
+      return;
+    }
+    const target = parentId ? { parent_id: parentId } : { category };
+    try {
+      await this._hass.callService("brainstorm", "sort_children", { ...target, by, reverse });
+      const parent = parentId ? ideas.find((i) => i.id === parentId) : null;
+      this._pushUndo(parent ? parent.text : category, () => this._hass.callService("brainstorm", "sort_children", { ...target, ids: before }));
+      this._showToast(this._usesSavedPositions() ? t("Sortiert. 🪄 ordnet die Map passend neu.") : t("Sortiert."));
+    } catch (err) {
+      console.error("[BrainstormMindmap] Failed to sort:", err);
+      this._showToast(t("Sortieren hat nicht geklappt."));
+    }
+  }
+
+  // Sort dialog for the S key: subtasks of the picked note, else the main notes
+  _showSortDialog(parentId) {
+    const parent = parentId ? this._ideaById(parentId) : null;
+    const title = parent ? t("↕ Unterpunkte von „{text}“ sortieren", { text: this._escapeHtml(parent.text) }) : t("↕ Hauptnotizen sortieren");
+    this._openDialog(title, (body) => {
+      body.innerHTML = `
+        <div class="dialog-prio-grid dialog-sort-grid">${this._sortChips()}</div>
+        <div class="dialog-hint">${t("Die Reihenfolge gilt in beiden Karten. ↶ macht es rückgängig.")}</div>
+      `;
+      body.querySelectorAll("[data-sort]").forEach((chip) => {
+        chip.addEventListener("click", () => {
+          this._closeDialog();
+          this._sortChildren(parentId, chip.getAttribute("data-sort"), chip.hasAttribute("data-reverse"));
+        });
+      });
+    });
+  }
+
   _startLink(id) {
     if (this._linkFrom === id) {
       this._cancelLink();
@@ -5539,10 +5610,13 @@ class BrainstormMindmapCard extends HTMLElement {
       const activeIdeas = attributes.ideas || [];
 
       // Filter ideas by selected category
-      const filteredIdeas = this._focusIdeas(activeIdeas.filter((i) => {
+      const listIdeas = activeIdeas.filter((i) => {
         if (this._selectedCategory === "all") return true;
         return String(i.category || "").trim() === String(this._selectedCategory || "").trim();
-      }));
+      });
+      // Numbers come from the whole list, so they stay the same in a focused branch
+      const numbers = numberLabels(listIdeas);
+      const filteredIdeas = this._focusIdeas(listIdeas);
       this._renderFocusBar();
 
       // Reset node positions and layout when selected category changes
@@ -5764,7 +5838,7 @@ class BrainstormMindmapCard extends HTMLElement {
               </span>
             </div>
             ${markerBadges(idea) || progressBadge(idea) ? `<div class="cloud-marks">${progressBadge(idea)}${markerBadges(idea)}</div>` : ""}
-            <div class="cloud-text" title="${t("Klicken zum Bearbeiten")}">${formatText(idea.text)}</div>
+            <div class="cloud-text" title="${t("Klicken zum Bearbeiten")}">${numbers.has(idea.id) ? `<span class="cloud-number">${numbers.get(idea.id)}</span> ` : ""}${formatText(idea.text)}</div>
             ${idea.result ? `<div class="cloud-result" title="${t("Ergebnis")}">${formatText(idea.result)}</div>` : ""}
             <div class="cloud-actions">
               <button class="action-btn done-btn" data-act="done" data-id="${idea.id}" title="${t("Als erledigt markieren")}">✓</button>
@@ -6208,6 +6282,8 @@ class BrainstormMindmapCard extends HTMLElement {
     const hasSubtasks = Boolean(idea.subtasks && idea.subtasks.total);
     const currentProgress = Number(idea.progress) || 0;
     let selectedProgress = currentProgress;
+    const currentNumbering = NUMBERING.includes(idea.numbering) ? idea.numbering : "";
+    let selectedNumbering = currentNumbering;
 
     this._openDialog(t("✏️ Notiz bearbeiten"), (body) => {
       body.innerHTML = `
@@ -6244,6 +6320,16 @@ class BrainstormMindmapCard extends HTMLElement {
           : `<div class="dialog-prio-grid dialog-progress-grid" id="editProgressGrid">
           ${[0, 25, 50, 75, 100].map((step) => `<div class="dialog-prio-chip ${step === selectedProgress ? "selected" : ""}" data-progress="${step}">${step} %</div>`).join("")}
         </div>`}
+
+        ${hasSubtasks ? `
+        <div class="dialog-label">${t("Unterpunkte nummerieren:")}</div>
+        <div class="dialog-prio-grid dialog-numbering-grid" id="editNumberingGrid">
+          ${["", ...NUMBERING].map((style) => `<div class="dialog-prio-chip ${style === selectedNumbering ? "selected" : ""}" data-numbering="${style}">${numberingLabel(style)}</div>`).join("")}
+        </div>
+        <div class="dialog-label">${t("Unterpunkte sortieren:")}</div>
+        <div class="dialog-prio-grid dialog-sort-grid" id="editSortGrid">${this._sortChips()}</div>
+        <div class="dialog-hint">${t("Sortiert sofort, ↶ macht es rückgängig.")}</div>
+        ` : ""}
 
         <div class="dialog-label">${t("Form auf der Mindmap:")}</div>
         <div class="dialog-prio-grid dialog-shape-grid" id="editShapeGrid">
@@ -6332,6 +6418,17 @@ class BrainstormMindmapCard extends HTMLElement {
           else selectedMarkers.add(marker);
           chip.classList.toggle("selected", selectedMarkers.has(marker));
         });
+      });
+      const numberingChips = body.querySelectorAll("#editNumberingGrid .dialog-prio-chip");
+      numberingChips.forEach((chip) => {
+        chip.addEventListener("click", () => {
+          numberingChips.forEach((c) => c.classList.remove("selected"));
+          chip.classList.add("selected");
+          selectedNumbering = chip.getAttribute("data-numbering") || "";
+        });
+      });
+      body.querySelectorAll("#editSortGrid [data-sort]").forEach((chip) => {
+        chip.addEventListener("click", () => this._sortChildren(id, chip.getAttribute("data-sort"), chip.hasAttribute("data-reverse")));
       });
       const progressChips = body.querySelectorAll("#editProgressGrid .dialog-prio-chip");
       progressChips.forEach((chip) => {
@@ -6443,6 +6540,7 @@ class BrainstormMindmapCard extends HTMLElement {
         if (!hasSubtasks && selectedProgress !== currentProgress) {
           payload.progress = selectedProgress;
         }
+        if (selectedNumbering !== currentNumbering) payload.numbering = selectedNumbering || null;
         const newCallout = (body.querySelector("#editCallout").value || "").trim();
         if (newCallout !== (idea.callout || "")) payload.callout = newCallout || null;
         const newFrame = (body.querySelector("#editFrame").value || "").trim();
@@ -6458,6 +6556,7 @@ class BrainstormMindmapCard extends HTMLElement {
         if ("markers" in payload) before.markers = currentMarkers;
         if ("progress" in payload) before.progress = currentProgress;
         if ("callout" in payload) before.callout = idea.callout || null;
+        if ("numbering" in payload) before.numbering = currentNumbering || null;
         if ("frame" in payload) before.frame = idea.frame || null;
         try {
           await this._hass.callService("brainstorm", "update_idea", payload);
@@ -7163,7 +7262,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.8.2 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.8.3 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );
