@@ -1,9 +1,9 @@
-import { MARKERS, alexaEchos, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.10";
+import { MARKERS, alexaEchos, emptyFilter, ideaMatches, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.11";
 
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.8.10 - Presentation Mode
+ * Version 1.8.11 - List Search
  */
 // The bulb lies next to this file, wherever Home Assistant serves it from
 const BULB_URL = new URL("./brainstorm-bulb.svg", import.meta.url).href;
@@ -19,6 +19,7 @@ const BRAINSTORM_CARD_DEFAULTS = {
   show_logo: true,
   show_quick_input: true,
   show_mic: true,
+  show_search: true,
   show_categories: true,
   hide_empty_categories: true,
   compact_mode: false,
@@ -568,6 +569,69 @@ class BrainstormCard extends HTMLElement {
     else if (date.toDateString() === tomorrow.toDateString()) label = t("Morgen {clock}", { clock });
     const overdue = date < now;
     return `<span class="due-badge ${overdue ? "overdue" : ""}" title="${overdue ? t("Überfällig") : t("Erinnerung")}">⏰ ${label}</span>`;
+  }
+
+  _searchActive() {
+    return this._config.show_search !== false && Boolean((this._searchQuery || "").trim());
+  }
+
+  /**
+   * Keep the ideas that fit the search, together with their parents and
+   * children, so a found subtask still shows where it belongs.
+   */
+  _applySearch(ideas) {
+    const filter = emptyFilter();
+    filter.query = this._searchQuery || "";
+    const byId = new Map(ideas.map((idea) => [idea.id, idea]));
+    const keep = new Set();
+    ideas.forEach((idea) => {
+      if (!ideaMatches(idea, filter)) return;
+      keep.add(idea.id);
+      let parent = idea.parent_id;
+      while (parent && byId.has(parent) && !keep.has(parent)) {
+        keep.add(parent);
+        parent = byId.get(parent).parent_id;
+      }
+    });
+    const hits = new Set(keep);
+    ideas.forEach((idea) => {
+      if (idea.parent_id && hits.has(idea.parent_id)) keep.add(idea.id);
+    });
+    this._searchHits = hits;
+    return ideas.filter((idea) => keep.has(idea.id));
+  }
+
+  _setupSearch() {
+    const input = this.shadowRoot.getElementById("listSearchInput");
+    const clear = this.shadowRoot.getElementById("listSearchClear");
+    if (!input || input._bound) return;
+    input._bound = true;
+    input.value = this._searchQuery || "";
+    const apply = () => {
+      this._searchQuery = input.value;
+      if (clear) clear.style.display = input.value ? "" : "none";
+      this._lastUpdated = null;
+      this._updateContent();
+    };
+    let timer = null;
+    input.addEventListener("input", () => {
+      clearTimeout(timer);
+      timer = setTimeout(apply, 150);
+    });
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && input.value) {
+        event.stopPropagation();
+        input.value = "";
+        apply();
+      }
+    });
+    if (clear) {
+      clear.addEventListener("click", () => {
+        input.value = "";
+        apply();
+        input.focus();
+      });
+    }
   }
 
   _applyShareFilter(ideas) {
@@ -3669,6 +3733,50 @@ class BrainstormCard extends HTMLElement {
           opacity: 0.5;
           pointer-events: none;
         }
+        .list-search {
+          align-items: center;
+          gap: 6px;
+          margin-bottom: 10px;
+          padding: 0 10px;
+          min-height: 40px;
+          border: 1px solid var(--divider-color);
+          border-radius: 20px;
+          background: var(--secondary-background-color, transparent);
+        }
+        .list-search:focus-within {
+          border-color: var(--primary-color);
+        }
+        .list-search-icon {
+          font-size: 0.9rem;
+          opacity: 0.7;
+        }
+        .list-search input {
+          flex: 1;
+          min-width: 0;
+          border: none;
+          outline: none;
+          background: transparent;
+          color: var(--primary-text-color);
+          font: inherit;
+          font-size: 0.9rem;
+          padding: 8px 0;
+        }
+        .list-search input::-webkit-search-cancel-button {
+          display: none;
+        }
+        .list-search-clear {
+          min-width: 32px;
+          min-height: 32px;
+          border: none;
+          border-radius: 50%;
+          background: transparent;
+          color: var(--secondary-text-color);
+          font-size: 0.9rem;
+          cursor: pointer;
+        }
+        .idea-item.search-context {
+          opacity: 0.55;
+        }
         .share-filter {
           display: flex;
           flex-wrap: wrap;
@@ -4211,6 +4319,11 @@ class BrainstormCard extends HTMLElement {
 
           <div class="pills" id="pillsContainer" style="display: ${this._config.show_categories === true ? "flex" : "none"};"></div>
 
+          <div class="list-search" id="listSearch" style="display: ${this._config.show_search === false ? "none" : "flex"};">
+            <span class="list-search-icon">🔍</span>
+            <input type="search" id="listSearchInput" enterkeyhint="search" autocomplete="off" placeholder="${t("Suchen … (#tag möglich)")}" aria-label="${t("Notizen durchsuchen")}" />
+            <button class="list-search-clear" id="listSearchClear" title="${t("Suche leeren")}" style="display: none;">✕</button>
+          </div>
           <div class="share-filter" id="shareFilter" style="display: none;"></div>
           <div class="selection-bar" id="selectionBar" style="display: none;"></div>
           <div class="ideas-list" id="ideasList"></div>
@@ -4470,8 +4583,14 @@ class BrainstormCard extends HTMLElement {
       pillsContainer.style.display = this._config.show_categories === true ? "flex" : "none";
     }
 
+    const listSearch = this.shadowRoot.getElementById("listSearch");
+    if (listSearch) {
+      listSearch.style.display = this._config.show_search === false ? "none" : "flex";
+    }
+
     // 2. Update Select Dropdown and Input Placeholder
     this._setupMicButton();
+    this._setupSearch();
     const ideaInput = this.shadowRoot.getElementById("ideaInput");
     if (ideaInput && document.activeElement !== ideaInput) {
       if (this._selectedCategory && this._selectedCategory !== "all" && this._selectedCategory !== "__completed__") {
@@ -4605,6 +4724,9 @@ class BrainstormCard extends HTMLElement {
       ? activeIdeas
       : activeIdeas.filter((i) => String(i.category || "").trim() === String(this._selectedCategory || "").trim());
 
+    const searching = this._searchActive();
+    if (searching) filteredIdeas = this._applySearch(filteredIdeas);
+
     if (this._config.max_items && typeof this._config.max_items === "number" && this._config.max_items > 0) {
       filteredIdeas = filteredIdeas.slice(0, this._config.max_items);
     }
@@ -4642,7 +4764,7 @@ class BrainstormCard extends HTMLElement {
       lastTopLevelId = topItem.id;
 
       const children = parentMap.get(topItem.id) || [];
-      const folded = children.length > 0 && collapsedIds.has(topItem.id);
+      const folded = !searching && children.length > 0 && collapsedIds.has(topItem.id);
       orderedIdeas[orderedIdeas.length - 1].childCount = children.length;
       orderedIdeas[orderedIdeas.length - 1].collapsed = folded;
       if (folded) return;
@@ -4661,7 +4783,9 @@ class BrainstormCard extends HTMLElement {
         ideasList.innerHTML = `
           <div class="empty-state">
             ${
-              isCompletedView
+              searching
+                ? t("Nichts gefunden für „{query}“.", { query: this._escapeHtml(this._searchQuery.trim()) })
+                : isCompletedView
                 ? t("Keine erledigten Ideen vorhanden.")
                 : this._selectedCategory === "all"
                 ? t("✨ Noch keine aktiven Ideen. Tippe oben eine Idee ein oder sprich mit Alexa!")
@@ -4687,7 +4811,7 @@ class BrainstormCard extends HTMLElement {
             const itemEdit = canEdit && item.access !== "view";
             const itemDelete = canDelete && (!item.access || item.access === "owner");
             return `
-            <div class="idea-item ${isSub ? "is-subtask" : ""} ${isCompletedView ? "completed" : ""}" data-id="${item.id}" data-idx="${idx}" style="--item-cat-color: ${this._getCategoryColor(item.category)};">
+            <div class="idea-item ${isSub ? "is-subtask" : ""} ${isCompletedView ? "completed" : ""} ${searching && !this._searchHits.has(item.id) ? "search-context" : ""}" data-id="${item.id}" data-idx="${idx}" style="--item-cat-color: ${this._getCategoryColor(item.category)};">
               ${!isCompletedView && itemEdit ? `<span class="drag-handle" title="${t("Halten & Ziehen zum Sortieren oder Unteraufgabe zuordnen")}" data-id="${item.id}">⠿</span>` : ""}
               <button 
                 class="check-btn ${isCompletedView ? "checked" : ""}" 
@@ -5366,6 +5490,12 @@ class BrainstormCardEditor extends HTMLElement {
         selector: { boolean: {} },
       },
       {
+        name: "show_search",
+        label: t("Suchfeld über der Liste anzeigen"),
+        default: true,
+        selector: { boolean: {} },
+      },
+      {
         name: "show_categories",
         label: t("Kategorie-Leiste (Filter-Pills) anzeigen"),
         default: true,
@@ -5658,7 +5788,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.8.10 ",
+  "%c BRAINSTORM-CARD %c v1.8.11 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

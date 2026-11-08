@@ -212,6 +212,7 @@ With **Smart Text Optimization** (General Settings) spoken notes are tidied up a
 | Indent and outdent | *Indent under the previous task* and *Outdent* buttons |
 | Suggest subtasks | ✨ lets the AI suggest subtasks (AI under Configure) |
 | Sort | hold and drag |
+| Search | 🔍 field above the list: words search title, description, result and person, `#tag` a tag; ✕ or **Esc** clears it |
 | Filter | category pills at the top |
 | Color mode | 🌈 colorful / 🎨 theme colors in the header |
 | Mind map | 🧠 in the header opens it as a layer, **Esc** closes it |
@@ -339,6 +340,7 @@ max_items: 20                 # 0 = all
 compact_mode: true
 color_mode: multicolor        # or theme
 show_mic: true
+show_search: true
 hide_empty_categories: true
 allow_delete: false           # e.g. for a wall tablet
 ```
@@ -355,6 +357,7 @@ allow_delete: false           # e.g. for a wall tablet
 | `show_badge` | `true` | counter in the header |
 | `show_quick_input` | `true` | quick input |
 | `show_mic` | `true` | 🎙️ in the input (HTTPS only) |
+| `show_search` | `true` | 🔍 search field above the list |
 | `show_categories` | `true` | category pills |
 | `hide_empty_categories` | `true` | hide empty categories |
 | `show_mindmap_button` | `true` | 🧠 in the header |

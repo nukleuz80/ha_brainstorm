@@ -213,6 +213,7 @@ Mit **Intelligente Formatierung** (Allgemeine Einstellungen) werden gesprochene 
 | Ein- und ausrücken | Knöpfe *Unter vorherige Aufgabe einrücken* und *Ausrücken* |
 | Unteraufgaben vorschlagen | ✨ lässt die KI Unteraufgaben vorschlagen (KI unter Konfigurieren) |
 | Sortieren | halten und ziehen |
+| Suchen | Feld 🔍 über der Liste: Wörter suchen in Titel, Beschreibung, Ergebnis und Person, `#tag` nach einem Tag; ✕ oder **Esc** leert es |
 | Filtern | Kategorie-Pills oben |
 | Farbmodus | 🌈 bunt / 🎨 Theme-Farben im Kopf |
 | Zur Mindmap | 🧠 im Kopf öffnet sie als Ebene, **Esc** schließt |
@@ -340,6 +341,7 @@ max_items: 20                  # 0 = alle
 compact_mode: true
 color_mode: multicolor         # oder theme
 show_mic: true
+show_search: true
 hide_empty_categories: true
 allow_delete: false            # z. B. für ein Wand-Tablet
 ```
@@ -356,6 +358,7 @@ allow_delete: false            # z. B. für ein Wand-Tablet
 | `show_badge` | `true` | Zähler im Kopf |
 | `show_quick_input` | `true` | Feld *Blitz-Idee* |
 | `show_mic` | `true` | 🎙️ im Feld (nur HTTPS) |
+| `show_search` | `true` | Suchfeld 🔍 über der Liste |
 | `show_categories` | `true` | Kategorie-Pills |
 | `hide_empty_categories` | `true` | leere Kategorien ausblenden |
 | `show_mindmap_button` | `true` | 🧠 im Kopf |
