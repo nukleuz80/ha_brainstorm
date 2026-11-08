@@ -1,8 +1,8 @@
-import { BOARDS, MARKERS, NUMBERING, boardColumnOf, boardColumns, boardDrop, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.7";
+import { BOARDS, MARKERS, NUMBERING, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.8";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.8.7 - Kanban, Timeline and Eisenhower Views
+ * Version: 1.8.8 - Outline View and Content Templates
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -11,7 +11,7 @@ import { BOARDS, MARKERS, NUMBERING, boardColumnOf, boardColumns, boardDrop, ale
 // Folded branches of the mind map, kept per device
 const COLLAPSED_KEY = "brainstorm_mindmap_collapsed";
 const LAYOUT_KEY = "brainstorm_mindmap_layout";
-const LAYOUTS = ["radial", "tree", "org", "kanban", "timeline", "matrix"];
+const LAYOUTS = ["radial", "tree", "org", "outline", "kanban", "timeline", "matrix"];
 const UNDO_LIMIT = 30;
 
 // The bulb lies next to this file, wherever Home Assistant serves it from
@@ -2414,6 +2414,26 @@ class BrainstormMindmapCard extends HTMLElement {
         .canvas-area.board-mode .branch-toggle {
           display: none;
         }
+        .template-chips {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+          margin-bottom: 8px;
+        }
+        .template-chip {
+          min-height: 36px;
+          padding: 6px 12px;
+          border-radius: 18px;
+          border: 1px solid var(--divider-color, rgba(127, 127, 127, 0.3));
+          background: var(--secondary-background-color, rgba(127, 127, 127, 0.08));
+          color: var(--primary-text-color, #212121);
+          font: inherit;
+          font-size: 13px;
+          cursor: pointer;
+        }
+        .template-chip:hover {
+          border-color: var(--primary-color, #03a9f4);
+        }
         .layout-grid {
           display: grid;
           grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -3567,7 +3587,7 @@ class BrainstormMindmapCard extends HTMLElement {
   }
 
   _layoutIcon(layout = this._layout()) {
-    return { radial: "◎", tree: "⇶", org: "⊤", kanban: "▥", timeline: "📅", matrix: "⊞" }[layout];
+    return { radial: "◎", tree: "⇶", org: "⊤", outline: "☰", kanban: "▥", timeline: "📅", matrix: "⊞" }[layout];
   }
 
   _layoutName(layout) {
@@ -3575,6 +3595,7 @@ class BrainstormMindmapCard extends HTMLElement {
       radial: t("Rund um die Mitte"),
       tree: t("Baum nach rechts"),
       org: t("Organigramm nach unten"),
+      outline: t("Gliederung"),
       kanban: t("Kanban nach Status"),
       timeline: t("Zeitleiste nach Fälligkeit"),
       matrix: t("Eisenhower-Matrix"),
@@ -4026,6 +4047,10 @@ class BrainstormMindmapCard extends HTMLElement {
           <button class="dialog-btn dialog-btn-cancel" data-export="mm">${t("FreeMind (.mm)")}</button>
         </div>
         <div class="dialog-label">${t("Gliederung einfügen:")}</div>
+        <div class="dialog-hint">${t("Vorlage wählen, anpassen und einfügen:")}</div>
+        <div class="template-chips">
+          ${contentTemplates().map((tpl) => `<button class="template-chip" data-template="${tpl.key}">${tpl.icon} ${this._escapeHtml(tpl.name)}</button>`).join("")}
+        </div>
         <textarea class="dialog-input dialog-textarea" id="outlineText" rows="5" placeholder="${t("Eine Zeile pro Notiz, Unterpunkte eingerückt oder als Markdown-Liste. Oder eine Datei wählen.")}"></textarea>
         <div class="export-row">
           <label class="dialog-btn dialog-btn-cancel outline-file">📂 ${t("Datei wählen")}<input type="file" id="outlineFile" accept=".md,.markdown,.txt,.opml,.mm,.xml,text/plain,text/markdown,text/xml"></label>
@@ -4050,6 +4075,16 @@ class BrainstormMindmapCard extends HTMLElement {
       const error = body.querySelector("#outlineError");
       text.addEventListener("input", () => {
         importBtn.disabled = !text.value.trim();
+      });
+      body.querySelectorAll("[data-template]").forEach((chip) => {
+        chip.addEventListener("click", () => {
+          const tpl = contentTemplates().find((item) => item.key === chip.dataset.template);
+          if (!tpl) return;
+          text.value = tpl.outline;
+          importBtn.disabled = false;
+          error.textContent = "";
+          text.focus();
+        });
       });
       body.querySelector("#outlineFile").addEventListener("change", (e) => {
         const file = e.target.files && e.target.files[0];
@@ -5278,6 +5313,10 @@ class BrainstormMindmapCard extends HTMLElement {
       this._arrangeBoardLayout(ideas, w, h);
       return;
     }
+    if (this._layout() === "outline") {
+      this._arrangeOutlineLayout(ideas, childrenOf, roots, w, h, centerNode);
+      return;
+    }
     if (this._layout() !== "radial") {
       this._arrangeTreeLayout(ideas, childrenOf, roots, w, h, centerNode, this._layout() === "org");
       return;
@@ -5739,6 +5778,50 @@ class BrainstormMindmapCard extends HTMLElement {
     });
   }
 
+  // One note per row, subtasks indented below their parent, as in an outliner
+  _arrangeOutlineLayout(ideas, childrenOf, roots, w, h, centerNode) {
+    const indent = 44;
+    const gap = 10;
+    const centerW = (centerNode && centerNode.offsetWidth) || 154;
+    const centerH = (centerNode && centerNode.offsetHeight) || 154;
+    this._centerPos = { x: 20 + centerW / 2, y: 20 + centerH / 2 };
+    if (centerNode) {
+      centerNode.style.left = `${this._centerPos.x}px`;
+      centerNode.style.top = `${this._centerPos.y}px`;
+    }
+    const left = 20 + centerW / 2 + 30;
+    let top = 20 + centerH + 16;
+    let maxX = 20 + centerW;
+    const seen = new Set();
+    const place = (idea, depth) => {
+      if (seen.has(idea.id)) return;
+      seen.add(idea.id);
+      const el = this.shadowRoot.getElementById(`cloud_${idea.id}`);
+      const width = (el && el.offsetWidth) || 230;
+      const height = (el && el.offsetHeight) || 120;
+      const x = left + depth * indent + width / 2;
+      const y = top + height / 2;
+      top += height + gap;
+      maxX = Math.max(maxX, x + width / 2);
+      this._nodePositions.set(idea.id, { x, y });
+      if (el) {
+        el.style.left = `${x}px`;
+        el.style.top = `${y}px`;
+      }
+      (childrenOf.get(idea.id) || []).forEach((kid) => place(kid, depth + 1));
+    };
+    roots.forEach((root) => place(root, 0));
+    ideas.forEach((idea) => place(idea, 0));
+    // The width fits the card, the list scrolls down by panning
+    if (this._scale >= 0.95 && this._scale <= 1.05) {
+      this._scale = Math.max(0.45, Math.min(1, (w - 24) / (maxX + 4)));
+      this._panX = 12 - this._scale * 8;
+      this._panY = 12 - this._scale * 8;
+      this._applyTransform();
+    }
+    this._drawConnections();
+  }
+
   // Tidy tree: every leaf gets its own row (or column), parents sit in the middle of theirs
   _arrangeTreeLayout(ideas, childrenOf, roots, w, h, centerNode, vertical) {
     const size = new Map();
@@ -5924,7 +6007,15 @@ class BrainstormMindmapCard extends HTMLElement {
         [x2, y2] = this._underlineEnd(el, pos, x1);
       }
 
-      const pathData = this._linePath(lines, x1, y1, x2, y2);
+      let pathData;
+      if (layout === "outline") {
+        // Down from the left side of the parent, then across to the note
+        const fromEl = from ? this.shadowRoot.getElementById(`cloud_${parentId}`) : this.shadowRoot.getElementById("centerNode");
+        const spine = x1 - ((fromEl && fromEl.offsetWidth) || 0) / 2 + 22;
+        pathData = `M ${spine} ${y1} V ${y2} H ${x2 - el.offsetWidth / 2}`;
+      } else {
+        pathData = this._linePath(lines, x1, y1, x2, y2);
+      }
       const faded = this._filterHits && !this._filterHits.has(idea.id) ? " filter-out" : "";
       svgHtml += `
         <path id="path_${idea.id}" class="synapse-path${from ? " branch-path" : ""}${faded}" d="${pathData}" style="--path-color: ${catColor};" />
@@ -7719,6 +7810,7 @@ class BrainstormMindmapCardEditor extends HTMLElement {
               { value: "radial", label: t("Rund um die Mitte") },
               { value: "tree", label: t("Baum nach rechts") },
               { value: "org", label: t("Organigramm nach unten") },
+              { value: "outline", label: t("Gliederung") },
               { value: "kanban", label: t("Kanban nach Status") },
               { value: "timeline", label: t("Zeitleiste nach Fälligkeit") },
               { value: "matrix", label: t("Eisenhower-Matrix") },
@@ -8100,7 +8192,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.8.7 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.8.8 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

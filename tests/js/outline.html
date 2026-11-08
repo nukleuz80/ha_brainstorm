@@ -2,7 +2,7 @@
 <!-- Browser test for the outline exports. Run: python3 -m http.server in the repo root,
      open http://localhost:8000/tests/js/outline.html, it shows PASS or the failures. --><meta charset="utf-8"><body><pre id="out">running</pre>
 <script type="module">
-import { outlineFreemind, outlineMarkdown, outlineOpml } from "../../custom_components/brainstorm/cards/brainstorm-i18n.js";
+import { contentTemplates, outlineFreemind, outlineMarkdown, outlineOpml } from "../../custom_components/brainstorm/cards/brainstorm-i18n.js";
 const ideas = [
   { id: "a", text: "Dach & Rinne" },
   { id: "b", text: "Ziegel <rot>", parent_id: "a", description: "Angebot \"B\"\nabwarten" },
@@ -26,5 +26,13 @@ check("freemind note", mm.querySelector('richcontent[TYPE="NOTE"]').textContent.
 check("empty", outlineMarkdown([], "Leer"), "# Leer\n\n");
 const loop = [{ id: "x", text: "X", parent_id: "y" }, { id: "y", text: "Y", parent_id: "x" }];
 check("cycle is skipped, no hang", outlineMarkdown(loop, "L"), "# L\n\n");
+const templates = contentTemplates();
+check("templates have unique keys", new Set(templates.map((tpl) => tpl.key)).size, templates.length);
+templates.forEach((tpl) => {
+  const lines = tpl.outline.trim().split("\n");
+  check(`template ${tpl.key} starts with its title`, lines[0].startsWith("# "), true);
+  check(`template ${tpl.key} is a list`, lines.slice(1).every((line) => /^(  )?- \S/.test(line)), true);
+});
+check("project template", templates.find((tpl) => tpl.key === "project").outline.includes("- Aufgaben\n  - Planung\n"), true);
 document.getElementById("out").textContent = fails.length ? "FAIL\n" + fails.join("\n") : "PASS";
 </script>

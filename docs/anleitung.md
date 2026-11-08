@@ -243,7 +243,7 @@ Mit **Intelligente Formatierung** (Allgemeine Einstellungen) werden gesprochene 
 | Rahmen um Notizen | Notizen auswählen ➔ ▢ *Rahmen*, oder ✏️ Bearbeiten ➔ *Rahmen*; ein Tipp auf den Rahmennamen benennt um |
 | Callout | ✏️ Bearbeiten ➔ *Callout* |
 | Brainstorm: schnell viele Ideen sammeln | ⚡ unten rechts oder **B** |
-| Baum, Organigramm, Kanban, Zeitleiste oder Eisenhower-Matrix | Ansichts-Knopf über ⚡ |
+| Baum, Organigramm, Gliederung, Kanban, Zeitleiste oder Eisenhower-Matrix | Ansichts-Knopf über ⚡ |
 | Unterpunkte nummerieren | ✏️ Bearbeiten ➔ *Unterpunkte nummerieren*: 1., 1.1 · a) · I. |
 | Unterpunkte sortieren | ✏️ Bearbeiten ➔ *Unterpunkte sortieren*, oder **S** (ohne Auswahl: die Hauptnotizen) |
 
@@ -263,11 +263,11 @@ Mit **Intelligente Formatierung** (Allgemeine Einstellungen) werden gesprochene 
 
 **Brainstorm-Modus:** ⚡ unten rechts (oder **B**) öffnet ein großes Eingabefeld mit Timer: 3, 5, 10 oder 15 Minuten oder ohne Zeit. Die Uhr startet mit der ersten Idee. Jede Idee wird mit **Enter** sofort als Notiz gespeichert, das Feld ist gleich wieder frei, und die Idee erscheint als bunter Zettel darunter. ✕ auf einem Zettel löscht sie wieder. Die Ideen landen in der gewählten Kategorie, im Fokus unter der Fokus-Notiz, unter *Alle* in der passenden Kategorie. Nach *Fertig* nimmt ↶ alle gesammelten Ideen auf einmal heraus, 🪄 ordnet die Map neu. Danach lassen sie sich per Ziehen in Zweige sortieren.
 
-**Layouts:** Der Knopf über ⚡ schaltet die Anordnung um: ◎ rund um die Mitte, ⇶ Baum nach rechts (Hauptnotizen in einer Spalte, Unterpunkte rechts daneben) und ⊤ Organigramm nach unten. Im Baum und im Organigramm steht eine Notiz mittig zu ihren Unterpunkten, und die Linien verlaufen rechtwinklig. Die Wahl merkt sich dieser Browser; die Kartenoption `layout` legt den Standard fest. Verschobene Notizen bleiben, wo du sie hingelegt hast, bis du das Layout wieder wechselst.
+**Layouts:** Der Knopf über ⚡ öffnet die Ansichtswahl: ◎ rund um die Mitte, ⇶ Baum nach rechts (Hauptnotizen in einer Spalte, Unterpunkte rechts daneben), ⊤ Organigramm nach unten und ☰ Gliederung (eine Notiz pro Zeile, Unterpunkte eingerückt darunter). Im Baum und im Organigramm steht eine Notiz mittig zu ihren Unterpunkten, und die Linien verlaufen rechtwinklig. Die Wahl merkt sich dieser Browser; die Kartenoption `layout` legt den Standard fest. Verschobene Notizen bleiben, wo du sie hingelegt hast, bis du das Layout wieder wechselst.
 
 **Boards:** Drei weitere Ansichten zeigen die Notizen in Spalten statt als Map. **▥ Kanban** sortiert nach Status: *Offen*, *In Arbeit*, *Wartet* (blockierende Verbindung) und *Erledigt*. Zieh eine Notiz nach *In Arbeit*, um sie zu markieren, zurück nach *Offen*, um die Markierung zu entfernen, auf *Erledigt*, um sie abzuhaken. **📅 Zeitleiste** sortiert nach Fälligkeit: *Überfällig*, *Heute*, *Morgen*, *Diese Woche*, *Später*, *Ohne Datum*. Ziehen setzt das Datum und behält die Uhrzeit (09:00 bei einer Notiz ohne); *Ohne Datum* entfernt es. **⊞ Eisenhower-Matrix** sortiert nach Wichtigkeit (Priorität 🔥 oder 🔴) und Dringlichkeit (🔥 oder fällig in drei Tagen): *Sofort erledigen*, *Einplanen*, *Abgeben*, *Später oder gar nicht*. Ziehen setzt die Priorität; *Abgeben* gibt einer Notiz ohne nahes Datum eines für morgen. Spalten, die sich aus etwas anderem ergeben (*Wartet*, *Überfällig*, ein nahes Datum), erreicht man nicht durch Ziehen; ein kurzer Hinweis sagt warum. ↶ nimmt jeden Zug zurück.
 
-**Export und Import:** 🖼️ speichert die Map als Bild (SVG, PNG) oder als Gliederung: **Markdown** (eine verschachtelte Liste, Beschreibungen als `>`-Zeile), **OPML** (für Gliederungsprogramme wie Workflowy, OmniOutliner oder Logseq) und **FreeMind** (`.mm`, öffnet sich in Freeplane, XMind und MindManager). Die Gliederung enthält alle Notizen der Map, auch eingeklappte; im Fokus nur den Zweig. Unter *Gliederung einfügen* tippst oder kopierst du eine Liste hinein, eine Zeile pro Notiz, Unterpunkte eingerückt oder mit `-`, `*`, `1.` und Überschriften `#`. Oder du wählst eine Datei (`.md`, `.txt`, `.opml`, `.mm`). `- [x]` legt den Punkt gleich als erledigt an. Die Notizen landen als Hauptnotizen der Kategorie, im Fokus unter der Fokus-Notiz. Höchstens 300 Notizen auf einmal, ↶ nimmt alle wieder heraus. Für Automationen gibt es den Dienst `brainstorm.import_outline`.
+**Export und Import:** 🖼️ speichert die Map als Bild (SVG, PNG) oder als Gliederung: **Markdown** (eine verschachtelte Liste, Beschreibungen als `>`-Zeile), **OPML** (für Gliederungsprogramme wie Workflowy, OmniOutliner oder Logseq) und **FreeMind** (`.mm`, öffnet sich in Freeplane, XMind und MindManager). Die Gliederung enthält alle Notizen der Map, auch eingeklappte; im Fokus nur den Zweig. Unter *Gliederung einfügen* tippst oder kopierst du eine Liste hinein, eine Zeile pro Notiz, Unterpunkte eingerückt oder mit `-`, `*`, `1.` und Überschriften `#`. Oder du wählst eine Datei (`.md`, `.txt`, `.opml`, `.mm`). `- [x]` legt den Punkt gleich als erledigt an. Die Notizen landen als Hauptnotizen der Kategorie, im Fokus unter der Fokus-Notiz. Höchstens 300 Notizen auf einmal, ↶ nimmt alle wieder heraus. **Inhaltsvorlagen:** Über dem Textfeld stehen fertige Zweige: SWOT-Analyse, Pro und Contra, Projektplan, Wochenplan, Feier, Reise (mit Packliste), Rückblick und Raum renovieren. Ein Tipp schreibt die Vorlage ins Feld; Zeilen ändern oder ergänzen, dann *Einfügen*. Für Automationen gibt es den Dienst `brainstorm.import_outline`.
 
 **Rahmen und Callouts:** Ein Rahmen ist ein gestricheltes Rechteck mit Namen um mehrere Notizen, etwa *Phase 1* oder *Erdgeschoss*. Notizen mit demselben Rahmennamen teilen sich einen Rahmen. Ein Callout ist eine kurze Anmerkung in einer Sprechblase über der Notiz, für Dinge wie *Farbe noch offen*. Die Listenkarte zeigt den Rahmen als Chip und den Callout unter dem Text.
 
@@ -366,7 +366,7 @@ allow_delete: false            # z. B. für ein Wand-Tablet
 ```yaml
 type: custom:brainstorm-mindmap-card
 map_template: sketch    # standard, clean, sketch, neon
-layout: kanban          # radial, tree, org, kanban, timeline, matrix
+layout: kanban          # radial, tree, org, outline, kanban, timeline, matrix
 node_shape: thought     # überschreibt die Vorlage
 line_style: curve
 color_scheme: pastel

@@ -461,6 +461,63 @@ const DICTIONARIES = {
     "🔥 Sofort erledigen": "🔥 Do now",
     "🔧 In Arbeit": "🔧 In progress",
     "🗑️ Später oder gar nicht": "🗑️ Later or never",
+    "Gliederung": "Outline",
+    "Ablauf": "Schedule",
+    "Anreise": "Getting there",
+    "Aufgaben": "Tasks",
+    "Ausflüge": "Trips",
+    "Ausmessen": "Measure",
+    "Budget": "Budget",
+    "Chancen": "Opportunities",
+    "Contra": "Con",
+    "Deko": "Decoration",
+    "Dienstag": "Tuesday",
+    "Dokumente": "Documents",
+    "Donnerstag": "Thursday",
+    "Einkauf": "Shopping",
+    "Entscheidung": "Decision",
+    "Essen und Getränke": "Food and drinks",
+    "Feier": "Party",
+    "Feier planen": "Plan a party",
+    "Freitag": "Friday",
+    "Gäste": "Guests",
+    "Handwerker": "Tradespeople",
+    "Kleidung": "Clothes",
+    "Material": "Material",
+    "Mittwoch": "Wednesday",
+    "Montag": "Monday",
+    "Musik": "Music",
+    "Offene Fragen": "Open questions",
+    "Packliste": "Packing list",
+    "Planung": "Planning",
+    "Pro": "Pro",
+    "Pro und Contra": "Pros and cons",
+    "Projekt": "Project",
+    "Projektplan": "Project plan",
+    "Raum renovieren": "Renovate a room",
+    "Reihenfolge": "Order of work",
+    "Reise": "Trip",
+    "Reise planen": "Plan a trip",
+    "Renovierung": "Renovation",
+    "Risiken": "Threats",
+    "Rückblick": "Retrospective",
+    "SWOT-Analyse": "SWOT analysis",
+    "Schwächen": "Weaknesses",
+    "Stärken": "Strengths",
+    "Technik": "Gadgets",
+    "Termine": "Dates",
+    "Test": "Testing",
+    "Umsetzung": "Doing",
+    "Unterkunft": "Accommodation",
+    "Vorlage wählen, anpassen und einfügen:": "Pick a template, adjust it and insert it:",
+    "Was lief gut": "What went well",
+    "Was lief nicht gut": "What went badly",
+    "Was wir ändern": "What we change",
+    "Werkzeug": "Tools",
+    "Woche": "Week",
+    "Wochenende": "Weekend",
+    "Wochenplan": "Week plan",
+    "Ziel": "Goal",
     "Anordnung der Notizen": "Arrangement of the notes",
     "Rund um die Mitte": "Around the center",
     "Baum nach rechts": "Tree to the right",
@@ -1140,6 +1197,69 @@ export function boardDrop(kind, key, idea, now = new Date()) {
     return change;
   }
   return null;
+}
+
+/**
+ * Return the content templates: ready branches for common kinds of thinking,
+ * each as a Markdown outline that import_outline understands.
+ */
+export function contentTemplates() {
+  const outline = (title, items) => {
+    const lines = [`# ${title}`];
+    items.forEach((item) => {
+      const [text, subs] = Array.isArray(item) ? item : [item, []];
+      lines.push(`- ${text}`);
+      subs.forEach((sub) => lines.push(`  - ${sub}`));
+    });
+    return `${lines.join("\n")}\n`;
+  };
+  return [
+    { key: "swot", icon: "🧭", name: t("SWOT-Analyse"), outline: outline(t("SWOT-Analyse"), [t("Stärken"), t("Schwächen"), t("Chancen"), t("Risiken")]) },
+    { key: "procon", icon: "⚖️", name: t("Pro und Contra"), outline: outline(t("Entscheidung"), [t("Pro"), t("Contra"), t("Offene Fragen"), t("Ergebnis")]) },
+    {
+      key: "project",
+      icon: "🚀",
+      name: t("Projektplan"),
+      outline: outline(t("Projekt"), [
+        t("Ziel"),
+        [t("Aufgaben"), [t("Planung"), t("Umsetzung"), t("Test")]],
+        t("Termine"),
+        t("Budget"),
+        t("Risiken"),
+        t("Offene Fragen"),
+      ]),
+    },
+    {
+      key: "week",
+      icon: "🗓️",
+      name: t("Wochenplan"),
+      outline: outline(t("Woche"), [t("Montag"), t("Dienstag"), t("Mittwoch"), t("Donnerstag"), t("Freitag"), t("Wochenende")]),
+    },
+    {
+      key: "party",
+      icon: "🎉",
+      name: t("Feier planen"),
+      outline: outline(t("Feier"), [t("Gäste"), t("Essen und Getränke"), t("Einkauf"), t("Deko"), t("Musik"), t("Ablauf")]),
+    },
+    {
+      key: "trip",
+      icon: "🧳",
+      name: t("Reise planen"),
+      outline: outline(t("Reise"), [t("Anreise"), t("Unterkunft"), [t("Packliste"), [t("Kleidung"), t("Dokumente"), t("Technik")]], t("Ausflüge"), t("Budget")]),
+    },
+    {
+      key: "retro",
+      icon: "🔁",
+      name: t("Rückblick"),
+      outline: outline(t("Rückblick"), [t("Was lief gut"), t("Was lief nicht gut"), t("Was wir ändern")]),
+    },
+    {
+      key: "room",
+      icon: "🏠",
+      name: t("Raum renovieren"),
+      outline: outline(t("Renovierung"), [t("Ausmessen"), t("Material"), t("Werkzeug"), t("Handwerker"), t("Reihenfolge"), t("Budget")]),
+    },
+  ];
 }
 
 /** Return the 📎 badge of an idea with files, or nothing. */
