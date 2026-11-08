@@ -1,0 +1,34 @@
+<!doctype html>
+<!-- Browser test for tags and the map filter. Run: python3 -m http.server in the repo root,
+     open http://localhost:8000/tests/js/filter.html, it shows PASS or the failures. --><meta charset="utf-8"><body><pre id="out">running</pre>
+<script type="module">
+import { emptyFilter, filterActive, ideaMatches, ideaTags } from "../../custom_components/brainstorm/cards/brainstorm-i18n.js";
+const now = new Date("2026-11-08T12:00:00Z");
+const ideas = {
+  apples: { text: "Äpfel kaufen #Einkauf", category: "Haus", priority: "low" },
+  lawn: { text: "Rasen mähen", description: "Mit #garten und #Einkauf", priority: "urgent", due: "2026-11-01T09:00:00Z" },
+  call: { text: "Arzt anrufen", priority: "high", due: "2026-11-10T09:00:00Z", in_progress: { by: "Jan" } },
+  plain: { text: "Prio #1 klären", priority: "medium" },
+};
+const fails = [];
+const check = (name, got, want) => { if (JSON.stringify(got) !== JSON.stringify(want)) fails.push(`${name}: want ${JSON.stringify(want)}, got ${JSON.stringify(got)}`); };
+const hits = (change) => { const f = emptyFilter(); change(f); return Object.keys(ideas).filter((k) => ideaMatches(ideas[k], f, now)); };
+check("tags", ideaTags(ideas.lawn), ["garten", "einkauf"]);
+check("no number tags", ideaTags(ideas.plain), []);
+check("no color tags", ideaTags({ text: "Farbe #ff7800 und #cafe #abc123ff" }), ["cafe"]);
+check("tags from an action", ideaTags({ text: "Lampe #Keller", tags: ["keller", "#Strom"] }), ["keller", "strom"]);
+check("empty filter is off", filterActive(emptyFilter()), false);
+check("empty filter keeps all", hits(() => {}), ["apples", "lawn", "call", "plain"]);
+check("accents and case", hits((f) => { f.query = "APFEL"; }), ["apples"]);
+check("words all match", hits((f) => { f.query = "rasen garten"; }), ["lawn"]);
+check("tag prefix in search", hits((f) => { f.query = "#ein"; }), ["apples", "lawn"]);
+check("not the category, the pills choose it", hits((f) => { f.query = "haus"; }), []);
+check("priorities any", hits((f) => { f.prios.add("urgent"); f.prios.add("high"); }), ["lawn", "call"]);
+check("overdue", hits((f) => { f.overdue = true; }), ["lawn"]);
+check("next 7 days", hits((f) => { f.soon = true; }), ["call"]);
+check("overdue or soon", hits((f) => { f.overdue = true; f.soon = true; }), ["lawn", "call"]);
+check("in progress", hits((f) => { f.working = true; }), ["call"]);
+check("tags all", hits((f) => { f.tags.add("einkauf"); f.tags.add("garten"); }), ["lawn"]);
+check("groups together", hits((f) => { f.tags.add("einkauf"); f.prios.add("low"); }), ["apples"]);
+document.getElementById("out").textContent = fails.length ? "FAIL\n" + fails.join("\n") : "PASS";
+</script>

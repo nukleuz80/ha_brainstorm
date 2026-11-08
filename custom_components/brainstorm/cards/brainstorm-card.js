@@ -1,9 +1,9 @@
-import { alexaEchos, attachmentBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, inProgressBadge, parseDueInput, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.7.22";
+import { alexaEchos, attachmentBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, inProgressBadge, parseDueInput, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.0";
 
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.7.22 - Skill, Reminders, Privacy and Sharing
+ * Version 1.8.0 - Search, Filter and Tags
  */
 // The bulb lies next to this file, wherever Home Assistant serves it from
 const BULB_URL = new URL("./brainstorm-bulb.svg", import.meta.url).href;
@@ -3410,6 +3410,21 @@ class BrainstormCard extends HTMLElement {
           text-decoration: underline;
           overflow-wrap: anywhere;
         }
+        .bs-tag {
+          display: inline-block;
+          padding: 0 6px;
+          border-radius: 9px;
+          background: color-mix(in srgb, var(--primary-color, #03a9f4) 14%, transparent);
+          color: var(--primary-color, #03a9f4);
+          font-size: 0.88em;
+          font-weight: 600;
+          line-height: 1.5;
+          cursor: pointer;
+          white-space: nowrap;
+        }
+        .bs-tag:hover {
+          background: color-mix(in srgb, var(--primary-color, #03a9f4) 26%, transparent);
+        }
         .idea-text code, .idea-result code, .cloud-text code, .cloud-result code {
           font-family: var(--code-font-family, monospace);
           font-size: 0.9em;
@@ -5513,7 +5528,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.7.22 ",
+  "%c BRAINSTORM-CARD %c v1.8.0 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

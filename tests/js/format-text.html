@@ -17,6 +17,11 @@ const cases = [
  ["5 * 3 * 2 und snake_case_name", "5 * 3 * 2 und snake_case_name"],
  ["**<img src=x onerror=alert(1)>**", "<strong>&lt;img src=x onerror=alert(1)&gt;</strong>"],
  ["mailto ok [Jan](mailto:a@b.de)", 'mailto ok <a class="bs-link" href="mailto:a@b.de" target="_blank" rel="noopener noreferrer">Jan</a>'],
+ ["Rasen #Garten mähen", 'Rasen <span class="bs-tag" data-tag="garten">#Garten</span> mähen'],
+ ["(#3d-druck) Prio #1 und a#b", '(<span class="bs-tag" data-tag="3d-druck">#3d-druck</span>) Prio #1 und a#b'],
+ ["https://x.de/#frag #ok", '<a class="bs-link" href="https://x.de/#frag" target="_blank" rel="noopener noreferrer">https://x.de/#frag</a> <span class="bs-tag" data-tag="ok">#ok</span>'],
+ ["it's #<b>x</b>", "it&#039;s #&lt;b&gt;x&lt;/b&gt;"],
+ ["Farbe #ff7800", "Farbe #ff7800"],
  [null, ""],
 ];
 const fails = [];
@@ -25,7 +30,7 @@ for (const [input, want] of cases) { const got = formatText(input); if (got !== 
 const div = document.createElement("div");
 for (const [input] of cases) div.innerHTML += formatText(input);
 for (const el of div.querySelectorAll("*")) {
-  if (!["A","STRONG","EM","S","CODE"].includes(el.tagName)) fails.push("bad tag " + el.tagName);
+  if (!["A","STRONG","EM","S","CODE"].includes(el.tagName) && !(el.tagName === "SPAN" && el.className === "bs-tag")) fails.push("bad tag " + el.tagName);
   for (const a of el.attributes) if (a.name.startsWith("on")) fails.push("bad attr " + a.name);
   if (el.tagName === "A" && !/^(https?:|mailto:)/.test(el.getAttribute("href"))) fails.push("bad href " + el.getAttribute("href"));
 }

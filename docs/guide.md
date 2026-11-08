@@ -231,6 +231,12 @@ With **Smart Text Optimization** (General Settings) spoken notes are tidied up a
 | Fold/unfold a branch | button on the branch, or **→** on a folded note |
 | Save as image | 🖼️ |
 | Full screen | ⛶ |
+| Search and filter | 🔍, or **/** or **Ctrl+F** on the map |
+| Filter by a tag | tap a #tag in a note |
+
+**Search and filter:** 🔍 opens a bar above the map. Words you type must all appear in the title, description, result or person; `#gar` finds notes with a tag starting with *gar*. The chips filter by priority (🔥 🔴 🟡 🟢), by *Overdue* or *7 days*, by *In progress* and by the tags of the list, with their number. Notes that fit stay bright, their parents half, the rest fades. A folded branch with hits shows its button in color. **Enter** jumps to the next hit and unfolds its branch, **Shift+Enter** to the previous one, **Esc** clears the search and then closes the bar, which also clears the filter.
+
+**Tags:** write `#garten` or `#3d-druck` anywhere in the title or description, or say *"hashtag garden"* to Alexa or Assist. A tag needs a letter, so `#1` stays a number and a color like `#ff7800` stays a color. Tags given with `tags:` in `brainstorm.add_idea` count too.
 
 **Keyboard** (with a note selected)
 
@@ -359,6 +365,7 @@ A single note can get its own shape in the edit dialog or through a service (`no
 | `show_controls` | `true` | zoom and center |
 | `show_add_btn` | `true` | "+ Idea" |
 | `show_export_btn` | `true` | 🖼️ save as image |
+| `show_filter` | `true` | 🔍 search and filter |
 | `show_fullscreen_btn` | `true` | ⛶ full screen |
 | `show_color_toggle` | `true` | 🎨/🌈 |
 | `hide_empty_categories` | `true` | hide empty categories |

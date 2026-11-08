@@ -1212,9 +1212,7 @@ null
 "spoken": [
 "(Icon: mdi:home, Farbe: #ff7800)",
 "Alltag",
-[
-"ff7800"
-],
+[],
 "medium"
 ],
 "spoken_due": [
@@ -1226,9 +1224,7 @@ null,
 "typed_entry": [
 "(Icon: mdi:home, Farbe: #ff7800)",
 "Alltag",
-[
-"ff7800"
-],
+[],
 "medium"
 ],
 "verb": false
@@ -2594,7 +2590,7 @@ null,
 null
 ],
 "spoken": [
-"Etwas ganz anderes #Alltag",
+"Etwas ganz anderes #alltag",
 "Alltag",
 [
 "alltag"

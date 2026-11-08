@@ -121,6 +121,13 @@ _LOGGER = logging.getLogger(__name__)
 
 COLOR_PATTERN = re.compile(r"^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$")
 ICON_PATTERN = re.compile(r"^[a-zA-Z0-9_-]+:[a-zA-Z0-9_-]+$")
+# A tag is a word after #, with at least one letter, so "#1" stays a number.
+# The cards find tags the same way.
+TAG_PATTERN = re.compile(r"(?:^|(?<=[\s(\[,;]))#((?=[\w-]*[^\W\d_])[\w-]+)")
+# A color such as #ff7800 is no tag
+COLOR_TAG_PATTERN = re.compile(r"(?=[a-f]*\d)[0-9a-f]{6}(?:[0-9a-f]{2})?", re.IGNORECASE)
+# Said aloud, a tag is "hashtag garten"
+SPOKEN_TAG_PATTERN = re.compile(r"\bhash\s?tag\s+([^\W\d_][\w-]*)", re.IGNORECASE)
 # Config subfolders exports must not write to; 'www' is served without authentication
 EXPORT_BLOCKED_DIRS = {"custom_components", "www"}
 # How many deleted ideas can be brought back until the next start
@@ -467,6 +474,8 @@ class BrainstormStore:
                 result[ATTR_ATTACHMENTS] = [dict(a) for a in attachments]
             if working := idea.get(ATTR_IN_PROGRESS):
                 result[ATTR_IN_PROGRESS] = dict(working)
+            if tags := idea.get(ATTR_TAGS):
+                result[ATTR_TAGS] = list(tags)
             return result
 
         last_action = self.last_action
@@ -822,8 +831,12 @@ class BrainstormStore:
             if not category:
                 category = exp
 
-        # Extract hashtags
-        tags = re.findall(r"#([a-zA-Z0-9äöüÄÖÜß_-]+)", clean_text)
+        # Extract hashtags, a spoken "hashtag garten" becomes "#garten"
+        clean_text = SPOKEN_TAG_PATTERN.sub(lambda m: f"#{m.group(1).lower()}", clean_text)
+        written_tags = [
+            tag for tag in TAG_PATTERN.findall(clean_text) if not COLOR_TAG_PATTERN.fullmatch(tag)
+        ]
+        tags = list(dict.fromkeys(tag.lower() for tag in written_tags))
 
         # 1. Prefix: 'Kategorie: Der eigentliche Text' or '[Kategorie] Der eigentliche Text'
         if not category:
@@ -965,8 +978,20 @@ class BrainstormStore:
             clean_text, spoken_prio = pack.extract_priority(clean_text)
             resolved_prio = spoken_prio or resolved_prio
 
-        # 7. Smart NLP Text Normalization, a typed text only gets its typos fixed
+        # 7. Smart NLP Text Normalization, a typed text only gets its typos fixed.
+        # The tags of a spoken sentence wait at its end, so they do not break it up.
         if self._smart_formatting:
+            spoken_tags: list[str] = []
+            if spoken and tags:
+                # Each tag once, spelled as written
+                spoken_tags = [
+                    f"#{tag}" for tag in {t.lower(): t for t in reversed(written_tags)}.values()
+                ][::-1]
+                clean_text = TAG_PATTERN.sub(
+                    lambda m: m.group(0) if COLOR_TAG_PATTERN.fullmatch(m.group(1)) else "",
+                    clean_text,
+                )
+                clean_text = re.sub(r"\s{2,}", " ", clean_text).strip()
             formatted = (
                 pack.clean_text(clean_text, self._glossary(pack))
                 if spoken
@@ -974,6 +999,8 @@ class BrainstormStore:
             )
             if formatted:
                 clean_text = formatted
+            if spoken_tags:
+                clean_text = " ".join([clean_text, *spoken_tags]).strip()
 
         return clean_text, category, tags, resolved_prio
 

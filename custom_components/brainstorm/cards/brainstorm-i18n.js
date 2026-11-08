@@ -324,6 +324,19 @@ const DICTIONARIES = {
     "Die KI ist gerade nicht erreichbar. Versuch es gleich nochmal.": "The AI cannot be reached right now. Try again in a moment.",
     "Wähle zuerst eine KI-Aufgaben-Entität unter Brainstorm Hub ➔ Konfigurieren ➔ KI.": "First choose an AI task entity under Brainstorm Hub ➔ Configure ➔ AI.",
     "Du darfst diese Notiz nicht ändern.": "You may not change this note.",
+    "Suchen und filtern (/)": "Search and filter (/)",
+    "Suchen … (#tag)": "Search … (#tag)",
+    "Suchen": "Search",
+    "Filter zurücksetzen und schließen (ESC)": "Clear the filter and close (ESC)",
+    "Überfällig": "Overdue",
+    "Termin ist vorbei": "The due date has passed",
+    "7 Tage": "7 days",
+    "Termin in den nächsten 7 Tagen": "Due in the next 7 days",
+    "Als „In Arbeit“ markiert": "Marked as “in progress”",
+    "Nur Notizen mit #{tag}": "Only notes with #{tag}",
+    "{hits} von {total}": "{hits} of {total}",
+    "{index}/{hits} von {total}": "{index}/{hits} of {total}",
+    "Suche und Filter (🔍) anzeigen": "Show search and filter (🔍)",
   },
 };
 
@@ -478,7 +491,97 @@ export function formatText(text) {
       html += `<em>${formatText(italic)}</em>`;
     }
   }
+  return html + plainText(raw.slice(last));
+}
+
+// A tag is a word after #, such as #garten or #3d-druck, with at least one
+// letter, so "#1" stays a number. It starts the text or follows a space or a bracket.
+const TAG = /(^|[\s(\[,;])#((?=[\p{N}_-]*\p{L})[\p{L}\p{N}_-]+)/gu;
+// A color such as #ff7800 is no tag
+const COLOR = /^(?=[a-f]*\d)[0-9a-f]{6}(?:[0-9a-f]{2})?$/i;
+
+/** Escape plain text and show its tags as chips. */
+function plainText(raw) {
+  let html = "";
+  let last = 0;
+  for (const match of raw.matchAll(TAG)) {
+    if (COLOR.test(match[2])) continue;
+    const start = match.index + match[1].length;
+    html += escapeHtml(raw.slice(last, start));
+    const tag = match[2];
+    html += `<span class="bs-tag" data-tag="${escapeHtml(tag.toLowerCase())}">#${escapeHtml(tag)}</span>`;
+    last = start + 1 + tag.length;
+  }
   return html + escapeHtml(raw.slice(last));
+}
+
+/** Return the tags of an idea, from its title and its description, in lower case. */
+export function ideaTags(idea) {
+  const tags = new Set();
+  for (const field of [idea && idea.text, idea && idea.description]) {
+    if (!field) continue;
+    for (const match of String(field).matchAll(TAG)) {
+      if (!COLOR.test(match[2])) tags.add(match[2].toLowerCase());
+    }
+  }
+  // Tags given by an action, without # in the text
+  for (const tag of (idea && Array.isArray(idea.tags) ? idea.tags : [])) {
+    if (typeof tag === "string" && tag.trim()) tags.add(tag.trim().replace(/^#/, "").toLowerCase());
+  }
+  return [...tags];
+}
+
+// Searching ignores case and accents, so "apfel" finds "Äpfel"
+const fold = (text) => String(text || "").normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+
+/** Return an empty filter: no words, priorities, dates or tags. */
+export function emptyFilter() {
+  return { query: "", prios: new Set(), overdue: false, soon: false, working: false, tags: new Set() };
+}
+
+/** Tell whether a filter asks for anything. */
+export function filterActive(filter) {
+  return Boolean(
+    filter &&
+      (filter.query.trim() || filter.prios.size || filter.overdue || filter.soon || filter.working || filter.tags.size),
+  );
+}
+
+/**
+ * Tell whether an idea fits a filter.
+ *
+ * Every word of the search must appear in the title, description, result
+ * or person, a word with # must start one of its tags. Priorities
+ * count if any fits, overdue and next 7 days likewise, the tags all have to be there.
+ */
+export function ideaMatches(idea, filter, now = new Date()) {
+  if (!filterActive(filter)) return true;
+  const tags = ideaTags(idea);
+  const words = fold(filter.query).split(/\s+/).filter(Boolean);
+  if (words.length) {
+    const haystack = fold([idea.text, idea.description, idea.result, idea.assignee].join(" "));
+    for (const word of words) {
+      if (word.startsWith("#") && word.length > 1) {
+        const wanted = word.slice(1);
+        if (!tags.some((tag) => fold(tag).startsWith(wanted))) return false;
+      } else if (!haystack.includes(word)) {
+        return false;
+      }
+    }
+  }
+  if (filter.prios.size && !filter.prios.has(String(idea.priority || "medium").toLowerCase())) return false;
+  if (filter.overdue || filter.soon) {
+    const due = idea.due ? new Date(idea.due).getTime() : NaN;
+    if (Number.isNaN(due)) return false;
+    const overdue = due < now.getTime();
+    const soon = !overdue && due <= now.getTime() + 7 * 24 * 3600 * 1000;
+    if (!((filter.overdue && overdue) || (filter.soon && soon))) return false;
+  }
+  if (filter.working && !idea.in_progress) return false;
+  for (const tag of filter.tags) {
+    if (!tags.includes(tag)) return false;
+  }
+  return true;
 }
 
 const ATTACHMENT_URL = "/api/brainstorm/attachments";

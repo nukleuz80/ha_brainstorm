@@ -1,8 +1,8 @@
-import { alexaEchos, attachmentBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, inProgressBadge, parseDueInput, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.7.22";
+import { alexaEchos, attachmentBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMatches, ideaTags, inProgressBadge, parseDueInput, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.0";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.7.22 - Skill, Reminders, Privacy and Sharing
+ * Version: 1.8.0 - Search, Filter and Tags
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -32,6 +32,7 @@ const BRAINSTORM_MINDMAP_DEFAULTS = {
   show_controls: true,
   show_add_btn: true,
   show_export_btn: true,
+  show_filter: true,
   hide_empty_categories: true,
   map_template: "standard",
   node_shape: "template",
@@ -258,6 +259,12 @@ class BrainstormMindmapCard extends HTMLElement {
     this._lasso = null;
     // Steps of this session that Ctrl+Z takes back, newest last
     this._undoStack = [];
+    // Search and filter: hits stay bright, the rest of the map fades
+    this._filter = emptyFilter();
+    this._filterOpen = false;
+    this._filterHits = null; // Set of ids while a filter is on
+    this._filterContext = new Set(); // parents of hits, half faded
+    this._hitIndex = -1;
   }
 
   static async getConfigElement() {
@@ -372,6 +379,10 @@ class BrainstormMindmapCard extends HTMLElement {
 
     const exportBtn = this.shadowRoot.getElementById("exportBtn");
     if (exportBtn) exportBtn.style.display = this._config.show_export_btn === true ? "inline-flex" : "none";
+
+    const filterBtn = this.shadowRoot.getElementById("filterBtn");
+    if (filterBtn) filterBtn.style.display = this._config.show_filter === true ? "inline-flex" : "none";
+    if (this._config.show_filter !== true && this._filterOpen) this._setFilterOpen(false);
 
     const controlsPanel = this.shadowRoot.querySelector(".controls-panel");
     if (controlsPanel) controlsPanel.style.display = this._config.show_controls === true ? "flex" : "none";
@@ -1930,6 +1941,158 @@ class BrainstormMindmapCard extends HTMLElement {
           text-decoration: underline;
           overflow-wrap: anywhere;
         }
+        .bs-tag {
+          display: inline-block;
+          padding: 0 6px;
+          border-radius: 9px;
+          background: color-mix(in srgb, var(--primary-color, #03a9f4) 14%, transparent);
+          color: var(--primary-color, #03a9f4);
+          font-size: 0.88em;
+          font-weight: 600;
+          line-height: 1.5;
+          cursor: pointer;
+          white-space: nowrap;
+        }
+        .bs-tag:hover {
+          background: color-mix(in srgb, var(--primary-color, #03a9f4) 26%, transparent);
+        }
+        /* Search and filter */
+        .filter-bar {
+          flex: 0 0 auto;
+          display: none;
+          align-items: center;
+          gap: 8px;
+          padding: 6px 12px;
+          z-index: 19;
+          background: var(--ha-card-background, var(--card-background-color, #ffffff));
+          border-bottom: 1px solid var(--divider-color, rgba(127, 127, 127, 0.15));
+        }
+        .filter-bar.open {
+          display: flex;
+        }
+        .filter-search {
+          flex: 0 1 260px;
+          min-width: 140px;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          height: 34px;
+          padding: 0 10px;
+          border-radius: 17px;
+          border: 1px solid var(--divider-color, rgba(127, 127, 127, 0.25));
+          background: var(--secondary-background-color, rgba(127, 127, 127, 0.06));
+          font-size: 0.85rem;
+        }
+        .filter-search:focus-within {
+          border-color: var(--primary-color, #03a9f4);
+        }
+        .filter-search input {
+          flex: 1 1 auto;
+          min-width: 0;
+          border: none;
+          outline: none;
+          background: transparent;
+          color: var(--primary-text-color, #212121);
+          font: inherit;
+          font-size: 16px;
+        }
+        .filter-chips {
+          flex: 1 1 auto;
+          min-width: 0;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          overflow-x: auto;
+          scrollbar-width: none;
+        }
+        .filter-chips::-webkit-scrollbar {
+          display: none;
+        }
+        .filter-chip {
+          flex: 0 0 auto;
+          height: 30px;
+          padding: 0 10px;
+          border-radius: 15px;
+          border: 1px solid var(--divider-color, rgba(127, 127, 127, 0.25));
+          background: transparent;
+          color: var(--primary-text-color, #212121);
+          font-size: 0.8rem;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          white-space: nowrap;
+        }
+        .filter-chip.on {
+          background: var(--primary-color, #03a9f4);
+          border-color: var(--primary-color, #03a9f4);
+          color: var(--text-primary-color, #ffffff);
+        }
+        .filter-chip-count {
+          opacity: 0.65;
+          font-size: 0.72rem;
+        }
+        .filter-sep {
+          flex: 0 0 1px;
+          height: 18px;
+          background: var(--divider-color, rgba(127, 127, 127, 0.25));
+        }
+        .filter-count {
+          flex: 0 0 auto;
+          font-size: 0.78rem;
+          color: var(--secondary-text-color, #727272);
+          white-space: nowrap;
+        }
+        .filter-close {
+          flex: 0 0 auto;
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          border: none;
+          background: transparent;
+          color: var(--secondary-text-color, #727272);
+          cursor: pointer;
+          font-size: 0.95rem;
+        }
+        .filter-close:hover {
+          background: var(--secondary-background-color, rgba(127, 127, 127, 0.1));
+        }
+        .top-tool-btn.filter-on {
+          background: var(--primary-color, #03a9f4);
+          border-color: var(--primary-color, #03a9f4);
+          color: var(--text-primary-color, #ffffff);
+        }
+        .note-cloud.filter-out {
+          opacity: 0.16;
+          filter: grayscale(0.7);
+        }
+        .note-cloud.filter-context {
+          opacity: 0.55;
+        }
+        .note-cloud.filter-hit {
+          filter: drop-shadow(0 0 6px color-mix(in srgb, var(--primary-color, #03a9f4) 70%, transparent));
+        }
+        .note-cloud.filter-hidden-hits .branch-toggle {
+          background: var(--primary-color, #03a9f4);
+          border-color: var(--primary-color, #03a9f4);
+          color: var(--text-primary-color, #ffffff);
+        }
+        .synapse-path.filter-out {
+          stroke-opacity: 0.08;
+        }
+        @media (max-width: 600px) {
+          .filter-bar {
+            flex-wrap: wrap;
+            row-gap: 6px;
+          }
+          .filter-search {
+            flex: 1 1 0;
+          }
+          .filter-chips {
+            order: 3;
+            flex: 1 0 100%;
+          }
+        }
         .idea-text code, .idea-result code, .cloud-text code, .cloud-result code {
           font-family: var(--code-font-family, monospace);
           font-size: 0.9em;
@@ -2466,9 +2629,21 @@ class BrainstormMindmapCard extends HTMLElement {
             <button class="top-tool-btn" id="colorModeBtn" style="display: ${this._config.show_color_toggle === true ? 'inline-flex' : 'none'};" title="${this._colorMode === 'theme' ? t("Farbmodus: Theme-Farben aktiv (Klicken für Bunt)") : t("Farbmodus: Bunt aktiv (Klicken für Theme-Farben)")}">
               ${this._colorMode === 'theme' ? '🎨' : '🌈'}
             </button>
+            <button class="top-tool-btn" id="filterBtn" style="display: ${this._config.show_filter === true ? 'inline-flex' : 'none'};" title="${t("Suchen und filtern (/)")}" aria-pressed="false">🔍</button>
             <button class="top-tool-btn" id="exportBtn" style="display: ${this._config.show_export_btn === true ? 'inline-flex' : 'none'};" title="${t("Map als Bild speichern")}">🖼️</button>
             <button class="fullscreen-btn" id="fullscreenToggleBtn" style="display: ${this._config.show_fullscreen_btn === true ? 'inline-flex' : 'none'};" title="${t("Vollbild umschalten (ESC zum Beenden)")}">⛶</button>
           </div>
+        </div>
+
+        <!-- Search and filter -->
+        <div class="filter-bar" id="filterBar" role="search">
+          <label class="filter-search">
+            <span aria-hidden="true">🔍</span>
+            <input id="filterInput" type="search" autocomplete="off" enterkeyhint="search" placeholder="${t("Suchen … (#tag)")}" aria-label="${t("Suchen")}" />
+          </label>
+          <div class="filter-chips" id="filterChips"></div>
+          <span class="filter-count" id="filterCount" aria-live="polite"></span>
+          <button class="filter-close" id="filterClose" title="${t("Filter zurücksetzen und schließen (ESC)")}">✕</button>
         </div>
 
         <!-- Interactive Canvas Area -->
@@ -2803,6 +2978,7 @@ class BrainstormMindmapCard extends HTMLElement {
     if (undoBtn) undoBtn.addEventListener("click", () => this._undo());
     const exportBtn = this.shadowRoot.getElementById("exportBtn");
     if (exportBtn) exportBtn.addEventListener("click", () => this._showExportDialog());
+    this._bindFilterEvents();
     this._updateUndoButton();
 
     // Quick Add -> Show Dialog Modal
@@ -3439,6 +3615,210 @@ class BrainstormMindmapCard extends HTMLElement {
     return { markup, width, height };
   }
 
+  // --- Search and filter: hits stay bright, the rest of the map fades ---
+
+  _bindFilterEvents() {
+    const filterBtn = this.shadowRoot.getElementById("filterBtn");
+    const input = this.shadowRoot.getElementById("filterInput");
+    const close = this.shadowRoot.getElementById("filterClose");
+    const chips = this.shadowRoot.getElementById("filterChips");
+    if (filterBtn) filterBtn.addEventListener("click", () => this._setFilterOpen(!this._filterOpen));
+    if (close) close.addEventListener("click", () => this._setFilterOpen(false));
+    if (input) {
+      input.addEventListener("input", () => {
+        this._filter.query = input.value;
+        this._hitIndex = -1;
+        this._applyFilter();
+      });
+      input.addEventListener("keydown", (e) => {
+        e.stopPropagation();
+        if (e.key === "Enter") {
+          e.preventDefault();
+          this._jumpToHit(e.shiftKey ? -1 : 1);
+        } else if (e.key === "Escape") {
+          e.preventDefault();
+          if (input.value) {
+            input.value = "";
+            this._filter.query = "";
+            this._applyFilter();
+          } else {
+            this._setFilterOpen(false);
+          }
+        }
+      });
+    }
+    if (chips) {
+      chips.addEventListener("click", (e) => {
+        const chip = e.target.closest(".filter-chip");
+        if (!chip) return;
+        const kind = chip.getAttribute("data-kind");
+        const value = chip.getAttribute("data-value");
+        if (kind === "prio") {
+          if (this._filter.prios.has(value)) this._filter.prios.delete(value);
+          else this._filter.prios.add(value);
+        } else if (kind === "tag") {
+          this._toggleFilterTag(value);
+          return;
+        } else if (kind === "flag") {
+          this._filter[value] = !this._filter[value];
+        }
+        this._hitIndex = -1;
+        this._renderFilterChips();
+        this._applyFilter();
+      });
+    }
+  }
+
+  // Closing the bar also drops the filter, so nothing stays hidden unseen
+  _setFilterOpen(open) {
+    this._filterOpen = Boolean(open);
+    const bar = this.shadowRoot.getElementById("filterBar");
+    const input = this.shadowRoot.getElementById("filterInput");
+    const filterBtn = this.shadowRoot.getElementById("filterBtn");
+    if (bar) bar.classList.toggle("open", this._filterOpen);
+    if (filterBtn) filterBtn.setAttribute("aria-pressed", String(this._filterOpen));
+    if (this._filterOpen) {
+      this._renderFilterChips();
+      if (input) setTimeout(() => input.focus({ preventScroll: true }), 0);
+    } else {
+      this._filter = emptyFilter();
+      this._hitIndex = -1;
+      if (input) input.value = "";
+      this._focusMap();
+    }
+    this._applyFilter();
+  }
+
+  _toggleFilterTag(tag) {
+    if (!tag) return;
+    if (this._filter.tags.has(tag)) this._filter.tags.delete(tag);
+    else this._filter.tags.add(tag);
+    this._hitIndex = -1;
+    if (!this._filterOpen) {
+      this._setFilterOpen(true);
+      return;
+    }
+    this._renderFilterChips();
+    this._applyFilter();
+  }
+
+  _renderFilterChips() {
+    const chips = this.shadowRoot && this.shadowRoot.getElementById("filterChips");
+    if (!chips || !this._filterOpen) return;
+    const ideas = this._categoryIdeas();
+    const counts = new Map();
+    ideas.forEach((idea) => ideaTags(idea).forEach((tag) => counts.set(tag, (counts.get(tag) || 0) + 1)));
+    // Chosen tags stay even when no note of this list has them any more
+    this._filter.tags.forEach((tag) => {
+      if (!counts.has(tag)) counts.set(tag, 0);
+    });
+    const tags = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+    const chip = (kind, value, label, title, on) =>
+      `<button class="filter-chip${on ? " on" : ""}" data-kind="${kind}" data-value="${this._escapeHtml(value)}" title="${this._escapeHtml(title)}" aria-pressed="${on}">${label}</button>`;
+    const prios = [
+      ["urgent", "🔥", t("🔥 Dringend")],
+      ["high", "🔴", t("🔴 Hoch")],
+      ["medium", "🟡", t("🟡 Mittel")],
+      ["low", "🟢", t("🟢 Niedrig")],
+    ];
+    chips.innerHTML = [
+      ...prios.map(([value, icon, label]) => chip("prio", value, icon, label, this._filter.prios.has(value))),
+      '<span class="filter-sep"></span>',
+      chip("flag", "overdue", `⏰ ${t("Überfällig")}`, t("Termin ist vorbei"), this._filter.overdue),
+      chip("flag", "soon", `📅 ${t("7 Tage")}`, t("Termin in den nächsten 7 Tagen"), this._filter.soon),
+      chip("flag", "working", `🔧 ${t("In Arbeit")}`, t("Als „In Arbeit“ markiert"), this._filter.working),
+      tags.length ? '<span class="filter-sep"></span>' : "",
+      ...tags.map(([tag, count]) => chip("tag", tag, `#${this._escapeHtml(tag)}<span class="filter-chip-count">${count}</span>`, t("Nur Notizen mit #{tag}", { tag }), this._filter.tags.has(tag))),
+    ].join("");
+  }
+
+  // Mark hits, their parents and the rest; a folded branch with hits says so
+  _applyFilter() {
+    if (!this.shadowRoot) return;
+    const ideas = this._categoryIdeas();
+    const active = filterActive(this._filter);
+    const filterBtn = this.shadowRoot.getElementById("filterBtn");
+    if (filterBtn) filterBtn.classList.toggle("filter-on", active);
+    const countEl = this.shadowRoot.getElementById("filterCount");
+    const clouds = this.shadowRoot.querySelectorAll(".note-cloud");
+    const paths = this.shadowRoot.querySelectorAll(".synapse-path");
+    if (!active) {
+      this._filterHits = null;
+      this._filterContext = new Set();
+      clouds.forEach((el) => el.classList.remove("filter-hit", "filter-context", "filter-out", "filter-hidden-hits"));
+      paths.forEach((el) => el.classList.remove("filter-out"));
+      if (countEl) countEl.textContent = "";
+      return;
+    }
+    const now = new Date();
+    const hits = new Set(ideas.filter((idea) => ideaMatches(idea, this._filter, now)).map((i) => i.id));
+    const ids = new Set(ideas.map((i) => i.id));
+    const byId = new Map(ideas.map((i) => [i.id, i]));
+    const context = new Set();
+    const hiddenHits = new Set();
+    hits.forEach((id) => {
+      const seen = new Set([id]);
+      let parent = this._branchParent(byId.get(id), ids);
+      while (parent && !seen.has(parent)) {
+        seen.add(parent);
+        if (!hits.has(parent)) context.add(parent);
+        if (this._collapsed.has(parent)) hiddenHits.add(parent);
+        parent = this._branchParent(byId.get(parent), ids);
+      }
+    });
+    this._filterHits = hits;
+    this._filterContext = context;
+    clouds.forEach((el) => {
+      const id = el.getAttribute("data-id");
+      el.classList.toggle("filter-hit", hits.has(id));
+      el.classList.toggle("filter-context", context.has(id));
+      el.classList.toggle("filter-out", !hits.has(id) && !context.has(id));
+      el.classList.toggle("filter-hidden-hits", hiddenHits.has(id));
+    });
+    paths.forEach((el) => {
+      const id = el.id.replace(/^path_/, "");
+      el.classList.toggle("filter-out", !hits.has(id));
+    });
+    if (countEl) countEl.textContent = t("{hits} von {total}", { hits: hits.size, total: ideas.length });
+  }
+
+  // Enter walks through the hits, unfolds their branch and brings them into view
+  _jumpToHit(direction) {
+    if (!this._filterHits || !this._filterHits.size) return;
+    const ideas = this._categoryIdeas();
+    const order = ideas.filter((idea) => this._filterHits.has(idea.id));
+    this._hitIndex = (this._hitIndex + direction + order.length) % order.length;
+    const target = order[this._hitIndex];
+    const ids = new Set(ideas.map((i) => i.id));
+    const byId = new Map(ideas.map((i) => [i.id, i]));
+    let unfolded = false;
+    const seen = new Set([target.id]);
+    let parent = this._branchParent(target, ids);
+    while (parent && !seen.has(parent)) {
+      seen.add(parent);
+      if (this._collapsed.delete(parent)) unfolded = true;
+      parent = this._branchParent(byId.get(parent), ids);
+    }
+    if (unfolded) {
+      this._saveCollapsed();
+      this._lastLayoutKey = "";
+      this._updateContent();
+    }
+    const pos = this._nodePositions.get(target.id);
+    const canvasArea = this.shadowRoot.getElementById("canvasArea");
+    if (pos && canvasArea) {
+      this._panX = canvasArea.clientWidth / 2 - pos.x * this._scale;
+      this._panY = canvasArea.clientHeight / 2 - pos.y * this._scale;
+      this._applyTransform();
+    }
+    this._selectedId = target.id;
+    this.shadowRoot.querySelectorAll(".note-cloud.selected").forEach((el) => el.classList.remove("selected"));
+    const el = this.shadowRoot.getElementById(`cloud_${target.id}`);
+    if (el) el.classList.add("selected");
+    const countEl = this.shadowRoot.getElementById("filterCount");
+    if (countEl) countEl.textContent = t("{index}/{hits} von {total}", { index: this._hitIndex + 1, hits: order.length, total: ideas.length });
+  }
+
   _focusMap() {
     const canvasArea = this.shadowRoot.getElementById("canvasArea");
     if (canvasArea) canvasArea.focus({ preventScroll: true });
@@ -3650,6 +4030,12 @@ class BrainstormMindmapCard extends HTMLElement {
     if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "z") {
       e.preventDefault();
       this._undo();
+      return;
+    }
+    // Slash or Ctrl+F opens the search, like in most programs
+    if (this._config.show_filter === true && ((e.key === "/" && !e.ctrlKey && !e.metaKey && !e.altKey) || ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === "f"))) {
+      e.preventDefault();
+      this._setFilterOpen(true);
       return;
     }
     if (e.ctrlKey || e.metaKey || e.altKey) return;
@@ -4360,8 +4746,9 @@ class BrainstormMindmapCard extends HTMLElement {
       }
 
       const pathData = this._linePath(lines, x1, y1, x2, y2);
+      const faded = this._filterHits && !this._filterHits.has(idea.id) ? " filter-out" : "";
       svgHtml += `
-        <path id="path_${idea.id}" class="synapse-path${from ? " branch-path" : ""}" d="${pathData}" style="--path-color: ${catColor};" />
+        <path id="path_${idea.id}" class="synapse-path${from ? " branch-path" : ""}${faded}" d="${pathData}" style="--path-color: ${catColor};" />
       `;
     });
 
@@ -4587,6 +4974,8 @@ class BrainstormMindmapCard extends HTMLElement {
         container.innerHTML = "";
         this._nodePositions.clear();
         this._drawConnections();
+        this._renderFilterChips();
+        this._applyFilter();
         return;
       }
 
@@ -4731,7 +5120,7 @@ class BrainstormMindmapCard extends HTMLElement {
 
         // Mouse down records pending drag - only moves if threshold > 5px (prevents click jitter!)
         cloud.addEventListener("mousedown", (e) => {
-          if (e.target.closest(".action-btn") || e.target.closest("a") || e.target.closest(".cat-tag") || e.target.closest(".prio-tag") || e.target.closest(".branch-toggle") || e.target.closest(".cloud-inline-editor")) return;
+          if (e.target.closest(".action-btn") || e.target.closest("a") || e.target.closest(".bs-tag") || e.target.closest(".cat-tag") || e.target.closest(".prio-tag") || e.target.closest(".branch-toggle") || e.target.closest(".cloud-inline-editor")) return;
           if (e.button !== 0) return;
           const pos = this._nodePositions.get(id) || { x: 0, y: 0 };
           this._pendingDrag = {
@@ -4747,7 +5136,7 @@ class BrainstormMindmapCard extends HTMLElement {
 
         // Touch start records pending drag
         cloud.addEventListener("touchstart", (e) => {
-          if (e.target.closest(".action-btn") || e.target.closest("a") || e.target.closest(".cat-tag") || e.target.closest(".prio-tag") || e.target.closest(".branch-toggle") || e.target.closest(".cloud-inline-editor")) return;
+          if (e.target.closest(".action-btn") || e.target.closest("a") || e.target.closest(".bs-tag") || e.target.closest(".cat-tag") || e.target.closest(".prio-tag") || e.target.closest(".branch-toggle") || e.target.closest(".cloud-inline-editor")) return;
           if (e.touches.length === 1) {
             const touch = e.touches[0];
             const pos = this._nodePositions.get(id) || { x: 0, y: 0 };
@@ -4803,7 +5192,7 @@ class BrainstormMindmapCard extends HTMLElement {
         });
         cloud.addEventListener("dblclick", (e) => {
           if (e.shiftKey || e.ctrlKey || e.metaKey || this._lassoMode) return;
-          if (e.target.closest(".action-btn") || e.target.closest("a") || e.target.closest(".cloud-inline-editor")) return;
+          if (e.target.closest(".action-btn") || e.target.closest("a") || e.target.closest(".bs-tag") || e.target.closest(".cloud-inline-editor")) return;
           this._startInlineEdit(idea.id);
         });
         const textEl = cloud.querySelector(".cloud-text");
@@ -4811,12 +5200,21 @@ class BrainstormMindmapCard extends HTMLElement {
           textEl.addEventListener("click", (e) => {
             if (e.shiftKey || e.ctrlKey || e.metaKey || this._lassoMode) return;
             e.stopPropagation();
-            if (e.target.closest("a")) return;
+            if (e.target.closest("a") || e.target.closest(".bs-tag")) return;
             if (Date.now() - this._dragEndedAt < 300) return;
             this._selectIdea(idea.id);
             this._startInlineEdit(idea.id);
           });
         }
+
+        // A #tag in the text filters the map by it
+        cloud.querySelectorAll(".bs-tag").forEach((tagEl) => {
+          tagEl.addEventListener("click", (e) => {
+            if (e.shiftKey || e.ctrlKey || e.metaKey || this._lassoMode) return;
+            e.stopPropagation();
+            this._toggleFilterTag(tagEl.getAttribute("data-tag"));
+          });
+        });
 
         // Category Tag click -> Category Picker
         const catTagEl = cloud.querySelector(".cat-tag");
@@ -4842,6 +5240,8 @@ class BrainstormMindmapCard extends HTMLElement {
           });
         });
       });
+      this._renderFilterChips();
+      this._applyFilter();
     } catch (e) {
       console.error("[BrainstormMindmapCard] Update error:", e);
     }
@@ -5705,6 +6105,12 @@ class BrainstormMindmapCardEditor extends HTMLElement {
         selector: { boolean: {} },
       },
       {
+        name: "show_filter",
+        label: t("Suche und Filter (🔍) anzeigen"),
+        default: true,
+        selector: { boolean: {} },
+      },
+      {
         name: "show_add_btn",
         label: t("Neue Notiz-Schaltfläche (+ Idee) anzeigen"),
         default: true,
@@ -5930,7 +6336,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.7.22 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.8.0 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );
