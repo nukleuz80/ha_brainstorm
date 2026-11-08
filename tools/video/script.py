@@ -1,6 +1,8 @@
 """Storyboard of the Brainstorm Alexa skill video (German)."""
 from __future__ import annotations
 
+from pron import SPOKEN  # noqa: F401  (used by build.py)
+
 # README sections this video covers, check them on every release
 COVERS = ["Variante C: Eigener Alexa-Skill", "Listen auf dem Echo Show", "Echte Alexa-Erinnerungen"]
 TITLE = "Brainstorm: Eigenen Alexa-Skill einrichten"
@@ -357,33 +359,3 @@ CHAPTERS: list[dict] = [
 ]
 
 # Pronunciation help for the German voice, applied to the spoken text only
-SPOKEN: list[tuple[str, str]] = [
-    ("Alexa-hosted", "Alexa-Housted"),
-    ("Presentation Language", "Präsentäischen Länguitsch"),
-    ("Start from Scratch", "Start from Skrätsch"),
-    ("Create Skill", "Krieeit Skill"),
-    ("Build Skill", "Bild Skill"),
-    ("Interaction Model", "Interäkschen Model"),
-    ("JSON Editor", "Dschäisonn Editor"),
-    ("Invocation Name", "Inwokäischen Neim"),
-    ("Invocations", "Inwokäischens"),
-    ("Interfaces", "Interfäisis"),
-    ("Permissions", "Pörmischens"),
-    ("Reminders", "Rimainders"),
-    ("Development", "Diwellopment"),
-    ("Deploy", "Diploi"),
-    ("Build", "Bild"),
-    ("Save", "Säiw"),
-    ("Custom", "Kastem"),
-    ("Other", "Ather"),
-    ("Python", "Peisen"),
-    ("German", "Dschörmen"),
-    ("English", "Inglisch"),
-    ("Home Assistant", "Houm Assistent"),
-    ("Echo Show", "Echo Schou"),
-    ("Echos", "Echos"),
-    ("Skill-Code", "Skill-Code"),
-    ("HTTPS", "H T T P S"),
-    ("Off", "Off"),
-    ("Hub", "Hab"),
-]

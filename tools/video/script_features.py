@@ -1,7 +1,7 @@
 """Storyboard: Brainstorm Hub feature overview (German)."""
 from __future__ import annotations
 
-from script import SPOKEN as _SKILL_SPOKEN
+from pron import SPOKEN  # noqa: F401  (used by build.py)
 
 TITLE = "Brainstorm Hub: Die wichtigsten Funktionen"
 OUT_NAME = "brainstorm-features"
@@ -208,20 +208,4 @@ CHAPTERS: list[dict] = [
             },
         ],
     },
-]
-
-SPOKEN: list[tuple[str, str]] = [
-    ("Brainstorm Hub", "Brainstorm Hab"),
-    ("Claude Code", "Klohd Code"),
-    ("Google Tasks", "Gugel Tasks"),
-    ("Todoist", "Tuduist"),
-    ("Markdown", "Markdaun"),
-    ("Dashboard", "Däschbord"),
-    ("Assist", "Assist"),
-    ("Siri", "Siri"),
-    ("HACS", "Hacks"),
-    ("GitHub", "Git-Hab"),
-    ("Echo Show", "Echo Schou"),
-    ("Blitz-Idee", "Blitz-Idee"),
-    *_SKILL_SPOKEN,
 ]

@@ -1,7 +1,7 @@
 """Storyboard: installing Brainstorm Hub (German)."""
 from __future__ import annotations
 
-from script import SPOKEN as _SKILL_SPOKEN
+from pron import SPOKEN  # noqa: F401  (used by build.py)
 
 TITLE = "Brainstorm Hub installieren"
 OUT_NAME = "brainstorm-installation"
@@ -71,7 +71,7 @@ CHAPTERS: list[dict] = [
         "scenes": [
             {
                 "v": ("ha", "Brainstorm Hub", [
-                    ("Version", "v1.7.20 (neueste)", True, "HACS bietet immer das neueste Release an"),
+                    ("Version", "v1.7.22 (neueste)", True, "HACS bietet immer das neueste Release an"),
                     ("Kategorie", "Integration", False, ""),
                 ], "HACS ➔ Brainstorm Hub suchen ➔ Herunterladen", "Herunterladen"),
                 "say": "Suche in HACS nach Brainstorm Hub, öffne den Eintrag und klicke unten "
@@ -226,24 +226,4 @@ CHAPTERS: list[dict] = [
             },
         ],
     },
-]
-
-SPOKEN: list[tuple[str, str]] = [
-    ("Brainstorm Hub", "Brainstorm Hab"),
-    ("Brainstorm Card", "Brainstorm Kahrd"),
-    ("custom brainstorm card", "Kastem Brainstorm Kahrd"),
-    ("Alexa Media Player", "Alexa Media Pläyer"),
-    ("Open in HACS", "Open in Hacks"),
-    ("HACS", "Hacks"),
-    ("README", "Riedmi"),
-    ("github punkt com", "git-hab punkt com"),
-    ("nukleuz80", "nukleus achtzig"),
-    ("ha underscore brainstorm", "h a anderskor brainstorm"),
-    ("Dashboard", "Däschbord"),
-    ("YAML", "Jammel"),
-    ("Markdown", "Markdaun"),
-    ("Panel-Ansicht", "Pännel-Ansicht"),
-    ("Release", "Rilies"),
-    ("2026 Punkt 10", "zweitausendsechsundzwanzig Punkt zehn"),
-    *_SKILL_SPOKEN,
 ]

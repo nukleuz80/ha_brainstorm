@@ -6,46 +6,46 @@ Alle Videos sind deutsch gesprochen, mit dem Text als Untertitel im Bild. Die MP
 
 ## Die wichtigsten Funktionen (3 Minuten)
 
-[![Die wichtigsten Funktionen](video/poster-features.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.20/brainstorm-features.mp4)
+[![Die wichtigsten Funktionen](video/poster-features.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.22/brainstorm-features.mp4)
 
-**[▶️ Video ansehen](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.20/brainstorm-features.mp4)**
+**[▶️ Video ansehen](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.22/brainstorm-features.mp4)**
 
 | Zeit | Kapitel |
 | :--- | :--- |
 | 0:00 | Was ist Brainstorm? |
-| 0:18 | Erfassen per Stimme: Alexa, Assist, Siri, Mikrofon, KI |
-| 0:32 | Versteht ganze Sätze: Text, Termin, Priorität, Kategorie |
-| 0:51 | Die Listenkarte |
-| 1:05 | Unteraufgaben & Details |
-| 1:19 | Die Mindmap |
-| 1:33 | Erinnerungen |
-| 1:46 | Alexa-Skill & Echo Show |
-| 2:00 | Erledigt & Ergebnis |
-| 2:13 | Verbunden mit allem: To-do, Bring!, Markdown, JSON |
-| 2:27 | Privatsphäre & Freigaben |
-| 2:40 | Loslegen |
+| 0:17 | Erfassen per Stimme: Alexa, Assist, Siri, Mikrofon, KI |
+| 0:31 | Versteht ganze Sätze: Text, Termin, Priorität, Kategorie |
+| 0:50 | Die Listenkarte |
+| 1:03 | Unteraufgaben & Details |
+| 1:16 | Die Mindmap |
+| 1:30 | Erinnerungen |
+| 1:43 | Alexa-Skill & Echo Show |
+| 1:57 | Erledigt & Ergebnis |
+| 2:11 | Verbunden mit allem: To-do, Bring!, Markdown, JSON |
+| 2:23 | Privatsphäre & Freigaben |
+| 2:36 | Loslegen |
 
 ## Installation (3 Minuten)
 
-[![Installation](video/poster-installation.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.20/brainstorm-installation.mp4)
+[![Installation](video/poster-installation.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.22/brainstorm-installation.mp4)
 
-**[▶️ Video ansehen](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.20/brainstorm-installation.mp4)** · 📄 [Schriftlich in der README](../README_de.md#-installation)
+**[▶️ Video ansehen](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.22/brainstorm-installation.mp4)** · 📄 [Schriftlich in der README](../README_de.md#-installation)
 
 | Zeit | Kapitel |
 | :--- | :--- |
 | 0:00 | Einleitung |
 | 0:13 | Voraussetzungen |
 | 0:29 | HACS: Repository hinzufügen |
-| 0:54 | Herunterladen |
-| 1:03 | Neustart |
-| 1:15 | Integration hinzufügen |
-| 1:26 | Ersteinrichtung |
-| 1:38 | Karte ins Dashboard |
-| 1:58 | Mindmap-Karte |
-| 2:09 | Die erste Idee |
-| 2:20 | Konfigurieren |
-| 2:33 | Updates |
-| 2:44 | Wie geht's weiter? |
+| 0:52 | Herunterladen |
+| 1:01 | Neustart |
+| 1:13 | Integration hinzufügen |
+| 1:24 | Ersteinrichtung |
+| 1:37 | Karte ins Dashboard |
+| 1:56 | Mindmap-Karte |
+| 2:07 | Die erste Idee |
+| 2:19 | Konfigurieren |
+| 2:32 | Updates |
+| 2:42 | Wie geht's weiter? |
 
 ## Eigener Alexa-Skill (6 Minuten)
 
@@ -55,9 +55,9 @@ Ein Kapitel pro Einstellung in der Alexa-Entwicklerkonsole, mit Kapitelliste auf
 
 ## Erinnerungen & Benachrichtigungen
 
-[![Erinnerungen & Benachrichtigungen](video/poster-erinnerungen.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.21/brainstorm-erinnerungen.mp4)
+[![Erinnerungen & Benachrichtigungen](video/poster-erinnerungen.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.22/brainstorm-erinnerungen.mp4)
 
-**[▶️ Video ansehen](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.21/brainstorm-erinnerungen.mp4)** (3½ Minuten) · 📄 [Schriftlich in der README](../README_de.md#-erinnerungen--benachrichtigungen)
+**[▶️ Video ansehen](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.22/brainstorm-erinnerungen.mp4)** (3½ Minuten) · 📄 [Schriftlich in der README](../README_de.md#-erinnerungen--benachrichtigungen)
 
 | Zeit | Kapitel |
 | :--- | :--- |
@@ -72,14 +72,14 @@ Ein Kapitel pro Einstellung in der Alexa-Entwicklerkonsole, mit Kapitelliste auf
 | 2:30 | Für andere Personen |
 | 2:43 | Antworten per Sprache: erledigt, später |
 | 2:53 | Kalender & echte Alexa-Erinnerungen |
-| 3:07 | Eigene Automationen |
-| 3:18 | Zusammenfassung |
+| 3:08 | Eigene Automationen |
+| 3:19 | Zusammenfassung |
 
 ## iPhone-Kurzbefehl
 
-[![iPhone-Kurzbefehl](video/poster-iphone.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.21/brainstorm-iphone.mp4)
+[![iPhone-Kurzbefehl](video/poster-iphone.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.22/brainstorm-iphone.mp4)
 
-**[▶️ Video ansehen](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.21/brainstorm-iphone.mp4)** (2 Minuten) · 📄 [Schriftlich in der README](../README_de.md#3-iphone-kurzbefehl-mit-siri-action-taste-oder-rückseite)
+**[▶️ Video ansehen](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.22/brainstorm-iphone.mp4)** (2 Minuten) · 📄 [Schriftlich in der README](../README_de.md#3-iphone-kurzbefehl-mit-siri-action-taste-oder-rückseite)
 
 | Zeit | Kapitel |
 | :--- | :--- |
@@ -92,9 +92,9 @@ Ein Kapitel pro Einstellung in der Alexa-Entwicklerkonsole, mit Kapitelliste auf
 
 ## Privatsphäre, Freigaben & KI-Backlog
 
-[![Privatsphäre, Freigaben & KI-Backlog](video/poster-privatsphaere.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.21/brainstorm-privatsphaere.mp4)
+[![Privatsphäre, Freigaben & KI-Backlog](video/poster-privatsphaere.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.22/brainstorm-privatsphaere.mp4)
 
-**[▶️ Video ansehen](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.21/brainstorm-privatsphaere.mp4)** (2 Minuten) · 📄 [Schriftlich in der README](../README_de.md#-privatsphäre--freigaben)
+**[▶️ Video ansehen](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.22/brainstorm-privatsphaere.mp4)** (2 Minuten) · 📄 [Schriftlich in der README](../README_de.md#-privatsphäre--freigaben)
 
 | Zeit | Kapitel |
 | :--- | :--- |
@@ -104,7 +104,7 @@ Ein Kapitel pro Einstellung in der Alexa-Entwicklerkonsole, mit Kapitelliste auf
 | 0:58 | Echos Personen zuordnen |
 | 1:12 | Was Privatsphäre nicht kann |
 | 1:24 | Backlog für Coding-KIs wie Claude Code |
-| 2:02 | Zusammenfassung |
+| 2:01 | Zusammenfassung |
 
 ## Selbst erzeugen
 
