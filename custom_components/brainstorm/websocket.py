@@ -25,6 +25,8 @@ def async_register_commands(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, websocket_get_ideas)
     websocket_api.async_register_command(hass, websocket_set_map_positions)
     websocket_api.async_register_command(hass, websocket_suggest_subtasks)
+    websocket_api.async_register_command(hass, websocket_summarize_branch)
+    websocket_api.async_register_command(hass, websocket_suggest_parents)
 
 
 @websocket_api.websocket_command({vol.Required("type"): "brainstorm/ideas"})
@@ -151,5 +153,92 @@ async def websocket_suggest_subtasks(
         return
     if suggestions is None:
         connection.send_error(msg["id"], ERR_AI_FAILED, "The AI gave no subtasks")
+        return
+    connection.send_result(msg["id"], {"suggestions": suggestions})
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "brainstorm/summarize_branch",
+        vol.Required("idea_id"): cv.string,
+        vol.Optional("language"): vol.All(cv.string, vol.Length(max=10)),
+    }
+)
+@websocket_api.async_response
+async def websocket_summarize_branch(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Let the AI sum up a note and its subtasks; nothing is stored."""
+    store = get_loaded_store(hass)
+    if store is None:
+        connection.send_error(
+            msg["id"], websocket_api.ERR_NOT_FOUND, "Brainstorm is not loaded"
+        )
+        return
+    idea = store.get_idea(msg["idea_id"])
+    user_id = connection.user.id
+    if idea is None or not store.can_access(idea, user_id):
+        connection.send_error(msg["id"], websocket_api.ERR_NOT_FOUND, "Unknown idea")
+        return
+    if not store.ai_subtasks_available:
+        connection.send_error(
+            msg["id"], ERR_AI_NOT_CONFIGURED, "No AI task entity is set up"
+        )
+        return
+    try:
+        summary = await store.async_summarize_branch(idea, user_id, msg.get("language"))
+    except AIUnavailableError:
+        connection.send_error(
+            msg["id"], ERR_AI_UNAVAILABLE, "The AI did not answer, try again later"
+        )
+        return
+    if summary is None:
+        connection.send_error(msg["id"], ERR_AI_FAILED, "The AI gave no summary")
+        return
+    connection.send_result(
+        msg["id"], {"summary": summary, "can_edit": store.can_edit(idea, user_id)}
+    )
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "brainstorm/suggest_parents",
+        vol.Required("category"): vol.All(cv.string, vol.Length(max=100)),
+        vol.Optional("language"): vol.All(cv.string, vol.Length(max=10)),
+    }
+)
+@websocket_api.async_response
+async def websocket_suggest_parents(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Let the AI suggest where loose notes of a category belong; nothing is stored."""
+    store = get_loaded_store(hass)
+    if store is None:
+        connection.send_error(
+            msg["id"], websocket_api.ERR_NOT_FOUND, "Brainstorm is not loaded"
+        )
+        return
+    if not store.ai_subtasks_available:
+        connection.send_error(
+            msg["id"], ERR_AI_NOT_CONFIGURED, "No AI task entity is set up"
+        )
+        return
+    try:
+        suggestions = await store.async_suggest_parents(
+            msg["category"], connection.user.id, msg.get("language")
+        )
+    except AIUnavailableError:
+        connection.send_error(
+            msg["id"], ERR_AI_UNAVAILABLE, "The AI did not answer, try again later"
+        )
+        return
+    if suggestions is None:
+        connection.send_error(
+            msg["id"], ERR_AI_FAILED, "There are no loose notes to sort in"
+        )
         return
     connection.send_result(msg["id"], {"suggestions": suggestions})

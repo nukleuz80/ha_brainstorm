@@ -1,8 +1,8 @@
-import { BOARDS, MARKERS, NUMBERING, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.8";
+import { BOARDS, MARKERS, NUMBERING, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.9";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.8.8 - Outline View and Content Templates
+ * Version: 1.8.9 - AI Branch Summary and Sorting In
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -2414,6 +2414,14 @@ class BrainstormMindmapCard extends HTMLElement {
         .canvas-area.board-mode .branch-toggle {
           display: none;
         }
+        .sortin-text {
+          flex: 1;
+          font-size: 14px;
+          line-height: 1.4;
+        }
+        .sortin-arrow {
+          color: var(--secondary-text-color, #727272);
+        }
         .template-chips {
           display: flex;
           flex-wrap: wrap;
@@ -3881,6 +3889,213 @@ class BrainstormMindmapCard extends HTMLElement {
     return created.id;
   }
 
+  _aiAvailable() {
+    const sensor = this._getSensorEntity();
+    return Boolean(sensor && sensor.attributes && sensor.attributes.ai_subtasks);
+  }
+
+  // The category whose loose notes the AI may sort in, null under "All"
+  _sortInCategory() {
+    const focus = this._focusIdea();
+    if (focus) return focus.category;
+    return this._selectedCategory && this._selectedCategory !== "all" ? this._selectedCategory : null;
+  }
+
+  _aiErrorText(err, fallback) {
+    const code = err && err.code;
+    if (code === "ai_not_configured") return t("Wähle zuerst eine KI-Aufgaben-Entität unter Brainstorm Hub ➔ Konfigurieren ➔ KI.");
+    if (code === "ai_unavailable") return t("Die KI ist gerade nicht erreichbar. Versuch es gleich nochmal.");
+    return fallback;
+  }
+
+  // ✨ on a note with subtasks offers more than new subtasks
+  _showAiChooser(idea) {
+    const sensor = this._getSensorEntity();
+    const ideas = (sensor && sensor.attributes.ideas) || [];
+    const hasChildren = ideas.some((i) => i.parent_id === idea.id);
+    if (!hasChildren) {
+      this._showSubtaskSuggestions(idea);
+      return;
+    }
+    this._openDialog(t("✨ KI-Hilfe"), (body) => {
+      body.innerHTML = `
+        <div class="dialog-note-preview">${formatText(idea.text)}</div>
+        <div class="layout-grid">
+          <button class="layout-choice" data-ai="subtasks"><span class="layout-icon">🌿</span><span>${t("Unteraufgaben vorschlagen")}</span></button>
+          <button class="layout-choice" data-ai="summary"><span class="layout-icon">🧾</span><span>${t("Ast zusammenfassen")}</span></button>
+        </div>`;
+      body.querySelectorAll("[data-ai]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          this._closeDialog();
+          if (btn.dataset.ai === "summary") this._showBranchSummary(idea);
+          else this._showSubtaskSuggestions(idea);
+        });
+      });
+    });
+  }
+
+  // The AI sums up a branch; it becomes the description only if the person wants
+  _showBranchSummary(idea) {
+    if (!this._hass) return;
+    this._openDialog(t("🧾 Ast zusammenfassen"), (body) => {
+      const preview = `<div class="dialog-note-preview">${formatText(idea.text)}</div>`;
+      const load = async () => {
+        body.innerHTML = `${preview}<div class="dialog-label suggest-status">${t("Die KI denkt nach …")}</div>`;
+        let result;
+        try {
+          result = await this._hass.callWS({
+            type: "brainstorm/summarize_branch",
+            idea_id: idea.id,
+            ...(this._hass.language ? { language: this._hass.language } : {}),
+          });
+        } catch (err) {
+          if (!this._isModalOpen) return;
+          body.innerHTML = `
+            ${preview}
+            <div class="dialog-error" style="display: flex;">${this._aiErrorText(err, t("Die KI hat keine Zusammenfassung geliefert."))}</div>
+            <div class="dialog-footer">
+              <button class="dialog-btn dialog-btn-cancel" id="summaryCancel">${t("Abbrechen")}</button>
+              <button class="dialog-btn dialog-btn-primary" id="summaryRetry">${t("Nochmal versuchen")}</button>
+            </div>`;
+          body.querySelector("#summaryCancel").addEventListener("click", () => this._closeDialog());
+          body.querySelector("#summaryRetry").addEventListener("click", load);
+          return;
+        }
+        if (!this._isModalOpen) return;
+        const summary = (result && result.summary) || "";
+        body.innerHTML = `
+          ${preview}
+          <div class="dialog-label">${t("Du kannst den Text noch ändern.")}</div>
+          <textarea class="dialog-input dialog-textarea" id="summaryText" rows="6">${this._escapeHtml(summary)}</textarea>
+          <div class="dialog-footer">
+            <button class="dialog-btn dialog-btn-cancel" id="summaryCopy">${t("Kopieren")}</button>
+            <button class="dialog-btn dialog-btn-cancel" id="summaryRetry">${t("Neu schreiben")}</button>
+            ${result.can_edit ? `<button class="dialog-btn dialog-btn-primary" id="summarySave">${t("Als Beschreibung übernehmen")}</button>` : ""}
+          </div>`;
+        const text = body.querySelector("#summaryText");
+        body.querySelector("#summaryRetry").addEventListener("click", load);
+        body.querySelector("#summaryCopy").addEventListener("click", async () => {
+          try {
+            await navigator.clipboard.writeText(text.value);
+            this._showToast(t("Kopiert"));
+          } catch (err) {
+            text.select();
+          }
+        });
+        const save = body.querySelector("#summarySave");
+        if (save) {
+          save.addEventListener("click", async () => {
+            const value = text.value.trim();
+            const current = this._ideaById(idea.id) || idea;
+            const before = current.description || "";
+            const next = before ? `${value}\n\n${before}` : value;
+            this._closeDialog();
+            try {
+              await this._hass.callService("brainstorm", "update_idea", { id: idea.id, description: next });
+              this._showToast(t("Zusammenfassung gespeichert"));
+              this._pushUndo(idea.text, () => this._hass.callService("brainstorm", "update_idea", { id: idea.id, description: before }));
+            } catch (err) {
+              console.error("[BrainstormMindmap] Failed to save the summary:", err);
+            }
+          });
+        }
+      };
+      load();
+    });
+  }
+
+  // The AI suggests where loose notes belong; nothing moves until the person picks
+  _showSortInDialog() {
+    if (!this._hass) return;
+    const category = this._sortInCategory();
+    if (!category) {
+      this._showToast(t("Wähle zuerst eine Kategorie."));
+      return;
+    }
+    this._openDialog(t("✨ Lose Ideen zuordnen"), (body) => {
+      const load = async () => {
+        body.innerHTML = `<div class="dialog-label suggest-status">${t("Die KI denkt nach …")}</div>`;
+        let suggestions;
+        try {
+          const result = await this._hass.callWS({
+            type: "brainstorm/suggest_parents",
+            category,
+            ...(this._hass.language ? { language: this._hass.language } : {}),
+          });
+          suggestions = (result && result.suggestions) || [];
+        } catch (err) {
+          if (!this._isModalOpen) return;
+          const message = err && err.code === "ai_failed"
+            ? t("In dieser Kategorie gibt es keine losen Notizen.")
+            : this._aiErrorText(err, t("Die KI hat keine Zuordnung geliefert."));
+          body.innerHTML = `
+            <div class="dialog-error" style="display: flex;">${message}</div>
+            <div class="dialog-footer">
+              <button class="dialog-btn dialog-btn-cancel" id="sortInCancel">${t("Schließen")}</button>
+              <button class="dialog-btn dialog-btn-primary" id="sortInRetry">${t("Nochmal versuchen")}</button>
+            </div>`;
+          body.querySelector("#sortInCancel").addEventListener("click", () => this._closeDialog());
+          body.querySelector("#sortInRetry").addEventListener("click", load);
+          return;
+        }
+        if (!this._isModalOpen) return;
+        if (!suggestions.length) {
+          body.innerHTML = `
+            <div class="dialog-hint">${t("Die KI hat für keine lose Notiz einen passenden Platz gefunden.")}</div>
+            <div class="dialog-footer">
+              <button class="dialog-btn dialog-btn-cancel" id="sortInRetry">${t("Nochmal versuchen")}</button>
+              <button class="dialog-btn dialog-btn-primary" id="sortInCancel">${t("Schließen")}</button>
+            </div>`;
+          body.querySelector("#sortInCancel").addEventListener("click", () => this._closeDialog());
+          body.querySelector("#sortInRetry").addEventListener("click", load);
+          return;
+        }
+        body.innerHTML = `
+          <div class="dialog-label">${t("Haken weg bei allem, was bleiben soll, wo es ist.")}</div>
+          <div class="suggest-list">
+            ${suggestions.map((item, index) => `
+              <label class="suggest-row sortin-row">
+                <input type="checkbox" class="suggest-check" data-index="${index}" checked />
+                <span class="sortin-text">${formatText(item.text)} <span class="sortin-arrow">→</span> <b>${formatText(item.parent_text)}</b></span>
+              </label>`).join("")}
+          </div>
+          <div class="dialog-footer">
+            <button class="dialog-btn dialog-btn-cancel" id="sortInRetry">${t("Neue Vorschläge")}</button>
+            <button class="dialog-btn dialog-btn-primary" id="sortInSave"></button>
+          </div>`;
+        const saveBtn = body.querySelector("#sortInSave");
+        const picked = () => [...body.querySelectorAll(".suggest-check")].filter((box) => box.checked).map((box) => suggestions[Number(box.dataset.index)]);
+        const update = () => {
+          const count = picked().length;
+          saveBtn.textContent = t("{count} übernehmen", { count });
+          saveBtn.disabled = count === 0;
+        };
+        body.querySelectorAll(".suggest-check").forEach((box) => box.addEventListener("input", update));
+        update();
+        body.querySelector("#sortInRetry").addEventListener("click", load);
+        saveBtn.addEventListener("click", async () => {
+          const moves = picked();
+          this._closeDialog();
+          const done = [];
+          for (const move of moves) {
+            try {
+              await this._hass.callService("brainstorm", "update_idea", { id: move.idea_id, parent_id: move.parent_id });
+              done.push(move.idea_id);
+            } catch (err) {
+              console.error("[BrainstormMindmap] Failed to sort in a note:", err);
+            }
+          }
+          if (!done.length) return;
+          this._showToast(t("{count} Notizen zugeordnet", { count: done.length }));
+          this._pushUndo(t("{count} Notizen", { count: done.length }), async () => {
+            for (const id of done) await this._hass.callService("brainstorm", "update_idea", { id, parent_id: null });
+          });
+        });
+      };
+      load();
+    });
+  }
+
   // The AI suggests subtasks; nothing is stored until the person picks and saves
   _showSubtaskSuggestions(idea) {
     if (!this._hass) return;
@@ -4908,6 +5123,11 @@ class BrainstormMindmapCard extends HTMLElement {
       e.preventDefault();
       e.stopPropagation();
       this._cancelLink();
+      return;
+    }
+    if ((e.key === "z" || e.key === "Z") && this._aiAvailable()) {
+      e.preventDefault();
+      this._showSortInDialog();
       return;
     }
     if ((e.key === "b" || e.key === "B") && !e.shiftKey) {
@@ -6140,6 +6360,7 @@ class BrainstormMindmapCard extends HTMLElement {
         <div class="storm-count" id="stormCount"></div>
         <div class="storm-notes" id="stormNotes"></div>
         <div class="dialog-footer">
+          ${this._aiAvailable() && this._sortInCategory() ? `<button class="dialog-btn dialog-btn-cancel" id="stormSortIn">${t("✨ Lose Ideen zuordnen")}</button>` : ""}
           <button class="dialog-btn dialog-btn-primary" id="stormDone">${t("Fertig")}</button>
         </div>
       `;
@@ -6235,6 +6456,13 @@ class BrainstormMindmapCard extends HTMLElement {
       });
       body.querySelector("#stormAdd").addEventListener("click", add);
       body.querySelector("#stormDone").addEventListener("click", () => this._closeDialog());
+      const sortIn = body.querySelector("#stormSortIn");
+      if (sortIn) {
+        sortIn.addEventListener("click", () => {
+          this._closeDialog();
+          this._showSortInDialog();
+        });
+      }
       this._dialogCleanup = () => {
         clearInterval(state.timer);
         const ids = state.added.map((item) => item.id).filter(Boolean);
@@ -6979,7 +7207,7 @@ class BrainstormMindmapCard extends HTMLElement {
             else if (act === "branch") this._showAddDialog(idea);
             else if (act === "focus") this._setFocus(idea.id);
             else if (act === "link") this._startLink(idea.id);
-            else if (act === "suggest") this._showSubtaskSuggestions(idea);
+            else if (act === "suggest") this._showAiChooser(idea);
             else if (act === "edit") this._showEditDialog(idea.id, idea.text, idea.category, idea.priority);
             else if (act === "move") this._showCategoryPicker(idea.id, idea.category, idea.text);
             else if (act === "delete") this._showDeleteConfirm(idea.id, idea.text);
@@ -8192,7 +8420,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.8.8 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.8.9 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

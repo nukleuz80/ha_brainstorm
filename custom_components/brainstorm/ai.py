@@ -105,3 +105,48 @@ def parse_subtask_suggestions(text: str | None, known: list[str]) -> list[str]:
         if len(suggestions) >= MAX_SUBTASK_SUGGESTIONS:
             break
     return suggestions
+
+
+# How much of a branch or a list goes to the AI at most
+MAX_BRANCH_LINES = 80
+MAX_LOOSE_IDEAS = 30
+MAX_PARENT_CANDIDATES = 80
+_PAIR = re.compile(r"\bL\s*(\d+)\b\D*?\bK\s*(\d+)\b", re.IGNORECASE)
+
+
+def clean_summary(text: str | None, limit: int) -> str | None:
+    """Turn the AI's summary into plain text, without a heading or list marks."""
+    if not text:
+        return None
+    lines = []
+    for line in text.splitlines():
+        line = _LIST_MARK.sub("", line).strip().strip("*_#` ").strip()
+        if line and not (line.endswith(":") and len(line) < 40):
+            lines.append(line)
+    summary = " ".join(lines).strip()
+    return summary[:limit].strip() or None
+
+
+def parse_parent_suggestions(
+    text: str | None, loose_count: int, candidate_count: int
+) -> list[tuple[int, int]]:
+    """Read lines such as 'L2 -> K5' as (loose index, candidate index), 0-based.
+
+    Each loose idea gets at most one parent; unknown numbers are left out.
+    """
+    if not text:
+        return []
+    pairs: list[tuple[int, int]] = []
+    seen: set[int] = set()
+    for line in text.splitlines():
+        match = _PAIR.search(line)
+        if not match:
+            continue
+        loose, candidate = int(match.group(1)) - 1, int(match.group(2)) - 1
+        if not (0 <= loose < loose_count and 0 <= candidate < candidate_count):
+            continue
+        if loose in seen:
+            continue
+        seen.add(loose)
+        pairs.append((loose, candidate))
+    return pairs

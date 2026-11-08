@@ -1528,6 +1528,22 @@ MESSAGES: dict[str, str] = {
         "Kategorie: {category}\n"
         "Vorhandene Unteraufgaben: {existing}"
     ),
+    "branch_summary_prompt": (
+        "Fasse diesen Zweig einer Mindmap in zwei bis vier kurzen deutschen Sätzen "
+        "zusammen: worum es geht, was erledigt ist (✓) und was noch offen ist. "
+        "Antworte nur mit der Zusammenfassung, ohne Überschrift und ohne Liste. "
+        "Erfinde keine Namen, Zahlen oder Termine.\n"
+        "Notiz: {text}\n"
+        "Unterpunkte:\n{outline}"
+    ),
+    "parents_prompt": (
+        "In der Liste „{category}“ stehen lose Notizen ohne Zuordnung (L). Ordne "
+        "jede lose Notiz der Notiz (K) zu, unter die sie inhaltlich am besten "
+        "passt. Lass eine lose Notiz weg, wenn keine gut passt. Antworte nur mit "
+        "Zeilen wie „L1 -> K3“, eine pro Zeile, ohne Erklärung.\n"
+        "Mögliche Oberpunkte:\n{candidates}\n"
+        "Lose Notizen:\n{loose}"
+    ),
     "summarize_prompt": (
         "Fasse diese Erinnerung als kurzen, natürlichen deutschen Satz zum "
         "Vorlesen zusammen. Erfinde nichts dazu und lasse keinen Eintrag weg: "

@@ -47,6 +47,7 @@ from .const import (
     ATTR_PRIORITY,
     ATTR_RESULT,
     ATTR_DESCRIPTION,
+    DESCRIPTION_MAX_LENGTH,
     ATTR_BATTERY,
     ATTR_ATTACHMENTS,
     ATTR_BATTERY_DONE,
@@ -120,8 +121,13 @@ from .const import (
     VOICE_MODE_NATIVE,
 )
 from .ai import (
+    MAX_BRANCH_LINES,
+    MAX_LOOSE_IDEAS,
+    MAX_PARENT_CANDIDATES,
     async_generate_text,
     async_request_text_with_retry,
+    clean_summary,
+    parse_parent_suggestions,
     parse_subtask_suggestions,
 )
 from .languages import CATEGORY_KEYS, get_pack
@@ -805,6 +811,117 @@ class BrainstormStore:
             answer, [idea.get(ATTR_TEXT) or "", *children]
         )
         return suggestions or None
+
+    async def async_summarize_branch(
+        self, idea: dict[str, Any], user_id: str | None, language: str | None = None
+    ) -> str | None:
+        """Ask the AI for a short summary of a note and everything below it.
+
+        Nothing is stored: the person decides whether it becomes the description.
+        Raises AIUnavailableError when the AI did not answer, even when asked twice.
+        """
+        entity = self.options.get(CONF_AI_ENTITY)
+        if not entity:
+            return None
+        pack = self._pack(language)
+        lines: list[str] = []
+        seen: set[str] = set()
+
+        def walk(parent_id: str, depth: int) -> None:
+            for child in self.children_of(parent_id):
+                if child[ATTR_ID] in seen or len(lines) >= MAX_BRANCH_LINES:
+                    continue
+                seen.add(child[ATTR_ID])
+                if not self.can_access(child, user_id):
+                    continue
+                line = f"{'  ' * depth}- {child.get(ATTR_TEXT) or ''}"
+                if child.get(ATTR_STATUS) == "completed":
+                    line += " ✓"
+                if description := (child.get(ATTR_DESCRIPTION) or "").strip():
+                    line += f" ({' '.join(description.split())[:200]})"
+                lines.append(line)
+                walk(child[ATTR_ID], depth + 1)
+
+        walk(idea[ATTR_ID], 0)
+        if not lines:
+            return None
+        instructions = pack.msg(
+            "branch_summary_prompt",
+            text=idea.get(ATTR_TEXT) or "",
+            outline="\n".join(lines),
+        )
+        answer = await async_request_text_with_retry(self.hass, entity, instructions)
+        return clean_summary(answer, DESCRIPTION_MAX_LENGTH)
+
+    async def async_suggest_parents(
+        self, category: str, user_id: str | None, language: str | None = None
+    ) -> list[dict[str, Any]] | None:
+        """Ask the AI where loose notes of a category belong.
+
+        Loose are main notes without subtasks; each may get another note of the
+        category as its parent. Nothing is stored. Raises AIUnavailableError when
+        the AI did not answer, even when asked twice.
+        """
+        entity = self.options.get(CONF_AI_ENTITY)
+        if not entity:
+            return None
+        pack = self._pack(language)
+        notes = [
+            idea
+            for idea in self.visible_ideas(user_id)
+            if idea.get(ATTR_CATEGORY) == category
+            and idea.get(ATTR_STATUS) == "active"
+        ]
+        parents = {idea.get(ATTR_PARENT_ID) for idea in notes}
+        loose = [
+            idea
+            for idea in notes
+            if not idea.get(ATTR_PARENT_ID) or idea.get(ATTR_PARENT_ID) not in self._ideas
+            if idea[ATTR_ID] not in parents and self.can_edit(idea, user_id)
+        ][:MAX_LOOSE_IDEAS]
+        # Notes with subtasks first, they are the likely homes
+        candidates = sorted(notes, key=lambda idea: idea[ATTR_ID] not in parents)
+        candidates = candidates[:MAX_PARENT_CANDIDATES]
+        if not loose or len(candidates) < 2:
+            return None
+        instructions = pack.msg(
+            "parents_prompt",
+            category=category,
+            candidates="\n".join(
+                f"K{index}: {idea.get(ATTR_TEXT) or ''}"
+                for index, idea in enumerate(candidates, 1)
+            ),
+            loose="\n".join(
+                f"L{index}: {idea.get(ATTR_TEXT) or ''}"
+                for index, idea in enumerate(loose, 1)
+            ),
+        )
+        answer = await async_request_text_with_retry(self.hass, entity, instructions)
+        suggestions: list[dict[str, Any]] = []
+        chosen: dict[str, str] = {}
+        for loose_index, candidate_index in parse_parent_suggestions(
+            answer, len(loose), len(candidates)
+        ):
+            idea, parent = loose[loose_index], candidates[candidate_index]
+            # Not below itself, and loose notes not below each other in a ring
+            step, ring = parent[ATTR_ID], False
+            while step:
+                if step == idea[ATTR_ID]:
+                    ring = True
+                    break
+                step = chosen.get(step)
+            if ring:
+                continue
+            chosen[idea[ATTR_ID]] = parent[ATTR_ID]
+            suggestions.append(
+                {
+                    "idea_id": idea[ATTR_ID],
+                    "text": idea.get(ATTR_TEXT) or "",
+                    "parent_id": parent[ATTR_ID],
+                    "parent_text": parent.get(ATTR_TEXT) or "",
+                }
+            )
+        return suggestions
 
     def async_cancel_ai_tasks(self) -> None:
         """Stop AI work that is still running when the integration unloads."""

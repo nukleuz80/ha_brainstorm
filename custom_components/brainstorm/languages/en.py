@@ -967,6 +967,22 @@ MESSAGES: dict[str, str] = {
         "Category: {category}\n"
         "Existing subtasks: {existing}"
     ),
+    "branch_summary_prompt": (
+        "Summarize this branch of a mind map in two to four short English "
+        "sentences: what it is about, what is done (✓) and what is still open. "
+        "Answer only with the summary, without a heading and without a list. "
+        "Do not make up names, numbers or dates.\n"
+        "Note: {text}\n"
+        "Subtasks:\n{outline}"
+    ),
+    "parents_prompt": (
+        "The list \"{category}\" has loose notes that belong nowhere yet (L). "
+        "Put each loose note below the note (K) it fits best by content. Leave a "
+        "loose note out when nothing fits well. Answer only with lines such as "
+        "\"L1 -> K3\", one per line, without an explanation.\n"
+        "Possible parents:\n{candidates}\n"
+        "Loose notes:\n{loose}"
+    ),
     "summarize_prompt": (
         "Summarize this reminder as a short, natural English sentence to read aloud. "
         "Do not add anything and do not leave out any entry: {message}"

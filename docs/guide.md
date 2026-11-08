@@ -266,6 +266,8 @@ With **Smart Text Optimization** (General Settings) spoken notes are tidied up a
 
 **Boards:** three more views show the notes in columns instead of a map. **▥ Kanban** sorts by state: *Open*, *In progress*, *Waiting* (a blocking link) and *Done*. Drag a note to *In progress* to mark it, back to *Open* to unmark it, onto *Done* to tick it off. **📅 Timeline** sorts by due date: *Overdue*, *Today*, *Tomorrow*, *This week*, *Later*, *No date*. Dragging sets the date and keeps the time (09:00 for a note without one); *No date* removes it. **⊞ Eisenhower matrix** sorts by importance (priority 🔥 or 🔴) and urgency (🔥 or due within three days): *Do now*, *Schedule*, *Delegate*, *Later or never*. Dragging sets the priority; *Delegate* gives a note without a near date one for tomorrow. Columns that follow from something else (*Waiting*, *Overdue*, a near date) cannot be reached by dragging; a short note says why. ↶ takes every move back.
 
+**AI help:** with an AI task entity (Brainstorm Hub ➔ Configure ➔ AI), ✨ on a note suggests subtasks. On a note with subtasks, ✨ asks first: *Suggest subtasks* or *Summarize the branch*. The summary covers the note and everything below it, done items included, in two to four sentences; edit it, copy it or put it in front of the description. **Z** (or *✨ Sort in loose ideas* at the end of a brainstorm round) looks at the main notes of the category that have no subtasks and suggests where each belongs. Untick what should stay, *Apply* moves the rest; ↶ moves them back. Only the notes of this category go to the AI.
+
 **Export and import:** 🖼️ saves the map as a picture (SVG, PNG) or as an outline: **Markdown** (a nested list, descriptions as a `>` line), **OPML** (for outliners such as Workflowy, OmniOutliner or Logseq) and **FreeMind** (`.mm`, opens in Freeplane, XMind and MindManager). The outline holds all notes of the map, folded ones too; in focus only the branch. Under *Insert an outline* you type or paste a list, one line per note, subtasks indented or with `-`, `*`, `1.` and `#` headings. Or you choose a file (`.md`, `.txt`, `.opml`, `.mm`). `- [x]` adds the item as done. The notes go in as main notes of the category, in focus below the focused note. At most 300 notes at once, and ↶ takes them all out again. **Content templates:** above the text field are ready branches: SWOT analysis, pros and cons, project plan, week plan, party, trip (with packing list), retrospective and room renovation. A tap writes the template into the field; change or add lines, then *Insert*. Automations can use the service `brainstorm.import_outline`.
 
 **Frames and callouts:** a frame is a dashed, named rectangle around several notes, such as *Phase 1* or *Ground floor*. Notes with the same frame name share one frame. A callout is a short remark in a speech bubble above the note, for things like *colour still open*. The list card shows the frame as a chip and the callout below the text.
@@ -286,6 +288,7 @@ With **Smart Text Optimization** (General Settings) spoken notes are tidied up a
 | **L** | draw a link to another note |
 | **B** | brainstorm mode |
 | **S** | sort the subtasks (no selection: main notes) |
+| **Z** | AI: sort in loose ideas |
 | **Esc** | clear the selection, go up one level in focus, cancel linking |
 | **Ctrl+Z** | undo |
 
