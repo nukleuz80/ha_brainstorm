@@ -462,6 +462,32 @@ const DICTIONARIES = {
     "🔧 In Arbeit": "🔧 In progress",
     "🗑️ Später oder gar nicht": "🗑️ Later or never",
     "Gliederung": "Outline",
+    "Zurück": "Back",
+    "Name": "Name",
+    "Regeln: passende Notizen färben (R)": "Rules: color fitting notes (R)",
+    "Die Regeln konnten nicht gespeichert werden.": "The rules could not be saved.",
+    "🎨 Regeln": "🎨 Rules",
+    "Regeln färben jede Notiz, die zu einem gespeicherten Filter passt, und setzen ein Zeichen daran. Die erste passende Regel gilt. Sie gelten für dich auf allen Geräten.": "Rules color every note that fits a saved filter and put a sign on it. The first rule that fits wins. They apply to you on every device.",
+    "Regel an oder aus": "Rule on or off",
+    "Regel {number}": "Rule {number}",
+    "Nach oben": "Move up",
+    "Noch keine Regeln.": "No rules yet.",
+    "Für eine neue Regel stelle zuerst in der Suche 🔍 einen Filter ein, z. B. 🔥 Dringend oder #garten, und tippe dann hier auf ＋.": "For a new rule, first set a filter in the search 🔍, e.g. 🔥 Urgent or #garden, then tap ＋ here.",
+    "Aktuellen Filter als Regel": "Current filter as a rule",
+    "🎨 Neue Regel": "🎨 New rule",
+    "🎨 Regel bearbeiten": "🎨 Edit rule",
+    "Wenn": "When",
+    "z. B. Brennt": "e.g. On fire",
+    "Farbe": "Color",
+    "Keine Farbe": "No color",
+    "Zeichen": "Sign",
+    "Kein Zeichen": "No sign",
+    "Wähle eine Farbe oder ein Zeichen.": "Pick a color or a sign.",
+    " oder ": " or ",
+    "überfällig oder in 7 Tagen fällig": "overdue or due within 7 days",
+    "überfällig": "overdue",
+    "in 7 Tagen fällig": "due within 7 days",
+    "in Arbeit": "in progress",
     "Suchen … (#tag möglich)": "Search … (#tag works)",
     "Notizen durchsuchen": "Search notes",
     "Suche leeren": "Clear search",
@@ -807,6 +833,117 @@ export function ideaMatches(idea, filter, now = new Date()) {
     if (!markers.includes(marker)) return false;
   }
   return true;
+}
+
+/** Colors a rule can paint a note with. */
+export const RULE_COLORS = ["#e53935", "#fb8c00", "#fdd835", "#43a047", "#00acc1", "#1e88e5", "#8e24aa", "#6d4c41", "#757575"];
+
+/** Store a filter as plain data, so a rule can keep it. */
+export function filterToRule(filter) {
+  return {
+    query: String(filter.query || "").trim(),
+    prios: [...filter.prios],
+    overdue: Boolean(filter.overdue),
+    soon: Boolean(filter.soon),
+    working: Boolean(filter.working),
+    tags: [...filter.tags],
+    markers: [...(filter.markers || [])],
+  };
+}
+
+/** Turn the condition of a rule back into a filter. */
+export function ruleFilter(rule) {
+  const filter = emptyFilter();
+  const when = (rule && rule.when) || {};
+  filter.query = String(when.query || "");
+  (when.prios || []).forEach((prio) => filter.prios.add(String(prio)));
+  filter.overdue = Boolean(when.overdue);
+  filter.soon = Boolean(when.soon);
+  filter.working = Boolean(when.working);
+  (when.tags || []).forEach((tag) => filter.tags.add(String(tag)));
+  (when.markers || []).forEach((marker) => filter.markers.add(String(marker)));
+  return filter;
+}
+
+/** Keep only rules that make sense, so a broken entry cannot hurt the map. */
+export function cleanRules(rules) {
+  if (!Array.isArray(rules)) return [];
+  return rules
+    .filter((rule) => rule && typeof rule === "object" && filterActive(ruleFilter(rule)))
+    .map((rule) => ({
+      id: String(rule.id || Math.random().toString(36).slice(2, 10)),
+      name: String(rule.name || "").slice(0, 60),
+      color: RULE_COLORS.includes(rule.color) ? rule.color : "",
+      icon: String(rule.icon || "").slice(0, 4),
+      enabled: rule.enabled !== false,
+      when: filterToRule(ruleFilter(rule)),
+    }))
+    .filter((rule) => rule.color || rule.icon)
+    .slice(0, 20);
+}
+
+/** Return the first switched-on rule a note fits, or null. */
+export function ruleFor(idea, rules, now = new Date()) {
+  for (const rule of rules || []) {
+    if (rule.enabled === false) continue;
+    if (ideaMatches(idea, ruleFilter(rule), now)) return rule;
+  }
+  return null;
+}
+
+const RULES_KEY = "brainstorm_rules";
+
+/**
+ * Load the rules of the user: from the user data of Home Assistant, so
+ * they follow the user to every device, with the browser as fallback.
+ */
+export async function loadRules(hass) {
+  let rules = null;
+  if (hass && hass.callWS) {
+    try {
+      const result = await hass.callWS({ type: "frontend/get_user_data", key: RULES_KEY });
+      if (result && result.value && Array.isArray(result.value.rules)) rules = result.value.rules;
+    } catch (err) {
+      console.warn("[Brainstorm] Rules could not be loaded from Home Assistant:", err);
+    }
+  }
+  if (!rules) {
+    try {
+      rules = JSON.parse(localStorage.getItem(RULES_KEY) || "[]");
+    } catch {
+      rules = [];
+    }
+  }
+  return cleanRules(rules);
+}
+
+/** Save the rules for the user and tell the other cards on the page. */
+export async function saveRules(hass, rules) {
+  const clean = cleanRules(rules);
+  try {
+    localStorage.setItem(RULES_KEY, JSON.stringify(clean));
+  } catch {}
+  if (hass && hass.callWS) {
+    await hass.callWS({ type: "frontend/set_user_data", key: RULES_KEY, value: { rules: clean } });
+  }
+  window.dispatchEvent(new CustomEvent("brainstorm-rules-changed", { detail: { rules: clean } }));
+  return clean;
+}
+
+/** Describe the condition of a rule in a few words. */
+export function ruleSummary(rule) {
+  const when = (rule && rule.when) || {};
+  const prioNames = { urgent: t("🔥 Dringend"), high: t("🔴 Hoch"), medium: t("🟡 Mittel"), low: t("🟢 Niedrig") };
+  const parts = [];
+  if (when.query) parts.push(`„${when.query}“`);
+  if ((when.prios || []).length) parts.push(when.prios.map((prio) => prioNames[prio] || prio).join(t(" oder ")));
+  if (when.overdue && when.soon) parts.push(t("überfällig oder in 7 Tagen fällig"));
+  else if (when.overdue) parts.push(t("überfällig"));
+  else if (when.soon) parts.push(t("in 7 Tagen fällig"));
+  if (when.working) parts.push(t("in Arbeit"));
+  (when.markers || []).forEach((marker) => parts.push(markerIcon(marker)));
+  (when.tags || []).forEach((tag) => parts.push(`#${tag}`));
+  return parts.join(" · ");
 }
 
 /** The markers a note can carry, in the order the cards show them. */

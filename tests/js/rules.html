@@ -1,0 +1,52 @@
+<!doctype html>
+<!-- Browser test for rules that color notes. Run: python3 -m http.server in the repo root,
+     open http://localhost:8000/tests/js/rules.html, it shows PASS or the failures. --><meta charset="utf-8"><body><pre id="out">running</pre>
+<script type="module">
+import { RULE_COLORS, cleanRules, emptyFilter, filterToRule, loadRules, ruleFilter, ruleFor, ruleSummary, saveRules } from "../../custom_components/brainstorm/cards/brainstorm-i18n.js";
+const now = new Date("2026-11-08T12:00:00Z");
+const fails = [];
+const check = (name, got, want) => { if (JSON.stringify(got) !== JSON.stringify(want)) fails.push(`${name}: want ${JSON.stringify(want)}, got ${JSON.stringify(got)}`); };
+const filter = emptyFilter();
+filter.prios.add("urgent");
+filter.tags.add("garten");
+const when = filterToRule(filter);
+check("filter to rule", when, { query: "", prios: ["urgent"], overdue: false, soon: false, working: false, tags: ["garten"], markers: [] });
+check("and back", [...ruleFilter({ when }).prios], ["urgent"]);
+const rules = cleanRules([
+  { id: "a", name: "Brennt", color: RULE_COLORS[0], icon: "🔥", when: { prios: ["urgent"] } },
+  { id: "b", name: "Garten", color: RULE_COLORS[3], when: { tags: ["garten"] } },
+  { id: "c", name: "Aus", color: RULE_COLORS[1], enabled: false, when: { overdue: true } },
+  { id: "d", name: "Leer", color: RULE_COLORS[2], when: {} },
+  { id: "e", name: "Ohne Wirkung", when: { working: true } },
+  { id: "f", name: "Fremde Farbe", color: "red;x", icon: "⭐", when: { query: "arzt" } },
+  null,
+]);
+check("broken rules dropped", rules.map((r) => r.id), ["a", "b", "c", "f"]);
+check("unknown color removed", rules[3].color, "");
+const lawn = { text: "Rasen mähen #garten", priority: "urgent", due: "2026-11-01T09:00:00Z" };
+const bed = { text: "Beet umgraben #garten", priority: "low", due: "2026-11-01T09:00:00Z" };
+const doctor = { text: "Arzt anrufen", priority: "high" };
+const none = { text: "Milch", priority: "medium" };
+check("first rule wins", ruleFor(lawn, rules, now).id, "a");
+check("second rule", ruleFor(bed, rules, now).id, "b");
+check("switched off rule ignored", ruleFor({ text: "x", due: "2026-11-01T09:00:00Z" }, rules, now), null);
+check("text rule", ruleFor(doctor, rules, now).id, "f");
+check("no rule", ruleFor(none, rules, now), null);
+check("summary", ruleSummary({ when: { query: "arzt", prios: ["urgent", "high"], overdue: true, tags: ["garten"], markers: ["star"] } }), "„arzt“ · 🔥 Dringend oder 🔴 Hoch · überfällig · ⭐ · #garten");
+check("at most 20", cleanRules(Array.from({ length: 30 }, (_, i) => ({ id: String(i), color: RULE_COLORS[0], when: { query: "x" } }))).length, 20);
+// Saving goes to the user data of Home Assistant and back
+const stored = {};
+const hass = { callWS: async (msg) => {
+  if (msg.type === "frontend/set_user_data") { stored[msg.key] = msg.value; return null; }
+  if (msg.type === "frontend/get_user_data") return { value: stored[msg.key] || null };
+  throw new Error("unknown");
+} };
+let event = null;
+window.addEventListener("brainstorm-rules-changed", (e) => { event = e.detail.rules; });
+await saveRules(hass, rules);
+check("event sent", event.length, 4);
+check("loaded back", (await loadRules(hass)).map((r) => r.id), ["a", "b", "c", "f"]);
+const broken = { callWS: async () => { throw new Error("offline"); } };
+check("browser fallback", (await loadRules(broken)).map((r) => r.id), ["a", "b", "c", "f"]);
+document.getElementById("out").textContent = fails.length ? "FAIL\n" + fails.join("\n") : "PASS";
+</script>

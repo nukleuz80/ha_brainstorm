@@ -1,8 +1,8 @@
-import { BOARDS, MARKERS, NUMBERING, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.11";
+import { BOARDS, MARKERS, NUMBERING, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.12";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.8.11 - List Search
+ * Version: 1.8.12 - Rules
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -273,6 +273,21 @@ class BrainstormMindmapCard extends HTMLElement {
     this._filterHits = null; // Set of ids while a filter is on
     this._filterContext = new Set(); // parents of hits, half faded
     this._hitIndex = -1;
+    // Rules paint fitting notes with a color and a sign, like SmartRules
+    this._rules = [];
+    this._rulesLoaded = false;
+    this._onRulesChanged = (e) => {
+      this._rules = (e.detail && e.detail.rules) || [];
+      this._applyRules();
+    };
+  }
+
+  connectedCallback() {
+    window.addEventListener("brainstorm-rules-changed", this._onRulesChanged);
+  }
+
+  disconnectedCallback() {
+    window.removeEventListener("brainstorm-rules-changed", this._onRulesChanged);
   }
 
   static async getConfigElement() {
@@ -421,6 +436,13 @@ class BrainstormMindmapCard extends HTMLElement {
     this._refreshPrivateData();
     if (!this._initialized) {
       this._initDom();
+    }
+    if (!this._rulesLoaded) {
+      this._rulesLoaded = true;
+      loadRules(hass).then((rules) => {
+        this._rules = rules;
+        this._applyRules();
+      });
     }
     const sensor = this._getSensorEntity();
     if (!sensor) return;
@@ -2128,6 +2150,116 @@ class BrainstormMindmapCard extends HTMLElement {
         .note-cloud.filter-context {
           opacity: 0.55;
         }
+        .note-cloud.rule-hit {
+          --cat-color: var(--rule-color);
+          border-color: color-mix(in srgb, var(--rule-color) 55%, transparent);
+          border-left-color: var(--rule-color);
+          background: color-mix(in srgb, var(--rule-color) 12%, var(--ha-card-background, var(--card-background-color, #ffffff)));
+        }
+        #notesContainer .note-cloud.rule-hit {
+          border-left-color: var(--rule-color) !important;
+        }
+        .rule-badge {
+          position: absolute;
+          top: -11px;
+          left: -9px;
+          min-width: 22px;
+          height: 22px;
+          padding: 0 3px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 11px;
+          font-size: 0.8rem;
+          background: var(--ha-card-background, var(--card-background-color, #ffffff));
+          border: 1px solid var(--rule-color, var(--divider-color));
+          box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+          pointer-events: none;
+          z-index: 2;
+        }
+        .filter-rules {
+          flex: 0 0 auto;
+          min-width: 36px;
+          min-height: 36px;
+          border: none;
+          border-radius: 50%;
+          background: transparent;
+          font-size: 1rem;
+          cursor: pointer;
+        }
+        .filter-rules:hover {
+          background: var(--secondary-background-color, rgba(127, 127, 127, 0.15));
+        }
+        .rule-list {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          margin-bottom: 12px;
+        }
+        .rule-row {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 10px;
+          border: 1px solid var(--divider-color, rgba(127, 127, 127, 0.25));
+          border-left: 5px solid var(--rule-color, var(--divider-color));
+          border-radius: 10px;
+        }
+        .rule-row.off {
+          opacity: 0.5;
+        }
+        .rule-main {
+          flex: 1;
+          min-width: 0;
+        }
+        .rule-name {
+          font-weight: 600;
+        }
+        .rule-when {
+          font-size: 0.8rem;
+          color: var(--secondary-text-color);
+          overflow-wrap: anywhere;
+        }
+        .rule-row button {
+          min-width: 34px;
+          min-height: 34px;
+          border: none;
+          border-radius: 8px;
+          background: transparent;
+          color: var(--primary-text-color);
+          cursor: pointer;
+          font-size: 0.95rem;
+        }
+        .rule-row button:hover {
+          background: var(--secondary-background-color, rgba(127, 127, 127, 0.15));
+        }
+        .rule-swatches {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          margin: 6px 0 12px;
+        }
+        .rule-swatch {
+          width: 34px;
+          height: 34px;
+          border-radius: 50%;
+          border: 2px solid transparent;
+          background: var(--swatch);
+          cursor: pointer;
+          font-size: 0.9rem;
+          color: var(--primary-text-color);
+        }
+        .rule-swatch.none {
+          background: transparent;
+          border-color: var(--divider-color);
+        }
+        .rule-swatch.icon {
+          background: var(--secondary-background-color, rgba(127, 127, 127, 0.12));
+        }
+        .rule-swatch.active {
+          border-color: var(--primary-text-color);
+          box-shadow: 0 0 0 2px var(--primary-color);
+        }
         .note-cloud.filter-hit {
           filter: drop-shadow(0 0 6px color-mix(in srgb, var(--primary-color, #03a9f4) 70%, transparent));
         }
@@ -3183,6 +3315,7 @@ class BrainstormMindmapCard extends HTMLElement {
           </label>
           <div class="filter-chips" id="filterChips"></div>
           <span class="filter-count" id="filterCount" aria-live="polite"></span>
+          <button class="filter-rules" id="filterRules" title="${t("Regeln: passende Notizen färben (R)")}">🎨</button>
           <button class="filter-close" id="filterClose" title="${t("Filter zurücksetzen und schließen (ESC)")}">✕</button>
         </div>
 
@@ -4916,6 +5049,8 @@ class BrainstormMindmapCard extends HTMLElement {
     const close = this.shadowRoot.getElementById("filterClose");
     const chips = this.shadowRoot.getElementById("filterChips");
     if (filterBtn) filterBtn.addEventListener("click", () => this._setFilterOpen(!this._filterOpen));
+    const rulesBtn = this.shadowRoot.getElementById("filterRules");
+    if (rulesBtn) rulesBtn.addEventListener("click", () => this._showRulesDialog());
     if (close) close.addEventListener("click", () => this._setFilterOpen(false));
     if (input) {
       input.addEventListener("input", () => {
@@ -5022,6 +5157,155 @@ class BrainstormMindmapCard extends HTMLElement {
     } catch (err) {
       console.error("[BrainstormMindmap] Failed to set the progress:", err);
     }
+  }
+
+  // --- Rules: notes that fit a saved filter get its color and sign ---
+
+  _applyRules() {
+    if (!this.shadowRoot) return;
+    const clouds = this.shadowRoot.querySelectorAll(".note-cloud");
+    if (!clouds.length) return;
+    const byId = new Map(this._categoryIdeas().map((idea) => [idea.id, idea]));
+    const now = new Date();
+    clouds.forEach((el) => {
+      const idea = byId.get(el.getAttribute("data-id"));
+      const rule = idea && this._rules.length ? ruleFor(idea, this._rules, now) : null;
+      const old = el.querySelector(":scope > .rule-badge");
+      if (old) old.remove();
+      el.classList.toggle("rule-hit", Boolean(rule && rule.color));
+      if (rule && rule.color) el.style.setProperty("--rule-color", rule.color);
+      else el.style.removeProperty("--rule-color");
+      if (rule && rule.icon) {
+        const badge = document.createElement("span");
+        badge.className = "rule-badge";
+        badge.textContent = rule.icon;
+        badge.title = rule.name || ruleSummary(rule);
+        el.appendChild(badge);
+      }
+    });
+  }
+
+  async _storeRules(rules) {
+    try {
+      this._rules = await saveRules(this._hass, rules);
+    } catch (err) {
+      console.error("[BrainstormMindmap] Failed to save the rules:", err);
+      this._showToast(t("Die Regeln konnten nicht gespeichert werden."));
+    }
+    this._applyRules();
+  }
+
+  _showRulesDialog() {
+    this._openDialog(t("🎨 Regeln"), (body) => {
+      const canAdd = filterActive(this._filter);
+      const rules = this._rules;
+      body.innerHTML = `
+        <div class="dialog-hint">${t("Regeln färben jede Notiz, die zu einem gespeicherten Filter passt, und setzen ein Zeichen daran. Die erste passende Regel gilt. Sie gelten für dich auf allen Geräten.")}</div>
+        <div class="rule-list">
+          ${rules.length ? rules.map((rule, index) => `
+            <div class="rule-row${rule.enabled ? "" : " off"}" style="--rule-color: ${rule.color || "var(--divider-color)"};">
+              <input type="checkbox" class="rule-on" data-index="${index}" ${rule.enabled ? "checked" : ""} title="${t("Regel an oder aus")}" />
+              <div class="rule-main">
+                <div class="rule-name">${rule.icon ? `${this._escapeHtml(rule.icon)} ` : ""}${this._escapeHtml(rule.name || t("Regel {number}", { number: index + 1 }))}</div>
+                <div class="rule-when">${this._escapeHtml(ruleSummary(rule))}</div>
+              </div>
+              <button class="rule-up" data-index="${index}" title="${t("Nach oben")}" ${index ? "" : "disabled"}>↑</button>
+              <button class="rule-edit" data-index="${index}" title="${t("Bearbeiten")}">✎</button>
+              <button class="rule-delete" data-index="${index}" title="${t("Löschen")}">🗑️</button>
+            </div>`).join("") : `<div class="dialog-label">${t("Noch keine Regeln.")}</div>`}
+        </div>
+        ${canAdd ? "" : `<div class="dialog-hint">${t("Für eine neue Regel stelle zuerst in der Suche 🔍 einen Filter ein, z. B. 🔥 Dringend oder #garten, und tippe dann hier auf ＋.")}</div>`}
+        <div class="dialog-footer">
+          <button class="dialog-btn dialog-btn-cancel" id="rulesClose">${t("Schließen")}</button>
+          <button class="dialog-btn dialog-btn-primary" id="rulesAdd" ${canAdd ? "" : "disabled"}>＋ ${t("Aktuellen Filter als Regel")}</button>
+        </div>`;
+      body.querySelector("#rulesClose").addEventListener("click", () => this._closeDialog());
+      body.querySelector("#rulesAdd").addEventListener("click", () => {
+        if (!canAdd) return;
+        this._showRuleEditor(null, { when: filterToRule(this._filter), color: RULE_COLORS[0], icon: "", name: "", enabled: true });
+      });
+      const at = (btn) => Number(btn.getAttribute("data-index"));
+      body.querySelectorAll(".rule-on").forEach((box) => {
+        box.addEventListener("change", async () => {
+          const next = rules.map((rule, index) => (index === at(box) ? { ...rule, enabled: box.checked } : rule));
+          await this._storeRules(next);
+          this._showRulesDialog();
+        });
+      });
+      body.querySelectorAll(".rule-up").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const index = at(btn);
+          if (!index) return;
+          const next = [...rules];
+          [next[index - 1], next[index]] = [next[index], next[index - 1]];
+          await this._storeRules(next);
+          this._showRulesDialog();
+        });
+      });
+      body.querySelectorAll(".rule-edit").forEach((btn) => {
+        btn.addEventListener("click", () => this._showRuleEditor(at(btn), rules[at(btn)]));
+      });
+      body.querySelectorAll(".rule-delete").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const removed = rules[at(btn)];
+          await this._storeRules(rules.filter((_, index) => index !== at(btn)));
+          this._pushUndo(removed.name || ruleSummary(removed), () => this._storeRules([...this._rules, removed]));
+          this._showRulesDialog();
+        });
+      });
+    });
+  }
+
+  _showRuleEditor(index, rule) {
+    const icons = ["", "🔥", "⚠️", "⭐", "❗", "🚩", "💰", "⏰", "✅", "💤"];
+    let color = rule.color || "";
+    let icon = rule.icon || "";
+    this._openDialog(index === null ? t("🎨 Neue Regel") : t("🎨 Regel bearbeiten"), (body) => {
+      body.innerHTML = `
+        <div class="dialog-label">${t("Wenn")}</div>
+        <div class="rule-when" style="margin-bottom: 12px;">${this._escapeHtml(ruleSummary(rule))}</div>
+        <label class="dialog-label" for="ruleName">${t("Name")}</label>
+        <input class="dialog-input" id="ruleName" maxlength="60" value="${this._escapeHtml(rule.name || "")}" placeholder="${t("z. B. Brennt")}" />
+        <div class="dialog-label">${t("Farbe")}</div>
+        <div class="rule-swatches" id="ruleColors">
+          <button class="rule-swatch none${color ? "" : " active"}" data-color="" title="${t("Keine Farbe")}">∅</button>
+          ${RULE_COLORS.map((value) => `<button class="rule-swatch${value === color ? " active" : ""}" data-color="${value}" style="--swatch: ${value};" title="${value}"></button>`).join("")}
+        </div>
+        <div class="dialog-label">${t("Zeichen")}</div>
+        <div class="rule-swatches" id="ruleIcons">
+          ${icons.map((value) => `<button class="rule-swatch icon${value === icon ? " active" : ""}" data-icon="${value}" title="${value || t("Kein Zeichen")}">${value || "∅"}</button>`).join("")}
+        </div>
+        <div class="dialog-error" id="ruleError"></div>
+        <div class="dialog-footer">
+          <button class="dialog-btn dialog-btn-cancel" id="ruleBack">${t("Zurück")}</button>
+          <button class="dialog-btn dialog-btn-primary" id="ruleSave">${t("Speichern")}</button>
+        </div>`;
+      const pick = (selector, attr, set) => {
+        body.querySelectorAll(selector).forEach((btn) => {
+          btn.addEventListener("click", () => {
+            body.querySelectorAll(selector).forEach((other) => other.classList.toggle("active", other === btn));
+            set(btn.getAttribute(attr));
+          });
+        });
+      };
+      pick("#ruleColors .rule-swatch", "data-color", (value) => (color = value));
+      pick("#ruleIcons .rule-swatch", "data-icon", (value) => (icon = value));
+      body.querySelector("#ruleBack").addEventListener("click", () => this._showRulesDialog());
+      body.querySelector("#ruleSave").addEventListener("click", async () => {
+        if (!color && !icon) {
+          const error = body.querySelector("#ruleError");
+          error.textContent = t("Wähle eine Farbe oder ein Zeichen.");
+          error.style.display = "flex";
+          return;
+        }
+        const saved = { ...rule, name: body.querySelector("#ruleName").value.trim(), color, icon };
+        const next = [...this._rules];
+        if (index === null) next.push(saved);
+        else next[index] = saved;
+        await this._storeRules(next);
+        this._showRulesDialog();
+      });
+    });
   }
 
   _renderFilterChips() {
@@ -5396,6 +5680,11 @@ class BrainstormMindmapCard extends HTMLElement {
     if ((e.key === "z" || e.key === "Z") && this._aiAvailable()) {
       e.preventDefault();
       this._showSortInDialog();
+      return;
+    }
+    if (e.key === "r" || e.key === "R") {
+      e.preventDefault();
+      this._showRulesDialog();
       return;
     }
     if ((e.key === "b" || e.key === "B") && !e.shiftKey) {
@@ -7483,6 +7772,7 @@ class BrainstormMindmapCard extends HTMLElement {
         });
       });
       this._renderFilterChips();
+      this._applyRules();
       this._applyFilter();
     } catch (e) {
       console.error("[BrainstormMindmapCard] Update error:", e);
@@ -8688,7 +8978,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.8.11 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.8.12 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

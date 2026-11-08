@@ -1,9 +1,9 @@
-import { MARKERS, alexaEchos, emptyFilter, ideaMatches, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.11";
+import { MARKERS, alexaEchos, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.12";
 
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.8.11 - List Search
+ * Version 1.8.12 - Rules
  */
 // The bulb lies next to this file, wherever Home Assistant serves it from
 const BULB_URL = new URL("./brainstorm-bulb.svg", import.meta.url).href;
@@ -38,6 +38,14 @@ class BrainstormCard extends HTMLElement {
     this.attachShadow({ mode: "open" });
     this._selectedCategory = "all";
     this._viewMode = "list"; // 'list' | 'mindmap'
+    // Rules from the mind map color fitting notes here as well
+    this._rules = [];
+    this._rulesLoaded = false;
+    this._onRulesChanged = (e) => {
+      this._rules = (e.detail && e.detail.rules) || [];
+      this._lastUpdated = null;
+      if (this._initialized && !this._isDialogOpen) this._updateContent();
+    };
     this._config = { ...BRAINSTORM_CARD_DEFAULTS };
     let savedColorMode = "multicolor";
     try {
@@ -191,6 +199,15 @@ class BrainstormCard extends HTMLElement {
     setLanguage(hass);
     this._hass = hass;
     this._refreshPrivateData();
+    if (!this._rulesLoaded) {
+      this._rulesLoaded = true;
+      loadRules(hass).then((rules) => {
+        this._rules = rules;
+        if (!rules.length) return;
+        this._lastUpdated = null;
+        if (this._initialized && !this._isDialogOpen) this._updateContent();
+      });
+    }
     if (!this._initialized) {
       this._initDom();
     } else {
@@ -867,7 +884,12 @@ class BrainstormCard extends HTMLElement {
     this._showMicStatus(message);
   }
 
+  connectedCallback() {
+    window.addEventListener("brainstorm-rules-changed", this._onRulesChanged);
+  }
+
   disconnectedCallback() {
+    window.removeEventListener("brainstorm-rules-changed", this._onRulesChanged);
     if (this._micSession) this._endMic(this._micSession, "");
   }
 
@@ -3480,6 +3502,10 @@ class BrainstormCard extends HTMLElement {
           padding: 8px 11px;
           transition: background 0.15s, border-color 0.15s;
         }
+        .idea-item.rule-hit {
+          border-left-width: 5px;
+          background: color-mix(in srgb, var(--item-cat-color) 10%, var(--card-background-color, #ffffff));
+        }
         .idea-item:hover {
           border-color: var(--divider-color, rgba(0,0,0,0.15));
           background: var(--secondary-background-color, rgba(0,0,0,0.02));
@@ -4804,14 +4830,17 @@ class BrainstormCard extends HTMLElement {
 
         this._ideasById = Object.fromEntries(orderedIdeas.map((item) => [item.id, item]));
         const numbers = isCompletedView ? new Map() : numberLabels(activeIdeas);
+        const ruleNow = new Date();
         ideasList.innerHTML = orderedIdeas
           .map((item, idx) => {
             const isSub = item.isSubtask === true;
             // Without privacy, every idea has full access as before
             const itemEdit = canEdit && item.access !== "view";
             const itemDelete = canDelete && (!item.access || item.access === "owner");
+            const rule = !isCompletedView && this._rules.length ? ruleFor(item, this._rules, ruleNow) : null;
+            const itemColor = rule && rule.color ? rule.color : this._getCategoryColor(item.category);
             return `
-            <div class="idea-item ${isSub ? "is-subtask" : ""} ${isCompletedView ? "completed" : ""} ${searching && !this._searchHits.has(item.id) ? "search-context" : ""}" data-id="${item.id}" data-idx="${idx}" style="--item-cat-color: ${this._getCategoryColor(item.category)};">
+            <div class="idea-item ${isSub ? "is-subtask" : ""} ${isCompletedView ? "completed" : ""} ${searching && !this._searchHits.has(item.id) ? "search-context" : ""}${rule && rule.color ? " rule-hit" : ""}" data-id="${item.id}" data-idx="${idx}" style="--item-cat-color: ${itemColor};">
               ${!isCompletedView && itemEdit ? `<span class="drag-handle" title="${t("Halten & Ziehen zum Sortieren oder Unteraufgabe zuordnen")}" data-id="${item.id}">⠿</span>` : ""}
               <button 
                 class="check-btn ${isCompletedView ? "checked" : ""}" 
@@ -4822,7 +4851,7 @@ class BrainstormCard extends HTMLElement {
               >${isCompletedView ? "✓" : ""}</button>
               <div class="idea-content">
                 <div class="idea-text" title="${itemEdit ? t("Klicken zum Bearbeiten (Lange drücken für Kontextmenü)") : ""}" data-id="${item.id}" style="${itemEdit ? "" : "cursor: default;"}">
-                  ${isSub ? `<span class="subtask-indicator" title="${t("Unteraufgabe")}">↳</span>` : ""}${numbers.has(item.id) ? `<span class="idea-number">${numbers.get(item.id)}</span> ` : ""}${formatText(item.text)}
+                  ${isSub ? `<span class="subtask-indicator" title="${t("Unteraufgabe")}">↳</span>` : ""}${numbers.has(item.id) ? `<span class="idea-number">${numbers.get(item.id)}</span> ` : ""}${rule && rule.icon ? `<span class="rule-icon" title="${this._escapeHtml(rule.name)}">${this._escapeHtml(rule.icon)}</span> ` : ""}${formatText(item.text)}
                 </div>
                 ${item.description ? `<div class="idea-description" title="${t("Antippen zum Auf- und Zuklappen")}" data-id="${item.id}">${formatText(item.description)}</div>` : ""}
                 ${item.result ? `<div class="idea-result" title="${t("Ergebnis")}">${formatText(item.result)}</div>` : ""}
@@ -5788,7 +5817,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.8.11 ",
+  "%c BRAINSTORM-CARD %c v1.8.12 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

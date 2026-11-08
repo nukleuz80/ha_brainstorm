@@ -247,6 +247,8 @@ With **Smart Text Optimization** (General Settings) spoken notes are tidied up a
 | Number the subtasks | ✏️ Edit ➔ *Number the subtasks*: 1., 1.1 · a) · I. |
 | Sort the subtasks | ✏️ Edit ➔ *Sort the subtasks*, or **S** (no selection: the main notes) |
 
+**Rules:** set a filter in the search bar, then 🎨 (or **R**) ➔ *Current filter as a rule*. Give it a name, one of nine colors and a sign. Every note that fits gets the color and the sign, in the map and in the list card; when several rules fit, the upper one wins. In the rule list, the box switches a rule on or off, ↑ moves it up, ✎ edits it and 🗑️ deletes it (↶ brings it back). Rules belong to your Home Assistant user and follow you to every device.
+
 **Search and filter:** 🔍 opens a bar above the map. Words you type must all appear in the title, description, result or person; `#gar` finds notes with a tag starting with *gar*. The chips filter by priority (🔥 🔴 🟡 🟢), by *Overdue* or *7 days*, by *In progress* and by the tags of the list, with their number. Notes that fit stay bright, their parents half, the rest fades. A folded branch with hits shows its button in color. **Enter** jumps to the next hit and unfolds its branch, **Shift+Enter** to the previous one, **Esc** clears the search and then closes the bar, which also clears the filter.
 
 **Tags:** write `#garten` or `#3d-druck` anywhere in the title or description, or say *"hashtag garden"* to Alexa or Assist. A tag needs a letter, so `#1` stays a number and a color like `#ff7800` stays a color. Tags given with `tags:` in `brainstorm.add_idea` count too.
@@ -292,6 +294,7 @@ With **Smart Text Optimization** (General Settings) spoken notes are tidied up a
 | **B** | brainstorm mode |
 | **S** | sort the subtasks (no selection: main notes) |
 | **Z** | AI: sort in loose ideas |
+| **R** | rules: color notes that fit a saved filter |
 | **P** | presentation mode |
 | **Esc** | clear the selection, go up one level in focus, cancel linking |
 | **Ctrl+Z** | undo |
