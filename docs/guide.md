@@ -247,6 +247,8 @@ With **Smart Text Optimization** (General Settings) spoken notes are tidied up a
 | Number the subtasks | ✏️ Edit ➔ *Number the subtasks*: 1., 1.1 · a) · I. |
 | Sort the subtasks | ✏️ Edit ➔ *Sort the subtasks*, or **S** (no selection: the main notes) |
 
+**Pictures:** the first picture among the attachments of a note shows inside the note. A tap opens it in full size. Add one with 📎 in the edit dialog, or paste or drop it there.
+
 **Rules:** set a filter in the search bar, then 🎨 (or **R**) ➔ *Current filter as a rule*. Give it a name, one of nine colors and a sign. Every note that fits gets the color and the sign, in the map and in the list card; when several rules fit, the upper one wins. In the rule list, the box switches a rule on or off, ↑ moves it up, ✎ edits it and 🗑️ deletes it (↶ brings it back). Rules belong to your Home Assistant user and follow you to every device.
 
 **Search and filter:** 🔍 opens a bar above the map. Words you type must all appear in the title, description, result or person; `#gar` finds notes with a tag starting with *gar*. The chips filter by priority (🔥 🔴 🟡 🟢), by *Overdue* or *7 days*, by *In progress* and by the tags of the list, with their number. Notes that fit stay bright, their parents half, the rest fades. A folded branch with hits shows its button in color. **Enter** jumps to the next hit and unfolds its branch, **Shift+Enter** to the previous one, **Esc** clears the search and then closes the bar, which also clears the filter.
@@ -416,6 +418,7 @@ A single note can get its own shape in the edit dialog or through a service (`no
 | `show_add_btn` | `true` | "+ Idea" |
 | `show_export_btn` | `true` | 🖼️ save as image or outline, insert an outline |
 | `show_filter` | `true` | 🔍 search and filter |
+| `show_images` | `true` | first picture attachment inside the note |
 | `show_fullscreen_btn` | `true` | ⛶ full screen |
 | `show_color_toggle` | `true` | 🎨/🌈 |
 | `hide_empty_categories` | `true` | hide empty categories |

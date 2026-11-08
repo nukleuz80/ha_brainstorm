@@ -1,8 +1,8 @@
-import { BOARDS, MARKERS, NUMBERING, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.12";
+import { BOARDS, MARKERS, NUMBERING, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.13";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.8.12 - Rules
+ * Version: 1.8.13 - Pictures in Notes
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -35,6 +35,7 @@ const BRAINSTORM_MINDMAP_DEFAULTS = {
   show_add_btn: true,
   show_export_btn: true,
   show_filter: true,
+  show_images: true,
   hide_empty_categories: true,
   layout: "radial",
   map_template: "standard",
@@ -2158,6 +2159,24 @@ class BrainstormMindmapCard extends HTMLElement {
         }
         #notesContainer .note-cloud.rule-hit {
           border-left-color: var(--rule-color) !important;
+        }
+        .cloud-image {
+          height: 110px;
+          margin: 6px 0 4px;
+          border-radius: 10px;
+          overflow: hidden;
+          background: var(--secondary-background-color, rgba(127, 127, 127, 0.12));
+          cursor: zoom-in;
+        }
+        .cloud-image img {
+          display: block;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          pointer-events: none;
+        }
+        .cloud-image.broken {
+          display: none;
         }
         .rule-badge {
           position: absolute;
@@ -5159,6 +5178,39 @@ class BrainstormMindmapCard extends HTMLElement {
     }
   }
 
+  // --- Pictures: the first image attachment shows inside its note ---
+
+  _loadNodeImages(container) {
+    container.querySelectorAll(".cloud-image").forEach((box) => {
+      const img = box.querySelector("img");
+      attachmentUrl(this._hass, box.dataset.id, box.dataset.att)
+        .then((url) => {
+          if (img) img.src = url;
+        })
+        .catch((err) => {
+          console.warn("[BrainstormMindmap] Picture could not be loaded:", err);
+          box.remove();
+        });
+      if (img) img.addEventListener("error", () => box.classList.add("broken"));
+      box.addEventListener("click", async (e) => {
+        // Linking and picking several notes work on the picture as well
+        if (e.shiftKey || e.ctrlKey || e.metaKey || this._lassoMode || this._linkFrom) return;
+        e.stopPropagation();
+        if (Date.now() - (this._dragEndedAt || 0) < 300) return;
+        // Open the window first, so pop-up blockers see the tap
+        const win = window.open("", "_blank");
+        try {
+          const url = await attachmentUrl(this._hass, box.dataset.id, box.dataset.att);
+          if (win) win.location.href = url;
+          else window.location.href = url;
+        } catch (err) {
+          if (win) win.close();
+          console.error("[BrainstormMindmap] Picture could not be opened:", err);
+        }
+      });
+    });
+  }
+
   // --- Rules: notes that fit a saved filter get its color and sign ---
 
   _applyRules() {
@@ -7497,6 +7549,7 @@ class BrainstormMindmapCard extends HTMLElement {
         const hasBranch = filteredIdeas.some((i) => i.id !== idea.id && i.parent_id === idea.id && listIds.has(i.id));
         const folded = hasBranch && this._collapsed.has(idea.id);
         const hiddenCount = folded ? this._descendantIds(idea.id, filteredIdeas).length : 0;
+        const cover = this._config.show_images !== false ? coverAttachment(idea) : null;
         const branchToggle = hasBranch
           ? `<button class="branch-toggle" data-id="${idea.id}" title="${folded ? t("Zweig aufklappen") : t("Zweig einklappen")}">${folded ? `+${hiddenCount}` : "−"}</button>`
           : "";
@@ -7522,6 +7575,7 @@ class BrainstormMindmapCard extends HTMLElement {
               </span>
             </div>
             ${markerBadges(idea) || progressBadge(idea) ? `<div class="cloud-marks">${progressBadge(idea)}${markerBadges(idea)}</div>` : ""}
+            ${cover ? `<div class="cloud-image" data-id="${idea.id}" data-att="${this._escapeHtml(cover.id)}" title="${t("Bild öffnen")}"><img alt="${this._escapeHtml(cover.name || "")}" draggable="false"></div>` : ""}
             <div class="cloud-text" title="${t("Klicken zum Bearbeiten")}">${numbers.has(idea.id) ? `<span class="cloud-number">${numbers.get(idea.id)}</span> ` : ""}${formatText(idea.text)}</div>
             ${idea.result ? `<div class="cloud-result" title="${t("Ergebnis")}">${formatText(idea.result)}</div>` : ""}
             <div class="cloud-actions">
@@ -7540,6 +7594,7 @@ class BrainstormMindmapCard extends HTMLElement {
       // The old notes go, and with them what the observer watched
       if (this._shapeObserver) this._shapeObserver.disconnect();
       container.innerHTML = html;
+      this._loadNodeImages(container);
       // Notes that are done, deleted or filtered away leave the selection
       const shownIds = new Set(shownIdeas.map((i) => i.id));
       [...this._multi].forEach((id) => {
@@ -7704,7 +7759,7 @@ class BrainstormMindmapCard extends HTMLElement {
         });
         cloud.addEventListener("dblclick", (e) => {
           if (e.shiftKey || e.ctrlKey || e.metaKey || this._lassoMode) return;
-          if (e.target.closest(".action-btn") || e.target.closest("a") || e.target.closest(".bs-tag") || e.target.closest(".marker-badge") || e.target.closest(".progress-badge") || e.target.closest(".cloud-inline-editor")) return;
+          if (e.target.closest(".action-btn") || e.target.closest("a") || e.target.closest(".bs-tag") || e.target.closest(".marker-badge") || e.target.closest(".progress-badge") || e.target.closest(".cloud-image") || e.target.closest(".cloud-inline-editor")) return;
           this._startInlineEdit(idea.id);
         });
         const textEl = cloud.querySelector(".cloud-text");
@@ -8747,6 +8802,12 @@ class BrainstormMindmapCardEditor extends HTMLElement {
         selector: { boolean: {} },
       },
       {
+        name: "show_images",
+        label: t("Bilder aus den Anhängen in den Notizen zeigen"),
+        default: true,
+        selector: { boolean: {} },
+      },
+      {
         name: "show_filter",
         label: t("Suche und Filter (🔍) anzeigen"),
         default: true,
@@ -8978,7 +9039,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.8.12 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.8.13 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

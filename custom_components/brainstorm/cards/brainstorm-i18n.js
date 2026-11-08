@@ -462,6 +462,8 @@ const DICTIONARIES = {
     "🔧 In Arbeit": "🔧 In progress",
     "🗑️ Später oder gar nicht": "🗑️ Later or never",
     "Gliederung": "Outline",
+    "Bild öffnen": "Open picture",
+    "Bilder aus den Anhängen in den Notizen zeigen": "Show pictures from the attachments in the notes",
     "Zurück": "Back",
     "Name": "Name",
     "Regeln: passende Notizen färben (R)": "Rules: color fitting notes (R)",
@@ -1187,6 +1189,17 @@ const ATTACHMENT_ACCEPT = "image/*,.pdf,.txt,.log,.md,.csv,.json,.yaml,.yml,.zip
 const signedUrls = new Map();
 
 /** Return a signed address, so an image tag can load a file without a token. */
+/** Return the first picture among the files of a note, shown on the map. */
+export function coverAttachment(idea) {
+  const files = (idea && idea.attachments) || [];
+  return files.find((a) => String(a.type || "").startsWith("image/") && a.type !== "image/heic") || null;
+}
+
+/** Return a short-lived address of an attachment that an image or a tab can open. */
+export async function attachmentUrl(hass, ideaId, attachmentId) {
+  return signedAttachmentUrl(hass, ideaId, attachmentId);
+}
+
 async function signedAttachmentUrl(hass, ideaId, attachmentId) {
   const path = `${ATTACHMENT_URL}/${encodeURIComponent(ideaId)}/${encodeURIComponent(attachmentId)}`;
   const cached = signedUrls.get(path);

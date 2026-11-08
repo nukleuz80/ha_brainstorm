@@ -248,6 +248,8 @@ Mit **Intelligente Formatierung** (Allgemeine Einstellungen) werden gesprochene 
 | Unterpunkte nummerieren | ✏️ Bearbeiten ➔ *Unterpunkte nummerieren*: 1., 1.1 · a) · I. |
 | Unterpunkte sortieren | ✏️ Bearbeiten ➔ *Unterpunkte sortieren*, oder **S** (ohne Auswahl: die Hauptnotizen) |
 
+**Bilder:** Das erste Bild unter den Anhängen einer Notiz erscheint in der Notiz. Antippen öffnet es groß. Ein Bild kommt per 📎 im Bearbeiten-Dialog dazu, oder per Einfügen oder Ziehen dorthin.
+
 **Regeln:** In der Suchleiste einen Filter einstellen, dann 🎨 (oder **R**) ➔ *Aktuellen Filter als Regel*. Name, eine von neun Farben und ein Zeichen wählen. Jede passende Notiz bekommt Farbe und Zeichen, in der Map und in der Listenkarte; passen mehrere Regeln, gilt die obere. In der Regelliste schaltet das Kästchen eine Regel an oder aus, ↑ schiebt sie nach oben, ✎ bearbeitet sie und 🗑️ löscht sie (↶ holt sie zurück). Regeln gehören zu deinem Home-Assistant-Benutzer und gelten auf jedem Gerät.
 
 **Suchen und filtern:** 🔍 öffnet eine Leiste über der Map. Alle getippten Wörter müssen im Titel, in der Beschreibung, im Ergebnis oder bei der Person vorkommen; `#gar` findet Notizen mit einem Tag, das mit *gar* beginnt. Die Chips filtern nach Priorität (🔥 🔴 🟡 🟢), nach *Überfällig* oder *7 Tage*, nach *In Arbeit* und nach den Tags der Liste, mit ihrer Anzahl. Passende Notizen bleiben hell, ihre übergeordneten Punkte halb, der Rest tritt zurück. Ein eingeklappter Zweig mit Treffern zeigt seinen Knopf farbig. **Enter** springt zum nächsten Treffer und klappt seinen Zweig auf, **Umschalt+Enter** zum vorigen, **Esc** leert die Suche und schließt danach die Leiste, das hebt auch den Filter auf.
@@ -417,6 +419,7 @@ Pro Notiz kannst du die Form auch im Bearbeiten-Dialog wählen oder per Dienst s
 | `show_add_btn` | `true` | „+ Idee“ |
 | `show_export_btn` | `true` | 🖼️ Als Bild oder Gliederung speichern, Gliederung einfügen |
 | `show_filter` | `true` | 🔍 Suchen und filtern |
+| `show_images` | `true` | erstes Bild der Anhänge in der Notiz |
 | `show_fullscreen_btn` | `true` | ⛶ Vollbild |
 | `show_color_toggle` | `true` | 🎨/🌈 |
 | `hide_empty_categories` | `true` | leere Kategorien ausblenden |
