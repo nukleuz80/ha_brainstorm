@@ -1,8 +1,8 @@
-import { BOARDS, MARKERS, NUMBERING, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.13";
+import { BOARDS, MARKERS, NUMBERING, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.14";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.8.13 - Pictures in Notes
+ * Version: 1.8.14 - PDF Export
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -4655,6 +4655,12 @@ class BrainstormMindmapCard extends HTMLElement {
           <button class="dialog-btn dialog-btn-cancel" data-export="svg">${t("SVG (Vektor)")}</button>
           <button class="dialog-btn dialog-btn-cancel" data-export="png">${t("PNG (Bild)")}</button>
         </div>
+        <div class="dialog-label">${t("Als PDF:")}</div>
+        <div class="dialog-hint">${t("Zum Drucken oder Weitergeben: das Bild der Map und danach alle Notizen als Gliederung mit Beschreibung.")}</div>
+        <div class="export-row">
+          <button class="dialog-btn dialog-btn-cancel" data-export="pdf">📄 ${t("PDF (Map und Gliederung)")}</button>
+          <button class="dialog-btn dialog-btn-cancel" data-export="pdf-outline">${t("PDF (nur Gliederung)")}</button>
+        </div>
         <div class="dialog-label">${t("Als Gliederung:")}</div>
         <div class="dialog-hint">${t("Alle Notizen dieser Map, auch eingeklappte, für andere Mindmap- und Gliederungsprogramme.")}</div>
         <div class="export-row">
@@ -4683,6 +4689,7 @@ class BrainstormMindmapCard extends HTMLElement {
           const kind = btn.getAttribute("data-export");
           this._closeDialog();
           if (kind === "svg" || kind === "png") this._exportMap(kind);
+          else if (kind === "pdf" || kind === "pdf-outline") this._exportPdf(kind === "pdf");
           else this._exportOutline(kind);
         });
       });
@@ -4819,8 +4826,40 @@ class BrainstormMindmapCard extends HTMLElement {
     }
   }
 
+  // A PDF with the picture of the map and the outline of all its notes
+  async _exportPdf(withMap) {
+    const focus = this._focusIdea();
+    const ideas = this._categoryIdeas();
+    if (!ideas.length) {
+      this._showToast(t("Auf der Map ist nichts zum Speichern"));
+      return;
+    }
+    const title = focus ? focus.text : this._selectedCategory === "all" ? t("Alle") : this._selectedCategory;
+    try {
+      let map = null;
+      const image = withMap ? this._buildMapSvg() : null;
+      if (image) {
+        // At most 3000 pixels on the long side keeps the file small enough
+        const scale = Math.min(2, 3000 / Math.max(image.width, image.height));
+        const blob = await this._svgToPng(image, scale, "image/jpeg");
+        map = {
+          jpeg: new Uint8Array(await blob.arrayBuffer()),
+          width: image.width,
+          height: image.height,
+          pixelWidth: Math.ceil(image.width * scale),
+          pixelHeight: Math.ceil(image.height * scale),
+        };
+      }
+      const pdf = outlinePdf(ideas, title, map);
+      this._downloadBlob(new Blob([pdf], { type: "application/pdf" }), this._exportFileName("pdf"));
+    } catch (err) {
+      console.error("[BrainstormMindmap] PDF export failed:", err);
+      this._showToast(t("Speichern als PDF ging nicht"));
+    }
+  }
+
   // Draws the SVG onto a canvas at twice the size, for sharp pictures
-  _svgToPng(image, scale = 2) {
+  _svgToPng(image, scale = 2, type = "image/png") {
     return new Promise((resolve, reject) => {
       const url = URL.createObjectURL(new Blob([image.markup], { type: "image/svg+xml" }));
       const img = new Image();
@@ -4830,10 +4869,15 @@ class BrainstormMindmapCard extends HTMLElement {
           canvas.width = Math.ceil(image.width * scale);
           canvas.height = Math.ceil(image.height * scale);
           const ctx = canvas.getContext("2d");
+          if (type === "image/jpeg") {
+            // JPEG has no transparency, so the page gets a white ground first
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+          }
           ctx.scale(scale, scale);
           ctx.drawImage(img, 0, 0, image.width, image.height);
           URL.revokeObjectURL(url);
-          canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("empty canvas"))), "image/png");
+          canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("empty canvas"))), type, 0.9);
         } catch (err) {
           URL.revokeObjectURL(url);
           reject(err);
@@ -9039,7 +9083,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.8.13 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.8.14 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

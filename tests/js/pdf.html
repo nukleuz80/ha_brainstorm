@@ -1,0 +1,50 @@
+<!doctype html>
+<!-- Browser test for the PDF export. Run: python3 -m http.server in the repo root,
+     open http://localhost:8000/tests/js/pdf.html, it shows PASS or the failures. --><meta charset="utf-8"><body><pre id="out">running</pre><pre id="pdf"></pre>
+<script type="module">
+import { outlinePdf, pdfPlain } from "../../custom_components/brainstorm/cards/brainstorm-i18n.js";
+const fails = [];
+const check = (name, got, want) => { if (JSON.stringify(got) !== JSON.stringify(want)) fails.push(`${name}: want ${JSON.stringify(want)}, got ${JSON.stringify(got)}`); };
+check("markdown and emoji gone", pdfPlain("**Fett** und [Link](https://x.y) mit `code` 🔥 — Äpfel „gut“"), "Fett und Link mit code — Äpfel „gut“");
+check("italic", pdfPlain("ganz *wichtig* hier"), "ganz wichtig hier");
+const ideas = [
+  { id: "a", text: "Smart Mirror (bauen)", description: "Mit **Raspberry Pi** und Folie" },
+  { id: "b", text: "Folie bestellen \\ schnell", parent_id: "a" },
+  { id: "c", text: "Größe messen", parent_id: "b" },
+  { id: "d", text: "Einkauf" },
+  ...Array.from({ length: 80 }, (_, i) => ({ id: `x${i}`, text: `Punkt ${i} mit einem recht langen Text, der sicher über mehr als eine Zeile laufen muss, damit der Umbruch greift`, parent_id: "d" })),
+];
+const canvas = document.createElement("canvas");
+canvas.width = 40; canvas.height = 20;
+const ctx = canvas.getContext("2d"); ctx.fillStyle = "#3366cc"; ctx.fillRect(0, 0, 40, 20);
+const blob = await new Promise((r) => canvas.toBlob(r, "image/jpeg", 0.9));
+const jpeg = new Uint8Array(await blob.arrayBuffer());
+const bytes = outlinePdf(ideas, "Projekte", { jpeg, width: 400, height: 200, pixelWidth: 40, pixelHeight: 20 }, new Date("2026-11-09T10:00:00Z"));
+const text = new TextDecoder("latin1").decode(bytes);
+check("header", text.slice(0, 8), "%PDF-1.4");
+check("end", text.trimEnd().endsWith("%%EOF"), true);
+const count = Number(/\/Size (\d+)/.exec(text)[1]);
+const xrefAt = Number(/startxref\n(\d+)/.exec(text)[1]);
+check("startxref points at xref", text.slice(xrefAt, xrefAt + 4), "xref");
+const rows = text.slice(xrefAt).split("\n").slice(3, 2 + count);
+rows.forEach((row, i) => {
+  const at = Number(row.slice(0, 10));
+  if (!text.startsWith(`${i + 1} 0 obj`, at)) fails.push(`object ${i + 1} not at ${at}`);
+});
+const pages = Number(/\/Count (\d+)/.exec(text)[1]);
+check("map page and several outline pages", pages >= 3, true);
+check("landscape map page", text.includes("/MediaBox [0 0 841.89 595.28]"), true);
+check("image size in pixels", text.includes("/Width 40 /Height 20"), true);
+check("brackets escaped", text.includes("(Smart Mirror \\(bauen\\))"), true);
+check("backslash escaped", text.includes("Folie bestellen \\\\ schnell"), true);
+check("umlaut as WinAnsi", text.includes("Gr\\366\\337e messen"), true);
+check("description without markdown", text.includes("(Mit Raspberry Pi und Folie)"), true);
+const lengths = [...text.matchAll(/<< \/Length (\d+) >>\nstream\n/g)];
+lengths.forEach((m) => { const start = m.index + m[0].length; if (text.slice(start + Number(m[1]), start + Number(m[1]) + 10) !== "\nendstream") fails.push(`stream length wrong at ${m.index}`); });
+const only = new TextDecoder("latin1").decode(outlinePdf(ideas.slice(0, 3), "Nur Text", null));
+check("without map no image", only.includes("/Subtype /Image"), false);
+check("without map one page", /\/Count 1 /.test(only), true);
+let bin = ""; bytes.forEach((b) => { bin += String.fromCharCode(b); });
+document.getElementById("pdf").textContent = btoa(bin);
+document.getElementById("out").textContent = fails.length ? "FAIL\n" + fails.join("\n") : "PASS";
+</script>

@@ -462,6 +462,11 @@ const DICTIONARIES = {
     "🔧 In Arbeit": "🔧 In progress",
     "🗑️ Später oder gar nicht": "🗑️ Later or never",
     "Gliederung": "Outline",
+    "Als PDF:": "As PDF:",
+    "Zum Drucken oder Weitergeben: das Bild der Map und danach alle Notizen als Gliederung mit Beschreibung.": "For printing or passing on: the picture of the map, then all notes as an outline with their descriptions.",
+    "PDF (Map und Gliederung)": "PDF (map and outline)",
+    "PDF (nur Gliederung)": "PDF (outline only)",
+    "Speichern als PDF ging nicht": "Saving as PDF did not work",
     "Bild öffnen": "Open picture",
     "Bilder aus den Anhängen in den Notizen zeigen": "Show pictures from the attachments in the notes",
     "Zurück": "Back",
@@ -1115,6 +1120,187 @@ export function outlineMarkdown(ideas, title) {
     });
   walk(outlineTree(ideas), 0);
   return `${lines.join("\n")}\n`;
+}
+
+// --- PDF: a page with the picture of the map and pages with the outline ---
+
+// Characters of the standard PDF fonts outside Latin-1, in WinAnsi order
+const WIN_ANSI = { "€": 0x80, "‚": 0x82, "„": 0x84, "…": 0x85, "‘": 0x91, "’": 0x92, "“": 0x93, "”": 0x94, "•": 0x95, "–": 0x96, "—": 0x97, "™": 0x99 };
+
+/** Remove Markdown signs and characters the PDF fonts cannot show. */
+export function pdfPlain(text) {
+  return oneLine(text)
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/(\*\*|__|~~|`)/g, "")
+    .replace(/(^|\s)[*_](\S[^*_]*\S|\S)[*_](?=\s|$)/g, "$1$2")
+    .split("")
+    .filter((ch) => WIN_ANSI[ch] || (ch.charCodeAt(0) >= 32 && ch.charCodeAt(0) <= 255 && !(ch.charCodeAt(0) > 126 && ch.charCodeAt(0) < 160)))
+    .join("")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// A PDF string in brackets; everything outside plain ASCII as octal escapes
+function pdfString(text) {
+  let out = "(";
+  for (const ch of text) {
+    const code = WIN_ANSI[ch] || ch.charCodeAt(0);
+    if (ch === "(" || ch === ")" || ch === "\\") out += `\\${ch}`;
+    else if (code < 32 || code > 126) out += `\\${code.toString(8).padStart(3, "0")}`;
+    else out += ch;
+  }
+  return `${out})`;
+}
+
+// Rough widths of Helvetica, enough to break lines before the margin
+function pdfWidth(text, size) {
+  let width = 0;
+  for (const ch of text) {
+    if (" il.,:;'|!ijtfrI()[]".includes(ch)) width += 0.28;
+    else if ("mwMW@".includes(ch)) width += 0.85;
+    else if (ch >= "A" && ch <= "Z") width += 0.68;
+    else width += 0.54;
+  }
+  return width * size;
+}
+
+function pdfWrap(text, size, maxWidth) {
+  const lines = [];
+  let line = "";
+  for (const word of text.split(" ")) {
+    const next = line ? `${line} ${word}` : word;
+    if (line && pdfWidth(next, size) > maxWidth) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = next;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+/**
+ * Build a PDF file: a first page with the picture of the map (a JPEG) when
+ * there is one, then the notes as an outline with their descriptions.
+ */
+export function outlinePdf(ideas, title, map = null, date = new Date()) {
+  const A4 = [595.28, 841.89];
+  const margin = 42;
+  const pages = [];
+  const heading = pdfPlain(title) || "Brainstorm";
+  const stamp = pdfPlain(date.toLocaleDateString(dateLocale(), { day: "2-digit", month: "2-digit", year: "numeric" }));
+  const text = (x, y, size, value, bold = false, gray = 0) =>
+    `${gray ? `${gray} g ` : ""}BT /${bold ? "F2" : "F1"} ${size} Tf ${x.toFixed(2)} ${y.toFixed(2)} Td ${pdfString(value)} Tj ET${gray ? " 0 g" : ""}`;
+
+  if (map && map.jpeg && map.width && map.height) {
+    const landscape = map.width > map.height;
+    const [w, h] = landscape ? [A4[1], A4[0]] : A4;
+    const boxW = w - 2 * margin;
+    const boxH = h - 2 * margin - 34;
+    const scale = Math.min(boxW / map.width, boxH / map.height);
+    const iw = map.width * scale;
+    const ih = map.height * scale;
+    const x = margin + (boxW - iw) / 2;
+    const y = margin + (boxH - ih) / 2;
+    pages.push({
+      size: [w, h],
+      image: true,
+      ops: [
+        text(margin, h - margin - 16, 16, heading, true),
+        text(w - margin - pdfWidth(stamp, 9), h - margin - 14, 9, stamp, false, 0.45),
+        `q ${iw.toFixed(2)} 0 0 ${ih.toFixed(2)} ${x.toFixed(2)} ${y.toFixed(2)} cm /Im1 Do Q`,
+      ],
+    });
+  }
+
+  // The outline flows over as many pages as it needs
+  let ops = [];
+  let y = 0;
+  const newPage = () => {
+    if (ops.length) pages.push({ size: A4, ops });
+    ops = [];
+    y = A4[1] - margin;
+  };
+  newPage();
+  ops.push(text(margin, y - 16, 16, pages.length ? `${heading} – ${pdfPlain(t("Gliederung"))}` : heading, true));
+  if (!pages.length) ops.push(text(A4[0] - margin - pdfWidth(stamp, 9), y - 14, 9, stamp, false, 0.45));
+  y -= 40;
+  const ensure = (needed) => {
+    if (y - needed < margin) newPage();
+  };
+  const walk = (nodes, depth) =>
+    nodes.forEach(({ idea, children }) => {
+      const indent = margin + Math.min(depth, 8) * 16;
+      const width = A4[0] - margin - indent - 12;
+      const size = depth ? 10.5 : 12;
+      const lines = pdfWrap(pdfPlain(idea.text) || "…", size, width);
+      lines.forEach((line, index) => {
+        ensure(size + 4);
+        if (!index) ops.push(text(indent, y - size, size, depth ? "–" : "•", !depth));
+        ops.push(text(indent + 12, y - size, size, line, !depth));
+        y -= size + 4;
+      });
+      const description = pdfPlain(idea.description);
+      if (description) {
+        pdfWrap(description, 9, width).slice(0, 12).forEach((line) => {
+          ensure(12);
+          ops.push(text(indent + 12, y - 9, 9, line, false, 0.4));
+          y -= 12;
+        });
+      }
+      y -= depth ? 2 : 6;
+      walk(children, depth + 1);
+    });
+  walk(outlineTree(ideas), 0);
+  pages.push({ size: A4, ops });
+
+  // Objects: 1 catalog, 2 pages, 3 and 4 fonts, 5 the picture, then page and content pairs
+  const encoder = new TextEncoder();
+  const chunks = [];
+  const offsets = [];
+  let length = 0;
+  const add = (part) => {
+    const bytes = typeof part === "string" ? encoder.encode(part) : part;
+    chunks.push(bytes);
+    length += bytes.length;
+  };
+  const object = (number, body) => {
+    offsets[number] = length;
+    add(`${number} 0 obj\n${body}\nendobj\n`);
+  };
+  const first = 6;
+  add("%PDF-1.4\n%\xE2\xE3\xCF\xD3\n");
+  object(1, "<< /Type /Catalog /Pages 2 0 R >>");
+  object(2, `<< /Type /Pages /Kids [${pages.map((_, i) => `${first + i * 2} 0 R`).join(" ")}] /Count ${pages.length} >>`);
+  object(3, "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>");
+  object(4, "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>");
+  if (pages.some((page) => page.image)) {
+    offsets[5] = length;
+    add(`5 0 obj\n<< /Type /XObject /Subtype /Image /Width ${map.pixelWidth || Math.round(map.width)} /Height ${map.pixelHeight || Math.round(map.height)} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${map.jpeg.length} >>\nstream\n`);
+    add(map.jpeg);
+    add("\nendstream\nendobj\n");
+  } else {
+    object(5, "null");
+  }
+  pages.forEach((page, i) => {
+    const content = page.ops.join("\n");
+    const resources = `<< /Font << /F1 3 0 R /F2 4 0 R >>${page.image ? " /XObject << /Im1 5 0 R >>" : ""} >>`;
+    object(first + i * 2, `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${page.size[0]} ${page.size[1]}] /Resources ${resources} /Contents ${first + i * 2 + 1} 0 R >>`);
+    object(first + i * 2 + 1, `<< /Length ${content.length} >>\nstream\n${content}\nendstream`);
+  });
+  const xref = length;
+  const count = first + pages.length * 2;
+  let table = `xref\n0 ${count}\n0000000000 65535 f \n`;
+  for (let n = 1; n < count; n += 1) table += `${String(offsets[n]).padStart(10, "0")} 00000 n \n`;
+  add(`${table}trailer\n<< /Size ${count} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`);
+  const out = new Uint8Array(length);
+  let at = 0;
+  chunks.forEach((bytes) => {
+    out.set(bytes, at);
+    at += bytes.length;
+  });
+  return out;
 }
 
 /** The notes as OPML 2.0, for outliners such as Workflowy, OmniOutliner or Logseq. */
