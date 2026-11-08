@@ -242,6 +242,7 @@ With **Smart Text Optimization** (General Settings) spoken notes are tidied up a
 | Frame around notes | pick notes ➔ ▢ *Frame*, or ✏️ Edit ➔ *Frame*; tapping the frame name renames it |
 | Callout | ✏️ Edit ➔ *Callout* |
 | Brainstorm: collect many ideas fast | ⚡ at the bottom right or **B** |
+| Tree or org chart instead of the round map | ◎ / ⇶ / ⊤ at the bottom right |
 | Number the subtasks | ✏️ Edit ➔ *Number the subtasks*: 1., 1.1 · a) · I. |
 | Sort the subtasks | ✏️ Edit ➔ *Sort the subtasks*, or **S** (no selection: the main notes) |
 
@@ -260,6 +261,8 @@ With **Smart Text Optimization** (General Settings) spoken notes are tidied up a
 **Numbering and sorting:** in the edit dialog of a note with subtasks, *Number the subtasks* numbers everything below it, as in MindManager: 1., 1.1, 1.2 … or a), b) or I., II. A subtask can pick a style of its own, which then applies to its branch. The numbers show in front of the text in both cards and follow along when notes are added or moved. *Sort the subtasks* orders them right away by title (A → Z or Z → A), priority, due date or age. All other notes keep their place, and ↶ undoes it. On the map, **S** opens the same choice, without a selected note for the main notes of the category. If notes were moved by hand, 🪄 arranges the map to match afterwards.
 
 **Brainstorm mode:** ⚡ at the bottom right (or **B**) opens a big input with a timer: 3, 5, 10 or 15 minutes or no time limit. The clock starts with the first idea. **Enter** saves each idea as a note right away, the field is free again, and the idea shows as a coloured slip below. ✕ on a slip deletes it again. Ideas go into the chosen category, in focus below the focused note, under *All* into the matching category. After *Done*, ↶ takes all collected ideas out at once and 🪄 arranges the map. Then drag them into branches.
+
+**Layouts:** the button above ⚡ switches the arrangement: ◎ around the center, ⇶ a tree to the right (main notes in one column, subtasks to their right) and ⊤ an org chart downwards. In the tree and the org chart a parent sits in the middle of its subtasks and the lines run at right angles. The choice stays in this browser; the card option `layout` sets the default. Dragged notes stay where you put them until you switch the layout again.
 
 **Export and import:** 🖼️ saves the map as a picture (SVG, PNG) or as an outline: **Markdown** (a nested list, descriptions as a `>` line), **OPML** (for outliners such as Workflowy, OmniOutliner or Logseq) and **FreeMind** (`.mm`, opens in Freeplane, XMind and MindManager). The outline holds all notes of the map, folded ones too; in focus only the branch. Under *Insert an outline* you type or paste a list, one line per note, subtasks indented or with `-`, `*`, `1.` and `#` headings. Or you choose a file (`.md`, `.txt`, `.opml`, `.mm`). `- [x]` adds the item as done. The notes go in as main notes of the category, in focus below the focused note. At most 300 notes at once, and ↶ takes them all out again. Automations can use the service `brainstorm.import_outline`.
 
@@ -360,6 +363,7 @@ allow_delete: false           # e.g. for a wall tablet
 ```yaml
 type: custom:brainstorm-mindmap-card
 map_template: sketch    # standard, clean, sketch, neon
+layout: tree            # radial, tree, org
 node_shape: thought     # overrides the template
 line_style: curve
 color_scheme: pastel

@@ -438,6 +438,14 @@ const DICTIONARIES = {
     "{count} Ideen gesammelt. 🪄 ordnet die Map neu, ↶ nimmt alle heraus.": "{count} ideas collected. 🪄 arranges the map, ↶ takes them all out.",
     "{minutes} Min.": "{minutes} min",
     "⚡ Brainstorm": "⚡ Brainstorm",
+    "Anordnung der Notizen": "Arrangement of the notes",
+    "Rund um die Mitte": "Around the center",
+    "Baum nach rechts": "Tree to the right",
+    "Organigramm nach unten": "Org chart downwards",
+    "Layout wechseln: rund, Baum, Organigramm": "Switch layout: radial, tree, org chart",
+    "Layout: Baum nach rechts": "Layout: tree to the right",
+    "Layout: Organigramm nach unten": "Layout: org chart downwards",
+    "Layout: rund um die Mitte": "Layout: around the center",
   },
 };
 

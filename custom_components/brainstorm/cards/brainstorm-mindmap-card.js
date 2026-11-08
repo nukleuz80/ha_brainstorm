@@ -1,8 +1,8 @@
-import { MARKERS, NUMBERING, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.5";
+import { MARKERS, NUMBERING, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.6";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.8.5 - Brainstorm Mode
+ * Version: 1.8.6 - Tree and Org Chart Layouts
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -10,6 +10,8 @@ import { MARKERS, NUMBERING, alexaEchos, attachmentBadge, blockedBadge, dateLoca
 
 // Folded branches of the mind map, kept per device
 const COLLAPSED_KEY = "brainstorm_mindmap_collapsed";
+const LAYOUT_KEY = "brainstorm_mindmap_layout";
+const LAYOUTS = ["radial", "tree", "org"];
 const UNDO_LIMIT = 30;
 
 // The bulb lies next to this file, wherever Home Assistant serves it from
@@ -34,6 +36,7 @@ const BRAINSTORM_MINDMAP_DEFAULTS = {
   show_export_btn: true,
   show_filter: true,
   hide_empty_categories: true,
+  layout: "radial",
   map_template: "standard",
   node_shape: "template",
   voice_bubbles: true,
@@ -230,6 +233,11 @@ class BrainstormMindmapCard extends HTMLElement {
       savedColorMode = localStorage.getItem("brainstorm_color_mode") || "multicolor";
     } catch {}
     this._colorMode = savedColorMode; // 'multicolor' | 'theme'
+    let savedLayout = null;
+    try {
+      savedLayout = localStorage.getItem(LAYOUT_KEY);
+    } catch {}
+    this._savedLayout = LAYOUTS.includes(savedLayout) ? savedLayout : null;
     this._scale = 1;
     this._panX = 0;
     this._panY = 0;
@@ -3065,6 +3073,7 @@ class BrainstormMindmapCard extends HTMLElement {
           <button class="control-btn" id="zoomOutBtn" title="${t("Verkleinern")}">−</button>
           <button class="control-btn" id="resetViewBtn" title="${t("Zentrieren / Anordnen")}">⟲</button>
           <button class="control-btn" id="lassoBtn" title="${t("Auswählen: Rahmen um mehrere Notizen ziehen (oder Umschalt+Ziehen)")}" aria-pressed="false">⬚</button>
+          <button class="control-btn" id="layoutBtn" title="${t("Layout wechseln: rund, Baum, Organigramm")}">${this._layoutIcon()}</button>
           <button class="control-btn" id="stormBtn" title="${t("Brainstorm: schnell viele Ideen sammeln (B)")}">⚡</button>
           <button class="control-btn" id="levelsBtn" title="${t("Ebenen zeigen: 1, 2, 3 oder alle (Tasten 1–9, 0 = alle)")}">∞</button>
           <button class="control-btn" id="arrangeBtn" title="${t("Neu ordnen: von Hand verschobene Notizen wieder automatisch platzieren")}">🪄</button>
@@ -3383,6 +3392,12 @@ class BrainstormMindmapCard extends HTMLElement {
     }
     const stormBtn = this.shadowRoot.getElementById("stormBtn");
     if (stormBtn) stormBtn.addEventListener("click", () => this._showBrainstorm());
+    const layoutBtn = this.shadowRoot.getElementById("layoutBtn");
+    if (layoutBtn) {
+      layoutBtn.addEventListener("click", () => {
+        this._setLayout(LAYOUTS[(LAYOUTS.indexOf(this._layout()) + 1) % LAYOUTS.length]);
+      });
+    }
     const levelsBtn = this.shadowRoot.getElementById("levelsBtn");
     if (levelsBtn) {
       levelsBtn.addEventListener("click", () => {
@@ -3488,7 +3503,35 @@ class BrainstormMindmapCard extends HTMLElement {
 
   // A single list keeps its map on every device, the overview of all lists does not
   _usesSavedPositions() {
-    return Boolean(this._selectedCategory) && this._selectedCategory !== "all" && !this._focusId;
+    return Boolean(this._selectedCategory) && this._selectedCategory !== "all" && !this._focusId && this._layout() === "radial";
+  }
+
+  // Radial around the center, a tree to the right, or an org chart downwards
+  _layout() {
+    if (this._savedLayout) return this._savedLayout;
+    return LAYOUTS.includes(this._config.layout) ? this._config.layout : "radial";
+  }
+
+  _layoutIcon(layout = this._layout()) {
+    return { radial: "◎", tree: "⇶", org: "⊤" }[layout];
+  }
+
+  _setLayout(layout) {
+    this._savedLayout = layout;
+    try {
+      localStorage.setItem(LAYOUT_KEY, layout);
+    } catch {}
+    this._userMovedNodes.clear();
+    this._scale = 1;
+    this._panX = 0;
+    this._panY = 0;
+    this._applyTransform();
+    const btn = this.shadowRoot.getElementById("layoutBtn");
+    if (btn) btn.textContent = this._layoutIcon(layout);
+    this._updateContent();
+    this._arrangeNodesRadially();
+    const names = { radial: t("Layout: rund um die Mitte"), tree: t("Layout: Baum nach rechts"), org: t("Layout: Organigramm nach unten") };
+    this._showToast(names[layout]);
   }
 
   _loadCollapsed() {
@@ -5136,6 +5179,10 @@ class BrainstormMindmapCard extends HTMLElement {
     });
     const roots = ideas.filter((idea) => !this._branchParent(idea, ids));
     const ringCount = roots.length;
+    if (this._layout() !== "radial") {
+      this._arrangeTreeLayout(ideas, childrenOf, roots, w, h, centerNode, this._layout() === "org");
+      return;
+    }
 
     // Partition nodes into concentric elliptical rings to prevent clustering
     const rings = [];
@@ -5417,6 +5464,112 @@ class BrainstormMindmapCard extends HTMLElement {
     this._drawConnections();
   }
 
+  // Tidy tree: every leaf gets its own row (or column), parents sit in the middle of theirs
+  _arrangeTreeLayout(ideas, childrenOf, roots, w, h, centerNode, vertical) {
+    const size = new Map();
+    ideas.forEach((idea) => {
+      const el = this.shadowRoot.getElementById(`cloud_${idea.id}`);
+      size.set(idea.id, { w: (el && el.offsetWidth) || 230, h: (el && el.offsetHeight) || 120 });
+    });
+    const centerW = (centerNode && centerNode.offsetWidth) || 154;
+    const centerH = (centerNode && centerNode.offsetHeight) || 154;
+    const levelGap = vertical ? 46 : 70;
+    const siblingGap = vertical ? 18 : 22;
+    // How far each level reaches along the main direction
+    const depthOf = new Map();
+    const extent = [];
+    const seen = new Set();
+    const measure = (idea, depth) => {
+      if (seen.has(idea.id)) return;
+      seen.add(idea.id);
+      depthOf.set(idea.id, depth);
+      const box = size.get(idea.id);
+      extent[depth] = Math.max(extent[depth] || 0, vertical ? box.h : box.w);
+      (childrenOf.get(idea.id) || []).forEach((kid) => measure(kid, depth + 1));
+    };
+    roots.forEach((root) => measure(root, 0));
+    ideas.forEach((idea) => measure(idea, 0));
+    const main = [];
+    let cursorMain = (vertical ? centerH : centerW) / 2 + levelGap;
+    extent.forEach((reach, depth) => {
+      main[depth] = cursorMain + reach / 2;
+      cursorMain += reach + levelGap;
+    });
+    // Across the main direction leaves line up one after the other
+    const cross = new Map();
+    let cursorCross = 0;
+    const placed = new Set();
+    const place = (idea) => {
+      if (placed.has(idea.id)) return null;
+      placed.add(idea.id);
+      const kids = (childrenOf.get(idea.id) || []).map(place).filter((value) => value !== null);
+      const box = size.get(idea.id);
+      const span = vertical ? box.w : box.h;
+      let middle;
+      if (kids.length) {
+        middle = (kids[0] + kids[kids.length - 1]) / 2;
+        cursorCross = Math.max(cursorCross, middle + span / 2 + siblingGap);
+      } else {
+        middle = cursorCross + span / 2;
+        cursorCross += span + siblingGap;
+      }
+      cross.set(idea.id, middle);
+      return middle;
+    };
+    roots.forEach(place);
+    ideas.forEach(place);
+    const total = Math.max(0, cursorCross - siblingGap);
+    // The center sits at the start, in the middle of everything across
+    const margin = 20;
+    this._centerPos = vertical
+      ? { x: Math.max(w / 2, total / 2 + margin), y: margin + centerH / 2 }
+      : { x: margin + centerW / 2, y: Math.max(h / 2, total / 2 + margin) };
+    if (centerNode) {
+      centerNode.style.left = `${this._centerPos.x}px`;
+      centerNode.style.top = `${this._centerPos.y}px`;
+    }
+    const items = ideas.map((idea) => {
+      const along = main[depthOf.get(idea.id) || 0];
+      const across = cross.get(idea.id) - total / 2;
+      const box = size.get(idea.id);
+      return vertical
+        ? { idea, x: this._centerPos.x + across, y: this._centerPos.y + along, ...box }
+        : { idea, x: this._centerPos.x + along, y: this._centerPos.y + across, ...box };
+    });
+    items.forEach((item) => {
+      this._nodePositions.set(item.idea.id, { x: item.x, y: item.y });
+      const el = this.shadowRoot.getElementById(`cloud_${item.idea.id}`);
+      if (el) {
+        el.style.left = `${item.x}px`;
+        el.style.top = `${item.y}px`;
+      }
+    });
+    // Fit the whole tree into the card, the start of the tree in view
+    if (items.length && this._scale >= 0.95 && this._scale <= 1.05) {
+      let minX = this._centerPos.x - centerW / 2;
+      let minY = this._centerPos.y - centerH / 2;
+      let maxX = this._centerPos.x + centerW / 2;
+      let maxY = this._centerPos.y + centerH / 2;
+      items.forEach((item) => {
+        minX = Math.min(minX, item.x - item.w / 2);
+        maxX = Math.max(maxX, item.x + item.w / 2);
+        minY = Math.min(minY, item.y - item.h / 2);
+        maxY = Math.max(maxY, item.y + item.h / 2);
+      });
+      const bottomInset = 56;
+      const availW = w - 24;
+      const availH = h - 12 - bottomInset;
+      if (minX < 12 || maxX > w - 12 || minY < 12 || maxY > h - bottomInset) {
+        const fit = Math.min(availW / (maxX - minX), availH / (maxY - minY));
+        this._scale = Math.max(0.45, Math.min(1, fit));
+        this._panX = 12 - this._scale * minX + Math.max(0, (availW - this._scale * (maxX - minX)) / 2);
+        this._panY = 12 - this._scale * minY + Math.max(0, (availH - this._scale * (maxY - minY)) / 2);
+        this._applyTransform();
+      }
+    }
+    this._drawConnections();
+  }
+
   _linePath(lines, x1, y1, x2, y2) {
     const dx = x2 - x1;
     const dy = y2 - y1;
@@ -5425,6 +5578,10 @@ class BrainstormMindmapCard extends HTMLElement {
       // Out sideways, then up or down, then on to the note
       const midX = x1 + dx / 2;
       return `M ${x1} ${y1} H ${midX} V ${y2} H ${x2}`;
+    }
+    if (lines === "angled-down") {
+      const midY = y1 + dy / 2;
+      return `M ${x1} ${y1} V ${midY} H ${x2} V ${y2}`;
     }
     // Cubic Bézier curve for an organic synapse look
     const cx1 = x1 + dx * 0.35;
@@ -5453,7 +5610,9 @@ class BrainstormMindmapCard extends HTMLElement {
     }
 
     const ids = new Set(activeIdeas.map((i) => i.id));
-    const lines = this._mapStyle().lines;
+    // A tree or an org chart reads best with lines at right angles
+    const layout = this._layout();
+    const lines = { tree: "angled", org: "angled-down" }[layout] || this._mapStyle().lines;
     let svgHtml = "";
     activeIdeas.forEach((idea) => {
       const el = this.shadowRoot.getElementById(`cloud_${idea.id}`);
@@ -7264,6 +7423,21 @@ class BrainstormMindmapCardEditor extends HTMLElement {
         },
       },
       {
+        name: "layout",
+        label: t("Anordnung der Notizen"),
+        default: "radial",
+        selector: {
+          select: {
+            mode: "dropdown",
+            options: [
+              { value: "radial", label: t("Rund um die Mitte") },
+              { value: "tree", label: t("Baum nach rechts") },
+              { value: "org", label: t("Organigramm nach unten") },
+            ],
+          },
+        },
+      },
+      {
         name: "map_template",
         label: t("Vorlage für das Aussehen"),
         default: "standard",
@@ -7637,7 +7811,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.8.5 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.8.6 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );
