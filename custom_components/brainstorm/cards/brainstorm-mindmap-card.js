@@ -1,8 +1,8 @@
-import { MARKERS, NUMBERING, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.6";
+import { BOARDS, MARKERS, NUMBERING, boardColumnOf, boardColumns, boardDrop, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.7";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.8.6 - Tree and Org Chart Layouts
+ * Version: 1.8.7 - Kanban, Timeline and Eisenhower Views
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -11,7 +11,7 @@ import { MARKERS, NUMBERING, alexaEchos, attachmentBadge, blockedBadge, dateLoca
 // Folded branches of the mind map, kept per device
 const COLLAPSED_KEY = "brainstorm_mindmap_collapsed";
 const LAYOUT_KEY = "brainstorm_mindmap_layout";
-const LAYOUTS = ["radial", "tree", "org"];
+const LAYOUTS = ["radial", "tree", "org", "kanban", "timeline", "matrix"];
 const UNDO_LIMIT = 30;
 
 // The bulb lies next to this file, wherever Home Assistant serves it from
@@ -2390,6 +2390,60 @@ class BrainstormMindmapCard extends HTMLElement {
           font-weight: 600;
           fill: var(--primary-text-color, #212121);
         }
+        .board-rect {
+          fill: var(--board-color);
+          fill-opacity: 0.06;
+          stroke: var(--board-color);
+          stroke-opacity: 0.35;
+          stroke-width: 1.5;
+        }
+        .board-label {
+          font-size: 14px;
+          font-weight: 700;
+          fill: var(--primary-text-color, #212121);
+        }
+        .board-count {
+          font-weight: 600;
+          fill: var(--secondary-text-color, #727272);
+        }
+        .board-hint {
+          font-size: 12px;
+          fill: var(--secondary-text-color, #727272);
+        }
+        .canvas-area.board-mode .center-node,
+        .canvas-area.board-mode .branch-toggle {
+          display: none;
+        }
+        .layout-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+          gap: 8px;
+          margin-bottom: 12px;
+        }
+        .layout-choice {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          min-height: 48px;
+          padding: 8px 12px;
+          border-radius: 12px;
+          border: 1px solid var(--divider-color, rgba(127, 127, 127, 0.3));
+          background: var(--secondary-background-color, rgba(127, 127, 127, 0.08));
+          color: var(--primary-text-color, #212121);
+          font: inherit;
+          font-size: 13px;
+          text-align: left;
+          cursor: pointer;
+        }
+        .layout-choice.active {
+          border-color: var(--primary-color, #03a9f4);
+          box-shadow: 0 0 0 1px var(--primary-color, #03a9f4) inset;
+        }
+        .layout-icon {
+          font-size: 20px;
+          width: 24px;
+          text-align: center;
+        }
         .frame-rect {
           fill: var(--frame-color, var(--primary-color, #03a9f4));
           fill-opacity: 0.06;
@@ -3030,7 +3084,7 @@ class BrainstormMindmapCard extends HTMLElement {
         <nav class="focus-bar" id="focusBar" aria-label="${t("Fokus")}"></nav>
 
         <!-- Interactive Canvas Area -->
-        <div class="canvas-area" id="canvasArea" tabindex="0">
+        <div class="canvas-area${this._isBoard() ? " board-mode" : ""}" id="canvasArea" tabindex="0">
           <div class="lasso-rect" id="lassoRect"></div>
           <div class="selection-bar" id="selectionBar" role="toolbar" aria-label="${t("Auswahl")}">
             <span class="selection-count" id="selectionCount"></span>
@@ -3073,7 +3127,7 @@ class BrainstormMindmapCard extends HTMLElement {
           <button class="control-btn" id="zoomOutBtn" title="${t("Verkleinern")}">−</button>
           <button class="control-btn" id="resetViewBtn" title="${t("Zentrieren / Anordnen")}">⟲</button>
           <button class="control-btn" id="lassoBtn" title="${t("Auswählen: Rahmen um mehrere Notizen ziehen (oder Umschalt+Ziehen)")}" aria-pressed="false">⬚</button>
-          <button class="control-btn" id="layoutBtn" title="${t("Layout wechseln: rund, Baum, Organigramm")}">${this._layoutIcon()}</button>
+          <button class="control-btn" id="layoutBtn" title="${t("Ansicht wählen")}">${this._layoutIcon()}</button>
           <button class="control-btn" id="stormBtn" title="${t("Brainstorm: schnell viele Ideen sammeln (B)")}">⚡</button>
           <button class="control-btn" id="levelsBtn" title="${t("Ebenen zeigen: 1, 2, 3 oder alle (Tasten 1–9, 0 = alle)")}">∞</button>
           <button class="control-btn" id="arrangeBtn" title="${t("Neu ordnen: von Hand verschobene Notizen wieder automatisch platzieren")}">🪄</button>
@@ -3395,7 +3449,7 @@ class BrainstormMindmapCard extends HTMLElement {
     const layoutBtn = this.shadowRoot.getElementById("layoutBtn");
     if (layoutBtn) {
       layoutBtn.addEventListener("click", () => {
-        this._setLayout(LAYOUTS[(LAYOUTS.indexOf(this._layout()) + 1) % LAYOUTS.length]);
+        this._showLayoutDialog();
       });
     }
     const levelsBtn = this.shadowRoot.getElementById("levelsBtn");
@@ -3513,7 +3567,42 @@ class BrainstormMindmapCard extends HTMLElement {
   }
 
   _layoutIcon(layout = this._layout()) {
-    return { radial: "◎", tree: "⇶", org: "⊤" }[layout];
+    return { radial: "◎", tree: "⇶", org: "⊤", kanban: "▥", timeline: "📅", matrix: "⊞" }[layout];
+  }
+
+  _layoutName(layout) {
+    return {
+      radial: t("Rund um die Mitte"),
+      tree: t("Baum nach rechts"),
+      org: t("Organigramm nach unten"),
+      kanban: t("Kanban nach Status"),
+      timeline: t("Zeitleiste nach Fälligkeit"),
+      matrix: t("Eisenhower-Matrix"),
+    }[layout];
+  }
+
+  _isBoard() {
+    return BOARDS.includes(this._layout());
+  }
+
+  _showLayoutDialog() {
+    this._openDialog(t("Ansicht wählen"), (body) => {
+      body.innerHTML = `
+        <div class="layout-grid">
+          ${LAYOUTS.map((layout) => `
+            <button class="layout-choice${layout === this._layout() ? " active" : ""}" data-layout="${layout}">
+              <span class="layout-icon">${this._layoutIcon(layout)}</span>
+              <span>${this._layoutName(layout)}</span>
+            </button>`).join("")}
+        </div>
+        <div class="dialog-hint">${t("In Kanban, Zeitleiste und Matrix ändert das Ziehen in eine andere Spalte Status, Fälligkeit oder Priorität.")}</div>`;
+      body.querySelectorAll(".layout-choice").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          this._closeDialog();
+          this._setLayout(btn.dataset.layout);
+        });
+      });
+    });
   }
 
   _setLayout(layout) {
@@ -3528,10 +3617,12 @@ class BrainstormMindmapCard extends HTMLElement {
     this._applyTransform();
     const btn = this.shadowRoot.getElementById("layoutBtn");
     if (btn) btn.textContent = this._layoutIcon(layout);
+    const canvas = this.shadowRoot.getElementById("canvasArea");
+    if (canvas) canvas.classList.toggle("board-mode", this._isBoard());
+    this._lastLayoutKey = "";
     this._updateContent();
     this._arrangeNodesRadially();
-    const names = { radial: t("Layout: rund um die Mitte"), tree: t("Layout: Baum nach rechts"), org: t("Layout: Organigramm nach unten") };
-    this._showToast(names[layout]);
+    this._showToast(`${this._layoutIcon(layout)} ${this._layoutName(layout)}`);
   }
 
   _loadCollapsed() {
@@ -5026,6 +5117,10 @@ class BrainstormMindmapCard extends HTMLElement {
     // The click that ends a drag neither selects nor edits
     this._dragEndedAt = Date.now();
     const noteText = this._ideaText(drag.id);
+    if (this._isBoard()) {
+      this._dropOnBoard(moved, drag);
+      return;
+    }
     if (!this._usesSavedPositions()) {
       // Only this device knows these places, so undo puts them back here
       const starts = [{ id: drag.id, x: drag.startNodeX, y: drag.startNodeY }, ...(drag.group || [])];
@@ -5179,6 +5274,10 @@ class BrainstormMindmapCard extends HTMLElement {
     });
     const roots = ideas.filter((idea) => !this._branchParent(idea, ids));
     const ringCount = roots.length;
+    if (this._isBoard()) {
+      this._arrangeBoardLayout(ideas, w, h);
+      return;
+    }
     if (this._layout() !== "radial") {
       this._arrangeTreeLayout(ideas, childrenOf, roots, w, h, centerNode, this._layout() === "org");
       return;
@@ -5464,6 +5563,182 @@ class BrainstormMindmapCard extends HTMLElement {
     this._drawConnections();
   }
 
+  // Columns side by side, or the four fields of the Eisenhower matrix
+  _arrangeBoardLayout(ideas, w, h) {
+    const kind = this._layout();
+    const size = new Map();
+    ideas.forEach((idea) => {
+      const el = this.shadowRoot.getElementById(`cloud_${idea.id}`);
+      size.set(idea.id, { w: (el && el.offsetWidth) || 230, h: (el && el.offsetHeight) || 120 });
+    });
+    const order = new Map(ideas.map((idea, index) => [idea.id, index]));
+    const columns = boardColumns(kind, ideas);
+    const pad = 14;
+    const gap = 12;
+    const head = 44;
+    const noteW = Math.max(200, ...[...size.values()].map((box) => box.w));
+    const items = [];
+    const stack = (ids, x, y, perRow) => {
+      // Notes fill the field row by row, perRow side by side
+      let bottom = y;
+      const rowHeights = [];
+      ids.sort((a, b) => order.get(a) - order.get(b)).forEach((id, index) => {
+        const row = Math.floor(index / perRow);
+        rowHeights[row] = Math.max(rowHeights[row] || 0, size.get(id).h);
+      });
+      const rowTops = [];
+      rowHeights.reduce((top, height, row) => {
+        rowTops[row] = top;
+        return top + height + gap;
+      }, y);
+      ids.forEach((id, index) => {
+        const row = Math.floor(index / perRow);
+        const col = index % perRow;
+        const box = size.get(id);
+        const item = { id, x: x + col * (noteW + gap) + noteW / 2, y: rowTops[row] + box.h / 2, ...box };
+        items.push(item);
+        bottom = Math.max(bottom, rowTops[row] + box.h);
+      });
+      return bottom;
+    };
+    const fields = [];
+    if (kind === "matrix") {
+      const perRow = 2;
+      const fieldW = perRow * noteW + (perRow - 1) * gap + pad * 2;
+      const bottoms = columns.map((column, index) => {
+        const x = 20 + (index % 2) * (fieldW + gap);
+        return stack(column.ids, x + pad, 20 + head, perRow) - 20;
+      });
+      // Both fields of a row get the height of the taller one
+      const rowH = [0, 1].map((row) => Math.max(160, bottoms[row * 2], bottoms[row * 2 + 1]) + pad);
+      items.length = 0;
+      columns.forEach((column, index) => {
+        const row = Math.floor(index / 2);
+        const x = 20 + (index % 2) * (fieldW + gap);
+        const y = 20 + (row ? rowH[0] + gap : 0);
+        stack(column.ids, x + pad, y + head, perRow);
+        fields.push({ key: column.key, label: column.label, count: column.ids.length, x, y, w: fieldW, h: rowH[row] });
+      });
+    } else {
+      const colW = noteW + pad * 2;
+      let tallest = 200;
+      columns.forEach((column, index) => {
+        const x = 20 + index * (colW + gap);
+        tallest = Math.max(tallest, stack(column.ids, x + pad, 20 + head, 1) - 20 + pad);
+        fields.push({ key: column.key, label: column.label, count: column.ids.length, x, y: 20, w: colW, h: 0 });
+      });
+      fields.forEach((field) => { field.h = Math.max(tallest, h - 96); });
+    }
+    this._board = { kind, fields };
+    items.forEach((item) => {
+      this._nodePositions.set(item.id, { x: item.x, y: item.y });
+      const el = this.shadowRoot.getElementById(`cloud_${item.id}`);
+      if (el) {
+        el.style.left = `${item.x}px`;
+        el.style.top = `${item.y}px`;
+      }
+    });
+    if (this._scale >= 0.95 && this._scale <= 1.05) {
+      const maxX = Math.max(...fields.map((field) => field.x + field.w));
+      const maxY = Math.max(...fields.map((field) => field.y + field.h));
+      this._fitBox(8, 8, maxX + 12, maxY + 12, w, h, true);
+    }
+    this._drawConnections();
+  }
+
+  // Fit a box into the card, never below 45 %; a box too big stays at its start
+  _fitBox(minX, minY, maxX, maxY, w, h, alwaysFitWidth = false) {
+    const bottomInset = 56;
+    const availW = w - 24;
+    const availH = h - 12 - bottomInset;
+    const tooBig = minX < 12 || maxX > w - 12 || minY < 12 || maxY > h - bottomInset;
+    if (!tooBig && !alwaysFitWidth) return;
+    const fit = Math.min(availW / (maxX - minX), alwaysFitWidth ? Infinity : availH / (maxY - minY));
+    this._scale = Math.max(0.45, Math.min(1, fit));
+    this._panX = 12 - this._scale * minX + Math.max(0, (availW - this._scale * (maxX - minX)) / 2);
+    this._panY = 12 - this._scale * minY + Math.max(0, (availH - this._scale * (maxY - minY)) / 2);
+    this._applyTransform();
+  }
+
+  _boardSvg() {
+    const board = this._board;
+    if (!board || board.kind !== this._layout()) return "";
+    const tint = { do: "#e53935", plan: "#1e88e5", delegate: "#fb8c00", drop: "#9e9e9e", overdue: "#e53935", done: "#43a047" };
+    return board.fields.map((field) => {
+      const color = tint[field.key] || "var(--primary-color, #03a9f4)";
+      const empty = !field.count && field.key === "done"
+        ? `<text class="board-hint" x="${field.x + field.w / 2}" y="${field.y + 80}" text-anchor="middle">${this._escapeHtml(t("Hierher ziehen zum Abhaken"))}</text>`
+        : "";
+      return `
+        <g class="board-field" data-board="${field.key}">
+          <rect class="board-rect" x="${field.x}" y="${field.y}" width="${field.w}" height="${field.h}" rx="14" style="--board-color: ${color};" />
+          <text class="board-label" x="${field.x + 16}" y="${field.y + 28}" style="--board-color: ${color};">${this._escapeHtml(field.label)}<tspan class="board-count" dx="8">${field.count || ""}</tspan></text>
+          ${empty}
+        </g>`;
+    }).join("");
+  }
+
+  // The field under the middle of a dropped note
+  _boardFieldAt(x, y) {
+    const board = this._board;
+    if (!board) return null;
+    return board.fields.find((field) => x >= field.x - 6 && x <= field.x + field.w + 6 && y >= field.y - 40 && y <= field.y + field.h + 40) || null;
+  }
+
+  async _dropOnBoard(moved, drag) {
+    const kind = this._layout();
+    const pos = this._nodePositions.get(drag.id);
+    const field = pos && this._boardFieldAt(pos.x, pos.y);
+    const rearrange = () => {
+      this._lastLayoutKey = "";
+      this._arrangeNodesRadially();
+    };
+    if (!field || !this._hass) {
+      rearrange();
+      return;
+    }
+    const changes = [];
+    let refused = false;
+    moved.forEach((id) => {
+      const idea = this._ideaById(id);
+      if (!idea) return;
+      const change = boardDrop(kind, field.key, idea);
+      if (change === null) refused = true;
+      else if (Object.keys(change).length) changes.push({ idea, change });
+    });
+    if (refused) {
+      this._showToast(kind === "kanban"
+        ? t("„Wartet“ ergibt sich aus blockierenden Verbindungen")
+        : kind === "matrix"
+          ? t("Fällig in den nächsten drei Tagen bleibt dringend, ändere dafür das Datum")
+          : t("Überfällig ergibt sich aus dem Datum"));
+    }
+    if (!changes.length) {
+      rearrange();
+      return;
+    }
+    const undo = [];
+    for (const { idea, change } of changes) {
+      const before = { id: idea.id };
+      if ("status" in change) before.status = "active";
+      if ("in_progress" in change) before.in_progress = Boolean(idea.in_progress);
+      if ("due" in change) before.due = idea.due || null;
+      if ("priority" in change) before.priority = idea.priority || "medium";
+      try {
+        await this._hass.callService("brainstorm", "update_idea", { id: idea.id, ...change });
+        undo.push(before);
+      } catch (err) {
+        console.error("[BrainstormMindmap] Failed to move note on the board:", err);
+      }
+    }
+    rearrange();
+    if (!undo.length) return;
+    this._showToast(`${field.label}: ${undo.length === 1 ? changes[0].idea.text : t("{count} Notizen", { count: undo.length })}`);
+    this._pushUndo(undo.length === 1 ? changes[0].idea.text : t("{count} Notizen", { count: undo.length }), async () => {
+      for (const before of undo) await this._hass.callService("brainstorm", "update_idea", before);
+    });
+  }
+
   // Tidy tree: every leaf gets its own row (or column), parents sit in the middle of theirs
   _arrangeTreeLayout(ideas, childrenOf, roots, w, h, centerNode, vertical) {
     const size = new Map();
@@ -5610,6 +5885,15 @@ class BrainstormMindmapCard extends HTMLElement {
     }
 
     const ids = new Set(activeIdeas.map((i) => i.id));
+    if (this._isBoard()) {
+      // A board has columns instead of lines
+      activeIdeas.forEach((idea) => {
+        const el = this.shadowRoot.getElementById(`cloud_${idea.id}`);
+        if (el) this._drawNodeShape(el, -Math.PI / 2);
+      });
+      svg.innerHTML = this._boardSvg();
+      return;
+    }
     // A tree or an org chart reads best with lines at right angles
     const layout = this._layout();
     const lines = { tree: "angled", org: "angled-down" }[layout] || this._mapStyle().lines;
@@ -6415,10 +6699,12 @@ class BrainstormMindmapCard extends HTMLElement {
       }
 
       // Branches or positions changed, maybe on another device
+      const board = this._isBoard() ? this._layout() : null;
       const layoutKey = shownIdeas
         .map((i) => {
           const pos = this._usesSavedPositions() && i.map_pos ? `${i.map_pos.x},${i.map_pos.y}` : "";
-          return `${i.id}:${i.parent_id || ""}:${pos}:${this._collapsed.has(i.id) ? "folded" : ""}`;
+          const column = board ? boardColumnOf(board, i) : "";
+          return `${i.id}:${i.parent_id || ""}:${pos}:${this._collapsed.has(i.id) ? "folded" : ""}:${column}`;
         })
         .join("|");
       if (layoutKey !== this._lastLayoutKey) {
@@ -7433,6 +7719,9 @@ class BrainstormMindmapCardEditor extends HTMLElement {
               { value: "radial", label: t("Rund um die Mitte") },
               { value: "tree", label: t("Baum nach rechts") },
               { value: "org", label: t("Organigramm nach unten") },
+              { value: "kanban", label: t("Kanban nach Status") },
+              { value: "timeline", label: t("Zeitleiste nach Fälligkeit") },
+              { value: "matrix", label: t("Eisenhower-Matrix") },
             ],
           },
         },
@@ -7811,7 +8100,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.8.6 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.8.7 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

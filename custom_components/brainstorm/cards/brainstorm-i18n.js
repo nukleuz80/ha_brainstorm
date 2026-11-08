@@ -438,14 +438,33 @@ const DICTIONARIES = {
     "{count} Ideen gesammelt. 🪄 ordnet die Map neu, ↶ nimmt alle heraus.": "{count} ideas collected. 🪄 arranges the map, ↶ takes them all out.",
     "{minutes} Min.": "{minutes} min",
     "⚡ Brainstorm": "⚡ Brainstorm",
+    "Ansicht wählen": "Choose a view",
+    "Diese Woche": "This week",
+    "Eisenhower-Matrix": "Eisenhower matrix",
+    "Fällig in den nächsten drei Tagen bleibt dringend, ändere dafür das Datum": "Due within three days stays urgent, change the date for that",
+    "Heute": "Today",
+    "Hierher ziehen zum Abhaken": "Drag here to tick off",
+    "In Kanban, Zeitleiste und Matrix ändert das Ziehen in eine andere Spalte Status, Fälligkeit oder Priorität.": "On Kanban, timeline and matrix, dragging a note to another column changes its state, due date or priority.",
+    "Kanban nach Status": "Kanban by state",
+    "Morgen": "Tomorrow",
+    "Ohne Datum": "No date",
+    "Später": "Later",
+    "Zeitleiste nach Fälligkeit": "Timeline by due date",
+    "Überfällig ergibt sich aus dem Datum": "Overdue follows from the date",
+    "„Wartet“ ergibt sich aus blockierenden Verbindungen": "“Waiting” follows from blocking links",
+    "⚠️ Überfällig": "⚠️ Overdue",
+    "⛔ Wartet": "⛔ Waiting",
+    "✅ Erledigt": "✅ Done",
+    "👥 Abgeben": "👥 Delegate",
+    "📅 Einplanen": "📅 Schedule",
+    "📝 Offen": "📝 Open",
+    "🔥 Sofort erledigen": "🔥 Do now",
+    "🔧 In Arbeit": "🔧 In progress",
+    "🗑️ Später oder gar nicht": "🗑️ Later or never",
     "Anordnung der Notizen": "Arrangement of the notes",
     "Rund um die Mitte": "Around the center",
     "Baum nach rechts": "Tree to the right",
     "Organigramm nach unten": "Org chart downwards",
-    "Layout wechseln: rund, Baum, Organigramm": "Switch layout: radial, tree, org chart",
-    "Layout: Baum nach rechts": "Layout: tree to the right",
-    "Layout: Organigramm nach unten": "Layout: org chart downwards",
-    "Layout: rund um die Mitte": "Layout: around the center",
   },
 };
 
@@ -991,6 +1010,136 @@ export function blockedBadge(idea) {
   if (!waits.length) return "";
   const names = waits.map((w) => escapeHtml(w.text || "")).join(", ");
   return `<span class="blocked-badge" title="${t("Wartet auf: {names}", { names })}">⛔ ${t("Wartet")}${waits.length > 1 ? ` · ${waits.length}` : ""}</span>`;
+}
+
+// Boards: Kanban by state, a timeline by due date, the Eisenhower matrix
+export const BOARDS = ["kanban", "timeline", "matrix"];
+
+function startOfDay(date, plusDays = 0) {
+  const day = new Date(date);
+  day.setHours(0, 0, 0, 0);
+  day.setDate(day.getDate() + plusDays);
+  return day;
+}
+
+function dueDate(idea) {
+  const due = idea && idea.due ? new Date(idea.due) : null;
+  return due && !Number.isNaN(due.getTime()) ? due : null;
+}
+
+function isImportant(idea) {
+  return ["urgent", "high"].includes(String((idea && idea.priority) || "medium").toLowerCase());
+}
+
+// Urgent is the 🔥 priority or a due date within the next three days
+function isUrgent(idea, now) {
+  if (String((idea && idea.priority) || "").toLowerCase() === "urgent") return true;
+  const due = dueDate(idea);
+  return Boolean(due && due < startOfDay(now, 3));
+}
+
+function boardColumnKeys(kind) {
+  if (kind === "timeline") return ["overdue", "today", "tomorrow", "week", "later", "none"];
+  if (kind === "matrix") return ["do", "plan", "delegate", "drop"];
+  return ["open", "doing", "waiting", "done"];
+}
+
+export function boardColumnLabel(kind, key) {
+  const labels = {
+    open: t("📝 Offen"),
+    doing: t("🔧 In Arbeit"),
+    waiting: t("⛔ Wartet"),
+    done: t("✅ Erledigt"),
+    overdue: t("⚠️ Überfällig"),
+    today: t("Heute"),
+    tomorrow: t("Morgen"),
+    week: t("Diese Woche"),
+    later: t("Später"),
+    none: t("Ohne Datum"),
+    do: t("🔥 Sofort erledigen"),
+    plan: t("📅 Einplanen"),
+    delegate: t("👥 Abgeben"),
+    drop: t("🗑️ Später oder gar nicht"),
+  };
+  return labels[key] || key;
+}
+
+/** Return the column of a note on a board. */
+export function boardColumnOf(kind, idea, now = new Date()) {
+  if (kind === "timeline") {
+    const due = dueDate(idea);
+    if (!due) return "none";
+    if (due < now) return "overdue";
+    if (due < startOfDay(now, 1)) return "today";
+    if (due < startOfDay(now, 2)) return "tomorrow";
+    if (due < startOfDay(now, 7)) return "week";
+    return "later";
+  }
+  if (kind === "matrix") {
+    const important = isImportant(idea);
+    const urgent = isUrgent(idea, now);
+    if (important && urgent) return "do";
+    if (important) return "plan";
+    if (urgent) return "delegate";
+    return "drop";
+  }
+  if (idea.status === "completed") return "done";
+  if (idea.blocked_by && idea.blocked_by.length) return "waiting";
+  return idea.in_progress ? "doing" : "open";
+}
+
+/** Return the columns of a board, each with the ids of its notes in their order. */
+export function boardColumns(kind, ideas, now = new Date()) {
+  const columns = boardColumnKeys(kind).map((key) => ({ key, label: boardColumnLabel(kind, key), ids: [] }));
+  const byKey = new Map(columns.map((column) => [column.key, column]));
+  ideas.forEach((idea) => {
+    const column = byKey.get(boardColumnOf(kind, idea, now));
+    if (column) column.ids.push(idea.id);
+  });
+  return columns;
+}
+
+// A due date on the given day, at the time the note had or at 09:00
+function dueOn(idea, day) {
+  const old = dueDate(idea);
+  const due = new Date(day);
+  if (old) due.setHours(old.getHours(), old.getMinutes(), 0, 0);
+  else due.setHours(9, 0, 0, 0);
+  return due.toISOString();
+}
+
+/**
+ * Return what update_idea needs so a note dropped on a column belongs there,
+ * {} when it already does, or null when that column cannot be reached by hand.
+ */
+export function boardDrop(kind, key, idea, now = new Date()) {
+  if (boardColumnOf(kind, idea, now) === key) return {};
+  if (kind === "kanban") {
+    if (key === "done") return { status: "completed" };
+    if (key === "doing") return { in_progress: true };
+    if (key === "open") return { in_progress: false };
+    return null;
+  }
+  if (kind === "timeline") {
+    const days = { today: 0, tomorrow: 1, week: 3, later: 14 };
+    if (key === "none") return { due: null };
+    if (key in days) return { due: dueOn(idea, startOfDay(now, days[key])) };
+    return null;
+  }
+  if (kind === "matrix") {
+    // Importance is the priority, urgency the 🔥 priority or a near due date
+    const change = {};
+    const priority = String(idea.priority || "medium").toLowerCase();
+    const wanted = { do: "urgent", plan: "high" }[key];
+    if (wanted && priority !== wanted) change.priority = wanted;
+    if (!wanted && isImportant(idea)) change.priority = "medium";
+    const after = { ...idea, ...change };
+    if (key === "delegate" && !isUrgent(after, now)) change.due = dueOn(idea, startOfDay(now, 1));
+    // A note due within three days stays urgent, its date is not moved here
+    if ((key === "plan" || key === "drop") && isUrgent(after, now)) return null;
+    return change;
+  }
+  return null;
 }
 
 /** Return the 📎 badge of an idea with files, or nothing. */

@@ -1,0 +1,45 @@
+<!doctype html>
+<!-- Browser test for the boards: Kanban, timeline, Eisenhower matrix. Run: python3 -m http.server
+     in the repo root, open http://localhost:8000/tests/js/board.html, it shows PASS or the failures. --><meta charset="utf-8"><body><pre id="out">running</pre>
+<script type="module">
+import { boardColumnOf, boardColumns, boardDrop } from "../../custom_components/brainstorm/cards/brainstorm-i18n.js";
+const now = new Date(2026, 10, 8, 15, 0);
+const at = (days, hour = 9) => new Date(2026, 10, 8 + days, hour, 30).toISOString();
+const fails = [];
+const check = (name, got, want) => { if (JSON.stringify(got) !== JSON.stringify(want)) fails.push(`${name}: want ${JSON.stringify(want)}, got ${JSON.stringify(got)}`); };
+const ideas = [
+  { id: "a", text: "A" },
+  { id: "b", text: "B", in_progress: { name: "Jan" } },
+  { id: "c", text: "C", blocked_by: [{ id: "a", text: "A" }], in_progress: { name: "Jan" } },
+  { id: "d", text: "D", status: "completed" },
+];
+check("kanban", boardColumns("kanban", ideas, now).map((c) => [c.key, c.ids]), [["open", ["a"]], ["doing", ["b"]], ["waiting", ["c"]], ["done", ["d"]]]);
+check("drop to doing", boardDrop("kanban", "doing", ideas[0], now), { in_progress: true });
+check("drop to open", boardDrop("kanban", "open", ideas[1], now), { in_progress: false });
+check("drop to done", boardDrop("kanban", "done", ideas[0], now), { status: "completed" });
+check("waiting is not by hand", boardDrop("kanban", "waiting", ideas[0], now), null);
+check("same column", boardDrop("kanban", "open", ideas[0], now), {});
+
+const timed = [
+  { id: "o", due: at(0, 8) }, { id: "t", due: at(0, 20) }, { id: "m", due: at(1) },
+  { id: "w", due: at(5) }, { id: "l", due: at(7) }, { id: "n" },
+];
+check("timeline", boardColumns("timeline", timed, now).map((c) => c.ids), [["o"], ["t"], ["m"], ["w"], ["l"], ["n"]]);
+check("tomorrow keeps the time", boardDrop("timeline", "tomorrow", timed[3], now), { due: at(1) });
+check("today without a time is 09:00", boardDrop("timeline", "today", timed[5], now).due, new Date(2026, 10, 8, 9, 0).toISOString());
+check("no date clears", boardDrop("timeline", "none", timed[2], now), { due: null });
+check("overdue is not by hand", boardDrop("timeline", "overdue", timed[2], now), null);
+
+const prio = [
+  { id: "1", priority: "urgent" }, { id: "2", priority: "high" }, { id: "3", priority: "medium", due: at(1) },
+  { id: "4", priority: "low" }, { id: "5", priority: "high", due: at(2) },
+];
+check("matrix", boardColumns("matrix", prio, now).map((c) => c.ids), [["1", "5"], ["2"], ["3"], ["4"]]);
+check("plan to do", boardDrop("matrix", "do", prio[1], now), { priority: "urgent" });
+check("do to plan", boardDrop("matrix", "plan", prio[0], now), { priority: "high" });
+check("drop to delegate gets a date", boardDrop("matrix", "delegate", prio[3], now), { due: new Date(2026, 10, 9, 9, 0).toISOString() });
+check("do to drop", boardDrop("matrix", "drop", prio[0], now), { priority: "medium" });
+check("near date stays urgent", boardDrop("matrix", "plan", prio[4], now), null);
+check("column of", boardColumnOf("matrix", prio[2], now), "delegate");
+document.getElementById("out").textContent = fails.length ? "FAIL\n" + fails.join("\n") : "PASS";
+</script>
