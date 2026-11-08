@@ -1,8 +1,8 @@
-import { MARKERS, alexaEchos, attachmentBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.1";
+import { MARKERS, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.2";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.8.1 - Markers and Progress
+ * Version: 1.8.2 - Focus, Levels, Links, Frames and Callouts
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -1970,6 +1970,57 @@ class BrainstormMindmapCard extends HTMLElement {
         .filter-bar.open {
           display: flex;
         }
+        .focus-bar {
+          flex: 0 0 auto;
+          display: none;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 4px;
+          padding: 4px 12px;
+          z-index: 18;
+          font-size: 0.82rem;
+          background: color-mix(in srgb, var(--primary-color, #03a9f4) 8%, var(--ha-card-background, var(--card-background-color, #ffffff)));
+          border-bottom: 1px solid var(--divider-color, rgba(127, 127, 127, 0.15));
+        }
+        .focus-bar.open {
+          display: flex;
+        }
+        .focus-crumb {
+          min-height: 32px;
+          padding: 0 8px;
+          border: none;
+          border-radius: 8px;
+          background: transparent;
+          color: var(--primary-color, #03a9f4);
+          font: inherit;
+          cursor: pointer;
+        }
+        .focus-crumb:hover {
+          background: color-mix(in srgb, var(--primary-color, #03a9f4) 12%, transparent);
+        }
+        .focus-crumb.current {
+          display: inline-flex;
+          align-items: center;
+          color: var(--primary-text-color, #212121);
+          font-weight: 600;
+          cursor: default;
+        }
+        .focus-sep {
+          color: var(--secondary-text-color, #727272);
+        }
+        .focus-close {
+          margin-left: auto;
+          min-width: 32px;
+          min-height: 32px;
+          border: none;
+          border-radius: 50%;
+          background: transparent;
+          color: var(--secondary-text-color, #727272);
+          cursor: pointer;
+        }
+        .center-node.focused {
+          cursor: zoom-out;
+        }
         .filter-search {
           flex: 0 1 260px;
           min-width: 140px;
@@ -2124,6 +2175,129 @@ class BrainstormMindmapCard extends HTMLElement {
           font-weight: 600;
           color: var(--warning-color, #ff9800);
           background: color-mix(in srgb, var(--warning-color, #ff9800) 14%, transparent);
+        }
+        .note-cloud.is-blocked {
+          filter: grayscale(0.7);
+          opacity: 0.62;
+        }
+        .blocked-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 3px;
+          padding: 1px 5px;
+          border-radius: 6px;
+          font-size: 0.68rem;
+          font-weight: 600;
+          color: var(--error-color, #db4437);
+          background: color-mix(in srgb, var(--error-color, #db4437) 12%, transparent);
+        }
+        .cloud-callout {
+          position: absolute;
+          bottom: calc(100% + 8px);
+          right: -6px;
+          max-width: 200px;
+          padding: 5px 9px;
+          border-radius: 10px;
+          font-size: 0.74rem;
+          line-height: 1.3;
+          color: var(--primary-text-color, #212121);
+          background: color-mix(in srgb, var(--warning-color, #ffa600) 18%, var(--ha-card-background, var(--card-background-color, #ffffff)));
+          border: 1px solid color-mix(in srgb, var(--warning-color, #ffa600) 45%, transparent);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+          word-break: break-word;
+          pointer-events: auto;
+          z-index: 3;
+        }
+        .cloud-callout::after {
+          content: "";
+          position: absolute;
+          top: 100%;
+          right: 18px;
+          border: 6px solid transparent;
+          border-top-color: color-mix(in srgb, var(--warning-color, #ffa600) 45%, transparent);
+        }
+        .link-path {
+          fill: none;
+          stroke: var(--primary-color, #03a9f4);
+          stroke-width: 1.8;
+          stroke-dasharray: 6 4;
+          stroke-opacity: 0.8;
+        }
+        .link-path.link-blocks {
+          stroke: var(--error-color, #db4437);
+        }
+        .link-arrow {
+          fill: var(--primary-color, #03a9f4);
+        }
+        .link-arrow.link-blocks {
+          fill: var(--error-color, #db4437);
+        }
+        .link-hit {
+          fill: none;
+          stroke: transparent;
+          stroke-width: 16;
+          pointer-events: stroke;
+          cursor: pointer;
+        }
+        .link-label {
+          pointer-events: auto;
+          cursor: pointer;
+        }
+        .link-label rect {
+          fill: var(--ha-card-background, var(--card-background-color, #ffffff));
+          stroke: var(--primary-color, #03a9f4);
+          stroke-width: 1;
+        }
+        .link-label.link-blocks rect {
+          stroke: var(--error-color, #db4437);
+        }
+        .link-label text {
+          font-size: 11px;
+          font-weight: 600;
+          fill: var(--primary-text-color, #212121);
+        }
+        .frame-rect {
+          fill: var(--frame-color, var(--primary-color, #03a9f4));
+          fill-opacity: 0.06;
+          stroke: var(--frame-color, var(--primary-color, #03a9f4));
+          stroke-width: 1.5;
+          stroke-dasharray: 8 5;
+        }
+        .frame-label {
+          font-size: 12px;
+          font-weight: 700;
+          fill: var(--frame-color, var(--primary-color, #03a9f4));
+          pointer-events: auto;
+          cursor: pointer;
+        }
+        .frame.filter-out,
+        .link-path.filter-out,
+        .link-label.filter-out {
+          opacity: 0.2;
+        }
+        .canvas-area.linking,
+        .canvas-area.linking .note-cloud {
+          cursor: crosshair;
+        }
+        .note-cloud.link-source {
+          outline: 2px dashed var(--primary-color, #03a9f4);
+          outline-offset: 4px;
+        }
+        .dialog-check {
+          display: flex;
+          align-items: flex-start;
+          gap: 8px;
+          margin: 12px 0 4px;
+          font-size: 0.85rem;
+          line-height: 1.35;
+          color: var(--primary-text-color, #212121);
+          cursor: pointer;
+        }
+        .dialog-check input {
+          width: 18px;
+          height: 18px;
+          flex: none;
+          margin-top: 1px;
         }
         .cloud-marks {
           display: flex;
@@ -2639,6 +2813,15 @@ class BrainstormMindmapCard extends HTMLElement {
           background: var(--divider-color, rgba(127, 127, 127, 0.2));
           color: var(--primary-text-color, #212121);
         }
+        .dialog-btn-danger {
+          margin-right: auto;
+          background: transparent;
+          color: var(--error-color, #db4437);
+          border-color: color-mix(in srgb, var(--error-color, #db4437) 45%, transparent);
+        }
+        .dialog-btn-danger:hover {
+          background: color-mix(in srgb, var(--error-color, #db4437) 10%, transparent);
+        }
         .dialog-btn-primary {
           background: var(--primary-color, #03a9f4);
           color: var(--text-primary-color, #ffffff);
@@ -2709,6 +2892,9 @@ class BrainstormMindmapCard extends HTMLElement {
           <button class="filter-close" id="filterClose" title="${t("Filter zurücksetzen und schließen (ESC)")}">✕</button>
         </div>
 
+        <!-- Path of a focused branch -->
+        <nav class="focus-bar" id="focusBar" aria-label="${t("Fokus")}"></nav>
+
         <!-- Interactive Canvas Area -->
         <div class="canvas-area" id="canvasArea" tabindex="0">
           <div class="lasso-rect" id="lassoRect"></div>
@@ -2716,6 +2902,8 @@ class BrainstormMindmapCard extends HTMLElement {
             <span class="selection-count" id="selectionCount"></span>
             <button class="selection-btn" data-multi="done" title="${t("Alle abhaken")}">✓<span class="selection-label">${t("Abhaken")}</span></button>
             <button class="selection-btn" data-multi="move" title="${t("Kategorie ändern")}">📁<span class="selection-label">${t("Kategorie")}</span></button>
+            <button class="selection-btn" data-multi="frame" title="${t("Rahmen um die Auswahl legen")}">▢<span class="selection-label">${t("Rahmen")}</span></button>
+            <button class="selection-btn" data-multi="link" title="${t("Die zwei ausgewählten Notizen verbinden")}">🔗<span class="selection-label">${t("Verbinden")}</span></button>
             <button class="selection-btn danger" data-multi="delete" title="${t("Löschen")}">🗑️<span class="selection-label">${t("Löschen")}</span></button>
             <button class="selection-btn" data-multi="clear" title="${t("Auswahl aufheben (ESC)")}">✕</button>
           </div>
@@ -2751,6 +2939,7 @@ class BrainstormMindmapCard extends HTMLElement {
           <button class="control-btn" id="zoomOutBtn" title="${t("Verkleinern")}">−</button>
           <button class="control-btn" id="resetViewBtn" title="${t("Zentrieren / Anordnen")}">⟲</button>
           <button class="control-btn" id="lassoBtn" title="${t("Auswählen: Rahmen um mehrere Notizen ziehen (oder Umschalt+Ziehen)")}" aria-pressed="false">⬚</button>
+          <button class="control-btn" id="levelsBtn" title="${t("Ebenen zeigen: 1, 2, 3 oder alle (Tasten 1–9, 0 = alle)")}">∞</button>
           <button class="control-btn" id="arrangeBtn" title="${t("Neu ordnen: von Hand verschobene Notizen wieder automatisch platzieren")}">🪄</button>
           <button class="control-btn" id="undoBtn" title="${t("Rückgängig (Strg+Z)")}" disabled>↶</button>
         </div>
@@ -3031,6 +3220,15 @@ class BrainstormMindmapCard extends HTMLElement {
         const act = btn.getAttribute("data-multi");
         if (act === "done") this._completeSelected();
         else if (act === "move") this._showCategoryPicker([...this._multi]);
+        else if (act === "frame") this._showFrameDialog(null, [...this._multi]);
+        else if (act === "link") {
+          const [from, to] = [...this._multi];
+          this._clearMulti();
+          if (from && to) {
+            this._linkFrom = from;
+            this._finishLink(to);
+          }
+        }
         else if (act === "delete") this._confirmDeleteSelected();
         else if (act === "clear") this._clearMulti();
       });
@@ -3039,6 +3237,31 @@ class BrainstormMindmapCard extends HTMLElement {
     if (arrangeBtn) arrangeBtn.addEventListener("click", () => this._arrangeAgain());
     const undoBtn = this.shadowRoot.getElementById("undoBtn");
     if (undoBtn) undoBtn.addEventListener("click", () => this._undo());
+    // Links and frames are drawn on the line layer, a tap on them opens their dialog
+    const connectors = this.shadowRoot.getElementById("connectorsLayer");
+    if (connectors) {
+      const hit = (e) => e.target.closest && e.target.closest("[data-link-from], [data-frame]");
+      ["mousedown", "touchstart"].forEach((type) =>
+        connectors.addEventListener(type, (e) => {
+          if (hit(e)) e.stopPropagation();
+        }, { passive: true }),
+      );
+      connectors.addEventListener("click", (e) => {
+        const el = hit(e);
+        if (!el) return;
+        e.stopPropagation();
+        if (el.hasAttribute("data-link-from")) this._showLinkDialog(el.getAttribute("data-link-from"), el.getAttribute("data-link-to"));
+        else this._showFrameDialog(el.getAttribute("data-frame"), null);
+      });
+    }
+    const levelsBtn = this.shadowRoot.getElementById("levelsBtn");
+    if (levelsBtn) {
+      levelsBtn.addEventListener("click", () => {
+        const steps = [1, 2, 3, 0];
+        const index = steps.indexOf(this._levels === undefined ? 0 : this._levels);
+        this._showLevels(steps[(index + 1) % steps.length]);
+      });
+    }
     const exportBtn = this.shadowRoot.getElementById("exportBtn");
     if (exportBtn) exportBtn.addEventListener("click", () => this._showExportDialog());
     this._bindFilterEvents();
@@ -3049,6 +3272,11 @@ class BrainstormMindmapCard extends HTMLElement {
 
     // Center Node Click -> Cycle category
     centerNode.addEventListener("click", () => {
+      // In a focused branch the center goes one level up
+      if (this._focusId) {
+        this._focusUp();
+        return;
+      }
       const sensor = this._getSensorEntity();
       if (!sensor) return;
       const attributes = sensor.attributes || {};
@@ -3065,6 +3293,7 @@ class BrainstormMindmapCard extends HTMLElement {
       const idx = categories.indexOf(this._selectedCategory);
       const nextIdx = (idx + 1) % categories.length;
       this._selectedCategory = categories[nextIdx];
+      this._focusId = null;
       this._saveSelectedCategory();
       this._lastDataSignature = ""; // force re-render
       this._centerLayout(true);
@@ -3130,7 +3359,7 @@ class BrainstormMindmapCard extends HTMLElement {
 
   // A single list keeps its map on every device, the overview of all lists does not
   _usesSavedPositions() {
-    return Boolean(this._selectedCategory) && this._selectedCategory !== "all";
+    return Boolean(this._selectedCategory) && this._selectedCategory !== "all" && !this._focusId;
   }
 
   _loadCollapsed() {
@@ -3153,10 +3382,135 @@ class BrainstormMindmapCard extends HTMLElement {
   _categoryIdeas() {
     const sensor = this._getSensorEntity();
     if (!sensor) return [];
-    return (sensor.attributes.ideas || []).filter((i) => {
+    return this._focusIdeas((sensor.attributes.ideas || []).filter((i) => {
       if (this._selectedCategory === "all") return true;
       return String(i.category || "").trim() === String(this._selectedCategory || "").trim();
-    });
+    }));
+  }
+
+  // In a focused branch only what hangs below it is on the map, the branch itself is the center
+  _focusIdeas(ideas) {
+    if (!this._focusId) return ideas;
+    if (!ideas.some((i) => i.id === this._focusId)) {
+      this._focusId = null;
+      return ideas;
+    }
+    const inside = new Set(this._descendantIds(this._focusId, ideas));
+    return ideas.filter((i) => inside.has(i.id));
+  }
+
+  _focusIdea() {
+    const sensor = this._getSensorEntity();
+    if (!sensor || !this._focusId) return null;
+    return (sensor.attributes.ideas || []).find((i) => i.id === this._focusId) || null;
+  }
+
+  // Open a branch as if it were the whole map, null goes back to the list
+  _setFocus(id) {
+    const sensor = this._getSensorEntity();
+    const ideas = (sensor && sensor.attributes.ideas) || [];
+    const idea = id ? ideas.find((i) => i.id === id) : null;
+    const previous = this._focusId;
+    this._focusId = idea ? idea.id : null;
+    if (previous === this._focusId) return;
+    this._selectedId = previous && !this._focusId ? previous : null;
+    this._nodePositions.clear();
+    if (this._userMovedNodes) this._userMovedNodes.clear();
+    this._lastLayoutKey = "";
+    this._lastDataSignature = "";
+    this._centerLayout(true);
+    this._updateContent();
+    this._focusMap();
+  }
+
+  // One level up: to the parent of the focused branch, or back to the whole list
+  _focusUp() {
+    const focus = this._focusIdea();
+    if (!focus) {
+      this._setFocus(null);
+      return;
+    }
+    const sensor = this._getSensorEntity();
+    const ideas = (sensor && sensor.attributes.ideas) || [];
+    const parent = focus.parent_id && ideas.find((i) => i.id === focus.parent_id && i.category === focus.category);
+    const left = focus.id;
+    this._setFocus(parent ? parent.id : null);
+    if (this._shadowRootHas(left)) this._selectIdea(left);
+  }
+
+  _shadowRootHas(id) {
+    return Boolean(id && this.shadowRoot && this.shadowRoot.getElementById(`cloud_${id}`));
+  }
+
+  // The path to the focused branch: list, its parents, the branch
+  _renderFocusBar() {
+    const bar = this.shadowRoot && this.shadowRoot.getElementById("focusBar");
+    if (!bar) return;
+    const focus = this._focusIdea();
+    if (!focus) {
+      bar.classList.remove("open");
+      bar.innerHTML = "";
+      return;
+    }
+    const sensor = this._getSensorEntity();
+    const ideas = (sensor && sensor.attributes.ideas) || [];
+    const path = [];
+    const seen = new Set([focus.id]);
+    let parent = ideas.find((i) => i.id === focus.parent_id);
+    while (parent && !seen.has(parent.id) && parent.category === focus.category) {
+      path.unshift(parent);
+      seen.add(parent.id);
+      parent = ideas.find((i) => i.id === parent.parent_id);
+    }
+    const label = this._selectedCategory === "all" ? t("Alle") : this._selectedCategory;
+    const short = (text) => {
+      const plain = String(text || "").replace(/\s+/g, " ").trim();
+      return plain.length > 32 ? `${plain.slice(0, 31)}…` : plain;
+    };
+    bar.innerHTML = `
+      <span class="focus-icon" aria-hidden="true">🎯</span>
+      <button class="focus-crumb" data-focus="">${this._escapeHtml(label)}</button>
+      ${path.map((p) => `<span class="focus-sep">›</span><button class="focus-crumb" data-focus="${p.id}">${this._escapeHtml(short(p.text))}</button>`).join("")}
+      <span class="focus-sep">›</span><span class="focus-crumb current">${this._escapeHtml(short(focus.text))}</span>
+      <button class="focus-close" data-focus="" title="${t("Ganze Map zeigen (Umschalt+F4)")}">✕</button>
+    `;
+    bar.classList.add("open");
+    bar.onclick = (e) => {
+      const crumb = e.target.closest("[data-focus]");
+      if (crumb) this._setFocus(crumb.getAttribute("data-focus") || null);
+    };
+  }
+
+  // Fold every branch below a level, 0 opens them all
+  _showLevels(level) {
+    const ideas = this._categoryIdeas();
+    const ids = new Set(ideas.map((i) => i.id));
+    const byId = new Map(ideas.map((i) => [i.id, i]));
+    const depth = (idea) => {
+      let d = 1;
+      const seen = new Set([idea.id]);
+      let parent = this._branchParent(idea, ids);
+      while (parent && !seen.has(parent)) {
+        seen.add(parent);
+        d += 1;
+        parent = this._branchParent(byId.get(parent), ids);
+      }
+      return d;
+    };
+    const parents = new Set(ideas.map((i) => this._branchParent(i, ids)).filter(Boolean));
+    ideas.forEach((idea) => this._collapsed.delete(idea.id));
+    if (level > 0) {
+      ideas.forEach((idea) => {
+        if (parents.has(idea.id) && depth(idea) >= level) this._collapsed.add(idea.id);
+      });
+    }
+    this._levels = level;
+    this._saveCollapsed();
+    this._lastLayoutKey = "";
+    this._updateContent();
+    const levelsBtn = this.shadowRoot.getElementById("levelsBtn");
+    if (levelsBtn) levelsBtn.textContent = level > 0 ? String(level) : "∞";
+    this._showToast(level > 0 ? t("Ebenen bis {level}", { level }) : t("Alle Ebenen"));
   }
 
   // The ideas on the map, without those inside a folded branch
@@ -3623,7 +3977,15 @@ class BrainstormMindmapCard extends HTMLElement {
     const gradient = areaStyle.backgroundImage && areaStyle.backgroundImage.startsWith("radial-gradient");
 
     let body = "";
-    sr.querySelectorAll("#connectorsLayer path").forEach((path) => {
+    sr.querySelectorAll("#connectorsLayer rect").forEach((rect) => {
+      const style = getComputedStyle(rect);
+      body += `<rect x="${xml(rect.getAttribute("x"))}" y="${xml(rect.getAttribute("y"))}" width="${xml(rect.getAttribute("width"))}" height="${xml(rect.getAttribute("height"))}" rx="${xml(rect.getAttribute("rx") || 0)}" fill="${xml(style.fill)}" fill-opacity="${xml(style.fillOpacity)}" stroke="${xml(style.stroke)}" stroke-width="${xml(px(style.strokeWidth) || 1)}"${style.strokeDasharray && style.strokeDasharray !== "none" ? ` stroke-dasharray="${xml(style.strokeDasharray)}"` : ""}/>`;
+    });
+    sr.querySelectorAll("#connectorsLayer text").forEach((text) => {
+      const style = getComputedStyle(text);
+      body += `<text x="${xml(text.getAttribute("x"))}" y="${xml(text.getAttribute("y"))}" text-anchor="${xml(text.getAttribute("text-anchor") || "start")}" font-family="sans-serif" font-size="${xml(px(style.fontSize) || 11)}" font-weight="${xml(style.fontWeight)}" fill="${xml(style.fill)}">${xml(text.firstChild ? text.firstChild.textContent : "")}</text>`;
+    });
+    sr.querySelectorAll("#connectorsLayer path:not(.link-hit):not(.link-arrow)").forEach((path) => {
       const style = getComputedStyle(path);
       body += `<path d="${xml(path.getAttribute("d"))}" fill="none" stroke="${xml(style.stroke)}" stroke-opacity="${xml(style.strokeOpacity)}" stroke-width="${xml(px(style.strokeWidth) || 1.8)}"${style.strokeDasharray && style.strokeDasharray !== "none" ? ` stroke-dasharray="${xml(style.strokeDasharray)}"` : ""} stroke-linecap="round" stroke-linejoin="round"/>`;
     });
@@ -4034,6 +4396,8 @@ class BrainstormMindmapCard extends HTMLElement {
     const bar = this.shadowRoot.getElementById("selectionBar");
     if (!bar) return;
     bar.classList.toggle("visible", this._multi.size > 0);
+    const linkBtn = bar.querySelector('[data-multi="link"]');
+    if (linkBtn) linkBtn.style.display = this._multi.size === 2 ? "" : "none";
     const count = this.shadowRoot.getElementById("selectionCount");
     if (count) count.textContent = t("{count} ausgewählt", { count: this._multi.size });
   }
@@ -4140,6 +4504,30 @@ class BrainstormMindmapCard extends HTMLElement {
       return;
     }
     if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (this._linkFrom && e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
+      this._cancelLink();
+      return;
+    }
+    if ((e.key === "l" || e.key === "L") && this._selectedId) {
+      e.preventDefault();
+      this._startLink(this._selectedId);
+      return;
+    }
+    // Digits fold the map to that many levels, 0 opens everything
+    if (/^[0-9]$/.test(e.key) && !e.shiftKey) {
+      e.preventDefault();
+      this._showLevels(Number(e.key));
+      return;
+    }
+    // F4 opens the chosen branch on its own, Shift+F4 goes back up
+    if (e.key === "F4") {
+      e.preventDefault();
+      if (e.shiftKey) this._focusUp();
+      else if (this._selectedId) this._setFocus(this._selectedId);
+      return;
+    }
     // With several notes picked, Delete asks once for all of them
     if (this._multi.size && (e.key === "Delete" || e.key === "Backspace")) {
       e.preventDefault();
@@ -4152,7 +4540,10 @@ class BrainstormMindmapCard extends HTMLElement {
     const key = e.key;
 
     if (!idea) {
-      if (key === "Enter") {
+      if (key === "Escape" && this._focusId) {
+        e.preventDefault();
+        this._focusUp();
+      } else if (key === "Enter") {
         e.preventDefault();
         this._showAddDialog();
       } else if (key.startsWith("Arrow") && ideas.length) {
@@ -4853,7 +5244,250 @@ class BrainstormMindmapCard extends HTMLElement {
       `;
     });
 
-    svg.innerHTML = svgHtml;
+    svg.innerHTML = `${this._framesSvg(activeIdeas)}${svgHtml}${this._linksSvg(activeIdeas)}`;
+  }
+
+  // Where the line from the middle of a note towards a point leaves the note
+  _nodeEdge(id, toward) {
+    const pos = this._nodePositions.get(id);
+    const el = this.shadowRoot.getElementById(`cloud_${id}`);
+    if (!pos || !el) return pos;
+    const dx = toward.x - pos.x;
+    const dy = toward.y - pos.y;
+    const halfW = el.offsetWidth / 2 + 4;
+    const halfH = el.offsetHeight / 2 + 4;
+    if (!dx && !dy) return pos;
+    const scale = Math.min(dx ? halfW / Math.abs(dx) : Infinity, dy ? halfH / Math.abs(dy) : Infinity);
+    return scale >= 1 ? pos : { x: pos.x + dx * scale, y: pos.y + dy * scale };
+  }
+
+  // Curved arrows between notes of different branches, with their label
+  _linksSvg(ideas) {
+    const shown = new Map(ideas.map((i) => [i.id, i]));
+    let html = "";
+    ideas.forEach((idea) => {
+      (idea.links || []).forEach((link) => {
+        if (!shown.has(link.to)) return;
+        const a = this._nodePositions.get(idea.id);
+        const b = this._nodePositions.get(link.to);
+        if (!a || !b) return;
+        const mx = (a.x + b.x) / 2;
+        const my = (a.y + b.y) / 2;
+        const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+        // The line bows to one side, so it does not hide the tree lines
+        const bow = Math.min(80, len * 0.22);
+        const control = { x: mx - ((b.y - a.y) / len) * bow, y: my + ((b.x - a.x) / len) * bow };
+        const start = this._nodeEdge(idea.id, control);
+        const end = this._nodeEdge(link.to, control);
+        const d = `M ${start.x.toFixed(1)} ${start.y.toFixed(1)} Q ${control.x.toFixed(1)} ${control.y.toFixed(1)} ${end.x.toFixed(1)} ${end.y.toFixed(1)}`;
+        const labelX = 0.25 * start.x + 0.5 * control.x + 0.25 * end.x;
+        const labelY = 0.25 * start.y + 0.5 * control.y + 0.25 * end.y;
+        const faded = this._filterHits && !this._filterHits.has(idea.id) && !this._filterHits.has(link.to) ? " filter-out" : "";
+        const kind = link.blocks ? " link-blocks" : "";
+        const label = `${link.blocks ? "⛔ " : ""}${link.label || ""}`.trim();
+        const ids = `data-link-from="${idea.id}" data-link-to="${this._escapeHtml(link.to)}"`;
+        html += `<path class="link-path${kind}${faded}" d="${d}" marker-end="url(#bsLinkArrow${link.blocks ? "Blocks" : ""})" />`;
+        html += `<path class="link-hit" ${ids} d="${d}"><title>${this._escapeHtml(t("Verbindung bearbeiten"))}</title></path>`;
+        if (label) {
+          const width = Math.max(24, [...label].length * 6.4 + 14);
+          html += `<g class="link-label${kind}${faded}" ${ids}><rect x="${(labelX - width / 2).toFixed(1)}" y="${(labelY - 10).toFixed(1)}" width="${width.toFixed(1)}" height="20" rx="10" /><text x="${labelX.toFixed(1)}" y="${(labelY + 4).toFixed(1)}" text-anchor="middle">${this._escapeHtml(label)}</text></g>`;
+        }
+      });
+    });
+    if (!html) return "";
+    const arrow = (id) => `<marker id="${id}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" class="${id === "bsLinkArrow" ? "link-arrow" : "link-arrow link-blocks"}" /></marker>`;
+    return `<defs>${arrow("bsLinkArrow")}${arrow("bsLinkArrowBlocks")}</defs>${html}`;
+  }
+
+  // A rounded frame around the notes with the same frame name
+  _framesSvg(ideas) {
+    const groups = new Map();
+    ideas.forEach((idea) => {
+      if (!idea.frame) return;
+      if (!groups.has(idea.frame)) groups.set(idea.frame, []);
+      groups.get(idea.frame).push(idea);
+    });
+    let html = "";
+    groups.forEach((members, name) => {
+      let minX = Infinity;
+      let minY = Infinity;
+      let maxX = -Infinity;
+      let maxY = -Infinity;
+      members.forEach((idea) => {
+        const pos = this._nodePositions.get(idea.id);
+        const el = this.shadowRoot.getElementById(`cloud_${idea.id}`);
+        if (!pos || !el) return;
+        minX = Math.min(minX, pos.x - el.offsetWidth / 2);
+        maxX = Math.max(maxX, pos.x + el.offsetWidth / 2);
+        minY = Math.min(minY, pos.y - el.offsetHeight / 2);
+        maxY = Math.max(maxY, pos.y + el.offsetHeight / 2);
+      });
+      if (!Number.isFinite(minX)) return;
+      const pad = 16;
+      const x = minX - pad;
+      const y = minY - pad - 18;
+      const width = maxX - minX + pad * 2;
+      const height = maxY - minY + pad * 2 + 18;
+      const color = this._getCategoryColor(members[0].category);
+      const faded = this._filterHits && !members.some((m) => this._filterHits.has(m.id)) ? " filter-out" : "";
+      html += `<g class="frame${faded}" style="--frame-color: ${color};"><rect class="frame-rect" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${width.toFixed(1)}" height="${height.toFixed(1)}" rx="18" />`;
+      html += `<text class="frame-label" data-frame="${this._escapeHtml(name)}" x="${(x + 14).toFixed(1)}" y="${(y + 17).toFixed(1)}">▢ ${this._escapeHtml(name)}<title>${this._escapeHtml(t("Rahmen bearbeiten"))}</title></text></g>`;
+    });
+    return html;
+  }
+
+  _startLink(id) {
+    if (this._linkFrom === id) {
+      this._cancelLink();
+      return;
+    }
+    this._linkFrom = id;
+    const area = this.shadowRoot.getElementById("canvasArea");
+    if (area) area.classList.add("linking");
+    this.shadowRoot.querySelectorAll(".note-cloud").forEach((el) => el.classList.toggle("link-source", el.getAttribute("data-id") === id));
+    this._showToast(t("Ziel-Notiz antippen … (Esc bricht ab)"));
+  }
+
+  _cancelLink() {
+    this._linkFrom = null;
+    const area = this.shadowRoot.getElementById("canvasArea");
+    if (area) area.classList.remove("linking");
+    this.shadowRoot.querySelectorAll(".note-cloud.link-source").forEach((el) => el.classList.remove("link-source"));
+  }
+
+  _ideaById(id) {
+    const sensor = this._getSensorEntity();
+    return ((sensor && sensor.attributes.ideas) || []).find((i) => i.id === id) || null;
+  }
+
+  async _saveLinks(fromId, links, before) {
+    try {
+      await this._hass.callService("brainstorm", "update_idea", { id: fromId, links });
+      const from = this._ideaById(fromId);
+      this._pushUndo(from ? from.text : "", () => this._hass.callService("brainstorm", "update_idea", { id: fromId, links: before }));
+    } catch (err) {
+      console.error("[BrainstormMindmap] Failed to save the links:", err);
+      this._showToast(t("Die Verbindung konnte nicht gespeichert werden."));
+    }
+  }
+
+  async _finishLink(toId) {
+    const fromId = this._linkFrom;
+    this._cancelLink();
+    if (!fromId || fromId === toId) return;
+    const from = this._ideaById(fromId);
+    if (!from) return;
+    const before = (from.links || []).map((link) => ({ ...link }));
+    if (before.some((link) => link.to === toId)) {
+      this._showLinkDialog(fromId, toId);
+      return;
+    }
+    // A line back between the same two notes would only double the first
+    const to = this._ideaById(toId);
+    if (to && (to.links || []).some((link) => link.to === fromId)) {
+      this._showLinkDialog(toId, fromId);
+      return;
+    }
+    if (before.length >= 20) {
+      this._showToast(t("Höchstens 20 Verbindungen pro Notiz."));
+      return;
+    }
+    await this._saveLinks(fromId, [...before, { to: toId }], before);
+    this._showToast(t("Verbunden. Die Linie antippen, um sie zu beschriften."));
+  }
+
+  _showLinkDialog(fromId, toId) {
+    const from = this._ideaById(fromId);
+    const to = this._ideaById(toId);
+    if (!from || !to) return;
+    const before = (from.links || []).map((link) => ({ ...link }));
+    const link = before.find((l) => l.to === toId) || { to: toId };
+    this._openDialog(t("🔗 Verbindung"), (body) => {
+      body.innerHTML = `
+        <div class="dialog-label">${this._escapeHtml(from.text)} → ${this._escapeHtml(to.text)}</div>
+        <div class="dialog-label">${t("Beschriftung:")}</div>
+        <input class="dialog-input" id="linkLabel" maxlength="40" placeholder="${t("z. B. gehört zu, braucht, siehe auch")}" value="${this._escapeHtml(link.label || "")}">
+        <label class="dialog-check"><input type="checkbox" id="linkBlocks" ${link.blocks ? "checked" : ""}> ${t("„{from}“ blockiert „{to}“: das Ziel wartet, bis die erste Notiz erledigt ist", { from: this._escapeHtml(from.text), to: this._escapeHtml(to.text) })}</label>
+        <div class="dialog-footer">
+          <button class="dialog-btn dialog-btn-danger" id="linkDelete">${t("Verbindung löschen")}</button>
+          <button class="dialog-btn dialog-btn-cancel" id="linkCancel">${t("Abbrechen")}</button>
+          <button class="dialog-btn dialog-btn-primary" id="linkSave">${t("Speichern")}</button>
+        </div>
+      `;
+      const input = body.querySelector("#linkLabel");
+      const save = () => {
+        const label = input.value.trim();
+        const blocks = body.querySelector("#linkBlocks").checked;
+        const next = before.filter((l) => l.to !== toId);
+        const item = { to: toId };
+        if (label) item.label = label;
+        if (blocks) item.blocks = true;
+        const index = before.findIndex((l) => l.to === toId);
+        next.splice(index < 0 ? next.length : index, 0, item);
+        this._closeDialog();
+        this._saveLinks(fromId, next, before);
+      };
+      body.querySelector("#linkSave").addEventListener("click", save);
+      body.querySelector("#linkCancel").addEventListener("click", () => this._closeDialog());
+      body.querySelector("#linkDelete").addEventListener("click", () => {
+        this._closeDialog();
+        this._saveLinks(fromId, before.filter((l) => l.to !== toId), before);
+      });
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          save();
+        }
+      });
+      setTimeout(() => input.focus(), 50);
+    });
+  }
+
+  // Name, rename or remove a frame; with ids it frames those notes
+  _showFrameDialog(name, ids) {
+    const sensor = this._getSensorEntity();
+    const ideas = (sensor && sensor.attributes.ideas) || [];
+    const members = ids
+      ? ideas.filter((i) => ids.includes(i.id))
+      : this._categoryIdeas().filter((i) => i.frame === name);
+    if (!members.length) return;
+    const existing = [...new Set(this._categoryIdeas().map((i) => i.frame).filter(Boolean))];
+    this._openDialog(ids ? t("▢ Rahmen um {count} Notizen", { count: members.length }) : t("▢ Rahmen bearbeiten"), (body) => {
+      body.innerHTML = `
+        <div class="dialog-label">${t("Name des Rahmens:")}</div>
+        <input class="dialog-input" id="frameName" maxlength="40" list="frameNames" placeholder="${t("z. B. Phase 1, Später, Erdgeschoss")}" value="${this._escapeHtml(name || "")}">
+        <datalist id="frameNames">${existing.map((f) => `<option value="${this._escapeHtml(f)}"></option>`).join("")}</datalist>
+        <div class="dialog-hint">${t("Notizen mit demselben Namen teilen sich einen Rahmen.")}</div>
+        <div class="dialog-footer">
+          ${name ? `<button class="dialog-btn dialog-btn-danger" id="frameRemove">${t("Rahmen entfernen")}</button>` : ""}
+          <button class="dialog-btn dialog-btn-cancel" id="frameCancel">${t("Abbrechen")}</button>
+          <button class="dialog-btn dialog-btn-primary" id="frameSave">${t("Speichern")}</button>
+        </div>
+      `;
+      const input = body.querySelector("#frameName");
+      const apply = async (value) => {
+        this._closeDialog();
+        const previous = members.map((m) => ({ id: m.id, frame: m.frame || null }));
+        try {
+          await Promise.all(members.map((m) => this._hass.callService("brainstorm", "update_idea", { id: m.id, frame: value })));
+          this._pushUndo(value || name || "", () => Promise.all(previous.map((p) => this._hass.callService("brainstorm", "update_idea", p))));
+          if (ids) this._clearMulti();
+        } catch (err) {
+          console.error("[BrainstormMindmap] Failed to save the frame:", err);
+        }
+      };
+      body.querySelector("#frameSave").addEventListener("click", () => apply(input.value.trim() || null));
+      body.querySelector("#frameCancel").addEventListener("click", () => this._closeDialog());
+      const remove = body.querySelector("#frameRemove");
+      if (remove) remove.addEventListener("click", () => apply(null));
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          apply(input.value.trim() || null);
+        }
+      });
+      setTimeout(() => input.focus(), 50);
+    });
   }
 
   // The end of a note's underline that faces towards x
@@ -4905,10 +5539,11 @@ class BrainstormMindmapCard extends HTMLElement {
       const activeIdeas = attributes.ideas || [];
 
       // Filter ideas by selected category
-      const filteredIdeas = activeIdeas.filter((i) => {
+      const filteredIdeas = this._focusIdeas(activeIdeas.filter((i) => {
         if (this._selectedCategory === "all") return true;
         return String(i.category || "").trim() === String(this._selectedCategory || "").trim();
-      });
+      }));
+      this._renderFocusBar();
 
       // Reset node positions and layout when selected category changes
       if (this._lastRenderedCategory !== this._selectedCategory) {
@@ -5027,8 +5662,9 @@ class BrainstormMindmapCard extends HTMLElement {
         pillsBar.querySelectorAll(".cat-pill").forEach((pill) => {
           pill.addEventListener("click", () => {
             const newCat = String(pill.getAttribute("data-cat") || "").trim();
-            if (this._selectedCategory !== newCat) {
+            if (this._selectedCategory !== newCat || this._focusId) {
               this._selectedCategory = newCat;
+              this._focusId = null;
               this._saveSelectedCategory();
               this._nodePositions.clear();
               if (this._userMovedNodes) this._userMovedNodes.clear();
@@ -5049,7 +5685,11 @@ class BrainstormMindmapCard extends HTMLElement {
 
       if (centerTitle && centerBadge) {
         const displayCat = this._selectedCategory === "all" ? t("Alle") : this._selectedCategory;
-        centerTitle.textContent = displayCat;
+        const focusIdea = this._focusIdea();
+        const focusText = focusIdea ? String(focusIdea.text || "").replace(/\s+/g, " ").trim() : "";
+        centerTitle.textContent = focusIdea ? (focusText.length > 40 ? `${focusText.slice(0, 39)}…` : focusText) : displayCat;
+        centerNode.classList.toggle("focused", Boolean(focusIdea));
+        centerNode.title = focusIdea ? t("Eine Ebene zurück (Umschalt+F4)") : "";
         centerBadge.textContent = `${filteredIdeas.length} ${filteredIdeas.length === 1 ? t("Idee") : t("Ideen")}`;
 
         // Accent border color matching category
@@ -5104,9 +5744,10 @@ class BrainstormMindmapCard extends HTMLElement {
           : "";
 
         html += `
-          <div class="note-cloud ${prioClass} nshape-${shape}${svgShape ? " has-shape" : ""}${idea.id === this._selectedId ? " selected" : ""}${this._multi.has(idea.id) ? " multi-selected" : ""}" id="cloud_${idea.id}" data-id="${idea.id}" data-shape="${shape}" style="--cat-color: ${color};">
+          <div class="note-cloud ${prioClass}${idea.blocked_by && idea.blocked_by.length ? " is-blocked" : ""}${idea.id === this._linkFrom ? " link-source" : ""} nshape-${shape}${svgShape ? " has-shape" : ""}${idea.id === this._selectedId ? " selected" : ""}${this._multi.has(idea.id) ? " multi-selected" : ""}" id="cloud_${idea.id}" data-id="${idea.id}" data-shape="${shape}" style="--cat-color: ${color};">
             ${svgShape ? '<svg class="node-shape" aria-hidden="true"></svg>' : ""}
             ${branchToggle}
+            ${idea.callout ? `<div class="cloud-callout" title="${t("Callout")}">💬 ${formatText(idea.callout)}</div>` : ""}
             <div class="cloud-meta">
               <span class="cat-tag" data-cat="${this._escapeHtml(idea.category)}" title="${t("Kategorie ändern")}">
                 <ha-icon icon="${this._getCategoryIcon(idea.category)}" style="--mdc-icon-size: 12px; width: 12px; height: 12px; display: inline-flex; align-items: center; vertical-align: middle;"></ha-icon> ${this._escapeHtml(idea.category)}
@@ -5114,6 +5755,7 @@ class BrainstormMindmapCard extends HTMLElement {
               ${prioBadge}
               ${this._getReminderBadges(idea)}
               ${inProgressBadge(idea)}
+              ${blockedBadge(idea)}
               ${attachmentBadge(idea)}
               <span class="cloud-source" title="${t("Quelle")}: ${this._escapeHtml(idea.source || 'Dashboard')}${idea.device ? ` • ${t("Gerät")}: ` + this._escapeHtml(idea.device) : ''}">
                 <span>${sourceBadge}</span>
@@ -5127,6 +5769,8 @@ class BrainstormMindmapCard extends HTMLElement {
             <div class="cloud-actions">
               <button class="action-btn done-btn" data-act="done" data-id="${idea.id}" title="${t("Als erledigt markieren")}">✓</button>
               <button class="action-btn" data-act="branch" data-id="${idea.id}" title="${t("Unteridee anlegen")}">🌿</button>
+              <button class="action-btn" data-act="link" data-id="${idea.id}" title="${t("Mit einer anderen Notiz verbinden (L)")}">🔗</button>
+              ${hasBranch ? `<button class="action-btn" data-act="focus" data-id="${idea.id}" title="${t("Nur diesen Zweig zeigen (F4)")}">🎯</button>` : ""}
               ${aiSubtasks ? `<button class="action-btn" data-act="suggest" data-id="${idea.id}" title="${t("Unteraufgaben von der KI vorschlagen lassen")}">✨</button>` : ""}
               <button class="action-btn" data-act="edit" data-id="${idea.id}" title="${t("Bearbeiten")}">✏️</button>
               <button class="action-btn" data-act="move" data-id="${idea.id}" title="${t("Kategorie ändern")}">📁</button>
@@ -5284,6 +5928,12 @@ class BrainstormMindmapCard extends HTMLElement {
         // A click selects the note, a click on its text edits it right there
         cloud.addEventListener("click", (e) => {
           if (Date.now() - this._dragEndedAt < 300 || e.target.closest(".cloud-inline-editor")) return;
+          // While linking, a tap on another note is the end of the line
+          if (this._linkFrom && !e.target.closest(".action-btn")) {
+            e.stopPropagation();
+            this._finishLink(idea.id);
+            return;
+          }
           // Shift or Ctrl+click, or a tap while selecting, adds or removes the note
           if (e.shiftKey || e.ctrlKey || e.metaKey || this._lassoMode) {
             if (e.target.closest(".action-btn") || e.target.closest("a")) return;
@@ -5300,7 +5950,7 @@ class BrainstormMindmapCard extends HTMLElement {
         const textEl = cloud.querySelector(".cloud-text");
         if (textEl) {
           textEl.addEventListener("click", (e) => {
-            if (e.shiftKey || e.ctrlKey || e.metaKey || this._lassoMode) return;
+            if (e.shiftKey || e.ctrlKey || e.metaKey || this._lassoMode || this._linkFrom) return;
             e.stopPropagation();
             if (e.target.closest("a") || e.target.closest(".bs-tag")) return;
             if (Date.now() - this._dragEndedAt < 300) return;
@@ -5352,6 +6002,8 @@ class BrainstormMindmapCard extends HTMLElement {
             this._selectIdea(idea.id);
             if (act === "done") this._completeIdea(idea.id);
             else if (act === "branch") this._showAddDialog(idea);
+            else if (act === "focus") this._setFocus(idea.id);
+            else if (act === "link") this._startLink(idea.id);
             else if (act === "suggest") this._showSubtaskSuggestions(idea);
             else if (act === "edit") this._showEditDialog(idea.id, idea.text, idea.category, idea.priority);
             else if (act === "move") this._showCategoryPicker(idea.id, idea.category, idea.text);
@@ -5575,6 +6227,12 @@ class BrainstormMindmapCard extends HTMLElement {
           <div class="dialog-prio-chip ${selectedPrio === "urgent" ? "selected" : ""}" data-prio="urgent">${t("🔥 Dringend")}</div>
         </div>
 
+        <div class="dialog-label">${t("Callout:")}</div>
+        <input class="dialog-input" id="editCallout" maxlength="200" placeholder="${t("Optional: kurze Anmerkung in einer Sprechblase")}" value="${this._escapeHtml(idea.callout || "")}">
+        <div class="dialog-label">${t("Rahmen:")}</div>
+        <input class="dialog-input" id="editFrame" maxlength="40" list="editFrameNames" placeholder="${t("Optional: Name eines Rahmens")}" value="${this._escapeHtml(idea.frame || "")}">
+        <datalist id="editFrameNames">${[...new Set(((sensor && sensor.attributes.ideas) || []).filter((i) => i.category === (idea.category || currentCategory)).map((i) => i.frame).filter(Boolean))].map((f) => `<option value="${this._escapeHtml(f)}"></option>`).join("")}</datalist>
+
         <div class="dialog-label">${t("Marker:")}</div>
         <div class="dialog-prio-grid dialog-marker-grid" id="editMarkerGrid">
           ${MARKERS.map((marker) => `<div class="dialog-prio-chip ${selectedMarkers.has(marker) ? "selected" : ""}" data-marker="${marker}" title="${this._escapeHtml(markerLabel(marker))}">${markerIcon(marker)} ${this._escapeHtml(markerLabel(marker))}</div>`).join("")}
@@ -5785,6 +6443,10 @@ class BrainstormMindmapCard extends HTMLElement {
         if (!hasSubtasks && selectedProgress !== currentProgress) {
           payload.progress = selectedProgress;
         }
+        const newCallout = (body.querySelector("#editCallout").value || "").trim();
+        if (newCallout !== (idea.callout || "")) payload.callout = newCallout || null;
+        const newFrame = (body.querySelector("#editFrame").value || "").trim();
+        if (newFrame !== (idea.frame || "")) payload.frame = newFrame || null;
 
         // Everything this save changes, as it was before
         const before = { id, text: currentText, priority: currentPriority || "medium" };
@@ -5795,6 +6457,8 @@ class BrainstormMindmapCard extends HTMLElement {
         if ("shape" in payload) before.shape = currentShape || null;
         if ("markers" in payload) before.markers = currentMarkers;
         if ("progress" in payload) before.progress = currentProgress;
+        if ("callout" in payload) before.callout = idea.callout || null;
+        if ("frame" in payload) before.frame = idea.frame || null;
         try {
           await this._hass.callService("brainstorm", "update_idea", payload);
           this._pushUndo(currentText, () => this._hass.callService("brainstorm", "update_idea", before));
@@ -5815,6 +6479,8 @@ class BrainstormMindmapCard extends HTMLElement {
   }
 
   _showAddDialog(parent = null) {
+    // In a focused branch a new note hangs below it
+    if (!parent && this._focusId) parent = this._focusIdea();
     const sensor = this._getSensorEntity();
     const categories = sensor ? (sensor.attributes.categories || ["Inbox"]) : ["Inbox"];
     let selectedCat = this._selectedCategory && this._selectedCategory !== "all" ? this._selectedCategory : "Inbox";
@@ -6497,7 +7163,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.8.1 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.8.2 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

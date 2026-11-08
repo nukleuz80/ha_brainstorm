@@ -1,9 +1,9 @@
-import { MARKERS, alexaEchos, attachmentBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.1";
+import { MARKERS, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.2";
 
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.8.1 - Markers and Progress
+ * Version 1.8.2 - Links, Frames and Callouts
  */
 // The bulb lies next to this file, wherever Home Assistant serves it from
 const BULB_URL = new URL("./brainstorm-bulb.svg", import.meta.url).href;
@@ -3502,6 +3502,34 @@ class BrainstormCard extends HTMLElement {
           white-space: pre-line;
           word-break: break-word;
         }
+        .idea-callout {
+          display: inline-block;
+          margin-top: 3px;
+          padding: 2px 8px;
+          border-radius: 8px;
+          font-size: 0.75rem;
+          line-height: 1.3;
+          color: var(--primary-text-color, #212121);
+          background: color-mix(in srgb, var(--warning-color, #ffa600) 14%, transparent);
+          word-break: break-word;
+        }
+        .blocked-badge {
+          display: inline-flex;
+          align-items: center;
+          padding: 1px 5px;
+          border-radius: 6px;
+          font-weight: 600;
+          color: var(--error-color, #db4437);
+          background: color-mix(in srgb, var(--error-color, #db4437) 12%, transparent);
+        }
+        .frame-chip {
+          display: inline-flex;
+          align-items: center;
+          padding: 1px 6px;
+          border-radius: 6px;
+          border: 1px dashed var(--divider-color, rgba(127, 127, 127, 0.4));
+          color: var(--secondary-text-color, #757575);
+        }
         .idea-meta {
           display: flex;
           align-items: center;
@@ -4668,6 +4696,7 @@ class BrainstormCard extends HTMLElement {
                 </div>
                 ${item.description ? `<div class="idea-description" title="${t("Antippen zum Auf- und Zuklappen")}" data-id="${item.id}">${formatText(item.description)}</div>` : ""}
                 ${item.result ? `<div class="idea-result" title="${t("Ergebnis")}">${formatText(item.result)}</div>` : ""}
+                ${item.callout ? `<div class="idea-callout" title="${t("Callout")}">💬 ${formatText(item.callout)}</div>` : ""}
                 <div class="idea-meta">
                   ${isSub ? `<span class="subtask-badge" title="${t("Unteraufgabe")}">${t("Unteraufgabe")}</span>` : ""}
                   <span class="category-tag ${itemEdit ? "clickable" : ""}" title="${itemEdit ? t("Kategorie ändern") : t("Kategorie")}" data-id="${item.id}" data-cat="${this._escapeHtml(item.category)}" style="color: ${this._getCategoryColor(item.category)}; background: color-mix(in srgb, ${this._getCategoryColor(item.category)} 12%, var(--secondary-background-color, rgba(0,0,0,0.06))); border: 1px solid color-mix(in srgb, ${this._getCategoryColor(item.category)} 25%, transparent);"><ha-icon icon="${this._getCategoryIcon(item.category)}" style="--mdc-icon-size: 11px; width: 11px; height: 11px; margin-right: 3px; display: inline-flex; align-items: center; vertical-align: middle;"></ha-icon>${this._escapeHtml(item.category)}</span>
@@ -4678,6 +4707,8 @@ class BrainstormCard extends HTMLElement {
                   ${this._formatAuthorBadge(item)}
                   ${progressBadge(item)}
                   ${markerBadges(item)}
+                  ${blockedBadge(item)}
+                  ${item.frame ? `<span class="frame-chip" title="${t("Rahmen")}">▢ ${this._escapeHtml(item.frame)}</span>` : ""}
                   ${attachmentBadge(item)}
                   ${inProgressBadge(item)}
                   ${showSource ? `${this._getSourceBadge(item.source, item.device)}` : ""}
@@ -5621,7 +5652,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.8.1 ",
+  "%c BRAINSTORM-CARD %c v1.8.2 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

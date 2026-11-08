@@ -199,6 +199,21 @@ update_idea:
             - "50"
             - "75"
             - "100"
+    links:
+      required: false
+      example: '[{"to": "abc123", "label": "blockiert", "blocks": true}]'
+      selector:
+        object:
+    frame:
+      required: false
+      example: "Phase 1"
+      selector:
+        text:
+    callout:
+      required: false
+      example: "Angebot von Firma B abwarten"
+      selector:
+        text:
 
 delete_idea:
   fields:

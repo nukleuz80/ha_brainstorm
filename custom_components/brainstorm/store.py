@@ -55,6 +55,14 @@ from .const import (
     ATTR_MARKERS,
     ATTR_PROGRESS,
     ATTR_SUBTASKS,
+    ATTR_LINKS,
+    ATTR_BLOCKED_BY,
+    ATTR_FRAME,
+    ATTR_CALLOUT,
+    CALLOUT_MAX_LENGTH,
+    FRAME_MAX_LENGTH,
+    LINK_LABEL_MAX_LENGTH,
+    LINKS_MAX_COUNT,
     ATTR_SHAPE,
     MARKERS,
     NODE_SHAPES,
@@ -151,6 +159,9 @@ IMPORT_FIELDS = (
     ATTR_SHAPE,
     ATTR_MARKERS,
     ATTR_PROGRESS,
+    ATTR_LINKS,
+    ATTR_FRAME,
+    ATTR_CALLOUT,
 )
 # Fields that belong to this Home Assistant and stay out of a JSON export
 EXPORT_SKIPPED_FIELDS = (
@@ -441,6 +452,8 @@ class BrainstormStore:
         }
 
         progress_of = _subtask_progress(visible)
+        visible_by_id = {str(i.get(ATTR_ID)): i for i in visible}
+        blocked_by = _blocked_by(visible)
 
         def summary(idea: dict[str, Any]) -> dict[str, Any]:
             return {
@@ -491,6 +504,18 @@ class BrainstormStore:
                 result[ATTR_PROGRESS] = progress
             if subtasks := progress_of.get(str(idea.get(ATTR_ID))):
                 result[ATTR_SUBTASKS] = subtasks
+            if links := [
+                dict(link)
+                for link in idea.get(ATTR_LINKS) or []
+                if link.get("to") in visible_by_id
+            ]:
+                result[ATTR_LINKS] = links
+            if waits := blocked_by.get(str(idea.get(ATTR_ID))):
+                result[ATTR_BLOCKED_BY] = waits
+            if frame := idea.get(ATTR_FRAME):
+                result[ATTR_FRAME] = frame
+            if callout := idea.get(ATTR_CALLOUT):
+                result[ATTR_CALLOUT] = callout
             return result
 
         last_action = self.last_action
@@ -1214,6 +1239,12 @@ class BrainstormStore:
         update_markers: bool = False,
         progress: int | None = None,
         update_progress: bool = False,
+        links: list[dict[str, Any]] | None = None,
+        update_links: bool = False,
+        frame: str | None = None,
+        update_frame: bool = False,
+        callout: str | None = None,
+        update_callout: bool = False,
     ) -> dict[str, Any] | None:
         """Update an existing idea.
 
@@ -1309,6 +1340,21 @@ class BrainstormStore:
                 idea[ATTR_PROGRESS] = cleaned_progress
             else:
                 idea.pop(ATTR_PROGRESS, None)
+        if update_links:
+            if cleaned_links := _clean_links(links, idea_id, set(self._ideas)):
+                idea[ATTR_LINKS] = cleaned_links
+            else:
+                idea.pop(ATTR_LINKS, None)
+        if update_frame:
+            if cleaned_frame := _clean_short_text(frame, FRAME_MAX_LENGTH):
+                idea[ATTR_FRAME] = cleaned_frame
+            else:
+                idea.pop(ATTR_FRAME, None)
+        if update_callout:
+            if cleaned_callout := _clean_short_text(callout, CALLOUT_MAX_LENGTH):
+                idea[ATTR_CALLOUT] = cleaned_callout
+            else:
+                idea.pop(ATTR_CALLOUT, None)
         if update_parent:
             if not parent_id or parent_id.strip() in ("", "none"):
                 idea[ATTR_PARENT_ID] = None
@@ -2343,7 +2389,20 @@ class BrainstormStore:
                     idea[ATTR_PROGRESS] = cleaned_progress
                 else:
                     idea.pop(ATTR_PROGRESS)
+            for field, limit in ((ATTR_FRAME, FRAME_MAX_LENGTH), (ATTR_CALLOUT, CALLOUT_MAX_LENGTH)):
+                if field in idea:
+                    if cleaned_text := _clean_short_text(idea[field], limit):
+                        idea[field] = cleaned_text
+                    else:
+                        idea.pop(field)
             new_ideas[idea_id] = idea
+        known = set(new_ideas) | set(self._ideas)
+        for idea_id, idea in new_ideas.items():
+            if ATTR_LINKS in idea:
+                if cleaned_links := _clean_links(idea[ATTR_LINKS], idea_id, known):
+                    idea[ATTR_LINKS] = cleaned_links
+                else:
+                    idea.pop(ATTR_LINKS)
 
         for name, value in (data.get("category_icons") or {}).items():
             if name in self._categories and name not in self._category_icons:
@@ -2443,4 +2502,54 @@ def _subtask_progress(ideas: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
             "total": len(subtasks),
             "percent": round(percent(idea, frozenset())),
         }
+    return result
+
+
+def _clean_short_text(value: Any, limit: int) -> str | None:
+    """Return a one-line text cut to its limit, or None when it is empty."""
+    if not isinstance(value, str):
+        return None
+    text = " ".join(value.split())
+    return text[:limit] or None
+
+
+def _clean_links(links: Any, own_id: str, known: set[str]) -> list[dict[str, Any]]:
+    """Return the links to other known notes, one per target, at most 20."""
+    if not isinstance(links, list):
+        return []
+    cleaned: list[dict[str, Any]] = []
+    targets: set[str] = set()
+    for link in links:
+        if not isinstance(link, dict):
+            continue
+        target = link.get("to")
+        if not isinstance(target, str) or target == own_id or target in targets:
+            continue
+        if target not in known:
+            continue
+        item: dict[str, Any] = {"to": target}
+        if label := _clean_short_text(link.get("label"), LINK_LABEL_MAX_LENGTH):
+            item["label"] = label
+        if link.get("blocks") is True:
+            item["blocks"] = True
+        cleaned.append(item)
+        targets.add(target)
+        if len(cleaned) >= LINKS_MAX_COUNT:
+            break
+    return cleaned
+
+
+def _blocked_by(ideas: list[dict[str, Any]]) -> dict[str, list[dict[str, str]]]:
+    """Return for each note the open notes that block it."""
+    ids = {str(i.get(ATTR_ID)) for i in ideas}
+    result: dict[str, list[dict[str, str]]] = {}
+    for idea in ideas:
+        if idea.get(ATTR_STATUS) != "active":
+            continue
+        for link in idea.get(ATTR_LINKS) or []:
+            target = link.get("to")
+            if link.get("blocks") and target in ids:
+                result.setdefault(target, []).append(
+                    {"id": str(idea.get(ATTR_ID)), "text": str(idea.get(ATTR_TEXT) or "")}
+                )
     return result

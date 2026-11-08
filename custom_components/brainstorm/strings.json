@@ -854,6 +854,18 @@
         "progress": {
           "name": "Progress",
           "description": "How far a note without subtasks is, in percent: 0, 25, 50, 75 or 100. 0 removes it. A note with subtasks shows their progress instead."
+        },
+        "links": {
+          "name": "Links",
+          "description": "Lines to notes in other branches, as a list of {to: id, label: text, blocks: true/false}. A link that blocks keeps its target greyed out until this note is done. Replaces the old links, an empty list removes them."
+        },
+        "frame": {
+          "name": "Frame",
+          "description": "Name of a frame around notes of the same list that belong together. Notes with the same name share one frame. Empty removes the note from its frame."
+        },
+        "callout": {
+          "name": "Callout",
+          "description": "A short remark (at most 200 characters) shown in a bubble next to the note. Empty removes it."
         }
       }
     },

@@ -40,6 +40,13 @@ from .const import (
     ATTR_IN_PROGRESS,
     ATTR_MARKERS,
     ATTR_PROGRESS,
+    ATTR_LINKS,
+    ATTR_FRAME,
+    ATTR_CALLOUT,
+    CALLOUT_MAX_LENGTH,
+    FRAME_MAX_LENGTH,
+    LINK_LABEL_MAX_LENGTH,
+    LINKS_MAX_COUNT,
     ATTR_SHAPE,
     ATTR_REMINDED_AT,
     ATTR_RESET,
@@ -166,6 +173,31 @@ SERVICE_UPDATE_IDEA_SCHEMA = vol.Schema(
         ),
         vol.Optional(ATTR_PROGRESS): vol.Any(
             None, vol.All(vol.Coerce(int), vol.In(PROGRESS_STEPS))
+        ),
+        vol.Optional(ATTR_LINKS): vol.Any(
+            None,
+            vol.All(
+                cv.ensure_list,
+                [
+                    vol.Schema(
+                        {
+                            vol.Required("to"): cv.string,
+                            vol.Optional("label"): vol.Any(
+                                None,
+                                vol.All(cv.string, vol.Length(max=LINK_LABEL_MAX_LENGTH)),
+                            ),
+                            vol.Optional("blocks"): cv.boolean,
+                        }
+                    )
+                ],
+                vol.Length(max=LINKS_MAX_COUNT),
+            ),
+        ),
+        vol.Optional(ATTR_FRAME): vol.Any(
+            None, vol.All(cv.string, vol.Length(max=FRAME_MAX_LENGTH))
+        ),
+        vol.Optional(ATTR_CALLOUT): vol.Any(
+            None, vol.All(cv.string, vol.Length(max=CALLOUT_MAX_LENGTH))
         ),
     },
     extra=vol.ALLOW_EXTRA,
@@ -458,6 +490,12 @@ def _register_services(hass: HomeAssistant) -> None:
             update_markers=ATTR_MARKERS in call.data,
             progress=call.data.get(ATTR_PROGRESS),
             update_progress=ATTR_PROGRESS in call.data,
+            links=call.data.get(ATTR_LINKS),
+            update_links=ATTR_LINKS in call.data,
+            frame=call.data.get(ATTR_FRAME),
+            update_frame=ATTR_FRAME in call.data,
+            callout=call.data.get(ATTR_CALLOUT),
+            update_callout=ATTR_CALLOUT in call.data,
         )
         if updated is not None and (
             ATTR_ASSIGNEE in call.data

@@ -854,6 +854,18 @@
         "progress": {
           "name": "Fortschritt",
           "description": "Wie weit eine Notiz ohne Unteraufgaben ist, in Prozent: 0, 25, 50, 75 oder 100. 0 entfernt ihn. Eine Notiz mit Unteraufgaben zeigt stattdessen deren Fortschritt."
+        },
+        "links": {
+          "name": "Querverbindungen",
+          "description": "Linien zu Notizen in anderen Ästen, als Liste aus {to: ID, label: Text, blocks: true/false}. Eine blockierende Verbindung graut ihr Ziel aus, bis diese Notiz erledigt ist. Ersetzt die bisherigen, eine leere Liste entfernt sie."
+        },
+        "frame": {
+          "name": "Rahmen",
+          "description": "Name eines Rahmens um zusammengehörige Notizen derselben Liste. Notizen mit demselben Namen teilen sich einen Rahmen. Leer nimmt die Notiz aus ihrem Rahmen."
+        },
+        "callout": {
+          "name": "Callout",
+          "description": "Eine kurze Anmerkung (höchstens 200 Zeichen) in einer Sprechblase neben der Notiz. Leer entfernt sie."
         }
       }
     },

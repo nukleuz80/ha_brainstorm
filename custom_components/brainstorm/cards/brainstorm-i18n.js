@@ -352,6 +352,41 @@ const DICTIONARIES = {
     "Marker:": "Markers:",
     "Fortschritt:": "Progress:",
     "Kommt aus den Unteraufgaben: {done} von {total} erledigt, {percent} %.": "Comes from the subtasks: {done} of {total} done, {percent} %.",
+    "Alle Ebenen": "All levels",
+    "Ebenen bis {level}": "Levels up to {level}",
+    "Ganze Map zeigen (Umschalt+F4)": "Show the whole map (Shift+F4)",
+    "Eine Ebene zurück (Umschalt+F4)": "One level up (Shift+F4)",
+    "Nur diesen Zweig zeigen (F4)": "Show only this branch (F4)",
+    "Ebenen zeigen: 1, 2, 3 oder alle (Tasten 1–9, 0 = alle)": "Show levels: 1, 2, 3 or all (keys 1–9, 0 = all)",
+    "Fokus": "Focus",
+    "Beschriftung:": "Label:",
+    "Callout": "Callout",
+    "Callout:": "Callout:",
+    "Die Verbindung konnte nicht gespeichert werden.": "The link could not be saved.",
+    "Die zwei ausgewählten Notizen verbinden": "Link the two selected notes",
+    "Höchstens 20 Verbindungen pro Notiz.": "At most 20 links per note.",
+    "Mit einer anderen Notiz verbinden (L)": "Link to another note (L)",
+    "Name des Rahmens:": "Frame name:",
+    "Notizen mit demselben Namen teilen sich einen Rahmen.": "Notes with the same name share one frame.",
+    "Optional: Name eines Rahmens": "Optional: name of a frame",
+    "Optional: kurze Anmerkung in einer Sprechblase": "Optional: short remark in a speech bubble",
+    "Rahmen": "Frame",
+    "Rahmen bearbeiten": "Edit frame",
+    "Rahmen entfernen": "Remove frame",
+    "Rahmen um die Auswahl legen": "Put a frame around the selection",
+    "Rahmen:": "Frame:",
+    "Verbinden": "Link",
+    "Verbindung bearbeiten": "Edit link",
+    "Verbindung löschen": "Delete link",
+    "Verbunden. Die Linie antippen, um sie zu beschriften.": "Linked. Tap the line to label it.",
+    "Wartet auf: {names}": "Waiting for: {names}",
+    "Ziel-Notiz antippen … (Esc bricht ab)": "Tap the target note … (Esc cancels)",
+    "z. B. Phase 1, Später, Erdgeschoss": "e.g. Phase 1, Later, Ground floor",
+    "z. B. gehört zu, braucht, siehe auch": "e.g. belongs to, needs, see also",
+    "„{from}“ blockiert „{to}“: das Ziel wartet, bis die erste Notiz erledigt ist": "“{from}” blocks “{to}”: the target waits until the first note is done",
+    "▢ Rahmen bearbeiten": "▢ Edit frame",
+    "▢ Rahmen um {count} Notizen": "▢ Frame around {count} notes",
+    "🔗 Verbindung": "🔗 Link",
   },
 };
 
@@ -742,6 +777,14 @@ export function inProgressBadge(idea) {
   const name = mark.name ? escapeHtml(mark.name) : "";
   const title = name ? t("{name} arbeitet daran seit {time}", { name, time: when }) : t("In Arbeit seit {time}", { time: when });
   return `<span class="in-progress-badge" title="${title}">🔧 ${t("In Arbeit")}${name ? ` · ${name}` : ""}</span>`;
+}
+
+/** Return the ⛔ badge of a note that waits for other open notes, or nothing. */
+export function blockedBadge(idea) {
+  const waits = (idea && idea.blocked_by) || [];
+  if (!waits.length) return "";
+  const names = waits.map((w) => escapeHtml(w.text || "")).join(", ");
+  return `<span class="blocked-badge" title="${t("Wartet auf: {names}", { names })}">⛔ ${t("Wartet")}${waits.length > 1 ? ` · ${waits.length}` : ""}</span>`;
 }
 
 /** Return the 📎 badge of an idea with files, or nothing. */

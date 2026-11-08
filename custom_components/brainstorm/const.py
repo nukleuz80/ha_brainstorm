@@ -194,6 +194,18 @@ ATTR_PROGRESS = "progress"
 PROGRESS_STEPS = (0, 25, 50, 75, 100)
 # What the cards get about the subtasks of a note
 ATTR_SUBTASKS = "subtasks"
+# Lines to notes in other branches; one that blocks keeps its target waiting
+ATTR_LINKS = "links"
+LINK_LABEL_MAX_LENGTH = 40
+LINKS_MAX_COUNT = 20
+# What the cards get about the notes a note waits for
+ATTR_BLOCKED_BY = "blocked_by"
+# A named frame around notes of a list that belong together
+ATTR_FRAME = "frame"
+FRAME_MAX_LENGTH = 40
+# A short remark in a bubble next to the note
+ATTR_CALLOUT = "callout"
+CALLOUT_MAX_LENGTH = 200
 ATTACHMENT_DIR = "brainstorm_attachments"
 ATTACHMENT_MAX_SIZE = 10 * 1024 * 1024
 ATTACHMENT_MAX_COUNT = 20

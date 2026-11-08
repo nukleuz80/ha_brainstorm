@@ -236,6 +236,12 @@ Mit **Intelligente Formatierung** (Allgemeine Einstellungen) werden gesprochene 
 | Nach einem Tag filtern | auf ein #Tag in einer Notiz tippen |
 | Marker setzen | ✏️ Bearbeiten ➔ *Marker*, ein Tipp auf einen Marker an der Notiz filtert danach |
 | Fortschritt weiterschalten | auf den Ring an einer Notiz ohne Unteraufgaben tippen: 0 ➔ 25 ➔ 50 ➔ 75 ➔ 100 % |
+| Nur einen Zweig zeigen | 🎯 an der Notiz oder **F4**, zurück über die Brotkrumen, **Umschalt+F4** oder **Esc** |
+| Ebenen ein- und ausklappen | ∞ unten rechts: 1 ➔ 2 ➔ 3 ➔ alle, oder die Tasten **1–9**, **0** = alle |
+| Zwei Notizen verbinden | 🔗 an der Notiz oder **L**, dann die Ziel-Notiz antippen; zwei ausgewählte Notizen ➔ 🔗 *Verbinden* |
+| Verbindung beschriften oder löschen | auf die gestrichelte Linie tippen |
+| Rahmen um Notizen | Notizen auswählen ➔ ▢ *Rahmen*, oder ✏️ Bearbeiten ➔ *Rahmen*; ein Tipp auf den Rahmennamen benennt um |
+| Callout | ✏️ Bearbeiten ➔ *Callout* |
 
 **Suchen und filtern:** 🔍 öffnet eine Leiste über der Map. Alle getippten Wörter müssen im Titel, in der Beschreibung, im Ergebnis oder bei der Person vorkommen; `#gar` findet Notizen mit einem Tag, das mit *gar* beginnt. Die Chips filtern nach Priorität (🔥 🔴 🟡 🟢), nach *Überfällig* oder *7 Tage*, nach *In Arbeit* und nach den Tags der Liste, mit ihrer Anzahl. Passende Notizen bleiben hell, ihre übergeordneten Punkte halb, der Rest tritt zurück. Ein eingeklappter Zweig mit Treffern zeigt seinen Knopf farbig. **Enter** springt zum nächsten Treffer und klappt seinen Zweig auf, **Umschalt+Enter** zum vorigen, **Esc** leert die Suche und schließt danach die Leiste, das hebt auch den Filter auf.
 
@@ -244,6 +250,12 @@ Mit **Intelligente Formatierung** (Allgemeine Einstellungen) werden gesprochene 
 **Marker:** Kleine Zeichen an einer Notiz, wie bei MindManager: ❓ Frage, 💡 Idee, ⚠️ Achtung, 💰 Geld, ⭐ Stern, 🚩 Flagge, ✅ Haken, ⛔ Blockiert, ⏳ Wartet, ❤️ Herz. Du setzt sie im Bearbeiten-Dialog beider Karten oder mit `markers` bei `brainstorm.update_idea`. Die Suchleiste bekommt für jeden Marker der Liste einen Chip.
 
 **Fortschritt:** Eine Notiz mit Unteraufgaben zeigt einen Ring mit *erledigt/gesamt*, z. B. `3/5`. Der Ring füllt sich wie bei MindManager: Erledigte Unteraufgaben zählen 100 %, eine Unteraufgabe mit eigenen Unteraufgaben den Durchschnitt davon, jede andere ihren eigenen Fortschritt. Bei einer Notiz ohne Unteraufgaben stellst du den Fortschritt selbst ein, in Viertelschritten im Bearbeiten-Dialog, per Tipp auf den Ring oder mit `progress` bei `brainstorm.update_idea`. Bei 100 % wird der Ring grün.
+
+**Fokus und Ebenen:** Bei großen Maps zeigt 🎯 (oder **F4**) nur den Zweig einer Notiz, die Notiz rückt in die Mitte. Über der Map steht der Weg dorthin, ein Tipp auf einen Eintrag springt zurück, ✕ zeigt wieder die ganze Map. Neue Notizen landen im Fokus unter der Fokus-Notiz. ∞ unten rechts klappt alle Zweige ab der gewählten Ebene ein, die Tasten **1** bis **9** tun das direkt, **0** klappt alles wieder auf.
+
+**Querverbindungen:** Die Linien der Map zeigen, was wozu gehört. Eine Querverbindung verbindet zwei beliebige Notizen, auch aus verschiedenen Zweigen, mit einem gebogenen, gestrichelten Pfeil. 🔗 an der Notiz (oder **L**) startet, ein Tipp auf das Ziel beendet, **Esc** bricht ab. Ein Tipp auf die Linie öffnet einen Dialog für eine Beschriftung wie *braucht* oder *siehe auch*. Mit dem Haken *blockiert* wird die Verbindung rot: Die Ziel-Notiz wird grau und zeigt ⛔ *Wartet*, bis die erste Notiz erledigt ist. Das Abzeichen erscheint auch in der Listenkarte.
+
+**Rahmen und Callouts:** Ein Rahmen ist ein gestricheltes Rechteck mit Namen um mehrere Notizen, etwa *Phase 1* oder *Erdgeschoss*. Notizen mit demselben Rahmennamen teilen sich einen Rahmen. Ein Callout ist eine kurze Anmerkung in einer Sprechblase über der Notiz, für Dinge wie *Farbe noch offen*. Die Listenkarte zeigt den Rahmen als Chip und den Callout unter dem Text.
 
 **Tastatur** (eine Notiz ist ausgewählt)
 
@@ -256,7 +268,10 @@ Mit **Intelligente Formatierung** (Allgemeine Einstellungen) werden gesprochene 
 | **←** | zum übergeordneten Punkt |
 | **→** | zum ersten Unterpunkt, eingeklappten Zweig öffnen |
 | **↑** / **↓** | zum vorherigen / nächsten Geschwister |
-| **Esc** | Auswahl aufheben |
+| **F4** / **Umschalt+F4** | nur diesen Zweig zeigen / eine Ebene zurück |
+| **1**–**9** / **0** | Ebenen bis 1–9 zeigen / alle Ebenen |
+| **L** | Querverbindung zu einer anderen Notiz ziehen |
+| **Esc** | Auswahl aufheben, im Fokus eine Ebene zurück, beim Verbinden abbrechen |
 | **Strg+Z** | rückgängig |
 
 Im Textfeld: **Enter** speichert, **Umschalt+Enter** macht eine neue Zeile, **Esc** bricht ab.
@@ -389,7 +404,7 @@ Alle Parameter stehen in der [README](../README_de.md#️-dienste-services) und 
 | Dienst | Kurzbeispiel |
 |---|---|
 | `brainstorm.add_idea` | `text: "Filter tauschen"`, `category: Smarthome`, `priority: high`, `due: "2026-12-01 18:00"` |
-| `brainstorm.update_idea` | `id: …`, `status: completed`, `in_progress: true`, `markers: [question, money]` oder `progress: 50` |
+| `brainstorm.update_idea` | `id: …`, `status: completed`, `in_progress: true`, `markers: [question, money]`, `progress: 50`, `links: [{to: …, label: braucht, blocks: true}]`, `frame: Phase 1` oder `callout: Farbe offen` |
 | `brainstorm.delete_idea` | `id: …` |
 | `brainstorm.delete_done` | erledigte löschen, optional nur ältere (`older_than_days`) |
 | `brainstorm.restore_idea` | gelöschte Notiz zurückholen |

@@ -235,6 +235,12 @@ With **Smart Text Optimization** (General Settings) spoken notes are tidied up a
 | Filter by a tag | tap a #tag in a note |
 | Set markers | ✏️ Edit ➔ *Markers*; tapping a marker on a note filters by it |
 | Move the progress on | tap the ring of a note without subtasks: 0 ➔ 25 ➔ 50 ➔ 75 ➔ 100 % |
+| Show one branch only | 🎯 on the note or **F4**, back via the breadcrumb, **Shift+F4** or **Esc** |
+| Fold and unfold levels | ∞ at the bottom right: 1 ➔ 2 ➔ 3 ➔ all, or the keys **1–9**, **0** = all |
+| Link two notes | 🔗 on the note or **L**, then tap the target note; two picked notes ➔ 🔗 *Link* |
+| Label or delete a link | tap the dashed line |
+| Frame around notes | pick notes ➔ ▢ *Frame*, or ✏️ Edit ➔ *Frame*; tapping the frame name renames it |
+| Callout | ✏️ Edit ➔ *Callout* |
 
 **Search and filter:** 🔍 opens a bar above the map. Words you type must all appear in the title, description, result or person; `#gar` finds notes with a tag starting with *gar*. The chips filter by priority (🔥 🔴 🟡 🟢), by *Overdue* or *7 days*, by *In progress* and by the tags of the list, with their number. Notes that fit stay bright, their parents half, the rest fades. A folded branch with hits shows its button in color. **Enter** jumps to the next hit and unfolds its branch, **Shift+Enter** to the previous one, **Esc** clears the search and then closes the bar, which also clears the filter.
 
@@ -243,6 +249,12 @@ With **Smart Text Optimization** (General Settings) spoken notes are tidied up a
 **Markers:** small signs on a note, as in MindManager: ❓ question, 💡 idea, ⚠️ warning, 💰 money, ⭐ star, 🚩 flag, ✅ check, ⛔ blocked, ⏳ waiting, ❤️ heart. Set them in the edit dialog of either card or with `markers` in `brainstorm.update_idea`. The search bar gets a chip for every marker in the list.
 
 **Progress:** a note with subtasks shows a ring with *done/total*, such as `3/5`. The ring fills like in MindManager: subtasks that are done count 100 %, a subtask with subtasks of its own the mean of those, any other its own progress. For a note without subtasks you set the progress yourself, in quarters, in the edit dialog, by tapping the ring or with `progress` in `brainstorm.update_idea`. At 100 % the ring turns green.
+
+**Focus and levels:** on a big map, 🎯 (or **F4**) shows only the branch of one note, and the note moves to the middle. The way there shows above the map; tap an entry to go back, ✕ shows the whole map again. New notes land under the focused note. ∞ at the bottom right folds every branch below the chosen level, the keys **1** to **9** do that directly, **0** unfolds everything again.
+
+**Links:** the lines of the map show what belongs where. A link joins any two notes, also from different branches, with a curved, dashed arrow. 🔗 on the note (or **L**) starts it, a tap on the target ends it, **Esc** cancels. A tap on the line opens a dialog for a label such as *needs* or *see also*. Tick *blocks* and the link turns red: the target note turns grey and shows ⛔ *Waiting* until the first note is done. The badge shows in the list card too.
+
+**Frames and callouts:** a frame is a dashed, named rectangle around several notes, such as *Phase 1* or *Ground floor*. Notes with the same frame name share one frame. A callout is a short remark in a speech bubble above the note, for things like *colour still open*. The list card shows the frame as a chip and the callout below the text.
 
 **Keyboard** (with a note selected)
 
@@ -255,7 +267,10 @@ With **Smart Text Optimization** (General Settings) spoken notes are tidied up a
 | **←** | to the parent |
 | **→** | to the first child, unfolds a folded branch |
 | **↑** / **↓** | to the previous / next sibling |
-| **Esc** | clear the selection |
+| **F4** / **Shift+F4** | show only this branch / go up one level |
+| **1**–**9** / **0** | show levels up to 1–9 / all levels |
+| **L** | draw a link to another note |
+| **Esc** | clear the selection, go up one level in focus, cancel linking |
 | **Ctrl+Z** | undo |
 
 In a text field: **Enter** saves, **Shift+Enter** starts a new line, **Esc** cancels.
@@ -388,7 +403,7 @@ All parameters are in the [README](../README.md#️-services) and under **Develo
 | Service | Short example |
 |---|---|
 | `brainstorm.add_idea` | `text: "Replace filter"`, `category: Smart Home`, `priority: high`, `due: "2026-12-01 18:00"` |
-| `brainstorm.update_idea` | `id: …`, `status: completed`, `in_progress: true`, `markers: [question, money]` or `progress: 50` |
+| `brainstorm.update_idea` | `id: …`, `status: completed`, `in_progress: true`, `markers: [question, money]`, `progress: 50`, `links: [{to: …, label: needs, blocks: true}]`, `frame: Phase 1` or `callout: colour open` |
 | `brainstorm.delete_idea` | `id: …` |
 | `brainstorm.delete_done` | delete done notes, optionally only older ones (`older_than_days`) |
 | `brainstorm.restore_idea` | bring a deleted note back |
