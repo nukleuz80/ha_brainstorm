@@ -1,8 +1,8 @@
-import { alexaEchos, attachmentBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMatches, ideaTags, inProgressBadge, parseDueInput, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.0";
+import { MARKERS, alexaEchos, attachmentBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.1";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.8.0 - Search, Filter and Tags
+ * Version: 1.8.1 - Markers and Progress
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -2125,6 +2125,69 @@ class BrainstormMindmapCard extends HTMLElement {
           color: var(--warning-color, #ff9800);
           background: color-mix(in srgb, var(--warning-color, #ff9800) 14%, transparent);
         }
+        .cloud-marks {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 4px;
+          margin-bottom: 4px;
+        }
+        .marker-badges {
+          display: inline-flex;
+          flex-wrap: wrap;
+          gap: 2px;
+        }
+        .marker-badge {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 22px;
+          height: 22px;
+          font-size: 0.9rem;
+          line-height: 1;
+          border-radius: 6px;
+          cursor: pointer;
+        }
+        .marker-badge:hover {
+          background: var(--secondary-background-color, rgba(127, 127, 127, 0.12));
+        }
+        .progress-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 3px;
+          min-height: 22px;
+          padding: 0 6px 0 3px;
+          border-radius: 11px;
+          font-size: 0.7rem;
+          font-weight: 600;
+          color: var(--secondary-text-color, #727272);
+          background: var(--secondary-background-color, rgba(127, 127, 127, 0.12));
+          cursor: pointer;
+          font-variant-numeric: tabular-nums;
+        }
+        .progress-badge.progress-auto {
+          cursor: default;
+        }
+        .progress-badge svg {
+          flex: none;
+        }
+        .progress-track {
+          fill: none;
+          stroke: color-mix(in srgb, var(--secondary-text-color, #727272) 25%, transparent);
+          stroke-width: 2.5;
+        }
+        .progress-fill {
+          fill: none;
+          stroke: var(--cat-color, var(--primary-color, #03a9f4));
+          stroke-width: 2.5;
+          stroke-linecap: round;
+        }
+        .progress-badge.progress-full {
+          color: var(--success-color, #4caf50);
+        }
+        .progress-full .progress-fill {
+          stroke: var(--success-color, #4caf50);
+        }
         .cloud-result {
           margin: -4px 0 8px;
           padding-left: 7px;
@@ -3462,7 +3525,11 @@ class BrainstormMindmapCard extends HTMLElement {
       const padX = Math.max(px(style.paddingLeft), 10);
       const fontSize = px(textStyle.fontSize) || 14;
       const font = `${textStyle.fontWeight} ${fontSize}px ${textStyle.fontFamily}`;
-      const lines = wrap(textEl ? textEl.textContent.trim() : "", font, width - padX * 2);
+      // Markers and progress go in front of the text, as signs
+      const marksEl = el.querySelector(".cloud-marks");
+      const marks = marksEl ? marksEl.textContent.replace(/\s+/g, " ").trim() : "";
+      const text = textEl ? textEl.textContent.trim() : "";
+      const lines = wrap(marks ? `${marks}  ${text}` : text, font, width - padX * 2);
       const lineHeight = Math.round(fontSize * 1.35);
       const tagSize = 10;
       const height = 12 + tagSize + 6 + lines.length * lineHeight + 10;
@@ -3659,6 +3726,9 @@ class BrainstormMindmapCard extends HTMLElement {
         } else if (kind === "tag") {
           this._toggleFilterTag(value);
           return;
+        } else if (kind === "marker") {
+          this._toggleFilterMarker(value);
+          return;
         } else if (kind === "flag") {
           this._filter[value] = !this._filter[value];
         }
@@ -3702,6 +3772,32 @@ class BrainstormMindmapCard extends HTMLElement {
     this._applyFilter();
   }
 
+  _toggleFilterMarker(marker) {
+    if (!MARKERS.includes(marker)) return;
+    if (this._filter.markers.has(marker)) this._filter.markers.delete(marker);
+    else this._filter.markers.add(marker);
+    this._hitIndex = -1;
+    if (!this._filterOpen) {
+      this._setFilterOpen(true);
+      return;
+    }
+    this._renderFilterChips();
+    this._applyFilter();
+  }
+
+  // A note without subtasks moves on by a quarter, 100 % goes back to 0
+  async _cycleProgress(idea) {
+    if (!idea || (idea.subtasks && idea.subtasks.total)) return;
+    const before = Number(idea.progress) || 0;
+    const next = nextProgress(before);
+    try {
+      await this._hass.callService("brainstorm", "update_idea", { id: idea.id, progress: next });
+      this._pushUndo(idea.text, () => this._hass.callService("brainstorm", "update_idea", { id: idea.id, progress: before }));
+    } catch (err) {
+      console.error("[BrainstormMindmap] Failed to set the progress:", err);
+    }
+  }
+
   _renderFilterChips() {
     const chips = this.shadowRoot && this.shadowRoot.getElementById("filterChips");
     if (!chips || !this._filterOpen) return;
@@ -3713,6 +3809,9 @@ class BrainstormMindmapCard extends HTMLElement {
       if (!counts.has(tag)) counts.set(tag, 0);
     });
     const tags = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+    const markerCounts = new Map();
+    ideas.forEach((idea) => ideaMarkers(idea).forEach((marker) => markerCounts.set(marker, (markerCounts.get(marker) || 0) + 1)));
+    const markers = MARKERS.filter((marker) => markerCounts.has(marker) || this._filter.markers.has(marker));
     const chip = (kind, value, label, title, on) =>
       `<button class="filter-chip${on ? " on" : ""}" data-kind="${kind}" data-value="${this._escapeHtml(value)}" title="${this._escapeHtml(title)}" aria-pressed="${on}">${label}</button>`;
     const prios = [
@@ -3727,6 +3826,8 @@ class BrainstormMindmapCard extends HTMLElement {
       chip("flag", "overdue", `⏰ ${t("Überfällig")}`, t("Termin ist vorbei"), this._filter.overdue),
       chip("flag", "soon", `📅 ${t("7 Tage")}`, t("Termin in den nächsten 7 Tagen"), this._filter.soon),
       chip("flag", "working", `🔧 ${t("In Arbeit")}`, t("Als „In Arbeit“ markiert"), this._filter.working),
+      markers.length ? '<span class="filter-sep"></span>' : "",
+      ...markers.map((marker) => chip("marker", marker, `${markerIcon(marker)}<span class="filter-chip-count">${markerCounts.get(marker) || 0}</span>`, t("Nur Notizen mit {marker}", { marker: markerLabel(marker) }), this._filter.markers.has(marker))),
       tags.length ? '<span class="filter-sep"></span>' : "",
       ...tags.map(([tag, count]) => chip("tag", tag, `#${this._escapeHtml(tag)}<span class="filter-chip-count">${count}</span>`, t("Nur Notizen mit #{tag}", { tag }), this._filter.tags.has(tag))),
     ].join("");
@@ -5020,6 +5121,7 @@ class BrainstormMindmapCard extends HTMLElement {
                 <span>${timeAgo}</span>
               </span>
             </div>
+            ${markerBadges(idea) || progressBadge(idea) ? `<div class="cloud-marks">${progressBadge(idea)}${markerBadges(idea)}</div>` : ""}
             <div class="cloud-text" title="${t("Klicken zum Bearbeiten")}">${formatText(idea.text)}</div>
             ${idea.result ? `<div class="cloud-result" title="${t("Ergebnis")}">${formatText(idea.result)}</div>` : ""}
             <div class="cloud-actions">
@@ -5120,7 +5222,7 @@ class BrainstormMindmapCard extends HTMLElement {
 
         // Mouse down records pending drag - only moves if threshold > 5px (prevents click jitter!)
         cloud.addEventListener("mousedown", (e) => {
-          if (e.target.closest(".action-btn") || e.target.closest("a") || e.target.closest(".bs-tag") || e.target.closest(".cat-tag") || e.target.closest(".prio-tag") || e.target.closest(".branch-toggle") || e.target.closest(".cloud-inline-editor")) return;
+          if (e.target.closest(".action-btn") || e.target.closest("a") || e.target.closest(".bs-tag") || e.target.closest(".marker-badge") || e.target.closest(".progress-badge") || e.target.closest(".cat-tag") || e.target.closest(".prio-tag") || e.target.closest(".branch-toggle") || e.target.closest(".cloud-inline-editor")) return;
           if (e.button !== 0) return;
           const pos = this._nodePositions.get(id) || { x: 0, y: 0 };
           this._pendingDrag = {
@@ -5136,7 +5238,7 @@ class BrainstormMindmapCard extends HTMLElement {
 
         // Touch start records pending drag
         cloud.addEventListener("touchstart", (e) => {
-          if (e.target.closest(".action-btn") || e.target.closest("a") || e.target.closest(".bs-tag") || e.target.closest(".cat-tag") || e.target.closest(".prio-tag") || e.target.closest(".branch-toggle") || e.target.closest(".cloud-inline-editor")) return;
+          if (e.target.closest(".action-btn") || e.target.closest("a") || e.target.closest(".bs-tag") || e.target.closest(".marker-badge") || e.target.closest(".progress-badge") || e.target.closest(".cat-tag") || e.target.closest(".prio-tag") || e.target.closest(".branch-toggle") || e.target.closest(".cloud-inline-editor")) return;
           if (e.touches.length === 1) {
             const touch = e.touches[0];
             const pos = this._nodePositions.get(id) || { x: 0, y: 0 };
@@ -5192,7 +5294,7 @@ class BrainstormMindmapCard extends HTMLElement {
         });
         cloud.addEventListener("dblclick", (e) => {
           if (e.shiftKey || e.ctrlKey || e.metaKey || this._lassoMode) return;
-          if (e.target.closest(".action-btn") || e.target.closest("a") || e.target.closest(".bs-tag") || e.target.closest(".cloud-inline-editor")) return;
+          if (e.target.closest(".action-btn") || e.target.closest("a") || e.target.closest(".bs-tag") || e.target.closest(".marker-badge") || e.target.closest(".progress-badge") || e.target.closest(".cloud-inline-editor")) return;
           this._startInlineEdit(idea.id);
         });
         const textEl = cloud.querySelector(".cloud-text");
@@ -5215,6 +5317,23 @@ class BrainstormMindmapCard extends HTMLElement {
             this._toggleFilterTag(tagEl.getAttribute("data-tag"));
           });
         });
+
+        // A marker filters the map by it, the ring of a note without subtasks moves on
+        cloud.querySelectorAll(".marker-badge").forEach((markerEl) => {
+          markerEl.addEventListener("click", (e) => {
+            if (e.shiftKey || e.ctrlKey || e.metaKey || this._lassoMode) return;
+            e.stopPropagation();
+            this._toggleFilterMarker(markerEl.getAttribute("data-marker"));
+          });
+        });
+        const progressEl = cloud.querySelector(".progress-badge:not(.progress-auto)");
+        if (progressEl) {
+          progressEl.addEventListener("click", (e) => {
+            if (e.shiftKey || e.ctrlKey || e.metaKey || this._lassoMode) return;
+            e.stopPropagation();
+            this._cycleProgress(idea);
+          });
+        }
 
         // Category Tag click -> Category Picker
         const catTagEl = cloud.querySelector(".cat-tag");
@@ -5432,6 +5551,11 @@ class BrainstormMindmapCard extends HTMLElement {
     const currentShape = NODE_SHAPES.includes(idea.shape) ? idea.shape : "";
     let selectedShape = currentShape;
     const shapeChoices = [["", t("Automatisch")], ...NODE_SHAPES.map((shape) => [shape, shapeLabel(shape)])];
+    const currentMarkers = ideaMarkers(idea);
+    let selectedMarkers = new Set(currentMarkers);
+    const hasSubtasks = Boolean(idea.subtasks && idea.subtasks.total);
+    const currentProgress = Number(idea.progress) || 0;
+    let selectedProgress = currentProgress;
 
     this._openDialog(t("✏️ Notiz bearbeiten"), (body) => {
       body.innerHTML = `
@@ -5450,6 +5574,18 @@ class BrainstormMindmapCard extends HTMLElement {
           <div class="dialog-prio-chip ${selectedPrio === "high" ? "selected" : ""}" data-prio="high">${t("🔴 Hoch")}</div>
           <div class="dialog-prio-chip ${selectedPrio === "urgent" ? "selected" : ""}" data-prio="urgent">${t("🔥 Dringend")}</div>
         </div>
+
+        <div class="dialog-label">${t("Marker:")}</div>
+        <div class="dialog-prio-grid dialog-marker-grid" id="editMarkerGrid">
+          ${MARKERS.map((marker) => `<div class="dialog-prio-chip ${selectedMarkers.has(marker) ? "selected" : ""}" data-marker="${marker}" title="${this._escapeHtml(markerLabel(marker))}">${markerIcon(marker)} ${this._escapeHtml(markerLabel(marker))}</div>`).join("")}
+        </div>
+
+        <div class="dialog-label">${t("Fortschritt:")}</div>
+        ${hasSubtasks
+          ? `<div class="dialog-hint">${t("Kommt aus den Unteraufgaben: {done} von {total} erledigt, {percent} %.", { done: idea.subtasks.done, total: idea.subtasks.total, percent: idea.subtasks.percent })}</div>`
+          : `<div class="dialog-prio-grid dialog-progress-grid" id="editProgressGrid">
+          ${[0, 25, 50, 75, 100].map((step) => `<div class="dialog-prio-chip ${step === selectedProgress ? "selected" : ""}" data-progress="${step}">${step} %</div>`).join("")}
+        </div>`}
 
         <div class="dialog-label">${t("Form auf der Mindmap:")}</div>
         <div class="dialog-prio-grid dialog-shape-grid" id="editShapeGrid">
@@ -5529,6 +5665,22 @@ class BrainstormMindmapCard extends HTMLElement {
           shapeChips.forEach((c) => c.classList.remove("selected"));
           chip.classList.add("selected");
           selectedShape = chip.getAttribute("data-shape") || "";
+        });
+      });
+      body.querySelectorAll("#editMarkerGrid .dialog-prio-chip").forEach((chip) => {
+        chip.addEventListener("click", () => {
+          const marker = chip.getAttribute("data-marker");
+          if (selectedMarkers.has(marker)) selectedMarkers.delete(marker);
+          else selectedMarkers.add(marker);
+          chip.classList.toggle("selected", selectedMarkers.has(marker));
+        });
+      });
+      const progressChips = body.querySelectorAll("#editProgressGrid .dialog-prio-chip");
+      progressChips.forEach((chip) => {
+        chip.addEventListener("click", () => {
+          progressChips.forEach((c) => c.classList.remove("selected"));
+          chip.classList.add("selected");
+          selectedProgress = Number(chip.getAttribute("data-progress")) || 0;
         });
       });
       const dueDate = body.querySelector("#editDueDate");
@@ -5626,6 +5778,13 @@ class BrainstormMindmapCard extends HTMLElement {
         if (selectedShape !== currentShape) {
           payload.shape = selectedShape || null;
         }
+        const newMarkers = MARKERS.filter((marker) => selectedMarkers.has(marker));
+        if (newMarkers.join() !== currentMarkers.join()) {
+          payload.markers = newMarkers;
+        }
+        if (!hasSubtasks && selectedProgress !== currentProgress) {
+          payload.progress = selectedProgress;
+        }
 
         // Everything this save changes, as it was before
         const before = { id, text: currentText, priority: currentPriority || "medium" };
@@ -5634,6 +5793,8 @@ class BrainstormMindmapCard extends HTMLElement {
         if ("echos" in payload) before.echos = currentEchos.length ? currentEchos : null;
         if ("description" in payload) before.description = idea.description || "";
         if ("shape" in payload) before.shape = currentShape || null;
+        if ("markers" in payload) before.markers = currentMarkers;
+        if ("progress" in payload) before.progress = currentProgress;
         try {
           await this._hass.callService("brainstorm", "update_idea", payload);
           this._pushUndo(currentText, () => this._hass.callService("brainstorm", "update_idea", before));
@@ -6336,7 +6497,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.8.0 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.8.1 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

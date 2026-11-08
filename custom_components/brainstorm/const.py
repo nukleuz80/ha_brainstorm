@@ -175,6 +175,25 @@ NODE_SHAPES = (
     "note",
     "underline",
 )
+# Small signs on a note, like the markers of MindManager
+ATTR_MARKERS = "markers"
+MARKERS = (
+    "question",
+    "idea",
+    "warning",
+    "money",
+    "star",
+    "flag",
+    "check",
+    "blocked",
+    "waiting",
+    "heart",
+)
+# How far a note without subtasks is, in steps of a quarter
+ATTR_PROGRESS = "progress"
+PROGRESS_STEPS = (0, 25, 50, 75, 100)
+# What the cards get about the subtasks of a note
+ATTR_SUBTASKS = "subtasks"
 ATTACHMENT_DIR = "brainstorm_attachments"
 ATTACHMENT_MAX_SIZE = 10 * 1024 * 1024
 ATTACHMENT_MAX_COUNT = 20

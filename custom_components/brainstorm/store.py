@@ -52,8 +52,13 @@ from .const import (
     ATTR_BATTERY_DONE,
     ATTR_COMPLETED_AT,
     ATTR_IN_PROGRESS,
+    ATTR_MARKERS,
+    ATTR_PROGRESS,
+    ATTR_SUBTASKS,
     ATTR_SHAPE,
+    MARKERS,
     NODE_SHAPES,
+    PROGRESS_STEPS,
     ATTACHMENT_DIR,
     ATTACHMENT_MAX_COUNT,
     ATTACHMENT_MAX_SIZE,
@@ -144,6 +149,8 @@ IMPORT_FIELDS = (
     ATTR_MAP_POS,
     ATTR_CREATED_BY,
     ATTR_SHAPE,
+    ATTR_MARKERS,
+    ATTR_PROGRESS,
 )
 # Fields that belong to this Home Assistant and stay out of a JSON export
 EXPORT_SKIPPED_FIELDS = (
@@ -433,6 +440,8 @@ class BrainstormStore:
             for prio in ("urgent", "high", "medium", "low")
         }
 
+        progress_of = _subtask_progress(visible)
+
         def summary(idea: dict[str, Any]) -> dict[str, Any]:
             return {
                 "text": idea.get(ATTR_TEXT),
@@ -476,6 +485,12 @@ class BrainstormStore:
                 result[ATTR_IN_PROGRESS] = dict(working)
             if tags := idea.get(ATTR_TAGS):
                 result[ATTR_TAGS] = list(tags)
+            if markers := idea.get(ATTR_MARKERS):
+                result[ATTR_MARKERS] = list(markers)
+            if progress := idea.get(ATTR_PROGRESS):
+                result[ATTR_PROGRESS] = progress
+            if subtasks := progress_of.get(str(idea.get(ATTR_ID))):
+                result[ATTR_SUBTASKS] = subtasks
             return result
 
         last_action = self.last_action
@@ -1195,6 +1210,10 @@ class BrainstormStore:
         in_progress: bool | None = None,
         shape: str | None = None,
         update_shape: bool = False,
+        markers: list[str] | None = None,
+        update_markers: bool = False,
+        progress: int | None = None,
+        update_progress: bool = False,
     ) -> dict[str, Any] | None:
         """Update an existing idea.
 
@@ -1280,6 +1299,16 @@ class BrainstormStore:
                 idea[ATTR_SHAPE] = shape
             else:
                 idea.pop(ATTR_SHAPE, None)
+        if update_markers:
+            if cleaned := _clean_markers(markers):
+                idea[ATTR_MARKERS] = cleaned
+            else:
+                idea.pop(ATTR_MARKERS, None)
+        if update_progress:
+            if cleaned_progress := _clean_progress(progress):
+                idea[ATTR_PROGRESS] = cleaned_progress
+            else:
+                idea.pop(ATTR_PROGRESS, None)
         if update_parent:
             if not parent_id or parent_id.strip() in ("", "none"):
                 idea[ATTR_PARENT_ID] = None
@@ -2304,6 +2333,16 @@ class BrainstormStore:
                     idea[field] = item[field]
             if idea.get(ATTR_SHAPE) not in (None, *NODE_SHAPES):
                 idea.pop(ATTR_SHAPE)
+            if ATTR_MARKERS in idea:
+                if cleaned := _clean_markers(idea[ATTR_MARKERS]):
+                    idea[ATTR_MARKERS] = cleaned
+                else:
+                    idea.pop(ATTR_MARKERS)
+            if ATTR_PROGRESS in idea:
+                if cleaned_progress := _clean_progress(idea[ATTR_PROGRESS]):
+                    idea[ATTR_PROGRESS] = cleaned_progress
+                else:
+                    idea.pop(ATTR_PROGRESS)
             new_ideas[idea_id] = idea
 
         for name, value in (data.get("category_icons") or {}).items():
@@ -2346,3 +2385,62 @@ class BrainstormStore:
             "skipped": skipped,
             "categories_added": added_categories,
         }
+
+
+def _clean_markers(markers: Any) -> list[str]:
+    """Return the known markers of a list once each, in their fixed order."""
+    if not isinstance(markers, list):
+        return []
+    return [marker for marker in MARKERS if marker in markers]
+
+
+def _clean_progress(progress: Any) -> int | None:
+    """Return a progress step above 0, or None for none or nonsense."""
+    if isinstance(progress, bool):
+        return None
+    try:
+        value = int(progress)
+    except (TypeError, ValueError):
+        return None
+    return value if value in PROGRESS_STEPS and value > 0 else None
+
+
+def _subtask_progress(ideas: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
+    """Return how far the subtasks of each note with subtasks are.
+
+    "done" and "total" count the direct subtasks, archived ones not at all.
+    "percent" rolls up like MindManager: a ticked off note counts 100, one
+    with subtasks the mean of them, any other its own progress.
+    """
+    children: dict[str, list[dict[str, Any]]] = {}
+    for idea in ideas:
+        parent = idea.get(ATTR_PARENT_ID)
+        if parent and idea.get(ATTR_STATUS) != "archived":
+            children.setdefault(str(parent), []).append(idea)
+    percents: dict[str, float] = {}
+
+    def percent(idea: dict[str, Any], seen: frozenset[str]) -> float:
+        idea_id = str(idea.get(ATTR_ID))
+        if idea_id in percents:
+            return percents[idea_id]
+        if idea.get(ATTR_STATUS) == "completed":
+            value = 100.0
+        elif (subtasks := children.get(idea_id)) and idea_id not in seen:
+            inner = seen | {idea_id}
+            value = sum(percent(child, inner) for child in subtasks) / len(subtasks)
+        else:
+            value = float(_clean_progress(idea.get(ATTR_PROGRESS)) or 0)
+        percents[idea_id] = value
+        return value
+
+    result: dict[str, dict[str, int]] = {}
+    for idea in ideas:
+        idea_id = str(idea.get(ATTR_ID))
+        if not (subtasks := children.get(idea_id)):
+            continue
+        result[idea_id] = {
+            "done": sum(1 for child in subtasks if child.get(ATTR_STATUS) == "completed"),
+            "total": len(subtasks),
+            "percent": round(percent(idea, frozenset())),
+        }
+    return result

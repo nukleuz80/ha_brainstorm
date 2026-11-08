@@ -171,6 +171,34 @@ update_idea:
             - hexagon
             - note
             - underline
+    markers:
+      required: false
+      example: '["question", "money"]'
+      selector:
+        select:
+          translation_key: marker
+          multiple: true
+          options:
+            - question
+            - idea
+            - warning
+            - money
+            - star
+            - flag
+            - check
+            - blocked
+            - waiting
+            - heart
+    progress:
+      required: false
+      selector:
+        select:
+          options:
+            - "0"
+            - "25"
+            - "50"
+            - "75"
+            - "100"
 
 delete_idea:
   fields:

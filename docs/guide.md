@@ -233,10 +233,16 @@ With **Smart Text Optimization** (General Settings) spoken notes are tidied up a
 | Full screen | ⛶ |
 | Search and filter | 🔍, or **/** or **Ctrl+F** on the map |
 | Filter by a tag | tap a #tag in a note |
+| Set markers | ✏️ Edit ➔ *Markers*; tapping a marker on a note filters by it |
+| Move the progress on | tap the ring of a note without subtasks: 0 ➔ 25 ➔ 50 ➔ 75 ➔ 100 % |
 
 **Search and filter:** 🔍 opens a bar above the map. Words you type must all appear in the title, description, result or person; `#gar` finds notes with a tag starting with *gar*. The chips filter by priority (🔥 🔴 🟡 🟢), by *Overdue* or *7 days*, by *In progress* and by the tags of the list, with their number. Notes that fit stay bright, their parents half, the rest fades. A folded branch with hits shows its button in color. **Enter** jumps to the next hit and unfolds its branch, **Shift+Enter** to the previous one, **Esc** clears the search and then closes the bar, which also clears the filter.
 
 **Tags:** write `#garten` or `#3d-druck` anywhere in the title or description, or say *"hashtag garden"* to Alexa or Assist. A tag needs a letter, so `#1` stays a number and a color like `#ff7800` stays a color. Tags given with `tags:` in `brainstorm.add_idea` count too.
+
+**Markers:** small signs on a note, as in MindManager: ❓ question, 💡 idea, ⚠️ warning, 💰 money, ⭐ star, 🚩 flag, ✅ check, ⛔ blocked, ⏳ waiting, ❤️ heart. Set them in the edit dialog of either card or with `markers` in `brainstorm.update_idea`. The search bar gets a chip for every marker in the list.
+
+**Progress:** a note with subtasks shows a ring with *done/total*, such as `3/5`. The ring fills like in MindManager: subtasks that are done count 100 %, a subtask with subtasks of its own the mean of those, any other its own progress. For a note without subtasks you set the progress yourself, in quarters, in the edit dialog, by tapping the ring or with `progress` in `brainstorm.update_idea`. At 100 % the ring turns green.
 
 **Keyboard** (with a note selected)
 
@@ -382,7 +388,7 @@ All parameters are in the [README](../README.md#️-services) and under **Develo
 | Service | Short example |
 |---|---|
 | `brainstorm.add_idea` | `text: "Replace filter"`, `category: Smart Home`, `priority: high`, `due: "2026-12-01 18:00"` |
-| `brainstorm.update_idea` | `id: …`, `status: completed` or `in_progress: true` |
+| `brainstorm.update_idea` | `id: …`, `status: completed`, `in_progress: true`, `markers: [question, money]` or `progress: 50` |
 | `brainstorm.delete_idea` | `id: …` |
 | `brainstorm.delete_done` | delete done notes, optionally only older ones (`older_than_days`) |
 | `brainstorm.restore_idea` | bring a deleted note back |

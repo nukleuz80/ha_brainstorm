@@ -337,6 +337,21 @@ const DICTIONARIES = {
     "{hits} von {total}": "{hits} of {total}",
     "{index}/{hits} von {total}": "{index}/{hits} of {total}",
     "Suche und Filter (🔍) anzeigen": "Show search and filter (🔍)",
+    "Frage": "Question",
+    "Achtung": "Warning",
+    "Geld": "Money",
+    "Stern": "Star",
+    "Flagge": "Flag",
+    "Haken": "Check",
+    "Blockiert": "Blocked",
+    "Wartet": "Waiting",
+    "Herz": "Heart",
+    "{done} von {total} Unteraufgaben erledigt, {percent} % geschafft": "{done} of {total} subtasks done, {percent} % complete",
+    "Fortschritt {percent} % (antippen für den nächsten Schritt)": "Progress {percent} % (tap for the next step)",
+    "Nur Notizen mit {marker}": "Only notes with {marker}",
+    "Marker:": "Markers:",
+    "Fortschritt:": "Progress:",
+    "Kommt aus den Unteraufgaben: {done} von {total} erledigt, {percent} %.": "Comes from the subtasks: {done} of {total} done, {percent} %.",
   },
 };
 
@@ -536,14 +551,20 @@ const fold = (text) => String(text || "").normalize("NFD").replace(/\p{M}/gu, ""
 
 /** Return an empty filter: no words, priorities, dates or tags. */
 export function emptyFilter() {
-  return { query: "", prios: new Set(), overdue: false, soon: false, working: false, tags: new Set() };
+  return { query: "", prios: new Set(), overdue: false, soon: false, working: false, tags: new Set(), markers: new Set() };
 }
 
 /** Tell whether a filter asks for anything. */
 export function filterActive(filter) {
   return Boolean(
     filter &&
-      (filter.query.trim() || filter.prios.size || filter.overdue || filter.soon || filter.working || filter.tags.size),
+      (filter.query.trim() ||
+        filter.prios.size ||
+        filter.overdue ||
+        filter.soon ||
+        filter.working ||
+        filter.tags.size ||
+        (filter.markers && filter.markers.size)),
   );
 }
 
@@ -581,7 +602,100 @@ export function ideaMatches(idea, filter, now = new Date()) {
   for (const tag of filter.tags) {
     if (!tags.includes(tag)) return false;
   }
+  const markers = ideaMarkers(idea);
+  for (const marker of filter.markers || []) {
+    if (!markers.includes(marker)) return false;
+  }
   return true;
+}
+
+/** The markers a note can carry, in the order the cards show them. */
+export const MARKERS = ["question", "idea", "warning", "money", "star", "flag", "check", "blocked", "waiting", "heart"];
+const MARKER_ICONS = {
+  question: "❓",
+  idea: "💡",
+  warning: "⚠️",
+  money: "💰",
+  star: "⭐",
+  flag: "🚩",
+  check: "✅",
+  blocked: "⛔",
+  waiting: "⏳",
+  heart: "❤️",
+};
+
+/** Return the sign of a marker. */
+export function markerIcon(marker) {
+  return MARKER_ICONS[marker] || "";
+}
+
+/** Return the name of a marker in the language of the user. */
+export function markerLabel(marker) {
+  const labels = {
+    question: t("Frage"),
+    idea: t("Idee"),
+    warning: t("Achtung"),
+    money: t("Geld"),
+    star: t("Stern"),
+    flag: t("Flagge"),
+    check: t("Haken"),
+    blocked: t("Blockiert"),
+    waiting: t("Wartet"),
+    heart: t("Herz"),
+  };
+  return labels[marker] || marker;
+}
+
+/** Return the known markers of an idea. */
+export function ideaMarkers(idea) {
+  const markers = idea && Array.isArray(idea.markers) ? idea.markers : [];
+  return MARKERS.filter((marker) => markers.includes(marker));
+}
+
+/** Return the markers of an idea as small signs, a tap on one filters by it. */
+export function markerBadges(idea) {
+  const markers = ideaMarkers(idea);
+  if (!markers.length) return "";
+  return `<span class="marker-badges">${markers
+    .map((marker) => `<span class="marker-badge" data-marker="${marker}" title="${escapeHtml(markerLabel(marker))}">${markerIcon(marker)}</span>`)
+    .join("")}</span>`;
+}
+
+/**
+ * Return how far an idea is: from its subtasks if it has any, else what was
+ * set by hand, or nothing.
+ */
+export function ideaProgress(idea) {
+  const subtasks = idea && idea.subtasks;
+  if (subtasks && subtasks.total) {
+    return { percent: Math.max(0, Math.min(100, Number(subtasks.percent) || 0)), done: subtasks.done || 0, total: subtasks.total, auto: true };
+  }
+  const own = Number(idea && idea.progress) || 0;
+  return own > 0 ? { percent: Math.min(100, own), auto: false } : null;
+}
+
+/** Return the next step of a progress set by hand: 0, 25, 50, 75, 100 and back to 0. */
+export function nextProgress(percent) {
+  const steps = [0, 25, 50, 75, 100];
+  const index = steps.indexOf(Number(percent) || 0);
+  return steps[(index + 1) % steps.length];
+}
+
+/** Return a small ring that fills up with the progress of an idea, or nothing. */
+export function progressBadge(idea, { always = false } = {}) {
+  const progress = ideaProgress(idea);
+  if (!progress && !always) return "";
+  const percent = progress ? progress.percent : 0;
+  const circumference = 2 * Math.PI * 6;
+  const filled = (circumference * percent) / 100;
+  const label = progress && progress.auto ? `${progress.done}/${progress.total}` : `${percent} %`;
+  const title = progress && progress.auto
+    ? t("{done} von {total} Unteraufgaben erledigt, {percent} % geschafft", { done: progress.done, total: progress.total, percent })
+    : t("Fortschritt {percent} % (antippen für den nächsten Schritt)", { percent });
+  return `<span class="progress-badge${percent >= 100 ? " progress-full" : ""}${progress && progress.auto ? " progress-auto" : ""}" data-id="${escapeHtml(idea.id)}" title="${title}">`
+    + `<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6" class="progress-track"/>`
+    + `<circle cx="8" cy="8" r="6" class="progress-fill" stroke-dasharray="${filled.toFixed(2)} ${circumference.toFixed(2)}" transform="rotate(-90 8 8)"/></svg>`
+    + `<span>${label}</span></span>`;
 }
 
 const ATTACHMENT_URL = "/api/brainstorm/attachments";

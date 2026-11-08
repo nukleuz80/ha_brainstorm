@@ -1,9 +1,9 @@
-import { alexaEchos, attachmentBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, inProgressBadge, parseDueInput, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.0";
+import { MARKERS, alexaEchos, attachmentBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.1";
 
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.8.0 - Search, Filter and Tags
+ * Version 1.8.1 - Markers and Progress
  */
 // The bulb lies next to this file, wherever Home Assistant serves it from
 const BULB_URL = new URL("./brainstorm-bulb.svg", import.meta.url).href;
@@ -1372,6 +1372,11 @@ class BrainstormCard extends HTMLElement {
     const echos = alexaEchos(this._hass);
     const currentEchos = idea.echos || [];
     let selectedEchos = [...currentEchos];
+    const currentMarkers = ideaMarkers(idea);
+    const selectedMarkers = new Set(currentMarkers);
+    const hasSubtasks = Boolean(idea.subtasks && idea.subtasks.total);
+    const currentProgress = Number(idea.progress) || 0;
+    let selectedProgress = currentProgress;
 
     this._openDialog(t("✏️ Notiz bearbeiten"), (body) => {
       body.innerHTML = `
@@ -1397,6 +1402,18 @@ class BrainstormCard extends HTMLElement {
           <div class="action-dialog-prio-chip ${selectedPrio === "high" ? "selected" : ""}" data-prio="high" style="--chip-prio-color: #f97316;">${t("🔴 Hoch")}</div>
           <div class="action-dialog-prio-chip ${selectedPrio === "urgent" ? "selected" : ""}" data-prio="urgent" style="--chip-prio-color: #ef4444;">${t("🔥 Dringend")}</div>
         </div>
+
+        <div class="action-dialog-label">${t("Marker:")}</div>
+        <div class="action-dialog-prio-grid" id="editMarkerGrid">
+          ${MARKERS.map((marker) => `<div class="action-dialog-prio-chip ${selectedMarkers.has(marker) ? "selected" : ""}" data-marker="${marker}" title="${this._escapeHtml(markerLabel(marker))}">${markerIcon(marker)} ${this._escapeHtml(markerLabel(marker))}</div>`).join("")}
+        </div>
+
+        <div class="action-dialog-label">${t("Fortschritt:")}</div>
+        ${hasSubtasks
+          ? `<div class="action-dialog-hint">${t("Kommt aus den Unteraufgaben: {done} von {total} erledigt, {percent} %.", { done: idea.subtasks.done, total: idea.subtasks.total, percent: idea.subtasks.percent })}</div>`
+          : `<div class="action-dialog-prio-grid" id="editProgressGrid">
+          ${[0, 25, 50, 75, 100].map((step) => `<div class="action-dialog-prio-chip ${step === selectedProgress ? "selected" : ""}" data-progress="${step}">${step} %</div>`).join("")}
+        </div>`}
 
         <div class="action-dialog-label">${t("Kategorie:")}</div>
         <div class="action-dialog-categories-grid" id="editCatGrid">
@@ -1482,7 +1499,23 @@ class BrainstormCard extends HTMLElement {
       const saveBtn = body.querySelector("#saveEditBtn");
       const cancelBtn = body.querySelector("#cancelEditBtn");
       const catChips = body.querySelectorAll("#editCatGrid .action-dialog-cat-chip");
-      const prioChips = body.querySelectorAll(".action-dialog-prio-chip");
+      const prioChips = body.querySelectorAll("#editPrioGrid .action-dialog-prio-chip");
+      body.querySelectorAll("#editMarkerGrid .action-dialog-prio-chip").forEach((chip) => {
+        chip.addEventListener("click", () => {
+          const marker = chip.getAttribute("data-marker");
+          if (selectedMarkers.has(marker)) selectedMarkers.delete(marker);
+          else selectedMarkers.add(marker);
+          chip.classList.toggle("selected", selectedMarkers.has(marker));
+        });
+      });
+      const progressChips = body.querySelectorAll("#editProgressGrid .action-dialog-prio-chip");
+      progressChips.forEach((chip) => {
+        chip.addEventListener("click", () => {
+          progressChips.forEach((c) => c.classList.remove("selected"));
+          chip.classList.add("selected");
+          selectedProgress = Number(chip.getAttribute("data-progress")) || 0;
+        });
+      });
       const dueDate = body.querySelector("#editDueDate");
       const dueTime = body.querySelector("#editDueTime");
 
@@ -1574,6 +1607,13 @@ class BrainstormCard extends HTMLElement {
         }
         if ([...selectedEchos].sort().join() !== [...currentEchos].sort().join()) {
           payload.echos = selectedEchos.length ? selectedEchos : null;
+        }
+        const newMarkers = MARKERS.filter((marker) => selectedMarkers.has(marker));
+        if (newMarkers.join() !== currentMarkers.join()) {
+          payload.markers = newMarkers;
+        }
+        if (!hasSubtasks && selectedProgress !== currentProgress) {
+          payload.progress = selectedProgress;
         }
         const parentSelect = body.querySelector("#editParentSelect");
         if (parentSelect) {
@@ -3644,6 +3684,43 @@ class BrainstormCard extends HTMLElement {
           color: var(--warning-color, #ff9800);
           background: color-mix(in srgb, var(--warning-color, #ff9800) 14%, transparent);
         }
+        .marker-badges {
+          display: inline-flex;
+          gap: 1px;
+          font-size: 0.85rem;
+          line-height: 1;
+        }
+        .progress-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 3px;
+          padding: 1px 6px 1px 3px;
+          border-radius: 10px;
+          font-weight: 600;
+          cursor: pointer;
+          font-variant-numeric: tabular-nums;
+          background: var(--secondary-background-color, rgba(127, 127, 127, 0.12));
+        }
+        .progress-badge.progress-auto {
+          cursor: default;
+        }
+        .progress-track {
+          fill: none;
+          stroke: color-mix(in srgb, var(--secondary-text-color, #727272) 25%, transparent);
+          stroke-width: 2.5;
+        }
+        .progress-fill {
+          fill: none;
+          stroke: var(--primary-color, #03a9f4);
+          stroke-width: 2.5;
+          stroke-linecap: round;
+        }
+        .progress-badge.progress-full {
+          color: var(--success-color, #4caf50);
+        }
+        .progress-full .progress-fill {
+          stroke: var(--success-color, #4caf50);
+        }
         .attachment-badge {
           display: inline-flex;
           align-items: center;
@@ -4599,6 +4676,8 @@ class BrainstormCard extends HTMLElement {
                   ${this._formatTargetBadges(item)}
                   ${this._formatShareBadge(item)}
                   ${this._formatAuthorBadge(item)}
+                  ${progressBadge(item)}
+                  ${markerBadges(item)}
                   ${attachmentBadge(item)}
                   ${inProgressBadge(item)}
                   ${showSource ? `${this._getSourceBadge(item.source, item.device)}` : ""}
@@ -4715,6 +4794,20 @@ class BrainstormCard extends HTMLElement {
             e.stopPropagation();
             const item = activeIdeas.find((i) => i.id === btn.getAttribute("data-id"));
             if (item) this._showSubtaskSuggestions(item);
+          });
+        });
+
+        // The ring of a note without subtasks moves on by a quarter
+        ideasList.querySelectorAll(".progress-badge:not(.progress-auto)").forEach((el) => {
+          el.addEventListener("click", async (e) => {
+            e.stopPropagation();
+            const item = activeIdeas.find((i) => i.id === el.dataset.id);
+            if (!item || item.access === "view" || this._config.allow_edit === false) return;
+            try {
+              await this._hass.callService("brainstorm", "update_idea", { id: item.id, progress: nextProgress(item.progress) });
+            } catch (err) {
+              console.error("Failed to set the progress", err);
+            }
           });
         });
 
@@ -5528,7 +5621,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.8.0 ",
+  "%c BRAINSTORM-CARD %c v1.8.1 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

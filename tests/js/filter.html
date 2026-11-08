@@ -2,13 +2,13 @@
 <!-- Browser test for tags and the map filter. Run: python3 -m http.server in the repo root,
      open http://localhost:8000/tests/js/filter.html, it shows PASS or the failures. --><meta charset="utf-8"><body><pre id="out">running</pre>
 <script type="module">
-import { emptyFilter, filterActive, ideaMatches, ideaTags } from "../../custom_components/brainstorm/cards/brainstorm-i18n.js";
+import { emptyFilter, filterActive, ideaMarkers, ideaMatches, ideaProgress, ideaTags, markerBadges, nextProgress, progressBadge } from "../../custom_components/brainstorm/cards/brainstorm-i18n.js";
 const now = new Date("2026-11-08T12:00:00Z");
 const ideas = {
-  apples: { text: "Äpfel kaufen #Einkauf", category: "Haus", priority: "low" },
+  apples: { text: "Äpfel kaufen #Einkauf", category: "Haus", priority: "low", markers: ["money", "question"] },
   lawn: { text: "Rasen mähen", description: "Mit #garten und #Einkauf", priority: "urgent", due: "2026-11-01T09:00:00Z" },
   call: { text: "Arzt anrufen", priority: "high", due: "2026-11-10T09:00:00Z", in_progress: { by: "Jan" } },
-  plain: { text: "Prio #1 klären", priority: "medium" },
+  plain: { text: "Prio #1 klären", priority: "medium", markers: ["question", "<b>"] },
 };
 const fails = [];
 const check = (name, got, want) => { if (JSON.stringify(got) !== JSON.stringify(want)) fails.push(`${name}: want ${JSON.stringify(want)}, got ${JSON.stringify(got)}`); };
@@ -30,5 +30,19 @@ check("overdue or soon", hits((f) => { f.overdue = true; f.soon = true; }), ["la
 check("in progress", hits((f) => { f.working = true; }), ["call"]);
 check("tags all", hits((f) => { f.tags.add("einkauf"); f.tags.add("garten"); }), ["lawn"]);
 check("groups together", hits((f) => { f.tags.add("einkauf"); f.prios.add("low"); }), ["apples"]);
+check("markers known and in order", ideaMarkers(ideas.apples), ["question", "money"]);
+check("unknown markers dropped", ideaMarkers(ideas.plain), ["question"]);
+check("markers any idea", hits((f) => { f.markers.add("question"); }), ["apples", "plain"]);
+check("markers all", hits((f) => { f.markers.add("question"); f.markers.add("money"); }), ["apples"]);
+check("marker filter is on", filterActive((() => { const f = emptyFilter(); f.markers.add("star"); return f; })()), true);
+check("marker badges", (markerBadges(ideas.apples).match(/data-marker="(\w+)"/g) || []).length, 2);
+check("no marker badges", markerBadges(ideas.lawn), "");
+check("progress from subtasks", ideaProgress({ subtasks: { done: 1, total: 3, percent: 67 }, progress: 25 }), { percent: 67, done: 1, total: 3, auto: true });
+check("own progress", ideaProgress({ progress: 50 }), { percent: 50, auto: false });
+check("no progress", ideaProgress({ progress: 0 }), null);
+check("next step", [0, 25, 50, 75, 100].map(nextProgress), [25, 50, 75, 100, 0]);
+check("ring label auto", progressBadge({ id: "x", subtasks: { done: 3, total: 5, percent: 60 } }).includes("<span>3/5</span>"), true);
+check("ring full", progressBadge({ id: "x", progress: 100 }).includes("progress-full"), true);
+check("no ring", progressBadge({ id: "x" }), "");
 document.getElementById("out").textContent = fails.length ? "FAIL\n" + fails.join("\n") : "PASS";
 </script>

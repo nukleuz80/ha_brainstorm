@@ -38,6 +38,8 @@ from .const import (
     ATTR_RESULT,
     ATTR_DESCRIPTION,
     ATTR_IN_PROGRESS,
+    ATTR_MARKERS,
+    ATTR_PROGRESS,
     ATTR_SHAPE,
     ATTR_REMINDED_AT,
     ATTR_RESET,
@@ -51,7 +53,9 @@ from .const import (
     PLATFORMS,
     RESULT_MAX_LENGTH,
     DESCRIPTION_MAX_LENGTH,
+    MARKERS,
     NODE_SHAPES,
+    PROGRESS_STEPS,
     SERVICE_REORDER_IDEAS,
     SERVICE_DELETE_DONE,
     SERVICE_SET_CATEGORY_STYLE,
@@ -157,6 +161,12 @@ SERVICE_UPDATE_IDEA_SCHEMA = vol.Schema(
         ),
         vol.Optional(ATTR_IN_PROGRESS): cv.boolean,
         vol.Optional(ATTR_SHAPE): vol.Any(None, "", vol.In(NODE_SHAPES)),
+        vol.Optional(ATTR_MARKERS): vol.Any(
+            None, vol.All(cv.ensure_list, [vol.In(MARKERS)])
+        ),
+        vol.Optional(ATTR_PROGRESS): vol.Any(
+            None, vol.All(vol.Coerce(int), vol.In(PROGRESS_STEPS))
+        ),
     },
     extra=vol.ALLOW_EXTRA,
 )
@@ -444,6 +454,10 @@ def _register_services(hass: HomeAssistant) -> None:
             in_progress=call.data.get(ATTR_IN_PROGRESS),
             shape=call.data.get(ATTR_SHAPE),
             update_shape=ATTR_SHAPE in call.data,
+            markers=call.data.get(ATTR_MARKERS),
+            update_markers=ATTR_MARKERS in call.data,
+            progress=call.data.get(ATTR_PROGRESS),
+            update_progress=ATTR_PROGRESS in call.data,
         )
         if updated is not None and (
             ATTR_ASSIGNEE in call.data

@@ -234,10 +234,16 @@ Mit **Intelligente Formatierung** (Allgemeine Einstellungen) werden gesprochene 
 | Vollbild | ⛶ |
 | Suchen und filtern | 🔍, oder **/** bzw. **Strg+F** auf der Map |
 | Nach einem Tag filtern | auf ein #Tag in einer Notiz tippen |
+| Marker setzen | ✏️ Bearbeiten ➔ *Marker*, ein Tipp auf einen Marker an der Notiz filtert danach |
+| Fortschritt weiterschalten | auf den Ring an einer Notiz ohne Unteraufgaben tippen: 0 ➔ 25 ➔ 50 ➔ 75 ➔ 100 % |
 
 **Suchen und filtern:** 🔍 öffnet eine Leiste über der Map. Alle getippten Wörter müssen im Titel, in der Beschreibung, im Ergebnis oder bei der Person vorkommen; `#gar` findet Notizen mit einem Tag, das mit *gar* beginnt. Die Chips filtern nach Priorität (🔥 🔴 🟡 🟢), nach *Überfällig* oder *7 Tage*, nach *In Arbeit* und nach den Tags der Liste, mit ihrer Anzahl. Passende Notizen bleiben hell, ihre übergeordneten Punkte halb, der Rest tritt zurück. Ein eingeklappter Zweig mit Treffern zeigt seinen Knopf farbig. **Enter** springt zum nächsten Treffer und klappt seinen Zweig auf, **Umschalt+Enter** zum vorigen, **Esc** leert die Suche und schließt danach die Leiste, das hebt auch den Filter auf.
 
 **Tags:** `#garten` oder `#3d-druck` irgendwo in Titel oder Beschreibung schreiben, oder Alexa bzw. Assist *„Hashtag Garten“* sagen. Ein Tag braucht einen Buchstaben, `#1` bleibt also eine Zahl und eine Farbe wie `#ff7800` eine Farbe. Tags aus `tags:` bei `brainstorm.add_idea` zählen auch.
+
+**Marker:** Kleine Zeichen an einer Notiz, wie bei MindManager: ❓ Frage, 💡 Idee, ⚠️ Achtung, 💰 Geld, ⭐ Stern, 🚩 Flagge, ✅ Haken, ⛔ Blockiert, ⏳ Wartet, ❤️ Herz. Du setzt sie im Bearbeiten-Dialog beider Karten oder mit `markers` bei `brainstorm.update_idea`. Die Suchleiste bekommt für jeden Marker der Liste einen Chip.
+
+**Fortschritt:** Eine Notiz mit Unteraufgaben zeigt einen Ring mit *erledigt/gesamt*, z. B. `3/5`. Der Ring füllt sich wie bei MindManager: Erledigte Unteraufgaben zählen 100 %, eine Unteraufgabe mit eigenen Unteraufgaben den Durchschnitt davon, jede andere ihren eigenen Fortschritt. Bei einer Notiz ohne Unteraufgaben stellst du den Fortschritt selbst ein, in Viertelschritten im Bearbeiten-Dialog, per Tipp auf den Ring oder mit `progress` bei `brainstorm.update_idea`. Bei 100 % wird der Ring grün.
 
 **Tastatur** (eine Notiz ist ausgewählt)
 
@@ -383,7 +389,7 @@ Alle Parameter stehen in der [README](../README_de.md#️-dienste-services) und 
 | Dienst | Kurzbeispiel |
 |---|---|
 | `brainstorm.add_idea` | `text: "Filter tauschen"`, `category: Smarthome`, `priority: high`, `due: "2026-12-01 18:00"` |
-| `brainstorm.update_idea` | `id: …`, `status: completed` oder `in_progress: true` |
+| `brainstorm.update_idea` | `id: …`, `status: completed`, `in_progress: true`, `markers: [question, money]` oder `progress: 50` |
 | `brainstorm.delete_idea` | `id: …` |
 | `brainstorm.delete_done` | erledigte löschen, optional nur ältere (`older_than_days`) |
 | `brainstorm.restore_idea` | gelöschte Notiz zurückholen |

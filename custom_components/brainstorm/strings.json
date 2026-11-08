@@ -535,6 +535,20 @@
         "underline": "Underlined"
       }
     },
+    "marker": {
+      "options": {
+        "question": "Question",
+        "idea": "Idea",
+        "warning": "Warning",
+        "money": "Money",
+        "star": "Star",
+        "flag": "Flag",
+        "check": "Check",
+        "blocked": "Blocked",
+        "waiting": "Waiting",
+        "heart": "Heart"
+      }
+    },
     "voice_mode": {
       "options": {
         "native": "Native (without skill)",
@@ -832,6 +846,14 @@
         "shape": {
           "name": "Shape",
           "description": "How the note looks on the mind map: card, cloud, speech bubble, thought bubble, pill, rectangle, ellipse, hexagon, note slip or underlined text. Empty uses the look of the map, where voice notes become speech bubbles."
+        },
+        "markers": {
+          "name": "Markers",
+          "description": "Small signs on the note, shown in both cards: question, idea, warning, money, star, flag, check, blocked, waiting, heart. Replaces the markers of the note, an empty list removes them."
+        },
+        "progress": {
+          "name": "Progress",
+          "description": "How far a note without subtasks is, in percent: 0, 25, 50, 75 or 100. 0 removes it. A note with subtasks shows their progress instead."
         }
       }
     },

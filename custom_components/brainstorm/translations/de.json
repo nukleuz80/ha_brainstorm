@@ -535,6 +535,20 @@
         "underline": "Unterstrichen"
       }
     },
+    "marker": {
+      "options": {
+        "question": "Frage",
+        "idea": "Idee",
+        "warning": "Achtung",
+        "money": "Geld",
+        "star": "Stern",
+        "flag": "Flagge",
+        "check": "Haken",
+        "blocked": "Blockiert",
+        "waiting": "Wartet",
+        "heart": "Herz"
+      }
+    },
     "voice_mode": {
       "options": {
         "native": "Nativ (ohne Skill)",
@@ -832,6 +846,14 @@
         "shape": {
           "name": "Form",
           "description": "Wie die Notiz auf der Mindmap aussieht: Karte, Wolke, Sprechblase, Gedankenblase, Kapsel, Rechteck, Ellipse, Sechseck, Notizzettel oder unterstrichener Text. Leer nimmt das Aussehen der Map, dort werden Sprachnotizen zu Sprechblasen."
+        },
+        "markers": {
+          "name": "Marker",
+          "description": "Kleine Zeichen an der Notiz, in beiden Karten zu sehen: Frage, Idee, Achtung, Geld, Stern, Flagge, Haken, Blockiert, Wartet, Herz. Ersetzt die Marker der Notiz, eine leere Liste entfernt sie."
+        },
+        "progress": {
+          "name": "Fortschritt",
+          "description": "Wie weit eine Notiz ohne Unteraufgaben ist, in Prozent: 0, 25, 50, 75 oder 100. 0 entfernt ihn. Eine Notiz mit Unteraufgaben zeigt stattdessen deren Fortschritt."
         }
       }
     },
