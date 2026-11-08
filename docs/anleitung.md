@@ -242,6 +242,7 @@ Mit **Intelligente Formatierung** (Allgemeine Einstellungen) werden gesprochene 
 | Verbindung beschriften oder löschen | auf die gestrichelte Linie tippen |
 | Rahmen um Notizen | Notizen auswählen ➔ ▢ *Rahmen*, oder ✏️ Bearbeiten ➔ *Rahmen*; ein Tipp auf den Rahmennamen benennt um |
 | Callout | ✏️ Bearbeiten ➔ *Callout* |
+| Brainstorm: schnell viele Ideen sammeln | ⚡ unten rechts oder **B** |
 | Unterpunkte nummerieren | ✏️ Bearbeiten ➔ *Unterpunkte nummerieren*: 1., 1.1 · a) · I. |
 | Unterpunkte sortieren | ✏️ Bearbeiten ➔ *Unterpunkte sortieren*, oder **S** (ohne Auswahl: die Hauptnotizen) |
 
@@ -258,6 +259,8 @@ Mit **Intelligente Formatierung** (Allgemeine Einstellungen) werden gesprochene 
 **Querverbindungen:** Die Linien der Map zeigen, was wozu gehört. Eine Querverbindung verbindet zwei beliebige Notizen, auch aus verschiedenen Zweigen, mit einem gebogenen, gestrichelten Pfeil. 🔗 an der Notiz (oder **L**) startet, ein Tipp auf das Ziel beendet, **Esc** bricht ab. Ein Tipp auf die Linie öffnet einen Dialog für eine Beschriftung wie *braucht* oder *siehe auch*. Mit dem Haken *blockiert* wird die Verbindung rot: Die Ziel-Notiz wird grau und zeigt ⛔ *Wartet*, bis die erste Notiz erledigt ist. Das Abzeichen erscheint auch in der Listenkarte.
 
 **Nummerierung und Sortieren:** Im Bearbeiten-Dialog einer Notiz mit Unteraufgaben nummeriert *Unterpunkte nummerieren* alles darunter, wie in MindManager: 1., 1.1, 1.2 … oder a), b) oder I., II. Eine Unteraufgabe kann eine eigene Art wählen, die dann für ihren Zweig gilt. Die Nummern stehen in beiden Karten vor dem Text und passen sich an, wenn Punkte dazukommen oder wandern. *Unterpunkte sortieren* ordnet sofort nach Titel (A → Z oder Z → A), Priorität, Fälligkeit oder Alter. Die übrigen Notizen bleiben an ihrem Platz, ↶ macht es rückgängig. Auf der Map öffnet **S** dieselbe Auswahl, ohne ausgewählte Notiz für die Hauptnotizen der Kategorie. Bei frei verschobenen Notizen ordnet 🪄 die Map danach passend neu.
+
+**Brainstorm-Modus:** ⚡ unten rechts (oder **B**) öffnet ein großes Eingabefeld mit Timer: 3, 5, 10 oder 15 Minuten oder ohne Zeit. Die Uhr startet mit der ersten Idee. Jede Idee wird mit **Enter** sofort als Notiz gespeichert, das Feld ist gleich wieder frei, und die Idee erscheint als bunter Zettel darunter. ✕ auf einem Zettel löscht sie wieder. Die Ideen landen in der gewählten Kategorie, im Fokus unter der Fokus-Notiz, unter *Alle* in der passenden Kategorie. Nach *Fertig* nimmt ↶ alle gesammelten Ideen auf einmal heraus, 🪄 ordnet die Map neu. Danach lassen sie sich per Ziehen in Zweige sortieren.
 
 **Export und Import:** 🖼️ speichert die Map als Bild (SVG, PNG) oder als Gliederung: **Markdown** (eine verschachtelte Liste, Beschreibungen als `>`-Zeile), **OPML** (für Gliederungsprogramme wie Workflowy, OmniOutliner oder Logseq) und **FreeMind** (`.mm`, öffnet sich in Freeplane, XMind und MindManager). Die Gliederung enthält alle Notizen der Map, auch eingeklappte; im Fokus nur den Zweig. Unter *Gliederung einfügen* tippst oder kopierst du eine Liste hinein, eine Zeile pro Notiz, Unterpunkte eingerückt oder mit `-`, `*`, `1.` und Überschriften `#`. Oder du wählst eine Datei (`.md`, `.txt`, `.opml`, `.mm`). `- [x]` legt den Punkt gleich als erledigt an. Die Notizen landen als Hauptnotizen der Kategorie, im Fokus unter der Fokus-Notiz. Höchstens 300 Notizen auf einmal, ↶ nimmt alle wieder heraus. Für Automationen gibt es den Dienst `brainstorm.import_outline`.
 
@@ -277,6 +280,7 @@ Mit **Intelligente Formatierung** (Allgemeine Einstellungen) werden gesprochene 
 | **F4** / **Umschalt+F4** | nur diesen Zweig zeigen / eine Ebene zurück |
 | **1**–**9** / **0** | Ebenen bis 1–9 zeigen / alle Ebenen |
 | **L** | Querverbindung zu einer anderen Notiz ziehen |
+| **B** | Brainstorm-Modus |
 | **S** | Unterpunkte sortieren (ohne Auswahl: Hauptnotizen) |
 | **Esc** | Auswahl aufheben, im Fokus eine Ebene zurück, beim Verbinden abbrechen |
 | **Strg+Z** | rückgängig |

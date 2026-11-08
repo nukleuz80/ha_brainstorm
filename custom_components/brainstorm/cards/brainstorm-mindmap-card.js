@@ -1,8 +1,8 @@
-import { MARKERS, NUMBERING, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.4";
+import { MARKERS, NUMBERING, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.5";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.8.4 - Outline Export and Import
+ * Version: 1.8.5 - Brainstorm Mode
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -2176,6 +2176,92 @@ class BrainstormMindmapCard extends HTMLElement {
           color: var(--warning-color, #ff9800);
           background: color-mix(in srgb, var(--warning-color, #ff9800) 14%, transparent);
         }
+        .storm-head {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
+          flex-wrap: wrap;
+          margin-bottom: 6px;
+        }
+        .storm-times {
+          flex: 1 1 220px;
+          grid-template-columns: repeat(5, minmax(0, 1fr));
+        }
+        .storm-clock {
+          font-size: 1.9rem;
+          font-weight: 800;
+          font-variant-numeric: tabular-nums;
+          color: var(--primary-color, #03a9f4);
+          min-width: 88px;
+          text-align: right;
+        }
+        .storm-clock.storm-late {
+          color: var(--warning-color, #ffa600);
+        }
+        .storm-clock.storm-over {
+          color: var(--error-color, #db4437);
+          animation: storm-pulse 0.9s ease-in-out 3;
+        }
+        @keyframes storm-pulse {
+          50% { transform: scale(1.12); }
+        }
+        .storm-input-row {
+          display: flex;
+          gap: 8px;
+          margin: 10px 0 6px;
+        }
+        .storm-input {
+          flex: 1;
+          min-height: 46px;
+          font-size: 1.05rem;
+        }
+        .storm-count {
+          font-size: 0.8rem;
+          font-weight: 600;
+          color: var(--secondary-text-color, #727272);
+          min-height: 1em;
+        }
+        .storm-notes {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          padding: 8px 2px 4px;
+          max-height: 260px;
+          overflow-y: auto;
+        }
+        .storm-note {
+          position: relative;
+          width: 132px;
+          min-height: 64px;
+          padding: 10px 22px 10px 10px;
+          box-sizing: border-box;
+          font-size: 0.82rem;
+          line-height: 1.3;
+          color: #212121;
+          background: var(--storm-color);
+          border-radius: 3px 3px 12px 3px;
+          box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+          transform: rotate(var(--storm-tilt));
+          overflow-wrap: break-word;
+          hyphens: auto;
+          animation: storm-in 0.25s ease-out;
+        }
+        @keyframes storm-in {
+          from { transform: scale(0.6) rotate(0deg); opacity: 0; }
+        }
+        .storm-remove {
+          position: absolute;
+          top: 2px;
+          right: 2px;
+          width: 22px;
+          height: 22px;
+          border: none;
+          background: transparent;
+          color: rgba(0, 0, 0, 0.5);
+          cursor: pointer;
+          font-size: 0.75rem;
+        }
         .export-row {
           display: flex;
           flex-wrap: wrap;
@@ -2979,6 +3065,7 @@ class BrainstormMindmapCard extends HTMLElement {
           <button class="control-btn" id="zoomOutBtn" title="${t("Verkleinern")}">−</button>
           <button class="control-btn" id="resetViewBtn" title="${t("Zentrieren / Anordnen")}">⟲</button>
           <button class="control-btn" id="lassoBtn" title="${t("Auswählen: Rahmen um mehrere Notizen ziehen (oder Umschalt+Ziehen)")}" aria-pressed="false">⬚</button>
+          <button class="control-btn" id="stormBtn" title="${t("Brainstorm: schnell viele Ideen sammeln (B)")}">⚡</button>
           <button class="control-btn" id="levelsBtn" title="${t("Ebenen zeigen: 1, 2, 3 oder alle (Tasten 1–9, 0 = alle)")}">∞</button>
           <button class="control-btn" id="arrangeBtn" title="${t("Neu ordnen: von Hand verschobene Notizen wieder automatisch platzieren")}">🪄</button>
           <button class="control-btn" id="undoBtn" title="${t("Rückgängig (Strg+Z)")}" disabled>↶</button>
@@ -3294,6 +3381,8 @@ class BrainstormMindmapCard extends HTMLElement {
         else this._showFrameDialog(el.getAttribute("data-frame"), null);
       });
     }
+    const stormBtn = this.shadowRoot.getElementById("stormBtn");
+    if (stormBtn) stormBtn.addEventListener("click", () => this._showBrainstorm());
     const levelsBtn = this.shadowRoot.getElementById("levelsBtn");
     if (levelsBtn) {
       levelsBtn.addEventListener("click", () => {
@@ -4652,6 +4741,11 @@ class BrainstormMindmapCard extends HTMLElement {
       this._cancelLink();
       return;
     }
+    if ((e.key === "b" || e.key === "B") && !e.shiftKey) {
+      e.preventDefault();
+      this._showBrainstorm();
+      return;
+    }
     if (e.key === "s" || e.key === "S") {
       const hasChildren = this._selectedId && this._categoryIdeas().some((i) => i.parent_id === this._selectedId);
       if (hasChildren || (!this._selectedId && this._selectedCategory !== "all" && !this._focusId)) {
@@ -5486,6 +5580,141 @@ class BrainstormMindmapCard extends HTMLElement {
     return html;
   }
 
+  // Brainstorm mode: type idea after idea against a timer, each one a note at once
+  _showBrainstorm() {
+    const focus = this._focusIdea();
+    const category = focus ? focus.category : this._selectedCategory === "all" ? null : this._selectedCategory;
+    const where = focus
+      ? t("Ideen landen unter „{text}“.", { text: this._escapeHtml(focus.text) })
+      : category
+        ? t("Ideen landen in „{category}“.", { category: this._escapeHtml(category) })
+        : t("Ideen landen in der passenden Kategorie.");
+    const state = { minutes: 5, endsAt: 0, timer: null, added: [] };
+    this._openDialog(t("⚡ Brainstorm"), (body) => {
+      body.innerHTML = `
+        <div class="storm-head">
+          <div class="dialog-prio-grid storm-times" id="stormTimes">
+            ${[3, 5, 10, 15, 0].map((m) => `<div class="dialog-prio-chip ${m === state.minutes ? "selected" : ""}" data-minutes="${m}">${m ? t("{minutes} Min.", { minutes: m }) : "∞"}</div>`).join("")}
+          </div>
+          <div class="storm-clock" id="stormClock" aria-live="polite">5:00</div>
+        </div>
+        <div class="dialog-hint">${where} ${t("Nicht bewerten, nur sammeln: Enter speichert und das Feld ist sofort wieder frei.")}</div>
+        <div class="storm-input-row">
+          <input class="dialog-input storm-input" id="stormInput" maxlength="300" autocomplete="off" placeholder="${t("Idee eintippen und Enter …")}">
+          <button class="dialog-btn dialog-btn-primary" id="stormAdd">${t("Sammeln")}</button>
+        </div>
+        <div class="storm-count" id="stormCount"></div>
+        <div class="storm-notes" id="stormNotes"></div>
+        <div class="dialog-footer">
+          <button class="dialog-btn dialog-btn-primary" id="stormDone">${t("Fertig")}</button>
+        </div>
+      `;
+      const input = body.querySelector("#stormInput");
+      const clock = body.querySelector("#stormClock");
+      const notes = body.querySelector("#stormNotes");
+      const count = body.querySelector("#stormCount");
+      const colors = ["#fff59d", "#ffcc80", "#a5d6a7", "#90caf9", "#f48fb1", "#ce93d8"];
+      const fmt = (ms) => {
+        const total = Math.max(0, Math.ceil(ms / 1000));
+        return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
+      };
+      const showClock = () => {
+        if (!state.minutes) {
+          clock.textContent = "∞";
+          return;
+        }
+        if (!state.endsAt) {
+          clock.textContent = fmt(state.minutes * 60000);
+          return;
+        }
+        const left = state.endsAt - Date.now();
+        clock.textContent = fmt(left);
+        clock.classList.toggle("storm-late", left <= 30000);
+        if (left <= 0) {
+          clearInterval(state.timer);
+          state.timer = null;
+          clock.textContent = t("Zeit!");
+          clock.classList.add("storm-over");
+          if (navigator.vibrate) navigator.vibrate([120, 80, 120]);
+        }
+      };
+      const start = () => {
+        if (state.endsAt || !state.minutes) return;
+        state.endsAt = Date.now() + state.minutes * 60000;
+        state.timer = setInterval(showClock, 250);
+      };
+      const render = () => {
+        count.textContent = state.added.length ? t("{count} Ideen gesammelt", { count: state.added.length }) : "";
+        notes.innerHTML = state.added
+          .map((item, index) => `<div class="storm-note" style="--storm-color: ${colors[index % colors.length]}; --storm-tilt: ${((index * 37) % 7) - 3}deg;">${formatText(item.text)}<button class="storm-remove" data-index="${index}" title="${t("Wieder löschen")}">✕</button></div>`)
+          .reverse()
+          .join("");
+        notes.querySelectorAll(".storm-remove").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            const item = state.added[Number(btn.getAttribute("data-index"))];
+            if (!item) return;
+            state.added = state.added.filter((x) => x !== item);
+            render();
+            if (item.id) await this._hass.callService("brainstorm", "delete_idea", { id: item.id }).catch(() => {});
+          });
+        });
+      };
+      const add = async () => {
+        const text = input.value.trim();
+        if (!text) return;
+        input.value = "";
+        input.focus();
+        start();
+        const item = { text, id: null };
+        state.added.push(item);
+        render();
+        try {
+          item.id = await this._addIdea(
+            { text, ...(category ? { category } : {}), ...(focus ? { parent_id: focus.id } : {}) },
+            { undo: false },
+          );
+        } catch (err) {
+          console.error("[BrainstormMindmap] Brainstorm note failed:", err);
+          state.added = state.added.filter((x) => x !== item);
+          render();
+          this._showToast(t("Die Idee konnte nicht gespeichert werden."));
+        }
+      };
+      body.querySelectorAll("#stormTimes [data-minutes]").forEach((chip) => {
+        chip.addEventListener("click", () => {
+          body.querySelectorAll("#stormTimes [data-minutes]").forEach((c) => c.classList.remove("selected"));
+          chip.classList.add("selected");
+          state.minutes = Number(chip.getAttribute("data-minutes")) || 0;
+          clearInterval(state.timer);
+          state.timer = null;
+          state.endsAt = 0;
+          clock.classList.remove("storm-late", "storm-over");
+          showClock();
+          input.focus();
+        });
+      });
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.isComposing) {
+          e.preventDefault();
+          add();
+        }
+      });
+      body.querySelector("#stormAdd").addEventListener("click", add);
+      body.querySelector("#stormDone").addEventListener("click", () => this._closeDialog());
+      this._dialogCleanup = () => {
+        clearInterval(state.timer);
+        const ids = state.added.map((item) => item.id).filter(Boolean);
+        if (!ids.length) return;
+        this._pushUndo(t("{count} Ideen", { count: ids.length }), () =>
+          Promise.all(ids.map((id) => this._hass.callService("brainstorm", "delete_idea", { id }))),
+        );
+        this._showToast(t("{count} Ideen gesammelt. 🪄 ordnet die Map neu, ↶ nimmt alle heraus.", { count: ids.length }));
+      };
+      showClock();
+      setTimeout(() => input.focus(), 60);
+    });
+  }
+
   // The sort choices, as chips for the edit and the sort dialog
   _sortChips() {
     return [
@@ -6246,6 +6475,11 @@ class BrainstormMindmapCard extends HTMLElement {
     const bodyEl = this.shadowRoot.getElementById("dialogBody");
     if (!dialog || !titleEl || !bodyEl) return;
 
+    if (this._dialogCleanup) {
+      const cleanup = this._dialogCleanup;
+      this._dialogCleanup = null;
+      cleanup();
+    }
     this._isModalOpen = true;
     titleEl.innerHTML = title;
     if (bodyEl._bsAttachments) bodyEl._bsAttachments.abort();
@@ -6256,6 +6490,11 @@ class BrainstormMindmapCard extends HTMLElement {
   }
 
   _closeDialog() {
+    if (this._dialogCleanup) {
+      const cleanup = this._dialogCleanup;
+      this._dialogCleanup = null;
+      cleanup();
+    }
     const dialog = this.shadowRoot.getElementById("mindmapDialog");
     if (dialog) dialog.style.display = "none";
     this._isModalOpen = false;
@@ -7398,7 +7637,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.8.4 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.8.5 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );
