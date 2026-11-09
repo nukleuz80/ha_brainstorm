@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.9.0-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.9.1-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -931,7 +931,7 @@ Schreibt alle Kategorien und Ideen als Markdown-Dateien ins Dateisystem.
 
 | Feld | Pflicht | Bedeutung |
 | :--- | :--- | :--- |
-| `path` | Nein | Zielordner (Standard: /config/brainstorm). |
+| `path` | Nein | Zielordner (Standard: der Markdown-Ordner aus den Optionen, `/config/brainstorm`). Nur Admins dürfen einen Ordner wählen; er muss in `/config/brainstorm`, im Markdown-Ordner aus den Optionen oder in `allowlist_external_dirs` liegen. |
 
 ### `brainstorm.export_json`
 
@@ -942,7 +942,7 @@ Gibt die Ideen, die du sehen darfst, samt Kategorien, Icons und Farben als JSON 
 | Feld | Pflicht | Bedeutung |
 | :--- | :--- | :--- |
 | `category` | Nein | Nur diese Kategorie exportieren. Standard: alle Kategorien. |
-| `path` | Nein | Den Export zusätzlich in diese Datei schreiben, etwa `brainstorm/sicherung.json` (relativ zu `/config`). Der Name muss auf `.json` enden; `www`, `custom_components` und versteckte Ordner sind gesperrt. Mit Privatsphäre dürfen nur Admins Dateien schreiben. |
+| `path` | Nein | Den Export zusätzlich in diese Datei schreiben, etwa `brainstorm/sicherung.json` (relativ zu `/config`). Der Name muss auf `.json` enden. Erlaubt sind nur `/config/brainstorm`, der Markdown-Ordner aus den Optionen und `allowlist_external_dirs`. Nur Admins dürfen Dateien schreiben. |
 
 ```yaml
 action: brainstorm.export_json
@@ -960,7 +960,7 @@ Fügt die Ideen eines JSON-Exports hinzu, die es hier noch nicht gibt. Ideen mit
 | Feld | Pflicht | Bedeutung |
 | :--- | :--- | :--- |
 | `data` | Eins von beiden | Die Antwort von `brainstorm.export_json`. |
-| `path` | Eins von beiden | Eine von `brainstorm.export_json` geschriebene Datei, relativ zu `/config`. Mit Privatsphäre dürfen nur Admins Dateien lesen. |
+| `path` | Eins von beiden | Eine von `brainstorm.export_json` geschriebene Datei, relativ zu `/config`, aus denselben Ordnern wie beim Export. Nur Admins dürfen Dateien lesen. |
 
 Besitzer und Freigaben bleiben nur für Benutzer dieses Home Assistant erhalten, Besitzer nur, wenn ein Admin importiert. Sonst gehören die Ideen dem, der importiert. Die Antwort nennt, wie viele Ideen hinzugefügt (`added`) und übersprungen (`skipped`) wurden und welche Kategorien neu sind.
 
@@ -1090,6 +1090,7 @@ Weitere Beispiele für Assist und Alexa liegen im Ordner [`examples/`](examples/
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.9.1`** | 09.11.2026 | **Sicherheit (HACS-Review).** Die Aktionen `export_json`, `export_markdown` und `import_json` nehmen eine Datei bzw. einen Ordner (`path`) nur noch von Admins an, auch ohne Privatsphäre. Geschrieben und gelesen wird nur noch im Ordner `/config/brainstorm`, im Markdown-Ordner aus den Optionen oder in `allowlist_external_dirs`, damit keine Dateien anderer Integrationen überschrieben werden können. Importierte IDs müssen `[A-Za-z0-9_-]{1,64}` entsprechen, sonst gibt es eine neue ID; Position, Auslöser und Textfelder werden beim Import auf ihren Typ geprüft. Beide Karten escapen IDs, den Kategorienamen im Leer-Hinweis, den Kartentitel und Icons. |
 | **`v1.9.0`** | 09.11.2026 | **Release aller Neuerungen seit 1.8.0** (Suche in der Listenkarte, Regeln, Bilder in Notizen, PDF-Export, wiederkehrende Aufgaben, Präsentationsmodus, Gliederungsansicht, Inhaltsvorlagen, KI-Zusammenfassungen, gleicher Bearbeiten-Dialog in Liste und Mindmap, Doku-Links). **Fehlerbehebung auf dem Echo Show:** Ein Hauptpunkt zeigt jetzt *+ 3 Unterpunkte*; Antippen seines Textes klappt sie direkt auf dem Echo auf und zu, in jeder Tiefe und eingerückt. Vorher erschien nur die erste Ebene, immer offen, tiefere Unterpunkte fehlten. Funktioniert mit dem bisherigen Skill-Code, nichts neu zu kopieren. Auf breiten Bildschirmen ist die Liste jetzt einspaltig, damit offene Unterpunkte unter ihrem Hauptpunkt bleiben. |
 | **`v1.8.19`** | 09.11.2026 | **Doku: Links in dein Home Assistant.** Neue Zeile *Schnelllinks* unter *Installation* mit My-Home-Assistant-Buttons für HACS, Einrichtung, die Seite der Integration (Konfigurieren, Diagnose, Löschen), die Aktionen, Sprachassistenten, Reparaturen und die Protokolle. Menüpfade in README und Anleitung wie *Einstellungen ➔ Geräte & Dienste ➔ Brainstorm Hub ➔ Konfigurieren*, *Dashboards ➔ Ressourcen*, *Personen*, *Profil ➔ Sicherheit* und *Reparaturen* sind jetzt Links, die die Seite direkt öffnen. Jede Aktion unter *Dienste* hat einen Link *In Home Assistant ausprobieren*, der sie in den Entwicklerwerkzeugen öffnet. |
 | **`v1.8.18`** | 09.11.2026 | **Fehlerbehebung: Kopfzeile der Mindmap.** Bei vielen Kategorien liefen die Kategorie-Knöpfe unter die Symbole rechts, kürzten den Titel und versteckten die letzten Kategorien, selbst auf großen Bildschirmen. Die Kategorien haben jetzt eine eigene Zeile, die umbricht, sodass alle, der Titel und die Symbole sichtbar bleiben. Auf schmalen Karten bleibt es eine Zeile zum Wischen. |

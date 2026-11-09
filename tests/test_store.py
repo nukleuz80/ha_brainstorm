@@ -128,7 +128,9 @@ async def test_failing_auto_export_does_not_abort_add(
     ("relative", "allowed"),
     [
         ("brainstorm", True),
-        ("a/b", True),
+        ("brainstorm/a/b", True),
+        ("a/b", False),
+        ("node-red", False),
         ("", False),
         ("../outside", False),
         ("custom_components/brainstorm", False),
@@ -156,6 +158,22 @@ async def test_export_path_inside_config(
         with pytest.raises(ServiceValidationError):
             await store.async_export_to_markdown(str(target))
         assert not (target / "inbox.md").exists()
+
+
+async def test_export_to_configured_markdown_folder(
+    hass: HomeAssistant, tmp_path: Path
+) -> None:
+    """Test that the Markdown folder from the options is an own folder too."""
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    hass.config.config_dir = str(config_dir)
+    store = BrainstormStore(hass, {"markdown_path": str(config_dir / "notizen")})
+    await store.async_load()
+
+    await store.async_export_to_markdown(str(config_dir / "notizen"))
+    assert (config_dir / "notizen" / "inbox.md").exists()
+    with pytest.raises(ServiceValidationError):
+        await store.async_export_to_markdown(str(config_dir / "anderes"))
 
 
 async def test_export_to_external_dir_needs_allowlist(
@@ -255,8 +273,10 @@ async def test_archived_ideas_are_exported_as_done(
     hass.config.config_dir = str(tmp_path)
     idea = await store.async_add_idea("Alte Notiz hier")
     await store.async_update_idea(idea["id"], status="archived")
-    await store.async_export_to_markdown(str(tmp_path / "out"))
-    assert "~~Alte Notiz hier~~" in (tmp_path / "out/inbox.md").read_text("utf-8")
+    await store.async_export_to_markdown(str(tmp_path / "brainstorm/out"))
+    assert "~~Alte Notiz hier~~" in (tmp_path / "brainstorm/out/inbox.md").read_text(
+        "utf-8"
+    )
 
 
 @pytest.mark.parametrize(

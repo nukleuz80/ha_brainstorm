@@ -1,8 +1,8 @@
-import { BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, repeatBadge, repeatOptions, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.9.0";
+import { BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, repeatBadge, repeatOptions, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.9.1";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.9.0 - Unterpunkte auf dem Echo Show
+ * Version: 1.9.1 - Sicherheit: Dateien nur für Admins, Daten escaped
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -3332,7 +3332,7 @@ class BrainstormMindmapCard extends HTMLElement {
             <div class="brand-logo" id="brandLogo" style="display: ${this._config.show_logo !== false ? 'flex' : 'none'};">
               ${this._renderLogoSvg("mindmap")}
             </div>
-            <div class="title" id="cardTitle">${this._config.title !== undefined ? this._config.title : "Brainstorm Mindmap"}</div>
+            <div class="title" id="cardTitle">${this._escapeHtml(this._config.title !== undefined ? this._config.title : "Brainstorm Mindmap")}</div>
             <div id="mindmapLastAlexaWrap" class="last-alexa-wrap" style="display: none;"></div>
           </div>
           <div class="pills-container" id="pillsBar"></div>
@@ -4041,7 +4041,7 @@ class BrainstormMindmapCard extends HTMLElement {
     bar.innerHTML = `
       <span class="focus-icon" aria-hidden="true">🎯</span>
       <button class="focus-crumb" data-focus="">${this._escapeHtml(label)}</button>
-      ${path.map((p) => `<span class="focus-sep">›</span><button class="focus-crumb" data-focus="${p.id}">${this._escapeHtml(short(p.text))}</button>`).join("")}
+      ${path.map((p) => `<span class="focus-sep">›</span><button class="focus-crumb" data-focus="${this._escapeHtml(p.id)}">${this._escapeHtml(short(p.text))}</button>`).join("")}
       <span class="focus-sep">›</span><span class="focus-crumb current">${this._escapeHtml(short(focus.text))}</span>
       <button class="focus-close" data-focus="" title="${t("Ganze Map zeigen (Umschalt+F4)")}">✕</button>
     `;
@@ -6912,7 +6912,7 @@ class BrainstormMindmapCard extends HTMLElement {
       }
       const faded = this._filterHits && !this._filterHits.has(idea.id) ? " filter-out" : "";
       svgHtml += `
-        <path id="path_${idea.id}" class="synapse-path${from ? " branch-path" : ""}${faded}" d="${pathData}" style="--path-color: ${catColor};" />
+        <path id="path_${this._escapeHtml(idea.id)}" class="synapse-path${from ? " branch-path" : ""}${faded}" d="${pathData}" style="--path-color: ${catColor};" />
       `;
     });
 
@@ -6957,7 +6957,7 @@ class BrainstormMindmapCard extends HTMLElement {
         const faded = this._filterHits && !this._filterHits.has(idea.id) && !this._filterHits.has(link.to) ? " filter-out" : "";
         const kind = link.blocks ? " link-blocks" : "";
         const label = `${link.blocks ? "⛔ " : ""}${link.label || ""}`.trim();
-        const ids = `data-link-from="${idea.id}" data-link-to="${this._escapeHtml(link.to)}"`;
+        const ids = `data-link-from="${this._escapeHtml(idea.id)}" data-link-to="${this._escapeHtml(link.to)}"`;
         html += `<path class="link-path${kind}${faded}" d="${d}" marker-end="url(#bsLinkArrow${link.blocks ? "Blocks" : ""})" />`;
         html += `<path class="link-hit" ${ids} d="${d}"><title>${this._escapeHtml(t("Verbindung bearbeiten"))}</title></path>`;
         if (label) {
@@ -7518,7 +7518,7 @@ class BrainstormMindmapCard extends HTMLElement {
               const isActive = String(this._selectedCategory || "").trim() === String(cat || "").trim();
               return `
                 <div class="cat-pill ${isActive ? "active" : ""}" data-cat="${this._escapeHtml(cat)}" style="--category-color: ${catColor};">
-                  <ha-icon icon="${catIcon}" style="--mdc-icon-size: 14px; width: 14px; height: 14px; margin-right: 4px; display: inline-flex; align-items: center; vertical-align: middle; color: ${isActive ? '#ffffff' : catColor};"></ha-icon>
+                  <ha-icon icon="${this._escapeHtml(catIcon)}" style="--mdc-icon-size: 14px; width: 14px; height: 14px; margin-right: 4px; display: inline-flex; align-items: center; vertical-align: middle; color: ${isActive ? '#ffffff' : catColor};"></ha-icon>
                   <span>${this._escapeHtml(cat)}</span>
                   <span style="opacity: 0.75; font-size: 0.72rem;">(${c})</span>
                 </div>
@@ -7609,11 +7609,11 @@ class BrainstormMindmapCard extends HTMLElement {
         const hiddenCount = folded ? this._descendantIds(idea.id, filteredIdeas).length : 0;
         const cover = this._config.show_images !== false ? coverAttachment(idea) : null;
         const branchToggle = hasBranch
-          ? `<button class="branch-toggle" data-id="${idea.id}" title="${folded ? t("Zweig aufklappen") : t("Zweig einklappen")}">${folded ? `+${hiddenCount}` : "−"}</button>`
+          ? `<button class="branch-toggle" data-id="${this._escapeHtml(idea.id)}" title="${folded ? t("Zweig aufklappen") : t("Zweig einklappen")}">${folded ? `+${hiddenCount}` : "−"}</button>`
           : "";
 
         html += `
-          <div class="note-cloud ${prioClass}${idea.blocked_by && idea.blocked_by.length ? " is-blocked" : ""}${idea.id === this._linkFrom ? " link-source" : ""} nshape-${shape}${svgShape ? " has-shape" : ""}${idea.id === this._selectedId ? " selected" : ""}${this._multi.has(idea.id) ? " multi-selected" : ""}" id="cloud_${idea.id}" data-id="${idea.id}" data-shape="${shape}" style="--cat-color: ${color};">
+          <div class="note-cloud ${prioClass}${idea.blocked_by && idea.blocked_by.length ? " is-blocked" : ""}${idea.id === this._linkFrom ? " link-source" : ""} nshape-${shape}${svgShape ? " has-shape" : ""}${idea.id === this._selectedId ? " selected" : ""}${this._multi.has(idea.id) ? " multi-selected" : ""}" id="cloud_${this._escapeHtml(idea.id)}" data-id="${this._escapeHtml(idea.id)}" data-shape="${shape}" style="--cat-color: ${color};">
             ${svgShape ? '<svg class="node-shape" aria-hidden="true"></svg>' : ""}
             ${branchToggle}
             ${idea.callout ? `<div class="cloud-callout" title="${t("Callout")}">💬 ${formatText(idea.callout)}</div>` : ""}
@@ -7633,18 +7633,18 @@ class BrainstormMindmapCard extends HTMLElement {
               </span>
             </div>
             ${markerBadges(idea) || progressBadge(idea) ? `<div class="cloud-marks">${progressBadge(idea)}${markerBadges(idea)}</div>` : ""}
-            ${cover ? `<div class="cloud-image" data-id="${idea.id}" data-att="${this._escapeHtml(cover.id)}" title="${t("Bild öffnen")}"><img alt="${this._escapeHtml(cover.name || "")}" draggable="false"></div>` : ""}
+            ${cover ? `<div class="cloud-image" data-id="${this._escapeHtml(idea.id)}" data-att="${this._escapeHtml(cover.id)}" title="${t("Bild öffnen")}"><img alt="${this._escapeHtml(cover.name || "")}" draggable="false"></div>` : ""}
             <div class="cloud-text" title="${t("Klicken zum Bearbeiten")}">${numbers.has(idea.id) ? `<span class="cloud-number">${numbers.get(idea.id)}</span> ` : ""}${formatText(idea.text)}</div>
             ${idea.result ? `<div class="cloud-result" title="${t("Ergebnis")}">${formatText(idea.result)}</div>` : ""}
             <div class="cloud-actions">
-              <button class="action-btn done-btn" data-act="done" data-id="${idea.id}" title="${t("Als erledigt markieren")}">✓</button>
-              <button class="action-btn" data-act="branch" data-id="${idea.id}" title="${t("Unteridee anlegen")}">🌿</button>
-              <button class="action-btn" data-act="link" data-id="${idea.id}" title="${t("Mit einer anderen Notiz verbinden (L)")}">🔗</button>
-              ${hasBranch ? `<button class="action-btn" data-act="focus" data-id="${idea.id}" title="${t("Nur diesen Zweig zeigen (F4)")}">🎯</button>` : ""}
-              ${aiSubtasks ? `<button class="action-btn" data-act="suggest" data-id="${idea.id}" title="${t("Unteraufgaben von der KI vorschlagen lassen")}">✨</button>` : ""}
-              <button class="action-btn" data-act="edit" data-id="${idea.id}" title="${t("Bearbeiten")}">✏️</button>
-              <button class="action-btn" data-act="move" data-id="${idea.id}" title="${t("Kategorie ändern")}">📁</button>
-              <button class="action-btn del-btn" data-act="delete" data-id="${idea.id}" title="${t("Löschen")}">🗑️</button>
+              <button class="action-btn done-btn" data-act="done" data-id="${this._escapeHtml(idea.id)}" title="${t("Als erledigt markieren")}">✓</button>
+              <button class="action-btn" data-act="branch" data-id="${this._escapeHtml(idea.id)}" title="${t("Unteridee anlegen")}">🌿</button>
+              <button class="action-btn" data-act="link" data-id="${this._escapeHtml(idea.id)}" title="${t("Mit einer anderen Notiz verbinden (L)")}">🔗</button>
+              ${hasBranch ? `<button class="action-btn" data-act="focus" data-id="${this._escapeHtml(idea.id)}" title="${t("Nur diesen Zweig zeigen (F4)")}">🎯</button>` : ""}
+              ${aiSubtasks ? `<button class="action-btn" data-act="suggest" data-id="${this._escapeHtml(idea.id)}" title="${t("Unteraufgaben von der KI vorschlagen lassen")}">✨</button>` : ""}
+              <button class="action-btn" data-act="edit" data-id="${this._escapeHtml(idea.id)}" title="${t("Bearbeiten")}">✏️</button>
+              <button class="action-btn" data-act="move" data-id="${this._escapeHtml(idea.id)}" title="${t("Kategorie ändern")}">📁</button>
+              <button class="action-btn del-btn" data-act="delete" data-id="${this._escapeHtml(idea.id)}" title="${t("Löschen")}">🗑️</button>
             </div>
           </div>
         `;
@@ -9023,7 +9023,7 @@ class BrainstormMindmapCardEditor extends HTMLElement {
       <div class="fallback-container">
         <div class="fallback-row">
           <label class="fallback-label">${t("Mindmap-Titel")}</label>
-          <input class="fallback-input" id="fbTitle" type="text" value="${this._config.title || 'Brainstorm Mindmap'}" />
+          <input class="fallback-input" id="fbTitle" type="text" value="${this._escapeHtml(this._config.title || 'Brainstorm Mindmap')}" />
         </div>
         <div class="fallback-row">
           <label class="fallback-label">${t("Sensor-Entität")}</label>
@@ -9128,7 +9128,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.9.0 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.9.1 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

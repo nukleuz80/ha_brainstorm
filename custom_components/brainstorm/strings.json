@@ -714,7 +714,7 @@
       "message": "Idea \"{id}\" cannot be a parent (cycle)."
     },
     "export_not_allowed": {
-      "message": "Export to \"{path}\" is not allowed. Allowed are subfolders of the config directory and allowlist_external_dirs."
+      "message": "Export to \"{path}\" is not allowed. Files may only go to the Brainstorm folder {folder}, the Markdown folder from the options, or allowlist_external_dirs."
     },
     "store_not_readable": {
       "message": "Brainstorm Hub could not read its stored data: {error}"
@@ -1040,7 +1040,7 @@
       "fields": {
         "path": {
           "name": "Path",
-          "description": "Target folder. Default: `/config/brainstorm`."
+          "description": "Target folder. Default: `/config/brainstorm`. Only administrators may choose a folder; it must lie in the Brainstorm folder or the Markdown folder from the options."
         }
       }
     },
@@ -1054,7 +1054,7 @@
         },
         "path": {
           "name": "File",
-          "description": "Also write the export to this file, such as `brainstorm/backup.json` (relative to `/config`). The name must end in .json."
+          "description": "Also write the export to this file, such as `brainstorm/backup.json` (relative to `/config`). The name must end in .json. Only administrators may write files."
         }
       }
     },
@@ -1068,7 +1068,7 @@
         },
         "path": {
           "name": "File",
-          "description": "A file written by `brainstorm.export_json`, such as `brainstorm/backup.json` (relative to `/config`)."
+          "description": "A file written by `brainstorm.export_json`, such as `brainstorm/backup.json` (relative to `/config`). Only administrators may read files."
         }
       }
     },

@@ -1,9 +1,9 @@
-import { MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, repeatBadge, repeatOptions, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.9.0";
+import { MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, repeatBadge, repeatOptions, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.9.1";
 
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.9.0 - Unterpunkte auf dem Echo Show
+ * Version 1.9.1 - Sicherheit: Dateien nur für Admins, Daten escaped
  */
 // The bulb lies next to this file, wherever Home Assistant serves it from
 const BULB_URL = new URL("./brainstorm-bulb.svg", import.meta.url).href;
@@ -2027,9 +2027,9 @@ class BrainstormCard extends HTMLElement {
             <label class="action-dialog-label" style="display: block; margin-bottom: 6px;">${t("Icon (Home Assistant / MDI):")}</label>
             <div style="display: flex; gap: 8px; align-items: center;">
               <span id="styleIconPreview" style="display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 8px; background: rgba(0,0,0,0.06); color: ${currentColor}; font-size: 20px;">
-                <ha-icon icon="${currentIcon}" style="--mdc-icon-size: 22px; width: 22px; height: 22px;"></ha-icon>
+                <ha-icon icon="${this._escapeHtml(currentIcon)}" style="--mdc-icon-size: 22px; width: 22px; height: 22px;"></ha-icon>
               </span>
-              <input type="text" class="action-dialog-input" id="styleIconInput" value="${currentIcon}" placeholder="${t("z. B. mdi:home-automation")}" style="flex: 1;" />
+              <input type="text" class="action-dialog-input" id="styleIconInput" value="${this._escapeHtml(currentIcon)}" placeholder="${t("z. B. mdi:home-automation")}" style="flex: 1;" />
             </div>
             <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px;">
               ${["mdi:inbox", "mdi:home-automation", "mdi:flower", "mdi:clipboard-check-outline", "mdi:calendar-check", "mdi:brain", "mdi:cart", "mdi:account-group", "mdi:briefcase", "mdi:cash-multiple", "mdi:car", "mdi:beach", "mdi:heart-pulse"]
@@ -2066,7 +2066,7 @@ class BrainstormCard extends HTMLElement {
         const ic = (iconInput.value || "mdi:tag-outline").trim();
         const col = (colorInput.value || colorPicker.value).trim();
         if (iconPreview) {
-          iconPreview.innerHTML = `<ha-icon icon="${ic}" style="--mdc-icon-size: 22px; width: 22px; height: 22px;"></ha-icon>`;
+          iconPreview.innerHTML = `<ha-icon icon="${this._escapeHtml(ic)}" style="--mdc-icon-size: 22px; width: 22px; height: 22px;"></ha-icon>`;
           iconPreview.style.color = col;
         }
       };
@@ -2192,7 +2192,7 @@ class BrainstormCard extends HTMLElement {
     } else if (prevTopLevelItem) {
       const prevTitle = prevTopLevelItem.text.length > 30 ? prevTopLevelItem.text.slice(0, 30) + "..." : prevTopLevelItem.text;
       actionsHtml += `
-        <button class="apple-menu-btn action-indent" data-act="indent" data-target="${prevTopLevelItem.id}">
+        <button class="apple-menu-btn action-indent" data-act="indent" data-target="${this._escapeHtml(prevTopLevelItem.id)}">
           <span class="btn-icon">↳</span>
           <div class="btn-content">
             <span>${t("Unteraufgabe einrücken")}</span>
@@ -4378,7 +4378,7 @@ class BrainstormCard extends HTMLElement {
               ${this._renderLogoSvg("card")}
             </div>
             <div class="header-titles">
-              <span class="card-title" id="cardTitle">${this._config.title !== undefined ? this._config.title : "Brainstorm Hub"}</span>
+              <span class="card-title" id="cardTitle">${this._escapeHtml(this._config.title !== undefined ? this._config.title : "Brainstorm Hub")}</span>
               <div class="badge" id="badgeCount" style="display: ${this._config.show_badge === true ? "inline-flex" : "none"};">${t("0 Ideen")}</div>
               <div id="lastAlexaWrap" class="last-alexa-wrap" style="display: none;"></div>
             </div>
@@ -4764,7 +4764,7 @@ class BrainstormCard extends HTMLElement {
               : "";
             return `
               <div class="pill ${isActive ? "active" : ""}" data-cat="${this._escapeHtml(cat)}" style="${pillStyle}">
-                <ha-icon icon="${catIcon}" style="--mdc-icon-size: 14px; width: 14px; height: 14px; margin-right: 4px; display: inline-flex; align-items: center; vertical-align: middle; color: ${isActive ? '#ffffff' : catColor};"></ha-icon>
+                <ha-icon icon="${this._escapeHtml(catIcon)}" style="--mdc-icon-size: 14px; width: 14px; height: 14px; margin-right: 4px; display: inline-flex; align-items: center; vertical-align: middle; color: ${isActive ? '#ffffff' : catColor};"></ha-icon>
                 <span>${this._escapeHtml(cat)}</span>
                 <span class="pill-count">${count}</span>
                 ${isActive ? `<span class="style-cat-btn" title="${t("Design für '{name}' anpassen", { name: this._escapeHtml(cat) })}" data-stylecat="${this._escapeHtml(cat)}" style="margin-left: 4px; font-size: 0.72rem; cursor: pointer; opacity: 0.85;">🎨</span>` : ""}
@@ -4901,7 +4901,7 @@ class BrainstormCard extends HTMLElement {
                 ? t("Keine erledigten Ideen vorhanden.")
                 : this._selectedCategory === "all"
                 ? t("✨ Noch keine aktiven Ideen. Tippe oben eine Idee ein oder sprich mit Alexa!")
-                : t('Keine Ideen in der Kategorie "{category}".', { category: this._selectedCategory })
+                : t('Keine Ideen in der Kategorie "{category}".', { category: this._escapeHtml(this._selectedCategory) })
             }
           </div>
         `;
@@ -4926,25 +4926,25 @@ class BrainstormCard extends HTMLElement {
             const rule = !isCompletedView && this._rules.length ? ruleFor(item, this._rules, ruleNow) : null;
             const itemColor = rule && rule.color ? rule.color : this._getCategoryColor(item.category);
             return `
-            <div class="idea-item ${isSub ? "is-subtask" : ""} ${isCompletedView ? "completed" : ""} ${searching && !this._searchHits.has(item.id) ? "search-context" : ""}${rule && rule.color ? " rule-hit" : ""}" data-id="${item.id}" data-idx="${idx}" style="--item-cat-color: ${itemColor};">
-              ${!isCompletedView && itemEdit ? `<span class="drag-handle" title="${t("Halten & Ziehen zum Sortieren oder Unteraufgabe zuordnen")}" data-id="${item.id}">⠿</span>` : ""}
+            <div class="idea-item ${isSub ? "is-subtask" : ""} ${isCompletedView ? "completed" : ""} ${searching && !this._searchHits.has(item.id) ? "search-context" : ""}${rule && rule.color ? " rule-hit" : ""}" data-id="${this._escapeHtml(item.id)}" data-idx="${idx}" style="--item-cat-color: ${itemColor};">
+              ${!isCompletedView && itemEdit ? `<span class="drag-handle" title="${t("Halten & Ziehen zum Sortieren oder Unteraufgabe zuordnen")}" data-id="${this._escapeHtml(item.id)}">⠿</span>` : ""}
               <button 
                 class="check-btn ${isCompletedView ? "checked" : ""}" 
                 title="${isCompletedView ? t("Wieder als aktiv markieren") : t("Als erledigt markieren")}" 
-                data-id="${item.id}"
+                data-id="${this._escapeHtml(item.id)}"
                 data-completed="${isCompletedView ? "true" : "false"}"
                 ${item.access === "view" ? "disabled" : ""}
               >${isCompletedView ? "✓" : ""}</button>
               <div class="idea-content">
-                <div class="idea-text" title="${itemEdit ? t("Klicken zum Bearbeiten (Lange drücken für Kontextmenü)") : ""}" data-id="${item.id}" style="${itemEdit ? "" : "cursor: default;"}">
+                <div class="idea-text" title="${itemEdit ? t("Klicken zum Bearbeiten (Lange drücken für Kontextmenü)") : ""}" data-id="${this._escapeHtml(item.id)}" style="${itemEdit ? "" : "cursor: default;"}">
                   ${isSub ? `<span class="subtask-indicator" title="${t("Unteraufgabe")}">↳</span>` : ""}${numbers.has(item.id) ? `<span class="idea-number">${numbers.get(item.id)}</span> ` : ""}${rule && rule.icon ? `<span class="rule-icon" title="${this._escapeHtml(rule.name)}">${this._escapeHtml(rule.icon)}</span> ` : ""}${formatText(item.text)}
                 </div>
-                ${item.description ? `<div class="idea-description" title="${t("Antippen zum Auf- und Zuklappen")}" data-id="${item.id}">${formatText(item.description)}</div>` : ""}
+                ${item.description ? `<div class="idea-description" title="${t("Antippen zum Auf- und Zuklappen")}" data-id="${this._escapeHtml(item.id)}">${formatText(item.description)}</div>` : ""}
                 ${item.result ? `<div class="idea-result" title="${t("Ergebnis")}">${formatText(item.result)}</div>` : ""}
                 ${item.callout ? `<div class="idea-callout" title="${t("Callout")}">💬 ${formatText(item.callout)}</div>` : ""}
                 <div class="idea-meta">
                   ${isSub ? `<span class="subtask-badge" title="${t("Unteraufgabe")}">${t("Unteraufgabe")}</span>` : ""}
-                  <span class="category-tag ${itemEdit ? "clickable" : ""}" title="${itemEdit ? t("Kategorie ändern") : t("Kategorie")}" data-id="${item.id}" data-cat="${this._escapeHtml(item.category)}" style="color: ${this._getCategoryColor(item.category)}; background: color-mix(in srgb, ${this._getCategoryColor(item.category)} 12%, var(--secondary-background-color, rgba(0,0,0,0.06))); border: 1px solid color-mix(in srgb, ${this._getCategoryColor(item.category)} 25%, transparent);"><ha-icon icon="${this._getCategoryIcon(item.category)}" style="--mdc-icon-size: 11px; width: 11px; height: 11px; margin-right: 3px; display: inline-flex; align-items: center; vertical-align: middle;"></ha-icon>${this._escapeHtml(item.category)}</span>
+                  <span class="category-tag ${itemEdit ? "clickable" : ""}" title="${itemEdit ? t("Kategorie ändern") : t("Kategorie")}" data-id="${this._escapeHtml(item.id)}" data-cat="${this._escapeHtml(item.category)}" style="color: ${this._getCategoryColor(item.category)}; background: color-mix(in srgb, ${this._getCategoryColor(item.category)} 12%, var(--secondary-background-color, rgba(0,0,0,0.06))); border: 1px solid color-mix(in srgb, ${this._getCategoryColor(item.category)} 25%, transparent);"><ha-icon icon="${this._getCategoryIcon(item.category)}" style="--mdc-icon-size: 11px; width: 11px; height: 11px; margin-right: 3px; display: inline-flex; align-items: center; vertical-align: middle;"></ha-icon>${this._escapeHtml(item.category)}</span>
                   ${this._getPriorityBadge(item.priority, item.id)}
                   ${item.due ? this._formatDueBadge(item.due) : ""}${repeatBadge(item)}
                   ${this._formatTargetBadges(item)}
@@ -4964,23 +4964,23 @@ class BrainstormCard extends HTMLElement {
               <div class="item-actions">
                 ${
                   item.childCount
-                    ? `<button class="collapse-btn ${item.collapsed ? "is-collapsed" : ""}" title="${item.collapsed ? t("Unteraufgaben ausklappen") : t("Unteraufgaben einklappen")}" aria-expanded="${item.collapsed ? "false" : "true"}" data-id="${item.id}">${item.collapsed ? "▸" : "▾"}<span class="collapse-count">${item.childCount}</span></button>`
+                    ? `<button class="collapse-btn ${item.collapsed ? "is-collapsed" : ""}" title="${item.collapsed ? t("Unteraufgaben ausklappen") : t("Unteraufgaben einklappen")}" aria-expanded="${item.collapsed ? "false" : "true"}" data-id="${this._escapeHtml(item.id)}">${item.collapsed ? "▸" : "▾"}<span class="collapse-count">${item.childCount}</span></button>`
                     : ""
                 }
                 ${
                   itemEdit
                     ? isSub
-                      ? `<button class="indent-btn outdent-btn" title="${t("Ausrücken (zu Hauptaufgabe)")}" data-id="${item.id}" data-action="outdent">↰</button>`
+                      ? `<button class="indent-btn outdent-btn" title="${t("Ausrücken (zu Hauptaufgabe)")}" data-id="${this._escapeHtml(item.id)}" data-action="outdent">↰</button>`
                       : item.candidateParentId
-                      ? `<button class="indent-btn do-indent-btn" title="${t("Unter vorherige Aufgabe einrücken")}" data-id="${item.id}" data-parent-id="${item.candidateParentId}" data-action="indent">↳</button>`
+                      ? `<button class="indent-btn do-indent-btn" title="${t("Unter vorherige Aufgabe einrücken")}" data-id="${this._escapeHtml(item.id)}" data-parent-id="${this._escapeHtml(item.candidateParentId)}" data-action="indent">↳</button>`
                       : ""
                     : ""
                 }
-                ${item.bring_list && !isCompletedView ? `<button class="bring-btn" title="${t("Bring-Nachricht senden")}" data-id="${item.id}">🛒</button>` : ""}
-                ${itemEdit && !isSub && !isCompletedView ? `<button class="branch-btn" title="${t("Unteridee anlegen")}" data-id="${item.id}">🌿</button>` : ""}
-                ${itemEdit && aiSubtasks && !isSub && !isCompletedView ? `<button class="suggest-btn" title="${t("Unteraufgaben von der KI vorschlagen lassen")}" data-id="${item.id}">✨</button>` : ""}
-                ${itemEdit ? `<button class="edit-btn" title="${t("Bearbeiten")}" data-id="${item.id}">✎</button>` : ""}
-                ${itemDelete ? `<button class="delete-btn" title="${t("Löschen")}" data-id="${item.id}">✕</button>` : ""}
+                ${item.bring_list && !isCompletedView ? `<button class="bring-btn" title="${t("Bring-Nachricht senden")}" data-id="${this._escapeHtml(item.id)}">🛒</button>` : ""}
+                ${itemEdit && !isSub && !isCompletedView ? `<button class="branch-btn" title="${t("Unteridee anlegen")}" data-id="${this._escapeHtml(item.id)}">🌿</button>` : ""}
+                ${itemEdit && aiSubtasks && !isSub && !isCompletedView ? `<button class="suggest-btn" title="${t("Unteraufgaben von der KI vorschlagen lassen")}" data-id="${this._escapeHtml(item.id)}">✨</button>` : ""}
+                ${itemEdit ? `<button class="edit-btn" title="${t("Bearbeiten")}" data-id="${this._escapeHtml(item.id)}">✎</button>` : ""}
+                ${itemDelete ? `<button class="delete-btn" title="${t("Löschen")}" data-id="${this._escapeHtml(item.id)}">✕</button>` : ""}
               </div>
             </div>
           `;
@@ -5791,7 +5791,7 @@ class BrainstormCardEditor extends HTMLElement {
       <div class="fallback-container">
         <div class="fallback-row">
           <label class="fallback-label">${t("Kartentitel")}</label>
-          <input class="fallback-input" id="fbTitle" type="text" value="${this._config.title || 'Brainstorm Hub'}" />
+          <input class="fallback-input" id="fbTitle" type="text" value="${this._escapeHtml(this._config.title || 'Brainstorm Hub')}" />
         </div>
         <div class="fallback-row">
           <label class="fallback-label">${t("Sensor-Entität")}</label>
@@ -5903,7 +5903,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.9.0 ",
+  "%c BRAINSTORM-CARD %c v1.9.1 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

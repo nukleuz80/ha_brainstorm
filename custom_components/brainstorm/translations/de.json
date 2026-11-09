@@ -714,7 +714,7 @@
       "message": "Idee \"{id}\" kann nicht übergeordnet werden (Zyklus)."
     },
     "export_not_allowed": {
-      "message": "Export nach \"{path}\" ist nicht erlaubt. Erlaubt sind Unterordner des Config-Verzeichnisses und allowlist_external_dirs."
+      "message": "Export nach \"{path}\" ist nicht erlaubt. Dateien dürfen nur in den Brainstorm-Ordner {folder}, den Markdown-Ordner aus den Optionen oder nach allowlist_external_dirs."
     },
     "store_not_readable": {
       "message": "Brainstorm Hub konnte seine gespeicherten Daten nicht lesen: {error}"
@@ -1040,7 +1040,7 @@
       "fields": {
         "path": {
           "name": "Pfad",
-          "description": "Zielordner (Standard: /config/brainstorm)."
+          "description": "Zielordner (Standard: /config/brainstorm). Nur Administratoren dürfen einen Ordner wählen; er muss im Brainstorm-Ordner oder im Markdown-Ordner aus den Optionen liegen."
         }
       }
     },
@@ -1054,7 +1054,7 @@
         },
         "path": {
           "name": "Datei",
-          "description": "Den Export zusätzlich in diese Datei schreiben, etwa `brainstorm/sicherung.json` (relativ zu `/config`). Der Name muss auf .json enden."
+          "description": "Den Export zusätzlich in diese Datei schreiben, etwa `brainstorm/sicherung.json` (relativ zu `/config`). Der Name muss auf .json enden. Nur Administratoren dürfen Dateien schreiben."
         }
       }
     },
@@ -1068,7 +1068,7 @@
         },
         "path": {
           "name": "Datei",
-          "description": "Eine von `brainstorm.export_json` geschriebene Datei, etwa `brainstorm/sicherung.json` (relativ zu `/config`)."
+          "description": "Eine von `brainstorm.export_json` geschriebene Datei, etwa `brainstorm/sicherung.json` (relativ zu `/config`). Nur Administratoren dürfen Dateien lesen."
         }
       }
     },

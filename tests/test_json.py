@@ -183,6 +183,8 @@ async def test_export_to_a_file_and_back(
     [
         ("brainstorm/backup.txt", "json_path_invalid"),
         ("www/backup.json", "export_not_allowed"),
+        ("node-red/flows.json", "export_not_allowed"),
+        ("zigbee2mqtt/coordinator_backup.json", "export_not_allowed"),
         (".storage/backup.json", "export_not_allowed"),
         ("brainstorm/missing.json", "json_file_missing"),
     ],
@@ -284,3 +286,90 @@ async def test_privacy_limits_export_and_owners(
         context=Context(user_id=hass_admin_user.id),
     )
     assert store.get_idea("x3")["owner"] == hass_admin_user.id
+
+
+@pytest.mark.parametrize(
+    ("action", "data"),
+    [
+        ("export_json", {"path": "brainstorm/x.json"}),
+        ("export_markdown", {"path": "brainstorm/md"}),
+        ("import_json", {"path": "brainstorm/x.json"}),
+    ],
+)
+async def test_files_need_an_admin_without_privacy(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_read_only_user: Any,
+    tmp_path: Path,
+    action: str,
+    data: dict[str, Any],
+) -> None:
+    """Test that only admins may name a file, even with privacy off."""
+    hass.config.config_dir = str(tmp_path)
+    await setup_entry(stored=STORED)
+    with pytest.raises(ServiceValidationError) as err:
+        await hass.services.async_call(
+            DOMAIN,
+            action,
+            data,
+            blocking=True,
+            return_response=action != "export_markdown",
+            context=Context(user_id=hass_read_only_user.id),
+        )
+    assert err.value.translation_key == "admin_only"
+    assert not (tmp_path / "brainstorm").exists()
+
+
+async def test_files_are_fine_for_admins(
+    hass: HomeAssistant, setup_entry: SetupEntry, hass_admin_user: Any, tmp_path: Path
+) -> None:
+    """Test that an admin can still write an export file."""
+    hass.config.config_dir = str(tmp_path)
+    await setup_entry(stored=STORED)
+    result = await hass.services.async_call(
+        DOMAIN,
+        "export_json",
+        {"path": "brainstorm/x.json"},
+        blocking=True,
+        return_response=True,
+        context=Context(user_id=hass_admin_user.id),
+    )
+    assert result["path"] == str(tmp_path / "brainstorm" / "x.json")
+
+
+async def test_unusual_ids_get_a_new_id(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that imported IDs with markup are replaced, and so are their parents."""
+    entry = await setup_entry(stored={"ideas": [], "categories": ["Inbox"]})
+    bad = '"><img src=x onerror=alert(1)>'
+    result = await _call(
+        hass,
+        "import_json",
+        data={
+            "format": "brainstorm_hub",
+            "version": 1,
+            "ideas": [
+                {"id": bad, "text": "Böse"},
+                {"id": "gut_1", "text": "Gut", "parent_id": bad},
+                {"id": 12345, "text": "Zahl"},
+                {
+                    "id": "pos1",
+                    "text": "Position",
+                    "map_pos": {"x": "1;color:red", "y": 2},
+                    "trigger": "zone.home",
+                    "source": {"x": 1},
+                },
+            ],
+        },
+    )
+    assert result["added"] == 4
+    store = entry.runtime_data
+    ids = {i["id"] for i in store.ideas}
+    assert bad not in ids
+    assert all(i.isalnum() or "_" in i for i in ids)
+    assert store.get_idea("gut_1")["parent_id"] is None
+    position = store.get_idea("pos1")
+    assert "map_pos" not in position
+    assert position["trigger"] is None
+    assert position["source"] == "manual"

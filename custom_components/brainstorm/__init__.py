@@ -426,6 +426,18 @@ async def _check_shared_setting_access(
         )
 
 
+async def _check_admin(hass: HomeAssistant, call: ServiceCall) -> None:
+    """Only let admins, automations and scripts touch files."""
+    user_id = call.context.user_id
+    if user_id is None:
+        return
+    user = await hass.auth.async_get_user(user_id)
+    if user is None or not user.is_admin:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN, translation_key="admin_only"
+        )
+
+
 @callback
 def _register_services(hass: HomeAssistant) -> None:
     """Register brainstorm services."""
@@ -823,6 +835,9 @@ def _register_services(hass: HomeAssistant) -> None:
         await _check_shared_setting_access(hass, store, call)
 
         path = call.data.get("path")
+        if path:
+            # Writing files into the config folder is for admins only
+            await _check_admin(hass, call)
         try:
             await store.async_export_to_markdown(path)
         except OSError as err:
@@ -838,8 +853,8 @@ def _register_services(hass: HomeAssistant) -> None:
         data = store.export_json(call.context.user_id, call.data.get(ATTR_CATEGORY))
         if not path:
             return data
-        # A file can be read by everyone with access to the config folder
-        await _check_shared_setting_access(hass, store, call)
+        # Writing files into the config folder is for admins only
+        await _check_admin(hass, call)
         try:
             written = await store.async_write_json(path, data)
         except OSError as err:
@@ -863,7 +878,8 @@ def _register_services(hass: HomeAssistant) -> None:
         user = await hass.auth.async_get_user(user_id) if user_id else None
         is_admin = user_id is None or (user is not None and user.is_admin)
         if path is not None:
-            await _check_shared_setting_access(hass, store, call)
+            # Reading files from the config folder is for admins only
+            await _check_admin(hass, call)
             try:
                 data = await store.async_read_json(path)
             except OSError as err:

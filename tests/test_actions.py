@@ -291,7 +291,7 @@ async def test_export_markdown(
         ("Vierte Notiz", {"priority": "medium", "source": ""}),
     ):
         await _call(hass, "add_idea", text=text, category="Neues Thema", **fields)
-    target = tmp_path / "export"
+    target = tmp_path / "brainstorm" / "export"
     assert (await _call(hass, "export_markdown", path=str(target)))["success"]
 
     lines = (target / "inbox.md").read_text("utf-8")
@@ -311,7 +311,9 @@ async def test_export_markdown_reports_file_errors(
         patch("custom_components.brainstorm.store.os.makedirs", side_effect=OSError("voll")),
         pytest.raises(HomeAssistantError, match="voll"),
     ):
-        await _call(hass, "export_markdown", path=str(tmp_path / "export"))
+        await _call(
+            hass, "export_markdown", path=str(tmp_path / "brainstorm" / "export")
+        )
 
 
 async def test_share_reports_unknown_ideas(

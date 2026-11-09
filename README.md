@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.9.0-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.9.1-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -872,7 +872,7 @@ Writes all categories and ideas as Markdown files.
 
 | Field | Required | Meaning |
 | :--- | :--- | :--- |
-| `path` | No | Target folder. Default: `/config/brainstorm`. |
+| `path` | No | Target folder. Default: the Markdown folder from the options (`/config/brainstorm`). Only admins may choose a folder, and it must lie in `/config/brainstorm`, the Markdown folder from the options or `allowlist_external_dirs`. |
 
 ### `brainstorm.export_json`
 
@@ -883,7 +883,7 @@ Returns the ideas you may see, with their categories, icons and colors, as JSON.
 | Field | Required | Meaning |
 | :--- | :--- | :--- |
 | `category` | No | Only export this category. Default: all categories. |
-| `path` | No | Also write the export to this file, such as `brainstorm/backup.json` (relative to `/config`). The name must end in `.json`; `www`, `custom_components` and hidden folders are refused. With privacy on, only admins may write files. |
+| `path` | No | Also write the export to this file, such as `brainstorm/backup.json` (relative to `/config`). The name must end in `.json`. Only `/config/brainstorm`, the Markdown folder from the options and `allowlist_external_dirs` are allowed. Only admins may write files. |
 
 ```yaml
 action: brainstorm.export_json
@@ -901,7 +901,7 @@ Adds the ideas of a JSON export that are not here yet. Ideas whose ID exists are
 | Field | Required | Meaning |
 | :--- | :--- | :--- |
 | `data` | One of both | The response of `brainstorm.export_json`. |
-| `path` | One of both | A file written by `brainstorm.export_json`, relative to `/config`. With privacy on, only admins may read files. |
+| `path` | One of both | A file written by `brainstorm.export_json`, relative to `/config`, from the same folders as the export. Only admins may read files. |
 
 Owners and shares only stay for users of this Home Assistant, and owners only when an admin imports. Otherwise the ideas belong to whoever imports them. The response says how many ideas were `added` and `skipped`, and which categories were added.
 
@@ -1031,6 +1031,7 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.9.1`** | 2026-11-09 | **Security (HACS review).** The actions `export_json`, `export_markdown` and `import_json` only accept a file or folder (`path`) from admins, even with privacy off. Files are only written and read in `/config/brainstorm`, the Markdown folder from the options, or `allowlist_external_dirs`, so files of other integrations can no longer be overwritten. Imported IDs must match `[A-Za-z0-9_-]{1,64}`, otherwise they get a new ID; position, trigger and text fields are type-checked on import. Both cards escape IDs, the category name in the empty hint, the card title and icons. |
 | **`v1.9.0`** | 2026-11-09 | **Release of everything since 1.8.0** (search in the list card, rules, pictures in notes, PDF export, repeating tasks, presentation mode, outline view, content templates, AI summaries, same edit dialog in list and mind map, documentation links). **Fix on the Echo Show:** a main task now shows *+ 3 subtasks*; touching its text opens and closes them right on the Echo, at every depth and indented. Before, only the first level appeared, always open, and deeper subtasks were missing. Works with the current skill code, nothing to copy. On wide screens the list is now one column, so open subtasks stay below their main task. |
 | **`v1.8.19`** | 2026-11-09 | **Documentation: links into your Home Assistant.** A new *Quick Links* row under *Installation* has My Home Assistant buttons for HACS, setup, the integration page (configure, diagnostics, delete), the actions, voice assistants, repairs and the logs. Menu paths in the README and the guide, such as *Settings ➔ Devices & Services ➔ Brainstorm Hub ➔ Configure*, *Dashboards ➔ Resources*, *People*, *Profile ➔ Security* and *Repairs*, are now links that open the page directly. Every action under *Services* has a *Try it in Home Assistant* link that opens it in the developer tools. |
 | **`v1.8.18`** | 2026-11-09 | **Fix: mind map header.** With many categories the pills ran under the buttons on the right, cut the title short and hid the last categories, even on large screens. The categories now have their own row that wraps, so all of them, the title and the buttons stay visible. On narrow cards the row stays one line you can swipe. |

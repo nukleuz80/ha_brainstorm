@@ -6,6 +6,7 @@ import contextlib
 import hashlib
 import json
 import logging
+import math
 import os
 import re
 import shutil
@@ -156,6 +157,10 @@ COLOR_TAG_PATTERN = re.compile(r"(?=[a-f]*\d)[0-9a-f]{6}(?:[0-9a-f]{2})?", re.IG
 SPOKEN_TAG_PATTERN = re.compile(r"\bhash\s?tag\s+([^\W\d_][\w-]*)", re.IGNORECASE)
 # Config subfolders exports must not write to; 'www' is served without authentication
 EXPORT_BLOCKED_DIRS = {"custom_components", "www"}
+# The own folder below the config dir that exports and imports use
+EXPORT_DIR_NAME = "brainstorm"
+# What an imported idea ID may look like; anything else gets a new ID
+IMPORT_ID_PATTERN = re.compile(r"[A-Za-z0-9_-]{1,64}")
 # How many deleted ideas can be brought back until the next start
 MAX_RESTORABLE = 50
 # Fields of an idea a JSON import takes over, everything else is left out
@@ -191,6 +196,16 @@ EXPORT_SKIPPED_FIELDS = (
     ATTR_ALEXA_NATIVE,
 )
 IMPORT_STATUSES = ("active", "completed", "archived")
+# Imported fields that must be plain text
+IMPORT_TEXT_FIELDS = (
+    ATTR_RAW_TEXT,
+    ATTR_DESCRIPTION,
+    ATTR_SOURCE,
+    ATTR_DEVICE,
+    ATTR_RESULT,
+    ATTR_ASSIGNEE,
+    ATTR_CREATED_BY,
+)
 
 
 def _validate_category_style(icon: str | None, color: str | None) -> None:
@@ -2519,24 +2534,44 @@ class BrainstormStore:
 
         return " ".join(parts)
 
-    def _validate_export_dir(self, export_dir: str) -> None:
-        """Allow config subfolders and allowlisted external dirs only (blocking I/O)."""
-        config_dir = Path(self.hass.config.config_dir).resolve()
-        target = Path(export_dir).resolve()
-        if target.is_relative_to(config_dir):
-            parts = target.relative_to(config_dir).parts
+    def _export_roots(self, config_dir: Path) -> list[Path]:
+        """Return the folders below the config dir that files may go to (blocking I/O)."""
+        roots = [config_dir / EXPORT_DIR_NAME]
+        configured = Path(self._markdown_path)
+        if not configured.is_absolute():
+            configured = config_dir / configured
+        configured = configured.resolve()
+        if configured.is_relative_to(config_dir):
+            parts = configured.relative_to(config_dir).parts
             if (
                 parts
                 and parts[0] not in EXPORT_BLOCKED_DIRS
                 and not parts[0].startswith(".")
             ):
+                roots.append(configured)
+        return roots
+
+    def _validate_export_dir(self, export_dir: str) -> None:
+        """Allow the own export folder and allowlisted external dirs only (blocking I/O).
+
+        Below the config dir, files only go to the Brainstorm folder or the
+        configured Markdown folder, so no other integration's files can be
+        overwritten.
+        """
+        config_dir = Path(self.hass.config.config_dir).resolve()
+        target = Path(export_dir).resolve()
+        if target.is_relative_to(config_dir):
+            if any(target.is_relative_to(root) for root in self._export_roots(config_dir)):
                 return
         elif self.hass.config.is_allowed_path(str(target)):
             return
         raise ServiceValidationError(
             translation_domain=DOMAIN,
             translation_key="export_not_allowed",
-            translation_placeholders={"path": export_dir},
+            translation_placeholders={
+                "path": export_dir,
+                "folder": str(config_dir / EXPORT_DIR_NAME),
+            },
         )
 
     async def async_export_to_markdown(self, target_dir: str | None = None) -> None:
@@ -2743,10 +2778,17 @@ class BrainstormStore:
             if not isinstance(text, str) or not text.strip():
                 skipped += 1
                 continue
-            idea_id = str(item.get(ATTR_ID) or "").strip() or uuid.uuid4().hex[:8]
-            if idea_id in self._ideas or idea_id in new_ideas:
-                skipped += 1
-                continue
+            raw_id = item.get(ATTR_ID)
+            if isinstance(raw_id, str) and IMPORT_ID_PATTERN.fullmatch(raw_id.strip()):
+                idea_id = raw_id.strip()
+                if idea_id in self._ideas or idea_id in new_ideas:
+                    skipped += 1
+                    continue
+            else:
+                # An unusual ID could carry markup into the cards
+                idea_id = uuid.uuid4().hex[:8]
+                while idea_id in self._ideas or idea_id in new_ideas:
+                    idea_id = uuid.uuid4().hex[:8]
             category = _ensure_category(item.get(ATTR_CATEGORY)) or self._fallback_category
             status = item.get(ATTR_STATUS)
             due = dt_util.parse_datetime(str(item.get(ATTR_DUE) or ""))
@@ -2771,7 +2813,7 @@ class BrainstormStore:
                 ATTR_PRIORITY: self.parse_priority(
                     "", str(item.get(ATTR_PRIORITY) or DEFAULT_PRIORITY)
                 )[1],
-                ATTR_PARENT_ID: item.get(ATTR_PARENT_ID) or None,
+                ATTR_PARENT_ID: _clean_import_id(item.get(ATTR_PARENT_ID)),
                 ATTR_ORDER: order if isinstance(order, int) else None,
                 ATTR_SOURCE: "manual",
                 ATTR_DEVICE: None,
@@ -2787,9 +2829,33 @@ class BrainstormStore:
                 ATTR_OWNER: owner,
                 ATTR_SHARES: shares,
             }
+            # Only the expected kinds of values come in, nothing a card could
+            # mistake for markup or styles
             for field in IMPORT_FIELDS:
-                if item.get(field) is not None:
-                    idea[field] = item[field]
+                value = item.get(field)
+                if value is None:
+                    continue
+                if field in IMPORT_TEXT_FIELDS and not isinstance(value, str):
+                    continue
+                idea[field] = value
+            if ATTR_MAP_POS in idea:
+                if position := _clean_map_pos(idea[ATTR_MAP_POS]):
+                    idea[ATTR_MAP_POS] = position
+                else:
+                    idea.pop(ATTR_MAP_POS)
+            if idea.get(ATTR_TRIGGER) is not None:
+                trigger = idea[ATTR_TRIGGER]
+                if not (
+                    isinstance(trigger, dict)
+                    and isinstance(trigger.get("zone"), str)
+                    and isinstance(trigger.get("person"), (str, type(None)))
+                ):
+                    idea[ATTR_TRIGGER] = None
+                else:
+                    idea[ATTR_TRIGGER] = {
+                        "zone": trigger["zone"],
+                        "person": trigger.get("person"),
+                    }
             if idea.get(ATTR_SHAPE) not in (None, *NODE_SHAPES):
                 idea.pop(ATTR_SHAPE)
             if ATTR_MARKERS in idea:
@@ -2861,6 +2927,26 @@ class BrainstormStore:
             "skipped": skipped,
             "categories_added": added_categories,
         }
+
+
+def _clean_map_pos(value: Any) -> dict[str, float] | None:
+    """Return an imported mind map position if both coordinates are numbers."""
+    if not isinstance(value, dict):
+        return None
+    x, y = value.get("x"), value.get("y")
+    if not all(
+        isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
+        for v in (x, y)
+    ):
+        return None
+    return {"x": round(float(x), 1), "y": round(float(y), 1)}
+
+
+def _clean_import_id(value: Any) -> str | None:
+    """Return an imported reference to an idea if it looks like an ID."""
+    if isinstance(value, str) and IMPORT_ID_PATTERN.fullmatch(value.strip()):
+        return value.strip()
+    return None
 
 
 def _clean_markers(markers: Any) -> list[str]:
