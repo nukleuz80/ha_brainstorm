@@ -6,9 +6,9 @@ Alle Videos sind deutsch gesprochen, mit dem Text als Untertitel im Bild. Die MP
 
 ## Die wichtigsten Funktionen (3 Minuten)
 
-[![Die wichtigsten Funktionen](video/poster-features.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.22/brainstorm-features.mp4)
+[![Die wichtigsten Funktionen](video/poster-features.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.9.0/brainstorm-features.mp4)
 
-**[▶️ Video ansehen](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.22/brainstorm-features.mp4)**
+**[▶️ Video ansehen](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.9.0/brainstorm-features.mp4)**
 
 | Zeit | Kapitel |
 | :--- | :--- |
@@ -16,14 +16,14 @@ Alle Videos sind deutsch gesprochen, mit dem Text als Untertitel im Bild. Die MP
 | 0:17 | Erfassen per Stimme: Alexa, Assist, Siri, Mikrofon, KI |
 | 0:31 | Versteht ganze Sätze: Text, Termin, Priorität, Kategorie |
 | 0:50 | Die Listenkarte |
-| 1:03 | Unteraufgaben & Details |
-| 1:16 | Die Mindmap |
-| 1:30 | Erinnerungen |
-| 1:43 | Alexa-Skill & Echo Show |
-| 1:57 | Erledigt & Ergebnis |
-| 2:11 | Verbunden mit allem: To-do, Bring!, Markdown, JSON |
-| 2:23 | Privatsphäre & Freigaben |
-| 2:36 | Loslegen |
+| 1:02 | Unteraufgaben & Details |
+| 1:16 | Die Mindmap: Marker, Ansichten, Suche, Regeln, Präsentation, Export |
+| 2:00 | Erinnerungen und wiederkehrende Aufgaben |
+| 2:15 | Alexa-Skill & Echo Show |
+| 2:29 | Erledigt & Ergebnis |
+| 2:43 | Verbunden mit allem: To-do, Bring!, Markdown, JSON |
+| 2:55 | Privatsphäre & Freigaben |
+| 3:08 | Loslegen |
 
 ## Installation (3 Minuten)
 

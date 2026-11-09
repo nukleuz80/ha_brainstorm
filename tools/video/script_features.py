@@ -70,11 +70,11 @@ CHAPTERS: list[dict] = [
                     ("⚡", "<b>Blitz-Idee</b> oben eintippen"),
                     ("🏷️", "<b>Kategorien</b> als Filter mit Zähler"),
                     ("🎨", "<b>Prioritäten</b> in Farbe, ein Klick schaltet weiter"),
-                    ("🗣️", "<b>Herkunft</b> und Zeit an jedem Eintrag"),
+                    ("🔍", "<b>Suche</b> beim Tippen, auch nach #Tags"),
                 ], "Abhaken per Kreis, Sortieren per Ziehen, Bearbeiten per Stift."),
                 "say": "Die Listenkarte zeigt alles im Dashboard. Oben tippst du eine Blitz-Idee, "
-                       "darunter filterst du nach Kategorien. Jede Notiz zeigt Priorität, "
-                       "Termin und Herkunft. Ein Klick auf den Kreis hakt sie ab.",
+                       "darunter filterst du nach Kategorien, und die Suche findet jede Notiz "
+                       "schon beim Tippen, auch nach Tags. Ein Klick auf den Kreis hakt sie ab.",
             },
         ],
     },
@@ -98,15 +98,41 @@ CHAPTERS: list[dict] = [
         "title": "Die Mindmap",
         "scenes": [
             {
-                "v": ("shot", "crop_mindmapzoom.png", 450, [
+                "v": ("shot", "crop_mmprojekte.png", 450, [
                     ("🧠", "Alle Ideen als <b>Gedankenlandkarte</b>"),
-                    ("🖐️", "Verschieben, zoomen, <b>Zweige einklappen</b>"),
-                    ("⌨️", "<b>Tastatur</b>: Tab, Enter, Strg+Z"),
-                    ("🖼️", "Vorlagen, zehn Formen, <b>Bild-Export</b>"),
-                ], "Dringende Notizen pulsieren wie ein kleines Feuer."),
+                    ("⭐", "<b>Marker</b>, Fortschritt und <b>Nummerierung</b> 1., 1.1"),
+                    ("🔗", "<b>Querverbindungen</b> und Sprechblasen"),
+                    ("🎯", "<b>Fokus</b> auf einen einzelnen Zweig"),
+                ], "Verschieben, zoomen, Zweige einklappen – mit Maus, Finger oder Tastatur."),
                 "say": "Die Mindmap zeigt deine Ideen als Gedankenlandkarte. Unteraufgaben "
-                       "hängen als Äste an ihrer Idee. Du verschiebst und zoomst mit Maus oder "
-                       "Finger, und mit Vorlagen und Formen exportierst du das Ganze als Bild.",
+                       "hängen als Äste an ihrer Idee und lassen sich nummerieren. Marker wie "
+                       "Stern oder Fragezeichen, Querverbindungen und Callouts machen sie "
+                       "übersichtlich, und der Fokus zeigt nur einen Zweig.",
+            },
+            {
+                "v": ("shot", "crop_kanban.png", 450, [
+                    ("◎", "<b>Rund um die Mitte</b>, Baum oder Organigramm"),
+                    ("☰", "<b>Gliederung</b> wie in einem Outliner"),
+                    ("▥", "<b>Kanban</b>: offen, in Arbeit, wartet, erledigt"),
+                    ("📅", "<b>Zeitleiste</b> und Eisenhower-Matrix"),
+                ], "Ein Knopf unten rechts schaltet die Ansicht um."),
+                "say": "Dieselben Notizen gibt es in sieben Ansichten: rund um die Mitte, als "
+                       "Baum, Organigramm oder Gliederung, als Kanban nach Status, als "
+                       "Zeitleiste nach Fälligkeit oder als Eisenhower-Matrix.",
+            },
+            {
+                "v": ("grid", "Noch mehr auf der Mindmap", [
+                    ("🔍", "Suchen & Filtern", "Nach Priorität, Markern, Tags und Fälligkeit"),
+                    ("🎨", "Regeln", "Alles Dringende rot, #garten grün mit Stern"),
+                    ("▶️", "Präsentieren", "Vollbild, Notiz für Notiz"),
+                    ("⚡", "Brainstorm-Modus", "Mit Timer, jedes Enter eine Notiz"),
+                    ("📄", "Export", "Bild, PDF, Markdown, OPML und FreeMind"),
+                    ("✨", "KI-Hilfe", "Fasst einen Ast zusammen, ordnet lose Ideen zu"),
+                ], "Vorlagen wie SWOT-Analyse oder Packliste fügen fertige Zweige ein."),
+                "say": "Dazu kommen Suchen und Filtern, Regeln, die passende Notizen einfärben, "
+                       "ein Präsentationsmodus und ein Brainstorm-Modus mit Timer. Exportieren "
+                       "kannst du als Bild, PDF, Markdown, OPML oder FreeMind, und die KI fasst "
+                       "einen ganzen Ast in ein paar Sätzen zusammen.",
             },
         ],
     },
@@ -119,12 +145,13 @@ CHAPTERS: list[dict] = [
                     ("🔊", "Alexa-Ansage", "Der Echo sagt es an, das Handy folgt bei Bedarf"),
                     ("📱", "Benachrichtigung", "Mit Knöpfen für Erledigt und Später"),
                     ("🏠", "Orte", "„wenn ich bei Edeka bin, an die Milch“"),
-                    ("☀️", "Briefing", "Täglich ein kurzer Überblick, dazu ein Wochenrückblick"),
+                    ("🔁", "Wiederkehrend", "Täglich, wöchentlich, monatlich: abgehakt kommt sie wieder"),
                     ("🌙", "Ruhezeit", "Nachts bleibt alles still"),
                 ], "Auf Wunsch auch als echte Alexa-Erinnerung oder im Kalender."),
                 "say": "Hat eine Notiz einen Termin, erinnert Brainstorm dich: per Alexa-Ansage, "
                        "per Benachrichtigung aufs Handy, oder wenn du an einem Ort ankommst. "
-                       "Dazu gibt es ein tägliches Briefing und eine Ruhezeit für die Nacht.",
+                       "Wiederkehrende Aufgaben kommen nach dem Abhaken von selbst wieder, "
+                       "und nachts bleibt alles still.",
             },
         ],
     },

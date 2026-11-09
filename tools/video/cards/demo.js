@@ -9,21 +9,35 @@ const idea = (text, category, extra = {}) => ({
   due: null, assignee: null, trigger: null, echos: null, raw_text: null, ...extra,
 });
 const ideas = [
-  idea("Rasensprenger reparieren", "Haus & Garten", { priority: "high", source: "alexa", device: "Echo Küche", due: inDays(1) }),
-  idea("Tomaten düngen", "Haus & Garten", { source: "alexa", device: "Echo Wohnzimmer" }),
+  idea("Rasensprenger reparieren", "Haus & Garten", { priority: "high", source: "alexa", device: "Echo Küche", due: inDays(1), markers: ["warning"], tags: ["garten"] }),
+  idea("Tomaten düngen", "Haus & Garten", { source: "alexa", device: "Echo Wohnzimmer", repeat: "weekly", due: inDays(3, 18), tags: ["garten"] }),
   idea("Kellerlicht per Bewegungsmelder dimmen", "Smarthome", { priority: "urgent", source: "assist", in_progress: { user: "Claude", since: ago(12) } }),
   idea("Zigbee-Sensor im Bad tauschen", "Smarthome", { source: "siri", device: "iPhone" }),
-  idea("Balkonkraftwerk auswerten", "Smarthome", { priority: "low", source: "dashboard" }),
+  idea("Balkonkraftwerk auswerten", "Smarthome", { priority: "low", source: "dashboard", markers: ["money"], progress: 50 }),
   idea("Milch", "Einkauf", { source: "alexa", device: "Echo Küche" }),
   idea("Duschgel", "Einkauf", { source: "alexa", device: "Echo Bad" }),
-  idea("Smart Mirror bauen", "Projekte", { priority: "high", description: "**Raspberry Pi** mit Spiegelfolie, Kalender und Wetter" }),
+  idea("Smart Mirror bauen", "Projekte", { priority: "high", description: "**Raspberry Pi** mit Spiegelfolie, Kalender und Wetter", markers: ["star"], numbering: "decimal", callout: "Bis Weihnachten fertig" }),
   idea("Oma anrufen", "Alltag", { due: inDays(0, 18), source: "companion", device: "Pixel" }),
   idea("Reifen wechseln", "Alltag", { due: inDays(5), priority: "high" }),
 ];
 const parent = ideas.find((i) => i.text === "Smart Mirror bauen");
-for (const t of ["Spiegelfolie bestellen", "MagicMirror installieren", "Rahmen bauen"]) {
-  ideas.push(idea(t, "Projekte", { parent_id: parent.id }));
+const steps = {};
+for (const [t, extra] of [
+  ["Spiegelfolie bestellen", { markers: ["check"], in_progress: { user: "Jan", since: ago(30) } }],
+  ["MagicMirror installieren", { markers: ["question"] }],
+  ["Rahmen bauen", { due: inDays(4) }],
+]) {
+  steps[t] = idea(t, "Projekte", { parent_id: parent.id, ...extra });
+  ideas.push(steps[t]);
 }
+for (const t of ["Kalender-Modul", "Wetter-Modul"]) {
+  ideas.push(idea(t, "Projekte", { parent_id: steps["MagicMirror installieren"].id }));
+}
+for (const t of ["Holz zuschneiden", "Lackieren"]) {
+  ideas.push(idea(t, "Projekte", { parent_id: steps["Rahmen bauen"].id }));
+}
+steps["Rahmen bauen"].links = [{ to: steps["Spiegelfolie bestellen"].id, label: "braucht Maße", blocks: false }];
+ideas.push(idea("Gartenhaus streichen", "Projekte", { priority: "low", markers: ["idea"] }));
 const completed = [
   idea("Backup der Datenbank erstellen", "Smarthome", { status: "completed", result: "v1.7.19: Backup läuft täglich um 3 Uhr" }),
   idea("Brot", "Einkauf", { status: "completed" }),

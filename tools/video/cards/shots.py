@@ -15,6 +15,9 @@ SHOTS = [
     ("projekte", "640,800", "card=list&w=560&click=Projekte", None),
     ("done", "640,700", "card=list&w=560&click=Erledigt", None),
     ("mindmap", "1100,700", "card=mindmap&w=1060", None),
+    ("mmprojekte", "1100,700", "card=mindmap&w=1060&click=Projekte", None),
+    ("kanban", "1100,700", 'card=mindmap&w=1060&cfg={"layout":"kanban"}&click=Projekte', None),
+    ("outline", "1100,700", 'card=mindmap&w=1060&cfg={"layout":"tree"}&click=Projekte', None),
 ]
 
 
