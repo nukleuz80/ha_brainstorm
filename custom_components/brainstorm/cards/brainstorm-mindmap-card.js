@@ -1,8 +1,8 @@
-import { BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, repeatBadge, repeatOptions, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.9.3";
+import { LEVEL_CSS, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, repeatBadge, repeatOptions, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.10.0";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.9.3 - Sichtbar in HACS
+ * Version: 1.10.0 - Bedienstufen
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -12,6 +12,8 @@ import { BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sor
 const COLLAPSED_KEY = "brainstorm_mindmap_collapsed";
 const LAYOUT_KEY = "brainstorm_mindmap_layout";
 const LAYOUTS = ["radial", "tree", "org", "outline", "kanban", "timeline", "matrix"];
+// The level a view needs; the round map is there for everyone
+const LAYOUT_LEVELS = { tree: "normal", outline: "normal", kanban: "normal", org: "pro", timeline: "pro", matrix: "pro" };
 const UNDO_LIMIT = 30;
 
 // The bulb lies next to this file, wherever Home Assistant serves it from
@@ -895,6 +897,7 @@ class BrainstormMindmapCard extends HTMLElement {
 
     this.shadowRoot.innerHTML = `
       <style>
+        ${LEVEL_CSS}
         * {
           box-sizing: border-box;
           user-select: none;
@@ -3340,8 +3343,8 @@ class BrainstormMindmapCard extends HTMLElement {
             <button class="top-tool-btn" id="colorModeBtn" style="display: ${this._config.show_color_toggle === true ? 'inline-flex' : 'none'};" title="${this._colorMode === 'theme' ? t("Farbmodus: Theme-Farben aktiv (Klicken für Bunt)") : t("Farbmodus: Bunt aktiv (Klicken für Theme-Farben)")}">
               ${this._colorMode === 'theme' ? '🎨' : '🌈'}
             </button>
-            <button class="top-tool-btn" id="filterBtn" style="display: ${this._config.show_filter === true ? 'inline-flex' : 'none'};" title="${t("Suchen und filtern (/)")}" aria-pressed="false">🔍</button>
-            <button class="top-tool-btn" id="exportBtn" style="display: ${this._config.show_export_btn === true ? 'inline-flex' : 'none'};" title="${t("Map speichern oder Gliederung einfügen")}">🖼️</button>
+            <button class="top-tool-btn" id="filterBtn" data-lvl="normal" style="display: ${this._config.show_filter === true ? 'inline-flex' : 'none'};" title="${t("Suchen und filtern (/)")}" aria-pressed="false">🔍</button>
+            <button class="top-tool-btn" id="exportBtn" data-lvl="normal" style="display: ${this._config.show_export_btn === true ? 'inline-flex' : 'none'};" title="${t("Map speichern oder Gliederung einfügen")}">🖼️</button>
             <button class="fullscreen-btn" id="fullscreenToggleBtn" style="display: ${this._config.show_fullscreen_btn === true ? 'inline-flex' : 'none'};" title="${t("Vollbild umschalten (ESC zum Beenden)")}">⛶</button>
           </div>
         </div>
@@ -3354,7 +3357,7 @@ class BrainstormMindmapCard extends HTMLElement {
           </label>
           <div class="filter-chips" id="filterChips"></div>
           <span class="filter-count" id="filterCount" aria-live="polite"></span>
-          <button class="filter-rules" id="filterRules" title="${t("Regeln: passende Notizen färben (R)")}">🎨</button>
+          <button class="filter-rules" id="filterRules" data-lvl="pro" title="${t("Regeln: passende Notizen färben (R)")}">🎨</button>
           <button class="filter-close" id="filterClose" title="${t("Filter zurücksetzen und schließen (ESC)")}">✕</button>
         </div>
 
@@ -3368,8 +3371,8 @@ class BrainstormMindmapCard extends HTMLElement {
             <span class="selection-count" id="selectionCount"></span>
             <button class="selection-btn" data-multi="done" title="${t("Alle abhaken")}">✓<span class="selection-label">${t("Abhaken")}</span></button>
             <button class="selection-btn" data-multi="move" title="${t("Kategorie ändern")}">📁<span class="selection-label">${t("Kategorie")}</span></button>
-            <button class="selection-btn" data-multi="frame" title="${t("Rahmen um die Auswahl legen")}">▢<span class="selection-label">${t("Rahmen")}</span></button>
-            <button class="selection-btn" data-multi="link" title="${t("Die zwei ausgewählten Notizen verbinden")}">🔗<span class="selection-label">${t("Verbinden")}</span></button>
+            <button class="selection-btn" data-multi="frame" data-lvl="pro" title="${t("Rahmen um die Auswahl legen")}">▢<span class="selection-label">${t("Rahmen")}</span></button>
+            <button class="selection-btn" data-multi="link" data-lvl="pro" title="${t("Die zwei ausgewählten Notizen verbinden")}">🔗<span class="selection-label">${t("Verbinden")}</span></button>
             <button class="selection-btn danger" data-multi="delete" title="${t("Löschen")}">🗑️<span class="selection-label">${t("Löschen")}</span></button>
             <button class="selection-btn" data-multi="clear" title="${t("Auswahl aufheben (ESC)")}">✕</button>
           </div>
@@ -3404,11 +3407,11 @@ class BrainstormMindmapCard extends HTMLElement {
           <button class="control-btn" id="zoomInBtn" title="${t("Vergrößern")}">+</button>
           <button class="control-btn" id="zoomOutBtn" title="${t("Verkleinern")}">−</button>
           <button class="control-btn" id="resetViewBtn" title="${t("Zentrieren / Anordnen")}">⟲</button>
-          <button class="control-btn" id="lassoBtn" title="${t("Auswählen: Rahmen um mehrere Notizen ziehen (oder Umschalt+Ziehen)")}" aria-pressed="false">⬚</button>
-          <button class="control-btn" id="layoutBtn" title="${t("Ansicht wählen")}">${this._layoutIcon()}</button>
-          <button class="control-btn" id="stormBtn" title="${t("Brainstorm: schnell viele Ideen sammeln (B)")}">⚡</button>
-          <button class="control-btn" id="levelsBtn" title="${t("Ebenen zeigen: 1, 2, 3 oder alle (Tasten 1–9, 0 = alle)")}">∞</button>
-          <button class="control-btn" id="arrangeBtn" title="${t("Neu ordnen: von Hand verschobene Notizen wieder automatisch platzieren")}">🪄</button>
+          <button class="control-btn" id="lassoBtn" data-lvl="normal" title="${t("Auswählen: Rahmen um mehrere Notizen ziehen (oder Umschalt+Ziehen)")}" aria-pressed="false">⬚</button>
+          <button class="control-btn" id="layoutBtn" data-lvl="normal" title="${t("Ansicht wählen")}">${this._layoutIcon()}</button>
+          <button class="control-btn" id="stormBtn" data-lvl="pro" title="${t("Brainstorm: schnell viele Ideen sammeln (B)")}">⚡</button>
+          <button class="control-btn" id="levelsBtn" data-lvl="normal" title="${t("Ebenen zeigen: 1, 2, 3 oder alle (Tasten 1–9, 0 = alle)")}">∞</button>
+          <button class="control-btn" id="arrangeBtn" data-lvl="normal" title="${t("Neu ordnen: von Hand verschobene Notizen wieder automatisch platzieren")}">🪄</button>
           <button class="control-btn" id="undoBtn" title="${t("Rückgängig (Strg+Z)")}" disabled>↶</button>
         </div>
 
@@ -3862,8 +3865,26 @@ class BrainstormMindmapCard extends HTMLElement {
 
   // Radial around the center, a tree to the right, or an org chart downwards
   _layout() {
-    if (this._savedLayout) return this._savedLayout;
-    return LAYOUTS.includes(this._config.layout) ? this._config.layout : "radial";
+    const layout = this._savedLayout || (LAYOUTS.includes(this._config.layout) ? this._config.layout : "radial");
+    // A view of a higher level falls back to the round map, the choice stays saved
+    return levelAllows(this._currentLevel(), LAYOUT_LEVELS[layout] || "beginner") ? layout : "radial";
+  }
+
+  _currentLevel() {
+    return uiLevel(this._config, this._getRawSensorEntity());
+  }
+
+  // Beginners and normal users see fewer controls; CSS hides them by data-lvl
+  _applyLevel() {
+    const level = this._currentLevel();
+    if (this.getAttribute("data-level") !== level) {
+      this.setAttribute("data-level", level);
+      const canvas = this.shadowRoot && this.shadowRoot.getElementById("canvasArea");
+      if (canvas) canvas.classList.toggle("board-mode", this._isBoard());
+      const btn = this.shadowRoot && this.shadowRoot.getElementById("layoutBtn");
+      if (btn) btn.textContent = this._layoutIcon();
+    }
+    return level;
   }
 
   _layoutIcon(layout = this._layout()) {
@@ -3891,13 +3912,13 @@ class BrainstormMindmapCard extends HTMLElement {
       body.innerHTML = `
         <div class="layout-grid">
           ${LAYOUTS.map((layout) => `
-            <button class="layout-choice${layout === this._layout() ? " active" : ""}" data-layout="${layout}">
+            <button class="layout-choice${layout === this._layout() ? " active" : ""}" data-layout="${layout}"${LAYOUT_LEVELS[layout] ? ` data-lvl="${LAYOUT_LEVELS[layout]}"` : ""}>
               <span class="layout-icon">${this._layoutIcon(layout)}</span>
               <span>${this._layoutName(layout)}</span>
             </button>`).join("")}
         </div>
         <div class="dialog-hint">${t("In Kanban, Zeitleiste und Matrix ändert das Ziehen in eine andere Spalte Status, Fälligkeit oder Priorität.")}</div>
-        <div class="dialog-footer">
+        <div class="dialog-footer" data-lvl="pro">
           <button class="dialog-btn dialog-btn-primary" id="presentStart">▶ ${t("Präsentieren (P)")}</button>
         </div>`;
       body.querySelector("#presentStart").addEventListener("click", () => {
@@ -4335,7 +4356,8 @@ class BrainstormMindmapCard extends HTMLElement {
     const sensor = this._getSensorEntity();
     const ideas = (sensor && sensor.attributes.ideas) || [];
     const hasChildren = ideas.some((i) => i.parent_id === idea.id);
-    if (!hasChildren) {
+    // Summing up a branch is for pros
+    if (!hasChildren || !levelAllows(this._currentLevel(), "pro")) {
       this._showSubtaskSuggestions(idea);
       return;
     }
@@ -4686,8 +4708,8 @@ class BrainstormMindmapCard extends HTMLElement {
         <div class="dialog-hint">${t("Alle Notizen dieser Map, auch eingeklappte, für andere Mindmap- und Gliederungsprogramme.")}</div>
         <div class="export-row">
           <button class="dialog-btn dialog-btn-cancel" data-export="md">${t("Markdown")}</button>
-          <button class="dialog-btn dialog-btn-cancel" data-export="opml">${t("OPML")}</button>
-          <button class="dialog-btn dialog-btn-cancel" data-export="mm">${t("FreeMind (.mm)")}</button>
+          <button class="dialog-btn dialog-btn-cancel" data-export="opml" data-lvl="pro">${t("OPML")}</button>
+          <button class="dialog-btn dialog-btn-cancel" data-export="mm" data-lvl="pro">${t("FreeMind (.mm)")}</button>
         </div>
         <div class="dialog-label">${t("Gliederung einfügen:")}</div>
         <div class="dialog-hint">${t("Vorlage wählen, anpassen und einfügen:")}</div>
@@ -5575,6 +5597,8 @@ class BrainstormMindmapCard extends HTMLElement {
   }
 
   _startLasso(clientX, clientY, additive) {
+    // Picking several notes starts at the normal level
+    if (!levelAllows(this._currentLevel(), "normal")) return;
     const canvasArea = this.shadowRoot.getElementById("canvasArea");
     const rectEl = this.shadowRoot.getElementById("lassoRect");
     if (!canvasArea || !rectEl) return;
@@ -5639,6 +5663,8 @@ class BrainstormMindmapCard extends HTMLElement {
   }
 
   _toggleMulti(id) {
+    // Picking several notes starts at the normal level
+    if (!levelAllows(this._currentLevel(), "normal")) return;
     if (this._multi.has(id)) this._multi.delete(id);
     else this._multi.add(id);
     this._refreshMultiClasses();
@@ -5777,39 +5803,42 @@ class BrainstormMindmapCard extends HTMLElement {
       return;
     }
     // Slash or Ctrl+F opens the search, like in most programs
-    if (this._config.show_filter === true && ((e.key === "/" && !e.ctrlKey && !e.metaKey && !e.altKey) || ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === "f"))) {
+    if (this._config.show_filter === true && levelAllows(this._currentLevel(), "normal") && ((e.key === "/" && !e.ctrlKey && !e.metaKey && !e.altKey) || ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === "f"))) {
       e.preventDefault();
       this._setFilterOpen(true);
       return;
     }
     if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const level = this._currentLevel();
+    const pro = levelAllows(level, "pro");
+    const normal = levelAllows(level, "normal");
     if (this._linkFrom && e.key === "Escape") {
       e.preventDefault();
       e.stopPropagation();
       this._cancelLink();
       return;
     }
-    if (e.key === "p" || e.key === "P") {
+    if (pro && (e.key === "p" || e.key === "P")) {
       e.preventDefault();
       this._startPresentation();
       return;
     }
-    if ((e.key === "z" || e.key === "Z") && this._aiAvailable()) {
+    if (pro && (e.key === "z" || e.key === "Z") && this._aiAvailable()) {
       e.preventDefault();
       this._showSortInDialog();
       return;
     }
-    if (e.key === "r" || e.key === "R") {
+    if (pro && (e.key === "r" || e.key === "R")) {
       e.preventDefault();
       this._showRulesDialog();
       return;
     }
-    if ((e.key === "b" || e.key === "B") && !e.shiftKey) {
+    if (pro && (e.key === "b" || e.key === "B") && !e.shiftKey) {
       e.preventDefault();
       this._showBrainstorm();
       return;
     }
-    if (e.key === "s" || e.key === "S") {
+    if (pro && (e.key === "s" || e.key === "S")) {
       const hasChildren = this._selectedId && this._categoryIdeas().some((i) => i.parent_id === this._selectedId);
       if (hasChildren || (!this._selectedId && this._selectedCategory !== "all" && !this._focusId)) {
         e.preventDefault();
@@ -5817,19 +5846,19 @@ class BrainstormMindmapCard extends HTMLElement {
         return;
       }
     }
-    if ((e.key === "l" || e.key === "L") && this._selectedId) {
+    if (pro && (e.key === "l" || e.key === "L") && this._selectedId) {
       e.preventDefault();
       this._startLink(this._selectedId);
       return;
     }
     // Digits fold the map to that many levels, 0 opens everything
-    if (/^[0-9]$/.test(e.key) && !e.shiftKey) {
+    if (normal && /^[0-9]$/.test(e.key) && !e.shiftKey) {
       e.preventDefault();
       this._showLevels(Number(e.key));
       return;
     }
     // F4 opens the chosen branch on its own, Shift+F4 goes back up
-    if (e.key === "F4") {
+    if (normal && e.key === "F4") {
       e.preventDefault();
       if (e.shiftKey) this._focusUp();
       else if (this._selectedId) this._setFocus(this._selectedId);
@@ -7398,6 +7427,7 @@ class BrainstormMindmapCard extends HTMLElement {
     try {
       const sensor = this._getSensorEntity();
       if (!sensor) return;
+      this._applyLevel();
 
       const attributes = sensor.attributes || {};
       const categories = attributes.categories || ["Inbox"];
@@ -7638,10 +7668,10 @@ class BrainstormMindmapCard extends HTMLElement {
             ${idea.result ? `<div class="cloud-result" title="${t("Ergebnis")}">${formatText(idea.result)}</div>` : ""}
             <div class="cloud-actions">
               <button class="action-btn done-btn" data-act="done" data-id="${this._escapeHtml(idea.id)}" title="${t("Als erledigt markieren")}">✓</button>
-              <button class="action-btn" data-act="branch" data-id="${this._escapeHtml(idea.id)}" title="${t("Unteridee anlegen")}">🌿</button>
-              <button class="action-btn" data-act="link" data-id="${this._escapeHtml(idea.id)}" title="${t("Mit einer anderen Notiz verbinden (L)")}">🔗</button>
-              ${hasBranch ? `<button class="action-btn" data-act="focus" data-id="${this._escapeHtml(idea.id)}" title="${t("Nur diesen Zweig zeigen (F4)")}">🎯</button>` : ""}
-              ${aiSubtasks ? `<button class="action-btn" data-act="suggest" data-id="${this._escapeHtml(idea.id)}" title="${t("Unteraufgaben von der KI vorschlagen lassen")}">✨</button>` : ""}
+              <button class="action-btn" data-act="branch" data-lvl="normal" data-id="${this._escapeHtml(idea.id)}" title="${t("Unteridee anlegen")}">🌿</button>
+              <button class="action-btn" data-act="link" data-lvl="pro" data-id="${this._escapeHtml(idea.id)}" title="${t("Mit einer anderen Notiz verbinden (L)")}">🔗</button>
+              ${hasBranch ? `<button class="action-btn" data-act="focus" data-lvl="normal" data-id="${this._escapeHtml(idea.id)}" title="${t("Nur diesen Zweig zeigen (F4)")}">🎯</button>` : ""}
+              ${aiSubtasks ? `<button class="action-btn" data-act="suggest" data-lvl="normal" data-id="${this._escapeHtml(idea.id)}" title="${t("Unteraufgaben von der KI vorschlagen lassen")}">✨</button>` : ""}
               <button class="action-btn" data-act="edit" data-id="${this._escapeHtml(idea.id)}" title="${t("Bearbeiten")}">✏️</button>
               <button class="action-btn" data-act="move" data-id="${this._escapeHtml(idea.id)}" title="${t("Kategorie ändern")}">📁</button>
               <button class="action-btn del-btn" data-act="delete" data-id="${this._escapeHtml(idea.id)}" title="${t("Löschen")}">🗑️</button>
@@ -8105,14 +8135,14 @@ class BrainstormMindmapCard extends HTMLElement {
         <div class="dialog-error" id="editTextError" style="display: none;"></div>
         <div class="dialog-label">${t("Beschreibung:")}</div>
         <textarea class="dialog-textarea" id="editDescription" rows="4" placeholder="${t("Optional: Details, Links, Notizen …")}">${this._escapeHtml(idea.description || "")}</textarea>
-        <div class="dialog-label">${t("Anhänge:")}</div>
-        <div id="editAttachments"></div>
-        ${rawText && rawText !== currentText ? `
+        <div class="lvl" data-lvl="normal"><div class="dialog-label">${t("Anhänge:")}</div>
+        <div id="editAttachments"></div></div>
+        ${rawText && rawText !== currentText ? `<div class="lvl" data-lvl="pro">
           <div class="dialog-label">${t("Original gesprochen:")}</div>
           <div class="dialog-original-row">
             <span id="editOriginalText" class="dialog-original-text">${this._escapeHtml(rawText)}</span>
             <button class="dialog-btn dialog-btn-cancel" id="editUseOriginal">${t("Übernehmen")}</button>
-          </div>
+          </div></div>
         ` : ""}
 
         <div class="dialog-label">${t("Priorität:")}</div>
@@ -8123,17 +8153,17 @@ class BrainstormMindmapCard extends HTMLElement {
           <div class="dialog-prio-chip ${selectedPrio === "urgent" ? "selected" : ""}" data-prio="urgent">${t("🔥 Dringend")}</div>
         </div>
 
-        <div class="dialog-label">${t("Marker:")}</div>
+        <div class="lvl" data-lvl="normal"><div class="dialog-label">${t("Marker:")}</div>
         <div class="dialog-prio-grid dialog-marker-grid" id="editMarkerGrid">
           ${MARKERS.map((marker) => `<div class="dialog-prio-chip ${selectedMarkers.has(marker) ? "selected" : ""}" data-marker="${marker}" title="${this._escapeHtml(markerLabel(marker))}">${markerIcon(marker)} ${this._escapeHtml(markerLabel(marker))}</div>`).join("")}
-        </div>
+        </div></div>
 
-        <div class="dialog-label">${t("Fortschritt:")}</div>
+        <div class="lvl" data-lvl="pro"><div class="dialog-label">${t("Fortschritt:")}</div>
         ${hasSubtasks
           ? `<div class="dialog-hint">${t("Kommt aus den Unteraufgaben: {done} von {total} erledigt, {percent} %.", { done: idea.subtasks.done, total: idea.subtasks.total, percent: idea.subtasks.percent })}</div>`
           : `<div class="dialog-prio-grid dialog-progress-grid" id="editProgressGrid">
           ${[0, 25, 50, 75, 100].map((step) => `<div class="dialog-prio-chip ${step === selectedProgress ? "selected" : ""}" data-progress="${step}">${step} %</div>`).join("")}
-        </div>`}
+        </div>`}</div>
 
         <div class="dialog-label" style="margin-top: 10px;">${t("Kategorie:")}</div>
         <div class="dialog-categories-grid" id="editCatGrid">
@@ -8158,11 +8188,11 @@ class BrainstormMindmapCard extends HTMLElement {
           <button class="dialog-btn dialog-btn-cancel dialog-due-clear" id="editDueClear" title="${t("Termin entfernen")}" aria-label="${t("Termin entfernen")}">✕</button>
         </div>
         <div class="dialog-hint">${t("Ohne Uhrzeit erinnert Brainstorm um 9:00.")}</div>
-        <div class="dialog-label">${t("Wiederholen:")}</div>
-        <select class="dialog-input" id="editRepeat" title="${t("Abgehakt kommt die Notiz mit ihren Unteraufgaben zum nächsten Termin wieder.")}">${repeatOptions(idea.repeat)}</select>
+        <div class="lvl" data-lvl="normal"><div class="dialog-label">${t("Wiederholen:")}</div>
+        <select class="dialog-input" id="editRepeat" title="${t("Abgehakt kommt die Notiz mit ihren Unteraufgaben zum nächsten Termin wieder.")}">${repeatOptions(idea.repeat)}</select></div>
 
         ${echos.length ? `
-          <details class="dialog-echo-details">
+          <details class="dialog-echo-details" data-lvl="pro">
           <summary class="dialog-echo-summary">
             <span class="dialog-label">${t("Erinnern auf:")}</span>
             <span class="dialog-echo-chosen" id="editEchoChosen"></span>
@@ -8183,10 +8213,10 @@ class BrainstormMindmapCard extends HTMLElement {
           </details>
         ` : ""}
 
-        <div class="dialog-label">${t("Übergeordnete Aufgabe:")}</div>
-        <select class="dialog-input" id="editParentSelect">${parentOptions(allIdeas, id, currentParentId, idea.category || currentCategory)}</select>
+        <div class="lvl" data-lvl="normal"><div class="dialog-label">${t("Übergeordnete Aufgabe:")}</div>
+        <select class="dialog-input" id="editParentSelect">${parentOptions(allIdeas, id, currentParentId, idea.category || currentCategory)}</select></div>
 
-        ${hasSubtasks ? `
+        ${hasSubtasks ? `<div class="lvl" data-lvl="pro">
         <div class="dialog-label">${t("Unterpunkte nummerieren:")}</div>
         <div class="dialog-prio-grid dialog-numbering-grid" id="editNumberingGrid">
           ${["", ...NUMBERING].map((style) => `<div class="dialog-prio-chip ${style === selectedNumbering ? "selected" : ""}" data-numbering="${style}">${numberingLabel(style)}</div>`).join("")}
@@ -8194,9 +8224,9 @@ class BrainstormMindmapCard extends HTMLElement {
         <div class="dialog-label">${t("Unterpunkte sortieren:")}</div>
         <div class="dialog-prio-grid dialog-sort-grid" id="editSortGrid">${this._sortChips()}</div>
         <div class="dialog-hint">${t("Sortiert sofort, ↶ macht es rückgängig.")}</div>
-        ` : ""}
+        </div>` : ""}
 
-        <div class="dialog-label">${t("Callout:")}</div>
+        <div class="lvl" data-lvl="pro"><div class="dialog-label">${t("Callout:")}</div>
         <input class="dialog-input" id="editCallout" maxlength="200" placeholder="${t("Optional: kurze Anmerkung in einer Sprechblase")}" value="${this._escapeHtml(idea.callout || "")}">
         <div class="dialog-label">${t("Rahmen:")}</div>
         <input class="dialog-input" id="editFrame" maxlength="40" list="editFrameNames" placeholder="${t("Optional: Name eines Rahmens")}" value="${this._escapeHtml(idea.frame || "")}">
@@ -8209,7 +8239,7 @@ class BrainstormMindmapCard extends HTMLElement {
             .map(([value, label]) => `<div class="dialog-prio-chip ${value === selectedShape ? "selected" : ""}" data-shape="${value}">${label}</div>`)
             .join("")}
         </div>
-        <div class="dialog-hint dialog-shape-hint">${t("Automatisch: Sprachnotizen als Sprechblase, sonst die Form der Map.")}</div>
+        <div class="dialog-hint dialog-shape-hint">${t("Automatisch: Sprachnotizen als Sprechblase, sonst die Form der Map.")}</div></div>
 
         <div class="dialog-footer">
           <button class="dialog-btn dialog-btn-cancel" id="cancelEditBtn">${t("Abbrechen")}</button>
@@ -8217,6 +8247,7 @@ class BrainstormMindmapCard extends HTMLElement {
         </div>
       `;
 
+      addMoreFields(body, this._applyLevel(), "dialog-btn dialog-btn-cancel");
       const textarea = body.querySelector("#editTextarea");
       renderAttachments(body.querySelector("#editAttachments"), {
         hass: this._hass,
@@ -8704,6 +8735,17 @@ class BrainstormMindmapCardEditor extends HTMLElement {
         selector: { entity: { domain: ["sensor"] } },
       },
       {
+        name: "level",
+        label: t("Bedienstufe dieser Karte"),
+        default: "auto",
+        selector: {
+          select: {
+            mode: "dropdown",
+            options: ["auto", "beginner", "normal", "pro"].map((value) => ({ value, label: levelLabel(value) })),
+          },
+        },
+      },
+      {
         name: "show_last_alexa",
         label: t("Zuletzt aktive Alexa (Last Alexa) anzeigen"),
         default: false,
@@ -9128,7 +9170,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.9.3 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.10.0 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

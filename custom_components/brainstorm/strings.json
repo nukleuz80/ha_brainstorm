@@ -114,6 +114,7 @@
         "title": "Brainstorm › General",
         "description": "Configure Brainstorm Hub behavior and Markdown export.",
         "data": {
+          "ui_level": "Operating level",
           "default_category": "Default category for new ideas",
           "smart_formatting": "Smart Text Optimization (grammar, capitalization, infinitive formatting)",
           "voice_due": "Take dates from spoken text as a due date",
@@ -124,6 +125,7 @@
           "go_back": "⬅️ Back, without saving"
         },
         "data_description": {
+          "ui_level": "How many controls the cards and these settings show. Beginner shows the basics, Normal adds subtasks, markers, repeating and more views, Pro shows everything. Hiding deletes nothing, and each card can set its own level.",
           "allowed_echos": "Only these Echos can capture ideas and open Brainstorm by voice. Leave empty to use all Echos.",
           "default_category": "Used when an idea cannot be assigned to a category.",
           "smart_formatting": "Corrects capitalization and grammar of new ideas and removes filler words.",
@@ -622,6 +624,13 @@
         "biweekly": "Every 2 weeks",
         "monthly": "Every month",
         "yearly": "Every year"
+      }
+    },
+    "ui_level": {
+      "options": {
+        "beginner": "Beginner",
+        "normal": "Normal",
+        "pro": "Pro"
       }
     }
   },

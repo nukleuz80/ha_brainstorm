@@ -17,6 +17,18 @@ CONF_GLOSSARY = "glossary"
 CONF_HIDE_EMPTY_CATEGORIES = "hide_empty_categories"
 CONF_ALLOWED_ECHOS = "allowed_echos"
 CONF_VOICE_MODE = "voice_mode"
+CONF_UI_LEVEL = "ui_level"
+UI_LEVEL_BEGINNER = "beginner"
+UI_LEVEL_NORMAL = "normal"
+UI_LEVEL_PRO = "pro"
+UI_LEVELS = [UI_LEVEL_BEGINNER, UI_LEVEL_NORMAL, UI_LEVEL_PRO]
+# Installations from before the levels keep seeing everything, new ones start normal
+DEFAULT_UI_LEVEL = UI_LEVEL_PRO
+NEW_UI_LEVEL = UI_LEVEL_NORMAL
+# Menu entries of the settings that only pros see
+PRO_MENU_STEPS = frozenset(
+    {"battery", "privacy_voice", "reminder_lists", "reminder_locks"}
+)
 CONF_PRIVACY_ENABLED = "privacy_enabled"
 CONF_PRIVACY_OWNER = "privacy_owner"
 CONF_PRIVACY_EXPORT = "privacy_export"

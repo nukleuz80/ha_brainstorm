@@ -22,6 +22,7 @@ This guide shows with examples what you can **say**, **write**, **set** and **au
    - [List card](#32-list-card)
    - [Mind map: mouse, touch, keyboard](#33-mind-map-mouse-touch-keyboard)
 4. [Set](#4-set)
+   - [Operating level](#40-operating-level)
    - [Integration](#41-integration)
    - [List card](#42-list-card-brainstorm-card)
    - [Mind map card](#43-mind-map-card-brainstorm-mindmap-card)
@@ -311,6 +312,18 @@ In a text field: **Enter** saves, **Shift+Enter** starts a new line, **Esc** can
 
 ## 4. Set
 
+### 4.0 Operating level
+
+Under **Configure ➔ General Settings & Export ➔ Operating level** you choose how much Brainstorm shows. The level applies to everyone, to both cards and to the configure menu. New installations start with *Normal*, existing ones keep *Pro*, so everything stays as before.
+
+| Level | List card and edit dialog | Mind map | Configure menu |
+|---|---|---|---|
+| **Beginner** | input, microphone, categories, ticking off, search; in the dialog title, description, category, priority and due date | only *Around the center*, New idea, zoom, full screen | without batteries, lock times, rules per list, Echos & apps and AI text cleanup |
+| **Normal** | also subtasks, multi-select, markers, repeating, attachments, sharing, AI suggestions | also *Tree*, *Outline*, *Kanban*, focus, levels, search and filter, multi-select, export as picture, PDF and Markdown | like Beginner |
+| **Pro** | everything: progress, numbering and sorting, callout, frame, shape, remind on Echos, original text, "in progress" | everything: *Org chart*, *Timeline*, *Matrix*, rules, cross links, frames, brainstorm and presentation mode, OPML/FreeMind, summing up a branch, all shortcuts | everything |
+
+Hiding deletes nothing: markers, progress or frames that are set stay visible on the cards. In the edit dialog **More fields …** brings the hidden fields back. Each card can have its own level with `level: beginner`, `normal` or `pro`, for example a kitchen tablet that always shows *Beginner*.
+
 ### 4.1 Integration
 
 [**Settings ➔ Devices & Services ➔ Brainstorm Hub ➔ Configure**](https://my.home-assistant.io/redirect/integration/?domain=brainstorm) opens a menu. Every field is described in the [README](../README.md#️-all-settings).
@@ -358,6 +371,7 @@ allow_delete: false           # e.g. for a wall tablet
 |---|---|---|
 | `title` | Brainstorm Hub | card title |
 | `sensor` | `sensor.brainstorm_ideen_ubersicht` | data source |
+| `level` | as in the settings | operating level of this card only: `beginner`, `normal` or `pro`, see [4.0](#40-operating-level) |
 | `color_mode` | `multicolor` | `multicolor` (color per category) or `theme` (theme colors) |
 | `default_category` | `all` | filter when opening |
 | `max_items` | `0` | at most this many notes (0 = all) |
@@ -411,6 +425,7 @@ A single note can get its own shape in the edit dialog or through a service (`no
 | Option | Default | Meaning |
 |---|---|---|
 | `title` | Brainstorm Mindmap | title |
+| `level` | as in the settings | operating level of this card only, see [4.0](#40-operating-level) |
 | `height` | `calc(100vh - 32px)` | height, e.g. `600px` or `75vh` |
 | `voice_bubbles` | `true` | voice notes as speech bubbles |
 | `default_category` | `all` | category in focus |
@@ -491,7 +506,7 @@ actions:
 
 ### 5.3 Sensor attributes
 
-`sensor.brainstorm_ideen_ubersicht` counts open notes. Its attributes include all notes, the categories, `allowed_echos` and `voice_mode`.
+`sensor.brainstorm_ideen_ubersicht` counts open notes. Its attributes include all notes, the categories, `allowed_echos`, `voice_mode` and `ui_level` (operating level).
 
 ```yaml
 {{ state_attr('sensor.brainstorm_ideen_ubersicht', 'ideas')

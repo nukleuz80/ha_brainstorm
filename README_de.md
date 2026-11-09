@@ -9,7 +9,7 @@
 [![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.9.3-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.10.0-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -541,6 +541,7 @@ Du findest sie unter [**Einstellungen ➔ Geräte & Dienste ➔ Brainstorm Hub �
 
 | Feld | Was es bewirkt |
 | :--- | :--- |
+| Bedienstufe | Wie viele Bedienelemente die Karten und diese Einstellungen zeigen: Einsteiger, Normal oder Profi. Neue Installationen starten mit Normal, bestehende behalten Profi. Ausblenden löscht nichts, und jede Karte kann mit `level` ihre eigene Stufe haben. Details in der [Anleitung](docs/anleitung.md#40-bedienstufe). |
 | Standard-Kategorie für neue Ideen | Wird genutzt, wenn eine Idee keiner Kategorie zugeordnet werden kann. |
 | Intelligente Text-Optimierung (Grammatik, Groß-/Kleinschreibung, Infinitiv) | Korrigiert Groß-/Kleinschreibung und Grammatik neuer Ideen und entfernt Füllwörter. |
 | Datum aus gesprochenem Text als Termin übernehmen | Ein gesprochenes „morgen“ oder „am 25.11.“ wandert aus dem Text in den Termin. Ein Termin löst zu dieser Zeit eine Erinnerung aus, ohne Uhrzeit um 9 Uhr. |
@@ -1085,6 +1086,7 @@ Weitere Beispiele für Assist und Alexa liegen im Ordner [`examples/`](examples/
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.10.0`** | 09.11.2026 | **Bedienstufen: Einsteiger, Normal, Profi.** Neue Einstellung *Bedienstufe* unter *Konfigurieren ➔ Allgemeine Einstellungen & Export*. *Einsteiger* zeigt das Wichtigste (Eingabe, Mikrofon, Kategorien, Abhaken, Suche; im Dialog Titel, Beschreibung, Kategorie, Priorität und Termin; die runde Mindmap mit Neuer Idee, Zoom und Vollbild). *Normal* ergänzt Unterpunkte, Mehrfachauswahl, Marker, Wiederholen, Anhänge, Freigeben, KI-Vorschläge, die Ansichten Baum, Gliederung und Kanban, Fokus, Filter und Export als Bild, PDF und Markdown. *Profi* zeigt alles. Die Stufe gilt für beide Karten und das Konfigurieren-Menü (unter Profi ohne Batterien, Sperrzeiten, Regeln pro Liste, Echos & Apps und KI-Textaufräumen). Neue Installationen starten mit Normal, bestehende behalten Profi. Ausblenden löscht nichts: Gesetzte Werte bleiben sichtbar, und **Mehr Felder …** im Bearbeiten-Dialog zeigt alle Felder. Jede Karte kann mit `level` ihre eigene Stufe haben, etwa ein Küchentablet. Der Sensor hat das neue Attribut `ui_level`. |
 | **`v1.9.3`** | 09.11.2026 | **Sichtbar in HACS.** Brainstorm Hub erscheint jetzt in der normalen HACS-Suche, der Ausweichweg über ein benutzerdefiniertes Repository ist aus der Installation entfernt. Ein Hinweis ganz oben und ein *HACS Default*-Badge halten die Aufnahme in die Standardliste am 9. November 2026 fest. Wer das Repository früher selbst eingetragen hat, kann es in HACS wieder entfernen; die Installation bleibt erhalten. |
 | **`v1.9.2`** | 09.11.2026 | **Jetzt in der HACS-Standardliste.** Installation über die normale Suche in HACS; der Weg über ein benutzerdefiniertes Repository bleibt als Ausweichweg, bis der Eintrag überall sichtbar ist. |
 | **`v1.9.1`** | 09.11.2026 | **Sicherheit (HACS-Review).** Die Aktionen `export_json`, `export_markdown` und `import_json` nehmen eine Datei bzw. einen Ordner (`path`) nur noch von Admins an, auch ohne Privatsphäre. Geschrieben und gelesen wird nur noch im Ordner `/config/brainstorm`, im Markdown-Ordner aus den Optionen oder in `allowlist_external_dirs`, damit keine Dateien anderer Integrationen überschrieben werden können. Importierte IDs müssen `[A-Za-z0-9_-]{1,64}` entsprechen, sonst gibt es eine neue ID; Position, Auslöser und Textfelder werden beim Import auf ihren Typ geprüft. Beide Karten escapen IDs, den Kategorienamen im Leer-Hinweis, den Kartentitel und Icons. |

@@ -114,6 +114,7 @@
         "title": "Brainstorm › Allgemein",
         "description": "Passe das Verhalten von Brainstorm Hub und den Markdown-Export an.",
         "data": {
+          "ui_level": "Bedienstufe",
           "default_category": "Standard-Kategorie für neue Ideen",
           "smart_formatting": "Intelligente Text-Optimierung (Grammatik, Groß-/Kleinschreibung, Infinitiv)",
           "voice_due": "Datum aus gesprochenem Text als Termin übernehmen",
@@ -124,6 +125,7 @@
           "go_back": "⬅️ Zurück, ohne zu speichern"
         },
         "data_description": {
+          "ui_level": "Wie viele Bedienelemente die Karten und diese Einstellungen zeigen. Einsteiger zeigt das Wichtigste, Normal ergänzt Unterpunkte, Marker, Wiederholen und weitere Ansichten, Profi zeigt alles. Ausblenden löscht nichts, und jede Karte kann ihre eigene Stufe haben.",
           "allowed_echos": "Nur diese Echos können Ideen per Sprache erfassen und Brainstorm öffnen. Leer lassen, um alle Echos zu nutzen.",
           "default_category": "Wird genutzt, wenn eine Idee keiner Kategorie zugeordnet werden kann.",
           "smart_formatting": "Korrigiert Groß-/Kleinschreibung und Grammatik neuer Ideen und entfernt Füllwörter.",
@@ -622,6 +624,13 @@
         "biweekly": "Alle 2 Wochen",
         "monthly": "Jeden Monat",
         "yearly": "Jedes Jahr"
+      }
+    },
+    "ui_level": {
+      "options": {
+        "beginner": "Einsteiger",
+        "normal": "Normal",
+        "pro": "Profi"
       }
     }
   },

@@ -23,6 +23,9 @@ from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    CONF_UI_LEVEL,
+    DEFAULT_UI_LEVEL,
+    UI_LEVELS,
     ATTR_CATEGORY,
     ATTR_CREATED_AT,
     ATTR_ALEXA_NATIVE,
@@ -295,6 +298,8 @@ class BrainstormStore:
         )
         self._allowed_echos = list(self.options.get(CONF_ALLOWED_ECHOS) or [])
         self._voice_mode = self.options.get(CONF_VOICE_MODE, VOICE_MODE_NATIVE)
+        ui_level = self.options.get(CONF_UI_LEVEL, DEFAULT_UI_LEVEL)
+        self._ui_level = ui_level if ui_level in UI_LEVELS else DEFAULT_UI_LEVEL
         self._default_category = self.options.get("default_category", "Inbox")
         self._last_action: dict[str, Any] | None = None
         self._ai_tasks: set[asyncio.Task[None]] = set()
@@ -308,6 +313,11 @@ class BrainstormStore:
     def last_action(self) -> dict[str, Any] | None:
         """Return the most recent action performed."""
         return getattr(self, "_last_action", None)
+
+    @property
+    def ui_level(self) -> str:
+        """Return how many controls the cards and settings show."""
+        return self._ui_level
 
     @property
     def hide_empty_categories(self) -> bool:
@@ -462,6 +472,7 @@ class BrainstormStore:
             "allowed_echos": self.allowed_echos,
             "voice_mode": self.voice_mode,
             "ai_subtasks": self.ai_subtasks_available,
+            "ui_level": self.ui_level,
         }
 
     def get_overview_attributes(self, user_id: str | None = None) -> dict[str, Any]:
@@ -572,6 +583,7 @@ class BrainstormStore:
             "allowed_echos": self.allowed_echos,
             "voice_mode": self.voice_mode,
             "ai_subtasks": self.ai_subtasks_available,
+            "ui_level": self.ui_level,
             "category_counts": counts_by_cat,
             "priority_counts": counts_by_prio,
             "latest_idea": summary(active_ideas[0]) if active_ideas else None,

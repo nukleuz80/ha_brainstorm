@@ -22,6 +22,7 @@ Diese Anleitung zeigt an Beispielen, was du **sagen**, **schreiben**, **einstell
    - [Listenkarte](#32-listenkarte)
    - [Mindmap: Maus, Finger, Tastatur](#33-mindmap-maus-finger-tastatur)
 4. [Einstellen](#4-einstellen)
+   - [Bedienstufe](#40-bedienstufe)
    - [Integration](#41-integration)
    - [Listenkarte](#42-listenkarte-brainstorm-card)
    - [Mindmap-Karte](#43-mindmap-karte-brainstorm-mindmap-card)
@@ -312,6 +313,18 @@ Im Textfeld: **Enter** speichert, **Umschalt+Enter** macht eine neue Zeile, **Es
 
 ## 4. Einstellen
 
+### 4.0 Bedienstufe
+
+Unter **Konfigurieren ➔ Allgemeine Einstellungen & Export ➔ Bedienstufe** wählst du, wie viel Brainstorm zeigt. Die Stufe gilt für alle Personen, für beide Karten und für das Konfigurieren-Menü. Neue Installationen starten mit *Normal*, bestehende behalten *Profi*, also alles wie bisher.
+
+| Stufe | Listenkarte und Bearbeiten-Dialog | Mindmap | Konfigurieren-Menü |
+|---|---|---|---|
+| **Einsteiger** | Eingabe, Mikrofon, Kategorien, Abhaken, Suche; im Dialog Titel, Beschreibung, Kategorie, Priorität und Termin | nur *Rund um die Mitte*, Neue Idee, Zoom, Vollbild | ohne Batterien, Sperrzeiten, Regeln pro Liste, Echos & Apps und KI-Textaufräumen |
+| **Normal** | zusätzlich Unterpunkte, Mehrfachauswahl, Marker, Wiederholen, Anhänge, Freigeben, KI-Vorschläge | zusätzlich *Baum*, *Gliederung*, *Kanban*, Fokus, Ebenen, Suche und Filter, Mehrfachauswahl, Export als Bild, PDF und Markdown | wie Einsteiger |
+| **Profi** | alles: Fortschritt, Nummerierung und Sortieren, Callout, Rahmen, Form, Erinnern auf Echos, Originaltext, „In Arbeit“ | alles: *Organigramm*, *Zeitleiste*, *Matrix*, Regeln, Querverbindungen, Rahmen, Brainstorm- und Präsentationsmodus, OPML/FreeMind, Ast zusammenfassen, alle Tastenkürzel | alles |
+
+Ausblenden löscht nichts: Gesetzte Marker, Fortschritt oder Rahmen bleiben auf den Karten sichtbar. Im Bearbeiten-Dialog holt **Mehr Felder …** die ausgeblendeten Felder zurück. Jede Karte kann mit `level: beginner`, `normal` oder `pro` ihre eigene Stufe haben, zum Beispiel ein Küchentablet immer *Einsteiger*.
+
 ### 4.1 Integration
 
 [**Einstellungen ➔ Geräte & Dienste ➔ Brainstorm Hub ➔ Konfigurieren**](https://my.home-assistant.io/redirect/integration/?domain=brainstorm) öffnet ein Menü. Alle Felder sind in der [README](../README_de.md#️-alle-einstellungen) einzeln beschrieben.
@@ -359,6 +372,7 @@ allow_delete: false            # z. B. für ein Wand-Tablet
 |---|---|---|
 | `title` | Brainstorm Hub | Kartentitel |
 | `sensor` | `sensor.brainstorm_ideen_ubersicht` | Datenquelle |
+| `level` | wie in den Einstellungen | Bedienstufe nur dieser Karte: `beginner`, `normal` oder `pro`, siehe [4.0](#40-bedienstufe) |
 | `color_mode` | `multicolor` | `multicolor` (Farbe je Kategorie) oder `theme` (Theme-Farben) |
 | `default_category` | `all` | Filter beim Öffnen |
 | `max_items` | `0` | höchstens so viele Notizen (0 = alle) |
@@ -412,6 +426,7 @@ Pro Notiz kannst du die Form auch im Bearbeiten-Dialog wählen oder per Dienst s
 | Option | Standard | Bedeutung |
 |---|---|---|
 | `title` | Brainstorm Mindmap | Titel |
+| `level` | wie in den Einstellungen | Bedienstufe nur dieser Karte, siehe [4.0](#40-bedienstufe) |
 | `height` | `calc(100vh - 32px)` | Höhe, z. B. `600px` oder `75vh` |
 | `voice_bubbles` | `true` | Sprachnotizen als Sprechblase |
 | `default_category` | `all` | Kategorie im Fokus |
@@ -492,7 +507,7 @@ actions:
 
 ### 5.3 Sensor-Attribute
 
-`sensor.brainstorm_ideen_ubersicht` zählt offene Notizen. In den Attributen stehen u. a. alle Notizen, Kategorien, `allowed_echos` und `voice_mode`.
+`sensor.brainstorm_ideen_ubersicht` zählt offene Notizen. In den Attributen stehen u. a. alle Notizen, Kategorien, `allowed_echos`, `voice_mode` und `ui_level` (Bedienstufe).
 
 ```yaml
 {{ state_attr('sensor.brainstorm_ideen_ubersicht', 'ideas')

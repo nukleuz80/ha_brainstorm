@@ -15,6 +15,12 @@ from homeassistant.helpers.network import NoURLAvailableError
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    CONF_UI_LEVEL,
+    DEFAULT_UI_LEVEL,
+    NEW_UI_LEVEL,
+    PRO_MENU_STEPS,
+    UI_LEVEL_PRO,
+    UI_LEVELS,
     ATTR_DUE,
     ATTR_TEXT,
     CONF_AI_ENABLED,
@@ -153,7 +159,9 @@ class BrainstormConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Handle the initial step."""
         if user_input is not None:
             return self.async_create_entry(
-                title="Brainstorm Hub", data={}, options=user_input
+                title="Brainstorm Hub",
+                data={},
+                options={CONF_UI_LEVEL: NEW_UI_LEVEL, **user_input},
             )
 
         data_schema = vol.Schema(
@@ -314,7 +322,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Show options menu."""
-        menu = self._get_localized_menu("init")
+        menu = self._level_menu(self._get_localized_menu("init"))
         if not bring_lists(self.hass):
             # Only offered where the Bring! integration has lists
             menu = {key: label for key, label in menu.items() if key != "bring"}
@@ -559,6 +567,16 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
 
         data_schema = vol.Schema(
             {
+                vol.Optional(
+                    CONF_UI_LEVEL,
+                    default=options.get(CONF_UI_LEVEL, DEFAULT_UI_LEVEL),
+                ): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=UI_LEVELS,
+                        mode=selector.SelectSelectorMode.LIST,
+                        translation_key=CONF_UI_LEVEL,
+                    )
+                ),
                 vol.Optional(
                     "default_category",
                     default=options.get("default_category", "Inbox"),
@@ -878,6 +896,13 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         step = getattr(self, f"async_step_{back_to}")
         return await step()
 
+    def _level_menu(self, menu: dict[str, str]) -> dict[str, str]:
+        """Leave out the menu entries that only pros see."""
+        options = self.config_entry.options or self.config_entry.data
+        if options.get(CONF_UI_LEVEL, DEFAULT_UI_LEVEL) == UI_LEVEL_PRO:
+            return menu
+        return {key: label for key, label in menu.items() if key not in PRO_MENU_STEPS}
+
     def _take_notice(self) -> str:
         """Return the message about the last action, shown only once."""
         notice, self._notice = self._notice, ""
@@ -1052,7 +1077,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         """Show the reminder sections."""
         return self.async_show_menu(
             step_id="reminders",
-            menu_options=self._get_localized_menu("reminders"),
+            menu_options=self._level_menu(self._get_localized_menu("reminders")),
             description_placeholders={
                 "notice": self._take_notice(),
                 "next_reminder": self._next_reminder(),
@@ -1404,25 +1429,24 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             options.pop(CONF_AI_ENTITY, None)
             options.update(user_input)
             return await self._async_saved(options, "init")
+        schema: dict[Any, Any] = {
+            vol.Optional(
+                CONF_AI_ENTITY, description=_suggested(options, CONF_AI_ENTITY)
+            ): selector.EntitySelector(selector.EntitySelectorConfig(domain="ai_task")),
+        }
+        # Polishing spoken text is a fine point only pros see; the value stays
+        if options.get(CONF_UI_LEVEL, DEFAULT_UI_LEVEL) == UI_LEVEL_PRO:
+            schema[
+                vol.Required(
+                    CONF_AI_TEXT_CLEANUP,
+                    default=options.get(CONF_AI_TEXT_CLEANUP, False),
+                )
+            ] = selector.BooleanSelector()
+        schema[
+            vol.Required(CONF_AI_ENABLED, default=options.get(CONF_AI_ENABLED, False))
+        ] = selector.BooleanSelector()
         return self.async_show_form(
-            step_id="ai",
-            data_schema=vol.Schema(
-                _with_back(
-                {
-                    vol.Optional(
-                        CONF_AI_ENTITY, description=_suggested(options, CONF_AI_ENTITY)
-                    ): selector.EntitySelector(
-                        selector.EntitySelectorConfig(domain="ai_task")
-                    ),
-                    vol.Required(
-                        CONF_AI_TEXT_CLEANUP,
-                        default=options.get(CONF_AI_TEXT_CLEANUP, False),
-                    ): selector.BooleanSelector(),
-                    vol.Required(
-                        CONF_AI_ENABLED, default=options.get(CONF_AI_ENABLED, False)
-                    ): selector.BooleanSelector(),
-                })
-            ),
+            step_id="ai", data_schema=vol.Schema(_with_back(schema))
         )
 
     async def async_step_cleanup(

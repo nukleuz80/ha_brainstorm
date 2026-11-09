@@ -9,7 +9,7 @@
 [![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.9.3-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.10.0-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -489,6 +489,7 @@ Find these under [**Settings ➔ Devices & Services ➔ Brainstorm Hub ➔ Confi
 
 | Field | What it does |
 | :--- | :--- |
+| Operating level | How many controls the cards and these settings show: Beginner, Normal or Pro. New installations start with Normal, existing ones keep Pro. Hiding deletes nothing, and each card can set its own `level`. Details in the [guide](docs/guide.md#40-operating-level). |
 | Default category for new ideas | Used when an idea cannot be assigned to a category. |
 | Smart Text Optimization (grammar, capitalization, infinitive formatting) | Corrects capitalization and grammar of new ideas and removes filler words. |
 | Take dates from spoken text as a due date | A spoken "tomorrow" or "on 25.11." moves out of the text and becomes a due date. A due date leads to a reminder at that time, without a time of day at 09:00. |
@@ -1033,6 +1034,7 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.10.0`** | 2026-11-09 | **Operating levels: Beginner, Normal, Pro.** New setting *Operating level* under *Configure ➔ General Settings & Export*. *Beginner* shows the basics (input, microphone, categories, ticking off, search; in the dialog title, description, category, priority and due date; the round mind map with New idea, zoom and full screen). *Normal* adds subtasks, multi-select, markers, repeating, attachments, sharing, AI suggestions, the views tree, outline and Kanban, focus, filter and export as picture, PDF and Markdown. *Pro* shows everything. The level applies to both cards and the configure menu (below Pro without batteries, lock times, rules per list, Echos & apps and AI text cleanup). New installations start with Normal, existing ones keep Pro. Hiding deletes nothing: values that are set stay visible, and **More fields …** in the edit dialog shows all fields. Each card can set its own `level`, for example a kitchen tablet. The sensor has the new attribute `ui_level`. |
 | **`v1.9.3`** | 2026-11-09 | **Visible in HACS.** Brainstorm Hub now shows up in the normal HACS search, so the custom repository fallback is gone from the installation steps. A note at the top and a *HACS Default* badge mark the acceptance into the default list on 9 November 2026. If you added the custom repository earlier, you can remove it in HACS; the installation stays. |
 | **`v1.9.2`** | 2026-11-09 | **Now in the HACS default list.** Install through the normal search in HACS; the custom repository route stays as a fallback until the entry is visible everywhere. |
 | **`v1.9.1`** | 2026-11-09 | **Security (HACS review).** The actions `export_json`, `export_markdown` and `import_json` only accept a file or folder (`path`) from admins, even with privacy off. Files are only written and read in `/config/brainstorm`, the Markdown folder from the options, or `allowlist_external_dirs`, so files of other integrations can no longer be overwritten. Imported IDs must match `[A-Za-z0-9_-]{1,64}`, otherwise they get a new ID; position, trigger and text fields are type-checked on import. Both cards escape IDs, the category name in the empty hint, the card title and icons. |

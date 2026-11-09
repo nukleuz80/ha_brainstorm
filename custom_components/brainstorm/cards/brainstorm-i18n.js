@@ -426,6 +426,11 @@ const DICTIONARIES = {
     "Brainstorm: schnell viele Ideen sammeln (B)": "Brainstorm: collect many ideas fast (B)",
     "Die Idee konnte nicht gespeichert werden.": "The idea could not be saved.",
     "Fertig": "Done",
+    "Einsteiger": "Beginner",
+    "Normal": "Normal",
+    "Profi": "Pro",
+    "Mehr Felder …": "More fields …",
+    "Bedienstufe dieser Karte": "Operating level of this card",
     "Idee eintippen und Enter …": "Type an idea and press Enter …",
     "Ideen landen in der passenden Kategorie.": "Ideas go into the matching category.",
     "Ideen landen in „{category}“.": "Ideas go into “{category}”.",
@@ -1539,6 +1544,60 @@ export function blockedBadge(idea) {
   if (!waits.length) return "";
   const names = waits.map((w) => escapeHtml(w.text || "")).join(", ");
   return `<span class="blocked-badge" title="${t("Wartet auf: {names}", { names })}">⛔ ${t("Wartet")}${waits.length > 1 ? ` · ${waits.length}` : ""}</span>`;
+}
+
+// Operating levels: beginners see the basics, pros see everything. Hiding
+// never deletes anything, it only takes the controls out of sight.
+export const LEVELS = ["beginner", "normal", "pro"];
+
+/** Return the level of a card: its own option first, then the setting of the integration. */
+export function uiLevel(config, sensor) {
+  const own = config && config.level;
+  if (LEVELS.includes(own)) return own;
+  const shared = sensor && sensor.attributes && sensor.attributes.ui_level;
+  // Installations from before the levels keep seeing everything
+  return LEVELS.includes(shared) ? shared : "pro";
+}
+
+/** Return whether a level shows what needs at least the given level. */
+export function levelAllows(level, needed) {
+  const have = LEVELS.indexOf(level);
+  return (have < 0 ? LEVELS.length - 1 : have) >= LEVELS.indexOf(needed);
+}
+
+/** Return the label of a level. */
+export function levelLabel(level) {
+  return { beginner: t("Einsteiger"), normal: t("Normal"), pro: t("Profi") }[level] || t("Wie in den Einstellungen");
+}
+
+/** CSS that hides what needs a higher level; the card sets data-level on itself. */
+export const LEVEL_CSS = `
+  .lvl { display: contents; }
+  :host([data-level="beginner"]) [data-lvl="normal"],
+  :host([data-level="beginner"]) [data-lvl="pro"],
+  :host([data-level="normal"]) [data-lvl="pro"] { display: none !important; }
+  .lvl-more { width: 100%; min-height: 44px; margin: 8px 0 4px; }
+`;
+
+/**
+ * Add a "More fields" button to a dialog with hidden fields. It shows them all,
+ * so values set at a higher level stay editable.
+ */
+export function addMoreFields(body, level, className) {
+  const hidden = [...body.querySelectorAll("[data-lvl]")].filter((el) => !levelAllows(level, el.dataset.lvl));
+  if (!hidden.length) return null;
+  const footer = body.querySelector(".action-dialog-footer, .dialog-footer");
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = `${className} lvl-more`;
+  button.textContent = t("Mehr Felder …");
+  button.addEventListener("click", () => {
+    body.querySelectorAll("[data-lvl]").forEach((el) => el.removeAttribute("data-lvl"));
+    button.remove();
+  });
+  if (footer) footer.before(button);
+  else body.append(button);
+  return button;
 }
 
 // Boards: Kanban by state, a timeline by due date, the Eisenhower matrix
