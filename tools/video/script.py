@@ -170,7 +170,8 @@ CHAPTERS: list[dict] = [
                 "say": "Hast du einen Echo Show? Dann öffne im Tab Build den Punkt Interfaces "
                        "und schalte Alexa Presentation Language ein. Wähle die Hub-Profile "
                        "für den Echo Show und klicke oben auf Save. Danach zeigt der Echo "
-                       "Show deine Listen, und du kannst Ideen durch Antippen erledigen.",
+                       "Show deine Listen. Antippen hakt eine Idee ab oder klappt ihre "
+                       "Unterpunkte auf.",
             },
         ],
     },
