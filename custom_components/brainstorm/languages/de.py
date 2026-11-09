@@ -174,6 +174,8 @@ CONVERSATIONAL_PREFIXES: list[str] = [
     r"^(?:(?:kannst|könntest)\s+du\s+(?:dir\s+)?(?:bitte\s+)?(?:notieren|aufschreiben|merken|eintragen)|notiere\s*(?:bitte)?|schreib\s*(?:bitte)?(?:\s*auf)?|merke?\s*(?:dir)?|trage\s+ein)\s*(?::|,|\s+dass(?:\s+(?:ich|wir)\b)?|\s+)\s*",
     r"^(?:bitte\s+notieren|bitte\s+aufschreiben|bitte\s+merken)\s*(?::|,|\s+dass(?:\s+(?:ich|wir)\b)?|\s+)\s*",
     r"^(?:neue\s+)?(?:idee|notiz)\s*(?::|,)?\s+(?!(?:von|vom|für|zu|zur|zum|an|am|über|mit|aus|im|in)\b)",
+    # A leftover 'bitte' when the voice command already took 'notiere'
+    r"^bitte\b[,.]?\s+",
     r"^(?:dass\s+ich\s+(?:noch\s+)?|dass\s+wir\s+(?:noch\s+)?|dass\s+)",
     r"^(?:noch\s+)",
 ]

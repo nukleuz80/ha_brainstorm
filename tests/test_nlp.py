@@ -26,6 +26,9 @@ from custom_components.brainstorm.languages.de import (
         ),
         ("schreib bitte auf dass wir terrasse reinigen", "Terrasse reinigen"),
         ("notiere dass ich noch milch kaufen muss", "Milch kaufen"),
+        # The voice command took "notiere" already
+        ("bitte dass der Rasen gemäht werden muss", "Rasen mähen"),
+        ("Bitte, Milch kaufen", "Milch kaufen"),
         ("WLAN Passwort ändern", "WLAN Passwort ändern"),
         ("ESP32 flashen", "ESP32 flashen"),
         ("iPhone laden", "iPhone laden"),
