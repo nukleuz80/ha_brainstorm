@@ -210,7 +210,9 @@ With **Smart Text Optimization** (General Settings) spoken notes are tidied up a
 | New note | type in the quick input, e.g. `Garden: cut the tree`, and press **Enter** |
 | Preset category and priority | the 🏷️ and priority selectors below the input (*Auto* detects them from the text) |
 | Edit | tap the text or the pencil; in the dialog **Ctrl+Enter** saves |
-| Context menu | long press a note |
+| Context menu | long press a note or tap ⋯ on the right of the row |
+| Buttons of a row | on phones and narrow cards under ⋯ (indent, subidea, AI, edit, delete), with a mouse they appear on hover; `row_actions` changes this |
+| Fold subtasks | tap the ▾ 0/2 badge next to the priority |
 | Complete | tap the circle on the left, reactivate it in the Done tab |
 | Delete | ✕ |
 | Subtask | *Add a subidea*, or drag a note onto another |
@@ -376,6 +378,7 @@ allow_delete: false           # e.g. for a wall tablet
 | `default_category` | `all` | filter when opening |
 | `max_items` | `0` | at most this many notes (0 = all) |
 | `compact_mode` | `false` | lower rows |
+| `row_actions` | `auto` | buttons in the rows: `auto` (⋯ on phones, on hover with a mouse), `inline` (always all) or `menu` (always only ⋯) |
 | `show_logo` | `true` | logo in the header |
 | `show_badge` | `true` | counter in the header |
 | `show_quick_input` | `true` | quick input |

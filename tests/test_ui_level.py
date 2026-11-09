@@ -117,3 +117,13 @@ def test_cards_hide_by_level() -> None:
         assert 'name: "level"' in source, card
         assert "addMoreFields(body" in source, card
         assert 'data-lvl="pro"' in source and 'data-lvl="normal"' in source, card
+
+
+def test_list_rows_keep_their_width() -> None:
+    """The row buttons sit behind ⋯ on phones and fold subtasks in the meta row."""
+    source = (CARDS / "brainstorm-card.js").read_text("utf-8")
+    assert 'class="more-btn"' in source
+    assert "collapse-chip" in source
+    assert 'name: "row_actions"' in source
+    assert "@container brainstorm-ha-card (max-width: 520px)" in source
+    assert "min-width: 44px" in source

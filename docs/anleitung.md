@@ -211,7 +211,9 @@ Mit **Intelligente Formatierung** (Allgemeine Einstellungen) werden gesprochene 
 | Neue Notiz | in *Blitz-Idee* tippen, z. B. `Garten: Baum schneiden`, und **Enter** |
 | Kategorie und Priorität vorgeben | Auswahlfelder 🏷️ und Priorität unter dem Eingabefeld (*Auto* erkennt sie aus dem Text) |
 | Bearbeiten | auf den Text oder den Stift tippen; im Dialog speichert **Strg+Enter** |
-| Kontextmenü | lange auf eine Notiz drücken |
+| Kontextmenü | lange auf eine Notiz drücken oder ⋯ rechts in der Zeile antippen |
+| Knöpfe einer Zeile | am Handy und auf schmalen Karten unter ⋯ (Einrücken, Unteridee, KI, Bearbeiten, Löschen), mit der Maus erscheinen sie beim Darüberfahren; `row_actions` ändert das |
+| Unterpunkte auf- und zuklappen | Abzeichen ▾ 0/2 neben der Priorität antippen |
 | Abhaken | Kreis links antippen, im Reiter Erledigt wieder aktivieren |
 | Löschen | ✕ |
 | Unteraufgabe | Unteridee anlegen, oder Notiz ziehen und auf eine andere fallen lassen |
@@ -377,6 +379,7 @@ allow_delete: false            # z. B. für ein Wand-Tablet
 | `default_category` | `all` | Filter beim Öffnen |
 | `max_items` | `0` | höchstens so viele Notizen (0 = alle) |
 | `compact_mode` | `false` | flachere Zeilen |
+| `row_actions` | `auto` | Knöpfe in den Zeilen: `auto` (Handy ⋯, Maus beim Darüberfahren), `inline` (immer alle) oder `menu` (immer nur ⋯) |
 | `show_logo` | `true` | Logo im Kopf |
 | `show_badge` | `true` | Zähler im Kopf |
 | `show_quick_input` | `true` | Feld *Blitz-Idee* |

@@ -1,9 +1,9 @@
-import { LEVEL_CSS, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, repeatBadge, repeatOptions, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.10.0";
+import { LEVEL_CSS, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, repeatBadge, repeatOptions, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.10.1";
 
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.10.0 - Bedienstufen
+ * Version 1.10.1 - Platz in der Liste
  */
 // The bulb lies next to this file, wherever Home Assistant serves it from
 const BULB_URL = new URL("./brainstorm-bulb.svg", import.meta.url).href;
@@ -3994,6 +3994,106 @@ class BrainstormCard extends HTMLElement {
         .source-device {
           opacity: 0.85;
           font-weight: 500;
+          display: inline-block;
+          max-width: 11em;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          vertical-align: bottom;
+        }
+        .source-badge {
+          white-space: nowrap;
+          max-width: 100%;
+        }
+        /* Subtasks fold with the progress badge in the meta row */
+        .collapse-btn.collapse-chip {
+          min-width: 0;
+          min-height: 26px;
+          padding: 0 6px 0 4px;
+          border-radius: 12px;
+          gap: 2px;
+          font-size: inherit;
+        }
+        .collapse-chip .progress-badge {
+          background: transparent;
+          padding: 0;
+          cursor: inherit;
+        }
+        .collapse-chip .collapse-arrow {
+          font-size: 0.8rem;
+        }
+        /* Row actions: ⋯ opens the long-press menu, so the text keeps the width */
+        .more-btn {
+          display: none;
+          align-items: center;
+          justify-content: center;
+          background: transparent;
+          border: none;
+          color: var(--secondary-text-color, #9e9e9e);
+          min-width: 44px;
+          min-height: 44px;
+          margin: -8px -8px -8px 0;
+          font-size: 1.35rem;
+          line-height: 1;
+          border-radius: 50%;
+          cursor: pointer;
+        }
+        .more-btn:hover,
+        .more-btn:focus-visible {
+          background: var(--secondary-background-color, rgba(127, 127, 127, 0.12));
+          color: var(--primary-text-color, #212121);
+        }
+        ha-card.row-actions-menu .item-actions.has-more > :not(.more-btn) {
+          display: none !important;
+        }
+        ha-card.row-actions-menu .more-btn {
+          display: inline-flex;
+        }
+        @media (hover: none) {
+          ha-card.row-actions-auto .item-actions.has-more > :not(.more-btn) {
+            display: none !important;
+          }
+          ha-card.row-actions-auto .more-btn {
+            display: inline-flex;
+          }
+        }
+        @container brainstorm-ha-card (max-width: 520px) {
+          ha-card.row-actions-auto .item-actions.has-more > :not(.more-btn) {
+            display: none !important;
+          }
+          ha-card.row-actions-auto .more-btn {
+            display: inline-flex;
+          }
+        }
+        /* With a mouse on a wide card the tools float over the row on hover */
+        @media (hover: hover) {
+          @container brainstorm-ha-card (min-width: 521px) {
+            ha-card.row-actions-auto .idea-item {
+              position: relative;
+            }
+            ha-card.row-actions-auto .item-actions.has-more {
+              position: absolute;
+              right: 6px;
+              top: 4px;
+              margin: 0;
+              padding: 2px 4px;
+              border-radius: 10px;
+              background: var(--card-background-color, #ffffff);
+              box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+              opacity: 0;
+              pointer-events: none;
+              transition: opacity 0.15s;
+              z-index: 2;
+            }
+            ha-card.row-actions-auto .idea-item:hover .item-actions.has-more,
+            ha-card.row-actions-auto .idea-item:focus-within .item-actions.has-more {
+              opacity: 1;
+              pointer-events: auto;
+            }
+            ha-card.row-actions-auto .item-actions.has-more > button {
+              opacity: 0.85 !important;
+            }
+          }
         }
         .item-actions {
           display: flex;
@@ -4373,7 +4473,7 @@ class BrainstormCard extends HTMLElement {
         }
       </style>
 
-      <ha-card class="${this._config.compact_mode === true ? 'compact-mode' : ''}">
+      <ha-card class="${this._config.compact_mode === true ? 'compact-mode' : ''} row-actions-${["inline", "menu"].includes(this._config.row_actions) ? this._config.row_actions : "auto"}">
         <div class="header">
           <div class="header-main">
             <div class="logo-wrap" id="logoWrap" title="Brainstorm Hub" style="display: ${this._config.show_logo !== false ? 'flex' : 'none'};">
@@ -4960,7 +5060,9 @@ class BrainstormCard extends HTMLElement {
                   ${this._formatTargetBadges(item)}
                   ${this._formatShareBadge(item)}
                   ${this._formatAuthorBadge(item)}
-                  ${progressBadge(item)}
+                  ${item.childCount
+                    ? `<button class="collapse-btn collapse-chip ${item.collapsed ? "is-collapsed" : ""}" title="${item.collapsed ? t("Unteraufgaben ausklappen") : t("Unteraufgaben einklappen")}" aria-expanded="${item.collapsed ? "false" : "true"}" data-id="${this._escapeHtml(item.id)}"><span class="collapse-arrow">${item.collapsed ? "▸" : "▾"}</span>${progressBadge(item) || `<span class="collapse-count">${item.childCount}</span>`}</button>`
+                    : progressBadge(item)}
                   ${markerBadges(item)}
                   ${blockedBadge(item)}
                   ${item.frame ? `<span class="frame-chip" title="${t("Rahmen")}">▢ ${this._escapeHtml(item.frame)}</span>` : ""}
@@ -4971,12 +5073,7 @@ class BrainstormCard extends HTMLElement {
                   ${showTime ? `<span>${this._formatTime(item.created_at)}</span>` : ""}
                 </div>
               </div>
-              <div class="item-actions">
-                ${
-                  item.childCount
-                    ? `<button class="collapse-btn ${item.collapsed ? "is-collapsed" : ""}" title="${item.collapsed ? t("Unteraufgaben ausklappen") : t("Unteraufgaben einklappen")}" aria-expanded="${item.collapsed ? "false" : "true"}" data-id="${this._escapeHtml(item.id)}">${item.collapsed ? "▸" : "▾"}<span class="collapse-count">${item.childCount}</span></button>`
-                    : ""
-                }
+              <div class="item-actions${itemEdit && !isCompletedView ? " has-more" : ""}">
                 ${
                   itemEdit
                     ? isSub
@@ -4991,6 +5088,7 @@ class BrainstormCard extends HTMLElement {
                 ${itemEdit && aiSubtasks && !isSub && !isCompletedView ? `<button class="suggest-btn" title="${t("Unteraufgaben von der KI vorschlagen lassen")}" data-id="${this._escapeHtml(item.id)}">✨</button>` : ""}
                 ${itemEdit ? `<button class="edit-btn" title="${t("Bearbeiten")}" data-id="${this._escapeHtml(item.id)}">✎</button>` : ""}
                 ${itemDelete ? `<button class="delete-btn" title="${t("Löschen")}" data-id="${this._escapeHtml(item.id)}">✕</button>` : ""}
+                ${itemEdit && !isCompletedView ? `<button class="more-btn" title="${t("Aktionen")}" aria-label="${t("Aktionen")}" aria-haspopup="menu" data-id="${this._escapeHtml(item.id)}">⋯</button>` : ""}
               </div>
             </div>
           `;
@@ -5150,6 +5248,15 @@ class BrainstormCard extends HTMLElement {
             }
             const prevItem = idx > 0 ? orderedIdeas[idx - 1] : null;
             const nextItem = idx < orderedIdeas.length - 1 ? orderedIdeas[idx + 1] : null;
+
+            // The ⋯ button holds the row's actions on phones and narrow cards
+            const moreBtn = el.querySelector(".more-btn");
+            if (moreBtn) {
+              moreBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                this._openContextMenu(item, prevTop, nextItem, prevItem, activeIdeas);
+              });
+            }
 
             // Desktop Right-Click
             el.addEventListener("contextmenu", (e) => {
@@ -5570,6 +5677,21 @@ class BrainstormCardEditor extends HTMLElement {
         },
       },
       {
+        name: "row_actions",
+        label: t("Knöpfe in den Zeilen"),
+        default: "auto",
+        selector: {
+          select: {
+            mode: "dropdown",
+            options: [
+              { value: "auto", label: t("Automatisch: Handy ⋯, Maus beim Darüberfahren") },
+              { value: "inline", label: t("Immer alle Knöpfe zeigen") },
+              { value: "menu", label: t("Immer nur ⋯") },
+            ],
+          },
+        },
+      },
+      {
         name: "show_last_alexa",
         label: t("Zuletzt aktive Alexa (Last Alexa) anzeigen"),
         default: false,
@@ -5924,7 +6046,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.10.0 ",
+  "%c BRAINSTORM-CARD %c v1.10.1 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );
