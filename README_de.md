@@ -8,7 +8,7 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.8.18-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.8.19-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -80,7 +80,7 @@ Brainstorm Hub verwandelt alle deine **Amazon Echo**-Geräte im Haus in sekunden
     - `brainstorm_complete_idea`: Hakt Aufgaben per natürlicher Sprache ab (per ID oder Volltextsuche, z. B. *„Die Hecke ist geschnitten“*).
     - `brainstorm_delete_idea`: Löscht Notizen unwiderruflich per Sprachbefehl.
     - `brainstorm_list_categories`: Gibt der KI Überblick über alle Kategorien und Aufgabenstatistiken.
-  - **Universell einsetzbar:** Direkt in den Einstellungen jedes Sprachassistenten unter *LLM API: „Brainstorm Hub“* aktivierbar.
+  - **Universell einsetzbar:** Direkt in den Einstellungen jedes Sprachassistenten unter *LLM API: „Brainstorm Hub“* aktivierbar ([Sprachassistenten öffnen](https://my.home-assistant.io/redirect/voice_assistants/)).
 - 🧠 **Intelligente Text-Optimierung & NLP-Bereinigung (v1.4.0):**
   - **Ganze Sätze statt Satzreste (v1.5.8):** *„der Rasen muss gemäht werden“* ➔ *„Rasen mähen“*. Verneinungen, Fragen und nicht vollständig umbaubare Sätze behalten ihren Wortlaut. Getippter Text bekommt nur eine Rechtschreibkorrektur.
   - **Termin und Priorität aus dem Satz (v1.5.10):** *„ich muss morgen unbedingt den Arzt anrufen“* ➔ *„Arzt anrufen“*, Termin morgen um 9 Uhr, hohe Priorität. Der Termin löst eine Erinnerung aus und lässt sich abschalten. Der gesprochene Satz bleibt gespeichert und kann in der Karte übernommen werden.
@@ -146,7 +146,7 @@ Brainstorm Hub verwandelt alle deine **Amazon Echo**-Geräte im Haus in sekunden
     - **Vollbild-Modus (`⛶`):** Per Knopfdruck oder Dashboard-Einbindung als beeindruckendes Vollbild-Erlebnis (ESC zum Schließen).
     - Direkte Aktionen an jeder Gedankenwolke (Erledigen, Text editieren, Kategorie wechseln, Löschen).
 - ⚙️ **Konfigurations- & Options-Flow im HA-Backend:**
-  - Unter *Einstellungen ➔ Geräte & Dienste ➔ Brainstorm Hub ➔ Konfigurieren* Kategorien komfortabel pflegen (hinzufügen, löschen, anpassen) und Optionen steuern.
+  - Unter [*Einstellungen ➔ Geräte & Dienste ➔ Brainstorm Hub ➔ Konfigurieren*](https://my.home-assistant.io/redirect/integration/?domain=brainstorm) Kategorien komfortabel pflegen (hinzufügen, löschen, anpassen) und Optionen steuern.
   - Sichere Migration: Beim Löschen einer Kategorie werden verbliebene Ideen automatisch in die `Inbox` verschoben.
 - 📝 **Automatischer Markdown-Export:**
   - Exportiert Ideen strukturiert nach Kategorien in Markdown-Dateien (z. B. `/config/brainstorm/`).
@@ -165,6 +165,14 @@ Brainstorm Hub verwandelt alle deine **Amazon Echo**-Geräte im Haus in sekunden
 ---
 
 ## 📦 Installation
+
+### 🔗 Schnelllinks
+
+Diese Buttons öffnen die passende Seite in deinem eigenen Home Assistant:
+
+[![Brainstorm Hub in HACS öffnen](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration) [![Brainstorm Hub einrichten](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm) [![Brainstorm Hub öffnen (Konfigurieren, Diagnose, Löschen)](https://my.home-assistant.io/badges/integration.svg)](https://my.home-assistant.io/redirect/integration/?domain=brainstorm) [![Brainstorm-Aktionen ausprobieren](https://my.home-assistant.io/badges/tools_actions.svg)](https://my.home-assistant.io/redirect/tools_actions/) [![Sprachassistenten (Assist, LLM API)](https://my.home-assistant.io/badges/voice_assistants.svg)](https://my.home-assistant.io/redirect/voice_assistants/) [![Reparaturen](https://my.home-assistant.io/badges/repairs.svg)](https://my.home-assistant.io/redirect/repairs/) [![Protokolle von Brainstorm Hub](https://my.home-assistant.io/badges/logs.svg)](https://my.home-assistant.io/redirect/logs/?integration=brainstorm)
+
+Die Links laufen über [My Home Assistant](https://my.home-assistant.io/). Beim ersten Klick fragt es nach der Adresse deines Home Assistant und merkt sie sich. Auch die Menüpfade in dieser README und in der [Anleitung](docs/anleitung.md), etwa **Einstellungen ➔ Geräte & Dienste**, sind solche Links, und jede Aktion unter [Dienste](#️-dienste-services) hat einen Link, der sie in den Entwicklerwerkzeugen öffnet.
 
 ### Voraussetzungen
 
@@ -203,11 +211,11 @@ Die Karten kommen mit der Integration: Nach dem Neustart lädt Home Assistant si
 2. Kopiere den Ordner `custom_components/brainstorm` in dein Home Assistant Verzeichnis `/config/custom_components/`.
 3. Starte Home Assistant neu. Die Karten liegen im Ordner der Integration (`cards/`) und werden von selbst geladen.
 
-> **Update von einer Version vor 1.7.15:** Entferne die alten Ressourcen `/local/brainstorm-card.js` und `/local/brainstorm-mindmap-card.js` unter *Einstellungen ➔ Dashboards ➔ Ressourcen* (oder aus `resources:` im YAML-Modus) und lösche die Karten-Dateien in `/config/www/`. Sonst kann der Browser noch die alten Karten laden.
+> **Update von einer Version vor 1.7.15:** Entferne die alten Ressourcen `/local/brainstorm-card.js` und `/local/brainstorm-mindmap-card.js` unter [*Einstellungen ➔ Dashboards ➔ Ressourcen*](https://my.home-assistant.io/redirect/lovelace_resources/) (oder aus `resources:` im YAML-Modus) und lösche die Karten-Dateien in `/config/www/`. Sonst kann der Browser noch die alten Karten laden.
 
 ### Integration entfernen
 
-1. Öffne **Einstellungen ➔ Geräte & Dienste ➔ Brainstorm Hub**, klicke auf die drei Punkte und wähle **Löschen**.
+1. Öffne [**Einstellungen ➔ Geräte & Dienste ➔ Brainstorm Hub**](https://my.home-assistant.io/redirect/integration/?domain=brainstorm), klicke auf die drei Punkte und wähle **Löschen**.
 2. Über HACS installiert: Öffne Brainstorm Hub in HACS und wähle **Entfernen**. Manuell installiert: Lösche `/config/custom_components/brainstorm`.
 3. Entferne alle Brainstorm-Karten aus deinen Dashboards.
 4. Starte Home Assistant neu.
@@ -275,7 +283,7 @@ Klicke auf diesen Button, um die Ersteinrichtung von **Brainstorm Hub** direkt i
 <details>
 <summary><b>Alternativ: Manuell über die UI einrichten</b></summary>
 
-1. Gehe in Home Assistant auf **Einstellungen ➔ Geräte & Dienste ➔ Integration hinzufügen**.
+1. Gehe in Home Assistant auf [**Einstellungen ➔ Geräte & Dienste ➔ Integration hinzufügen**](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm).
 2. Suche nach **Brainstorm Hub** und schließe die Ersteinrichtung ab.
 3. Über den Button **Konfigurieren** stehen dir zwei Menübereiche zur Verfügung:
    - **📁 Kategorien verwalten:** Neue Kategorien hinzufügen, ungenutzte löschen oder per Kommaliste anpassen.
@@ -332,7 +340,7 @@ Alle Sätze und was Brainstorm daraus liest (Kategorie, Priorität, Termin) steh
 ### 1. Amazon Alexa
 
 #### Nur ausgewählte Echos nutzen
-Standardmäßig kann jeder Echo Ideen erfassen. Zum Einschränken gehst du auf **Einstellungen ➔ Geräte & Dienste ➔ Brainstorm Hub ➔ Konfigurieren ➔ Allgemeine Einstellungen & Export** und wählst die Echos unter **Echo-Geräte für die Spracheingabe** aus. Eine leere Liste bedeutet: alle Echos.
+Standardmäßig kann jeder Echo Ideen erfassen. Zum Einschränken gehst du auf [**Einstellungen ➔ Geräte & Dienste ➔ Brainstorm Hub ➔ Konfigurieren ➔ Allgemeine Einstellungen & Export**](https://my.home-assistant.io/redirect/integration/?domain=brainstorm) und wählst die Echos unter **Echo-Geräte für die Spracheingabe** aus. Eine leere Liste bedeutet: alle Echos.
 
 Die Alexa-Sprachabläufe laufen als Automationen und Skripte in deiner eigenen Home-Assistant-Konfiguration. Jeder Einstieg braucht deshalb diese Bedingung (`echo_device` enthält den aufrufenden Echo):
 
@@ -465,8 +473,8 @@ Eine Kategorie kann das Backlog eines Programmierprojekts sein: Du sammelst Aufg
 
 **Einrichtung**
 
-1. **Eigener Benutzer für die KI:** Unter **Einstellungen ➔ Personen** einen Benutzer anlegen, etwa *Claude*. Bekommt seine Person ein Bild, zeigen die Karten es an den Einträgen, die die KI anlegt.
-2. **Token:** Als dieser Benutzer anmelden, unter **Profil ➔ Sicherheit** ein langlebiges Zugriffstoken erstellen und damit den MCP-Server verbinden, zum Beispiel [ha-mcp](https://github.com/homeassistant-ai/ha-mcp). Ob der Benutzer Adminrechte braucht, hängt davon ab, wie ha-mcp läuft, siehe Hinweis unten.
+1. **Eigener Benutzer für die KI:** Unter [**Einstellungen ➔ Personen**](https://my.home-assistant.io/redirect/people/) einen Benutzer anlegen, etwa *Claude*. Bekommt seine Person ein Bild, zeigen die Karten es an den Einträgen, die die KI anlegt.
+2. **Token:** Als dieser Benutzer anmelden, unter [**Profil ➔ Sicherheit**](https://my.home-assistant.io/redirect/profile_security/) ein langlebiges Zugriffstoken erstellen und damit den MCP-Server verbinden, zum Beispiel [ha-mcp](https://github.com/homeassistant-ai/ha-mcp). Ob der Benutzer Adminrechte braucht, hängt davon ab, wie ha-mcp läuft, siehe Hinweis unten.
 3. **Privatsphäre einschalten** (siehe oben) und die Backlog-Kategorie für den KI-Benutzer freigeben: *Ansehen* zum Lesen, *Bearbeiten*, wenn er abhaken darf. Alles andere bleibt für ihn unsichtbar.
 4. **Skill installieren:** Den Ordner [`examples/claude-code/skills/brainstorm-backlog`](examples/claude-code/skills/brainstorm-backlog/SKILL.md) nach `~/.claude/skills/` kopieren (für alle Projekte) oder nach `.claude/skills/` im Projekt.
 5. **Kategorie nennen:** In `CLAUDE.md` oder `AGENTS.md` des Projekts eintragen, etwa: *„Das Backlog ist die Brainstorm-Kategorie ‚Brainstorm‘.“*
@@ -509,7 +517,7 @@ Neu konfigurieren bietet zusätzlich:
 
 ### Nach der Einrichtung
 
-Du findest sie unter **Einstellungen ➔ Geräte & Dienste ➔ Brainstorm Hub ➔ Konfigurieren**.
+Du findest sie unter [**Einstellungen ➔ Geräte & Dienste ➔ Brainstorm Hub ➔ Konfigurieren**](https://my.home-assistant.io/redirect/integration/?domain=brainstorm).
 
 #### Brainstorm › Kategorien
 
@@ -770,13 +778,15 @@ Macht aus schwachen Batterien Aufgaben (v1.7.5). Jeder Batterie-Sensor zählt: e
 | `sensor.brainstorm_ideen_ubersicht` | Anzahl offener Ideen. Attribute: `active_count`, `completed_count`, `category_counts`, `priority_counts`, `categories`, `active_categories`, `latest_idea`, `recent_ideas`, `ideas`, `speech_overview`, `voice_mode`, `allowed_echos`. Mit eingeschalteter Privatsphäre sind nur Zahlen zu sehen. |
 | `todo.<kategorie>` | Eine To-do-Liste pro Kategorie. Einträge lassen sich in der To-do-Ansicht anlegen, umbenennen, erledigen, mit Termin versehen und löschen; die Karten zeigen das sofort. Neue Kategorien bekommen gleich eine Liste, gelöschte verlieren ihre. |
 
-Alle Entitäten gehören zum Gerät **Brainstorm Hub**. Unter **Einstellungen > Geräte & Dienste > Brainstorm Hub > ⋮ > Diagnose herunterladen** gibt es eine Datei für Fehlerberichte. Sie enthält Zahlen und Einstellungen, aber keine Ideen-Texte, Personen oder Echos.
+Alle Entitäten gehören zum Gerät **Brainstorm Hub**. Unter [**Einstellungen > Geräte & Dienste > Brainstorm Hub > ⋮ > Diagnose herunterladen**](https://my.home-assistant.io/redirect/integration/?domain=brainstorm) gibt es eine Datei für Fehlerberichte. Sie enthält Zahlen und Einstellungen, aber keine Ideen-Texte, Personen oder Echos.
 
 ## 🛠️ Dienste (Services)
 
 Jede Aktion bleibt verfügbar, solange die Integration nicht geladen ist, und erklärt dann, warum sie nicht ausgeführt werden kann.
 
 ### `brainstorm.add_idea`
+
+▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.add_idea)
 
 Fügt blitzschnell eine neue Brainstorm-Idee hinzu. Erkennt automatisch Kategorien im Text (z.B. 'Garten: Blumen pflanzen' oder '#smarthome').
 
@@ -796,6 +806,8 @@ Fügt blitzschnell eine neue Brainstorm-Idee hinzu. Erkennt automatisch Kategori
 | `language` | Nein | Sprache des Textes (z.B. "de" oder "en"). Ohne Angabe gilt die Sprache von Home Assistant. |
 
 ### `brainstorm.update_idea`
+
+▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.update_idea)
 
 Aktualisiert Text, Kategorie oder Status einer bestehenden Idee.
 
@@ -825,6 +837,8 @@ Aktualisiert Text, Kategorie oder Status einer bestehenden Idee.
 
 ### `brainstorm.delete_idea`
 
+▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.delete_idea)
+
 Entfernt eine Idee. Bis zum nächsten Start von Home Assistant holt `brainstorm.restore_idea` sie zurück.
 
 | Feld | Pflicht | Bedeutung |
@@ -832,6 +846,8 @@ Entfernt eine Idee. Bis zum nächsten Start von Home Assistant holt `brainstorm.
 | `id` | Ja | ID der zu löschenden Idee. |
 
 ### `brainstorm.delete_done`
+
+▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.delete_done)
 
 Löscht erledigte (abgehakte oder archivierte) Einträge auf einmal. Mit eingeschalteter Privatsphäre nur die eigenen. Gelöschte Einträge lassen sich nicht zurückholen. Die Antwort nennt die Anzahl (`deleted`).
 
@@ -841,6 +857,8 @@ Löscht erledigte (abgehakte oder archivierte) Einträge auf einmal. Mit eingesc
 
 ### `brainstorm.restore_idea`
 
+▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.restore_idea)
+
 Holt eine Idee zurück, die seit dem letzten Start von Home Assistant gelöscht wurde, samt der Verbindung zu ihren Unteraufgaben. Das kann nur, wer sie gelöscht hat. Die Mindmap-Karte nutzt das für „Rückgängig“.
 
 | Feld | Pflicht | Bedeutung |
@@ -848,6 +866,8 @@ Holt eine Idee zurück, die seit dem letzten Start von Home Assistant gelöscht 
 | `id` | Ja | ID der gelöschten Idee. |
 
 ### `brainstorm.get_ideas`
+
+▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.get_ideas)
 
 Gibt eine Liste gespeicherter Ideen zurück (für Templates oder Automationen).
 
@@ -859,6 +879,8 @@ Gibt eine Liste gespeicherter Ideen zurück (für Templates oder Automationen).
 
 ### `brainstorm.get_announcement`
 
+▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.get_announcement)
+
 Erzeugt einen flüssigen, gesprochenen Ansagetext für Alexa oder Assist über alle oder eine bestimmte Kategorie.
 
 | Feld | Pflicht | Bedeutung |
@@ -867,6 +889,8 @@ Erzeugt einen flüssigen, gesprochenen Ansagetext für Alexa oder Assist über a
 | `device` | Nein | Das Gerät, das gefragt hat. Bei eingeschalteter Privatsphäre bestimmt es, wessen Einträge genannt werden. |
 
 ### `brainstorm.add_category`
+
+▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.add_category)
 
 Erstellt eine neue Brainstorm-Kategorie und die dazugehörige To-do-Liste.
 
@@ -877,6 +901,8 @@ Erstellt eine neue Brainstorm-Kategorie und die dazugehörige To-do-Liste.
 | `color` | Nein | Optionale Akzentfarbe (Hexadezimal wie #ff7800). |
 
 ### `brainstorm.set_category_style`
+
+▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.set_category_style)
 
 Legt ein benutzerdefiniertes Icon und/oder eine Akzentfarbe für eine Kategorie fest.
 
@@ -889,6 +915,8 @@ Legt ein benutzerdefiniertes Icon und/oder eine Akzentfarbe für eine Kategorie 
 
 ### `brainstorm.remove_category`
 
+▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.remove_category)
+
 Entfernt eine Kategorie (verbleibende Ideen werden nach 'Inbox' verschoben).
 
 | Feld | Pflicht | Bedeutung |
@@ -897,6 +925,8 @@ Entfernt eine Kategorie (verbleibende Ideen werden nach 'Inbox' verschoben).
 
 ### `brainstorm.export_markdown`
 
+▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.export_markdown)
+
 Schreibt alle Kategorien und Ideen als Markdown-Dateien ins Dateisystem.
 
 | Feld | Pflicht | Bedeutung |
@@ -904,6 +934,8 @@ Schreibt alle Kategorien und Ideen als Markdown-Dateien ins Dateisystem.
 | `path` | Nein | Zielordner (Standard: /config/brainstorm). |
 
 ### `brainstorm.export_json`
+
+▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.export_json)
 
 Gibt die Ideen, die du sehen darfst, samt Kategorien, Icons und Farben als JSON zurück. Zum Sichern, für den Umzug auf ein anderes Home Assistant oder zum Teilen einer Kategorie.
 
@@ -921,6 +953,8 @@ response_variable: sicherung
 
 ### `brainstorm.import_json`
 
+▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.import_json)
+
 Fügt die Ideen eines JSON-Exports hinzu, die es hier noch nicht gibt. Ideen mit vorhandener ID werden übersprungen, zweimal dieselbe Datei zu importieren ändert also nichts. Fehlende Kategorien werden angelegt, Icons und Farben übernommen, wo eine Kategorie noch keine hat.
 
 | Feld | Pflicht | Bedeutung |
@@ -932,6 +966,8 @@ Besitzer und Freigaben bleiben nur für Benutzer dieses Home Assistant erhalten,
 
 ### `brainstorm.bring_message`
 
+▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.bring_message)
+
 Sagt allen auf einer Bring-Liste etwas, über die Benachrichtigungen von Bring selbst. In der Karte bietet der 🛒-Knopf einer Listen-Notiz *Ich gehe einkaufen*, *Einkauf erledigt* und *Liste geändert*; das Menü eines Eintrags auf einer Liste bietet *Dringend in Bring melden*.
 
 | Feld | Pflicht | Bedeutung |
@@ -941,6 +977,8 @@ Sagt allen auf einer Bring-Liste etwas, über die Benachrichtigungen von Bring s
 
 ### `brainstorm.reorder_ideas`
 
+▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.reorder_ideas)
+
 Aktualisiert die benutzerdefinierte Sortierreihenfolge der Notizen anhand einer Liste von IDs.
 
 | Feld | Pflicht | Bedeutung |
@@ -948,6 +986,8 @@ Aktualisiert die benutzerdefinierte Sortierreihenfolge der Notizen anhand einer 
 | `idea_ids` | Ja | Geordnete Liste der Notiz-IDs. |
 
 ### `brainstorm.import_outline`
+
+▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.import_outline)
 
 Legt einen Baum von Notizen aus einer Markdown-Gliederung, eingerücktem Text, OPML oder einer FreeMind-/Freeplane-Map (`.mm`) an, höchstens 300 Notizen. Gibt `added` und die neuen `ids` zurück.
 
@@ -960,6 +1000,8 @@ Legt einen Baum von Notizen aus einer Markdown-Gliederung, eingerücktem Text, O
 
 ### `brainstorm.sort_children`
 
+▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.sort_children)
+
 Sortiert die Unteraufgaben einer Notiz oder die Hauptnotizen einer Kategorie innerhalb der Plätze, die sie schon haben. Andere Notizen bleiben, wo sie sind.
 
 | Feld | Pflicht | Bedeutung |
@@ -971,6 +1013,8 @@ Sortiert die Unteraufgaben einer Notiz oder die Hauptnotizen einer Kategorie inn
 | `reverse` | Nein | Sortiert andersherum. |
 
 ### `brainstorm.share`
+
+▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.share)
 
 Gibt mehrere Einträge oder eine ganze Kategorie für Personen frei. Braucht eingeschaltete Privatsphäre.
 
@@ -1034,18 +1078,19 @@ Weitere Beispiele für Assist und Alexa liegen im Ordner [`examples/`](examples/
 
 | Problem | Lösung |
 |---|---|
-| Der Skill sagt, er erreicht Home Assistant nicht | Sieh unter **Einstellungen > Reparaturen** nach. Home Assistant braucht eine öffentliche HTTPS-Adresse, z. B. über Home Assistant Cloud. Danach den Skill-Code neu kopieren. |
+| Der Skill sagt, er erreicht Home Assistant nicht | Sieh unter [**Einstellungen > Reparaturen**](https://my.home-assistant.io/redirect/repairs/) nach. Home Assistant braucht eine öffentliche HTTPS-Adresse, z. B. über Home Assistant Cloud. Danach den Skill-Code neu kopieren. |
 | Alexa sagt immer wieder, ich soll mit *notiere* anfangen | Das aktuelle Sprachmodell in die Alexa-Entwicklerkonsole kopieren, dann **Save** und **Build**. |
 | *„Alexa, öffne Brainstorm“* startet den alten Dialog | Die Alexa-Routinen für *öffne Brainstorm* in der Alexa-App löschen. |
 | Eine Idee landet in der falschen Kategorie | Die Kategorie vorne nennen: *„notiere für den Einkauf Milch“*. Eine eigene Kategorie hat Vorrang vor Standard-Begriffen mit ihrem Namen. |
 | Eine Karte zeigt noch eine alte Version | Die Ressource auf die aktuelle `?v=`-Nummer setzen und die Seite ohne Cache neu laden. |
-| Ein Echo wird nicht erkannt oder ignoriert | Die Echo-Auswahl unter **Konfigurieren** prüfen. **Einstellungen > Reparaturen** nennt gewählte Echos, die es nicht mehr gibt. |
+| Ein Echo wird nicht erkannt oder ignoriert | Die Echo-Auswahl unter [**Konfigurieren**](https://my.home-assistant.io/redirect/integration/?domain=brainstorm) prüfen. [**Einstellungen > Reparaturen**](https://my.home-assistant.io/redirect/repairs/) nennt gewählte Echos, die es nicht mehr gibt. |
 | Etwas anderes klappt nicht | Die Diagnose herunterladen (siehe *Entitäten*) und ein [Issue](https://github.com/nukleuz80/ha_brainstorm/issues) eröffnen. |
 
 ## 📜 Versionshistorie & Changelog
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.8.19`** | 09.11.2026 | **Doku: Links in dein Home Assistant.** Neue Zeile *Schnelllinks* unter *Installation* mit My-Home-Assistant-Buttons für HACS, Einrichtung, die Seite der Integration (Konfigurieren, Diagnose, Löschen), die Aktionen, Sprachassistenten, Reparaturen und die Protokolle. Menüpfade in README und Anleitung wie *Einstellungen ➔ Geräte & Dienste ➔ Brainstorm Hub ➔ Konfigurieren*, *Dashboards ➔ Ressourcen*, *Personen*, *Profil ➔ Sicherheit* und *Reparaturen* sind jetzt Links, die die Seite direkt öffnen. Jede Aktion unter *Dienste* hat einen Link *In Home Assistant ausprobieren*, der sie in den Entwicklerwerkzeugen öffnet. |
 | **`v1.8.18`** | 09.11.2026 | **Fehlerbehebung: Kopfzeile der Mindmap.** Bei vielen Kategorien liefen die Kategorie-Knöpfe unter die Symbole rechts, kürzten den Titel und versteckten die letzten Kategorien, selbst auf großen Bildschirmen. Die Kategorien haben jetzt eine eigene Zeile, die umbricht, sodass alle, der Titel und die Symbole sichtbar bleiben. Auf schmalen Karten bleibt es eine Zeile zum Wischen. |
 | **`v1.8.17`** | 09.11.2026 | **Fehlerbehebung:** Ein *bitte* am Satzanfang fällt bei gesprochenen Notizen weg. *„Alexa, notiere bitte, dass der Rasen gemäht werden muss“* ergab „Bitte dass der Rasen mähen“, weil der Sprachbefehl *notiere* schon abgeschnitten hatte; jetzt steht wieder „Rasen mähen“ da. |
 | **`v1.8.16`** | 09.11.2026 | **Gleicher Bearbeiten-Dialog in Liste und Mindmap:** Beide Karten zeigen jetzt dieselben Felder in derselben Reihenfolge: Titel, Beschreibung, Anhänge, Original gesprochen, Priorität, Marker, Fortschritt, Kategorie, Termin, Wiederholen, Erinnern auf, übergeordnete Aufgabe, Unterpunkte nummerieren und sortieren, Callout, Rahmen und Form. Die Liste kann jetzt nummerieren, sortieren (mit Rückgängig im Dialog), Callout, Rahmen und Form; die Mindmap zeigt das gesprochene Original und die übergeordnete Aufgabe. **Fehlerbehebungen:** Die Auswahl der übergeordneten Aufgabe in der Liste bietet auch Unterpunkte an und löst eine Notiz unter einem Unterpunkt beim Speichern nicht mehr. Der Mindmap-Dialog hängt jetzt am Fenster statt an der Karte, bleibt dadurch ganz sichtbar und scrollt sauber, auch wenn die Map höher als der Bildschirm ist. |

@@ -313,7 +313,7 @@ In a text field: **Enter** saves, **Shift+Enter** starts a new line, **Esc** can
 
 ### 4.1 Integration
 
-**Settings ➔ Devices & Services ➔ Brainstorm Hub ➔ Configure** opens a menu. Every field is described in the [README](../README.md#️-all-settings).
+[**Settings ➔ Devices & Services ➔ Brainstorm Hub ➔ Configure**](https://my.home-assistant.io/redirect/integration/?domain=brainstorm) opens a menu. Every field is described in the [README](../README.md#️-all-settings).
 
 | Menu | Typical setting |
 |---|---|
@@ -434,7 +434,7 @@ A single note can get its own shape in the edit dialog or through a service (`no
 
 ### 5.1 Services
 
-All parameters are in the [README](../README.md#️-services) and under **Developer tools ➔ Actions**.
+All parameters are in the [README](../README.md#️-services) and under [**Developer tools ➔ Actions**](https://my.home-assistant.io/redirect/tools_actions/).
 
 | Service | Short example |
 |---|---|

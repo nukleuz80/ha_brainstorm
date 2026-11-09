@@ -314,7 +314,7 @@ Im Textfeld: **Enter** speichert, **Umschalt+Enter** macht eine neue Zeile, **Es
 
 ### 4.1 Integration
 
-**Einstellungen ➔ Geräte & Dienste ➔ Brainstorm Hub ➔ Konfigurieren** öffnet ein Menü. Alle Felder sind in der [README](../README_de.md#️-alle-einstellungen) einzeln beschrieben.
+[**Einstellungen ➔ Geräte & Dienste ➔ Brainstorm Hub ➔ Konfigurieren**](https://my.home-assistant.io/redirect/integration/?domain=brainstorm) öffnet ein Menü. Alle Felder sind in der [README](../README_de.md#️-alle-einstellungen) einzeln beschrieben.
 
 | Menü | Typische Einstellung |
 |---|---|
@@ -435,7 +435,7 @@ Pro Notiz kannst du die Form auch im Bearbeiten-Dialog wählen oder per Dienst s
 
 ### 5.1 Dienste
 
-Alle Parameter stehen in der [README](../README_de.md#️-dienste-services) und unter **Entwicklerwerkzeuge ➔ Aktionen**.
+Alle Parameter stehen in der [README](../README_de.md#️-dienste-services) und unter [**Entwicklerwerkzeuge ➔ Aktionen**](https://my.home-assistant.io/redirect/tools_actions/).
 
 | Dienst | Kurzbeispiel |
 |---|---|
