@@ -6,9 +6,9 @@
 
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
-[![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
+[![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.9.1-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.9.2-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -160,16 +160,26 @@ Brainstorm Hub connects to no external service by itself, so setup needs no acco
 
 ### Option 1: HACS (Recommended - 1-Click)
 
-Click the button below to add this repository directly to your HACS installation:
+Brainstorm Hub is part of the HACS default list since 9 November 2026, so no custom repository is needed any more. Click the button below to open it in your HACS:
 
-[![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
+[![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 
-Or manually:
+Or step by step:
 1. Open **HACS** in your Home Assistant sidebar.
-2. Click the three dots in the top right corner and select **Custom repositories**.
-3. Enter `https://github.com/nukleuz80/ha_brainstorm`, choose **Integration** as category, and click **Add**.
-4. Search for **Brainstorm Hub** and click **Download**.
-5. Restart Home Assistant.
+2. Search for **Brainstorm Hub** and click **Download**.
+3. Restart Home Assistant.
+
+<details>
+<summary><b>Not found in HACS yet? Add it as a custom repository</b></summary>
+
+HACS refreshes its list of repositories only every few hours, so a new entry can take a while to show up. Until then, add the repository by hand:
+
+1. Open **HACS**, click the three dots in the top right corner and select **Custom repositories**.
+2. Enter `https://github.com/nukleuz80/ha_brainstorm`, choose **Integration** as category, and click **Add**.
+3. Search for **Brainstorm Hub**, click **Download** and restart Home Assistant.
+
+Once Brainstorm Hub is in the default list of your HACS, you can remove the custom repository again; the installation stays.
+</details>
 
 The cards come with the integration: after the restart Home Assistant loads them by itself. Then add the integration as shown in the next option.
 
@@ -1031,6 +1041,7 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.9.2`** | 2026-11-09 | **Now in the HACS default list.** Install through the normal search in HACS; the custom repository route stays as a fallback until the entry is visible everywhere. |
 | **`v1.9.1`** | 2026-11-09 | **Security (HACS review).** The actions `export_json`, `export_markdown` and `import_json` only accept a file or folder (`path`) from admins, even with privacy off. Files are only written and read in `/config/brainstorm`, the Markdown folder from the options, or `allowlist_external_dirs`, so files of other integrations can no longer be overwritten. Imported IDs must match `[A-Za-z0-9_-]{1,64}`, otherwise they get a new ID; position, trigger and text fields are type-checked on import. Both cards escape IDs, the category name in the empty hint, the card title and icons. |
 | **`v1.9.0`** | 2026-11-09 | **Release of everything since 1.8.0** (search in the list card, rules, pictures in notes, PDF export, repeating tasks, presentation mode, outline view, content templates, AI summaries, same edit dialog in list and mind map, documentation links). **Fix on the Echo Show:** a main task now shows *+ 3 subtasks*; touching its text opens and closes them right on the Echo, at every depth and indented. Before, only the first level appeared, always open, and deeper subtasks were missing. Works with the current skill code, nothing to copy. On wide screens the list is now one column, so open subtasks stay below their main task. |
 | **`v1.8.19`** | 2026-11-09 | **Documentation: links into your Home Assistant.** A new *Quick Links* row under *Installation* has My Home Assistant buttons for HACS, setup, the integration page (configure, diagnostics, delete), the actions, voice assistants, repairs and the logs. Menu paths in the README and the guide, such as *Settings ➔ Devices & Services ➔ Brainstorm Hub ➔ Configure*, *Dashboards ➔ Resources*, *People*, *Profile ➔ Security* and *Repairs*, are now links that open the page directly. Every action under *Services* has a *Try it in Home Assistant* link that opens it in the developer tools. |
