@@ -7,8 +7,9 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
+[![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.9.2-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.9.3-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -19,6 +20,9 @@
 
 **Brainstorm Hub** ist die smarte Ideen-, Gedanken- und Notizen-Sammelzentrale für dein Home Assistant Smarthome.  
 Egal ob beim Kochen, im Garten, unter der Dusche oder unterwegs: Erfasse Geistesblitze sekundenschnell per Sprache (**Amazon Alexa** oder **Home Assistant Assist**), über das Lovelace-Dashboard oder Automationen. Brainstorm ordnet deine Ideen durch intelligente Heuristiken automatisch der passenden Kategorie zu und synchronisiert sie auf Wunsch als Markdown-Dateien für Obsidian, Logseq oder Nextcloud.
+
+> [!NOTE]
+> **🎉 Jetzt in HACS:** Am 9. November 2026 wurde Brainstorm Hub [in die Standardliste von HACS aufgenommen](https://github.com/hacs/default/pull/13619). Such in HACS einfach nach **Brainstorm Hub**, ein benutzerdefiniertes Repository brauchst du nicht.
 
 > [!TIP]
 > **📘 [Anleitung mit Beispielen](docs/anleitung.md):** Was du sagen, schreiben und einstellen kannst, mit Beispielen für Alexa, Assist, Siri, Karten, Tastatur und Automationen.
@@ -185,7 +189,7 @@ Brainstorm Hub verbindet sich von selbst mit keinem externen Dienst. Die Einrich
 
 ### Methode 1: Über HACS (Empfohlen – 1 Klick)
 
-Brainstorm Hub steht seit dem 9. November 2026 in der Standardliste von HACS, ein benutzerdefiniertes Repository ist nicht mehr nötig. Der Button öffnet es direkt in deinem HACS:
+Brainstorm Hub steht seit dem 9. November 2026 in der Standardliste von HACS. Der Button öffnet es direkt in deinem HACS:
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 
@@ -193,22 +197,6 @@ Oder Schritt für Schritt:
 1. Öffne **HACS** in deinem Home Assistant.
 2. Suche nach **Brainstorm Hub** und klicke auf **Herunterladen**.
 3. Starte Home Assistant neu.
-
-<details>
-<summary><b>Noch nicht in HACS zu finden? Als benutzerdefiniertes Repository eintragen</b></summary>
-
-HACS lädt seine Liste der Repositories nur alle paar Stunden neu, ein neuer Eintrag kann also eine Weile brauchen. Bis dahin trägst du das Repository selbst ein:
-
-1. Öffne **HACS** und klicke oben rechts auf das Drei-Punkte-Menü ➔ **Benutzerdefinierte Repositories**.
-2. Trage folgende Repository-URL ein:
-   ```text
-   https://github.com/nukleuz80/ha_brainstorm
-   ```
-3. Wähle als Kategorie **Integration** und klicke auf **Hinzufügen**.
-4. Suche nach **Brainstorm Hub**, klicke auf **Herunterladen** und starte Home Assistant neu.
-
-Sobald Brainstorm Hub in deinem HACS in der Standardliste steht, kannst du das benutzerdefinierte Repository wieder entfernen; die Installation bleibt erhalten.
-</details>
 
 Die Karten kommen mit der Integration: Nach dem Neustart lädt Home Assistant sie selbst, ohne Kopieren und ohne Ressourcen-Eintrag.
 
@@ -1097,6 +1085,7 @@ Weitere Beispiele für Assist und Alexa liegen im Ordner [`examples/`](examples/
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.9.3`** | 09.11.2026 | **Sichtbar in HACS.** Brainstorm Hub erscheint jetzt in der normalen HACS-Suche, der Ausweichweg über ein benutzerdefiniertes Repository ist aus der Installation entfernt. Ein Hinweis ganz oben und ein *HACS Default*-Badge halten die Aufnahme in die Standardliste am 9. November 2026 fest. Wer das Repository früher selbst eingetragen hat, kann es in HACS wieder entfernen; die Installation bleibt erhalten. |
 | **`v1.9.2`** | 09.11.2026 | **Jetzt in der HACS-Standardliste.** Installation über die normale Suche in HACS; der Weg über ein benutzerdefiniertes Repository bleibt als Ausweichweg, bis der Eintrag überall sichtbar ist. |
 | **`v1.9.1`** | 09.11.2026 | **Sicherheit (HACS-Review).** Die Aktionen `export_json`, `export_markdown` und `import_json` nehmen eine Datei bzw. einen Ordner (`path`) nur noch von Admins an, auch ohne Privatsphäre. Geschrieben und gelesen wird nur noch im Ordner `/config/brainstorm`, im Markdown-Ordner aus den Optionen oder in `allowlist_external_dirs`, damit keine Dateien anderer Integrationen überschrieben werden können. Importierte IDs müssen `[A-Za-z0-9_-]{1,64}` entsprechen, sonst gibt es eine neue ID; Position, Auslöser und Textfelder werden beim Import auf ihren Typ geprüft. Beide Karten escapen IDs, den Kategorienamen im Leer-Hinweis, den Kartentitel und Icons. |
 | **`v1.9.0`** | 09.11.2026 | **Release aller Neuerungen seit 1.8.0** (Suche in der Listenkarte, Regeln, Bilder in Notizen, PDF-Export, wiederkehrende Aufgaben, Präsentationsmodus, Gliederungsansicht, Inhaltsvorlagen, KI-Zusammenfassungen, gleicher Bearbeiten-Dialog in Liste und Mindmap, Doku-Links). **Fehlerbehebung auf dem Echo Show:** Ein Hauptpunkt zeigt jetzt *+ 3 Unterpunkte*; Antippen seines Textes klappt sie direkt auf dem Echo auf und zu, in jeder Tiefe und eingerückt. Vorher erschien nur die erste Ebene, immer offen, tiefere Unterpunkte fehlten. Funktioniert mit dem bisherigen Skill-Code, nichts neu zu kopieren. Auf breiten Bildschirmen ist die Liste jetzt einspaltig, damit offene Unterpunkte unter ihrem Hauptpunkt bleiben. |

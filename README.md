@@ -7,8 +7,9 @@
 [![English Docs](https://img.shields.io/badge/Language-English%20%F0%9F%87%AC%F0%9F%87%A7-blue.svg)](README.md)
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
+[![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.9.2-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.9.3-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -19,6 +20,9 @@
 
 **Brainstorm Hub** is the ultimate smart capture center for all your thoughts, ideas, and tasks in your Home Assistant smart home.  
 Whether you are cooking, working in the workshop, relaxing in the garden, or on the go: capture sudden flashes of inspiration within seconds hands-free via voice (**Amazon Alexa** or **Home Assistant Assist**), through interactive Lovelace dashboard cards, or via automated triggers. Brainstorm categorizes your thoughts using intelligent NLP heuristics and optionally synchronizes them as clean Markdown files for Obsidian, Logseq, or Nextcloud.
+
+> [!NOTE]
+> **🎉 Now in HACS:** On 9 November 2026 Brainstorm Hub was [accepted into the HACS default list](https://github.com/hacs/default/pull/13619). Just search for **Brainstorm Hub** in HACS, no custom repository needed.
 
 > [!TIP]
 > **📘 [Guide with examples](docs/guide.md):** what you can say, write and set, with examples for Alexa, Assist, Siri, the cards, the keyboard and automations.
@@ -160,7 +164,7 @@ Brainstorm Hub connects to no external service by itself, so setup needs no acco
 
 ### Option 1: HACS (Recommended - 1-Click)
 
-Brainstorm Hub is part of the HACS default list since 9 November 2026, so no custom repository is needed any more. Click the button below to open it in your HACS:
+Brainstorm Hub is part of the HACS default list since 9 November 2026. Click the button below to open it in your HACS:
 
 [![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 
@@ -168,18 +172,6 @@ Or step by step:
 1. Open **HACS** in your Home Assistant sidebar.
 2. Search for **Brainstorm Hub** and click **Download**.
 3. Restart Home Assistant.
-
-<details>
-<summary><b>Not found in HACS yet? Add it as a custom repository</b></summary>
-
-HACS refreshes its list of repositories only every few hours, so a new entry can take a while to show up. Until then, add the repository by hand:
-
-1. Open **HACS**, click the three dots in the top right corner and select **Custom repositories**.
-2. Enter `https://github.com/nukleuz80/ha_brainstorm`, choose **Integration** as category, and click **Add**.
-3. Search for **Brainstorm Hub**, click **Download** and restart Home Assistant.
-
-Once Brainstorm Hub is in the default list of your HACS, you can remove the custom repository again; the installation stays.
-</details>
 
 The cards come with the integration: after the restart Home Assistant loads them by itself. Then add the integration as shown in the next option.
 
@@ -1041,6 +1033,7 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.9.3`** | 2026-11-09 | **Visible in HACS.** Brainstorm Hub now shows up in the normal HACS search, so the custom repository fallback is gone from the installation steps. A note at the top and a *HACS Default* badge mark the acceptance into the default list on 9 November 2026. If you added the custom repository earlier, you can remove it in HACS; the installation stays. |
 | **`v1.9.2`** | 2026-11-09 | **Now in the HACS default list.** Install through the normal search in HACS; the custom repository route stays as a fallback until the entry is visible everywhere. |
 | **`v1.9.1`** | 2026-11-09 | **Security (HACS review).** The actions `export_json`, `export_markdown` and `import_json` only accept a file or folder (`path`) from admins, even with privacy off. Files are only written and read in `/config/brainstorm`, the Markdown folder from the options, or `allowlist_external_dirs`, so files of other integrations can no longer be overwritten. Imported IDs must match `[A-Za-z0-9_-]{1,64}`, otherwise they get a new ID; position, trigger and text fields are type-checked on import. Both cards escape IDs, the category name in the empty hint, the card title and icons. |
 | **`v1.9.0`** | 2026-11-09 | **Release of everything since 1.8.0** (search in the list card, rules, pictures in notes, PDF export, repeating tasks, presentation mode, outline view, content templates, AI summaries, same edit dialog in list and mind map, documentation links). **Fix on the Echo Show:** a main task now shows *+ 3 subtasks*; touching its text opens and closes them right on the Echo, at every depth and indented. Before, only the first level appeared, always open, and deeper subtasks were missing. Works with the current skill code, nothing to copy. On wide screens the list is now one column, so open subtasks stay below their main task. |
