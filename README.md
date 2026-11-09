@@ -8,7 +8,7 @@
 [![German Docs](https://img.shields.io/badge/Sprache-Deutsch%20%F0%9F%87%A9%F0%9F%87%AA-green.svg)](README_de.md)
 [![Open in HACS](https://img.shields.io/badge/HACS-Add%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.8.19-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.9.0-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -374,7 +374,7 @@ Brainstorm reminds you of due ideas on its own, over the services you have alrea
 
 The AI that shortens the briefing and review is set in the main menu under **Brainstorm Hub ➔ Configure ➔ AI** (since v1.6.27).
 
-**Lists on an Echo Show:** With the skill, an Echo with a screen shows your open ideas next to the voice answer: one page per category with tiles, swipe left or right to change it and scroll within a page. Touch the circle in front of an idea to complete it; a completed idea can be restored on the card. *"show daily life"* or *"show my lists"* shows the lists with only a short answer, while *"read"* and *"read everything"* show them while reading aloud.
+**Lists on an Echo Show:** With the skill, an Echo with a screen shows your open ideas next to the voice answer: one page per category with tiles, swipe left or right to change it and scroll within a page. Touch the circle in front of an idea to complete it. A main task with subtasks shows *+ 3 subtasks*; touching its text opens and closes them; a completed idea can be restored on the card. *"show daily life"* or *"show my lists"* shows the lists with only a short answer, while *"read"* and *"read everything"* show them while reading aloud.
 
 To set this up, open **Build ➔ Interfaces** in the Alexa developer console, switch on **Alexa Presentation Language** with the Echo Show profiles, and click **Save**. Then copy the **Voice model** and **Skill code** fields again, click **Build** and **Deploy**. Without these steps, the skill keeps answering by voice only. Amazon decides how long a screen stays visible, and it can return to the home screen earlier than the requested two minutes.
 
@@ -1031,6 +1031,7 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.9.0`** | 2026-11-09 | **Release of everything since 1.8.0** (search in the list card, rules, pictures in notes, PDF export, repeating tasks, presentation mode, outline view, content templates, AI summaries, same edit dialog in list and mind map, documentation links). **Fix on the Echo Show:** a main task now shows *+ 3 subtasks*; touching its text opens and closes them right on the Echo, at every depth and indented. Before, only the first level appeared, always open, and deeper subtasks were missing. Works with the current skill code, nothing to copy. On wide screens the list is now one column, so open subtasks stay below their main task. |
 | **`v1.8.19`** | 2026-11-09 | **Documentation: links into your Home Assistant.** A new *Quick Links* row under *Installation* has My Home Assistant buttons for HACS, setup, the integration page (configure, diagnostics, delete), the actions, voice assistants, repairs and the logs. Menu paths in the README and the guide, such as *Settings ➔ Devices & Services ➔ Brainstorm Hub ➔ Configure*, *Dashboards ➔ Resources*, *People*, *Profile ➔ Security* and *Repairs*, are now links that open the page directly. Every action under *Services* has a *Try it in Home Assistant* link that opens it in the developer tools. |
 | **`v1.8.18`** | 2026-11-09 | **Fix: mind map header.** With many categories the pills ran under the buttons on the right, cut the title short and hid the last categories, even on large screens. The categories now have their own row that wraps, so all of them, the title and the buttons stay visible. On narrow cards the row stays one line you can swipe. |
 | **`v1.8.17`** | 2026-11-09 | **Fix:** a leading *bitte* is dropped from spoken notes. *„Alexa, notiere bitte, dass der Rasen gemäht werden muss“* gave „Bitte dass der Rasen mähen“ because the voice command had already taken *notiere*; it is „Rasen mähen“ again. |

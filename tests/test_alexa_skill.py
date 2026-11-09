@@ -780,7 +780,8 @@ async def test_lists_have_a_page_per_category_and_start_on_the_spoken_one(
     assert sorted(names) == ["Alltag", "Projekte"]
     assert payload["start"] == names.index("Projekte")
     rows = payload["pages"][names.index("Alltag")]["items"]
-    assert [row["subtask"] for row in rows] == [False, True]
+    assert [row["subtask"] for row in rows] == [False]
+    assert [child["subtask"] for child in rows[0]["children"]] == [True]
     assert rows[0]["text"] == "Garage &lt;aufräumen&gt; &amp; mehr"
 
 
@@ -927,8 +928,15 @@ def test_tile_labels_priority_due_date_and_parent() -> None:
     ]
     directive = alexa_display.build_directive(ideas, ["Alltag"], {}, None, GERMAN)
     page = directive["datasources"][alexa_display.DATA_NAME]["pages"][0]
-    parent, child, plain = page["items"]
+    parent, plain = page["items"]
+    (child,) = parent["children"]
 
+    assert parent["has_children"] and not plain["has_children"]
+    assert parent["chips"].pop(0) == {
+        "toggle": True,
+        "text": "+ 1 Unterpunkt",
+        "text_open": "– 1 Unterpunkt",
+    }
     assert page["subtitle"] == "3 offen · 1 dringend"
     assert parent["chips"][0]["color"] == alexa_display.OVERDUE_COLOR
     assert parent["chips"][1]["text"] == "Dringend"
@@ -936,6 +944,47 @@ def test_tile_labels_priority_due_date_and_parent() -> None:
     assert child["chips"][0]["text"].startswith("Morgen")
     assert child["chips"][-1]["text"] == "↳ eltern"
     assert plain["chips"] == []
+
+
+def test_subtasks_of_every_depth_open_on_the_echo() -> None:
+    """Test what an Echo Show did not do: open the subtasks of a main task."""
+    ideas = [
+        {"id": "a", "text": "haupt", "category": "Alltag"},
+        {"id": "b", "text": "kind", "category": "Alltag", "parent_id": "a"},
+        {"id": "c", "text": "enkel", "category": "Alltag", "parent_id": "b"},
+        {"id": "d", "text": "urenkel", "category": "Alltag", "parent_id": "c"},
+        {"id": "e", "text": "ururenkel", "category": "Alltag", "parent_id": "d"},
+        {"id": "f", "text": "zweites kind", "category": "Alltag", "parent_id": "a"},
+    ]
+    directive = alexa_display.build_directive(ideas, ["Alltag"], {}, None, GERMAN)
+    page = directive["datasources"][alexa_display.DATA_NAME]["pages"][0]
+    (group,) = page["items"]
+
+    assert [child["text"] for child in group["children"]] == [
+        "kind", "enkel", "urenkel", "ururenkel", "zweites kind"
+    ]
+    assert [child["indent"] for child in group["children"]] == [
+        "33dp", "61dp", "89dp", "89dp", "33dp"
+    ]
+    assert group["children"][1]["chips"][-1]["text"] == "↳ kind"
+    assert page["subtitle"] == "6 offen"
+    document = json.dumps(directive["document"])
+    # The touch flips a value on the group, the closed subtasks take no space
+    assert '"componentId": "group-${data.id}"' in document
+    assert "\"display\": \"${open ? 'normal' : 'none'}\"" in document
+
+
+def test_subtasks_count_towards_the_screen_limit() -> None:
+    """Test that a main task with many subtasks keeps the answer small."""
+    ideas = [{"id": "p", "text": "haupt", "category": "Alltag"}] + [
+        {"id": f"{index:08x}", "text": "x", "category": "Alltag", "parent_id": "p"}
+        for index in range(400)
+    ]
+    directive = alexa_display.build_directive(ideas, ["Alltag"], {}, None, GERMAN)
+    page = directive["datasources"][alexa_display.DATA_NAME]["pages"][0]
+
+    assert len(page["items"][0]["children"]) == alexa_display.MAX_DISPLAY_ITEMS - 1
+    assert page["hint"] == "+ 251 weitere"
 
 
 def test_short_colors_can_be_tinted() -> None:

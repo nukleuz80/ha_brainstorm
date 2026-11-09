@@ -4,6 +4,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from datetime import timedelta
 from html import escape
+import json
 import re
 from typing import Any
 
@@ -36,6 +37,10 @@ DATA_NAME = "brainstorm"
 MAX_DISPLAY_ITEMS = 150
 MAX_DISPLAY_TEXT_LENGTH = 120
 MAX_PARENT_LENGTH = 28
+INDENT_DP = 28
+# The smaller of the two tile gaps, kept left of an indented subtask
+TILE_GAP_DP = 5
+MAX_INDENT_LEVELS = 3
 
 BACKGROUND_COLOR = "#14121f"
 TILE_COLOR = "#ffffff14"
@@ -163,6 +168,7 @@ _CHECK: dict[str, Any] = {
 
 _CHIP: dict[str, Any] = {
     "type": "Frame",
+    "when": "${!data.toggle}",
     "spacing": "6dp",
     "borderRadius": "@chipRadius",
     "backgroundColor": "${data.tint}",
@@ -179,10 +185,82 @@ _CHIP: dict[str, Any] = {
     ],
 }
 
-_TILE: dict[str, Any] = {
+# Opens and closes the subtasks of a main task right on the Echo, without the skill
+_TOGGLE: dict[str, Any] = {
+    "type": "SetValue",
+    "componentId": "group-${data.id}",
+    "property": "open",
+    "value": "${!open}",
+}
+
+_TEXT_BLOCK: list[dict[str, Any]] = [
+    {
+        "type": "Text",
+        "text": "${data.text}",
+        "fontSize": "@rowSize",
+        "color": TEXT_COLOR,
+        "maxLines": 2,
+    },
+    {
+        "type": "Container",
+        "direction": "row",
+        "paddingTop": "4dp",
+        "data": "${data.chips}",
+        "items": [
+            {
+                "type": "Frame",
+                "when": "${data.toggle}",
+                "spacing": "6dp",
+                "borderRadius": "@chipRadius",
+                "backgroundColor": "${page.tint}",
+                "items": [
+                    {
+                        "type": "Text",
+                        "paddingLeft": "10dp",
+                        "paddingRight": "10dp",
+                        "text": "${open ? data.text_open : data.text}",
+                        "fontSize": "@chipSize",
+                        "color": TEXT_COLOR,
+                        "maxLines": 1,
+                    }
+                ],
+            },
+            _CHIP,
+        ],
+    },
+]
+
+
+def _tile(indent: str, touch: bool) -> dict[str, Any]:
+    """Return a tile, whose text opens the subtasks when touch is set."""
+    text: dict[str, Any] = {
+        "type": "Container",
+        "grow": 1,
+        "shrink": 1,
+        "paddingRight": "14dp",
+        "items": _TEXT_BLOCK,
+    }
+    if touch:
+        text = {
+            "type": "TouchWrapper",
+            "grow": 1,
+            "shrink": 1,
+            "height": "100%",
+            "description": "${data.toggle_label}",
+            "onPress": [_TOGGLE],
+            "items": [{**text, "height": "100%", "justifyContent": "center"}],
+        }
+    tile = json.loads(json.dumps(_TILE_BASE))
+    if indent:
+        tile["paddingLeft"] = indent
+    tile["items"][0]["items"][0]["items"][1] = text
+    return tile
+
+
+_TILE_BASE: dict[str, Any] = {
     "type": "Container",
     "width": "100%",
-    "height": "100%",
+    "height": "@tileHeight",
     "padding": "@tileGap",
     "items": [
         {
@@ -200,32 +278,30 @@ _TILE: dict[str, Any] = {
                     "height": "100%",
                     "items": [
                         _CHECK,
-                        {
-                            "type": "Container",
-                            "grow": 1,
-                            "shrink": 1,
-                            "paddingRight": "14dp",
-                            "items": [
-                                {
-                                    "type": "Text",
-                                    "text": "${data.text}",
-                                    "fontSize": "@rowSize",
-                                    "color": TEXT_COLOR,
-                                    "maxLines": 2,
-                                },
-                                {
-                                    "type": "Container",
-                                    "direction": "row",
-                                    "paddingTop": "4dp",
-                                    "data": "${data.chips}",
-                                    "items": [_CHIP],
-                                },
-                            ],
-                        },
+                        {},
                     ],
                 }
             ],
         }
+    ],
+}
+
+# A main task with its subtasks, which stay closed until its text is touched
+_GROUP: dict[str, Any] = {
+    "type": "Container",
+    "id": "group-${data.id}",
+    "width": "100%",
+    "bind": [{"name": "open", "value": False}],
+    "items": [
+        {**_tile("", False), "when": "${!data.has_children}"},
+        {**_tile("", True), "when": "${data.has_children}"},
+        {
+            "type": "Container",
+            "width": "100%",
+            "display": "${open ? 'normal' : 'none'}",
+            "data": "${data.children}",
+            "items": [_tile("${data.indent}", False)],
+        },
     ],
 }
 
@@ -312,16 +388,14 @@ DOCUMENT: dict[str, Any] = {
                                 "items": [
                                     _HEADER,
                                     {
-                                        "type": "GridSequence",
+                                        "type": "Sequence",
                                         "when": "${!page.empty}",
                                         "width": "100%",
                                         "height": "100%",
                                         "shrink": 1,
                                         "paddingTop": "1vh",
-                                        "childWidth": "${viewport.width >= 800 ? '50%' : '100%'}",
-                                        "childHeight": "@tileHeight",
                                         "data": "${page.items}",
-                                        "items": [_TILE],
+                                        "items": [_GROUP],
                                     },
                                     {
                                         "type": "Text",
@@ -392,22 +466,29 @@ def _due_chip(due: Any, pack: LanguagePack) -> dict[str, str] | None:
     return _chip(text, OVERDUE_COLOR if local < now else MUTED_COLOR)
 
 
-def _with_subtasks(ideas: list[dict[str, Any]]) -> list[tuple[dict[str, Any], bool]]:
-    """Put subtasks right after their parent, like the dashboard card."""
+def _tree(ideas: list[dict[str, Any]]) -> list[tuple[dict[str, Any], list[tuple[dict[str, Any], int]]]]:
+    """Return each main task with all its subtasks below it, at any depth."""
     ids = {idea.get(ATTR_ID) for idea in ideas}
     children: dict[Any, list[dict[str, Any]]] = {}
     for idea in ideas:
         if idea.get(ATTR_PARENT_ID) in ids:
             children.setdefault(idea.get(ATTR_PARENT_ID), []).append(idea)
 
-    ordered: list[tuple[dict[str, Any], bool]] = []
-    for idea in ideas:
-        if idea.get(ATTR_PARENT_ID) not in ids:
-            ordered.append((idea, False))
-            ordered.extend(
-                (child, True) for child in children.get(idea.get(ATTR_ID), [])
-            )
-    return ordered
+    def below(parent: dict[str, Any], depth: int, seen: set[Any]) -> list[tuple[dict[str, Any], int]]:
+        rows: list[tuple[dict[str, Any], int]] = []
+        for child in children.get(parent.get(ATTR_ID), []):
+            if child.get(ATTR_ID) in seen:
+                continue
+            seen.add(child.get(ATTR_ID))
+            rows.append((child, depth))
+            rows.extend(below(child, depth + 1, seen))
+        return rows
+
+    return [
+        (idea, below(idea, 1, {idea.get(ATTR_ID)}))
+        for idea in ideas
+        if idea.get(ATTR_PARENT_ID) not in ids
+    ]
 
 
 def _row(
@@ -437,10 +518,38 @@ def _row(
     }
 
 
-def _subtitle(rows: list[tuple[dict[str, Any], bool]], pack: LanguagePack) -> str:
+def _group(
+    idea: dict[str, Any],
+    below: list[tuple[dict[str, Any], int]],
+    color: str,
+    texts: dict[Any, Any],
+    pack: LanguagePack,
+) -> dict[str, Any]:
+    """Return a main task with its subtasks, which a touch opens and closes."""
+    row = _row(idea, False, color, texts, pack)
+    row["has_children"] = bool(below)
+    row["children"] = []
+    for child, depth in below:
+        tile = _row(child, True, color, texts, pack)
+        tile["indent"] = f"{TILE_GAP_DP + INDENT_DP * min(depth, MAX_INDENT_LEVELS)}dp"
+        row["children"].append(tile)
+    if below:
+        count = len(below)
+        one = count == 1
+        label = pack.msg("display_subtask" if one else "display_subtasks", count=count)
+        row["toggle_label"] = pack.msg(
+            "display_show_subtask" if one else "display_show_subtasks", count=count
+        )
+        row["chips"].insert(
+            0, {"toggle": True, "text": f"+ {label}", "text_open": f"– {label}"}
+        )
+    return row
+
+
+def _subtitle(ideas: list[dict[str, Any]], pack: LanguagePack) -> str:
     """Return how much is open on a page, and how much of it is urgent."""
-    urgent = sum(1 for idea, _ in rows if idea.get(ATTR_PRIORITY) == "urgent")
-    text = f"{len(rows)} {pack.msg('display_open')}"
+    urgent = sum(1 for idea in ideas if idea.get(ATTR_PRIORITY) == "urgent")
+    text = f"{len(ideas)} {pack.msg('display_open')}"
     if urgent:
         text += f" · {urgent} {pack.msg('display_urgent')}"
     return text
@@ -461,21 +570,32 @@ def build_directive(
     order = list(grouped)
     texts = {idea.get(ATTR_ID): idea.get(ATTR_TEXT) for idea in ideas}
 
+    def color_for(name: str, number: int) -> str:
+        return _safe_color(colors.get(name), PALETTE[number % len(PALETTE)])
+
     pages: list[dict[str, Any]] = []
     remaining = MAX_DISPLAY_ITEMS
     for name, members in grouped.items():
         if not members:
             continue
-        rows = _with_subtasks(members)
-        shown = rows[: max(remaining, 0)]
-        remaining -= len(shown)
-        hidden = len(rows) - len(shown)
-        color = _safe_color(colors.get(name), PALETTE[len(pages) % len(PALETTE)])
+        rows = _tree(members)
+        total = sum(1 + len(below) for _, below in rows)
+        groups: list[dict[str, Any]] = []
+        shown = 0
+        for idea, below in rows:
+            if remaining - shown <= 0:
+                break
+            below = below[: remaining - shown - 1]
+            groups.append(_group(idea, below, color_for(name, len(pages)), texts, pack))
+            shown += 1 + len(below)
+        remaining -= shown
+        hidden = total - shown
+        color = color_for(name, len(pages))
         pages.append(
             {
                 "category": name,
                 "title": _safe_text(name),
-                "subtitle": _subtitle(rows, pack),
+                "subtitle": _subtitle(members, pack),
                 "color": color,
                 "tint": f"{color}{TINT_ALPHA}",
                 "done_label": done_label,
@@ -485,10 +605,7 @@ def build_directive(
                     if hidden
                     else ""
                 ),
-                "items": [
-                    _row(idea, subtask, color, texts, pack)
-                    for idea, subtask in shown
-                ],
+                "items": groups,
             }
         )
 
