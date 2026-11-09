@@ -102,7 +102,7 @@ def test_shapes_match_card_and_services() -> None:
 
     root = Path(__file__).parent.parent
     card = (
-        root / "custom_components" / "brainstorm" / "cards" / "brainstorm-mindmap-card.js"
+        root / "custom_components" / "brainstorm" / "cards" / "brainstorm-i18n.js"
     ).read_text(encoding="utf-8")
     match = re.search(r"const NODE_SHAPES = \[([^\]]*)\]", card)
     assert match

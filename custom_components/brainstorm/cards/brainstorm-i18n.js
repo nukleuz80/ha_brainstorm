@@ -462,6 +462,7 @@ const DICTIONARIES = {
     "🔧 In Arbeit": "🔧 In progress",
     "🗑️ Später oder gar nicht": "🗑️ Later or never",
     "Gliederung": "Outline",
+    "↶ Sortieren rückgängig": "↶ Undo sorting",
     "Jeden Tag": "Every day",
     "Jeden Werktag (Mo–Fr)": "Every weekday (Mon–Fri)",
     "Jede Woche": "Every week",
@@ -850,6 +851,72 @@ export function ideaMatches(idea, filter, now = new Date()) {
     if (!markers.includes(marker)) return false;
   }
   return true;
+}
+
+/** The shapes a note can have on the mind map. */
+export const NODE_SHAPES = ["card", "cloud", "bubble", "thought", "pill", "rect", "ellipse", "hexagon", "note", "underline"];
+
+/** Return the name of a shape in the language of the user. */
+export function shapeLabel(shape) {
+  return {
+    card: t("Karte"),
+    cloud: t("Wolke"),
+    bubble: t("Sprechblase"),
+    thought: t("Gedankenblase"),
+    pill: t("Kapsel"),
+    rect: t("Rechteck"),
+    ellipse: t("Ellipse"),
+    hexagon: t("Sechseck"),
+    note: t("Notizzettel"),
+    underline: t("Unterstrichen"),
+  }[shape];
+}
+
+/** The ways the subtasks of a note can be sorted: field, reversed, label. */
+export function sortChoices() {
+  return [
+    ["text", false, t("A → Z")],
+    ["text", true, t("Z → A")],
+    ["priority", false, t("Priorität")],
+    ["due", false, t("Fälligkeit")],
+    ["created", false, t("Älteste zuerst")],
+    ["created", true, t("Neueste zuerst")],
+  ];
+}
+
+/**
+ * The options of the parent field in the edit dialogs: every note except
+ * this one and its own subtasks, notes of the same category first. The
+ * current parent is always there, so saving never drops it unasked.
+ */
+export function parentOptions(ideas, id, currentParentId, category) {
+  const list = ideas || [];
+  const below = new Set([id]);
+  let grew = true;
+  while (grew) {
+    grew = false;
+    list.forEach((idea) => {
+      if (idea.parent_id && below.has(idea.parent_id) && !below.has(idea.id)) {
+        below.add(idea.id);
+        grew = true;
+      }
+    });
+  }
+  const candidates = list
+    .filter((idea) => !below.has(idea.id))
+    .sort((a, b) => Number(b.category === category) - Number(a.category === category));
+  const short = (text) => {
+    const plain = String(text || "");
+    return escapeHtml(plain.length > 50 ? `${plain.slice(0, 50)}…` : plain);
+  };
+  return [`<option value="">${t("— Keine (Hauptaufgabe) —")}</option>`]
+    .concat(
+      candidates.map(
+        (idea) =>
+          `<option value="${escapeHtml(idea.id)}"${idea.id === currentParentId ? " selected" : ""}>${idea.parent_id ? "↳ " : ""}${short(idea.text)}${idea.category !== category ? ` (${escapeHtml(idea.category || "")})` : ""}</option>`,
+      ),
+    )
+    .join("");
 }
 
 /** How often a note can come back after it is ticked off. */

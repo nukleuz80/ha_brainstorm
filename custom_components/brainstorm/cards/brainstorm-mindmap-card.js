@@ -1,8 +1,8 @@
-import { BOARDS, MARKERS, NUMBERING, repeatBadge, repeatOptions, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.15";
+import { BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, repeatBadge, repeatOptions, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.16";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.8.15 - Repeating Tasks
+ * Version: 1.8.16 - Gleicher Bearbeiten-Dialog
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -52,26 +52,10 @@ const MAP_TEMPLATES = {
   sketch: { shape: "pill", lines: "dashed", scheme: "pastel" },
   neon: { shape: "pill", lines: "curve", scheme: "neon" },
 };
-const NODE_SHAPES = ["card", "cloud", "bubble", "thought", "pill", "rect", "ellipse", "hexagon", "note", "underline"];
 // Shapes CSS cannot draw get an SVG outline behind the note
 const SVG_SHAPES = ["cloud", "bubble", "thought", "ellipse", "hexagon", "note"];
 // Shapes that point to their parent and need a new outline when it moves
 const POINTING_SHAPES = ["bubble", "thought"];
-// The name of a shape in the language of the user
-function shapeLabel(shape) {
-  return {
-    card: t("Karte"),
-    cloud: t("Wolke"),
-    bubble: t("Sprechblase"),
-    thought: t("Gedankenblase"),
-    pill: t("Kapsel"),
-    rect: t("Rechteck"),
-    ellipse: t("Ellipse"),
-    hexagon: t("Sechseck"),
-    note: t("Notizzettel"),
-    underline: t("Unterstrichen"),
-  }[shape];
-}
 
 // Where a ray from the middle of a w × h box leaves it along `angle`
 function boxExit(w, h, angle) {
@@ -1114,11 +1098,11 @@ class BrainstormMindmapCard extends HTMLElement {
           bottom: calc(10px + env(safe-area-inset-bottom)) !important;
           right: max(10px, env(safe-area-inset-right)) !important;
         }
-        ha-card.is-fullscreen .dialog-backdrop {
+        ha-card.is-fullscreen ~ .dialog-backdrop {
           padding-top: max(8px, env(safe-area-inset-top)) !important;
           padding-bottom: max(8px, env(safe-area-inset-bottom)) !important;
         }
-        ha-card.is-fullscreen .dialog-box {
+        ha-card.is-fullscreen ~ .dialog-backdrop .dialog-box {
           max-height: calc(100dvh - max(8px, env(safe-area-inset-top)) - max(8px, env(safe-area-inset-bottom))) !important;
         }
         .pills-container {
@@ -2165,6 +2149,19 @@ class BrainstormMindmapCard extends HTMLElement {
           align-items: center;
           font-size: 0.7rem;
         }
+        .dialog-original-row {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 8px;
+        }
+        .dialog-original-text {
+          flex: 1 1 180px;
+          color: var(--secondary-text-color);
+        }
+        .dialog-original-row .dialog-btn {
+          min-height: 44px;
+        }
         .cloud-image {
           height: 110px;
           margin: 6px 0 4px;
@@ -2936,11 +2933,16 @@ class BrainstormMindmapCard extends HTMLElement {
         }
 
         /* Dialog Modal (Mushroom / Minimalist UI) */
+        /* Fixed to the window like the list card, so a tall map never pushes
+           the dialog or its buttons out of sight */
         .dialog-backdrop {
-          position: absolute;
-          inset: 0;
-          z-index: 100;
-          border-radius: inherit;
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          height: 100dvh;
+          z-index: 999999;
           background: rgba(0, 0, 0, 0.45);
           backdrop-filter: blur(6px);
           -webkit-backdrop-filter: blur(6px);
@@ -2960,6 +2962,7 @@ class BrainstormMindmapCard extends HTMLElement {
           color: var(--primary-text-color, #212121);
           width: 100%;
           max-width: 420px;
+          max-height: calc(100dvh - 32px);
           border-radius: 20px;
           border: 1px solid var(--ha-card-border-color, var(--divider-color, rgba(127, 127, 127, 0.2)));
           box-shadow: 0 12px 36px rgba(0, 0, 0, 0.25);
@@ -3011,7 +3014,10 @@ class BrainstormMindmapCard extends HTMLElement {
           flex-direction: column;
           gap: 14px;
           max-height: 70vh;
+          min-height: 0;
+          flex: 1 1 auto;
           overflow-y: auto;
+          overscroll-behavior: contain;
           box-sizing: border-box;
         }
         .dialog-body > * {
@@ -3410,17 +3416,18 @@ class BrainstormMindmapCard extends HTMLElement {
           <button class="present-btn present-end" id="presentEnd" title="${t("Präsentation beenden (Esc)")}">✕</button>
         </div>
 
-        <!-- In-Card Modal Dialog (Mushroom Style) -->
-        <div class="dialog-backdrop" id="mindmapDialog" style="display: none;">
-          <div class="dialog-box" id="dialogBox">
-            <div class="dialog-header">
-              <div class="dialog-title" id="dialogTitle">${t("Titel")}</div>
-              <button class="dialog-close" id="dialogCloseBtn" title="${t("Schließen (ESC)")}">✕</button>
-            </div>
-            <div class="dialog-body" id="dialogBody"></div>
-          </div>
-        </div>
       </ha-card>
+
+      <!-- Dialog outside the card: the card's containment would trap a fixed box -->
+      <div class="dialog-backdrop" id="mindmapDialog" style="display: none;">
+        <div class="dialog-box" id="dialogBox">
+          <div class="dialog-header">
+            <div class="dialog-title" id="dialogTitle">${t("Titel")}</div>
+            <button class="dialog-close" id="dialogCloseBtn" title="${t("Schließen (ESC)")}">✕</button>
+          </div>
+          <div class="dialog-body" id="dialogBody"></div>
+        </div>
+      </div>
     `;
 
     this._applyMapStyle();
@@ -7137,14 +7144,7 @@ class BrainstormMindmapCard extends HTMLElement {
 
   // The sort choices, as chips for the edit and the sort dialog
   _sortChips() {
-    return [
-      ["text", false, t("A → Z")],
-      ["text", true, t("Z → A")],
-      ["priority", false, t("Priorität")],
-      ["due", false, t("Fälligkeit")],
-      ["created", false, t("Älteste zuerst")],
-      ["created", true, t("Neueste zuerst")],
-    ]
+    return sortChoices()
       .map(([by, reverse, label]) => `<div class="dialog-prio-chip" data-sort="${by}"${reverse ? " data-reverse" : ""}>${label}</div>`)
       .join("");
   }
@@ -8070,7 +8070,10 @@ class BrainstormMindmapCard extends HTMLElement {
     const categories = sensor ? (sensor.attributes.categories || ["Inbox"]) : ["Inbox"];
     let selectedCat = currentCategory || "Inbox";
     let selectedPrio = (currentPriority || "medium").toLowerCase();
-    const idea = ((sensor && sensor.attributes.ideas) || []).find((i) => i.id === id) || {};
+    const allIdeas = (sensor && sensor.attributes.ideas) || [];
+    const idea = allIdeas.find((i) => i.id === id) || {};
+    const rawText = idea.raw_text;
+    const currentParentId = idea.parent_id || null;
     const dueValues = dueInputValues(idea.due);
     const echos = alexaEchos(this._hass);
     const currentEchos = idea.echos || [];
@@ -8095,6 +8098,13 @@ class BrainstormMindmapCard extends HTMLElement {
         <textarea class="dialog-textarea" id="editDescription" rows="4" placeholder="${t("Optional: Details, Links, Notizen …")}">${this._escapeHtml(idea.description || "")}</textarea>
         <div class="dialog-label">${t("Anhänge:")}</div>
         <div id="editAttachments"></div>
+        ${rawText && rawText !== currentText ? `
+          <div class="dialog-label">${t("Original gesprochen:")}</div>
+          <div class="dialog-original-row">
+            <span id="editOriginalText" class="dialog-original-text">${this._escapeHtml(rawText)}</span>
+            <button class="dialog-btn dialog-btn-cancel" id="editUseOriginal">${t("Übernehmen")}</button>
+          </div>
+        ` : ""}
 
         <div class="dialog-label">${t("Priorität:")}</div>
         <div class="dialog-prio-grid" id="editPrioGrid">
@@ -8103,12 +8113,6 @@ class BrainstormMindmapCard extends HTMLElement {
           <div class="dialog-prio-chip ${selectedPrio === "high" ? "selected" : ""}" data-prio="high">${t("🔴 Hoch")}</div>
           <div class="dialog-prio-chip ${selectedPrio === "urgent" ? "selected" : ""}" data-prio="urgent">${t("🔥 Dringend")}</div>
         </div>
-
-        <div class="dialog-label">${t("Callout:")}</div>
-        <input class="dialog-input" id="editCallout" maxlength="200" placeholder="${t("Optional: kurze Anmerkung in einer Sprechblase")}" value="${this._escapeHtml(idea.callout || "")}">
-        <div class="dialog-label">${t("Rahmen:")}</div>
-        <input class="dialog-input" id="editFrame" maxlength="40" list="editFrameNames" placeholder="${t("Optional: Name eines Rahmens")}" value="${this._escapeHtml(idea.frame || "")}">
-        <datalist id="editFrameNames">${[...new Set(((sensor && sensor.attributes.ideas) || []).filter((i) => i.category === (idea.category || currentCategory)).map((i) => i.frame).filter(Boolean))].map((f) => `<option value="${this._escapeHtml(f)}"></option>`).join("")}</datalist>
 
         <div class="dialog-label">${t("Marker:")}</div>
         <div class="dialog-prio-grid dialog-marker-grid" id="editMarkerGrid">
@@ -8121,24 +8125,6 @@ class BrainstormMindmapCard extends HTMLElement {
           : `<div class="dialog-prio-grid dialog-progress-grid" id="editProgressGrid">
           ${[0, 25, 50, 75, 100].map((step) => `<div class="dialog-prio-chip ${step === selectedProgress ? "selected" : ""}" data-progress="${step}">${step} %</div>`).join("")}
         </div>`}
-
-        ${hasSubtasks ? `
-        <div class="dialog-label">${t("Unterpunkte nummerieren:")}</div>
-        <div class="dialog-prio-grid dialog-numbering-grid" id="editNumberingGrid">
-          ${["", ...NUMBERING].map((style) => `<div class="dialog-prio-chip ${style === selectedNumbering ? "selected" : ""}" data-numbering="${style}">${numberingLabel(style)}</div>`).join("")}
-        </div>
-        <div class="dialog-label">${t("Unterpunkte sortieren:")}</div>
-        <div class="dialog-prio-grid dialog-sort-grid" id="editSortGrid">${this._sortChips()}</div>
-        <div class="dialog-hint">${t("Sortiert sofort, ↶ macht es rückgängig.")}</div>
-        ` : ""}
-
-        <div class="dialog-label">${t("Form auf der Mindmap:")}</div>
-        <div class="dialog-prio-grid dialog-shape-grid" id="editShapeGrid">
-          ${shapeChoices
-            .map(([value, label]) => `<div class="dialog-prio-chip ${value === selectedShape ? "selected" : ""}" data-shape="${value}">${label}</div>`)
-            .join("")}
-        </div>
-        <div class="dialog-hint dialog-shape-hint">${t("Automatisch: Sprachnotizen als Sprechblase, sonst die Form der Map.")}</div>
 
         <div class="dialog-label" style="margin-top: 10px;">${t("Kategorie:")}</div>
         <div class="dialog-categories-grid" id="editCatGrid">
@@ -8188,6 +8174,34 @@ class BrainstormMindmapCard extends HTMLElement {
           </details>
         ` : ""}
 
+        <div class="dialog-label">${t("Übergeordnete Aufgabe:")}</div>
+        <select class="dialog-input" id="editParentSelect">${parentOptions(allIdeas, id, currentParentId, idea.category || currentCategory)}</select>
+
+        ${hasSubtasks ? `
+        <div class="dialog-label">${t("Unterpunkte nummerieren:")}</div>
+        <div class="dialog-prio-grid dialog-numbering-grid" id="editNumberingGrid">
+          ${["", ...NUMBERING].map((style) => `<div class="dialog-prio-chip ${style === selectedNumbering ? "selected" : ""}" data-numbering="${style}">${numberingLabel(style)}</div>`).join("")}
+        </div>
+        <div class="dialog-label">${t("Unterpunkte sortieren:")}</div>
+        <div class="dialog-prio-grid dialog-sort-grid" id="editSortGrid">${this._sortChips()}</div>
+        <div class="dialog-hint">${t("Sortiert sofort, ↶ macht es rückgängig.")}</div>
+        ` : ""}
+
+        <div class="dialog-label">${t("Callout:")}</div>
+        <input class="dialog-input" id="editCallout" maxlength="200" placeholder="${t("Optional: kurze Anmerkung in einer Sprechblase")}" value="${this._escapeHtml(idea.callout || "")}">
+        <div class="dialog-label">${t("Rahmen:")}</div>
+        <input class="dialog-input" id="editFrame" maxlength="40" list="editFrameNames" placeholder="${t("Optional: Name eines Rahmens")}" value="${this._escapeHtml(idea.frame || "")}">
+        <datalist id="editFrameNames">${[...new Set(((sensor && sensor.attributes.ideas) || []).filter((i) => i.category === (idea.category || currentCategory)).map((i) => i.frame).filter(Boolean))].map((f) => `<option value="${this._escapeHtml(f)}"></option>`).join("")}</datalist>
+
+
+        <div class="dialog-label">${t("Form auf der Mindmap:")}</div>
+        <div class="dialog-prio-grid dialog-shape-grid" id="editShapeGrid">
+          ${shapeChoices
+            .map(([value, label]) => `<div class="dialog-prio-chip ${value === selectedShape ? "selected" : ""}" data-shape="${value}">${label}</div>`)
+            .join("")}
+        </div>
+        <div class="dialog-hint dialog-shape-hint">${t("Automatisch: Sprachnotizen als Sprechblase, sonst die Form der Map.")}</div>
+
         <div class="dialog-footer">
           <button class="dialog-btn dialog-btn-cancel" id="cancelEditBtn">${t("Abbrechen")}</button>
           <button class="dialog-btn dialog-btn-primary" id="saveEditBtn">${t("Speichern")}</button>
@@ -8201,6 +8215,13 @@ class BrainstormMindmapCard extends HTMLElement {
         canEdit: true,
         dropTarget: body,
       });
+      const useOriginal = body.querySelector("#editUseOriginal");
+      if (useOriginal) {
+        useOriginal.addEventListener("click", () => {
+          textarea.value = rawText;
+          textarea.focus();
+        });
+      }
       const textError = body.querySelector("#editTextError");
       const saveBtn = body.querySelector("#saveEditBtn");
       const cancelBtn = body.querySelector("#cancelEditBtn");
@@ -8352,6 +8373,8 @@ class BrainstormMindmapCard extends HTMLElement {
         if (newCallout !== (idea.callout || "")) payload.callout = newCallout || null;
         const newFrame = (body.querySelector("#editFrame").value || "").trim();
         if (newFrame !== (idea.frame || "")) payload.frame = newFrame || null;
+        const newParent = body.querySelector("#editParentSelect").value || "";
+        if (newParent !== (currentParentId || "")) payload.parent_id = newParent;
 
         // Everything this save changes, as it was before
         const before = { id, text: currentText, priority: currentPriority || "medium" };
@@ -8365,6 +8388,8 @@ class BrainstormMindmapCard extends HTMLElement {
         if ("callout" in payload) before.callout = idea.callout || null;
         if ("numbering" in payload) before.numbering = currentNumbering || null;
         if ("frame" in payload) before.frame = idea.frame || null;
+        if ("parent_id" in payload) before.parent_id = currentParentId || "";
+        if ("repeat" in payload) before.repeat = idea.repeat || "";
         try {
           await this._hass.callService("brainstorm", "update_idea", payload);
           this._pushUndo(currentText, () => this._hass.callService("brainstorm", "update_idea", before));
@@ -9094,7 +9119,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.8.15 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.8.16 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

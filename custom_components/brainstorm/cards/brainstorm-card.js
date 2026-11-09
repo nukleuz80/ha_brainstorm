@@ -1,9 +1,9 @@
-import { MARKERS, alexaEchos, repeatBadge, repeatOptions, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.15";
+import { MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, repeatBadge, repeatOptions, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.16";
 
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.8.15 - Repeating Tasks
+ * Version 1.8.16 - Gleicher Bearbeiten-Dialog
  */
 // The bulb lies next to this file, wherever Home Assistant serves it from
 const BULB_URL = new URL("./brainstorm-bulb.svg", import.meta.url).href;
@@ -1445,14 +1445,20 @@ class BrainstormCard extends HTMLElement {
     this._isDialogOpen = false;
   }
 
-  _editIdea(id, currentText, currentCategory, currentPriority = "medium", currentParentId = null) {
+  _editIdea(id, currentText, currentCategory, currentPriority = "medium", parentHint = null) {
     const sensor = this._getSensorEntity();
     const categories = sensor ? (sensor.attributes.categories || ["Inbox"]) : ["Inbox"];
     const activeIdeas = sensor ? (sensor.attributes.ideas || []) : [];
     let selectedCat = currentCategory || "Inbox";
     let selectedPrio = (currentPriority || "medium").toLowerCase();
-    const candidateParents = activeIdeas.filter((i) => i.id !== id && !i.parent_id);
     const idea = activeIdeas.find((i) => i.id === id) || {};
+    const currentParentId = idea.parent_id || parentHint || null;
+    const currentShape = NODE_SHAPES.includes(idea.shape) ? idea.shape : "";
+    let selectedShape = currentShape;
+    const shapeChoices = [["", t("Automatisch")], ...NODE_SHAPES.map((shape) => [shape, shapeLabel(shape)])];
+    const currentNumbering = NUMBERING.includes(idea.numbering) ? idea.numbering : "";
+    let selectedNumbering = currentNumbering;
+    const frameNames = [...new Set(activeIdeas.filter((i) => i.category === (idea.category || currentCategory)).map((i) => i.frame).filter(Boolean))];
     const rawText = idea.raw_text;
     const dueValues = dueInputValues(idea.due);
     const echos = alexaEchos(this._hass);
@@ -1550,18 +1556,32 @@ class BrainstormCard extends HTMLElement {
         ` : ""}
 
         <div class="action-dialog-label" style="margin-top: 6px;">${t("Übergeordnete Aufgabe:")}</div>
-        <select class="action-dialog-input" id="editParentSelect" style="cursor: pointer; width: 100%;">
-          <option value="">${t("— Keine (Hauptaufgabe) —")}</option>
-          ${candidateParents
-            .map(
-              (p) => `
-            <option value="${p.id}" ${p.id === currentParentId ? "selected" : ""}>
-              ↳ ${this._escapeHtml(p.text.length > 50 ? p.text.substring(0, 50) + "..." : p.text)}
-            </option>
-          `
-            )
-            .join("")}
-        </select>
+        <select class="action-dialog-input" id="editParentSelect" style="cursor: pointer; width: 100%;">${parentOptions(activeIdeas, id, currentParentId, idea.category || currentCategory)}</select>
+
+        ${hasSubtasks ? `
+        <div class="action-dialog-label">${t("Unterpunkte nummerieren:")}</div>
+        <div class="action-dialog-prio-grid" id="editNumberingGrid">
+          ${["", ...NUMBERING].map((style) => `<div class="action-dialog-prio-chip ${style === selectedNumbering ? "selected" : ""}" data-numbering="${style}">${numberingLabel(style)}</div>`).join("")}
+        </div>
+        <div class="action-dialog-label">${t("Unterpunkte sortieren:")}</div>
+        <div class="action-dialog-prio-grid" id="editSortGrid">
+          ${sortChoices().map(([by, reverse, label]) => `<div class="action-dialog-prio-chip" data-sort="${by}"${reverse ? " data-reverse" : ""}>${label}</div>`).join("")}
+        </div>
+        <div class="action-dialog-hint" id="editSortHint">${t("Sortiert sofort, ↶ macht es rückgängig.")}</div>
+        <button class="action-dialog-btn action-dialog-btn-cancel" id="editSortUndo" style="display: none; min-height: 44px; margin-bottom: 12px;">${t("↶ Sortieren rückgängig")}</button>
+        ` : ""}
+
+        <div class="action-dialog-label">${t("Callout:")}</div>
+        <input class="action-dialog-input" id="editCallout" maxlength="200" style="width: 100%;" placeholder="${t("Optional: kurze Anmerkung in einer Sprechblase")}" value="${this._escapeHtml(idea.callout || "")}">
+        <div class="action-dialog-label">${t("Rahmen:")}</div>
+        <input class="action-dialog-input" id="editFrame" maxlength="40" style="width: 100%;" list="editFrameNames" placeholder="${t("Optional: Name eines Rahmens")}" value="${this._escapeHtml(idea.frame || "")}">
+        <datalist id="editFrameNames">${frameNames.map((f) => `<option value="${this._escapeHtml(f)}"></option>`).join("")}</datalist>
+
+        <div class="action-dialog-label">${t("Form auf der Mindmap:")}</div>
+        <div class="action-dialog-prio-grid" id="editShapeGrid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 4px;">
+          ${shapeChoices.map(([value, label]) => `<div class="action-dialog-prio-chip ${value === selectedShape ? "selected" : ""}" data-shape="${value}">${label}</div>`).join("")}
+        </div>
+        <div class="action-dialog-hint">${t("Automatisch: Sprachnotizen als Sprechblase, sonst die Form der Map.")}</div>
 
         <div class="action-dialog-footer">
           <button class="action-dialog-btn action-dialog-btn-cancel" id="cancelEditBtn">${t("Abbrechen")}</button>
@@ -1604,6 +1624,54 @@ class BrainstormCard extends HTMLElement {
           selectedProgress = Number(chip.getAttribute("data-progress")) || 0;
         });
       });
+      const pickOne = (selector, attr, set) => {
+        const chips = body.querySelectorAll(selector);
+        chips.forEach((chip) => {
+          chip.addEventListener("click", () => {
+            chips.forEach((c) => c.classList.remove("selected"));
+            chip.classList.add("selected");
+            set(chip.getAttribute(attr) || "");
+          });
+        });
+      };
+      pickOne("#editShapeGrid .action-dialog-prio-chip", "data-shape", (v) => { selectedShape = v; });
+      pickOne("#editNumberingGrid .action-dialog-prio-chip", "data-numbering", (v) => { selectedNumbering = v; });
+      const sortHint = body.querySelector("#editSortHint");
+      const sortUndo = body.querySelector("#editSortUndo");
+      let sortBefore = null;
+      body.querySelectorAll("#editSortGrid [data-sort]").forEach((chip) => {
+        chip.addEventListener("click", async () => {
+          const ideas = (this._getSensorEntity()?.attributes.ideas) || [];
+          const order = ideas.filter((i) => i.parent_id === id).map((i) => i.id);
+          try {
+            await this._hass.callService("brainstorm", "sort_children", {
+              parent_id: id,
+              by: chip.getAttribute("data-sort"),
+              reverse: chip.hasAttribute("data-reverse"),
+            });
+            if (!sortBefore) sortBefore = order;
+            sortHint.textContent = t("Sortiert.");
+            sortUndo.style.display = "";
+          } catch (err) {
+            console.error("Failed to sort subtasks", err);
+            sortHint.textContent = t("Sortieren hat nicht geklappt.");
+          }
+        });
+      });
+      if (sortUndo) {
+        sortUndo.addEventListener("click", async () => {
+          if (!sortBefore) return;
+          try {
+            await this._hass.callService("brainstorm", "sort_children", { parent_id: id, ids: sortBefore });
+            sortBefore = null;
+            sortUndo.style.display = "none";
+            sortHint.textContent = t("Sortiert sofort, ↶ macht es rückgängig.");
+          } catch (err) {
+            console.error("Failed to undo sorting", err);
+            sortHint.textContent = t("Rückgängig ging nicht");
+          }
+        });
+      }
       const dueDate = body.querySelector("#editDueDate");
       const dueTime = body.querySelector("#editDueTime");
 
@@ -1707,6 +1775,12 @@ class BrainstormCard extends HTMLElement {
         if (!hasSubtasks && selectedProgress !== currentProgress) {
           payload.progress = selectedProgress;
         }
+        if (selectedShape !== currentShape) payload.shape = selectedShape || null;
+        if (hasSubtasks && selectedNumbering !== currentNumbering) payload.numbering = selectedNumbering || null;
+        const newCallout = (body.querySelector("#editCallout").value || "").trim();
+        if (newCallout !== (idea.callout || "")) payload.callout = newCallout || null;
+        const newFrame = (body.querySelector("#editFrame").value || "").trim();
+        if (newFrame !== (idea.frame || "")) payload.frame = newFrame || null;
         const parentSelect = body.querySelector("#editParentSelect");
         if (parentSelect) {
           const selectedPid = parentSelect.value || "";
@@ -2767,6 +2841,7 @@ class BrainstormCard extends HTMLElement {
           gap: 14px;
           max-height: 70vh;
           overflow-y: auto;
+          overscroll-behavior: contain;
           box-sizing: border-box;
         }
         .action-dialog-body > * {
@@ -5828,7 +5903,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.8.15 ",
+  "%c BRAINSTORM-CARD %c v1.8.16 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );
