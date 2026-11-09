@@ -1,8 +1,8 @@
-import { BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, repeatBadge, repeatOptions, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.17";
+import { BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, repeatBadge, repeatOptions, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.8.18";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.8.17 - Bitte am Satzanfang
+ * Version: 1.8.18 - Mindmap-Kopfzeile
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -936,7 +936,10 @@ class BrainstormMindmapCard extends HTMLElement {
           align-items: center;
           justify-content: space-between;
           gap: 8px;
-          flex-wrap: nowrap;
+          /* Categories get their own row, so many of them never cover the
+             title or the buttons on the right */
+          flex-wrap: wrap;
+          row-gap: 8px;
           background: var(--ha-card-background, var(--card-background-color, #ffffff));
           border-bottom: 1px solid var(--divider-color, rgba(127, 127, 127, 0.15));
         }
@@ -944,7 +947,7 @@ class BrainstormMindmapCard extends HTMLElement {
           display: flex;
           align-items: center;
           gap: 8px;
-          flex: 0 1 auto;
+          flex: 1 1 0;
           min-width: 0;
         }
         .top-right {
@@ -1108,14 +1111,16 @@ class BrainstormMindmapCard extends HTMLElement {
         .pills-container {
           display: flex;
           align-items: center;
+          flex-wrap: wrap;
           gap: 6px;
-          overflow-x: auto;
-          -webkit-overflow-scrolling: touch;
-          flex: 1 1 auto;
+          order: 3;
+          flex: 1 0 100%;
           min-width: 0;
           max-width: none;
-          padding: 2px 4px;
-          scrollbar-width: none;
+          padding: 2px 0;
+        }
+        .pills-container .cat-pill {
+          flex-shrink: 0;
         }
         .pills-container::-webkit-scrollbar {
           display: none;
@@ -1129,9 +1134,13 @@ class BrainstormMindmapCard extends HTMLElement {
             flex: 1 1 0;
           }
           .pills-container {
-            order: 3;
-            flex: 1 0 100%;
-            padding: 2px 0;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+          }
+          .pills-container::-webkit-scrollbar {
+            display: none;
           }
           .cat-pill[data-cat="all"] {
             display: none !important;
@@ -9119,7 +9128,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.8.17 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.8.18 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );
