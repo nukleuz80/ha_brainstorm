@@ -9,7 +9,7 @@
 [![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.10.4-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.10.5-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -1034,6 +1034,7 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.10.5`** | 2026-11-10 | **Releases with a ZIP.** Every published release now gets `brainstorm.zip` attached by a GitHub Action, and `hacs.json` sets `zip_release`. HACS installs and updates download this file, so GitHub counts them as downloads of the release. The last five releases got the ZIP afterwards. Nothing changes for an existing installation. |
 | **`v1.10.4`** | 2026-11-10 | **Neutral example names.** Examples in the setup texts, the documentation, the video scripts, the demo data and the tests now use made-up names (Olaf, Frida, Tom, Paul, Musterdorf) instead of real ones. |
 | **`v1.10.3`** | 2026-11-10 | **Compact notes in the mindmap.** A note shows only ✓ done, 🌿 subidea, ✏️ edit and ⋯ on one line. ⋯ opens a menu with link, focus on branch, AI subtasks, change category and delete. It opens upward or to the right when there is no room, and a tap outside or Escape closes it. Notes no longer need a second row of buttons. |
 | **`v1.10.2`** | 2026-11-10 | **Buttons stay inside the note.** In the mindmap the row of buttons under a note (done, subidea, link, focus, AI, edit, move, delete) spilled out over the left edge once a note had more buttons than fit, most visibly on phones. The row now wraps onto a second line inside the note. |

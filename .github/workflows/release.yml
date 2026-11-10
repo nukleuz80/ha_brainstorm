@@ -1,0 +1,47 @@
+name: Release ZIP
+
+# Attaches brainstorm.zip to every published release. HACS installs and
+# updates download this file (zip_release in hacs.json), so GitHub counts
+# each of them as a download of the release.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag to attach the ZIP to, e.g. v1.9.2"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  zip:
+    name: Build and attach brainstorm.zip
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ env.TAG }}
+
+      - name: Check the version
+        run: |
+          version=$(jq -r .version custom_components/brainstorm/manifest.json)
+          if [ "v$version" != "$TAG" ]; then
+            echo "::warning::manifest.json says $version, the tag is $TAG"
+          fi
+
+      - name: Build the ZIP
+        # The files of the integration sit at the top of the archive, as HACS expects
+        run: |
+          cd custom_components/brainstorm
+          zip -r -X "$GITHUB_WORKSPACE/brainstorm.zip" . -x "*/__pycache__/*" "*.pyc"
+          unzip -l "$GITHUB_WORKSPACE/brainstorm.zip" | tail -n 3
+
+      - name: Attach it to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$TAG" brainstorm.zip --clobber --repo "$GITHUB_REPOSITORY"

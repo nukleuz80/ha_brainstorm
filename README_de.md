@@ -9,7 +9,7 @@
 [![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.10.4-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.10.5-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -1086,6 +1086,7 @@ Weitere Beispiele für Assist und Alexa liegen im Ordner [`examples/`](examples/
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.10.5`** | 10.11.2026 | **Releases mit ZIP.** Jedes veröffentlichte Release bekommt jetzt per GitHub Action die Datei `brainstorm.zip`, und `hacs.json` setzt `zip_release`. HACS lädt bei Installation und Update diese Datei, GitHub zählt das als Download des Releases. Die letzten fünf Releases haben die ZIP nachträglich bekommen. An bestehenden Installationen ändert sich nichts. |
 | **`v1.10.4`** | 10.11.2026 | **Neutrale Beispielnamen.** Beispiele in den Einrichtungstexten, der Doku, den Videoskripten, den Demodaten und den Tests verwenden jetzt erfundene Namen (Olaf, Frida, Tom, Paul, Musterdorf) statt echter. |
 | **`v1.10.3`** | 10.11.2026 | **Kompakte Notizen in der Mindmap.** Eine Notiz zeigt nur noch ✓ Erledigt, 🌿 Unteridee, ✏️ Bearbeiten und ⋯ in einer Zeile. ⋯ öffnet ein Menü mit Verbinden, Zweig fokussieren, KI-Unteraufgaben, Kategorie ändern und Löschen. Es öffnet sich nach oben oder nach rechts, wenn der Platz fehlt, und schließt mit einem Tipp daneben oder mit Escape. Notizen brauchen keine zweite Knopfzeile mehr. |
 | **`v1.10.2`** | 10.11.2026 | **Knöpfe bleiben in der Notiz.** In der Mindmap ragte die Knopfleiste unter einer Notiz (Erledigt, Unteridee, Verbinden, Fokus, KI, Bearbeiten, Verschieben, Löschen) links über den Rand hinaus, sobald mehr Knöpfe da waren als hineinpassten, vor allem am Handy. Die Leiste bricht jetzt innerhalb der Notiz in eine zweite Zeile um. |
