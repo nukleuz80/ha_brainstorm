@@ -133,11 +133,11 @@ async def test_others_keep_their_done_ideas(
     """Test that with privacy on a user only deletes their own done ideas."""
     entry = await setup_entry(
         stored={"ideas": [], "categories": ["Inbox"]},
-        options={"privacy_enabled": True, "privacy_owner": "user-jan"},
+        options={"privacy_enabled": True, "privacy_owner": "user-olaf"},
     )
     store = entry.runtime_data
-    mine = await store.async_add_idea("von jan", context=Context(user_id="user-jan"))
-    theirs = await store.async_add_idea("von lenja", context=Context(user_id="user-lenja"))
+    mine = await store.async_add_idea("von olaf", context=Context(user_id="user-olaf"))
+    theirs = await store.async_add_idea("von frida", context=Context(user_id="user-frida"))
     for idea in (mine, theirs):
         await store.async_update_idea(idea["id"], status="completed")
 
@@ -147,7 +147,7 @@ async def test_others_keep_their_done_ideas(
         {},
         blocking=True,
         return_response=True,
-        context=Context(user_id="user-lenja"),
+        context=Context(user_id="user-frida"),
     )
     assert response == {"deleted": 1}
     assert store.get_idea(theirs["id"]) is None

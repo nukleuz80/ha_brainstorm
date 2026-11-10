@@ -305,7 +305,7 @@
       },
       "reminder_persons": {
         "title": "Brainstorm › Erinnerungen › Personen",
-        "description": "Sag zum Beispiel: erinnere Lenja morgen um 8 an den Elternsprechtag. Wähle eine Person, um ihre Kanäle festzulegen.",
+        "description": "Sag zum Beispiel: erinnere Frida morgen um 8 an den Elternsprechtag. Wähle eine Person, um ihre Kanäle festzulegen.",
         "data": {
           "persons_enabled": "Erinnerungen für andere Personen nutzen",
           "person": "Person bearbeiten",
@@ -801,7 +801,7 @@
         },
         "device": {
           "name": "Erfassungsgerät",
-          "description": "Das auslösende Gerät (z.B. \"Echo Show Küche\", \"Wohnzimmer Echo Dot\", \"Jan (Handy)\")."
+          "description": "Das auslösende Gerät (z.B. \"Echo Show Küche\", \"Wohnzimmer Echo Dot\", \"Olaf (Handy)\")."
         },
         "language": {
           "name": "Sprache",

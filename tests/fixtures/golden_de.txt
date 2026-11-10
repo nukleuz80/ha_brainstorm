@@ -76,9 +76,9 @@ Du hast 2 Einträge
 ESP32 flashen
 Echo Fest
 Echo Küche
-Echo Lenja
+Echo Frida
 Echo Show Küche
-Edeka in Sorsum
+Edeka in Musterdorf
 Ein Buch auf die Bücher Liste
 Eine App für die Kinder bauen
 Error notifying brainstorm listener
@@ -148,7 +148,7 @@ Neues Thema
 Niedrige Priorität: Regal bauen
 Normale Priorität: Regal bauen
 Ob schlaue antworten auch einen Skill braucht
-Okay, ich erinnere Lenja morgen um 8 Uhr
+Okay, ich erinnere Frida morgen um 8 Uhr
 Okay, ich erinnere dich morgen um 8 Uhr
 Oma anrufen
 Open a section of the reminder options and submit it.
@@ -215,7 +215,7 @@ an den termin am 1.2.2027 um 17 uhr
 an die mülltonnen
 arzt anrufen
 arzt unbedingt anrufen
-arzt von lenja
+arzt von frida
 arztbesuch planen
 aus der app
 auto in die werkstatt bringen
@@ -710,8 +710,8 @@ ich will die reifen wechseln
 idee eine app für die kinder bauen
 idee vom leser
 idee von
-idee von jan
-idee von lenja
+idee von olaf
+idee von frida
 im Garten muss die Hecke geschnitten werden
 im garten das auto mähen
 im garten das auto putzen
@@ -806,8 +806,8 @@ kuchen backen
 kuchen für die oma backen
 könntest du dir merken dass ich die rechnung bezahlen muss
 kürbisse müssen wir heute schnitzen
-lenja morgen um 8 an den termin
-lenjas alltag
+frida morgen um 8 an den termin
+fridas alltag
 letzten freitag war der arzt da
 licht aus
 licht dimmen
@@ -1099,8 +1099,8 @@ warum wurde milch nicht repariert
 was macht die heizung?
 wenn ich bei edeka bin an die milch
 wenn ich heimkomme an den müll
-wenn ich im edeka in sorsum bin an brot
-wenn lenja heimkommt an den müll
+wenn ich im edeka in musterdorf bin an brot
+wenn frida heimkommt an den müll
 wichtige unterlagen holen
 wir brauchen 8 neue stühle
 wir brauchen keine neue heizung

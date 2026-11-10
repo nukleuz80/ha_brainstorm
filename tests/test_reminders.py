@@ -249,7 +249,7 @@ async def test_unknown_origin_keeps_other_echos_silent(
     entry, alexa, push = await _setup(
         hass, setup_entry, reminder_alexa="origin", reminder_notify=[PUSH]
     )
-    hass.states.async_set("media_player.jonathan", "idle", {"last_called": True})
+    hass.states.async_set("media_player.paul", "idle", {"last_called": True})
     await entry.runtime_data.async_add_idea(
         "aus der app", due=dt_util.now() - timedelta(minutes=1)
     )
@@ -973,21 +973,21 @@ async def test_digest_waits_for_presence(
 
 def _add_person_and_zones(hass: HomeAssistant) -> None:
     """Add people and places as they look in Home Assistant."""
-    hass.states.async_set("person.jan", "not_home", {"friendly_name": "Jan"})
-    hass.states.async_set("person.lenja", "not_home", {"friendly_name": "Lenja"})
+    hass.states.async_set("person.olaf", "not_home", {"friendly_name": "Olaf"})
+    hass.states.async_set("person.frida", "not_home", {"friendly_name": "Frida"})
     hass.states.async_set("zone.home", "0", {"friendly_name": "Zuhause"})
-    hass.states.async_set("zone.edeka", "0", {"friendly_name": "Edeka in Sorsum"})
+    hass.states.async_set("zone.edeka", "0", {"friendly_name": "Edeka in Musterdorf"})
 
 
 @pytest.mark.parametrize(
     ("spoken", "zone", "person", "text"),
     [
-        ("wenn ich heimkomme an den müll", "zone.home", "person.jan", "den müll"),
-        ("an den müll wenn ich nach hause komme", "zone.home", "person.jan", "den müll"),
-        ("wenn lenja heimkommt an den müll", "zone.home", "person.lenja", "den müll"),
-        ("wenn ich bei edeka bin an die milch", "zone.edeka", "person.jan", "die milch"),
-        ("beim edeka an die milch", "zone.edeka", "person.jan", "die milch"),
-        ("wenn ich im edeka in sorsum bin an brot", "zone.edeka", "person.jan", "brot"),
+        ("wenn ich heimkomme an den müll", "zone.home", "person.olaf", "den müll"),
+        ("an den müll wenn ich nach hause komme", "zone.home", "person.olaf", "den müll"),
+        ("wenn frida heimkommt an den müll", "zone.home", "person.frida", "den müll"),
+        ("wenn ich bei edeka bin an die milch", "zone.edeka", "person.olaf", "die milch"),
+        ("beim edeka an die milch", "zone.edeka", "person.olaf", "die milch"),
+        ("wenn ich im edeka in musterdorf bin an brot", "zone.edeka", "person.olaf", "brot"),
     ],
 )
 def test_build_request_places(
@@ -999,7 +999,7 @@ def test_build_request_places(
         "arrival_enabled": True,
         "places_enabled": True,
         "persons_enabled": True,
-        "default_person": "person.jan",
+        "default_person": "person.olaf",
     }
 
     request = build_reminder_request(hass, options, spoken, NOW)
@@ -1013,9 +1013,9 @@ def test_build_request_person_and_time(hass: HomeAssistant) -> None:
     """Test a reminder for someone else."""
     _add_person_and_zones(hass)
     request = build_reminder_request(
-        hass, {"persons_enabled": True}, "lenja morgen um 8 an den termin", NOW
+        hass, {"persons_enabled": True}, "frida morgen um 8 an den termin", NOW
     )
-    assert request.assignee == "person.lenja"
+    assert request.assignee == "person.frida"
     assert request.due == _at(1, 8)
     assert request.text == "den termin"
 
@@ -1025,7 +1025,7 @@ def test_build_request_respects_switches(hass: HomeAssistant) -> None:
     _add_person_and_zones(hass)
     request = build_reminder_request(hass, {}, "wenn ich heimkomme an den müll", NOW)
     assert request.trigger is None
-    request = build_reminder_request(hass, {}, "lenja morgen um 8 an den termin", NOW)
+    request = build_reminder_request(hass, {}, "frida morgen um 8 an den termin", NOW)
     assert request.assignee is None
     request = build_reminder_request(hass, {}, "beim edeka an die milch", NOW)
     assert request.trigger is None
@@ -1059,20 +1059,20 @@ async def test_arrival_reminds_right_person_once(
         reminder_notify=[PUSH],
     )
     await entry.runtime_data.async_add_idea(
-        "müll rausbringen", trigger={"zone": "zone.home", "person": "person.jan"}
+        "müll rausbringen", trigger={"zone": "zone.home", "person": "person.olaf"}
     )
 
-    hass.states.async_set("person.lenja", "home", {"friendly_name": "Lenja"})
+    hass.states.async_set("person.frida", "home", {"friendly_name": "Frida"})
     await hass.async_block_till_done()
     assert not push
 
-    hass.states.async_set("person.jan", "home", {"friendly_name": "Jan"})
+    hass.states.async_set("person.olaf", "home", {"friendly_name": "Olaf"})
     await hass.async_block_till_done()
     assert len(push) == 1
     assert len(alexa) == 1
 
-    hass.states.async_set("person.jan", "not_home", {"friendly_name": "Jan"})
-    hass.states.async_set("person.jan", "home", {"friendly_name": "Jan"})
+    hass.states.async_set("person.olaf", "not_home", {"friendly_name": "Olaf"})
+    hass.states.async_set("person.olaf", "home", {"friendly_name": "Olaf"})
     await hass.async_block_till_done()
     assert len(push) == 1
 
@@ -1094,7 +1094,7 @@ async def test_zone_reminds_on_phone_only(
         "milch kaufen", trigger={"zone": "zone.edeka", "person": None}
     )
 
-    hass.states.async_set("person.jan", "Edeka in Sorsum", {"friendly_name": "Jan"})
+    hass.states.async_set("person.olaf", "Edeka in Musterdorf", {"friendly_name": "Olaf"})
     await hass.async_block_till_done()
 
     assert len(push) == 1
@@ -1118,12 +1118,12 @@ async def test_list_at_place_once_a_day(
     )
     await entry.runtime_data.async_add_idea("milch", category="Alltag")
 
-    hass.states.async_set("person.jan", "Edeka in Sorsum", {"friendly_name": "Jan"})
+    hass.states.async_set("person.olaf", "Edeka in Musterdorf", {"friendly_name": "Olaf"})
     await hass.async_block_till_done()
     assert len(push) == 1
 
-    hass.states.async_set("person.jan", "not_home", {"friendly_name": "Jan"})
-    hass.states.async_set("person.jan", "Edeka in Sorsum", {"friendly_name": "Jan"})
+    hass.states.async_set("person.olaf", "not_home", {"friendly_name": "Olaf"})
+    hass.states.async_set("person.olaf", "Edeka in Musterdorf", {"friendly_name": "Olaf"})
     await hass.async_block_till_done()
     assert len(push) == 1
 
@@ -1140,7 +1140,7 @@ async def test_arrival_switch_off_stays_silent(
         "müll", trigger={"zone": "zone.home", "person": None}
     )
 
-    hass.states.async_set("person.jan", "home", {"friendly_name": "Jan"})
+    hass.states.async_set("person.olaf", "home", {"friendly_name": "Olaf"})
     await hass.async_block_till_done()
 
     assert not push
@@ -1159,21 +1159,21 @@ async def test_person_gets_own_channels(
         reminder_alexa="fixed",
         reminder_echos=["media_player.kuche"],
         person_rules={
-            "person.lenja": {
+            "person.frida": {
                 "notify": ["notify.mobile_app_lenja"],
-                "echos": ["media_player.lenja"],
+                "echos": ["media_player.frida"],
             }
         },
     )
-    lenja_calls = async_mock_service(hass, "notify", "mobile_app_lenja")
-    await _due_idea(entry, assignee="person.lenja")
+    frida_calls = async_mock_service(hass, "notify", "mobile_app_lenja")
+    await _due_idea(entry, assignee="person.frida")
 
     await entry.runtime_data.reminders.async_check(dt_util.now())
     await hass.async_block_till_done()
 
-    assert len(lenja_calls) == 1
+    assert len(frida_calls) == 1
     assert not push
-    assert alexa[0].data["target"] == ["media_player.lenja"]
+    assert alexa[0].data["target"] == ["media_player.frida"]
 
 
 async def test_calendar_sync_once(hass: HomeAssistant, setup_entry: SetupEntry) -> None:
@@ -1270,8 +1270,8 @@ async def test_skill_person_place_and_native(
         )
         return await response.json()
 
-    reply = await post("remind", "lenja morgen um 8 an den termin")
-    assert reply["speech"].startswith("Okay, ich erinnere Lenja morgen um 8 Uhr")
+    reply = await post("remind", "frida morgen um 8 an den termin")
+    assert reply["speech"].startswith("Okay, ich erinnere Frida morgen um 8 Uhr")
     assert "alexa_reminder" not in reply
 
     reply = await post("remind", "wenn ich heimkomme an den müll")
@@ -1336,13 +1336,13 @@ async def test_service_assignee_and_zone(
     response = await hass.services.async_call(
         "brainstorm",
         "add_idea",
-        {"text": "milch", "assignee": "person.jan", "zone": "zone.edeka"},
+        {"text": "milch", "assignee": "person.olaf", "zone": "zone.edeka"},
         blocking=True,
         return_response=True,
     )
     idea_id = response["idea"]["id"]
     stored = entry.runtime_data._ideas[idea_id]  # noqa: SLF001
-    assert stored["trigger"] == {"zone": "zone.edeka", "person": "person.jan"}
+    assert stored["trigger"] == {"zone": "zone.edeka", "person": "person.olaf"}
 
     await hass.services.async_call(
         "brainstorm", "update_idea", {"id": idea_id, "zone": None}, blocking=True

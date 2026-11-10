@@ -254,7 +254,7 @@ async def test_attachments_stay_out_of_the_json_export(
     [
         ("Screenshot 2026-11-05.png", "Screenshot 2026-11-05.png"),
         ("../../etc/passwd.txt", "passwd.txt"),
-        ("C:\\Users\\jan\\log.txt", "log.txt"),
+        ("C:\\Users\\olaf\\log.txt", "log.txt"),
         ('a<b>:"|?*.txt', "a_b______.txt"),
         ("...", "file"),
         ("", "file"),

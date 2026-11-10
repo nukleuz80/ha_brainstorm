@@ -9,8 +9,8 @@ const fails = [];
 const check = (name, got, want) => { if (JSON.stringify(got) !== JSON.stringify(want)) fails.push(`${name}: want ${JSON.stringify(want)}, got ${JSON.stringify(got)}`); };
 const ideas = [
   { id: "a", text: "A" },
-  { id: "b", text: "B", in_progress: { name: "Jan" } },
-  { id: "c", text: "C", blocked_by: [{ id: "a", text: "A" }], in_progress: { name: "Jan" } },
+  { id: "b", text: "B", in_progress: { name: "Olaf" } },
+  { id: "c", text: "C", blocked_by: [{ id: "a", text: "A" }], in_progress: { name: "Olaf" } },
   { id: "d", text: "D", status: "completed" },
 ];
 check("kanban", boardColumns("kanban", ideas, now).map((c) => [c.key, c.ids]), [["open", ["a"]], ["doing", ["b"]], ["waiting", ["c"]], ["done", ["d"]]]);

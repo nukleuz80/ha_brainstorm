@@ -305,7 +305,7 @@
       },
       "reminder_persons": {
         "title": "Brainstorm › Reminders › People",
-        "description": "Say for example: erinnere Lenja morgen um 8 an den Elternsprechtag. Choose a person to set their channels.",
+        "description": "Say for example: erinnere Frida morgen um 8 an den Elternsprechtag. Choose a person to set their channels.",
         "data": {
           "persons_enabled": "Use reminders for other people",
           "person": "Person to edit",

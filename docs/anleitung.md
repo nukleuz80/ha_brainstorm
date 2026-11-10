@@ -342,7 +342,7 @@ Ausblenden löscht nichts: Gesetzte Marker, Fortschritt oder Rahmen bleiben auf 
 | **Erinnerungen ➔ Ruhezeit, Briefing & Wochenrückblick** | Ruhe 22–7 Uhr, Briefing 7:30 nur wenn jemand zu Hause ist, Rückblick sonntags 18 Uhr |
 | **Erinnerungen ➔ Regeln pro Liste** | „Einkaufen“ nur im Laden (Zone) ansagen, „Alltag“ montags 8 Uhr |
 | **Erinnerungen ➔ Orte & Heimkommen** | „Vergiss nicht, beim Baumarkt Schrauben“ meldet sich beim Betreten der Zone Baumarkt |
-| **Erinnerungen ➔ Personen** | Jans Erinnerungen auf Jans Handy und den Echo im Büro |
+| **Erinnerungen ➔ Personen** | Olafs Erinnerungen auf Olafs Handy und den Echo im Büro |
 | **Erinnerungen ➔ Kalender & Alexa-Erinnerungen** | Termine in `calendar.familie` eintragen, zusätzlich echte Alexa-Erinnerung stellen |
 | **Erinnerungen ➔ Sperrzeiten pro Echo** | Kinderzimmer-Echo 19–7 Uhr stumm, optional mit Nicht stören |
 | **Erinnerungen ➔ Kanäle jetzt testen** | Probeansage und Probe-Push |

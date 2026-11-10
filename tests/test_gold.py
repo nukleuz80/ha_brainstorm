@@ -17,7 +17,7 @@ from custom_components.brainstorm.repairs import (
 from .conftest import SetupEntry
 
 COMPONENT = Path(__file__).parent.parent / "custom_components" / "brainstorm"
-SECRET_TEXT = "Geheimes Geschenk für Lenja"
+SECRET_TEXT = "Geheimes Geschenk für Frida"
 
 
 async def test_diagnostics_leave_out_ideas_and_people(
@@ -40,9 +40,9 @@ async def test_diagnostics_leave_out_ideas_and_people(
             ],
         },
         options={
-            "allowed_echos": ["media_player.lenja_echo_dot"],
-            "glossary": "Lenja",
-            "voice_owners": {"Lenja Echo": "user-1"},
+            "allowed_echos": ["media_player.frida_echo_dot"],
+            "glossary": "Frida",
+            "voice_owners": {"Frida Echo": "user-1"},
         },
     )
 
@@ -53,8 +53,8 @@ async def test_diagnostics_leave_out_ideas_and_people(
     assert result["ideas"]["by_status"] == {"active": 1}
     assert result["ideas"]["with_due"] == 1
     assert result["allowed_echos"] == 1
-    assert "Lenja" not in dumped
-    assert "lenja" not in dumped
+    assert "Frida" not in dumped
+    assert "frida" not in dumped
     assert "user-1" not in dumped
     assert SECRET_TEXT not in dumped
 

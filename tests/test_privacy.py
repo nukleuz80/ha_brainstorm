@@ -30,8 +30,8 @@ TEXT_ATTRIBUTES = (
     "speech_overview",
     "last_action",
 )
-OWNER = "user-jan"
-OTHER = "user-lenja"
+OWNER = "user-olaf"
+OTHER = "user-frida"
 
 
 async def _private(setup_entry: SetupEntry, **extra: Any) -> Any:
@@ -52,8 +52,8 @@ async def _private(setup_entry: SetupEntry, **extra: Any) -> Any:
         options={"privacy_enabled": True, "privacy_owner": OWNER, **extra},
     )
     store = entry.runtime_data
-    await store.async_add_idea("idee von jan", context=Context(user_id=OWNER))
-    await store.async_add_idea("idee von lenja", context=Context(user_id=OTHER))
+    await store.async_add_idea("idee von olaf", context=Context(user_id=OWNER))
+    await store.async_add_idea("idee von frida", context=Context(user_id=OTHER))
     return entry
 
 
@@ -68,11 +68,11 @@ async def test_switch_off_changes_nothing(
     """Test that without the switch everyone sees everything as before."""
     entry = await setup_entry()
     store = entry.runtime_data
-    await store.async_add_idea("idee von lenja", context=Context(user_id=OTHER))
+    await store.async_add_idea("idee von frida", context=Context(user_id=OTHER))
 
     attributes = hass.states.get(OVERVIEW_ENTITY_ID).attributes
     assert "privacy" not in attributes
-    assert _texts(attributes["ideas"]) == {"idee von lenja"}
+    assert _texts(attributes["ideas"]) == {"idee von frida"}
     assert store.can_access(store.ideas[0], OWNER)
     assert store.get_ideas_by_category(user_id=OWNER)
 
@@ -144,8 +144,8 @@ async def test_old_ideas_belong_to_main_user(
     entry = await _private(setup_entry)
     store = entry.runtime_data
 
-    assert _texts(store.visible_ideas(OWNER)) == {"alte geheime idee", "idee von jan"}
-    assert _texts(store.visible_ideas(OTHER)) == {"idee von lenja"}
+    assert _texts(store.visible_ideas(OWNER)) == {"alte geheime idee", "idee von olaf"}
+    assert _texts(store.visible_ideas(OTHER)) == {"idee von frida"}
     assert len(store.visible_ideas(None)) == 3
     overview = store.get_overview_attributes(OTHER)
     assert overview["category_counts"]["Inbox"] <= 1
@@ -213,7 +213,7 @@ async def test_read_services_are_filtered(
         return_response=True,
         context=Context(user_id=OTHER),
     )
-    assert _texts(response["ideas"]) == {"idee von lenja"}
+    assert _texts(response["ideas"]) == {"idee von frida"}
 
     response = await hass.services.async_call(
         "brainstorm",
@@ -223,7 +223,7 @@ async def test_read_services_are_filtered(
         return_response=True,
         context=Context(user_id=OTHER),
     )
-    assert "lenja" in response["speech"].lower()
+    assert "frida" in response["speech"].lower()
     assert "geheim" not in response["speech"].lower()
 
     # Without a user it is spoken in a room, so only the main user's ideas count
@@ -231,7 +231,7 @@ async def test_read_services_are_filtered(
         "brainstorm", "get_announcement", {}, blocking=True, return_response=True
     )
     assert "geheim" in response["speech"].lower()
-    assert "lenja" not in response["speech"].lower()
+    assert "frida" not in response["speech"].lower()
 
 
 @pytest.mark.parametrize(
@@ -368,7 +368,7 @@ async def test_assist_tools_are_filtered(
 
     result = await _tool(hass, query, {}, OTHER)
     assert "geheim" not in str(result).lower()
-    assert "lenja" in str(result).lower()
+    assert "frida" in str(result).lower()
 
     await _tool(hass, complete, {"id": "oldidea1"}, OTHER)
     await _tool(hass, complete, {"idea_id": "oldidea1"}, OTHER)
@@ -396,8 +396,8 @@ async def test_voice_and_briefing_only_mention_main_user(
         url, json={"application_id": "a", "action": "read_all", "text": ""}
     )
     speech = (await response.json())["speech"].lower()
-    assert "jan" in speech
-    assert "lenja" not in speech
+    assert "olaf" in speech
+    assert "frida" not in speech
 
     await store.async_add_idea("arztbesuch planen", context=Context(user_id=OTHER))
     response = await client.post(
@@ -418,28 +418,28 @@ async def test_foreign_reminder_goes_only_to_its_owner(
     hass: HomeAssistant, setup_entry: SetupEntry
 ) -> None:
     """Test that a private reminder does not reach the main user's phone."""
-    jan_phone = async_mock_service(hass, "notify", "mobile_app_jan")
-    lenja_phone = async_mock_service(hass, "notify", "mobile_app_lenja")
+    olaf_phone = async_mock_service(hass, "notify", "mobile_app_jan")
+    frida_phone = async_mock_service(hass, "notify", "mobile_app_lenja")
     alexa = async_mock_service(hass, "notify", "alexa_media")
-    hass.states.async_set("person.lenja", "home", {"user_id": OTHER})
+    hass.states.async_set("person.frida", "home", {"user_id": OTHER})
     entry = await _private(
         setup_entry,
         reminder_notify=["notify.mobile_app_jan"],
         reminder_alexa="fixed",
         reminder_echos=["media_player.kuche"],
-        person_rules={"person.lenja": {"notify": ["notify.mobile_app_lenja"]}},
+        person_rules={"person.frida": {"notify": ["notify.mobile_app_lenja"]}},
     )
     store = entry.runtime_data
     past = dt_util.now() - timedelta(minutes=1)
     await store.async_add_idea(
-        "arzt von lenja", due=past, context=Context(user_id=OTHER)
+        "arzt von frida", due=past, context=Context(user_id=OTHER)
     )
 
     await store.reminders.async_check(dt_util.now())
     await hass.async_block_till_done()
 
-    assert len(lenja_phone) == 1
-    assert not jan_phone
+    assert len(frida_phone) == 1
+    assert not olaf_phone
     assert not alexa
 
 
@@ -447,11 +447,11 @@ async def test_foreign_reminder_without_channels_stays_silent(
     hass: HomeAssistant, setup_entry: SetupEntry
 ) -> None:
     """Test that a person without channels gets nothing, rather than a leak."""
-    jan_phone = async_mock_service(hass, "notify", "mobile_app_jan")
+    olaf_phone = async_mock_service(hass, "notify", "mobile_app_jan")
     entry = await _private(setup_entry, reminder_notify=["notify.mobile_app_jan"])
     store = entry.runtime_data
     await store.async_add_idea(
-        "arzt von lenja",
+        "arzt von frida",
         due=dt_util.now() - timedelta(minutes=1),
         context=Context(user_id=OTHER),
     )
@@ -459,7 +459,7 @@ async def test_foreign_reminder_without_channels_stays_silent(
     await store.reminders.async_check(dt_util.now())
     await hass.async_block_till_done()
 
-    assert not jan_phone
+    assert not olaf_phone
 
 
 async def test_options_require_main_user(
@@ -509,7 +509,7 @@ async def test_share_single_idea_with_levels(
     """Test viewing and editing a shared idea, and taking it back."""
     entry = await _private(setup_entry)
     store = entry.runtime_data
-    third = "user-sava"
+    third = "user-tom"
 
     await _share(hass, OWNER, ids=["oldidea1"], shares={OTHER: "view", third: "edit"})
     idea = store.get_idea("oldidea1")
@@ -592,7 +592,7 @@ async def test_share_category_includes_later_ideas_and_survives_reload(
         "einkaufen", category="Alltag", context=Context(user_id=OWNER)
     )
     await store.async_add_idea(
-        "lenjas alltag", category="Alltag", context=Context(user_id=OTHER)
+        "fridas alltag", category="Alltag", context=Context(user_id=OTHER)
     )
 
     await _share(hass, OWNER, category="Alltag", shares={OTHER: "view"})
@@ -602,7 +602,7 @@ async def test_share_category_includes_later_ideas_and_survives_reload(
     assert {"einkaufen", "später dazu"} <= _texts(store.visible_ideas(OTHER))
     assert "alte geheime idee" not in _texts(store.visible_ideas(OTHER))
     # Someone else's ideas in the same category are not part of the share
-    assert "lenjas alltag" not in _texts(store.visible_ideas("user-sava"))
+    assert "fridas alltag" not in _texts(store.visible_ideas("user-tom"))
 
     await hass.config_entries.async_reload(entry.entry_id)
     await hass.async_block_till_done()
@@ -621,11 +621,11 @@ async def test_edit_share_lets_add_ideas_for_the_owner(
     await _share(hass, OWNER, category="Alltag", shares={OTHER: "edit"})
 
     idea = await store.async_add_idea(
-        "neu von lenja", category="Alltag", context=Context(user_id=OTHER)
+        "neu von frida", category="Alltag", context=Context(user_id=OTHER)
     )
     assert idea["owner"] == OWNER
-    assert "neu von lenja" in _texts(store.visible_ideas(OWNER))
-    # Lenja may change it but deleting stays with the owner of the list
+    assert "neu von frida" in _texts(store.visible_ideas(OWNER))
+    # Frida may change it but deleting stays with the owner of the list
     assert store.can_edit(idea, OTHER)
     assert not store.is_owner(idea, OTHER)
 
@@ -634,7 +634,7 @@ async def test_edit_share_lets_add_ideas_for_the_owner(
     )
     assert subtask["owner"] == OWNER
 
-    # Other categories stay Lenja's own
+    # Other categories stay Frida's own
     own = await store.async_add_idea(
         "eigene idee", category="Inbox", context=Context(user_id=OTHER)
     )
@@ -652,7 +652,7 @@ async def test_only_edit_share_adds_for_the_owner(
     await _share(hass, OWNER, category="Alltag", shares=shares)
 
     idea = await store.async_add_idea(
-        "neu von lenja", category="Alltag", context=Context(user_id=OTHER)
+        "neu von frida", category="Alltag", context=Context(user_id=OTHER)
     )
     assert idea["owner"] == OTHER
 
@@ -664,10 +664,10 @@ async def test_two_shared_lists_keep_new_ideas_private(
     entry = await _private(setup_entry)
     store = entry.runtime_data
     await _share(hass, OWNER, category="Alltag", shares={OTHER: "edit"})
-    await _share(hass, "user-sava", category="Alltag", shares={OTHER: "edit"})
+    await _share(hass, "user-tom", category="Alltag", shares={OTHER: "edit"})
 
     idea = await store.async_add_idea(
-        "neu von lenja", category="Alltag", context=Context(user_id=OTHER)
+        "neu von frida", category="Alltag", context=Context(user_id=OTHER)
     )
     assert idea["owner"] == OTHER
 
@@ -739,19 +739,19 @@ async def test_todo_lists_show_what_is_shared_with_all(
         context=Context(user_id=hass_admin_user.id),
     )
     assert "für alle" in [i["summary"].lower() for i in await items()]
-    assert "für alle" in _texts(entry.runtime_data.visible_ideas("user-sava"))
+    assert "für alle" in _texts(entry.runtime_data.visible_ideas("user-tom"))
 
 
 async def test_reminder_for_person_shares_idea(
     hass: HomeAssistant, setup_entry: SetupEntry
 ) -> None:
     """Test that someone who is reminded of an idea can also see it."""
-    hass.states.async_set("person.lenja", "home", {"user_id": OTHER})
+    hass.states.async_set("person.frida", "home", {"user_id": OTHER})
     entry = await _private(setup_entry)
     store = entry.runtime_data
 
     idea = await store.async_add_idea(
-        "termin", assignee="person.lenja", context=Context(user_id=OWNER)
+        "termin", assignee="person.frida", context=Context(user_id=OWNER)
     )
     assert store.access_level(store.get_idea(idea["id"]), OTHER) == "edit"
 
@@ -759,7 +759,7 @@ async def test_reminder_for_person_shares_idea(
     await hass.services.async_call(
         "brainstorm",
         "update_idea",
-        {"id": second["id"], "assignee": "person.lenja"},
+        {"id": second["id"], "assignee": "person.frida"},
         blocking=True,
         context=Context(user_id=OWNER),
     )
@@ -854,17 +854,17 @@ async def test_no_extra_fields_without_privacy(
 async def _voice_setup(
     hass: HomeAssistant, setup_entry: SetupEntry, hass_client_no_auth: ClientSessionGenerator
 ) -> tuple[Any, Any]:
-    """Set up two Echos that are already known, one assigned to Lenja."""
+    """Set up two Echos that are already known, one assigned to Frida."""
     hass.config.language = "de"
     assert await async_setup_component(hass, "http", {})
     entry = await _private(
         setup_entry,
         voice_mode="skill",
-        voice_owners={"Echo Lenja": OTHER},
+        voice_owners={"Echo Frida": OTHER},
     )
     store = entry.runtime_data
     store.alexa_skill._devices = {  # noqa: SLF001
-        "d-lenja": {"name": "Echo Lenja", "entity_id": None, "custom": True},
+        "d-frida": {"name": "Echo Frida", "entity_id": None, "custom": True},
         "d-kuche": {"name": "Echo Küche", "entity_id": None, "custom": True},
     }
     client = await hass_client_no_auth()
@@ -894,14 +894,14 @@ async def test_skill_uses_person_of_the_echo(
     entry, post = await _voice_setup(hass, setup_entry, hass_client_no_auth)
     store = entry.runtime_data
 
-    await post("d-lenja", "capture", "hausaufgaben machen")
+    await post("d-frida", "capture", "hausaufgaben machen")
     await post("d-kuche", "capture", "steuer abgeben")
-    lenja = next(i for i in store.ideas if "hausaufgaben" in i["text"].lower())
-    jan = next(i for i in store.ideas if "steuer" in i["text"].lower())
-    assert store.owner_of(lenja) == OTHER
-    assert store.owner_of(jan) == OWNER
+    frida = next(i for i in store.ideas if "hausaufgaben" in i["text"].lower())
+    olaf = next(i for i in store.ideas if "steuer" in i["text"].lower())
+    assert store.owner_of(frida) == OTHER
+    assert store.owner_of(olaf) == OWNER
 
-    speech = (await post("d-lenja", "read_all"))["speech"].lower()
+    speech = (await post("d-frida", "read_all"))["speech"].lower()
     assert "hausaufgaben" in speech
     assert "steuer" not in speech
     assert "geheim" not in speech
@@ -909,22 +909,22 @@ async def test_skill_uses_person_of_the_echo(
     assert "steuer" in speech
     assert "hausaufgaben" not in speech
 
-    assert "gefunden" in (await post("d-lenja", "done", "steuer abgeben"))["speech"]
-    assert store.get_idea(jan["id"])["status"] == "active"
-    assert "Erledigt" in (await post("d-lenja", "done", "hausaufgaben"))["speech"]
+    assert "gefunden" in (await post("d-frida", "done", "steuer abgeben"))["speech"]
+    assert store.get_idea(olaf["id"])["status"] == "active"
+    assert "Erledigt" in (await post("d-frida", "done", "hausaufgaben"))["speech"]
 
 
 async def test_native_voice_uses_person_of_the_echo(
     hass: HomeAssistant, setup_entry: SetupEntry
 ) -> None:
     """Test the automation path, which passes the Echo as the device."""
-    entry = await _private(setup_entry, voice_owners={"Echo Lenja": OTHER})
+    entry = await _private(setup_entry, voice_owners={"Echo Frida": OTHER})
     store = entry.runtime_data
 
     response = await hass.services.async_call(
         "brainstorm",
         "add_idea",
-        {"text": "hausaufgaben machen", "source": "alexa", "device": "Echo Lenja"},
+        {"text": "hausaufgaben machen", "source": "alexa", "device": "Echo Frida"},
         blocking=True,
         return_response=True,
     )
@@ -933,7 +933,7 @@ async def test_native_voice_uses_person_of_the_echo(
     response = await hass.services.async_call(
         "brainstorm",
         "get_announcement",
-        {"device": "Echo Lenja"},
+        {"device": "Echo Frida"},
         blocking=True,
         return_response=True,
     )
@@ -960,8 +960,8 @@ async def test_assist_without_user_only_gets_main_user(
         hass, llm.ToolInput(tool_name=tool.name, tool_args={}), context
     )
 
-    assert "lenja" not in str(result).lower()
-    assert "jan" in str(result).lower()
+    assert "frida" not in str(result).lower()
+    assert "olaf" in str(result).lower()
 
 
 async def test_reminder_of_assigned_echo_speaks_there(
@@ -970,21 +970,21 @@ async def test_reminder_of_assigned_echo_speaks_there(
     """Test that a person's reminder may use the Echo it came from."""
     alexa = async_mock_service(hass, "notify", "alexa_media")
     hass.states.async_set(
-        "media_player.lenja", "idle", {"friendly_name": "Echo Lenja"}
+        "media_player.frida", "idle", {"friendly_name": "Echo Frida"}
     )
-    hass.data.setdefault(DATA_ENTITY_SOURCE, {})["media_player.lenja"] = {
+    hass.data.setdefault(DATA_ENTITY_SOURCE, {})["media_player.frida"] = {
         "domain": "alexa_media",
         "custom_component": True,
     }
     entry = await _private(
         setup_entry,
         reminder_alexa="origin",
-        voice_owners={"Echo Lenja": OTHER},
+        voice_owners={"Echo Frida": OTHER},
     )
     store = entry.runtime_data
     await store.async_add_idea(
         "arzt",
-        device="Echo Lenja",
+        device="Echo Frida",
         owner=OTHER,
         due=dt_util.now() - timedelta(minutes=1),
     )
@@ -992,7 +992,7 @@ async def test_reminder_of_assigned_echo_speaks_there(
     await store.reminders.async_check(dt_util.now())
     await hass.async_block_till_done()
 
-    assert alexa[0].data["target"] == ["media_player.lenja"]
+    assert alexa[0].data["target"] == ["media_player.frida"]
 
 
 async def test_options_assign_and_remove_echo(
@@ -1010,15 +1010,15 @@ async def test_options_assign_and_remove_echo(
     result = await open_step()
     assert result["step_id"] == "privacy_voice"
     result = await hass.config_entries.options.async_configure(
-        result["flow_id"], {"device": "Echo Lenja", "voice_user": hass_admin_user.id}
+        result["flow_id"], {"device": "Echo Frida", "voice_user": hass_admin_user.id}
     )
     await hass.async_block_till_done()
     assert result["step_id"] == "privacy_voice"
-    assert entry.options["voice_owners"] == {"Echo Lenja": hass_admin_user.id}
-    assert "Echo Lenja" in result["description_placeholders"]["assignments"]
+    assert entry.options["voice_owners"] == {"Echo Frida": hass_admin_user.id}
+    assert "Echo Frida" in result["description_placeholders"]["assignments"]
 
     result = await hass.config_entries.options.async_configure(
-        result["flow_id"], {"device": "Echo Lenja"}
+        result["flow_id"], {"device": "Echo Frida"}
     )
     await hass.async_block_till_done()
     assert entry.options["voice_owners"] == {}
@@ -1095,7 +1095,7 @@ async def test_only_who_deleted_an_idea_can_restore_it(setup_entry: SetupEntry) 
     """Test that nobody else brings back a deleted private idea."""
     entry = await _private(setup_entry)
     store = entry.runtime_data
-    idea = next(i for i in store.ideas if i["text"].lower() == "idee von jan")
+    idea = next(i for i in store.ideas if i["text"].lower() == "idee von olaf")
 
     await store.async_delete_idea(idea["id"], context=Context(user_id=OWNER))
     assert not store.can_restore(idea["id"], OTHER)

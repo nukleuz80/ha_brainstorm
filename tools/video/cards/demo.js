@@ -23,7 +23,7 @@ const ideas = [
 const parent = ideas.find((i) => i.text === "Smart Mirror bauen");
 const steps = {};
 for (const [t, extra] of [
-  ["Spiegelfolie bestellen", { markers: ["check"], in_progress: { user: "Jan", since: ago(30) } }],
+  ["Spiegelfolie bestellen", { markers: ["check"], in_progress: { user: "Olaf", since: ago(30) } }],
   ["MagicMirror installieren", { markers: ["question"] }],
   ["Rahmen bauen", { due: inDays(4) }],
 ]) {
@@ -59,7 +59,7 @@ const sensor = {
 };
 window.demoHass = {
   language: "de", locale: { language: "de" }, themes: { darkMode: true },
-  user: { id: "u1", name: "Jan", is_admin: true },
+  user: { id: "u1", name: "Olaf", is_admin: true },
   states: { [sensor.entity_id]: sensor },
   callService: async () => {}, callWS: async () => ({}),
   connection: { subscribeMessage: async () => () => {}, subscribeEvents: async () => () => {} },

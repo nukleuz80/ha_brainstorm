@@ -243,10 +243,10 @@ async def test_private_ideas_stay_off_the_list(
 ) -> None:
     """Test that with privacy only ideas shared with everyone are synced."""
     store = await _linked(
-        hass, setup_entry, privacy_enabled=True, privacy_owner="user-jan"
+        hass, setup_entry, privacy_enabled=True, privacy_owner="user-olaf"
     )
     await store.async_add_idea(
-        "Geschenk", category="Einkauf", context=Context(user_id="user-jan")
+        "Geschenk", category="Einkauf", context=Context(user_id="user-olaf")
     )
     await store.async_add_idea(
         "Milch", category="Einkauf", source="dashboard", shares={"all": "edit"}

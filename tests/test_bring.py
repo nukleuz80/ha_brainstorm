@@ -399,7 +399,7 @@ async def test_options_set_up_bring_in_one_page(
         stored={"ideas": [], "categories": ["Inbox", "Alltag"]},
         options={
             "privacy_enabled": True,
-            "privacy_owner": "user-jan",
+            "privacy_owner": "user-olaf",
             "todo_sync": {"Alltag": HOME},
         },
     )
@@ -452,7 +452,7 @@ async def test_options_set_up_bring_in_one_page(
     assert entry.options["todo_sync"] == {}
     store = entry.runtime_data
     assert "Einkaufen" in store.categories
-    assert store._category_shares["user-jan"]["Einkaufen"] == {"all": "edit"}
+    assert store._category_shares["user-olaf"]["Einkaufen"] == {"all": "edit"}
 
 
 async def test_options_hide_bring_without_the_integration(

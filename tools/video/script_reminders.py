@@ -184,10 +184,10 @@ CHAPTERS: list[dict] = [
         "scenes": [
             {
                 "v": ("speech", [
-                    ("du", "Alexa, sage Brainstorm erinnere Lenja morgen um 8 an den Zahnarzt."),
-                    ("alexa", "Ich erinnere Lenja morgen um 8 Uhr an den Zahnarzt."),
+                    ("du", "Alexa, sage Brainstorm erinnere Frida morgen um 8 an den Zahnarzt."),
+                    ("alexa", "Ich erinnere Frida morgen um 8 Uhr an den Zahnarzt."),
                 ], "Jede Person mit eigenen Echos und Diensten"),
-                "say": "Erinnerungen können auch für andere sein: erinnere Lenja morgen um 8 an "
+                "say": "Erinnerungen können auch für andere sein: erinnere Frida morgen um 8 an "
                        "den Zahnarzt. Unter Personen legst du fest, welcher Echo und welches Handy "
                        "für jede Person zuständig ist.",
             },

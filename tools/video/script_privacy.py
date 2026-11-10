@@ -30,10 +30,10 @@ CHAPTERS: list[dict] = [
                 "v": ("switches", "Brainstorm › Privatsphäre & Benutzer", [
                     ("Einträge privat halten", True, True,
                      "Jede Person sieht nur ihre eigenen Einträge und was mit ihr geteilt wurde"),
-                    ("Hauptbenutzer", "Jan", True, "Besitzt alle vorhandenen Einträge"),
+                    ("Hauptbenutzer", "Olaf", True, "Besitzt alle vorhandenen Einträge"),
                     ("Weiter in Markdown-Dateien exportieren", False, False,
                      "Diese Dateien wären für alle mit Zugriff auf den Config-Ordner lesbar"),
-                    ("Diese Benutzer für Freigaben anbieten", "Jan, Lenja, Claude", False,
+                    ("Diese Benutzer für Freigaben anbieten", "Olaf, Frida, Claude", False,
                      "Blendet technische Konten wie MQTT aus"),
                 ], PATH + " ➔ Privatsphäre & Benutzer", "Ausgeschaltet sehen alle Benutzer alle Einträge."),
                 "say": "Standardmäßig sehen alle alles. Unter Privatsphäre und Benutzer schaltest du "
@@ -61,7 +61,7 @@ CHAPTERS: list[dict] = [
             },
             {
                 "v": ("bullets", "In fremde Listen schreiben", [
-                    ("🛒", "Lenja gibt dir die Kategorie <b>Einkauf</b> mit <i>Bearbeiten</i> frei"),
+                    ("🛒", "Frida gibt dir die Kategorie <b>Einkauf</b> mit <i>Bearbeiten</i> frei"),
                     ("➕", "Was du dort einträgst, landet in <b>ihrer</b> Liste und gehört ihr"),
                     ("✍️", "Ein Abzeichen zeigt, <b>wer es eingetragen hat</b>, mit Bild der Person"),
                 ], "Eine Freigabe für alle Benutzer zählt dafür nicht."),
@@ -77,11 +77,11 @@ CHAPTERS: list[dict] = [
             {
                 "v": ("switches", "Brainstorm › Echos & Apps zuordnen", [
                     ("Echo oder Alexa-App", "Echo Kinderzimmer", True, "Du kannst auch einen Namen eintippen"),
-                    ("Person", "Lenja", True, "Leer lassen, um die Zuordnung zu entfernen"),
+                    ("Person", "Frida", True, "Leer lassen, um die Zuordnung zu entfernen"),
                 ], PATH + " ➔ Echos & Apps Personen zuordnen",
                     "Home Assistant erkennt keine Stimmen, und im Raum hören alle mit."),
                 "say": "Auch Echos und Alexa-Apps lassen sich Personen zuordnen. Was am Echo im "
-                       "Kinderzimmer gesagt wird, gehört dann Lenja, und Alexa liest dort nur ihre "
+                       "Kinderzimmer gesagt wird, gehört dann Frida, und Alexa liest dort nur ihre "
                        "Einträge vor. Stimmen erkennt Home Assistant allerdings nicht.",
             },
         ],

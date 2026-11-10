@@ -2309,6 +2309,36 @@ null,
 ],
 "verb": false
 },
+"Echo Frida": {
+"clean": "Echo Frida",
+"parse_due": [
+null,
+"Echo Frida"
+],
+"priority": [
+"Echo Frida",
+null
+],
+"spoken": [
+"Echo Frida",
+"Smarthome",
+[],
+"medium"
+],
+"spoken_due": [
+null,
+"Echo Frida"
+],
+"strip": "Echo Frida",
+"typed": "Echo Frida",
+"typed_entry": [
+"Echo Frida",
+"Smarthome",
+[],
+"medium"
+],
+"verb": false
+},
 "Echo Küche": {
 "clean": "Echo Küche",
 "parse_due": [
@@ -2333,36 +2363,6 @@ null,
 "typed": "Echo Küche",
 "typed_entry": [
 "Echo Küche",
-"Smarthome",
-[],
-"medium"
-],
-"verb": false
-},
-"Echo Lenja": {
-"clean": "Echo Lenja",
-"parse_due": [
-null,
-"Echo Lenja"
-],
-"priority": [
-"Echo Lenja",
-null
-],
-"spoken": [
-"Echo Lenja",
-"Smarthome",
-[],
-"medium"
-],
-"spoken_due": [
-null,
-"Echo Lenja"
-],
-"strip": "Echo Lenja",
-"typed": "Echo Lenja",
-"typed_entry": [
-"Echo Lenja",
 "Smarthome",
 [],
 "medium"
@@ -2399,30 +2399,30 @@ null,
 ],
 "verb": false
 },
-"Edeka in Sorsum": {
-"clean": "Edeka in Sorsum",
+"Edeka in Musterdorf": {
+"clean": "Edeka in Musterdorf",
 "parse_due": [
 null,
-"Edeka in Sorsum"
+"Edeka in Musterdorf"
 ],
 "priority": [
-"Edeka in Sorsum",
+"Edeka in Musterdorf",
 null
 ],
 "spoken": [
-"Edeka in Sorsum",
+"Edeka in Musterdorf",
 "Inbox",
 [],
 "medium"
 ],
 "spoken_due": [
 null,
-"Edeka in Sorsum"
+"Edeka in Musterdorf"
 ],
-"strip": "Edeka in Sorsum",
-"typed": "Edeka in Sorsum",
+"strip": "Edeka in Musterdorf",
+"typed": "Edeka in Musterdorf",
 "typed_entry": [
-"Edeka in Sorsum",
+"Edeka in Musterdorf",
 "Inbox",
 [],
 "medium"
@@ -4507,30 +4507,30 @@ null,
 ],
 "verb": false
 },
-"Okay, ich erinnere Lenja morgen um 8 Uhr": {
-"clean": "Ich erinnere Lenja morgen um 8 Uhr",
+"Okay, ich erinnere Frida morgen um 8 Uhr": {
+"clean": "Ich erinnere Frida morgen um 8 Uhr",
 "parse_due": [
 "2026-03-11T08:00:00+00:00",
-"Okay, ich erinnere Lenja"
+"Okay, ich erinnere Frida"
 ],
 "priority": [
-"Okay, ich erinnere Lenja morgen um 8 Uhr",
+"Okay, ich erinnere Frida morgen um 8 Uhr",
 null
 ],
 "spoken": [
-"Ich erinnere Lenja morgen um 8 Uhr",
+"Ich erinnere Frida morgen um 8 Uhr",
 "Inbox",
 [],
 "medium"
 ],
 "spoken_due": [
 "2026-03-11T08:00:00+00:00",
-"Okay, ich erinnere Lenja"
+"Okay, ich erinnere Frida"
 ],
-"strip": "Okay, ich erinnere Lenja morgen um 8 Uhr",
-"typed": "Okay, ich erinnere Lenja morgen um 8 Uhr",
+"strip": "Okay, ich erinnere Frida morgen um 8 Uhr",
+"typed": "Okay, ich erinnere Frida morgen um 8 Uhr",
 "typed_entry": [
-"Okay, ich erinnere Lenja morgen um 8 Uhr",
+"Okay, ich erinnere Frida morgen um 8 Uhr",
 "Inbox",
 [],
 "medium"
@@ -6517,30 +6517,30 @@ null,
 ],
 "verb": false
 },
-"arzt von lenja": {
-"clean": "Arzt von Lenja",
+"arzt von frida": {
+"clean": "Arzt von Frida",
 "parse_due": [
 null,
-"arzt von lenja"
+"arzt von frida"
 ],
 "priority": [
-"arzt von lenja",
+"arzt von frida",
 null
 ],
 "spoken": [
-"Arzt von Lenja",
+"Arzt von Frida",
 "Alltag",
 [],
 "medium"
 ],
 "spoken_due": [
 null,
-"arzt von lenja"
+"arzt von frida"
 ],
-"strip": "arzt von lenja",
-"typed": "Arzt von lenja",
+"strip": "arzt von frida",
+"typed": "Arzt von frida",
 "typed_entry": [
-"Arzt von lenja",
+"Arzt von frida",
 "Alltag",
 [],
 "medium"
@@ -17883,6 +17883,66 @@ null,
 ],
 "verb": false
 },
+"frida morgen um 8 an den termin": {
+"clean": "Frida morgen um 8 an den Termin",
+"parse_due": [
+"2026-03-11T08:00:00+00:00",
+"frida an den termin"
+],
+"priority": [
+"frida morgen um 8 an den termin",
+null
+],
+"spoken": [
+"Frida morgen um 8 an den Termin",
+"Alltag",
+[],
+"medium"
+],
+"spoken_due": [
+"2026-03-11T08:00:00+00:00",
+"frida an den termin"
+],
+"strip": "frida morgen um 8 an den termin",
+"typed": "Frida morgen um 8 an den termin",
+"typed_entry": [
+"Frida morgen um 8 an den termin",
+"Alltag",
+[],
+"medium"
+],
+"verb": false
+},
+"fridas alltag": {
+"clean": "Fridas Alltag",
+"parse_due": [
+null,
+"fridas alltag"
+],
+"priority": [
+"fridas alltag",
+null
+],
+"spoken": [
+"Fridas Alltag",
+"Alltag",
+[],
+"medium"
+],
+"spoken_due": [
+null,
+"fridas alltag"
+],
+"strip": "fridas alltag",
+"typed": "Fridas alltag",
+"typed_entry": [
+"Fridas alltag",
+"Alltag",
+[],
+"medium"
+],
+"verb": false
+},
 "früh aufstehen": {
 "clean": "Früh aufstehen",
 "parse_due": [
@@ -21423,60 +21483,60 @@ null,
 ],
 "verb": false
 },
-"idee von jan": {
-"clean": "Idee von Jan",
+"idee von frida": {
+"clean": "Idee von Frida",
 "parse_due": [
 null,
-"idee von jan"
+"idee von frida"
 ],
 "priority": [
-"idee von jan",
+"idee von frida",
 null
 ],
 "spoken": [
-"Idee von Jan",
+"Idee von Frida",
 "Inbox",
 [],
 "medium"
 ],
 "spoken_due": [
 null,
-"idee von jan"
+"idee von frida"
 ],
-"strip": "idee von jan",
-"typed": "Idee von jan",
+"strip": "idee von frida",
+"typed": "Idee von frida",
 "typed_entry": [
-"Idee von jan",
+"Idee von frida",
 "Inbox",
 [],
 "medium"
 ],
 "verb": false
 },
-"idee von lenja": {
-"clean": "Idee von Lenja",
+"idee von olaf": {
+"clean": "Idee von Olaf",
 "parse_due": [
 null,
-"idee von lenja"
+"idee von olaf"
 ],
 "priority": [
-"idee von lenja",
+"idee von olaf",
 null
 ],
 "spoken": [
-"Idee von Lenja",
+"Idee von Olaf",
 "Inbox",
 [],
 "medium"
 ],
 "spoken_due": [
 null,
-"idee von lenja"
+"idee von olaf"
 ],
-"strip": "idee von lenja",
-"typed": "Idee von lenja",
+"strip": "idee von olaf",
+"typed": "Idee von olaf",
 "typed_entry": [
-"Idee von lenja",
+"Idee von olaf",
 "Inbox",
 [],
 "medium"
@@ -24302,66 +24362,6 @@ null,
 "typed_entry": [
 "Kürbisse müssen wir heute schnitzen",
 "Inbox",
-[],
-"medium"
-],
-"verb": false
-},
-"lenja morgen um 8 an den termin": {
-"clean": "Lenja morgen um 8 an den Termin",
-"parse_due": [
-"2026-03-11T08:00:00+00:00",
-"lenja an den termin"
-],
-"priority": [
-"lenja morgen um 8 an den termin",
-null
-],
-"spoken": [
-"Lenja morgen um 8 an den Termin",
-"Alltag",
-[],
-"medium"
-],
-"spoken_due": [
-"2026-03-11T08:00:00+00:00",
-"lenja an den termin"
-],
-"strip": "lenja morgen um 8 an den termin",
-"typed": "Lenja morgen um 8 an den termin",
-"typed_entry": [
-"Lenja morgen um 8 an den termin",
-"Alltag",
-[],
-"medium"
-],
-"verb": false
-},
-"lenjas alltag": {
-"clean": "Lenjas Alltag",
-"parse_due": [
-null,
-"lenjas alltag"
-],
-"priority": [
-"lenjas alltag",
-null
-],
-"spoken": [
-"Lenjas Alltag",
-"Alltag",
-[],
-"medium"
-],
-"spoken_due": [
-null,
-"lenjas alltag"
-],
-"strip": "lenjas alltag",
-"typed": "Lenjas alltag",
-"typed_entry": [
-"Lenjas alltag",
-"Alltag",
 [],
 "medium"
 ],
@@ -33045,6 +33045,36 @@ null,
 ],
 "verb": false
 },
+"wenn frida heimkommt an den müll": {
+"clean": "Wenn frida heimkommt an den Müll",
+"parse_due": [
+null,
+"wenn frida heimkommt an den müll"
+],
+"priority": [
+"wenn frida heimkommt an den müll",
+null
+],
+"spoken": [
+"Wenn frida heimkommt an den Müll",
+"Alltag",
+[],
+"medium"
+],
+"spoken_due": [
+null,
+"wenn frida heimkommt an den müll"
+],
+"strip": "wenn frida heimkommt an den müll",
+"typed": "Wenn frida heimkommt an den müll",
+"typed_entry": [
+"Wenn frida heimkommt an den müll",
+"Alltag",
+[],
+"medium"
+],
+"verb": false
+},
 "wenn ich bei edeka bin an die milch": {
 "clean": "Wenn ich bei Edeka bin an die Milch",
 "parse_due": [
@@ -33105,60 +33135,30 @@ null,
 ],
 "verb": false
 },
-"wenn ich im edeka in sorsum bin an brot": {
-"clean": "Wenn ich im Edeka in Sorsum bin an Brot",
+"wenn ich im edeka in musterdorf bin an brot": {
+"clean": "Wenn ich im Edeka in Musterdorf bin an Brot",
 "parse_due": [
 null,
-"wenn ich im edeka in sorsum bin an brot"
+"wenn ich im edeka in musterdorf bin an brot"
 ],
 "priority": [
-"wenn ich im edeka in sorsum bin an brot",
+"wenn ich im edeka in musterdorf bin an brot",
 null
 ],
 "spoken": [
-"Wenn ich im Edeka in Sorsum bin an Brot",
+"Wenn ich im Edeka in Musterdorf bin an Brot",
 "Alltag",
 [],
 "medium"
 ],
 "spoken_due": [
 null,
-"wenn ich im edeka in sorsum bin an brot"
+"wenn ich im edeka in musterdorf bin an brot"
 ],
-"strip": "wenn ich im edeka in sorsum bin an brot",
-"typed": "Wenn ich im edeka in sorsum bin an brot",
+"strip": "wenn ich im edeka in musterdorf bin an brot",
+"typed": "Wenn ich im edeka in musterdorf bin an brot",
 "typed_entry": [
-"Wenn ich im edeka in sorsum bin an brot",
-"Alltag",
-[],
-"medium"
-],
-"verb": false
-},
-"wenn lenja heimkommt an den müll": {
-"clean": "Wenn lenja heimkommt an den Müll",
-"parse_due": [
-null,
-"wenn lenja heimkommt an den müll"
-],
-"priority": [
-"wenn lenja heimkommt an den müll",
-null
-],
-"spoken": [
-"Wenn lenja heimkommt an den Müll",
-"Alltag",
-[],
-"medium"
-],
-"spoken_due": [
-null,
-"wenn lenja heimkommt an den müll"
-],
-"strip": "wenn lenja heimkommt an den müll",
-"typed": "Wenn lenja heimkommt an den müll",
-"typed_entry": [
-"Wenn lenja heimkommt an den müll",
+"Wenn ich im edeka in musterdorf bin an brot",
 "Alltag",
 [],
 "medium"
