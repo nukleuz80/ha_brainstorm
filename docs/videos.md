@@ -103,8 +103,8 @@ Ein Kapitel pro Einstellung in der Alexa-Entwicklerkonsole, mit Kapitelliste auf
 | 0:33 | Freigeben, in fremde Listen schreiben |
 | 0:58 | Echos Personen zuordnen |
 | 1:12 | Was Privatsphäre nicht kann |
-| 1:24 | Backlog für Coding-KIs wie Claude Code |
-| 2:01 | Zusammenfassung |
+| 1:25 | Backlog für Coding-KIs wie Claude Code |
+| 2:02 | Zusammenfassung |
 
 ## Selbst erzeugen
 
