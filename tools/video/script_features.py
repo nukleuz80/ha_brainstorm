@@ -71,10 +71,25 @@ CHAPTERS: list[dict] = [
                     ("🏷️", "<b>Kategorien</b> als Filter mit Zähler"),
                     ("🎨", "<b>Prioritäten</b> in Farbe, ein Klick schaltet weiter"),
                     ("🔍", "<b>Suche</b> beim Tippen, auch nach #Tags"),
-                ], "Abhaken per Kreis, Sortieren per Ziehen, Bearbeiten per Stift."),
+                ], "Abhaken per Kreis, alles Weitere hinter den drei Punkten."),
                 "say": "Die Listenkarte zeigt alles im Dashboard. Oben tippst du eine Blitz-Idee, "
                        "darunter filterst du nach Kategorien, und die Suche findet jede Notiz "
-                       "schon beim Tippen, auch nach Tags. Ein Klick auf den Kreis hakt sie ab.",
+                       "schon beim Tippen, auch nach Tags. Ein Klick auf den Kreis hakt sie ab, "
+                       "die drei Punkte öffnen alles Weitere.",
+            },
+            {
+                "v": ("grid", "So viel, wie du brauchst", [
+                    ("🌱", "Einsteiger", "Eingabe, Kategorien, Abhaken, Suche"),
+                    ("🙂", "Normal", "Dazu Unterpunkte, Marker, Anhänge und Ansichten"),
+                    ("🚀", "Profi", "Alle Felder und Funktionen"),
+                    ("📱", "Pro Karte", "Das Küchentablet bleibt einfach"),
+                    ("🔒", "Nichts geht verloren", "Gesetzte Werte bleiben sichtbar"),
+                    ("➕", "Mehr Felder …", "Zeigt im Dialog trotzdem alles"),
+                ], "Einstellbar unter Konfigurieren, Allgemeine Einstellungen."),
+                "say": "Wie viel die Karten zeigen, bestimmst du selbst. Einsteiger sehen nur das "
+                       "Wichtigste. Die Stufe Normal bringt Unterpunkte, Marker und Ansichten, "
+                       "und Profi zeigt alles. Jede Karte kann ihre eigene Stufe haben, etwa ein einfaches "
+                       "Küchentablet.",
             },
         ],
     },
@@ -103,7 +118,7 @@ CHAPTERS: list[dict] = [
                     ("⭐", "<b>Marker</b>, Fortschritt und <b>Nummerierung</b> 1., 1.1"),
                     ("🔗", "<b>Querverbindungen</b> und Sprechblasen"),
                     ("🎯", "<b>Fokus</b> auf einen einzelnen Zweig"),
-                ], "Verschieben, zoomen, Zweige einklappen – mit Maus, Finger oder Tastatur."),
+                ], "Jede Notiz: ✓ Erledigt, 🌿 Unteridee, ✏️ Bearbeiten, ⋯ für den Rest."),
                 "say": "Die Mindmap zeigt deine Ideen als Gedankenlandkarte. Unteraufgaben "
                        "hängen als Äste an ihrer Idee und lassen sich nummerieren. Marker wie "
                        "Stern oder Fragezeichen, Querverbindungen und Callouts machen sie "
