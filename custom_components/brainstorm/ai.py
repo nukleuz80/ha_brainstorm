@@ -4,9 +4,12 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
+from typing import Any
 
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
+
+from .outline import parse_markdown
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -105,6 +108,42 @@ def parse_subtask_suggestions(text: str | None, known: list[str]) -> list[str]:
         if len(suggestions) >= MAX_SUBTASK_SUGGESTIONS:
             break
     return suggestions
+
+
+# A mind map from a topic or a text: how much goes in and comes back
+MAP_INPUT_MAX_LENGTH = 6000
+MAP_MAX_NODES = 40
+MAP_MAX_DEPTH = 3
+_FENCE = re.compile(r"^\s*(```|~~~)")
+
+
+def parse_map_outline(text: str | None) -> list[dict[str, Any]]:
+    """Turn the AI's indented list into nodes with text and depth.
+
+    Depth 0 is the title; deeper levels than MAP_MAX_DEPTH move up to it, and
+    the depth never jumps by more than one from line to line.
+    """
+    if not text:
+        return []
+    lines = [line for line in text.splitlines() if not _FENCE.match(line)]
+    nodes: list[dict[str, Any]] = []
+    seen: set[tuple[int, str]] = set()
+    previous = -1
+    for node in parse_markdown("\n".join(lines)):
+        item = node.text.strip().strip("*_\"'„“”` ").strip()
+        if not item or (item.endswith(":") and not nodes):
+            continue
+        item = item[:MAX_SUBTASK_LENGTH].strip()
+        depth = min(node.depth, MAP_MAX_DEPTH, previous + 1)
+        key = (depth, item.casefold())
+        if key in seen:
+            continue
+        seen.add(key)
+        nodes.append({"text": item, "depth": depth})
+        previous = depth
+        if len(nodes) >= MAP_MAX_NODES:
+            break
+    return nodes
 
 
 # How much of a branch or a list goes to the AI at most

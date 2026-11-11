@@ -1,8 +1,8 @@
-import { LEVEL_CSS, SOCIAL_CSS, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, repeatBadge, repeatOptions, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.11.0";
+import { LEVEL_CSS, SOCIAL_CSS, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, repeatBadge, repeatOptions, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.11.1";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.11.0 - Minimap, Abstimmen und Reaktionen
+ * Version: 1.11.1 - KI: Map aus Thema oder Text
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -1703,6 +1703,29 @@ class BrainstormMindmapCard extends HTMLElement {
         .suggest-text {
           flex: 1 1 auto;
           min-width: 0;
+        }
+        .map-preview .suggest-row[data-depth="0"] .suggest-text {
+          font-weight: 600;
+        }
+        .map-preview .suggest-row.off .suggest-text {
+          opacity: 0.45;
+        }
+        .map-preview {
+          max-height: min(50vh, 420px);
+          overflow-y: auto;
+        }
+        .empty-ai-btn {
+          pointer-events: auto;
+          margin-top: 12px;
+          min-height: 40px;
+          padding: 8px 16px;
+          border-radius: 20px;
+          border: 1px solid var(--primary-color, #03a9f4);
+          background: transparent;
+          color: var(--primary-color, #03a9f4);
+          font: inherit;
+          font-weight: 600;
+          cursor: pointer;
         }
         .suggest-status {
           padding: 14px 0;
@@ -3609,6 +3632,7 @@ class BrainstormMindmapCard extends HTMLElement {
             <div id="notesContainer"></div>
             <div class="empty-state" id="emptyState" style="display: none;">
               ${t('Keine aktiven Notizen in dieser Kategorie.<br>Klicke unten links auf "+ Idee", um eine hinzuzufügen.')}
+              <div><button class="empty-ai-btn" id="emptyAiBtn" data-lvl="normal" style="display: none;">✨ ${t("Map aus Thema erzeugen")}</button></div>
             </div>
           </div>
         </div>
@@ -3994,6 +4018,8 @@ class BrainstormMindmapCard extends HTMLElement {
     }
     const voteBtn = this.shadowRoot.getElementById("voteBtn");
     if (voteBtn) voteBtn.addEventListener("click", () => this._showVotingDialog());
+    const emptyAiBtn = this.shadowRoot.getElementById("emptyAiBtn");
+    if (emptyAiBtn) emptyAiBtn.addEventListener("click", () => this._showGenerateMapDialog());
     const voteBar = this.shadowRoot.getElementById("voteBar");
     if (voteBar) {
       voteBar.addEventListener("click", (e) => {
@@ -5239,6 +5265,136 @@ class BrainstormMindmapCard extends HTMLElement {
     });
   }
 
+  // Let the AI turn a topic or a pasted text into notes, picked in a preview
+  _showGenerateMapDialog(prefill = "") {
+    if (!this._hass) return;
+    const focus = this._focusIdea();
+    const target = focus
+      ? t("Landet unter „{text}“.", { text: this._escapeHtml(focus.text) })
+      : this._selectedCategory === "all"
+        ? t("Landet in der Standardkategorie.")
+        : t("Landet als Hauptnotizen in „{category}“.", { category: this._escapeHtml(this._selectedCategory) });
+    let input = String(prefill || "");
+    this._openDialog(t("✨ Map aus Thema erzeugen"), (body) => {
+      const showInput = (error = "") => {
+        if (!this._isModalOpen) return;
+        body.innerHTML = `
+          <div class="dialog-hint">${t("Ein Thema wie „Sommerfest planen“ oder einen längeren Text einfügen. Die KI macht daraus eine Map mit bis zu drei Ebenen, du wählst vor dem Übernehmen aus.")}</div>
+          <textarea class="dialog-input dialog-textarea" id="mapTopic" rows="5" maxlength="6000" placeholder="${t("Thema oder Text")}"></textarea>
+          <div class="dialog-hint outline-target">${target}</div>
+          <div class="dialog-error" id="mapError" style="display: ${error ? "flex" : "none"};">${error}</div>
+          <div class="dialog-footer">
+            <button class="dialog-btn dialog-btn-cancel" id="mapCancel">${t("Abbrechen")}</button>
+            <button class="dialog-btn dialog-btn-primary" id="mapGenerate">✨ ${t("Erzeugen")}</button>
+          </div>
+        `;
+        const area = body.querySelector("#mapTopic");
+        const go = body.querySelector("#mapGenerate");
+        area.value = input;
+        go.disabled = !input.trim();
+        area.addEventListener("input", () => {
+          input = area.value;
+          go.disabled = !input.trim();
+        });
+        area.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" && (e.ctrlKey || e.metaKey) && input.trim()) {
+            e.preventDefault();
+            load();
+          }
+        });
+        body.querySelector("#mapCancel").addEventListener("click", () => this._closeDialog());
+        go.addEventListener("click", load);
+        setTimeout(() => area.focus(), 50);
+      };
+      const showPreview = (nodes) => {
+        if (!this._isModalOpen) return;
+        body.innerHTML = `
+          <div class="dialog-label">${t("Haken weg bei allem, was du nicht willst. Unterpunkte rücken dann nach oben. Du kannst die Texte noch ändern.")}</div>
+          <div class="suggest-list map-preview">
+            ${nodes
+              .map(
+                (node, index) => `
+              <label class="suggest-row" data-depth="${node.depth}" style="padding-left: ${node.depth * 18}px;">
+                <input type="checkbox" class="suggest-check" data-index="${index}" checked />
+                <input type="text" class="dialog-input suggest-text" data-index="${index}" maxlength="200" value="${this._escapeHtml(node.text)}" />
+              </label>`
+              )
+              .join("")}
+          </div>
+          <div class="dialog-hint outline-target">${target}</div>
+          <div class="dialog-error" id="mapError"></div>
+          <div class="dialog-footer">
+            <button class="dialog-btn dialog-btn-cancel" id="mapBack">${t("Zurück")}</button>
+            <button class="dialog-btn dialog-btn-cancel" id="mapRetry">${t("Neue Vorschläge")}</button>
+            <button class="dialog-btn dialog-btn-primary" id="mapSave"></button>
+          </div>
+        `;
+        const saveBtn = body.querySelector("#mapSave");
+        const outline = () => {
+          // A note below one that is left out moves up to the next one kept
+          const kept = [];
+          const lines = [];
+          nodes.forEach((node, index) => {
+            const box = body.querySelector(`.suggest-check[data-index="${index}"]`);
+            const text = body.querySelector(`.suggest-text[data-index="${index}"]`).value.trim();
+            const on = box.checked && Boolean(text);
+            box.closest(".suggest-row").classList.toggle("off", !on);
+            kept.length = node.depth;
+            const depth = kept.filter(Boolean).length;
+            kept[node.depth] = on;
+            if (on) lines.push(`${"  ".repeat(depth)}- ${text.replace(/\s+/g, " ")}`);
+          });
+          return lines;
+        };
+        const update = () => {
+          const count = outline().length;
+          saveBtn.textContent = t("{count} übernehmen", { count });
+          saveBtn.disabled = count === 0;
+        };
+        body.querySelectorAll(".suggest-check, .suggest-text").forEach((el) => el.addEventListener("input", update));
+        update();
+        body.querySelector("#mapBack").addEventListener("click", () => showInput());
+        body.querySelector("#mapRetry").addEventListener("click", load);
+        saveBtn.addEventListener("click", async () => {
+          const lines = outline();
+          if (!lines.length) return;
+          saveBtn.disabled = true;
+          const error = body.querySelector("#mapError");
+          const ok = await this._importOutline(lines.join("\n"), (message) => {
+            error.textContent = message;
+            error.style.display = "flex";
+          });
+          if (ok) this._closeDialog();
+          else saveBtn.disabled = false;
+        });
+      };
+      const load = async () => {
+        if (!input.trim()) return;
+        body.innerHTML = `<div class="dialog-label suggest-status">${t("Die KI denkt nach …")}</div>`;
+        try {
+          const result = await this._hass.callWS({
+            type: "brainstorm/generate_map",
+            text: input.trim(),
+            ...(this._hass.language ? { language: this._hass.language } : {}),
+          });
+          const nodes = (result && result.nodes) || [];
+          if (!nodes.length) showInput(t("Die KI hat keine Map geliefert."));
+          else showPreview(nodes);
+        } catch (err) {
+          const code = err && err.code;
+          showInput(
+            code === "ai_not_configured"
+              ? t("Wähle zuerst eine KI-Aufgaben-Entität unter Brainstorm Hub ➔ Konfigurieren ➔ KI.")
+              : code === "ai_unavailable"
+                ? t("Die KI ist gerade nicht erreichbar. Versuch es gleich nochmal.")
+                : t("Die KI hat keine Map geliefert.")
+          );
+        }
+      };
+      showInput();
+    });
+  }
+
   _pushUndo(text, run) {
     this._undoStack.push({ text, run });
     if (this._undoStack.length > UNDO_LIMIT) this._undoStack.shift();
@@ -5305,6 +5461,7 @@ class BrainstormMindmapCard extends HTMLElement {
         <div class="dialog-hint">${t("Vorlage wählen, anpassen und einfügen:")}</div>
         <div class="template-chips">
           ${contentTemplates().map((tpl) => `<button class="template-chip" data-template="${tpl.key}">${tpl.icon} ${this._escapeHtml(tpl.name)}</button>`).join("")}
+          ${this._aiAvailable() ? `<button class="template-chip" id="outlineAi" data-lvl="normal">✨ ${t("Mit KI erzeugen")}</button>` : ""}
         </div>
         <textarea class="dialog-input dialog-textarea" id="outlineText" rows="5" placeholder="${t("Eine Zeile pro Notiz, Unterpunkte eingerückt oder als Markdown-Liste. Oder eine Datei wählen.")}"></textarea>
         <div class="export-row">
@@ -5358,6 +5515,8 @@ class BrainstormMindmapCard extends HTMLElement {
         reader.readAsText(file);
       });
       body.querySelector("#outlineCancel").addEventListener("click", () => this._closeDialog());
+      const outlineAi = body.querySelector("#outlineAi");
+      if (outlineAi) outlineAi.addEventListener("click", () => this._showGenerateMapDialog(text.value));
       importBtn.addEventListener("click", async () => {
         importBtn.disabled = true;
         error.textContent = "";
@@ -6423,6 +6582,11 @@ class BrainstormMindmapCard extends HTMLElement {
     if (pro && (e.key === "p" || e.key === "P")) {
       e.preventDefault();
       this._startPresentation();
+      return;
+    }
+    if (normal && (e.key === "g" || e.key === "G") && this._aiAvailable()) {
+      e.preventDefault();
+      this._showGenerateMapDialog();
       return;
     }
     if (pro && (e.key === "z" || e.key === "Z") && this._aiAvailable()) {
@@ -8214,6 +8378,8 @@ class BrainstormMindmapCard extends HTMLElement {
 
       if (filteredIdeas.length === 0) {
         emptyState.style.display = "block";
+        const emptyAi = this.shadowRoot.getElementById("emptyAiBtn");
+        if (emptyAi) emptyAi.style.display = this._aiAvailable() ? "" : "none";
         container.innerHTML = "";
         this._nodePositions.clear();
         this._drawConnections();
@@ -9842,7 +10008,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.11.0 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.11.1 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

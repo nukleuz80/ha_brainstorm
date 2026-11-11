@@ -9,7 +9,7 @@ from homeassistant.components import websocket_api
 from homeassistant.core import HomeAssistant, callback
 import homeassistant.helpers.config_validation as cv
 
-from .ai import AIUnavailableError
+from .ai import MAP_INPUT_MAX_LENGTH, AIUnavailableError
 from .const import CONF_SHARE_USERS
 from .store import get_loaded_store
 
@@ -27,6 +27,7 @@ def async_register_commands(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, websocket_suggest_subtasks)
     websocket_api.async_register_command(hass, websocket_summarize_branch)
     websocket_api.async_register_command(hass, websocket_suggest_parents)
+    websocket_api.async_register_command(hass, websocket_generate_map)
 
 
 @websocket_api.websocket_command({vol.Required("type"): "brainstorm/ideas"})
@@ -247,3 +248,43 @@ async def websocket_suggest_parents(
         )
         return
     connection.send_result(msg["id"], {"suggestions": suggestions})
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "brainstorm/generate_map",
+        vol.Required("text"): vol.All(
+            cv.string, vol.Length(min=1, max=MAP_INPUT_MAX_LENGTH * 2)
+        ),
+        vol.Optional("language"): vol.All(cv.string, vol.Length(max=10)),
+    }
+)
+@websocket_api.async_response
+async def websocket_generate_map(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Let the AI turn a topic or a text into a mind map; nothing is stored."""
+    store = get_loaded_store(hass)
+    if store is None:
+        connection.send_error(
+            msg["id"], websocket_api.ERR_NOT_FOUND, "Brainstorm is not loaded"
+        )
+        return
+    if not store.ai_subtasks_available:
+        connection.send_error(
+            msg["id"], ERR_AI_NOT_CONFIGURED, "No AI task entity is set up"
+        )
+        return
+    try:
+        nodes = await store.async_generate_map(msg["text"], msg.get("language"))
+    except AIUnavailableError:
+        connection.send_error(
+            msg["id"], ERR_AI_UNAVAILABLE, "The AI did not answer, try again later"
+        )
+        return
+    if nodes is None:
+        connection.send_error(msg["id"], ERR_AI_FAILED, "The AI gave no mind map")
+        return
+    connection.send_result(msg["id"], {"nodes": nodes})

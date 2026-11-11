@@ -134,12 +134,15 @@ from .const import (
     VOICE_MODE_NATIVE,
 )
 from .ai import (
+    MAP_INPUT_MAX_LENGTH,
+    MAP_MAX_NODES,
     MAX_BRANCH_LINES,
     MAX_LOOSE_IDEAS,
     MAX_PARENT_CANDIDATES,
     async_generate_text,
     async_request_text_with_retry,
     clean_summary,
+    parse_map_outline,
     parse_parent_suggestions,
     parse_subtask_suggestions,
 )
@@ -917,6 +920,25 @@ class BrainstormStore:
         )
         answer = await async_request_text_with_retry(self.hass, entity, instructions)
         return clean_summary(answer, DESCRIPTION_MAX_LENGTH)
+
+    async def async_generate_map(
+        self, text: str, language: str | None = None
+    ) -> list[dict[str, Any]] | None:
+        """Ask the AI for a mind map from a topic or a pasted text.
+
+        Returns nodes with text and depth, the title first; nothing is stored,
+        the person picks what to keep. Raises AIUnavailableError when the AI did
+        not answer, even when asked twice.
+        """
+        entity = self.options.get(CONF_AI_ENTITY)
+        text = (text or "").strip()[:MAP_INPUT_MAX_LENGTH]
+        if not entity or not text:
+            return None
+        instructions = self._pack(language).msg(
+            "map_prompt", text=text, limit=MAP_MAX_NODES
+        )
+        answer = await async_request_text_with_retry(self.hass, entity, instructions)
+        return parse_map_outline(answer) or None
 
     async def async_suggest_parents(
         self, category: str, user_id: str | None, language: str | None = None

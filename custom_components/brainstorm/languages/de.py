@@ -1538,6 +1538,18 @@ MESSAGES: dict[str, str] = {
         "Notiz: {text}\n"
         "Unterpunkte:\n{outline}"
     ),
+    "map_prompt": (
+        "Erstelle aus der folgenden Eingabe eine Mindmap als eingerückte "
+        "Markdown-Liste. Ist die Eingabe ein kurzes Thema, sammle dazu vier bis "
+        "sieben Hauptäste mit je zwei bis vier Unterpunkten. Ist sie ein längerer "
+        "Text, gliedere seinen Inhalt und erfinde nichts dazu. Die erste Zeile ist "
+        "das Thema als kurzer Titel ohne Einrückung, darunter die Äste mit je zwei "
+        "Leerzeichen Einrückung pro Ebene, höchstens drei Ebenen unter dem Titel "
+        "und höchstens {limit} Zeilen. Jede Zeile ist ein knapper deutscher "
+        "Stichpunkt. Antworte nur mit der Liste, ohne Einleitung, ohne Nummern und "
+        "ohne Codeblock.\n"
+        "Eingabe:\n{text}"
+    ),
     "parents_prompt": (
         "In der Liste „{category}“ stehen lose Notizen ohne Zuordnung (L). Ordne "
         "jede lose Notiz der Notiz (K) zu, unter die sie inhaltlich am besten "

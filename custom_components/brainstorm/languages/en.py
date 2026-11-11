@@ -975,6 +975,17 @@ MESSAGES: dict[str, str] = {
         "Note: {text}\n"
         "Subtasks:\n{outline}"
     ),
+    "map_prompt": (
+        "Turn the following input into a mind map as an indented Markdown list. "
+        "If the input is a short topic, gather four to seven main branches with "
+        "two to four points each. If it is a longer text, structure its content "
+        "and do not add anything. The first line is the topic as a short title "
+        "without indentation, below it the branches with two spaces of indentation "
+        "per level, at most three levels below the title and at most {limit} "
+        "lines. Each line is a brief English bullet point. Answer only with the "
+        "list, without an introduction, without numbers and without a code block.\n"
+        "Input:\n{text}"
+    ),
     "parents_prompt": (
         "The list \"{category}\" has loose notes that belong nowhere yet (L). "
         "Put each loose note below the note (K) it fits best by content. Leave a "

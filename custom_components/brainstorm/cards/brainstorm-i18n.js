@@ -7,6 +7,14 @@
  */
 const DICTIONARIES = {
   en: {
+    "Map aus Thema erzeugen": "Create map from a topic",
+    "✨ Map aus Thema erzeugen": "✨ Create map from a topic",
+    "Mit KI erzeugen": "Create with AI",
+    "Ein Thema wie „Sommerfest planen“ oder einen längeren Text einfügen. Die KI macht daraus eine Map mit bis zu drei Ebenen, du wählst vor dem Übernehmen aus.": "Enter a topic such as “Plan a summer party” or paste a longer text. The AI turns it into a map with up to three levels, and you pick what to keep.",
+    "Thema oder Text": "Topic or text",
+    "Erzeugen": "Create",
+    "Haken weg bei allem, was du nicht willst. Unterpunkte rücken dann nach oben. Du kannst die Texte noch ändern.": "Untick whatever you do not want; its points move up. You can still change the texts.",
+    "Die KI hat keine Map geliefert.": "The AI did not return a map.",
     "Abstimmen: Stimmen pro Person verteilen (V)": "Vote: hand out votes per person (V)",
     "Abstimmung in {category}: noch {left} von {total} Stimmen": "Voting in {category}: {left} of {total} votes left",
     "Abstimmung in „{category}“ beenden? Danach zeigt Brainstorm das Ergebnis, die Stimmen bleiben an den Notizen.": "End the voting in “{category}”? Brainstorm then shows the result, the votes stay on the notes.",
