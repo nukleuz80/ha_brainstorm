@@ -31,8 +31,12 @@ el.style.width=(p.get("w")||"560")+"px";
 const cfg=JSON.parse(p.get("cfg")||"{}");
 el.setConfig(cfg);
 document.getElementById("wrap").appendChild(el);
+const scene=p.get("scene");
+const scenes=scene?await import("./scenes.js"):null;
+if(scenes)scenes.setup(scene,window.demoHass);
 el.hass=window.demoHass;
 setTimeout(()=>{el.hass={...window.demoHass}},300);
+if(scenes)setTimeout(()=>scenes.after(scene,el,window.demoHass),1600);
 const clicks=(p.get("click")||"").split("|").filter(Boolean);
 const findText=(root,txt)=>{for(const e of root.querySelectorAll("*")){if(e.shadowRoot){const r=findText(e.shadowRoot,txt);if(r)return r}
  if(e.children.length<=3&&(e.textContent||"").trim().startsWith(txt)&&e.offsetParent!==null)return e}return null};

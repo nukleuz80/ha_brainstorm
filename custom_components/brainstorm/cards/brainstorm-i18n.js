@@ -1304,7 +1304,8 @@ export function commentBadge(idea) {
  * Fill a dialog body with the comments of a note: load them, write a new one
  * (Ctrl+Enter sends) and delete your own. Both cards use it.
  */
-export function renderComments(body, { hass, idea, close }) {
+export function renderComments(body, { hass, idea, close, prefix = "dialog" }) {
+  const c = (names) => names.split(" ").map((n) => `${prefix}-${n}`).join(" ");
   const when = (iso) => {
     const date = new Date(iso);
     if (Number.isNaN(date.getTime())) return "";
@@ -1316,20 +1317,20 @@ export function renderComments(body, { hass, idea, close }) {
   const draw = (comments, error = "") => {
     if (!body.isConnected) return;
     body.innerHTML = `
-      <div class="dialog-hint">${formatText(idea.text)}</div>
+      <div class="${c("hint")}">${formatText(idea.text)}</div>
       <div class="bs-comments">
         ${
           comments.length
             ? comments
                 .map(
-                  (c) => `
-          <div class="bs-c${c.mine ? " mine" : ""}">
-            <div class="bs-c-avatar"${c.picture ? ` style="background-image: url('${escapeHtml(c.picture)}'); color: transparent;"` : ""}>${escapeHtml(initials(c.name))}</div>
+                  (item) => `
+          <div class="bs-c${item.mine ? " mine" : ""}">
+            <div class="bs-c-avatar"${item.picture ? ` style="background-image: url('${escapeHtml(item.picture)}'); color: transparent;"` : ""}>${escapeHtml(initials(item.name))}</div>
             <div class="bs-c-body">
-              <div class="bs-c-head"><b>${escapeHtml(c.name || t("Unbekannt"))}</b><span>${escapeHtml(when(c.at))}</span>
-                ${c.can_delete ? `<button type="button" class="bs-c-del" data-del="${escapeHtml(c.id)}" title="${t("Kommentar löschen")}" aria-label="${t("Kommentar löschen")}">✕</button>` : ""}
+              <div class="bs-c-head"><b>${escapeHtml(item.name || t("Unbekannt"))}</b><span>${escapeHtml(when(item.at))}</span>
+                ${item.can_delete ? `<button type="button" class="bs-c-del" data-del="${escapeHtml(item.id)}" title="${t("Kommentar löschen")}" aria-label="${t("Kommentar löschen")}">✕</button>` : ""}
               </div>
-              <div class="bs-c-text">${mention(formatText(c.text))}</div>
+              <div class="bs-c-text">${mention(formatText(item.text))}</div>
             </div>
           </div>`
                 )
@@ -1337,11 +1338,11 @@ export function renderComments(body, { hass, idea, close }) {
             : `<div class="bs-comments-empty">${t("Noch keine Kommentare.")}</div>`
         }
       </div>
-      <textarea class="dialog-input dialog-textarea" id="bsCommentText" rows="3" maxlength="2000" placeholder="${t("Kommentar schreiben … @Name benachrichtigt die Person")}"></textarea>
-      <div class="dialog-error" style="display: ${error ? "flex" : "none"};">${escapeHtml(error)}</div>
-      <div class="dialog-footer">
-        <button class="dialog-btn dialog-btn-cancel" id="bsCommentClose">${t("Schließen")}</button>
-        <button class="dialog-btn dialog-btn-primary" id="bsCommentSend">${t("Senden")}</button>
+      <textarea class="${c("input textarea")}" id="bsCommentText" rows="3" maxlength="2000" placeholder="${t("Kommentar schreiben … @Name benachrichtigt die Person")}"></textarea>
+      <div class="${c("error")}" style="display: ${error ? "flex" : "none"};">${escapeHtml(error)}</div>
+      <div class="${c("footer")}">
+        <button class="${c("btn btn-cancel")}" id="bsCommentClose">${t("Schließen")}</button>
+        <button class="${c("btn btn-primary")}" id="bsCommentSend">${t("Senden")}</button>
       </div>
     `;
     const area = body.querySelector("#bsCommentText");
@@ -1404,7 +1405,7 @@ export function renderComments(body, { hass, idea, close }) {
       draw(current, (err && err.message) || t("Das hat nicht geklappt."));
     }
   };
-  body.innerHTML = `<div class="dialog-label">${t("Lädt …")}</div>`;
+  body.innerHTML = `<div class="${c("label")}">${t("Lädt …")}</div>`;
   load();
 }
 

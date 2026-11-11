@@ -1,8 +1,8 @@
-import { LEVEL_CSS, SOCIAL_CSS, commentBadge, renderComments, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, repeatBadge, repeatOptions, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.11.2";
+import { LEVEL_CSS, SOCIAL_CSS, commentBadge, renderComments, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, repeatBadge, repeatOptions, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.11.3";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.11.2 - Kommentare
+ * Version: 1.11.3 - Kommentare
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -1711,7 +1711,8 @@ class BrainstormMindmapCard extends HTMLElement {
           opacity: 0.45;
         }
         .map-preview {
-          max-height: min(50vh, 420px);
+          /* The dialog body holds 70vh, so the buttons below stay in view */
+          max-height: max(140px, calc(70vh - 220px));
           overflow-y: auto;
         }
         .empty-ai-btn {
@@ -2491,7 +2492,7 @@ class BrainstormMindmapCard extends HTMLElement {
           opacity: 0;
           cursor: pointer;
         }
-        .outline-target {
+        .export-row .outline-target {
           flex: 1 1 160px;
           margin: 0;
         }
@@ -10022,7 +10023,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.11.2 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.11.3 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

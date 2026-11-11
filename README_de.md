@@ -9,7 +9,7 @@
 [![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.11.2-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.11.3-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -1159,6 +1159,7 @@ Weitere Beispiele für Assist und Alexa liegen im Ordner [`examples/`](examples/
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.11.3`** | 11.11.2026 | **Fehlerbehebungen:** Im Kommentar-Dialog der Listenkarte hatten Knöpfe und Textfeld keine Gestaltung. In der KI-Vorschau *Map aus Thema erzeugen* rutschten die Knöpfe bei langen Vorschlägen aus dem Bild; die Liste scrollt jetzt für sich, und eine leere Fläche von 160 px über den Knöpfen ist weg. |
 | **`v1.11.2`** | 11.11.2026 | **Kommentare an Notizen.** Verlauf pro Notiz mit Name, Zeit und Text, 💬 mit Anzahl in beiden Karten, Dialog über das Kontextmenü bzw. ⋯. `@Name` benachrichtigt die Person über ihre Kanäle unter *Erinnerungen ➔ Personen*, mit Privatsphäre nur, wenn sie die Notiz sehen darf. Neue Dienste `brainstorm.add_comment` und `delete_comment`, WebSocket-Befehl `brainstorm/comments`, Ereignis `brainstorm_comment_added`. Der Sensor zählt nur (`comment_count`); Kommentare bleiben aus dem JSON-Export heraus. |
 | **`v1.11.1`** | 11.11.2026 | **KI: Mindmap aus Thema oder Text.** ✨ *Map aus Thema erzeugen* auf einer leeren Map, Taste **G** oder ✨ *Mit KI erzeugen* im Dialog *Gliederung einfügen*: Die KI macht aus einem Thema Hauptäste mit Unterpunkten oder gliedert einen eingefügten Text, höchstens drei Ebenen und 40 Zeilen. In der Vorschau abhaken und Texte ändern, dann übernehmen; ↶ nimmt alles zurück. Neuer WebSocket-Befehl `brainstorm/generate_map`, gespeichert wird erst nach deiner Bestätigung. |
 | **`v1.11.0`** | 11.11.2026 | **Release: Übersicht, Abstimmen und Reaktionen.** Fasst v1.10.6 und v1.10.7 zusammen: Minimap in der Mindmap (🗺️ / **M**), Abstimmungen pro Kategorie (🗳️ / **V**, offen oder verdeckt, Rangliste beim Beenden) und Reaktionen 👍 ❤️ 😂 ❗ an jeder Notiz. |

@@ -18,6 +18,9 @@ SHOTS = [
     ("mmprojekte", "1100,700", "card=mindmap&w=1060&click=Projekte", None),
     ("kanban", "1100,700", 'card=mindmap&w=1060&cfg={"layout":"kanban"}&click=Projekte', None),
     ("outline", "1100,700", 'card=mindmap&w=1060&cfg={"layout":"tree"}&click=Projekte', None),
+    ("social", "1100,700", 'card=mindmap&w=1060&cfg={"default_category":"Ausflug"}&scene=social', None),
+    ("comments", "700,760", 'card=list&w=640&cfg={"default_category":"Ausflug"}&scene=comments', None),
+    ("aimap", "1000,800", 'card=mindmap&w=900&cfg={"default_category":"Sommerfest","height":"700px"}&scene=aimap', None),
 ]
 
 

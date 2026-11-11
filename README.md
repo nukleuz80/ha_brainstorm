@@ -9,7 +9,7 @@
 [![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.11.2-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.11.3-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -1107,6 +1107,7 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.11.3`** | 2026-11-11 | **Fixes:** in the list card's comment dialog, the buttons and the text field had no styling. In the *Create map from a topic* preview, long suggestions pushed the buttons out of view; the list now scrolls on its own, and an empty gap of 160 px above the buttons is gone. |
 | **`v1.11.2`** | 2026-11-11 | **Comments on notes.** A thread per note with name, time and text, 💬 with the count in both cards, the dialog from the context menu or ⋯. `@Name` tells that person over their channels under *Reminders ➔ Persons*, with privacy only when they may see the note. New services `brainstorm.add_comment` and `delete_comment`, WebSocket command `brainstorm/comments`, event `brainstorm_comment_added`. The sensor only counts them (`comment_count`); comments stay out of the JSON export. |
 | **`v1.11.1`** | 2026-11-11 | **AI: mind map from a topic or text.** ✨ *Create map from a topic* on an empty map, key **G**, or ✨ *Create with AI* in the *Insert an outline* dialog: the AI turns a topic into main branches with points, or structures a pasted text, at most three levels and 40 lines. Tick and edit in the preview, then add; ↶ takes it all back. New WebSocket command `brainstorm/generate_map`; nothing is stored before you confirm. |
 | **`v1.11.0`** | 2026-11-11 | **Release: overview, voting and reactions.** Bundles v1.10.6 and v1.10.7: minimap in the mind map (🗺️ / **M**), votes per category (🗳️ / **V**, open or hidden, ranking at the end) and reactions 👍 ❤️ 😂 ❗ on every note. |
