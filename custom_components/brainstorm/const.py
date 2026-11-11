@@ -231,7 +231,14 @@ ATTR_REPEAT_CLOSED = "repeat_closed"
 # At most this many subtasks come along with a repeating note
 REPEAT_MAX_SUBTASKS = 100
 # What the subtasks of a note can be sorted by
-SORT_KEYS = ("text", "priority", "due", "created")
+SORT_KEYS = ("text", "priority", "due", "created", "votes")
+# Quick reactions of people to a note: reaction -> user IDs
+ATTR_REACTIONS = "reactions"
+REACTIONS = ("like", "heart", "laugh", "important")
+# Points people gave a note in a voting round: user ID -> points
+ATTR_VOTES = "votes"
+# How many votes each person may give in one round
+VOTING_MAX_VOTES = 20
 ATTACHMENT_DIR = "brainstorm_attachments"
 ATTACHMENT_MAX_SIZE = 10 * 1024 * 1024
 ATTACHMENT_MAX_COUNT = 20
@@ -291,6 +298,10 @@ JSON_EXPORT_VERSION = 1
 
 SERVICE_REORDER_IDEAS = "reorder_ideas"
 SERVICE_SORT_CHILDREN = "sort_children"
+SERVICE_REACT = "react"
+SERVICE_VOTE = "vote"
+SERVICE_START_VOTING = "start_voting"
+SERVICE_END_VOTING = "end_voting"
 SERVICE_IMPORT_OUTLINE = "import_outline"
 SERVICE_DELETE_DONE = "delete_done"
 SERVICE_SET_CATEGORY_STYLE = "set_category_style"

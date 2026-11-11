@@ -605,7 +605,8 @@
         "text": "Title (A–Z)",
         "priority": "Priority (urgent first)",
         "due": "Due date (earliest first)",
-        "created": "Created (oldest first)"
+        "created": "Created (oldest first)",
+        "votes": "Votes (most first)"
       }
     },
     "outline_format": {
@@ -631,6 +632,14 @@
         "beginner": "Beginner",
         "normal": "Normal",
         "pro": "Pro"
+      }
+    },
+    "reaction": {
+      "options": {
+        "like": "👍 Like",
+        "heart": "❤️ Love",
+        "laugh": "😂 Funny",
+        "important": "❗ Important"
       }
     }
   },
@@ -772,6 +781,21 @@
     },
     "attachment_write_failed": {
       "message": "The attachment could not be saved: {error}"
+    },
+    "needs_user": {
+      "message": "Reacting and voting need a signed-in user."
+    },
+    "no_voting_round": {
+      "message": "There is no voting round in \"{category}\". Start one first."
+    },
+    "no_votes_left": {
+      "message": "All {votes} votes are used. Take a vote back from another note first."
+    },
+    "idea_not_active": {
+      "message": "Idea \"{id}\" is not open."
+    },
+    "category_not_found": {
+      "message": "Category \"{category}\" does not exist."
     }
   },
   "services": {
@@ -1141,7 +1165,7 @@
         },
         "by": {
           "name": "Sort by",
-          "description": "Title, priority, due date or creation time."
+          "description": "Title, priority, due date, creation time or votes."
         },
         "ids": {
           "name": "Fixed order",
@@ -1150,6 +1174,70 @@
         "reverse": {
           "name": "Reverse",
           "description": "Sorts the other way round. Notes without a due date stay last."
+        }
+      }
+    },
+    "react": {
+      "name": "React to a note",
+      "description": "Switches a quick reaction of the calling user on a note. Seeing the note is enough.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "The note."
+        },
+        "reaction": {
+          "name": "Reaction",
+          "description": "like, heart, laugh or important."
+        },
+        "active": {
+          "name": "On",
+          "description": "On or off. Left out, the reaction toggles."
+        }
+      }
+    },
+    "vote": {
+      "name": "Vote for a note",
+      "description": "Gives a note more or fewer points in the running voting round of its category.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "The note."
+        },
+        "delta": {
+          "name": "Change",
+          "description": "Points to add, negative to take them back."
+        }
+      }
+    },
+    "start_voting": {
+      "name": "Start voting",
+      "description": "Starts a voting round in a category. Each person gets a number of votes and may put several on one note.",
+      "fields": {
+        "category": {
+          "name": "Category",
+          "description": "The category whose open notes are voted on."
+        },
+        "votes": {
+          "name": "Votes per person",
+          "description": "How many votes each person may give, 1 to 20."
+        },
+        "hidden": {
+          "name": "Hidden",
+          "description": "Everyone sees only their own votes until the round ends."
+        },
+        "clear": {
+          "name": "Clear old votes",
+          "description": "Removes the points of earlier rounds in this category first."
+        }
+      }
+    },
+    "end_voting": {
+      "name": "End voting",
+      "description": "Ends the voting round of a category and returns its notes ranked by points.",
+      "fields": {
+        "category": {
+          "name": "Category",
+          "description": "The category whose round ends."
         }
       }
     },

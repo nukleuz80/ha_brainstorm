@@ -9,7 +9,7 @@
 [![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.10.6-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.10.7-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -138,6 +138,7 @@ Brainstorm Hub verwandelt alle deine **Amazon Echo**-Geräte im Haus in sekunden
     - **Gliederung exportieren und einfügen (v1.8.4):** 🖼️ speichert die Map auch als Markdown-Gliederung, OPML oder FreeMind-`.mm` (öffnet sich in Freeplane, XMind, MindManager). *Gliederung einfügen* macht aus einer eingefügten Liste oder einer Datei (`.md`, `.txt`, `.opml`, `.mm`) einen Zweig mit Notizen, im Fokus unter der Fokus-Notiz.
     - **Brainstorm-Modus (v1.8.5):** ⚡ oder **B** öffnet eine Schnelleingabe mit Timer von 3 bis 15 Minuten. Jedes Enter ist sofort eine Notiz und erscheint als bunter Zettel; ↶ nimmt die ganze Runde wieder heraus.
     - **Ansichten (v1.8.6–v1.8.8):** Der Ansichts-Knopf unten rechts zeigt die Notizen ◎ rund um die Mitte, als ⇶ Baum, ⊤ Organigramm, ☰ eingerückte Gliederung, ▥ Kanban nach Status (offen, in Arbeit, wartet, erledigt), 📅 Zeitleiste nach Fälligkeit (überfällig, heute, morgen, diese Woche, später, ohne Datum) oder ⊞ Eisenhower-Matrix (sofort erledigen, einplanen, abgeben, später oder gar nicht). Auf den Boards ändert das Ziehen in eine andere Spalte Status, Fälligkeit oder Priorität, ↶ nimmt es zurück. Die Wahl merkt sich der Browser; `layout` legt den Standard fest.
+    - **Abstimmen und Reaktionen (v1.10.7):** 🗳️ unten rechts oder **V** startet eine Abstimmung in einer Kategorie: Jede Person bekommt z. B. 5 Stimmen und verteilt sie mit − / + an den Notizen, in der Mindmap wie in der Liste. Verdeckt sieht jeder bis zum Ende nur die eigenen Stimmen. Beim Beenden erscheint die Rangliste mit 🥇🥈🥉, ein Tipp sortiert die Kategorie danach. Dazu Reaktionen 👍 ❤️ 😂 ❗ an jeder Notiz (Kontextmenü bzw. ⋯ in der Mindmap); wer eine geteilte Notiz nur sehen darf, darf trotzdem reagieren und abstimmen.
     - **Übersicht / Minimap (v1.10.6):** 🗺️ unten rechts oder **M** zeigt unten links die ganze Map im Kleinen, in den Kategoriefarben, mit dem sichtbaren Ausschnitt als Rahmen. Tippen oder Ziehen darin springt dorthin. Auf breiten Karten ist sie anfangs offen, am Handy zu; jeder Browser merkt sich die Wahl. Funktioniert in allen Ansichten, auch auf den Boards. `show_minimap: false` blendet sie samt Knopf aus.
     - **Präsentationsmodus (v1.8.10):** **P** (oder ▶ in der Ansichtswahl) zeigt die Map im Vollbild und geht sie Notiz für Notiz durch, Ast für Ast, mit der Beschreibung darunter. → / Leertaste für die nächste Notiz, ← zurück, Esc beendet.
     - **Wiederkehrende Aufgaben (v1.8.15):** *Wiederholen* im Bearbeiten-Dialog beider Karten: jeden Tag, jeden Werktag, jede Woche, alle 2 Wochen, jeden Monat oder jedes Jahr. Abgehakt kommt die Notiz sofort wieder, fällig zum nächsten Termin, mit ihren Angaben und wieder offenen Unteraufgaben; die erledigte Runde bleibt unter *Erledigt*. Spät abgehakt überspringt sie verpasste Termine. Wird die erledigte Runde wieder aktiviert, verschwindet die neue. Wiederkehrende Notizen zeigen 🔁. Aktion: `repeat` in `brainstorm.update_idea`.
@@ -1005,9 +1006,55 @@ Sortiert die Unteraufgaben einer Notiz oder die Hauptnotizen einer Kategorie inn
 | :--- | :--- | :--- |
 | `parent_id` | Nein | Die Notiz, deren Unteraufgaben sortiert werden. |
 | `category` | Nein | Ohne `parent_id`: die Kategorie, deren Hauptnotizen sortiert werden. |
-| `by` | Nein | `text` (A–Z), `priority` (dringend zuerst), `due` (früheste zuerst, Notizen ohne Datum am Ende) oder `created` (älteste zuerst). |
+| `by` | Nein | `text` (A–Z), `priority` (dringend zuerst), `due` (früheste zuerst, Notizen ohne Datum am Ende) oder `created` (älteste zuerst), `votes` (meiste Stimmen zuerst). |
 | `ids` | Nein | Statt `by`: die Unteraufgaben in fester Reihenfolge, etwa um ein Sortieren rückgängig zu machen. |
 | `reverse` | Nein | Sortiert andersherum. |
+
+### `brainstorm.react`
+
+▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.react)
+
+Setzt oder entfernt die eigene Reaktion an einer Notiz. Jede Person hat pro Reaktion eine Stimme; wer eine Notiz sehen darf, darf auch reagieren.
+
+| Feld | Pflicht | Bedeutung |
+| :--- | :--- | :--- |
+| `id` | Ja | ID der Notiz. |
+| `reaction` | Ja | `like` 👍, `heart` ❤️, `laugh` 😂 oder `important` ❗ |
+| `active` | Nein | `true` setzt, `false` entfernt; ohne Angabe wird umgeschaltet. |
+
+### `brainstorm.start_voting`
+
+▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.start_voting)
+
+Startet eine Abstimmung in einer Kategorie. Jede Person bekommt gleich viele Stimmen und verteilt sie auf die Notizen, auch mehrere auf eine.
+
+| Feld | Pflicht | Bedeutung |
+| :--- | :--- | :--- |
+| `category` | Ja | Die Kategorie, über deren Notizen abgestimmt wird. |
+| `votes` | Nein | Stimmen pro Person (1–20, Standard 5). |
+| `hidden` | Nein | Verdeckt: Jeder sieht bis zum Ende nur die eigenen Stimmen. |
+| `clear` | Nein | Löscht die Punkte einer früheren Runde. |
+
+### `brainstorm.vote`
+
+▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.vote)
+
+Gibt einer Notiz in einer laufenden Abstimmung Stimmen oder nimmt sie zurück. Antwortet mit `votes` (eigene an dieser Notiz), `used` und `allowed`.
+
+| Feld | Pflicht | Bedeutung |
+| :--- | :--- | :--- |
+| `id` | Ja | ID der Notiz. |
+| `delta` | Nein | Wie viele Stimmen dazu (Standard 1), negativ nimmt zurück. |
+
+### `brainstorm.end_voting`
+
+▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.end_voting)
+
+Beendet die Abstimmung einer Kategorie und antwortet mit der Rangliste (`ranking`: `id`, `text`, `points`, `voters`). Die Punkte bleiben an den Notizen, `sort_children` mit `by: votes` sortiert danach.
+
+| Feld | Pflicht | Bedeutung |
+| :--- | :--- | :--- |
+| `category` | Ja | Die Kategorie der Abstimmung. |
 
 ### `brainstorm.share`
 
@@ -1087,6 +1134,7 @@ Weitere Beispiele für Assist und Alexa liegen im Ordner [`examples/`](examples/
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.10.7`** | 11.11.2026 | **Abstimmen und Reaktionen.** 🗳️ oder **V** startet eine Abstimmung in einer Kategorie mit einer festen Zahl Stimmen pro Person (3/5/10), offen oder verdeckt; − / + an den Notizen in beiden Karten, eine Leiste zeigt die eigenen verbrauchten Stimmen. Beim Beenden kommt die Rangliste mit 🥇🥈🥉 und *Nach Stimmen sortieren*. Reaktionen 👍 ❤️ 😂 ❗ an jeder Notiz, Namen beim Darüberfahren. Neue Dienste `brainstorm.react`, `vote`, `start_voting`, `end_voting`; `sort_children` kann `by: votes`. Reaktionen und Stimmen bleiben aus dem JSON-Export heraus. |
 | **`v1.10.6`** | 11.11.2026 | **Übersicht (Minimap) in der Mindmap.** 🗺️ unten rechts oder **M** blendet unten links eine kleine Übersicht der ganzen Map ein, mit dem sichtbaren Ausschnitt als Rahmen; Tippen oder Ziehen springt dorthin. Gefilterte Notizen erscheinen blass, auf Kanban, Zeitleiste und Matrix sieht man die Spalten. Auf breiten Karten anfangs offen, am Handy zu, der Browser merkt sich die Wahl. Kartenoption `show_minimap` (Standard an). |
 | **`v1.10.5`** | 10.11.2026 | **Releases mit ZIP.** Jedes veröffentlichte Release bekommt jetzt per GitHub Action die Datei `brainstorm.zip`, und `hacs.json` setzt `zip_release`. HACS lädt bei Installation und Update diese Datei, GitHub zählt das als Download des Releases. Die letzten fünf Releases haben die ZIP nachträglich bekommen. An bestehenden Installationen ändert sich nichts. |
 | **`v1.10.4`** | 10.11.2026 | **Neutrale Beispielnamen.** Beispiele in den Einrichtungstexten, der Doku, den Videoskripten, den Demodaten und den Tests verwenden jetzt erfundene Namen (Olaf, Frida, Tom, Paul, Musterdorf) statt echter. |

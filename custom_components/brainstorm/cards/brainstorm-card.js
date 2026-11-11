@@ -1,9 +1,9 @@
-import { LEVEL_CSS, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, repeatBadge, repeatOptions, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.10.6";
+import { LEVEL_CSS, SOCIAL_CSS, needsPersonalData, reactionBadges, voteBadge, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, repeatBadge, repeatOptions, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.10.7";
 
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.10.6 - Übersicht (Minimap)
+ * Version 1.10.7 - Abstimmen und Reaktionen
  */
 // The bulb lies next to this file, wherever Home Assistant serves it from
 const BULB_URL = new URL("./brainstorm-bulb.svg", import.meta.url).href;
@@ -224,7 +224,7 @@ class BrainstormCard extends HTMLElement {
 
   _getSensorEntity() {
     const state = this._getRawSensorEntity();
-    if (!state || !state.attributes || !state.attributes.privacy) return state;
+    if (!state || !needsPersonalData(state.attributes)) return state;
     // With private ideas, the sensor holds no ideas and the user's own come separately
     return {
       ...state,
@@ -235,7 +235,7 @@ class BrainstormCard extends HTMLElement {
 
   _refreshPrivateData() {
     const state = this._getRawSensorEntity();
-    if (!state || !state.attributes || !state.attributes.privacy) return;
+    if (!state || !needsPersonalData(state.attributes)) return;
     if (this._privateFetchKey === state.last_updated) return;
     const key = state.last_updated;
     this._privateFetchKey = key;
@@ -2166,6 +2166,29 @@ class BrainstormCard extends HTMLElement {
     );
   }
 
+  _currentUserId() {
+    const sensor = this._getSensorEntity();
+    return (sensor && sensor.attributes.current_user) || (this._hass && this._hass.user && this._hass.user.id) || "";
+  }
+
+  async _react(id, reaction) {
+    try {
+      await this._hass.callService("brainstorm", "react", { id, reaction });
+    } catch (err) {
+      console.error("[Brainstorm] Reaction failed:", err);
+      window.alert((err && err.message) || t("Das ging nicht."));
+    }
+  }
+
+  async _vote(id, delta) {
+    try {
+      await this._hass.callService("brainstorm", "vote", { id, delta });
+    } catch (err) {
+      console.error("[Brainstorm] Vote failed:", err);
+      window.alert((err && err.message) || t("Das ging nicht."));
+    }
+  }
+
   _openContextMenu(item, prevTopLevelItem, nextItem, prevItem, activeIdeas) {
     if (this._selectionMode) return;
     const backdrop = this.shadowRoot.getElementById("appleContextMenu");
@@ -2324,7 +2347,14 @@ class BrainstormCard extends HTMLElement {
       </button>
     `;
 
-    actionsEl.innerHTML = actionsHtml;
+    actionsEl.innerHTML = `<div class="apple-menu-reactions">${reactionBadges(item, this._currentUserId(), true)}</div>${actionsHtml}`;
+    actionsEl.querySelectorAll("[data-react]").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this._closeContextMenu();
+        this._react(item.id, btn.getAttribute("data-react"));
+      });
+    });
 
     // Attach listeners
     actionsEl.querySelectorAll(".apple-menu-btn").forEach((btn) => {
@@ -2508,6 +2538,7 @@ class BrainstormCard extends HTMLElement {
     this.shadowRoot.innerHTML = `
       <style>
         ${LEVEL_CSS}
+        ${SOCIAL_CSS}
         * {
           box-sizing: border-box;
         }
@@ -4439,6 +4470,12 @@ class BrainstormCard extends HTMLElement {
           overflow: hidden;
           text-overflow: ellipsis;
         }
+        .apple-menu-reactions {
+          display: flex;
+          justify-content: space-around;
+          gap: 6px;
+          padding: 6px 4px 10px;
+        }
         .apple-menu-separator {
           height: 1px;
           background: var(--divider-color, rgba(127, 127, 127, 0.15));
@@ -5025,6 +5062,8 @@ class BrainstormCard extends HTMLElement {
         this._aiSubtasks = aiSubtasks;
 
         this._ideasById = Object.fromEntries(orderedIdeas.map((item) => [item.id, item]));
+        const voting = (aiSensor && aiSensor.attributes && aiSensor.attributes.voting) || {};
+        const me = this._currentUserId();
         const numbers = isCompletedView ? new Map() : numberLabels(activeIdeas);
         const ruleNow = new Date();
         ideasList.innerHTML = orderedIdeas
@@ -5064,6 +5103,7 @@ class BrainstormCard extends HTMLElement {
                     ? `<button class="collapse-btn collapse-chip ${item.collapsed ? "is-collapsed" : ""}" title="${item.collapsed ? t("Unteraufgaben ausklappen") : t("Unteraufgaben einklappen")}" aria-expanded="${item.collapsed ? "false" : "true"}" data-id="${this._escapeHtml(item.id)}"><span class="collapse-arrow">${item.collapsed ? "▸" : "▾"}</span>${progressBadge(item) || `<span class="collapse-count">${item.childCount}</span>`}</button>`
                     : progressBadge(item)}
                   ${markerBadges(item)}
+                  ${isCompletedView ? "" : voteBadge(item, voting, me)}${reactionBadges(item, me)}
                   ${blockedBadge(item)}
                   ${item.frame ? `<span class="frame-chip" title="${t("Rahmen")}">▢ ${this._escapeHtml(item.frame)}</span>` : ""}
                   ${attachmentBadge(item)}
@@ -5094,6 +5134,20 @@ class BrainstormCard extends HTMLElement {
           `;
           })
           .join("");
+
+        // Reactions switch your own, − and + change your points
+        ideasList.querySelectorAll("[data-react]").forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            this._react(btn.getAttribute("data-id"), btn.getAttribute("data-react"));
+          });
+        });
+        ideasList.querySelectorAll("[data-vote]").forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            this._vote(btn.getAttribute("data-id"), Number(btn.getAttribute("data-vote")));
+          });
+        });
 
         // Attach item button listeners
         ideasList.querySelectorAll(".check-btn").forEach((btn) => {
@@ -6046,7 +6100,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.10.6 ",
+  "%c BRAINSTORM-CARD %c v1.10.7 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

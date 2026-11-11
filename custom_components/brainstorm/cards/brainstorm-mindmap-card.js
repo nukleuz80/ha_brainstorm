@@ -1,8 +1,8 @@
-import { LEVEL_CSS, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, repeatBadge, repeatOptions, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.10.6";
+import { LEVEL_CSS, SOCIAL_CSS, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, repeatBadge, repeatOptions, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.10.7";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.10.6 - Übersicht (Minimap)
+ * Version: 1.10.7 - Abstimmen und Reaktionen
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -505,8 +505,8 @@ class BrainstormMindmapCard extends HTMLElement {
 
   _getSensorEntity() {
     const state = this._getRawSensorEntity();
-    if (!state || !state.attributes || !state.attributes.privacy) return state;
-    // With private ideas, the sensor holds no ideas and the user's own come separately
+    if (!state || !needsPersonalData(state.attributes)) return state;
+    // With private ideas or a running vote, the sensor holds no ideas and the user's own come separately
     return {
       ...state,
       last_updated: `${state.last_updated}_${this._privateVersion || 0}`,
@@ -516,7 +516,7 @@ class BrainstormMindmapCard extends HTMLElement {
 
   _refreshPrivateData() {
     const state = this._getRawSensorEntity();
-    if (!state || !state.attributes || !state.attributes.privacy) return;
+    if (!state || !needsPersonalData(state.attributes)) return;
     if (this._privateFetchKey === state.last_updated) return;
     const key = state.last_updated;
     this._privateFetchKey = key;
@@ -907,6 +907,7 @@ class BrainstormMindmapCard extends HTMLElement {
     this.shadowRoot.innerHTML = `
       <style>
         ${LEVEL_CSS}
+        ${SOCIAL_CSS}
         * {
           box-sizing: border-box;
           user-select: none;
@@ -2768,6 +2769,81 @@ class BrainstormMindmapCard extends HTMLElement {
           flex: none;
           margin-top: 1px;
         }
+        .cloud-social {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 4px;
+          margin: 2px 0 4px;
+        }
+        .menu-reactions {
+          display: flex;
+          justify-content: space-between;
+          gap: 4px;
+          padding: 4px 6px 6px;
+          border-bottom: 1px solid var(--divider-color, rgba(127, 127, 127, 0.15));
+          margin-bottom: 4px;
+        }
+        .vote-bar {
+          flex: 0 0 auto;
+          display: none;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 8px;
+          padding: 4px 12px;
+          z-index: 18;
+          font-size: 0.82rem;
+          background: color-mix(in srgb, var(--primary-color, #03a9f4) 12%, var(--ha-card-background, var(--card-background-color, #ffffff)));
+          border-bottom: 1px solid var(--divider-color, rgba(127, 127, 127, 0.15));
+        }
+        .vote-bar.open {
+          display: flex;
+        }
+        .vote-bar .vote-info {
+          flex: 1 1 auto;
+        }
+        .vote-bar button {
+          min-height: 32px;
+          padding: 0 12px;
+          border-radius: 16px;
+          border: 1px solid var(--primary-color, #03a9f4);
+          background: transparent;
+          color: var(--primary-color, #03a9f4);
+          font: inherit;
+          font-weight: 600;
+          cursor: pointer;
+        }
+        .vote-rank {
+          list-style: none;
+          margin: 0 0 8px;
+          padding: 0;
+        }
+        .vote-rank li {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 8px 4px;
+          border-bottom: 1px solid var(--divider-color, rgba(127, 127, 127, 0.15));
+        }
+        .vote-rank .rank-place {
+          width: 28px;
+          text-align: center;
+          font-weight: 700;
+        }
+        .vote-rank .rank-text {
+          flex: 1 1 auto;
+        }
+        .vote-rank .rank-points {
+          font-weight: 700;
+          color: var(--primary-color, #03a9f4);
+          white-space: nowrap;
+        }
+        .vote-choices {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+          margin: 6px 0 4px;
+        }
         .cloud-marks {
           display: flex;
           flex-wrap: wrap;
@@ -3503,6 +3579,7 @@ class BrainstormMindmapCard extends HTMLElement {
 
         <!-- Path of a focused branch -->
         <nav class="focus-bar" id="focusBar" aria-label="${t("Fokus")}"></nav>
+        <div class="vote-bar" id="voteBar" role="status" aria-live="polite"></div>
 
         <!-- Interactive Canvas Area -->
         <div class="canvas-area${this._isBoard() ? " board-mode" : ""}" id="canvasArea" tabindex="0">
@@ -3550,6 +3627,7 @@ class BrainstormMindmapCard extends HTMLElement {
           <button class="control-btn" id="minimapBtn" data-lvl="normal" title="${t("Übersicht ein- oder ausblenden (M)")}" aria-pressed="false">🗺️</button>
           <button class="control-btn" id="lassoBtn" data-lvl="normal" title="${t("Auswählen: Rahmen um mehrere Notizen ziehen (oder Umschalt+Ziehen)")}" aria-pressed="false">⬚</button>
           <button class="control-btn" id="layoutBtn" data-lvl="normal" title="${t("Ansicht wählen")}">${this._layoutIcon()}</button>
+          <button class="control-btn" id="voteBtn" data-lvl="normal" title="${t("Abstimmen: Stimmen pro Person verteilen (V)")}">🗳️</button>
           <button class="control-btn" id="stormBtn" data-lvl="pro" title="${t("Brainstorm: schnell viele Ideen sammeln (B)")}">⚡</button>
           <button class="control-btn" id="levelsBtn" data-lvl="normal" title="${t("Ebenen zeigen: 1, 2, 3 oder alle (Tasten 1–9, 0 = alle)")}">∞</button>
           <button class="control-btn" id="arrangeBtn" data-lvl="normal" title="${t("Neu ordnen: von Hand verschobene Notizen wieder automatisch platzieren")}">🪄</button>
@@ -3912,6 +3990,15 @@ class BrainstormMindmapCard extends HTMLElement {
     if (layoutBtn) {
       layoutBtn.addEventListener("click", () => {
         this._showLayoutDialog();
+      });
+    }
+    const voteBtn = this.shadowRoot.getElementById("voteBtn");
+    if (voteBtn) voteBtn.addEventListener("click", () => this._showVotingDialog());
+    const voteBar = this.shadowRoot.getElementById("voteBar");
+    if (voteBar) {
+      voteBar.addEventListener("click", (e) => {
+        const end = e.target.closest("[data-end-vote]");
+        if (end) this._endVoting(end.getAttribute("data-end-vote"));
       });
     }
     const minimapBtn = this.shadowRoot.getElementById("minimapBtn");
@@ -4362,6 +4449,175 @@ class BrainstormMindmapCard extends HTMLElement {
     const left = focus.id;
     this._setFocus(parent ? parent.id : null);
     if (this._shadowRootHas(left)) this._selectIdea(left);
+  }
+
+  // ---- Reactions and voting rounds ----
+
+  _currentUserId() {
+    const sensor = this._getSensorEntity();
+    return (sensor && sensor.attributes.current_user) || (this._hass && this._hass.user && this._hass.user.id) || "";
+  }
+
+  _voting() {
+    const sensor = this._getSensorEntity();
+    return (sensor && sensor.attributes.voting) || {};
+  }
+
+  async _react(id, reaction) {
+    try {
+      await this._hass.callService("brainstorm", "react", { id, reaction });
+    } catch (err) {
+      console.error("[BrainstormMindmap] Reaction failed:", err);
+      this._showToast((err && err.message) || t("Das ging nicht."));
+    }
+  }
+
+  async _vote(id, delta) {
+    try {
+      await this._hass.callService("brainstorm", "vote", { id, delta });
+    } catch (err) {
+      console.error("[BrainstormMindmap] Vote failed:", err);
+      this._showToast((err && err.message) || t("Das ging nicht."));
+    }
+  }
+
+  // The bar over the map while the shown list votes
+  _renderVoteBar() {
+    const bar = this.shadowRoot && this.shadowRoot.getElementById("voteBar");
+    if (!bar) return;
+    const voting = this._voting();
+    const categories = this._selectedCategory === "all" ? Object.keys(voting) : [this._selectedCategory].filter((c) => voting[c]);
+    if (!categories.length) {
+      bar.classList.remove("open");
+      bar.innerHTML = "";
+      return;
+    }
+    bar.innerHTML = categories
+      .map((category) => {
+        const round = voting[category];
+        const left = Math.max(0, (round.votes || 0) - (round.used || 0));
+        return `<span class="vote-info">🗳️ ${t("Abstimmung in {category}: noch {left} von {total} Stimmen", { category: this._escapeHtml(category), left, total: round.votes || 0 })}${round.hidden ? ` · 🙈 ${t("verdeckt")}` : ""}</span>
+          <button type="button" data-end-vote="${this._escapeHtml(category)}">${t("Beenden")}</button>`;
+      })
+      .join("");
+    bar.classList.add("open");
+  }
+
+  _showVotingDialog() {
+    const sensor = this._getSensorEntity();
+    if (!sensor) return;
+    const voting = this._voting();
+    const categories = (sensor.attributes.categories || []).filter((c) => c !== "__completed__");
+    const current = this._selectedCategory !== "all" && categories.includes(this._selectedCategory) ? this._selectedCategory : null;
+    if (current && voting[current]) {
+      this._endVoting(current);
+      return;
+    }
+    this._openDialog(t("🗳️ Abstimmung starten"), (body) => {
+      const counts = [3, 5, 10];
+      body.innerHTML = `
+        <div class="dialog-label">${t("Kategorie")}</div>
+        <select class="dialog-input" id="voteCategory">
+          ${categories.map((c) => `<option value="${this._escapeHtml(c)}"${c === current ? " selected" : ""}${voting[c] ? " disabled" : ""}>${this._escapeHtml(c)}${voting[c] ? ` (${t("läuft")})` : ""}</option>`).join("")}
+        </select>
+        <div class="dialog-label">${t("Stimmen pro Person")}</div>
+        <div class="vote-choices">
+          ${counts.map((n) => `<div class="dialog-prio-chip${n === 5 ? " selected" : ""}" data-votes="${n}">${n}</div>`).join("")}
+        </div>
+        <label class="dialog-check"><input type="checkbox" id="voteHidden"> ${t("Verdeckt: jede Person sieht bis zum Ende nur ihre eigenen Stimmen")}</label>
+        <label class="dialog-check"><input type="checkbox" id="voteClear" checked> ${t("Stimmen früherer Runden löschen")}</label>
+        <div class="dialog-hint">${t("Jede Person setzt ihre Stimmen mit + an den Notizen, auch mehrere auf eine. Wer die Liste sieht, darf mitstimmen.")}</div>
+        <div class="dialog-footer">
+          <button class="dialog-btn dialog-btn-cancel" id="voteCancel">${t("Abbrechen")}</button>
+          <button class="dialog-btn dialog-btn-primary" id="voteStart">${t("Starten")}</button>
+        </div>`;
+      let votes = 5;
+      body.querySelectorAll("[data-votes]").forEach((chip) => {
+        chip.addEventListener("click", () => {
+          votes = Number(chip.getAttribute("data-votes"));
+          body.querySelectorAll("[data-votes]").forEach((c) => c.classList.toggle("selected", c === chip));
+        });
+      });
+      body.querySelector("#voteCancel").addEventListener("click", () => this._closeDialog());
+      body.querySelector("#voteStart").addEventListener("click", async () => {
+        const category = body.querySelector("#voteCategory").value;
+        if (!category || voting[category]) return;
+        try {
+          await this._hass.callService("brainstorm", "start_voting", {
+            category,
+            votes,
+            hidden: body.querySelector("#voteHidden").checked,
+            clear: body.querySelector("#voteClear").checked,
+          });
+          this._closeDialog();
+          if (this._selectedCategory !== category && this._selectedCategory !== "all") {
+            this._selectedCategory = category;
+            this._saveSelectedCategory();
+            this._lastDataSignature = "";
+          }
+          this._showToast(t("Abstimmung läuft: {votes} Stimmen pro Person", { votes }));
+        } catch (err) {
+          console.error("[BrainstormMindmap] Starting the vote failed:", err);
+          this._showToast((err && err.message) || t("Das ging nicht."));
+        }
+      });
+    });
+  }
+
+  // Ask first, the round cannot be taken back
+  _endVoting(category) {
+    this._openDialog(t("🗳️ Abstimmung beenden"), (body) => {
+      body.innerHTML = `
+        <div class="dialog-hint">${t("Abstimmung in „{category}“ beenden? Danach zeigt Brainstorm das Ergebnis, die Stimmen bleiben an den Notizen.", { category: this._escapeHtml(category) })}</div>
+        <div class="dialog-footer">
+          <button class="dialog-btn dialog-btn-cancel" id="endVoteCancel">${t("Abbrechen")}</button>
+          <button class="dialog-btn dialog-btn-primary" id="endVoteOk">${t("Beenden")}</button>
+        </div>`;
+      body.querySelector("#endVoteCancel").addEventListener("click", () => this._closeDialog());
+      body.querySelector("#endVoteOk").addEventListener("click", () => this._finishVoting(category));
+    });
+  }
+
+  async _finishVoting(category) {
+    let ranking = [];
+    try {
+      const response = await this._hass.callWS({
+        type: "call_service",
+        domain: "brainstorm",
+        service: "end_voting",
+        service_data: { category },
+        return_response: true,
+      });
+      ranking = (response && response.response && response.response.ranking) || [];
+    } catch (err) {
+      console.error("[BrainstormMindmap] Ending the vote failed:", err);
+      this._showToast((err && err.message) || t("Das ging nicht."));
+      return;
+    }
+    this._openDialog(t("🏆 Ergebnis: {category}", { category: this._escapeHtml(category) }), (body) => {
+      body.innerHTML = ranking.length
+        ? `<ol class="vote-rank">${ranking
+            .map((item, index) => `<li><span class="rank-place">${index < 3 ? ["🥇", "🥈", "🥉"][index] : index + 1}</span><span class="rank-text">${formatText(item.text || "")}</span><span class="rank-points">● ${item.points}</span></li>`)
+            .join("")}</ol>`
+        : `<div class="dialog-hint">${t("Niemand hat abgestimmt.")}</div>`;
+      body.innerHTML += `
+        <div class="dialog-footer">
+          <button class="dialog-btn dialog-btn-cancel" id="rankClose">${t("Schließen")}</button>
+          ${ranking.length ? `<button class="dialog-btn dialog-btn-primary" id="rankSort">${t("Nach Stimmen sortieren")}</button>` : ""}
+        </div>`;
+      body.querySelector("#rankClose").addEventListener("click", () => this._closeDialog());
+      const sortBtn = body.querySelector("#rankSort");
+      if (sortBtn) {
+        sortBtn.addEventListener("click", async () => {
+          this._closeDialog();
+          try {
+            await this._hass.callService("brainstorm", "sort_children", { category, by: "votes" });
+          } catch (err) {
+            this._showToast((err && err.message) || t("Das ging nicht."));
+          }
+        });
+      }
+    });
   }
 
   _shadowRootHas(id) {
@@ -6154,6 +6410,11 @@ class BrainstormMindmapCard extends HTMLElement {
       this._cancelLink();
       return;
     }
+    if (normal && (e.key === "v" || e.key === "V")) {
+      e.preventDefault();
+      this._showVotingDialog();
+      return;
+    }
     if (normal && (e.key === "m" || e.key === "M") && this._config.show_minimap !== false) {
       e.preventDefault();
       this._toggleMinimap();
@@ -7784,6 +8045,7 @@ class BrainstormMindmapCard extends HTMLElement {
       const numbers = numberLabels(listIdeas);
       const filteredIdeas = this._focusIdeas(listIdeas);
       this._renderFocusBar();
+      this._renderVoteBar();
 
       // Reset node positions and layout when selected category changes
       if (this._lastRenderedCategory !== this._selectedCategory) {
@@ -7967,6 +8229,8 @@ class BrainstormMindmapCard extends HTMLElement {
       const listIds = new Set(filteredIdeas.map((i) => i.id));
       let html = "";
       const aiSubtasks = Boolean(sensor && sensor.attributes && sensor.attributes.ai_subtasks);
+      const voting = (sensor && sensor.attributes && sensor.attributes.voting) || {};
+      const me = this._currentUserId();
       shownIdeas.forEach((idea) => {
         const color = this._getCategoryColor(idea.category);
         const sourceBadge = this._getSourceBadge(idea.source, idea.device);
@@ -8005,6 +8269,10 @@ class BrainstormMindmapCard extends HTMLElement {
               </span>
             </div>
             ${markerBadges(idea) || progressBadge(idea) ? `<div class="cloud-marks">${progressBadge(idea)}${markerBadges(idea)}</div>` : ""}
+            ${(() => {
+              const social = `${voteBadge(idea, voting, me)}${reactionBadges(idea, me)}`;
+              return social ? `<div class="cloud-social">${social}</div>` : "";
+            })()}
             ${cover ? `<div class="cloud-image" data-id="${this._escapeHtml(idea.id)}" data-att="${this._escapeHtml(cover.id)}" title="${t("Bild öffnen")}"><img alt="${this._escapeHtml(cover.name || "")}" draggable="false"></div>` : ""}
             <div class="cloud-text" title="${t("Klicken zum Bearbeiten")}">${numbers.has(idea.id) ? `<span class="cloud-number">${numbers.get(idea.id)}</span> ` : ""}${formatText(idea.text)}</div>
             ${idea.result ? `<div class="cloud-result" title="${t("Ergebnis")}">${formatText(idea.result)}</div>` : ""}
@@ -8014,6 +8282,7 @@ class BrainstormMindmapCard extends HTMLElement {
               <button class="action-btn" data-act="edit" data-id="${this._escapeHtml(idea.id)}" title="${t("Bearbeiten")}">✏️</button>
               <button class="action-btn more-btn" data-act="menu" data-id="${this._escapeHtml(idea.id)}" title="${t("Aktionen")}" aria-label="${t("Aktionen")}" aria-haspopup="menu" aria-expanded="${idea.id === this._menuId}">⋯</button>
               <div class="cloud-menu" role="menu">
+                <div class="menu-reactions">${reactionBadges(idea, me, true)}</div>
                 <button class="action-btn menu-item" role="menuitem" data-act="link" data-lvl="pro" data-id="${this._escapeHtml(idea.id)}"><span>🔗</span>${t("Mit einer anderen Notiz verbinden (L)")}</button>
                 ${hasBranch ? `<button class="action-btn menu-item" role="menuitem" data-act="focus" data-lvl="normal" data-id="${this._escapeHtml(idea.id)}"><span>🎯</span>${t("Nur diesen Zweig zeigen (F4)")}</button>` : ""}
                 ${aiSubtasks ? `<button class="action-btn menu-item" role="menuitem" data-act="suggest" data-lvl="normal" data-id="${this._escapeHtml(idea.id)}"><span>✨</span>${t("Unteraufgaben von der KI vorschlagen lassen")}</button>` : ""}
@@ -8114,7 +8383,7 @@ class BrainstormMindmapCard extends HTMLElement {
 
         // Mouse down records pending drag - only moves if threshold > 5px (prevents click jitter!)
         cloud.addEventListener("mousedown", (e) => {
-          if (e.target.closest(".action-btn") || e.target.closest(".cloud-menu") || e.target.closest("a") || e.target.closest(".bs-tag") || e.target.closest(".marker-badge") || e.target.closest(".progress-badge") || e.target.closest(".cat-tag") || e.target.closest(".prio-tag") || e.target.closest(".branch-toggle") || e.target.closest(".cloud-inline-editor")) return;
+          if (e.target.closest(".action-btn") || e.target.closest(".cloud-menu") || e.target.closest("a") || e.target.closest(".bs-tag") || e.target.closest(".marker-badge") || e.target.closest(".bs-social") || e.target.closest(".progress-badge") || e.target.closest(".cat-tag") || e.target.closest(".prio-tag") || e.target.closest(".branch-toggle") || e.target.closest(".cloud-inline-editor")) return;
           if (e.button !== 0) return;
           const pos = this._nodePositions.get(id) || { x: 0, y: 0 };
           this._pendingDrag = {
@@ -8130,7 +8399,7 @@ class BrainstormMindmapCard extends HTMLElement {
 
         // Touch start records pending drag
         cloud.addEventListener("touchstart", (e) => {
-          if (e.target.closest(".action-btn") || e.target.closest(".cloud-menu") || e.target.closest("a") || e.target.closest(".bs-tag") || e.target.closest(".marker-badge") || e.target.closest(".progress-badge") || e.target.closest(".cat-tag") || e.target.closest(".prio-tag") || e.target.closest(".branch-toggle") || e.target.closest(".cloud-inline-editor")) return;
+          if (e.target.closest(".action-btn") || e.target.closest(".cloud-menu") || e.target.closest("a") || e.target.closest(".bs-tag") || e.target.closest(".marker-badge") || e.target.closest(".bs-social") || e.target.closest(".progress-badge") || e.target.closest(".cat-tag") || e.target.closest(".prio-tag") || e.target.closest(".branch-toggle") || e.target.closest(".cloud-inline-editor")) return;
           if (e.touches.length === 1) {
             const touch = e.touches[0];
             const pos = this._nodePositions.get(id) || { x: 0, y: 0 };
@@ -8192,7 +8461,7 @@ class BrainstormMindmapCard extends HTMLElement {
         });
         cloud.addEventListener("dblclick", (e) => {
           if (e.shiftKey || e.ctrlKey || e.metaKey || this._lassoMode) return;
-          if (e.target.closest(".action-btn") || e.target.closest(".cloud-menu") || e.target.closest("a") || e.target.closest(".bs-tag") || e.target.closest(".marker-badge") || e.target.closest(".progress-badge") || e.target.closest(".cloud-image") || e.target.closest(".cloud-inline-editor")) return;
+          if (e.target.closest(".action-btn") || e.target.closest(".cloud-menu") || e.target.closest("a") || e.target.closest(".bs-tag") || e.target.closest(".marker-badge") || e.target.closest(".bs-social") || e.target.closest(".progress-badge") || e.target.closest(".cloud-image") || e.target.closest(".cloud-inline-editor")) return;
           this._startInlineEdit(idea.id);
         });
         const textEl = cloud.querySelector(".cloud-text");
@@ -8213,6 +8482,20 @@ class BrainstormMindmapCard extends HTMLElement {
             if (e.shiftKey || e.ctrlKey || e.metaKey || this._lassoMode) return;
             e.stopPropagation();
             this._toggleFilterTag(tagEl.getAttribute("data-tag"));
+          });
+        });
+
+        // Reactions switch your own, − and + change your points
+        cloud.querySelectorAll("[data-react]").forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            this._react(idea.id, btn.getAttribute("data-react"));
+          });
+        });
+        cloud.querySelectorAll("[data-vote]").forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            this._vote(idea.id, Number(btn.getAttribute("data-vote")));
           });
         });
 
@@ -9559,7 +9842,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.10.6 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.10.7 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

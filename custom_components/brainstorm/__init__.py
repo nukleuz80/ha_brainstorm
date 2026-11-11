@@ -50,6 +50,8 @@ from .const import (
     NUMBERING_STYLES,
     REPEAT_RULES,
     SORT_KEYS,
+    REACTIONS,
+    VOTING_MAX_VOTES,
     LINK_LABEL_MAX_LENGTH,
     LINKS_MAX_COUNT,
     ATTR_SHAPE,
@@ -70,6 +72,10 @@ from .const import (
     PROGRESS_STEPS,
     SERVICE_REORDER_IDEAS,
     SERVICE_SORT_CHILDREN,
+    SERVICE_REACT,
+    SERVICE_VOTE,
+    SERVICE_START_VOTING,
+    SERVICE_END_VOTING,
     SERVICE_IMPORT_OUTLINE,
     SERVICE_DELETE_DONE,
     SERVICE_SET_CATEGORY_STYLE,
@@ -236,6 +242,36 @@ SERVICE_SORT_CHILDREN_SCHEMA = vol.Schema(
         vol.Optional("reverse", default=False): cv.boolean,
     }
 )
+
+SERVICE_REACT_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_ID): cv.string,
+        vol.Required("reaction"): vol.In(REACTIONS),
+        vol.Optional("active"): cv.boolean,
+    }
+)
+
+SERVICE_VOTE_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_ID): cv.string,
+        vol.Optional("delta", default=1): vol.All(
+            vol.Coerce(int), vol.Range(-VOTING_MAX_VOTES, VOTING_MAX_VOTES)
+        ),
+    }
+)
+
+SERVICE_START_VOTING_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_CATEGORY): cv.string,
+        vol.Optional("votes", default=5): vol.All(
+            vol.Coerce(int), vol.Range(1, VOTING_MAX_VOTES)
+        ),
+        vol.Optional("hidden", default=False): cv.boolean,
+        vol.Optional("clear", default=False): cv.boolean,
+    }
+)
+
+SERVICE_END_VOTING_SCHEMA = vol.Schema({vol.Required(ATTR_CATEGORY): cv.string})
 
 SERVICE_IMPORT_OUTLINE_SCHEMA = vol.Schema(
     {
@@ -609,6 +645,45 @@ def _register_services(hass: HomeAssistant) -> None:
             _check_idea_edit(store, idea_id, call)
         success = await store.async_reorder_ideas(idea_ids)
         return {"success": success}
+
+    async def handle_react(call: ServiceCall) -> dict[str, Any]:
+        """Switch a reaction of the calling user on a note."""
+        store = _require_store(hass)
+        reactions = await store.async_react(
+            call.data[ATTR_ID],
+            call.data["reaction"],
+            call.context.user_id,
+            call.data.get("active"),
+        )
+        return {"success": True, "reactions": reactions}
+
+    async def handle_vote(call: ServiceCall) -> dict[str, Any]:
+        """Give a note points in the voting round of its category."""
+        store = _require_store(hass)
+        result = await store.async_vote(
+            call.data[ATTR_ID], call.context.user_id, call.data["delta"]
+        )
+        return {"success": True, **result}
+
+    async def handle_start_voting(call: ServiceCall) -> dict[str, Any]:
+        """Start a voting round in a category."""
+        store = _require_store(hass)
+        voting = await store.async_start_voting(
+            call.data[ATTR_CATEGORY].strip(),
+            call.data["votes"],
+            call.data["hidden"],
+            call.data["clear"],
+            call.context.user_id,
+        )
+        return {"success": True, "voting": voting}
+
+    async def handle_end_voting(call: ServiceCall) -> dict[str, Any]:
+        """End the voting round of a category and rank its notes."""
+        store = _require_store(hass)
+        ranking = await store.async_end_voting(
+            call.data[ATTR_CATEGORY].strip(), call.context.user_id
+        )
+        return {"success": True, "ranking": ranking}
 
     async def handle_sort_children(call: ServiceCall) -> dict[str, Any]:
         """Sort the subtasks of a note, or the main notes of a category."""
@@ -1027,6 +1102,20 @@ def _register_services(hass: HomeAssistant) -> None:
         schema=SERVICE_SORT_CHILDREN_SCHEMA,
         supports_response=SupportsResponse.OPTIONAL,
     )
+
+    for service, handler, schema in (
+        (SERVICE_REACT, handle_react, SERVICE_REACT_SCHEMA),
+        (SERVICE_VOTE, handle_vote, SERVICE_VOTE_SCHEMA),
+        (SERVICE_START_VOTING, handle_start_voting, SERVICE_START_VOTING_SCHEMA),
+        (SERVICE_END_VOTING, handle_end_voting, SERVICE_END_VOTING_SCHEMA),
+    ):
+        hass.services.async_register(
+            DOMAIN,
+            service,
+            handler,
+            schema=schema,
+            supports_response=SupportsResponse.OPTIONAL,
+        )
 
     hass.services.async_register(
         DOMAIN,

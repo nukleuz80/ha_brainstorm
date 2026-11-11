@@ -211,6 +211,8 @@ With **Smart Text Optimization** (General Settings) spoken notes are tidied up a
 | Preset category and priority | the 🏷️ and priority selectors below the input (*Auto* detects them from the text) |
 | Edit | tap the text or the pencil; in the dialog **Ctrl+Enter** saves |
 | Context menu | long press a note or tap ⋯ on the right of the row |
+| React | 👍 ❤️ 😂 ❗ at the top of the context menu, or tap a reaction already on the note |
+| Vote | in a running vote, − / + on the note |
 | Buttons of a row | on phones and narrow cards under ⋯ (indent, subidea, AI, edit, delete), with a mouse they appear on hover; `row_actions` changes this |
 | Fold subtasks | tap the ▾ 0/2 badge next to the priority |
 | Complete | tap the circle on the left, reactivate it in the Done tab |
@@ -245,6 +247,8 @@ With **Smart Text Optimization** (General Settings) spoken notes are tidied up a
 | Move the progress on | tap the ring of a note without subtasks: 0 ➔ 25 ➔ 50 ➔ 75 ➔ 100 % |
 | Show one branch only | 🎯 on the note or **F4**, back via the breadcrumb, **Shift+F4** or **Esc** |
 | Fold and unfold levels | ∞ at the bottom right: 1 ➔ 2 ➔ 3 ➔ all, or the keys **1–9**, **0** = all |
+| Vote | 🗳️ at the bottom right or **V**: pick the category, votes per person and *hidden*, then − / + on the notes; *End* in the bar at the top shows the ranking |
+| React | ⋯ on the note ➔ 👍 ❤️ 😂 ❗; tapping a reaction toggles yours |
 | Overview (minimap) | 🗺️ at the bottom right or **M**; tap or drag in the overview at the bottom left to jump there |
 | Link two notes | 🔗 on the note or **L**, then tap the target note; two picked notes ➔ 🔗 *Link* |
 | Label or delete a link | tap the dashed line |
@@ -306,6 +310,7 @@ With **Smart Text Optimization** (General Settings) spoken notes are tidied up a
 | **Z** | AI: sort in loose ideas |
 | **R** | rules: color notes that fit a saved filter |
 | **M** | overview (minimap) on/off |
+| **V** | start or end a vote |
 | **P** | presentation mode |
 | **Esc** | clear the selection, go up one level in focus, cancel linking |
 | **Ctrl+Z** | undo |
@@ -472,7 +477,9 @@ All parameters are in the [README](../README.md#️-services) and under [**Devel
 | `brainstorm.bring_message` | message to Bring! |
 | `brainstorm.reorder_ideas` | set the order |
 | `brainstorm.import_outline` | add an outline: `text: …`, `category: …` or `parent_id: …`, `format: auto` |
-| `brainstorm.sort_children` | sort subtasks: `parent_id: …`, `by: text`, `priority`, `due` or `created` |
+| `brainstorm.sort_children` | sort subtasks: `parent_id: …`, `by: text`, `priority`, `due`, `created` or `votes` |
+| `brainstorm.react` | toggle a reaction: `id: …`, `reaction: heart` |
+| `brainstorm.start_voting` / `vote` / `end_voting` | voting: `category: Holiday`, `votes: 5`, `hidden: true`; `vote` with `id`, `delta`; `end_voting` responds with the ranking |
 | `brainstorm.share` | share a list with people |
 
 With `parse_due: true`, `add_idea` reads a point in time from the text like speech does:

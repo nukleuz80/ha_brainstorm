@@ -451,6 +451,7 @@ sort_children:
             - priority
             - due
             - created
+            - votes
     ids:
       required: false
       selector:
@@ -475,3 +476,73 @@ share:
       required: true
       selector:
         object:
+
+react:
+  fields:
+    id:
+      required: true
+      selector:
+        text:
+    reaction:
+      required: true
+      selector:
+        select:
+          translation_key: reaction
+          options:
+            - like
+            - heart
+            - laugh
+            - important
+    active:
+      required: false
+      selector:
+        boolean:
+
+vote:
+  fields:
+    id:
+      required: true
+      selector:
+        text:
+    delta:
+      required: false
+      default: 1
+      selector:
+        number:
+          min: -20
+          max: 20
+          mode: box
+
+start_voting:
+  fields:
+    category:
+      required: true
+      example: "Familie"
+      selector:
+        text:
+    votes:
+      required: false
+      default: 5
+      selector:
+        number:
+          min: 1
+          max: 20
+          mode: box
+    hidden:
+      required: false
+      default: false
+      selector:
+        boolean:
+    clear:
+      required: false
+      default: false
+      selector:
+        boolean:
+
+end_voting:
+  fields:
+    category:
+      required: true
+      example: "Familie"
+      selector:
+        text:

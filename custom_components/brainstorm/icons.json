@@ -62,6 +62,18 @@
     },
     "share": {
       "service": "mdi:share-variant-outline"
+    },
+    "react": {
+      "service": "mdi:emoticon-happy-outline"
+    },
+    "vote": {
+      "service": "mdi:vote-outline"
+    },
+    "start_voting": {
+      "service": "mdi:ballot-outline"
+    },
+    "end_voting": {
+      "service": "mdi:ballot-recount-outline"
     }
   }
 }

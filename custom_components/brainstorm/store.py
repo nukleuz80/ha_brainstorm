@@ -65,6 +65,10 @@ from .const import (
     ATTR_FRAME,
     ATTR_NUMBERING,
     ATTR_REPEAT,
+    ATTR_REACTIONS,
+    ATTR_VOTES,
+    REACTIONS,
+    VOTING_MAX_VOTES,
     ATTR_REPEATED_AS,
     ATTR_REPEAT_CLOSED,
     ATTR_CALLOUT,
@@ -197,6 +201,9 @@ EXPORT_SKIPPED_FIELDS = (
     ATTR_BATTERY_DONE,
     ATTR_CALENDAR_SYNCED,
     ATTR_ALEXA_NATIVE,
+    # Reactions and votes name users of this Home Assistant
+    ATTR_REACTIONS,
+    ATTR_VOTES,
 )
 IMPORT_STATUSES = ("active", "completed", "archived")
 # Imported fields that must be plain text
@@ -304,6 +311,8 @@ class BrainstormStore:
         self._last_action: dict[str, Any] | None = None
         self._ai_tasks: set[asyncio.Task[None]] = set()
         self._category_shares: dict[str, dict[str, dict[str, str]]] = {}
+        # Running voting rounds: category -> votes per person, hidden, by, since
+        self._voting: dict[str, dict[str, Any]] = {}
         self.integration_version: str | None = None
         self.alexa_skill: AlexaSkill | None = None
         self.reminders: ReminderManager | None = None
@@ -561,6 +570,18 @@ class BrainstormStore:
                 result[ATTR_NUMBERING] = numbering
             if repeat := idea.get(ATTR_REPEAT):
                 result[ATTR_REPEAT] = repeat
+            if reactions := idea.get(ATTR_REACTIONS):
+                result[ATTR_REACTIONS] = {k: list(v) for k, v in reactions.items()}
+            if votes := idea.get(ATTR_VOTES):
+                round_ = self._voting.get(str(idea.get(ATTR_CATEGORY)))
+                if round_ and round_.get("hidden"):
+                    # Hidden until the round ends: only your own points
+                    mine = votes.get(user_id or "")
+                    if mine:
+                        result[ATTR_VOTES] = {user_id: mine}
+                    result["votes_hidden"] = True
+                else:
+                    result[ATTR_VOTES] = dict(votes)
             return result
 
         last_action = self.last_action
@@ -601,6 +622,13 @@ class BrainstormStore:
             ],
             "completed_ideas": [details(i) for i in completed_ideas[:50]],
             "category_shares": self._category_shares.get(user_id or "", {}),
+            "voting": {
+                category: {
+                    **round_,
+                    "used": self.votes_used(category, user_id),
+                }
+                for category, round_ in self._voting.items()
+            },
         }
 
     @property
@@ -693,6 +721,7 @@ class BrainstormStore:
             self._category_icons = data.get("category_icons", {})
             self._category_colors = data.get("category_colors", {})
             self._category_shares = data.get("category_shares", {})
+            self._voting = data.get("voting", {})
             _LOGGER.debug(
                 "Loaded %d ideas and %d categories from storage",
                 len(self._ideas),
@@ -709,6 +738,7 @@ class BrainstormStore:
             "category_icons": self._category_icons,
             "category_colors": self._category_colors,
             "category_shares": self._category_shares,
+            "voting": self._voting,
             "ideas": list(self._ideas.values()),
         }
         await self._store.async_save(data)
@@ -2241,6 +2271,9 @@ class BrainstormStore:
                 return rank.get(str(idea.get(ATTR_PRIORITY)), 2)
             if by == "created":
                 return str(idea.get(ATTR_CREATED_AT) or "")
+            if by == "votes":
+                # Most points first, so the winners lead
+                return -sum((idea.get(ATTR_VOTES) or {}).values())
             return str(idea.get(ATTR_TEXT) or "").casefold()
 
         if manual is not None:
@@ -2261,6 +2294,187 @@ class BrainstormStore:
         await self.async_save()
         self._notify_listeners()
         return len(ids)
+
+    def _require_viewer(self, idea_id: str, user_id: str | None) -> dict[str, Any]:
+        """Return an idea a person may see, for reacting and voting."""
+        idea = self._ideas.get(idea_id)
+        if idea is None:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="idea_not_found",
+                translation_placeholders={"id": idea_id},
+            )
+        if not user_id:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="needs_user"
+            )
+        if not self.can_access(idea, user_id):
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="no_access_idea",
+                translation_placeholders={"id": idea_id},
+            )
+        return idea
+
+    async def async_react(
+        self,
+        idea_id: str,
+        reaction: str,
+        user_id: str | None,
+        active: bool | None = None,
+    ) -> dict[str, list[str]]:
+        """Switch a reaction of a person on a note, returning all reactions.
+
+        Seeing a note is enough to react to it. Without active the reaction
+        toggles.
+        """
+        idea = self._require_viewer(idea_id, user_id)
+        reactions: dict[str, list[str]] = {
+            key: list(users)
+            for key, users in (idea.get(ATTR_REACTIONS) or {}).items()
+            if key in REACTIONS
+        }
+        users = reactions.get(reaction, [])
+        on = user_id not in users if active is None else active
+        if on and user_id not in users:
+            users.append(str(user_id))
+        elif not on and user_id in users:
+            users.remove(user_id)
+        if users:
+            reactions[reaction] = users
+        else:
+            reactions.pop(reaction, None)
+        if reactions:
+            idea[ATTR_REACTIONS] = reactions
+        else:
+            idea.pop(ATTR_REACTIONS, None)
+        await self.async_save()
+        self._notify_listeners()
+        return reactions
+
+    def votes_used(self, category: str, user_id: str | None) -> int:
+        """Return how many votes a person gave in the open notes of a category."""
+        if not user_id:
+            return 0
+        return sum(
+            int((idea.get(ATTR_VOTES) or {}).get(user_id, 0))
+            for idea in self._ideas.values()
+            if idea.get(ATTR_CATEGORY) == category
+            and idea.get(ATTR_STATUS) == "active"
+        )
+
+    @property
+    def voting(self) -> dict[str, dict[str, Any]]:
+        """Return the running voting rounds by category."""
+        return {category: dict(round_) for category, round_ in self._voting.items()}
+
+    async def async_vote(
+        self, idea_id: str, user_id: str | None, delta: int
+    ) -> dict[str, Any]:
+        """Give a note more or fewer points in the running round of its list.
+
+        Each person has the votes the round grants and may put several on one
+        note. Taking points back is always possible.
+        """
+        idea = self._require_viewer(idea_id, user_id)
+        category = str(idea.get(ATTR_CATEGORY))
+        round_ = self._voting.get(category)
+        if round_ is None:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="no_voting_round",
+                translation_placeholders={"category": category},
+            )
+        if idea.get(ATTR_STATUS) != "active":
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="idea_not_active",
+                translation_placeholders={"id": idea_id},
+            )
+        votes: dict[str, int] = dict(idea.get(ATTR_VOTES) or {})
+        mine = int(votes.get(str(user_id), 0))
+        allowed = int(round_.get("votes", 1))
+        if delta > 0 and self.votes_used(category, user_id) + delta > allowed:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="no_votes_left",
+                translation_placeholders={"votes": str(allowed)},
+            )
+        mine = max(0, mine + delta)
+        if mine:
+            votes[str(user_id)] = mine
+        else:
+            votes.pop(str(user_id), None)
+        if votes:
+            idea[ATTR_VOTES] = votes
+        else:
+            idea.pop(ATTR_VOTES, None)
+        await self.async_save()
+        self._notify_listeners()
+        return {
+            "votes": mine,
+            "used": self.votes_used(category, user_id),
+            "allowed": allowed,
+        }
+
+    async def async_start_voting(
+        self,
+        category: str,
+        votes: int,
+        hidden: bool,
+        clear: bool,
+        user_id: str | None,
+    ) -> dict[str, Any]:
+        """Start a voting round in a category, optionally without old points."""
+        if category not in self._categories:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="category_not_found",
+                translation_placeholders={"category": category},
+            )
+        if clear:
+            for idea in self._ideas.values():
+                if idea.get(ATTR_CATEGORY) == category:
+                    idea.pop(ATTR_VOTES, None)
+        round_ = {
+            "votes": max(1, min(VOTING_MAX_VOTES, int(votes))),
+            "hidden": bool(hidden),
+            "since": dt_util.now().isoformat(),
+        }
+        if user_id:
+            round_["by"] = user_id
+        self._voting[category] = round_
+        await self.async_save()
+        self._notify_listeners()
+        return dict(round_)
+
+    async def async_end_voting(
+        self, category: str, user_id: str | None
+    ) -> list[dict[str, Any]]:
+        """End the round of a category and return its notes ranked by points."""
+        if self._voting.pop(category, None) is None:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="no_voting_round",
+                translation_placeholders={"category": category},
+            )
+        await self.async_save()
+        self._notify_listeners()
+        ranked = [
+            {
+                ATTR_ID: idea[ATTR_ID],
+                ATTR_TEXT: idea.get(ATTR_TEXT),
+                "points": sum((idea.get(ATTR_VOTES) or {}).values()),
+                "voters": len(idea.get(ATTR_VOTES) or {}),
+            }
+            for idea in self._ideas.values()
+            if idea.get(ATTR_CATEGORY) == category
+            and idea.get(ATTR_STATUS) == "active"
+            and idea.get(ATTR_VOTES)
+            and self.can_access(idea, user_id)
+        ]
+        ranked.sort(key=lambda item: -item["points"])
+        return ranked
 
     async def async_reorder_ideas(self, idea_ids: list[str]) -> bool:
         """Update order of ideas based on the provided list of IDs."""

@@ -7,6 +7,34 @@
  */
 const DICTIONARIES = {
   en: {
+    "Abstimmen: Stimmen pro Person verteilen (V)": "Vote: hand out votes per person (V)",
+    "Abstimmung in {category}: noch {left} von {total} Stimmen": "Voting in {category}: {left} of {total} votes left",
+    "Abstimmung in „{category}“ beenden? Danach zeigt Brainstorm das Ergebnis, die Stimmen bleiben an den Notizen.": "End the voting in “{category}”? Brainstorm then shows the result, the votes stay on the notes.",
+    "Abstimmung läuft: {votes} Stimmen pro Person": "Voting started: {votes} votes per person",
+    "Beenden": "End",
+    "Das ging nicht.": "That did not work.",
+    "Gefällt mir": "Like",
+    "Jede Person setzt ihre Stimmen mit + an den Notizen, auch mehrere auf eine. Wer die Liste sieht, darf mitstimmen.": "Everyone places their votes with + on the notes, several on one if they like. Whoever sees the list may vote.",
+    "Liebe ich": "Love",
+    "Lustig": "Funny",
+    "Nach Stimmen sortieren": "Sort by votes",
+    "Niemand hat abgestimmt.": "Nobody voted.",
+    "Noch {left} von {total} Stimmen": "{left} of {total} votes left",
+    "Starten": "Start",
+    "Stimme geben": "Give a vote",
+    "Stimme zurücknehmen": "Take a vote back",
+    "Stimmen": "Votes",
+    "Stimmen früherer Runden löschen": "Clear the votes of earlier rounds",
+    "Stimmen pro Person": "Votes per person",
+    "Unbekannt": "Unknown",
+    "Verdeckt: jede Person sieht bis zum Ende nur ihre eigenen Stimmen": "Hidden: everyone sees only their own votes until the end",
+    "Wichtig": "Important",
+    "läuft": "running",
+    "verdeckt": "hidden",
+    "{points} Stimmen": "{points} votes",
+    "🏆 Ergebnis: {category}": "🏆 Result: {category}",
+    "🗳️ Abstimmung beenden": "🗳️ End voting",
+    "🗳️ Abstimmung starten": "🗳️ Start voting",
     "+ Kategorie": "+ Category",
     "0 Ideen": "0 ideas",
     "0 Notizen": "0 notes",
@@ -894,6 +922,7 @@ export function sortChoices() {
     ["due", false, t("Fälligkeit")],
     ["created", false, t("Älteste zuerst")],
     ["created", true, t("Neueste zuerst")],
+    ["votes", false, t("Stimmen")],
   ];
 }
 
@@ -1123,6 +1152,104 @@ export function markerBadges(idea) {
     .map((marker) => `<span class="marker-badge" data-marker="${marker}" title="${escapeHtml(markerLabel(marker))}">${markerIcon(marker)}</span>`)
     .join("")}</span>`;
 }
+
+/** Quick reactions to a note: key and sign. */
+export const REACTIONS = [
+  ["like", "👍"],
+  ["heart", "❤️"],
+  ["laugh", "😂"],
+  ["important", "❗"],
+];
+
+/** The name of a reaction. */
+export function reactionLabel(key) {
+  return { like: t("Gefällt mir"), heart: t("Liebe ich"), laugh: t("Lustig"), important: t("Wichtig") }[key] || key;
+}
+
+/** Whether a card needs the ideas as the signed-in user sees them. */
+export function needsPersonalData(attributes) {
+  return Boolean(attributes && (attributes.privacy || Object.keys(attributes.voting || {}).length));
+}
+
+/** All points a note got. */
+export function voteTotal(idea) {
+  return Object.values((idea && idea.votes) || {}).reduce((sum, n) => sum + (Number(n) || 0), 0);
+}
+
+function peopleList(idea, ids) {
+  const people = (idea && idea.people) || {};
+  return ids.map((id) => people[id] || t("Unbekannt")).join(", ");
+}
+
+/**
+ * Return the reactions of a note as small buttons, yours highlighted;
+ * a tap switches your own. With picker, a row of all four to choose from.
+ */
+export function reactionBadges(idea, me, picker = false) {
+  const reactions = (idea && idea.reactions) || {};
+  const id = escapeHtml(idea.id);
+  const chips = REACTIONS.filter(([key]) => picker || (reactions[key] || []).length)
+    .map(([key, icon]) => {
+      const users = reactions[key] || [];
+      const mine = me && users.includes(me);
+      const who = users.length ? `: ${peopleList(idea, users)}` : "";
+      return `<button type="button" class="bs-react${mine ? " mine" : ""}" data-react="${key}" data-id="${id}" title="${escapeHtml(reactionLabel(key) + who)}" aria-pressed="${mine ? "true" : "false"}">${icon}${users.length ? `<span>${users.length}</span>` : ""}</button>`;
+    })
+    .join("");
+  return chips ? `<span class="bs-social${picker ? " bs-react-picker" : ""}">${chips}</span>` : "";
+}
+
+/**
+ * Return the points of a note. While its list votes, with − and + for your
+ * own points; a hidden round shows only yours.
+ */
+export function voteBadge(idea, voting, me) {
+  const round = idea && idea.status !== "completed" && voting && voting[idea.category];
+  const votes = (idea && idea.votes) || {};
+  const total = voteTotal(idea);
+  const mine = Number(votes[me] || 0);
+  const id = escapeHtml(idea.id);
+  const voters = Object.keys(votes);
+  const who = voters.length && !idea.votes_hidden
+    ? voters.map((v) => `${peopleList(idea, [v])} ${votes[v]}`).join(", ")
+    : "";
+  if (round) {
+    const left = Math.max(0, (round.votes || 0) - (round.used || 0));
+    const shown = idea.votes_hidden ? mine : total;
+    const title = `${t("Noch {left} von {total} Stimmen", { left, total: round.votes || 0 })}${who ? ` · ${who}` : ""}`;
+    return `<span class="bs-social bs-vote live${mine ? " mine" : ""}" title="${escapeHtml(title)}">`
+      + `<button type="button" class="bs-vote-btn" data-vote="-1" data-id="${id}" ${mine ? "" : "disabled"} aria-label="${escapeHtml(t("Stimme zurücknehmen"))}">−</button>`
+      + `<span class="bs-vote-count">● ${shown}${idea.votes_hidden ? "🙈" : ""}</span>`
+      + `<button type="button" class="bs-vote-btn" data-vote="1" data-id="${id}" ${left ? "" : "disabled"} aria-label="${escapeHtml(t("Stimme geben"))}">+</button></span>`;
+  }
+  if (!total) return "";
+  return `<span class="bs-social bs-vote${mine ? " mine" : ""}" title="${escapeHtml(`${t("{points} Stimmen", { points: total })}${who ? ` · ${who}` : ""}`)}"><span class="bs-vote-count">● ${total}</span></span>`;
+}
+
+/** Styles of reactions and points, the same in both cards. */
+export const SOCIAL_CSS = `
+  .bs-social { display: inline-flex; align-items: center; gap: 3px; flex-wrap: wrap; vertical-align: middle; }
+  .bs-react, .bs-vote-btn {
+    min-width: 28px; min-height: 26px; padding: 0 6px; display: inline-flex; align-items: center; justify-content: center; gap: 3px;
+    border-radius: 13px; cursor: pointer; font: inherit; font-size: 0.78rem; line-height: 1;
+    color: var(--primary-text-color, #212121);
+    background: color-mix(in srgb, var(--secondary-text-color, #727272) 10%, transparent);
+    border: 1px solid var(--divider-color, rgba(127, 127, 127, 0.25));
+  }
+  .bs-react span { font-size: 0.72rem; font-weight: 600; }
+  .bs-react.mine {
+    border-color: var(--primary-color, #03a9f4);
+    background: color-mix(in srgb, var(--primary-color, #03a9f4) 16%, transparent);
+  }
+  .bs-react-picker .bs-react { min-width: 40px; min-height: 36px; font-size: 1rem; }
+  .bs-vote { padding: 0 2px; border-radius: 13px; }
+  .bs-vote-count { font-size: 0.76rem; font-weight: 700; color: var(--primary-color, #03a9f4); padding: 0 4px; white-space: nowrap; }
+  .bs-vote.live { background: color-mix(in srgb, var(--primary-color, #03a9f4) 10%, transparent); border: 1px solid color-mix(in srgb, var(--primary-color, #03a9f4) 40%, transparent); }
+  .bs-vote.mine .bs-vote-count { text-decoration: underline; text-underline-offset: 2px; }
+  .bs-vote-btn { min-width: 26px; font-weight: 700; font-size: 0.9rem; }
+  .bs-vote-btn:disabled { opacity: 0.35; cursor: default; }
+  @media (pointer: coarse) { .bs-react, .bs-vote-btn { min-width: 34px; min-height: 32px; } }
+`;
 
 /**
  * Return how far an idea is: from its subtasks if it has any, else what was

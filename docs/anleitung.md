@@ -212,6 +212,8 @@ Mit **Intelligente Formatierung** (Allgemeine Einstellungen) werden gesprochene 
 | Kategorie und Priorität vorgeben | Auswahlfelder 🏷️ und Priorität unter dem Eingabefeld (*Auto* erkennt sie aus dem Text) |
 | Bearbeiten | auf den Text oder den Stift tippen; im Dialog speichert **Strg+Enter** |
 | Kontextmenü | lange auf eine Notiz drücken oder ⋯ rechts in der Zeile antippen |
+| Reagieren | 👍 ❤️ 😂 ❗ oben im Kontextmenü, oder auf eine vorhandene Reaktion an der Notiz tippen |
+| Abstimmen | in einer laufenden Abstimmung − / + an der Notiz |
 | Knöpfe einer Zeile | am Handy und auf schmalen Karten unter ⋯ (Einrücken, Unteridee, KI, Bearbeiten, Löschen), mit der Maus erscheinen sie beim Darüberfahren; `row_actions` ändert das |
 | Unterpunkte auf- und zuklappen | Abzeichen ▾ 0/2 neben der Priorität antippen |
 | Abhaken | Kreis links antippen, im Reiter Erledigt wieder aktivieren |
@@ -246,6 +248,8 @@ Mit **Intelligente Formatierung** (Allgemeine Einstellungen) werden gesprochene 
 | Fortschritt weiterschalten | auf den Ring an einer Notiz ohne Unteraufgaben tippen: 0 ➔ 25 ➔ 50 ➔ 75 ➔ 100 % |
 | Nur einen Zweig zeigen | 🎯 an der Notiz oder **F4**, zurück über die Brotkrumen, **Umschalt+F4** oder **Esc** |
 | Ebenen ein- und ausklappen | ∞ unten rechts: 1 ➔ 2 ➔ 3 ➔ alle, oder die Tasten **1–9**, **0** = alle |
+| Abstimmen | 🗳️ unten rechts oder **V**: Kategorie, Stimmen pro Person und *verdeckt* wählen, dann − / + an den Notizen; *Beenden* in der Leiste oben zeigt die Rangliste |
+| Reagieren | ⋯ an der Notiz ➔ 👍 ❤️ 😂 ❗; ein Tipp auf eine Reaktion schaltet die eigene um |
 | Übersicht (Minimap) | 🗺️ unten rechts oder **M**; in der Übersicht unten links tippen oder ziehen springt dorthin |
 | Zwei Notizen verbinden | 🔗 an der Notiz oder **L**, dann die Ziel-Notiz antippen; zwei ausgewählte Notizen ➔ 🔗 *Verbinden* |
 | Verbindung beschriften oder löschen | auf die gestrichelte Linie tippen |
@@ -307,6 +311,7 @@ Mit **Intelligente Formatierung** (Allgemeine Einstellungen) werden gesprochene 
 | **Z** | KI: lose Ideen zuordnen |
 | **R** | Regeln: Notizen färben, die zu einem gespeicherten Filter passen |
 | **M** | Übersicht (Minimap) ein/aus |
+| **V** | Abstimmung starten oder beenden |
 | **P** | Präsentationsmodus |
 | **Esc** | Auswahl aufheben, im Fokus eine Ebene zurück, beim Verbinden abbrechen |
 | **Strg+Z** | rückgängig |
@@ -473,7 +478,9 @@ Alle Parameter stehen in der [README](../README_de.md#️-dienste-services) und 
 | `brainstorm.bring_message` | Nachricht an Bring! |
 | `brainstorm.reorder_ideas` | Reihenfolge setzen |
 | `brainstorm.import_outline` | Gliederung anlegen: `text: …`, `category: …` oder `parent_id: …`, `format: auto` |
-| `brainstorm.sort_children` | Unterpunkte sortieren: `parent_id: …`, `by: text`, `priority`, `due` oder `created` |
+| `brainstorm.sort_children` | Unterpunkte sortieren: `parent_id: …`, `by: text`, `priority`, `due`, `created` oder `votes` |
+| `brainstorm.react` | Reaktion umschalten: `id: …`, `reaction: heart` |
+| `brainstorm.start_voting` / `vote` / `end_voting` | Abstimmung: `category: Urlaub`, `votes: 5`, `hidden: true`; `vote` mit `id`, `delta`; `end_voting` antwortet mit der Rangliste |
 | `brainstorm.share` | Liste mit Personen teilen |
 
 Mit `parse_due: true` wertet `add_idea` einen Zeitpunkt im Text aus wie bei Sprache:

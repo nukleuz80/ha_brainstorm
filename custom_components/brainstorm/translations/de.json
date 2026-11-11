@@ -605,7 +605,8 @@
         "text": "Titel (A–Z)",
         "priority": "Priorität (dringend zuerst)",
         "due": "Fälligkeit (früheste zuerst)",
-        "created": "Erstellt (älteste zuerst)"
+        "created": "Erstellt (älteste zuerst)",
+        "votes": "Stimmen (meiste zuerst)"
       }
     },
     "outline_format": {
@@ -631,6 +632,14 @@
         "beginner": "Einsteiger",
         "normal": "Normal",
         "pro": "Profi"
+      }
+    },
+    "reaction": {
+      "options": {
+        "like": "👍 Gefällt mir",
+        "heart": "❤️ Liebe ich",
+        "laugh": "😂 Lustig",
+        "important": "❗ Wichtig"
       }
     }
   },
@@ -772,6 +781,21 @@
     },
     "attachment_write_failed": {
       "message": "Der Anhang konnte nicht gespeichert werden: {error}"
+    },
+    "needs_user": {
+      "message": "Reagieren und Abstimmen brauchen einen angemeldeten Benutzer."
+    },
+    "no_voting_round": {
+      "message": "In „{category}“ läuft keine Abstimmung. Starte zuerst eine."
+    },
+    "no_votes_left": {
+      "message": "Alle {votes} Stimmen sind vergeben. Nimm zuerst bei einer anderen Notiz eine Stimme zurück."
+    },
+    "idea_not_active": {
+      "message": "Idee \"{id}\" ist nicht offen."
+    },
+    "category_not_found": {
+      "message": "Kategorie „{category}“ gibt es nicht."
     }
   },
   "services": {
@@ -1141,7 +1165,7 @@
         },
         "by": {
           "name": "Sortieren nach",
-          "description": "Titel, Priorität, Fälligkeit oder Erstellzeit."
+          "description": "Titel, Priorität, Fälligkeit, Erstellzeit oder Stimmen."
         },
         "ids": {
           "name": "Feste Reihenfolge",
@@ -1150,6 +1174,70 @@
         "reverse": {
           "name": "Umgekehrt",
           "description": "Sortiert andersherum. Notizen ohne Fälligkeit bleiben am Ende."
+        }
+      }
+    },
+    "react": {
+      "name": "Auf Notiz reagieren",
+      "description": "Schaltet eine schnelle Reaktion des aufrufenden Benutzers an einer Notiz. Sehen dürfen reicht.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "Die Notiz."
+        },
+        "reaction": {
+          "name": "Reaktion",
+          "description": "like, heart, laugh oder important."
+        },
+        "active": {
+          "name": "An",
+          "description": "An oder aus. Weggelassen schaltet die Reaktion um."
+        }
+      }
+    },
+    "vote": {
+      "name": "Für Notiz stimmen",
+      "description": "Gibt einer Notiz in der laufenden Abstimmung ihrer Kategorie mehr oder weniger Punkte.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "Die Notiz."
+        },
+        "delta": {
+          "name": "Änderung",
+          "description": "Punkte dazu, negativ nimmt sie zurück."
+        }
+      }
+    },
+    "start_voting": {
+      "name": "Abstimmung starten",
+      "description": "Startet eine Abstimmung in einer Kategorie. Jede Person bekommt eine Anzahl Stimmen und darf mehrere auf eine Notiz setzen.",
+      "fields": {
+        "category": {
+          "name": "Kategorie",
+          "description": "Die Kategorie, über deren offene Notizen abgestimmt wird."
+        },
+        "votes": {
+          "name": "Stimmen pro Person",
+          "description": "Wie viele Stimmen jede Person vergeben darf, 1 bis 20."
+        },
+        "hidden": {
+          "name": "Verdeckt",
+          "description": "Jede Person sieht bis zum Ende nur ihre eigenen Stimmen."
+        },
+        "clear": {
+          "name": "Alte Stimmen löschen",
+          "description": "Entfernt zuerst die Punkte früherer Runden in dieser Kategorie."
+        }
+      }
+    },
+    "end_voting": {
+      "name": "Abstimmung beenden",
+      "description": "Beendet die Abstimmung einer Kategorie und gibt ihre Notizen nach Punkten geordnet zurück.",
+      "fields": {
+        "category": {
+          "name": "Kategorie",
+          "description": "Die Kategorie, deren Runde endet."
         }
       }
     },
