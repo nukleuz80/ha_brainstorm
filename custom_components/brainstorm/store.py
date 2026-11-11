@@ -34,6 +34,8 @@ from .const import (
     ATTR_CREATED_BY,
     ATTR_MAP_POS,
     ATTR_OWNER,
+    ATTR_PIN,
+    PIN_COLORS,
     ATTR_SHARES,
     ACCESS_OWNER,
     SHARE_ALL,
@@ -195,6 +197,7 @@ IMPORT_FIELDS = (
     ATTR_ASSIGNEE,
     ATTR_TRIGGER,
     ATTR_MAP_POS,
+    ATTR_PIN,
     ATTR_CREATED_BY,
     ATTR_SHAPE,
     ATTR_MARKERS,
@@ -565,6 +568,8 @@ class BrainstormStore:
                     result[ATTR_CREATED_BY] = author
             if position := idea.get(ATTR_MAP_POS):
                 result[ATTR_MAP_POS] = position
+            if pin := idea.get(ATTR_PIN):
+                result[ATTR_PIN] = pin
             if shape := idea.get(ATTR_SHAPE):
                 result[ATTR_SHAPE] = shape
             if note := idea.get(ATTR_RESULT):
@@ -1641,6 +1646,7 @@ class BrainstormStore:
             # Its place on the map of the old list means nothing in the new one
             if idea.get(ATTR_CATEGORY) != cat_clean:
                 idea.pop(ATTR_MAP_POS, None)
+                idea.pop(ATTR_PIN, None)
             idea[ATTR_CATEGORY] = cat_clean
         if priority is not None:
             _, normalized_prio = self.parse_priority("", priority)
@@ -1791,7 +1797,7 @@ class BrainstormStore:
             ATTR_TEXT, ATTR_CATEGORY, ATTR_PRIORITY, ATTR_SOURCE, ATTR_DEVICE,
             ATTR_TAGS, ATTR_ASSIGNEE, ATTR_TRIGGER, ATTR_OWNER, ATTR_DESCRIPTION,
             ATTR_SHAPE, ATTR_MARKERS, ATTR_FRAME, ATTR_CALLOUT, ATTR_NUMBERING,
-            ATTR_MAP_POS, ATTR_ORDER, ATTR_CREATED_BY,
+            ATTR_MAP_POS, ATTR_PIN, ATTR_ORDER, ATTR_CREATED_BY,
         )
 
         def clone(source: dict[str, Any], parent: str | None, due: datetime | None) -> dict[str, Any]:
@@ -2233,6 +2239,43 @@ class BrainstormStore:
                 changed += 1
         if changed:
             # Moving a note on the map is no change of the note itself
+            await self.async_save()
+            self._notify_listeners()
+        return changed
+
+    async def async_set_pins(
+        self,
+        pins: dict[str, dict[str, Any] | None],
+        user_id: str | None,
+    ) -> int:
+        """Keep where notes sit on the pinboard and their colour.
+
+        Returns how many changed. None takes a note off the board, so it goes
+        back to the free row. Without a colour the note keeps the one it has,
+        an empty colour removes it. Notes the user may not change stay put.
+        """
+        changed = 0
+        for idea_id, pin in pins.items():
+            idea = self._ideas.get(idea_id)
+            if idea is None or not self.can_edit(idea, user_id):
+                continue
+            if pin is None:
+                if idea.pop(ATTR_PIN, None) is not None:
+                    changed += 1
+                continue
+            old = idea.get(ATTR_PIN) or {}
+            value: dict[str, Any] = {
+                "x": round(pin["x"], 1),
+                "y": round(pin["y"], 1),
+            }
+            color = pin.get("color", old.get("color"))
+            if color in PIN_COLORS:
+                value["color"] = color
+            if old != value:
+                idea[ATTR_PIN] = value
+                changed += 1
+        if changed:
+            # Moving a note on the board is no change of the note itself
             await self.async_save()
             self._notify_listeners()
         return changed
@@ -3409,6 +3452,11 @@ class BrainstormStore:
                     idea[ATTR_MAP_POS] = position
                 else:
                     idea.pop(ATTR_MAP_POS)
+            if ATTR_PIN in idea:
+                if pin := _clean_pin(idea[ATTR_PIN]):
+                    idea[ATTR_PIN] = pin
+                else:
+                    idea.pop(ATTR_PIN)
             if idea.get(ATTR_TRIGGER) is not None:
                 trigger = idea[ATTR_TRIGGER]
                 if not (
@@ -3506,6 +3554,16 @@ def _clean_map_pos(value: Any) -> dict[str, float] | None:
     ):
         return None
     return {"x": round(float(x), 1), "y": round(float(y), 1)}
+
+
+def _clean_pin(value: Any) -> dict[str, Any] | None:
+    """Return an imported pinboard place, with its colour if it is a known one."""
+    position = _clean_map_pos(value)
+    if position is None:
+        return None
+    if value.get("color") in PIN_COLORS:
+        position["color"] = value["color"]
+    return position
 
 
 def _clean_import_id(value: Any) -> str | None:

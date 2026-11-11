@@ -1,8 +1,8 @@
-import { LEVEL_CSS, SOCIAL_CSS, commentBadge, renderComments, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, repeatBadge, repeatOptions, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.11.5";
+import { LEVEL_CSS, SOCIAL_CSS, commentBadge, renderComments, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, repeatBadge, repeatOptions, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.11.6";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.11.5 - Verdeckte Runde
+ * Version: 1.11.6 - Pinnwand
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -11,9 +11,11 @@ import { LEVEL_CSS, SOCIAL_CSS, commentBadge, renderComments, needsPersonalData,
 // Folded branches of the mind map, kept per device
 const COLLAPSED_KEY = "brainstorm_mindmap_collapsed";
 const LAYOUT_KEY = "brainstorm_mindmap_layout";
-const LAYOUTS = ["radial", "tree", "org", "outline", "kanban", "timeline", "matrix"];
+const LAYOUTS = ["radial", "tree", "org", "outline", "pin", "kanban", "timeline", "matrix"];
+// Sticky note colours of the pinboard; a note without one is yellow
+const PIN_COLORS = { yellow: "#fff59d", pink: "#f8bbd0", green: "#c5e1a5", blue: "#b3e5fc", orange: "#ffcc80", purple: "#d1c4e9" };
 // The level a view needs; the round map is there for everyone
-const LAYOUT_LEVELS = { tree: "normal", outline: "normal", kanban: "normal", org: "pro", timeline: "pro", matrix: "pro" };
+const LAYOUT_LEVELS = { tree: "normal", outline: "normal", pin: "normal", kanban: "normal", org: "pro", timeline: "pro", matrix: "pro" };
 const UNDO_LIMIT = 30;
 
 // The bulb lies next to this file, wherever Home Assistant serves it from
@@ -243,6 +245,7 @@ class BrainstormMindmapCard extends HTMLElement {
     this._userMovedNodes = new Set();
     // Positions just placed by hand, until Home Assistant sends them back
     this._mapPosOverrides = new Map(); // id -> {x, y} relative to the center, or null
+    this._pinOverrides = new Map(); // id -> pinboard place just set here, or null
     // Folded branches, remembered per device
     this._collapsed = this._loadCollapsed();
     this._centerPos = { x: 400, y: 300 };
@@ -2610,8 +2613,63 @@ class BrainstormMindmapCard extends HTMLElement {
           fill: var(--secondary-text-color, #727272);
         }
         .canvas-area.board-mode .center-node,
-        .canvas-area.board-mode .branch-toggle {
+        .canvas-area.board-mode .branch-toggle,
+        .canvas-area.pin-mode .center-node,
+        .canvas-area.pin-mode .branch-toggle {
           display: none;
+        }
+        .canvas-area.pin-mode .note-cloud {
+          --primary-text-color: #2b2b2b;
+          --secondary-text-color: #5f5f5f;
+          color: #2b2b2b;
+          background: var(--pin-bg, #fff59d) !important;
+          border: none !important;
+          border-radius: 3px !important;
+          min-width: 150px;
+          max-width: 210px;
+          min-height: 84px;
+          box-shadow: 0 8px 16px -6px rgba(0, 0, 0, 0.35) !important;
+          rotate: var(--pin-tilt, 0deg);
+        }
+        .canvas-area.pin-mode .note-cloud.selected,
+        .canvas-area.pin-mode .note-cloud.multi-selected {
+          outline: 3px solid var(--primary-color, #03a9f4);
+          outline-offset: 2px;
+          rotate: 0deg;
+        }
+        .canvas-area.pin-mode .note-cloud .action-btn:not(.menu-item) {
+          background: rgba(0, 0, 0, 0.07);
+          border-color: rgba(0, 0, 0, 0.12);
+          color: #2b2b2b;
+        }
+        .canvas-area.pin-mode .note-cloud .node-shape {
+          display: none;
+        }
+        .canvas-area.pin-mode .note-cloud .cloud-menu {
+          --primary-text-color: initial;
+          --secondary-text-color: initial;
+          color: var(--primary-text-color);
+        }
+        .menu-pins {
+          display: flex;
+          justify-content: space-between;
+          gap: 6px;
+          padding: 4px 6px 8px;
+          border-bottom: 1px solid var(--divider-color, rgba(127, 127, 127, 0.15));
+          margin-bottom: 4px;
+        }
+        .pin-swatch {
+          width: 28px;
+          height: 28px;
+          border-radius: 50%;
+          border: 2px solid rgba(0, 0, 0, 0.15);
+          background: var(--pin-bg);
+          cursor: pointer;
+          padding: 0;
+        }
+        .pin-swatch.active {
+          border-color: var(--primary-color, #03a9f4);
+          box-shadow: 0 0 0 2px var(--primary-color, #03a9f4);
         }
         .present-bar {
           position: absolute;
@@ -3607,7 +3665,7 @@ class BrainstormMindmapCard extends HTMLElement {
         <div class="vote-bar" id="voteBar" role="status" aria-live="polite"></div>
 
         <!-- Interactive Canvas Area -->
-        <div class="canvas-area${this._isBoard() ? " board-mode" : ""}" id="canvasArea" tabindex="0">
+        <div class="canvas-area${this._isBoard() ? " board-mode" : ""}${this._isPinboard() ? " pin-mode" : ""}" id="canvasArea" tabindex="0">
           <div class="lasso-rect" id="lassoRect"></div>
           <div class="selection-bar" id="selectionBar" role="toolbar" aria-label="${t("Auswahl")}">
             <span class="selection-count" id="selectionCount"></span>
@@ -4345,7 +4403,7 @@ class BrainstormMindmapCard extends HTMLElement {
     if (this.getAttribute("data-level") !== level) {
       this.setAttribute("data-level", level);
       const canvas = this.shadowRoot && this.shadowRoot.getElementById("canvasArea");
-      if (canvas) canvas.classList.toggle("board-mode", this._isBoard());
+      if (canvas) this._syncCanvasMode(canvas);
       const btn = this.shadowRoot && this.shadowRoot.getElementById("layoutBtn");
       if (btn) btn.textContent = this._layoutIcon();
     }
@@ -4353,7 +4411,7 @@ class BrainstormMindmapCard extends HTMLElement {
   }
 
   _layoutIcon(layout = this._layout()) {
-    return { radial: "◎", tree: "⇶", org: "⊤", outline: "☰", kanban: "▥", timeline: "📅", matrix: "⊞" }[layout];
+    return { radial: "◎", tree: "⇶", org: "⊤", outline: "☰", pin: "📌", kanban: "▥", timeline: "📅", matrix: "⊞" }[layout];
   }
 
   _layoutName(layout) {
@@ -4362,14 +4420,166 @@ class BrainstormMindmapCard extends HTMLElement {
       tree: t("Baum nach rechts"),
       org: t("Organigramm nach unten"),
       outline: t("Gliederung"),
+      pin: t("Pinnwand mit Haftzetteln"),
       kanban: t("Kanban nach Status"),
       timeline: t("Zeitleiste nach Fälligkeit"),
       matrix: t("Eisenhower-Matrix"),
     }[layout];
   }
 
+  // A note shared only for viewing stays where its owner put it
+  _canEditIdea(idea) {
+    return !idea.access || idea.access !== "view";
+  }
+
+  _pinColorName(name) {
+    return { yellow: t("Gelb"), pink: t("Rosa"), green: t("Grün"), blue: t("Blau"), orange: t("Orange"), purple: t("Lila") }[name];
+  }
+
   _isBoard() {
     return BOARDS.includes(this._layout());
+  }
+
+  // Notes as sticky notes, placed freely, without the tree
+  _isPinboard() {
+    return this._layout() === "pin";
+  }
+
+  _syncCanvasMode(canvas) {
+    canvas.classList.toggle("board-mode", this._isBoard());
+    canvas.classList.toggle("pin-mode", this._isPinboard());
+  }
+
+  // Where a note sits on the pinboard: what was just set here, until Home Assistant has it
+  _pinOf(idea) {
+    if (!idea) return null;
+    const saved = idea.pin || null;
+    if (!this._pinOverrides.has(idea.id)) return saved;
+    const local = this._pinOverrides.get(idea.id);
+    const same = (a, b) => (!a && !b) || (a && b && a.x === b.x && a.y === b.y && (a.color || "") === (b.color || ""));
+    if (same(local, saved)) {
+      this._pinOverrides.delete(idea.id);
+      return saved;
+    }
+    return local;
+  }
+
+  // Pinned notes keep their place, the others line up in rows below them
+  _arrangePinLayout(ideas, w, h) {
+    const gap = 16;
+    const size = (id) => {
+      const el = this.shadowRoot.getElementById(`cloud_${id}`);
+      return { w: (el && el.offsetWidth) || 180, h: (el && el.offsetHeight) || 100 };
+    };
+    const places = new Map();
+    let bottom = 0;
+    ideas.forEach((idea) => {
+      const pin = this._pinOf(idea);
+      if (!pin) return;
+      places.set(idea.id, { x: pin.x, y: pin.y });
+      bottom = Math.max(bottom, pin.y + size(idea.id).h / 2);
+    });
+    const rowWidth = Math.max(w - 40, 420);
+    let x = 20;
+    let top = places.size ? bottom + 40 : 20;
+    let rowH = 0;
+    ideas.forEach((idea) => {
+      if (places.has(idea.id)) return;
+      const box = size(idea.id);
+      if (x > 20 && x + box.w > 20 + rowWidth) {
+        x = 20;
+        top += rowH + gap;
+        rowH = 0;
+      }
+      places.set(idea.id, { x: x + box.w / 2, y: top + box.h / 2 });
+      x += box.w + gap;
+      rowH = Math.max(rowH, box.h);
+    });
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    ideas.forEach((idea) => {
+      const pos = places.get(idea.id);
+      this._nodePositions.set(idea.id, pos);
+      const el = this.shadowRoot.getElementById(`cloud_${idea.id}`);
+      if (!el) return;
+      el.style.left = `${pos.x}px`;
+      el.style.top = `${pos.y}px`;
+      const pin = this._pinOf(idea);
+      el.style.setProperty("--pin-bg", PIN_COLORS[(pin && pin.color) || "yellow"] || PIN_COLORS.yellow);
+      // A slight, steady tilt per note, as on a real board
+      const seed = [...idea.id].reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
+      el.style.setProperty("--pin-tilt", `${(seed % 5) - 2}deg`);
+      const box = size(idea.id);
+      minX = Math.min(minX, pos.x - box.w / 2);
+      minY = Math.min(minY, pos.y - box.h / 2);
+      maxX = Math.max(maxX, pos.x + box.w / 2);
+      maxY = Math.max(maxY, pos.y + box.h / 2);
+    });
+    if (!this._pinFitted && ideas.length) {
+      this._pinFitted = true;
+      // Room above for frame names and callouts
+      this._fitBox(minX - 12, minY - 48, maxX + 12, maxY + 12, w, h);
+    }
+    this._drawConnections();
+  }
+
+  _savePins(pins) {
+    if (!this._hass) return Promise.resolve();
+    return this._hass.callWS({ type: "brainstorm/pins", pins }).catch((err) => {
+      console.error("[BrainstormMindmap] Failed to save pinboard places:", err);
+      this._showToast(t("Der Zettel konnte nicht gespeichert werden."));
+    });
+  }
+
+  // Pin the dropped notes where they are; undo puts them back
+  async _dropOnPinboard(moved) {
+    const pins = {};
+    const before = {};
+    moved.forEach((id) => {
+      const idea = this._ideaById(id);
+      const pos = this._nodePositions.get(id);
+      if (!idea || !pos || !this._canEditIdea(idea)) return;
+      const old = this._pinOf(idea);
+      before[id] = old ? { ...old } : null;
+      const place = { x: Math.round(pos.x * 10) / 10, y: Math.round(pos.y * 10) / 10 };
+      if (old && old.color) place.color = old.color;
+      pins[id] = { x: place.x, y: place.y };
+      this._pinOverrides.set(id, place);
+    });
+    this._lastLayoutKey = "";
+    this._arrangeNodesRadially();
+    if (!Object.keys(pins).length) return;
+    await this._savePins(pins);
+    this._pushUndo(moved.length === 1 ? this._ideaText(moved[0]) : t("{count} Notizen", { count: moved.length }), async () => {
+      const back = {};
+      Object.entries(before).forEach(([id, pin]) => {
+        this._pinOverrides.set(id, pin);
+        back[id] = pin ? { x: pin.x, y: pin.y, color: pin.color || "" } : null;
+      });
+      this._lastLayoutKey = "";
+      this._arrangeNodesRadially();
+      await this._savePins(back);
+    });
+  }
+
+  async _setPinColor(idea, color) {
+    const pos = this._pinOf(idea) || this._nodePositions.get(idea.id);
+    if (!pos) return;
+    const old = this._pinOf(idea);
+    const place = { x: Math.round(pos.x * 10) / 10, y: Math.round(pos.y * 10) / 10 };
+    if (color !== "yellow") place.color = color;
+    this._pinOverrides.set(idea.id, place);
+    const el = this.shadowRoot.getElementById(`cloud_${idea.id}`);
+    if (el) el.style.setProperty("--pin-bg", PIN_COLORS[color]);
+    await this._savePins({ [idea.id]: { x: place.x, y: place.y, color: place.color || "" } });
+    this._pushUndo(idea.text, async () => {
+      this._pinOverrides.set(idea.id, old ? { ...old } : null);
+      this._lastLayoutKey = "";
+      this._arrangeNodesRadially();
+      await this._savePins({ [idea.id]: old ? { x: old.x, y: old.y, color: old.color || "" } : null });
+    });
   }
 
   _showLayoutDialog() {
@@ -4383,6 +4593,7 @@ class BrainstormMindmapCard extends HTMLElement {
             </button>`).join("")}
         </div>
         <div class="dialog-hint">${t("In Kanban, Zeitleiste und Matrix ändert das Ziehen in eine andere Spalte Status, Fälligkeit oder Priorität.")}</div>
+        <div class="dialog-hint">${t("Auf der Pinnwand bleibt jeder Zettel, wo du ihn hinziehst. Die Farbe wählst du unter ⋯, Gruppen bekommen einen Rahmen.")}</div>
         <div class="dialog-footer" data-lvl="pro">
           <button class="dialog-btn dialog-btn-primary" id="presentStart">▶ ${t("Präsentieren (P)")}</button>
         </div>`;
@@ -4412,7 +4623,8 @@ class BrainstormMindmapCard extends HTMLElement {
     const btn = this.shadowRoot.getElementById("layoutBtn");
     if (btn) btn.textContent = this._layoutIcon(layout);
     const canvas = this.shadowRoot.getElementById("canvasArea");
-    if (canvas) canvas.classList.toggle("board-mode", this._isBoard());
+    if (canvas) this._syncCanvasMode(canvas);
+    this._pinFitted = false;
     this._lastLayoutKey = "";
     this._updateContent();
     this._arrangeNodesRadially();
@@ -4783,6 +4995,8 @@ class BrainstormMindmapCard extends HTMLElement {
 
   // The ideas on the map, without those inside a folded branch
   _mapIdeas(ideas = this._categoryIdeas()) {
+    // The pinboard has no branches to fold
+    if (this._isPinboard()) return ideas;
     const ids = new Set(ideas.map((i) => i.id));
     const byId = new Map(ideas.map((i) => [i.id, i]));
     return ideas.filter((idea) => {
@@ -7046,6 +7260,10 @@ class BrainstormMindmapCard extends HTMLElement {
       this._dropOnBoard(moved, drag);
       return;
     }
+    if (this._isPinboard()) {
+      this._dropOnPinboard(moved);
+      return;
+    }
     if (!this._usesSavedPositions()) {
       // Only this device knows these places, so undo puts them back here
       const starts = [{ id: drag.id, x: drag.startNodeX, y: drag.startNodeY }, ...(drag.group || [])];
@@ -7199,6 +7417,10 @@ class BrainstormMindmapCard extends HTMLElement {
     });
     const roots = ideas.filter((idea) => !this._branchParent(idea, ids));
     const ringCount = roots.length;
+    if (this._isPinboard()) {
+      this._arrangePinLayout(ideas, w, h);
+      return;
+    }
     if (this._isBoard()) {
       this._arrangeBoardLayout(ideas, w, h);
       return;
@@ -7865,6 +8087,16 @@ class BrainstormMindmapCard extends HTMLElement {
         if (el) this._drawNodeShape(el, -Math.PI / 2);
       });
       svg.innerHTML = this._boardSvg();
+      return;
+    }
+    if (this._isPinboard()) {
+      // Sticky notes need no lines, frames and own links stay
+      activeIdeas.forEach((idea) => {
+        const el = this.shadowRoot.getElementById(`cloud_${idea.id}`);
+        if (el) this._drawNodeShape(el, -Math.PI / 2);
+      });
+      svg.innerHTML = `${this._framesSvg(activeIdeas)}${this._linksSvg(activeIdeas)}`;
+      this._refreshMinimap();
       return;
     }
     // A tree or an org chart reads best with lines at right angles
@@ -8701,6 +8933,7 @@ class BrainstormMindmapCard extends HTMLElement {
               <button class="action-btn more-btn" data-act="menu" data-id="${this._escapeHtml(idea.id)}" title="${t("Aktionen")}" aria-label="${t("Aktionen")}" aria-haspopup="menu" aria-expanded="${idea.id === this._menuId}">⋯</button>
               <div class="cloud-menu" role="menu">
                 <div class="menu-reactions">${reactionBadges(idea, me, true)}</div>
+                ${this._isPinboard() && this._canEditIdea(idea) ? `<div class="menu-pins">${Object.entries(PIN_COLORS).map(([name, bg]) => `<button class="pin-swatch${((this._pinOf(idea) || {}).color || "yellow") === name ? " active" : ""}" data-pin-color="${name}" style="--pin-bg: ${bg};" title="${this._escapeHtml(this._pinColorName(name))}" aria-label="${this._escapeHtml(this._pinColorName(name))}"></button>`).join("")}</div>` : ""}
                 <button class="action-btn menu-item" role="menuitem" data-act="comments" data-lvl="normal" data-id="${this._escapeHtml(idea.id)}"><span>💬</span>${t("Kommentare")}${idea.comment_count ? ` (${idea.comment_count})` : ""}</button>
                 <button class="action-btn menu-item" role="menuitem" data-act="link" data-lvl="pro" data-id="${this._escapeHtml(idea.id)}"><span>🔗</span>${t("Mit einer anderen Notiz verbinden (L)")}</button>
                 ${hasBranch ? `<button class="action-btn menu-item" role="menuitem" data-act="focus" data-lvl="normal" data-id="${this._escapeHtml(idea.id)}"><span>🎯</span>${t("Nur diesen Zweig zeigen (F4)")}</button>` : ""}
@@ -8755,7 +8988,8 @@ class BrainstormMindmapCard extends HTMLElement {
       const layoutKey = shownIdeas
         .map((i) => {
           const pos = this._usesSavedPositions() && i.map_pos ? `${i.map_pos.x},${i.map_pos.y}` : "";
-          const column = board ? boardColumnOf(board, i) : "";
+          const pinPlace = this._isPinboard() ? this._pinOf(i) : null;
+          const column = board ? boardColumnOf(board, i) : pinPlace ? `${pinPlace.x},${pinPlace.y}` : "";
           return `${i.id}:${i.parent_id || ""}:${pos}:${this._collapsed.has(i.id) ? "folded" : ""}:${column}`;
         })
         .join("|");
@@ -8788,7 +9022,8 @@ class BrainstormMindmapCard extends HTMLElement {
         const dragGroup = () => {
           const roots = this._multi.has(id) ? [...this._multi] : [id];
           const ids = new Set(roots);
-          roots.forEach((rootId) => this._descendantIds(rootId, filteredIdeas).forEach((d) => ids.add(d)));
+          // On the pinboard every note moves on its own
+          if (!this._isPinboard()) roots.forEach((rootId) => this._descendantIds(rootId, filteredIdeas).forEach((d) => ids.add(d)));
           ids.delete(id);
           return [...ids]
             .map((otherId) => {
@@ -8949,6 +9184,14 @@ class BrainstormMindmapCard extends HTMLElement {
             this._showCategoryPicker(idea.id, idea.category, idea.text);
           });
         }
+
+        cloud.querySelectorAll(".pin-swatch").forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            this._closeNodeMenu();
+            this._setPinColor(idea, btn.dataset.pinColor);
+          });
+        });
 
         // Action buttons
         cloud.querySelectorAll(".action-btn").forEach((btn) => {
@@ -9875,6 +10118,7 @@ class BrainstormMindmapCardEditor extends HTMLElement {
               { value: "tree", label: t("Baum nach rechts") },
               { value: "org", label: t("Organigramm nach unten") },
               { value: "outline", label: t("Gliederung") },
+              { value: "pin", label: t("Pinnwand mit Haftzetteln") },
               { value: "kanban", label: t("Kanban nach Status") },
               { value: "timeline", label: t("Zeitleiste nach Fälligkeit") },
               { value: "matrix", label: t("Eisenhower-Matrix") },
@@ -10268,7 +10512,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.11.5 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.11.6 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

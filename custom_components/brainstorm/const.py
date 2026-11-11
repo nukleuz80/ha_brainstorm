@@ -279,6 +279,9 @@ ATTR_ASSIGNEE = "assignee"
 ATTR_OWNER = "owner"
 ATTR_CREATED_BY = "created_by"
 ATTR_MAP_POS = "map_pos"
+# Place and colour of a note on the pinboard, free of the tree
+ATTR_PIN = "pin"
+PIN_COLORS = ("yellow", "pink", "green", "blue", "orange", "purple")
 ATTR_SHARES = "shares"
 SHARE_ALL = "all"
 SHARE_VIEW = "view"

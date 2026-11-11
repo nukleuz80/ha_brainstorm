@@ -11,7 +11,7 @@ from homeassistant.exceptions import ServiceValidationError
 import homeassistant.helpers.config_validation as cv
 
 from .ai import MAP_INPUT_MAX_LENGTH, AIUnavailableError
-from .const import CONF_SHARE_USERS
+from .const import CONF_SHARE_USERS, PIN_COLORS
 from .store import get_loaded_store
 
 # Error codes the cards translate for the person
@@ -26,6 +26,7 @@ def async_register_commands(hass: HomeAssistant) -> None:
     """Register the WebSocket commands."""
     websocket_api.async_register_command(hass, websocket_get_ideas)
     websocket_api.async_register_command(hass, websocket_set_map_positions)
+    websocket_api.async_register_command(hass, websocket_set_pins)
     websocket_api.async_register_command(hass, websocket_suggest_subtasks)
     websocket_api.async_register_command(hass, websocket_summarize_branch)
     websocket_api.async_register_command(hass, websocket_suggest_parents)
@@ -117,6 +118,41 @@ async def websocket_set_map_positions(
     changed = await store.async_set_map_positions(
         msg["positions"], connection.user.id
     )
+    connection.send_result(msg["id"], {"changed": changed})
+
+
+PIN = vol.Any(
+    None,
+    vol.Schema(
+        {
+            vol.Required("x"): vol.All(vol.Coerce(float), vol.Range(-1e5, 1e5)),
+            vol.Required("y"): vol.All(vol.Coerce(float), vol.Range(-1e5, 1e5)),
+            vol.Optional("color"): vol.In([*PIN_COLORS, ""]),
+        }
+    ),
+)
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "brainstorm/pins",
+        vol.Required("pins"): vol.All(vol.Schema({cv.string: PIN}), vol.Length(max=500)),
+    }
+)
+@websocket_api.async_response
+async def websocket_set_pins(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Keep where the connected user placed notes on the pinboard."""
+    store = get_loaded_store(hass)
+    if store is None:
+        connection.send_error(
+            msg["id"], websocket_api.ERR_NOT_FOUND, "Brainstorm is not loaded"
+        )
+        return
+    changed = await store.async_set_pins(msg["pins"], connection.user.id)
     connection.send_result(msg["id"], {"changed": changed})
 
 

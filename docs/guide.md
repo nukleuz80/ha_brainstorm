@@ -257,7 +257,7 @@ With **Smart Text Optimization** (General Settings) spoken notes are tidied up a
 | Frame around notes | pick notes ➔ ▢ *Frame*, or ✏️ Edit ➔ *Frame*; tapping the frame name renames it |
 | Callout | ✏️ Edit ➔ *Callout* |
 | Brainstorm: collect many ideas fast | ⚡ at the bottom right or **B** |
-| Tree, org chart, outline, Kanban, timeline or Eisenhower matrix | view button above ⚡ |
+| Tree, org chart, outline, pinboard, Kanban, timeline or Eisenhower matrix | view button above ⚡ |
 | Number the subtasks | ✏️ Edit ➔ *Number the subtasks*: 1., 1.1 · a) · I. |
 | Sort the subtasks | ✏️ Edit ➔ *Sort the subtasks*, or **S** (no selection: the main notes) |
 
@@ -282,6 +282,8 @@ With **Smart Text Optimization** (General Settings) spoken notes are tidied up a
 **Brainstorm mode:** ⚡ at the bottom right (or **B**) opens a big input with a timer: 3, 5, 10 or 15 minutes or no time limit. The clock starts with the first idea. **Enter** saves each idea as a note right away, the field is free again, and the idea shows as a coloured slip below. ✕ on a slip deletes it again. Ideas go into the chosen category, in focus below the focused note, under *All* into the matching category. After *Done*, ↶ takes all collected ideas out at once and 🪄 arranges the map. Then drag them into branches.
 
 **Layouts:** the button above ⚡ opens the choice of views: ◎ around the center, ⇶ a tree to the right (main notes in one column, subtasks to their right), ⊤ an org chart downwards and ☰ an outline (one note per row, subtasks indented below their parent). In the tree and the org chart a parent sits in the middle of its subtasks and the lines run at right angles. The choice stays in this browser; the card option `layout` sets the default. Dragged notes stay where you put them until you switch the layout again.
+
+**Pinboard:** 📌 shows the notes as coloured sticky notes, without tree or lines. Drag a note anywhere and it stays there on every device; notes not placed yet line up in rows below. Pick the colour under ⋯; for groups, select notes and put a frame around them with ▢.
 
 **Boards:** three more views show the notes in columns instead of a map. **▥ Kanban** sorts by state: *Open*, *In progress*, *Waiting* (a blocking link) and *Done*. Drag a note to *In progress* to mark it, back to *Open* to unmark it, onto *Done* to tick it off. **📅 Timeline** sorts by due date: *Overdue*, *Today*, *Tomorrow*, *This week*, *Later*, *No date*. Dragging sets the date and keeps the time (09:00 for a note without one); *No date* removes it. **⊞ Eisenhower matrix** sorts by importance (priority 🔥 or 🔴) and urgency (🔥 or due within three days): *Do now*, *Schedule*, *Delegate*, *Later or never*. Dragging sets the priority; *Delegate* gives a note without a near date one for tomorrow. Columns that follow from something else (*Waiting*, *Overdue*, a near date) cannot be reached by dragging; a short note says why. ↶ takes every move back.
 

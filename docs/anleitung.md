@@ -258,7 +258,7 @@ Mit **Intelligente Formatierung** (Allgemeine Einstellungen) werden gesprochene 
 | Rahmen um Notizen | Notizen auswählen ➔ ▢ *Rahmen*, oder ✏️ Bearbeiten ➔ *Rahmen*; ein Tipp auf den Rahmennamen benennt um |
 | Callout | ✏️ Bearbeiten ➔ *Callout* |
 | Brainstorm: schnell viele Ideen sammeln | ⚡ unten rechts oder **B** |
-| Baum, Organigramm, Gliederung, Kanban, Zeitleiste oder Eisenhower-Matrix | Ansichts-Knopf über ⚡ |
+| Baum, Organigramm, Gliederung, Pinnwand, Kanban, Zeitleiste oder Eisenhower-Matrix | Ansichts-Knopf über ⚡ |
 | Unterpunkte nummerieren | ✏️ Bearbeiten ➔ *Unterpunkte nummerieren*: 1., 1.1 · a) · I. |
 | Unterpunkte sortieren | ✏️ Bearbeiten ➔ *Unterpunkte sortieren*, oder **S** (ohne Auswahl: die Hauptnotizen) |
 
@@ -283,6 +283,8 @@ Mit **Intelligente Formatierung** (Allgemeine Einstellungen) werden gesprochene 
 **Brainstorm-Modus:** ⚡ unten rechts (oder **B**) öffnet ein großes Eingabefeld mit Timer: 3, 5, 10 oder 15 Minuten oder ohne Zeit. Die Uhr startet mit der ersten Idee. Jede Idee wird mit **Enter** sofort als Notiz gespeichert, das Feld ist gleich wieder frei, und die Idee erscheint als bunter Zettel darunter. ✕ auf einem Zettel löscht sie wieder. Die Ideen landen in der gewählten Kategorie, im Fokus unter der Fokus-Notiz, unter *Alle* in der passenden Kategorie. Nach *Fertig* nimmt ↶ alle gesammelten Ideen auf einmal heraus, 🪄 ordnet die Map neu. Danach lassen sie sich per Ziehen in Zweige sortieren.
 
 **Layouts:** Der Knopf über ⚡ öffnet die Ansichtswahl: ◎ rund um die Mitte, ⇶ Baum nach rechts (Hauptnotizen in einer Spalte, Unterpunkte rechts daneben), ⊤ Organigramm nach unten und ☰ Gliederung (eine Notiz pro Zeile, Unterpunkte eingerückt darunter). Im Baum und im Organigramm steht eine Notiz mittig zu ihren Unterpunkten, und die Linien verlaufen rechtwinklig. Die Wahl merkt sich dieser Browser; die Kartenoption `layout` legt den Standard fest. Verschobene Notizen bleiben, wo du sie hingelegt hast, bis du das Layout wieder wechselst.
+
+**Pinnwand:** 📌 zeigt die Notizen als farbige Haftzettel, ohne Baum und Linien. Zieh einen Zettel irgendwohin, dort bleibt er auf jedem Gerät; noch nicht platzierte stehen in Reihen darunter. Die Farbe wählst du unter ⋯, für Gruppen markierst du Zettel und legst mit ▢ einen Rahmen darum.
 
 **Boards:** Drei weitere Ansichten zeigen die Notizen in Spalten statt als Map. **▥ Kanban** sortiert nach Status: *Offen*, *In Arbeit*, *Wartet* (blockierende Verbindung) und *Erledigt*. Zieh eine Notiz nach *In Arbeit*, um sie zu markieren, zurück nach *Offen*, um die Markierung zu entfernen, auf *Erledigt*, um sie abzuhaken. **📅 Zeitleiste** sortiert nach Fälligkeit: *Überfällig*, *Heute*, *Morgen*, *Diese Woche*, *Später*, *Ohne Datum*. Ziehen setzt das Datum und behält die Uhrzeit (09:00 bei einer Notiz ohne); *Ohne Datum* entfernt es. **⊞ Eisenhower-Matrix** sortiert nach Wichtigkeit (Priorität 🔥 oder 🔴) und Dringlichkeit (🔥 oder fällig in drei Tagen): *Sofort erledigen*, *Einplanen*, *Abgeben*, *Später oder gar nicht*. Ziehen setzt die Priorität; *Abgeben* gibt einer Notiz ohne nahes Datum eines für morgen. Spalten, die sich aus etwas anderem ergeben (*Wartet*, *Überfällig*, ein nahes Datum), erreicht man nicht durch Ziehen; ein kurzer Hinweis sagt warum. ↶ nimmt jeden Zug zurück.
 
