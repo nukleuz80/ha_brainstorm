@@ -190,6 +190,19 @@ def _alternatives(names: dict[str, str]) -> str:
     return "|".join(re.escape(name) for name in sorted(names, key=len, reverse=True))
 
 
+def find_mentions(hass: HomeAssistant, text: str) -> list[str]:
+    """Return the person entities named with @ in a text, such as @Frida."""
+    people = _names_of(hass, "person")
+    if not people or "@" not in text:
+        return []
+    found: list[str] = []
+    for match in re.finditer(rf"(?<![\w.])@({_alternatives(people)})(?!\w)", text, re.I):
+        person = people[match.group(1).lower()]
+        if person not in found:
+            found.append(person)
+    return found
+
+
 def build_reminder_request(
     hass: HomeAssistant,
     options: dict[str, Any],
@@ -567,6 +580,47 @@ class ReminderManager:
                 _LOGGER.warning("Notification service %s does not exist", service)
         except (HomeAssistantError, ValueError) as err:
             _LOGGER.warning("Could not send over %s: %s", service, err)
+
+    async def async_notify_mentions(
+        self,
+        idea: dict[str, Any],
+        persons: list[str],
+        author: str,
+        comment: str,
+        author_id: str | None = None,
+    ) -> list[str]:
+        """Tell people named in a comment over their own channels.
+
+        Only people with channels under Persons get a message, never the author,
+        and with privacy only those who may see the note. Returns who got one.
+        """
+        if not self.enabled or not self._options.get(CONF_NOTIFY_ENABLED, True):
+            return []
+        users = {
+            state.entity_id: state.attributes.get("user_id")
+            for state in self.hass.states.async_all("person")
+        }
+        title = self._pack.msg("comment_title", author=author)
+        message = self._pack.msg(
+            "comment_message", text=idea.get(ATTR_TEXT) or "", comment=comment
+        )
+        told: list[str] = []
+        for person in persons:
+            user_id = users.get(person)
+            if author_id and user_id == author_id:
+                continue
+            if self._ideas.privacy_enabled and not self._ideas.can_access(idea, user_id):
+                continue
+            services = list(self._person_rule(person).get("notify") or [])
+            for configured in services:
+                service = phone_service_for(self.hass, configured)
+                data = None
+                if service.startswith(f"notify.{MOBILE_APP_SERVICE_PREFIX}"):
+                    data = {"tag": f"brainstorm_comment_{idea[ATTR_ID]}"}
+                await self._async_send(service, title, message, data)
+            if services:
+                told.append(person)
+        return told
 
     async def _async_notify_idea(self, idea: dict[str, Any]) -> None:
         """Send a reminder to the phones and other services."""

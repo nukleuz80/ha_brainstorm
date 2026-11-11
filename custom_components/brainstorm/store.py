@@ -67,6 +67,11 @@ from .const import (
     ATTR_REPEAT,
     ATTR_REACTIONS,
     ATTR_VOTES,
+    ATTR_COMMENTS,
+    ATTR_COMMENT_COUNT,
+    COMMENT_MAX_LENGTH,
+    COMMENTS_MAX,
+    EVENT_COMMENT_ADDED,
     REACTIONS,
     VOTING_MAX_VOTES,
     ATTR_REPEATED_AS,
@@ -204,9 +209,10 @@ EXPORT_SKIPPED_FIELDS = (
     ATTR_BATTERY_DONE,
     ATTR_CALENDAR_SYNCED,
     ATTR_ALEXA_NATIVE,
-    # Reactions and votes name users of this Home Assistant
+    # Reactions, votes and comments name users of this Home Assistant
     ATTR_REACTIONS,
     ATTR_VOTES,
+    ATTR_COMMENTS,
 )
 IMPORT_STATUSES = ("active", "completed", "archived")
 # Imported fields that must be plain text
@@ -575,6 +581,8 @@ class BrainstormStore:
                 result[ATTR_REPEAT] = repeat
             if reactions := idea.get(ATTR_REACTIONS):
                 result[ATTR_REACTIONS] = {k: list(v) for k, v in reactions.items()}
+            if comments := idea.get(ATTR_COMMENTS):
+                result[ATTR_COMMENT_COUNT] = len(comments)
             if votes := idea.get(ATTR_VOTES):
                 round_ = self._voting.get(str(idea.get(ATTR_CATEGORY)))
                 if round_ and round_.get("hidden"):
@@ -2497,6 +2505,88 @@ class BrainstormStore:
         ]
         ranked.sort(key=lambda item: -item["points"])
         return ranked
+
+    def get_comments(self, idea_id: str, user_id: str | None) -> list[dict[str, Any]]:
+        """Return the comments of a note a person may see, oldest first."""
+        idea = self._require_viewer(idea_id, user_id)
+        return [dict(comment) for comment in idea.get(ATTR_COMMENTS) or []]
+
+    async def async_add_comment(
+        self,
+        idea_id: str,
+        text: str,
+        user_id: str | None,
+        mentions: list[str] | None = None,
+        context: Context | None = None,
+    ) -> dict[str, Any]:
+        """Add a comment of a person to a note; seeing the note is enough."""
+        idea = self._require_viewer(idea_id, user_id)
+        text = (text or "").strip()[:COMMENT_MAX_LENGTH]
+        if not text:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="comment_empty"
+            )
+        comments = list(idea.get(ATTR_COMMENTS) or [])
+        if len(comments) >= COMMENTS_MAX:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="too_many_comments",
+                translation_placeholders={"count": str(COMMENTS_MAX)},
+            )
+        comment: dict[str, Any] = {
+            ATTR_ID: uuid.uuid4().hex[:8],
+            "by": user_id,
+            "at": dt_util.now().isoformat(),
+            ATTR_TEXT: text,
+        }
+        if mentions:
+            comment["mentions"] = list(mentions)
+        comments.append(comment)
+        idea[ATTR_COMMENTS] = comments
+        await self.async_save()
+        self.hass.bus.async_fire(
+            EVENT_COMMENT_ADDED,
+            {
+                "idea_id": idea[ATTR_ID],
+                "idea_text": idea.get(ATTR_TEXT),
+                ATTR_CATEGORY: idea.get(ATTR_CATEGORY),
+                "comment_id": comment[ATTR_ID],
+                ATTR_TEXT: text,
+                "by": user_id,
+                "mentions": list(mentions or []),
+                "entity_id": OVERVIEW_ENTITY_ID,
+            },
+            context=context or Context(user_id=user_id),
+        )
+        self._notify_listeners()
+        return dict(comment)
+
+    async def async_delete_comment(
+        self, idea_id: str, comment_id: str, user_id: str | None
+    ) -> None:
+        """Remove a comment; its author or whoever may change the note may."""
+        idea = self._require_viewer(idea_id, user_id)
+        comments = list(idea.get(ATTR_COMMENTS) or [])
+        comment = next((c for c in comments if c.get(ATTR_ID) == comment_id), None)
+        if comment is None:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="comment_not_found",
+                translation_placeholders={"id": comment_id},
+            )
+        if comment.get("by") != user_id and not self.can_edit(idea, user_id):
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="comment_not_yours",
+                translation_placeholders={"id": comment_id},
+            )
+        comments.remove(comment)
+        if comments:
+            idea[ATTR_COMMENTS] = comments
+        else:
+            idea.pop(ATTR_COMMENTS, None)
+        await self.async_save()
+        self._notify_listeners()
 
     async def async_reorder_ideas(self, idea_ids: list[str]) -> bool:
         """Update order of ideas based on the provided list of IDs."""

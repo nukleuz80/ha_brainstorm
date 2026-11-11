@@ -9,7 +9,7 @@
 [![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.11.1-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.11.2-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -145,6 +145,7 @@ Brainstorm Hub verwandelt alle deine **Amazon Echo**-Geräte im Haus in sekunden
     - **PDF-Export (v1.8.14):** 🖼️ ➔ *PDF* speichert ein PDF mit dem Bild der Map auf der ersten Seite und danach allen Notizen als Gliederung mit Beschreibung, fertig zum Drucken oder Verschicken. *PDF (nur Gliederung)* lässt das Bild weg. Es entsteht im Browser, nichts verlässt Home Assistant.
     - **Bilder in Notizen (v1.8.13):** Das erste angehängte Bild einer Notiz (📎 im Bearbeiten-Dialog, auch per Einfügen oder Ziehen) erscheint direkt in ihr auf der Map, so sind Moodboard oder Skizze auf einen Blick zu sehen. Antippen öffnet es groß. `show_images: false` schaltet es ab.
     - **Regeln (v1.8.12):** 🎨 in der Suchleiste oder **R** macht aus dem aktuellen Filter eine Regel mit Farbe und Zeichen, wie SmartRules in MindManager: *alles 🔥 Dringende rot*, *#garten grün mit ⭐* … Jede passende Notiz wird in der Map und in der Listenkarte eingefärbt, die erste passende Regel gilt. Regeln lassen sich ausschalten, nach oben schieben, bearbeiten und löschen (↶ holt eine zurück). Sie liegen bei deinem Home-Assistant-Benutzer und gelten so auf jedem Gerät.
+    - **Kommentare (v1.11.2):** 💬 im Kontextmenü der Liste oder unter ⋯ in der Mindmap öffnet den Verlauf einer Notiz: wer, wann, was, mit Formatierung. Eine Notiz mit Kommentaren zeigt 💬 und die Anzahl, ein Tipp darauf öffnet ihn. **@Name** benachrichtigt die Person über ihre Kanäle unter *Erinnerungen ➔ Personen*. Eigene Kommentare lassen sich löschen; wer die Notiz ändern darf, kann alle löschen. Wer eine geteilte Notiz nur sehen darf, darf trotzdem kommentieren.
     - **KI: Map aus Thema oder Text (v1.11.1):** ✨ *Map aus Thema erzeugen* auf einer leeren Map, Taste **G** oder ✨ *Mit KI erzeugen* unter 🖼️ ➔ *Gliederung einfügen*. Ein Thema wie „Sommerfest planen“ oder ein eingefügter Text wird zu einer Vorschau mit bis zu drei Ebenen unter einem Titel. Haken weg bei allem, was du nicht willst (Unterpunkte rücken nach oben), Texte ändern, übernehmen; ↶ nimmt alles zurück. Landet im Fokus-Zweig oder in der gewählten Kategorie.
     - **KI-Hilfe auf der Map (v1.8.9):** Mit einer KI-Aufgaben-Entität kann ✨ an einer Notiz mit Unterpunkten auch **den Ast zusammenfassen**, in ein paar Sätzen, die zur Beschreibung werden können. **Lose Ideen zuordnen** (Taste **Z** oder am Ende einer Brainstorm-Runde) schlägt für jede lose Hauptnotiz der Kategorie einen Oberpunkt vor; du hakst ab, was gelten soll. Vor deiner Bestätigung ändert sich nichts, ↶ nimmt es zurück.
     - **Inhaltsvorlagen (v1.8.8):** 🖼️ ➔ *Gliederung einfügen* hat fertige Zweige wie SWOT-Analyse, Pro und Contra, Projektplan, Wochenplan oder Packliste für die Reise. Text anpassen, dann einfügen.
@@ -1023,6 +1024,29 @@ Setzt oder entfernt die eigene Reaktion an einer Notiz. Jede Person hat pro Reak
 | `reaction` | Ja | `like` 👍, `heart` ❤️, `laugh` 😂 oder `important` ❗ |
 | `active` | Nein | `true` setzt, `false` entfernt; ohne Angabe wird umgeschaltet. |
 
+### `brainstorm.add_comment`
+
+▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.add_comment)
+
+Schreibt einen Kommentar an eine Notiz. Wer die Notiz sehen darf, darf kommentieren. Mit `@Name` genannte Personen bekommen eine Nachricht über ihre Kanäle unter *Erinnerungen ➔ Personen*, mit Privatsphäre nur, wenn sie die Notiz sehen dürfen. Antwortet mit `comment` und `notified` (benachrichtigte Personen). Löst das Ereignis `brainstorm_comment_added` aus.
+
+| Feld | Pflicht | Bedeutung |
+| :--- | :--- | :--- |
+| `id` | Ja | ID der Notiz. |
+| `text` | Ja | Der Kommentar, bis 2000 Zeichen. `@Frida` oder `@Frida Sommer` benachrichtigt diese Person. |
+| `notify` | Nein | `false` schreibt den Kommentar ohne Benachrichtigung. |
+
+### `brainstorm.delete_comment`
+
+▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.delete_comment)
+
+Entfernt einen Kommentar. Das darf, wer ihn geschrieben hat oder die Notiz ändern darf.
+
+| Feld | Pflicht | Bedeutung |
+| :--- | :--- | :--- |
+| `id` | Ja | ID der Notiz. |
+| `comment_id` | Ja | ID des Kommentars. |
+
 ### `brainstorm.start_voting`
 
 ▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.start_voting)
@@ -1135,6 +1159,7 @@ Weitere Beispiele für Assist und Alexa liegen im Ordner [`examples/`](examples/
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.11.2`** | 11.11.2026 | **Kommentare an Notizen.** Verlauf pro Notiz mit Name, Zeit und Text, 💬 mit Anzahl in beiden Karten, Dialog über das Kontextmenü bzw. ⋯. `@Name` benachrichtigt die Person über ihre Kanäle unter *Erinnerungen ➔ Personen*, mit Privatsphäre nur, wenn sie die Notiz sehen darf. Neue Dienste `brainstorm.add_comment` und `delete_comment`, WebSocket-Befehl `brainstorm/comments`, Ereignis `brainstorm_comment_added`. Der Sensor zählt nur (`comment_count`); Kommentare bleiben aus dem JSON-Export heraus. |
 | **`v1.11.1`** | 11.11.2026 | **KI: Mindmap aus Thema oder Text.** ✨ *Map aus Thema erzeugen* auf einer leeren Map, Taste **G** oder ✨ *Mit KI erzeugen* im Dialog *Gliederung einfügen*: Die KI macht aus einem Thema Hauptäste mit Unterpunkten oder gliedert einen eingefügten Text, höchstens drei Ebenen und 40 Zeilen. In der Vorschau abhaken und Texte ändern, dann übernehmen; ↶ nimmt alles zurück. Neuer WebSocket-Befehl `brainstorm/generate_map`, gespeichert wird erst nach deiner Bestätigung. |
 | **`v1.11.0`** | 11.11.2026 | **Release: Übersicht, Abstimmen und Reaktionen.** Fasst v1.10.6 und v1.10.7 zusammen: Minimap in der Mindmap (🗺️ / **M**), Abstimmungen pro Kategorie (🗳️ / **V**, offen oder verdeckt, Rangliste beim Beenden) und Reaktionen 👍 ❤️ 😂 ❗ an jeder Notiz. |
 | **`v1.10.7`** | 11.11.2026 | **Abstimmen und Reaktionen.** 🗳️ oder **V** startet eine Abstimmung in einer Kategorie mit einer festen Zahl Stimmen pro Person (3/5/10), offen oder verdeckt; − / + an den Notizen in beiden Karten, eine Leiste zeigt die eigenen verbrauchten Stimmen. Beim Beenden kommt die Rangliste mit 🥇🥈🥉 und *Nach Stimmen sortieren*. Reaktionen 👍 ❤️ 😂 ❗ an jeder Notiz, Namen beim Darüberfahren. Neue Dienste `brainstorm.react`, `vote`, `start_voting`, `end_voting`; `sort_children` kann `by: votes`. Reaktionen und Stimmen bleiben aus dem JSON-Export heraus. |

@@ -1,9 +1,9 @@
-import { LEVEL_CSS, SOCIAL_CSS, needsPersonalData, reactionBadges, voteBadge, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, repeatBadge, repeatOptions, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.11.1";
+import { LEVEL_CSS, SOCIAL_CSS, commentBadge, renderComments, needsPersonalData, reactionBadges, voteBadge, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, repeatBadge, repeatOptions, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.11.2";
 
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.11.1 - KI: Map aus Thema oder Text
+ * Version 1.11.2 - Kommentare
  */
 // The bulb lies next to this file, wherever Home Assistant serves it from
 const BULB_URL = new URL("./brainstorm-bulb.svg", import.meta.url).href;
@@ -2171,6 +2171,12 @@ class BrainstormCard extends HTMLElement {
     return (sensor && sensor.attributes.current_user) || (this._hass && this._hass.user && this._hass.user.id) || "";
   }
 
+  // The comments of a note: read, write, delete your own
+  _showComments(idea) {
+    if (!this._hass || !idea) return;
+    this._openDialog(t("💬 Kommentare"), (body) => renderComments(body, { hass: this._hass, idea, close: () => this._closeDialog() }));
+  }
+
   async _react(id, reaction) {
     try {
       await this._hass.callService("brainstorm", "react", { id, reaction });
@@ -2331,6 +2337,14 @@ class BrainstormCard extends HTMLElement {
       `;
     }
 
+    // Comments
+    actionsHtml += `
+      <button class="apple-menu-btn" data-act="comments" data-lvl="normal">
+        <span class="btn-icon">💬</span>
+        <div class="btn-content"><span>${t("Kommentare")}${item.comment_count ? ` (${item.comment_count})` : ""}</span></div>
+      </button>
+    `;
+
     // Edit
     actionsHtml += `
       <button class="apple-menu-btn" data-act="edit">
@@ -2365,6 +2379,11 @@ class BrainstormCard extends HTMLElement {
 
         if (act === "share") {
           this._showShareDialog([item.id], null, item.shares || {});
+          return;
+        }
+
+        if (act === "comments") {
+          this._showComments(item);
           return;
         }
 
@@ -5103,7 +5122,7 @@ class BrainstormCard extends HTMLElement {
                     ? `<button class="collapse-btn collapse-chip ${item.collapsed ? "is-collapsed" : ""}" title="${item.collapsed ? t("Unteraufgaben ausklappen") : t("Unteraufgaben einklappen")}" aria-expanded="${item.collapsed ? "false" : "true"}" data-id="${this._escapeHtml(item.id)}"><span class="collapse-arrow">${item.collapsed ? "▸" : "▾"}</span>${progressBadge(item) || `<span class="collapse-count">${item.childCount}</span>`}</button>`
                     : progressBadge(item)}
                   ${markerBadges(item)}
-                  ${isCompletedView ? "" : voteBadge(item, voting, me)}${reactionBadges(item, me)}
+                  ${isCompletedView ? "" : voteBadge(item, voting, me)}${reactionBadges(item, me)}${commentBadge(item)}
                   ${blockedBadge(item)}
                   ${item.frame ? `<span class="frame-chip" title="${t("Rahmen")}">▢ ${this._escapeHtml(item.frame)}</span>` : ""}
                   ${attachmentBadge(item)}
@@ -5146,6 +5165,15 @@ class BrainstormCard extends HTMLElement {
           btn.addEventListener("click", (e) => {
             e.stopPropagation();
             this._vote(btn.getAttribute("data-id"), Number(btn.getAttribute("data-vote")));
+          });
+        });
+        ideasList.querySelectorAll("[data-comment]").forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const sensorNow = this._getSensorEntity();
+            const all = sensorNow ? [...(sensorNow.attributes.ideas || []), ...(sensorNow.attributes.completed_ideas || [])] : [];
+            const idea = all.find((i) => i.id === btn.getAttribute("data-comment"));
+            if (idea) this._showComments(idea);
           });
         });
 
@@ -6100,7 +6128,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.11.1 ",
+  "%c BRAINSTORM-CARD %c v1.11.2 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

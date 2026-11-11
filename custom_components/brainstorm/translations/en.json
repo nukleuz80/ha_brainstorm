@@ -796,6 +796,18 @@
     },
     "category_not_found": {
       "message": "Category \"{category}\" does not exist."
+    },
+    "comment_empty": {
+      "message": "A comment needs some text."
+    },
+    "too_many_comments": {
+      "message": "This note already has {count} comments."
+    },
+    "comment_not_found": {
+      "message": "There is no comment with the ID {id}."
+    },
+    "comment_not_yours": {
+      "message": "Only its author or whoever may change the note can remove comment {id}."
     }
   },
   "services": {
@@ -1238,6 +1250,38 @@
         "category": {
           "name": "Category",
           "description": "The category whose round ends."
+        }
+      }
+    },
+    "add_comment": {
+      "name": "Add comment",
+      "description": "Adds a comment to a note. People named with @, such as @Frida, get a message over their channels under Reminders ➔ Persons.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "ID of the note."
+        },
+        "text": {
+          "name": "Text",
+          "description": "The comment. @Name tells that person."
+        },
+        "notify": {
+          "name": "Notify",
+          "description": "Tell the people named with @. Default on."
+        }
+      }
+    },
+    "delete_comment": {
+      "name": "Delete comment",
+      "description": "Removes a comment. Its author may, and whoever may change the note.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "ID of the note."
+        },
+        "comment_id": {
+          "name": "Comment ID",
+          "description": "ID of the comment."
         }
       }
     },

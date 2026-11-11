@@ -74,6 +74,12 @@
     },
     "end_voting": {
       "service": "mdi:ballot-recount-outline"
+    },
+    "add_comment": {
+      "service": "mdi:comment-plus-outline"
+    },
+    "delete_comment": {
+      "service": "mdi:comment-remove-outline"
     }
   }
 }

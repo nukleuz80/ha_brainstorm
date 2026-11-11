@@ -76,6 +76,9 @@ from .const import (
     SERVICE_VOTE,
     SERVICE_START_VOTING,
     SERVICE_END_VOTING,
+    SERVICE_ADD_COMMENT,
+    SERVICE_DELETE_COMMENT,
+    COMMENT_MAX_LENGTH,
     SERVICE_IMPORT_OUTLINE,
     SERVICE_DELETE_DONE,
     SERVICE_SET_CATEGORY_STYLE,
@@ -87,7 +90,7 @@ from .outline import OUTLINE_FORMATS, OutlineError, parse_outline
 from .echo_locks import EchoLockManager
 from .frontend import async_register_frontend
 from .llm import async_register_llm_api
-from .reminders import ReminderManager, build_reminder_request
+from .reminders import ReminderManager, build_reminder_request, find_mentions
 from .repairs import async_check_issues, async_delete_issues
 from .store import BrainstormConfigEntry, BrainstormStore, get_loaded_store
 from .todo_sync import TodoSyncManager
@@ -272,6 +275,18 @@ SERVICE_START_VOTING_SCHEMA = vol.Schema(
 )
 
 SERVICE_END_VOTING_SCHEMA = vol.Schema({vol.Required(ATTR_CATEGORY): cv.string})
+
+SERVICE_ADD_COMMENT_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_ID): cv.string,
+        vol.Required("text"): vol.All(cv.string, vol.Length(max=COMMENT_MAX_LENGTH)),
+        vol.Optional("notify", default=True): cv.boolean,
+    }
+)
+
+SERVICE_DELETE_COMMENT_SCHEMA = vol.Schema(
+    {vol.Required(ATTR_ID): cv.string, vol.Required("comment_id"): cv.string}
+)
 
 SERVICE_IMPORT_OUTLINE_SCHEMA = vol.Schema(
     {
@@ -684,6 +699,35 @@ def _register_services(hass: HomeAssistant) -> None:
             call.data[ATTR_CATEGORY].strip(), call.context.user_id
         )
         return {"success": True, "ranking": ranking}
+
+    async def handle_add_comment(call: ServiceCall) -> dict[str, Any]:
+        """Add a comment of the calling user and tell people named with @."""
+        store = _require_store(hass)
+        user_id = call.context.user_id
+        text = call.data["text"]
+        mentions = find_mentions(hass, text)
+        comment = await store.async_add_comment(
+            call.data[ATTR_ID], text, user_id, mentions, call.context
+        )
+        notified: list[str] = []
+        if mentions and call.data["notify"] and store.reminders is not None:
+            user = await hass.auth.async_get_user(user_id) if user_id else None
+            notified = await store.reminders.async_notify_mentions(
+                store.get_idea(call.data[ATTR_ID]) or {},
+                mentions,
+                (user.name if user else None) or "Brainstorm",
+                comment[ATTR_TEXT],
+                user_id,
+            )
+        return {"success": True, "comment": comment, "notified": notified}
+
+    async def handle_delete_comment(call: ServiceCall) -> dict[str, Any]:
+        """Remove a comment of the calling user, or one on a note they may change."""
+        store = _require_store(hass)
+        await store.async_delete_comment(
+            call.data[ATTR_ID], call.data["comment_id"], call.context.user_id
+        )
+        return {"success": True}
 
     async def handle_sort_children(call: ServiceCall) -> dict[str, Any]:
         """Sort the subtasks of a note, or the main notes of a category."""
@@ -1108,6 +1152,8 @@ def _register_services(hass: HomeAssistant) -> None:
         (SERVICE_VOTE, handle_vote, SERVICE_VOTE_SCHEMA),
         (SERVICE_START_VOTING, handle_start_voting, SERVICE_START_VOTING_SCHEMA),
         (SERVICE_END_VOTING, handle_end_voting, SERVICE_END_VOTING_SCHEMA),
+        (SERVICE_ADD_COMMENT, handle_add_comment, SERVICE_ADD_COMMENT_SCHEMA),
+        (SERVICE_DELETE_COMMENT, handle_delete_comment, SERVICE_DELETE_COMMENT_SCHEMA),
     ):
         hass.services.async_register(
             DOMAIN,

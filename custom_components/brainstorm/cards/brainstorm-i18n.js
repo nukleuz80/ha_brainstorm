@@ -7,6 +7,16 @@
  */
 const DICTIONARIES = {
   en: {
+    "1 Kommentar": "1 comment",
+    "{count} Kommentare": "{count} comments",
+    "Kommentar löschen": "Delete comment",
+    "Noch keine Kommentare.": "No comments yet.",
+    "Kommentar schreiben … @Name benachrichtigt die Person": "Write a comment … @Name tells that person",
+    "Senden": "Send",
+    "Das hat nicht geklappt.": "That did not work.",
+    "Lädt …": "Loading …",
+    "💬 Kommentare": "💬 Comments",
+    "Kommentare": "Comments",
     "Map aus Thema erzeugen": "Create map from a topic",
     "✨ Map aus Thema erzeugen": "✨ Create map from a topic",
     "Mit KI erzeugen": "Create with AI",
@@ -1257,7 +1267,146 @@ export const SOCIAL_CSS = `
   .bs-vote-btn { min-width: 26px; font-weight: 700; font-size: 0.9rem; }
   .bs-vote-btn:disabled { opacity: 0.35; cursor: default; }
   @media (pointer: coarse) { .bs-react, .bs-vote-btn { min-width: 34px; min-height: 32px; } }
+  .bs-comment {
+    min-height: 26px; padding: 0 7px; display: inline-flex; align-items: center; gap: 3px; border-radius: 13px; cursor: pointer;
+    font: inherit; font-size: 0.76rem; font-weight: 600; line-height: 1; color: var(--primary-text-color, #212121);
+    background: color-mix(in srgb, var(--secondary-text-color, #727272) 10%, transparent);
+    border: 1px solid var(--divider-color, rgba(127, 127, 127, 0.25));
+  }
+  @media (pointer: coarse) { .bs-comment { min-height: 32px; } }
+  .bs-comments { display: flex; flex-direction: column; gap: 10px; max-height: min(45vh, 380px); overflow-y: auto; margin: 4px 0 10px; }
+  .bs-comments-empty { color: var(--secondary-text-color, #727272); font-size: 0.85rem; padding: 6px 0; }
+  .bs-c { display: flex; gap: 8px; align-items: flex-start; }
+  .bs-c-avatar {
+    flex: 0 0 30px; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    background: color-mix(in srgb, var(--primary-color, #03a9f4) 18%, transparent); color: var(--primary-color, #03a9f4);
+    font-weight: 700; font-size: 0.8rem; background-size: cover; background-position: center;
+  }
+  .bs-c-body { flex: 1 1 auto; min-width: 0; padding: 6px 10px; border-radius: 12px; background: color-mix(in srgb, var(--secondary-text-color, #727272) 9%, transparent); }
+  .bs-c.mine .bs-c-body { background: color-mix(in srgb, var(--primary-color, #03a9f4) 12%, transparent); }
+  .bs-c-head { display: flex; gap: 8px; align-items: baseline; font-size: 0.75rem; color: var(--secondary-text-color, #727272); }
+  .bs-c-head b { color: var(--primary-text-color, #212121); font-size: 0.8rem; }
+  .bs-c-text { font-size: 0.9rem; overflow-wrap: anywhere; color: var(--primary-text-color, #212121); }
+  .bs-c-text .bs-mention { color: var(--primary-color, #03a9f4); font-weight: 600; }
+  .bs-c-del { margin-left: auto; min-width: 28px; min-height: 28px; border: none; background: none; cursor: pointer; color: var(--secondary-text-color, #727272); font: inherit; border-radius: 14px; }
+  .bs-c-del:hover { color: var(--error-color, #db4437); }
 `;
+
+/** Return the 💬 badge with the number of comments, nothing without any. */
+export function commentBadge(idea) {
+  const count = Number(idea && idea.comment_count) || 0;
+  if (!count) return "";
+  const label = count === 1 ? t("1 Kommentar") : t("{count} Kommentare", { count });
+  return `<button type="button" class="bs-comment" data-comment="${escapeHtml(idea.id)}" title="${escapeHtml(label)}">💬 ${count}</button>`;
+}
+
+/**
+ * Fill a dialog body with the comments of a note: load them, write a new one
+ * (Ctrl+Enter sends) and delete your own. Both cards use it.
+ */
+export function renderComments(body, { hass, idea, close }) {
+  const when = (iso) => {
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toLocaleString(dateLocale(), { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  };
+  const initials = (name) => String(name || "?").trim().split(/\s+/).map((w) => w[0] || "").join("").slice(0, 2).toUpperCase() || "?";
+  const mention = (html) => html.replace(/(^|[\s(>])@([\p{L}\p{N}_-]+)/gu, '$1<span class="bs-mention">@$2</span>');
+  let draft = "";
+  const draw = (comments, error = "") => {
+    if (!body.isConnected) return;
+    body.innerHTML = `
+      <div class="dialog-hint">${formatText(idea.text)}</div>
+      <div class="bs-comments">
+        ${
+          comments.length
+            ? comments
+                .map(
+                  (c) => `
+          <div class="bs-c${c.mine ? " mine" : ""}">
+            <div class="bs-c-avatar"${c.picture ? ` style="background-image: url('${escapeHtml(c.picture)}'); color: transparent;"` : ""}>${escapeHtml(initials(c.name))}</div>
+            <div class="bs-c-body">
+              <div class="bs-c-head"><b>${escapeHtml(c.name || t("Unbekannt"))}</b><span>${escapeHtml(when(c.at))}</span>
+                ${c.can_delete ? `<button type="button" class="bs-c-del" data-del="${escapeHtml(c.id)}" title="${t("Kommentar löschen")}" aria-label="${t("Kommentar löschen")}">✕</button>` : ""}
+              </div>
+              <div class="bs-c-text">${mention(formatText(c.text))}</div>
+            </div>
+          </div>`
+                )
+                .join("")
+            : `<div class="bs-comments-empty">${t("Noch keine Kommentare.")}</div>`
+        }
+      </div>
+      <textarea class="dialog-input dialog-textarea" id="bsCommentText" rows="3" maxlength="2000" placeholder="${t("Kommentar schreiben … @Name benachrichtigt die Person")}"></textarea>
+      <div class="dialog-error" style="display: ${error ? "flex" : "none"};">${escapeHtml(error)}</div>
+      <div class="dialog-footer">
+        <button class="dialog-btn dialog-btn-cancel" id="bsCommentClose">${t("Schließen")}</button>
+        <button class="dialog-btn dialog-btn-primary" id="bsCommentSend">${t("Senden")}</button>
+      </div>
+    `;
+    const area = body.querySelector("#bsCommentText");
+    const send = body.querySelector("#bsCommentSend");
+    area.value = draft;
+    send.disabled = !draft.trim();
+    area.addEventListener("input", () => {
+      draft = area.value;
+      send.disabled = !draft.trim();
+    });
+    area.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        submit();
+      }
+    });
+    const list = body.querySelector(".bs-comments");
+    list.scrollTop = list.scrollHeight;
+    body.querySelector("#bsCommentClose").addEventListener("click", close);
+    send.addEventListener("click", submit);
+    body.querySelectorAll("[data-del]").forEach((btn) =>
+      btn.addEventListener("click", async () => {
+        btn.disabled = true;
+        try {
+          await hass.callService("brainstorm", "delete_comment", { id: idea.id, comment_id: btn.dataset.del });
+          await load();
+        } catch (err) {
+          draw(comments, (err && err.message) || t("Das hat nicht geklappt."));
+        }
+      })
+    );
+    if (!error) setTimeout(() => area.focus(), 50);
+  };
+  let current = [];
+  const load = async () => {
+    try {
+      const result = await hass.callWS({ type: "brainstorm/comments", idea_id: idea.id });
+      current = (result && result.comments) || [];
+      draw(current);
+    } catch (err) {
+      draw(current, (err && err.message) || t("Das hat nicht geklappt."));
+    }
+  };
+  const submit = async () => {
+    const text = draft.trim();
+    if (!text) return;
+    const send = body.querySelector("#bsCommentSend");
+    if (send) send.disabled = true;
+    try {
+      await hass.callWS({
+        type: "call_service",
+        domain: "brainstorm",
+        service: "add_comment",
+        service_data: { id: idea.id, text },
+        return_response: true,
+      });
+      draft = "";
+      await load();
+    } catch (err) {
+      draw(current, (err && err.message) || t("Das hat nicht geklappt."));
+    }
+  };
+  body.innerHTML = `<div class="dialog-label">${t("Lädt …")}</div>`;
+  load();
+}
 
 /**
  * Return how far an idea is: from its subtasks if it has any, else what was

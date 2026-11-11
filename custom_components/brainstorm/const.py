@@ -141,6 +141,7 @@ EVENT_IDEA_COMPLETED = "brainstorm_idea_completed"
 EVENT_IDEA_DELETED = "brainstorm_idea_deleted"
 EVENT_IDEA_UPDATED = "brainstorm_idea_updated"
 EVENT_REMINDER_DUE = "brainstorm_reminder_due"
+EVENT_COMMENT_ADDED = "brainstorm_comment_added"
 
 # Attributes
 ATTR_ID = "id"
@@ -239,6 +240,11 @@ REACTIONS = ("like", "heart", "laugh", "important")
 ATTR_VOTES = "votes"
 # How many votes each person may give in one round
 VOTING_MAX_VOTES = 20
+# Comments on a note: id, by (user ID), at, text; the overview only counts them
+ATTR_COMMENTS = "comments"
+ATTR_COMMENT_COUNT = "comment_count"
+COMMENT_MAX_LENGTH = 2000
+COMMENTS_MAX = 200
 ATTACHMENT_DIR = "brainstorm_attachments"
 ATTACHMENT_MAX_SIZE = 10 * 1024 * 1024
 ATTACHMENT_MAX_COUNT = 20
@@ -302,6 +308,8 @@ SERVICE_REACT = "react"
 SERVICE_VOTE = "vote"
 SERVICE_START_VOTING = "start_voting"
 SERVICE_END_VOTING = "end_voting"
+SERVICE_ADD_COMMENT = "add_comment"
+SERVICE_DELETE_COMMENT = "delete_comment"
 SERVICE_IMPORT_OUTLINE = "import_outline"
 SERVICE_DELETE_DONE = "delete_done"
 SERVICE_SET_CATEGORY_STYLE = "set_category_style"

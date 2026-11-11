@@ -546,3 +546,29 @@ end_voting:
       example: "Familie"
       selector:
         text:
+add_comment:
+  fields:
+    id:
+      required: true
+      selector:
+        text:
+    text:
+      required: true
+      example: "Ich kümmere mich darum, @Frida bringt den Grill."
+      selector:
+        text:
+          multiline: true
+    notify:
+      default: true
+      selector:
+        boolean:
+delete_comment:
+  fields:
+    id:
+      required: true
+      selector:
+        text:
+    comment_id:
+      required: true
+      selector:
+        text:

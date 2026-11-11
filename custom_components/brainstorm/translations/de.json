@@ -796,6 +796,18 @@
     },
     "category_not_found": {
       "message": "Kategorie „{category}“ gibt es nicht."
+    },
+    "comment_empty": {
+      "message": "Ein Kommentar braucht Text."
+    },
+    "too_many_comments": {
+      "message": "Diese Notiz hat schon {count} Kommentare."
+    },
+    "comment_not_found": {
+      "message": "Es gibt keinen Kommentar mit der ID {id}."
+    },
+    "comment_not_yours": {
+      "message": "Kommentar {id} darf nur entfernen, wer ihn geschrieben hat oder die Notiz ändern darf."
     }
   },
   "services": {
@@ -1238,6 +1250,38 @@
         "category": {
           "name": "Kategorie",
           "description": "Die Kategorie, deren Runde endet."
+        }
+      }
+    },
+    "add_comment": {
+      "name": "Kommentar schreiben",
+      "description": "Schreibt einen Kommentar an eine Notiz. Mit @ genannte Personen, etwa @Frida, bekommen eine Nachricht über ihre Kanäle unter Erinnerungen ➔ Personen.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "ID der Notiz."
+        },
+        "text": {
+          "name": "Text",
+          "description": "Der Kommentar. @Name benachrichtigt diese Person."
+        },
+        "notify": {
+          "name": "Benachrichtigen",
+          "description": "Die mit @ genannten Personen benachrichtigen. Standard an."
+        }
+      }
+    },
+    "delete_comment": {
+      "name": "Kommentar löschen",
+      "description": "Entfernt einen Kommentar. Das darf, wer ihn geschrieben hat oder die Notiz ändern darf.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "ID der Notiz."
+        },
+        "comment_id": {
+          "name": "Kommentar-ID",
+          "description": "ID des Kommentars."
         }
       }
     },

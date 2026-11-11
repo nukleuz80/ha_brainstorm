@@ -212,6 +212,7 @@ With **Smart Text Optimization** (General Settings) spoken notes are tidied up a
 | Edit | tap the text or the pencil; in the dialog **Ctrl+Enter** saves |
 | Context menu | long press a note or tap ⋯ on the right of the row |
 | React | 👍 ❤️ 😂 ❗ at the top of the context menu, or tap a reaction already on the note |
+| Comment | context menu ➔ 💬 *Comments*, or tap 💬 on the note; **Ctrl+Enter** sends, `@Name` tells that person |
 | Vote | in a running vote, − / + on the note |
 | Buttons of a row | on phones and narrow cards under ⋯ (indent, subidea, AI, edit, delete), with a mouse they appear on hover; `row_actions` changes this |
 | Fold subtasks | tap the ▾ 0/2 badge next to the priority |
@@ -249,6 +250,7 @@ With **Smart Text Optimization** (General Settings) spoken notes are tidied up a
 | Fold and unfold levels | ∞ at the bottom right: 1 ➔ 2 ➔ 3 ➔ all, or the keys **1–9**, **0** = all |
 | Vote | 🗳️ at the bottom right or **V**: pick the category, votes per person and *hidden*, then − / + on the notes; *End* in the bar at the top shows the ranking |
 | React | ⋯ on the note ➔ 👍 ❤️ 😂 ❗; tapping a reaction toggles yours |
+| Comment | ⋯ on the note ➔ 💬 *Comments*, or tap 💬 on the note; `@Name` tells that person |
 | Overview (minimap) | 🗺️ at the bottom right or **M**; tap or drag in the overview at the bottom left to jump there |
 | Link two notes | 🔗 on the note or **L**, then tap the target note; two picked notes ➔ 🔗 *Link* |
 | Label or delete a link | tap the dashed line |
@@ -480,6 +482,7 @@ All parameters are in the [README](../README.md#️-services) and under [**Devel
 | `brainstorm.import_outline` | add an outline: `text: …`, `category: …` or `parent_id: …`, `format: auto` |
 | `brainstorm.sort_children` | sort subtasks: `parent_id: …`, `by: text`, `priority`, `due`, `created` or `votes` |
 | `brainstorm.react` | toggle a reaction: `id: …`, `reaction: heart` |
+| `brainstorm.add_comment` / `delete_comment` | comment: `id: …`, `text: "@Frida can you bring salad?"`; delete with `comment_id` |
 | `brainstorm.start_voting` / `vote` / `end_voting` | voting: `category: Holiday`, `votes: 5`, `hidden: true`; `vote` with `id`, `delta`; `end_voting` responds with the ranking |
 | `brainstorm.share` | share a list with people |
 
@@ -501,6 +504,7 @@ data:
 | `brainstorm_idea_completed` | note completed |
 | `brainstorm_idea_deleted` | note deleted |
 | `brainstorm_reminder_due` | a reminder is due |
+| `brainstorm_comment_added` | a new comment (`idea_id`, `idea_text`, `text`, `by`, `mentions`) |
 
 The event data holds the whole note (`id`, `text`, `category`, `priority`, `source`, …):
 

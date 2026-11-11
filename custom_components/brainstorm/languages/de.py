@@ -1508,6 +1508,8 @@ MESSAGES: dict[str, str] = {
     "battery_task": "Batterie wechseln: {name}",
     "battery_task_level": "Batterie wechseln: {name} ({level} %)",
     "reminder_title": "Brainstorm: Erinnerung",
+    "comment_title": "Brainstorm: {author} hat kommentiert",
+    "comment_message": "„{text}“: {comment}",
     "action_done": "Erledigt",
     "action_snooze": "1 Stunde später",
     "action_tomorrow": "Morgen",

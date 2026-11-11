@@ -1,8 +1,8 @@
-import { LEVEL_CSS, SOCIAL_CSS, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, repeatBadge, repeatOptions, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.11.1";
+import { LEVEL_CSS, SOCIAL_CSS, commentBadge, renderComments, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, repeatBadge, repeatOptions, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.11.2";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.11.1 - KI: Map aus Thema oder Text
+ * Version: 1.11.2 - Kommentare
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -5265,6 +5265,12 @@ class BrainstormMindmapCard extends HTMLElement {
     });
   }
 
+  // The comments of a note: read, write, delete your own
+  _showComments(idea) {
+    if (!this._hass || !idea) return;
+    this._openDialog(t("💬 Kommentare"), (body) => renderComments(body, { hass: this._hass, idea, close: () => this._closeDialog() }));
+  }
+
   // Let the AI turn a topic or a pasted text into notes, picked in a preview
   _showGenerateMapDialog(prefill = "") {
     if (!this._hass) return;
@@ -8436,7 +8442,7 @@ class BrainstormMindmapCard extends HTMLElement {
             </div>
             ${markerBadges(idea) || progressBadge(idea) ? `<div class="cloud-marks">${progressBadge(idea)}${markerBadges(idea)}</div>` : ""}
             ${(() => {
-              const social = `${voteBadge(idea, voting, me)}${reactionBadges(idea, me)}`;
+              const social = `${voteBadge(idea, voting, me)}${reactionBadges(idea, me)}${commentBadge(idea)}`;
               return social ? `<div class="cloud-social">${social}</div>` : "";
             })()}
             ${cover ? `<div class="cloud-image" data-id="${this._escapeHtml(idea.id)}" data-att="${this._escapeHtml(cover.id)}" title="${t("Bild öffnen")}"><img alt="${this._escapeHtml(cover.name || "")}" draggable="false"></div>` : ""}
@@ -8449,6 +8455,7 @@ class BrainstormMindmapCard extends HTMLElement {
               <button class="action-btn more-btn" data-act="menu" data-id="${this._escapeHtml(idea.id)}" title="${t("Aktionen")}" aria-label="${t("Aktionen")}" aria-haspopup="menu" aria-expanded="${idea.id === this._menuId}">⋯</button>
               <div class="cloud-menu" role="menu">
                 <div class="menu-reactions">${reactionBadges(idea, me, true)}</div>
+                <button class="action-btn menu-item" role="menuitem" data-act="comments" data-lvl="normal" data-id="${this._escapeHtml(idea.id)}"><span>💬</span>${t("Kommentare")}${idea.comment_count ? ` (${idea.comment_count})` : ""}</button>
                 <button class="action-btn menu-item" role="menuitem" data-act="link" data-lvl="pro" data-id="${this._escapeHtml(idea.id)}"><span>🔗</span>${t("Mit einer anderen Notiz verbinden (L)")}</button>
                 ${hasBranch ? `<button class="action-btn menu-item" role="menuitem" data-act="focus" data-lvl="normal" data-id="${this._escapeHtml(idea.id)}"><span>🎯</span>${t("Nur diesen Zweig zeigen (F4)")}</button>` : ""}
                 ${aiSubtasks ? `<button class="action-btn menu-item" role="menuitem" data-act="suggest" data-lvl="normal" data-id="${this._escapeHtml(idea.id)}"><span>✨</span>${t("Unteraufgaben von der KI vorschlagen lassen")}</button>` : ""}
@@ -8664,6 +8671,12 @@ class BrainstormMindmapCard extends HTMLElement {
             this._vote(idea.id, Number(btn.getAttribute("data-vote")));
           });
         });
+        cloud.querySelectorAll("[data-comment]").forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            this._showComments(idea);
+          });
+        });
 
         // A marker filters the map by it, the ring of a note without subtasks moves on
         cloud.querySelectorAll(".marker-badge").forEach((markerEl) => {
@@ -8706,6 +8719,7 @@ class BrainstormMindmapCard extends HTMLElement {
             else if (act === "branch") this._showAddDialog(idea);
             else if (act === "focus") this._setFocus(idea.id);
             else if (act === "link") this._startLink(idea.id);
+            else if (act === "comments") this._showComments(idea);
             else if (act === "suggest") this._showAiChooser(idea);
             else if (act === "edit") this._showEditDialog(idea.id, idea.text, idea.category, idea.priority);
             else if (act === "move") this._showCategoryPicker(idea.id, idea.category, idea.text);
@@ -10008,7 +10022,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.11.1 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.11.2 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );
