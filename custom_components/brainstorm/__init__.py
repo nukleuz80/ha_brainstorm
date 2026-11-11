@@ -79,6 +79,9 @@ from .const import (
     SERVICE_ADD_COMMENT,
     SERVICE_DELETE_COMMENT,
     SERVICE_GROUP_IDEAS,
+    SERVICE_START_ROUND,
+    SERVICE_END_ROUND,
+    ROUND_MAX_MINUTES,
     COMMENT_MAX_LENGTH,
     SERVICE_IMPORT_OUTLINE,
     SERVICE_DELETE_DONE,
@@ -288,6 +291,17 @@ SERVICE_ADD_COMMENT_SCHEMA = vol.Schema(
 SERVICE_DELETE_COMMENT_SCHEMA = vol.Schema(
     {vol.Required(ATTR_ID): cv.string, vol.Required("comment_id"): cv.string}
 )
+
+SERVICE_START_ROUND_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_CATEGORY): cv.string,
+        vol.Optional("minutes", default=0): vol.All(
+            vol.Coerce(int), vol.Range(0, ROUND_MAX_MINUTES)
+        ),
+    }
+)
+
+SERVICE_END_ROUND_SCHEMA = vol.Schema({vol.Required(ATTR_CATEGORY): cv.string})
 
 SERVICE_GROUP_IDEAS_SCHEMA = vol.Schema(
     {
@@ -736,6 +750,20 @@ def _register_services(hass: HomeAssistant) -> None:
             call.data[ATTR_ID], call.data["comment_id"], call.context.user_id
         )
         return {"success": True}
+
+    async def handle_start_round(call: ServiceCall) -> dict[str, Any]:
+        """Start a hidden brainstorm round in a category."""
+        store = _require_store(hass)
+        round_ = await store.async_start_round(
+            call.data[ATTR_CATEGORY].strip(), call.data["minutes"], call.context.user_id
+        )
+        return {"success": True, "round": round_}
+
+    async def handle_end_round(call: ServiceCall) -> dict[str, Any]:
+        """End the hidden round of a category and show all its notes."""
+        store = _require_store(hass)
+        revealed = await store.async_end_round(call.data[ATTR_CATEGORY].strip())
+        return {"success": True, "revealed": revealed}
 
     async def handle_group_ideas(call: ServiceCall) -> dict[str, Any]:
         """Put notes of one category below a new note, for example a theme."""
@@ -1190,6 +1218,8 @@ def _register_services(hass: HomeAssistant) -> None:
         (SERVICE_ADD_COMMENT, handle_add_comment, SERVICE_ADD_COMMENT_SCHEMA),
         (SERVICE_DELETE_COMMENT, handle_delete_comment, SERVICE_DELETE_COMMENT_SCHEMA),
         (SERVICE_GROUP_IDEAS, handle_group_ideas, SERVICE_GROUP_IDEAS_SCHEMA),
+        (SERVICE_START_ROUND, handle_start_round, SERVICE_START_ROUND_SCHEMA),
+        (SERVICE_END_ROUND, handle_end_round, SERVICE_END_ROUND_SCHEMA),
     ):
         hass.services.async_register(
             DOMAIN,

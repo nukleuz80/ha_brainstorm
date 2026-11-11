@@ -485,6 +485,7 @@ All parameters are in the [README](../README.md#️-services) and under [**Devel
 | `brainstorm.react` | toggle a reaction: `id: …`, `reaction: heart` |
 | `brainstorm.add_comment` / `delete_comment` | comment: `id: …`, `text: "@Frida can you bring salad?"`; delete with `comment_id` |
 | `brainstorm.start_voting` / `vote` / `end_voting` | voting: `category: Holiday`, `votes: 5`, `hidden: true`; `vote` with `id`, `delta`; `end_voting` responds with the ranking |
+| `brainstorm.start_round` / `end_round` | hidden round: `category: Holiday`, `minutes: 10`; `end_round` reveals and responds with `revealed` |
 | `brainstorm.share` | share a list with people |
 
 With `parse_due: true`, `add_idea` reads a point in time from the text like speech does:
@@ -506,6 +507,7 @@ data:
 | `brainstorm_idea_deleted` | note deleted |
 | `brainstorm_reminder_due` | a reminder is due |
 | `brainstorm_comment_added` | a new comment (`idea_id`, `idea_text`, `text`, `by`, `mentions`) |
+| `brainstorm_round_ended` | a hidden round was revealed (`category`, `revealed`) |
 
 The event data holds the whole note (`id`, `text`, `category`, `priority`, `source`, …):
 

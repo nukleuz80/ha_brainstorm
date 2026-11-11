@@ -486,6 +486,7 @@ Alle Parameter stehen in der [README](../README_de.md#️-dienste-services) und 
 | `brainstorm.react` | Reaktion umschalten: `id: …`, `reaction: heart` |
 | `brainstorm.add_comment` / `delete_comment` | Kommentar: `id: …`, `text: "@Frida bringst du Salat?"`; löschen mit `comment_id` |
 | `brainstorm.start_voting` / `vote` / `end_voting` | Abstimmung: `category: Urlaub`, `votes: 5`, `hidden: true`; `vote` mit `id`, `delta`; `end_voting` antwortet mit der Rangliste |
+| `brainstorm.start_round` / `end_round` | Verdeckte Runde: `category: Urlaub`, `minutes: 10`; `end_round` deckt auf und antwortet mit `revealed` |
 | `brainstorm.share` | Liste mit Personen teilen |
 
 Mit `parse_due: true` wertet `add_idea` einen Zeitpunkt im Text aus wie bei Sprache:
@@ -507,6 +508,7 @@ data:
 | `brainstorm_idea_deleted` | Notiz gelöscht |
 | `brainstorm_reminder_due` | Erinnerung ist fällig |
 | `brainstorm_comment_added` | neuer Kommentar (`idea_id`, `idea_text`, `text`, `by`, `mentions`) |
+| `brainstorm_round_ended` | verdeckte Runde aufgedeckt (`category`, `revealed`) |
 
 In den Ereignisdaten steckt die ganze Notiz (`id`, `text`, `category`, `priority`, `source`, …):
 

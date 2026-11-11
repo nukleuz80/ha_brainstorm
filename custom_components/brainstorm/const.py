@@ -142,6 +142,7 @@ EVENT_IDEA_DELETED = "brainstorm_idea_deleted"
 EVENT_IDEA_UPDATED = "brainstorm_idea_updated"
 EVENT_REMINDER_DUE = "brainstorm_reminder_due"
 EVENT_COMMENT_ADDED = "brainstorm_comment_added"
+EVENT_ROUND_ENDED = "brainstorm_round_ended"
 
 # Attributes
 ATTR_ID = "id"
@@ -243,6 +244,10 @@ VOTING_MAX_VOTES = 20
 # Comments on a note: id, by (user ID), at, text; the overview only counts them
 ATTR_COMMENTS = "comments"
 ATTR_COMMENT_COUNT = "comment_count"
+# Written during a hidden brainstorm round: user ID of the author, the others
+# do not see the note until the round of its category ends
+ATTR_ROUND_BY = "round_by"
+ROUND_MAX_MINUTES = 60
 COMMENT_MAX_LENGTH = 2000
 COMMENTS_MAX = 200
 ATTACHMENT_DIR = "brainstorm_attachments"
@@ -311,6 +316,8 @@ SERVICE_END_VOTING = "end_voting"
 SERVICE_ADD_COMMENT = "add_comment"
 SERVICE_DELETE_COMMENT = "delete_comment"
 SERVICE_GROUP_IDEAS = "group_ideas"
+SERVICE_START_ROUND = "start_round"
+SERVICE_END_ROUND = "end_round"
 SERVICE_IMPORT_OUTLINE = "import_outline"
 SERVICE_DELETE_DONE = "delete_done"
 SERVICE_SET_CATEGORY_STYLE = "set_category_style"

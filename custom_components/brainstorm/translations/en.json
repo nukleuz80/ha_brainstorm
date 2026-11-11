@@ -814,6 +814,9 @@
     },
     "group_mixed_categories": {
       "message": "Only notes of the same category can be grouped."
+    },
+    "no_hidden_round": {
+      "message": "No hidden round is running in {category}."
     }
   },
   "services": {
@@ -1320,6 +1323,30 @@
         "ids": {
           "name": "Note IDs",
           "description": "The notes that go below it, all from the same category."
+        }
+      }
+    },
+    "start_round": {
+      "name": "Start hidden round",
+      "description": "Starts a hidden brainstorm round in a category: until it ends, each person sees only their own new notes there. If a round is already running, it stays as it is.",
+      "fields": {
+        "category": {
+          "name": "Category",
+          "description": "The list the round is for."
+        },
+        "minutes": {
+          "name": "Minutes",
+          "description": "Ends the round by itself after this time. 0 = until someone ends it."
+        }
+      }
+    },
+    "end_round": {
+      "name": "End hidden round",
+      "description": "Ends the hidden round of a category and shows everyone all notes written in it.",
+      "fields": {
+        "category": {
+          "name": "Category",
+          "description": "The list whose round ends."
         }
       }
     }

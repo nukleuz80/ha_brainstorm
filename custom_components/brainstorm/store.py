@@ -19,6 +19,7 @@ from typing import Any, Callable, TYPE_CHECKING
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Context, HomeAssistant
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
+from homeassistant.helpers.event import async_track_point_in_utc_time
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
@@ -68,11 +69,13 @@ from .const import (
     ATTR_REACTIONS,
     ATTR_VOTES,
     ATTR_COMMENTS,
+    ATTR_ROUND_BY,
     ATTR_COMMENT_COUNT,
     COMMENT_MAX_LENGTH,
     COMMENTS_MAX,
     EVENT_COMMENT_ADDED,
     REACTIONS,
+    ROUND_MAX_MINUTES,
     VOTING_MAX_VOTES,
     ATTR_REPEATED_AS,
     ATTR_REPEAT_CLOSED,
@@ -125,6 +128,7 @@ from .const import (
     EVENT_IDEA_COMPLETED,
     EVENT_IDEA_DELETED,
     EVENT_IDEA_UPDATED,
+    EVENT_ROUND_ENDED,
     JSON_EXPORT_FORMAT,
     JSON_EXPORT_VERSION,
     OVERVIEW_ENTITY_ID,
@@ -216,6 +220,7 @@ EXPORT_SKIPPED_FIELDS = (
     ATTR_REACTIONS,
     ATTR_VOTES,
     ATTR_COMMENTS,
+    ATTR_ROUND_BY,
 )
 IMPORT_STATUSES = ("active", "completed", "archived")
 # Imported fields that must be plain text
@@ -325,6 +330,9 @@ class BrainstormStore:
         self._category_shares: dict[str, dict[str, dict[str, str]]] = {}
         # Running voting rounds: category -> votes per person, hidden, by, since
         self._voting: dict[str, dict[str, Any]] = {}
+        # Hidden brainstorm rounds: category -> since, by, ends_at
+        self._rounds: dict[str, dict[str, Any]] = {}
+        self._round_timers: dict[str, Callable[[], None]] = {}
         self.integration_version: str | None = None
         self.alexa_skill: AlexaSkill | None = None
         self.reminders: ReminderManager | None = None
@@ -373,6 +381,8 @@ class BrainstormStore:
 
     def access_level(self, idea: dict[str, Any], user_id: str | None) -> str | None:
         """Return what a user may do with an idea, None being the system."""
+        if self.hidden_in_round(idea, user_id):
+            return None
         if not self._privacy_enabled or user_id is None:
             return ACCESS_OWNER
         owner = self.owner_of(idea)
@@ -499,6 +509,13 @@ class BrainstormStore:
     def get_overview_attributes(self, user_id: str | None = None) -> dict[str, Any]:
         """Return the statistics and ideas a user may see."""
         visible = self.visible_ideas(user_id)
+        if user_id is None:
+            # The shared sensor shows no note of a running hidden round
+            visible = [
+                i
+                for i in visible
+                if not (i.get(ATTR_ROUND_BY) and i.get(ATTR_CATEGORY) in self._rounds)
+            ]
         active_ideas = [i for i in visible if i.get(ATTR_STATUS) == "active"]
         completed_ideas = [i for i in visible if i.get(ATTR_STATUS) == "completed"]
 
@@ -643,6 +660,10 @@ class BrainstormStore:
                 }
                 for category, round_ in self._voting.items()
             },
+            "rounds": {
+                category: {**round_, "hidden_count": self.round_hidden_count(category, user_id)}
+                for category, round_ in self._rounds.items()
+            },
         }
 
     @property
@@ -736,6 +757,9 @@ class BrainstormStore:
             self._category_colors = data.get("category_colors", {})
             self._category_shares = data.get("category_shares", {})
             self._voting = data.get("voting", {})
+            self._rounds = data.get("rounds", {})
+            for category in list(self._rounds):
+                self._schedule_round_end(category)
             _LOGGER.debug(
                 "Loaded %d ideas and %d categories from storage",
                 len(self._ideas),
@@ -753,6 +777,7 @@ class BrainstormStore:
             "category_colors": self._category_colors,
             "category_shares": self._category_shares,
             "voting": self._voting,
+            "rounds": self._rounds,
             "ideas": list(self._ideas.values()),
         }
         await self._store.async_save(data)
@@ -1124,9 +1149,12 @@ class BrainstormStore:
         return group
 
     def async_cancel_ai_tasks(self) -> None:
-        """Stop AI work that is still running when the integration unloads."""
+        """Stop AI work and round timers that still run when the integration unloads."""
         for task in self._ai_tasks:
             task.cancel()
+        for cancel in self._round_timers.values():
+            cancel()
+        self._round_timers.clear()
 
     def parse_text_and_category(
         self,
@@ -1485,6 +1513,9 @@ class BrainstormStore:
         # Written into someone else's list, so its owner can see who it was
         if author and idea[ATTR_OWNER] != author:
             idea[ATTR_CREATED_BY] = author
+        # During a hidden round only its author sees the new note
+        if author and resolved_cat in self._rounds:
+            idea[ATTR_ROUND_BY] = author
         # Someone who is meant to be reminded also has to see the idea
         if assignee_user := self._person_user(assignee):
             idea[ATTR_SHARES].setdefault(assignee_user, SHARE_EDIT)
@@ -2610,6 +2641,98 @@ class BrainstormStore:
         ]
         ranked.sort(key=lambda item: -item["points"])
         return ranked
+
+    @property
+    def rounds(self) -> dict[str, dict[str, Any]]:
+        """Return the running hidden brainstorm rounds by category."""
+        return {category: dict(round_) for category, round_ in self._rounds.items()}
+
+    def hidden_in_round(self, idea: dict[str, Any], user_id: str | None) -> bool:
+        """Tell whether a note of someone else is still hidden from this user."""
+        author = idea.get(ATTR_ROUND_BY)
+        return bool(
+            author
+            and user_id is not None
+            and author != user_id
+            and idea.get(ATTR_CATEGORY) in self._rounds
+        )
+
+    def round_hidden_count(self, category: str, user_id: str | None) -> int:
+        """Count the notes of others this user cannot see yet in a round."""
+        return sum(
+            1
+            for idea in self._ideas.values()
+            if idea.get(ATTR_CATEGORY) == category
+            and idea.get(ATTR_STATUS) == "active"
+            and self.hidden_in_round(idea, user_id)
+        )
+
+    async def async_start_round(
+        self, category: str, minutes: int, user_id: str | None
+    ) -> dict[str, Any]:
+        """Start a hidden brainstorm round, or return the one already running.
+
+        Until it ends, each person sees only their own new notes of the
+        category. With minutes it ends by itself.
+        """
+        if category not in self._categories:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="category_not_found",
+                translation_placeholders={"category": category},
+            )
+        if (running := self._rounds.get(category)) is not None:
+            return dict(running)
+        now = dt_util.now()
+        round_: dict[str, Any] = {"since": now.isoformat()}
+        if user_id:
+            round_["by"] = user_id
+        minutes = max(0, min(ROUND_MAX_MINUTES, int(minutes)))
+        if minutes:
+            round_["ends_at"] = (now + timedelta(minutes=minutes)).isoformat()
+        self._rounds[category] = round_
+        self._schedule_round_end(category)
+        await self.async_save()
+        self._notify_listeners()
+        return dict(round_)
+
+    async def async_end_round(self, category: str) -> int:
+        """End the hidden round of a category, show all its notes and count them."""
+        if self._rounds.pop(category, None) is None:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="no_hidden_round",
+                translation_placeholders={"category": category},
+            )
+        if cancel := self._round_timers.pop(category, None):
+            cancel()
+        revealed = 0
+        for idea in self._ideas.values():
+            if idea.get(ATTR_CATEGORY) == category and idea.pop(ATTR_ROUND_BY, None):
+                revealed += 1
+        await self.async_save()
+        self.hass.bus.async_fire(
+            EVENT_ROUND_ENDED, {"category": category, "revealed": revealed}
+        )
+        self._notify_listeners()
+        return revealed
+
+    def _schedule_round_end(self, category: str) -> None:
+        """End a round with a time limit when its time is up."""
+        if cancel := self._round_timers.pop(category, None):
+            cancel()
+        ends_at = dt_util.parse_datetime(str(self._rounds[category].get("ends_at") or ""))
+        if ends_at is None:
+            return
+
+        async def _end(_now: datetime) -> None:
+            self._round_timers.pop(category, None)
+            if category in self._rounds:
+                await self.async_end_round(category)
+
+        self._round_timers[category] = async_track_point_in_utc_time(
+            self.hass, _end, dt_util.as_utc(ends_at)
+        )
 
     def get_comments(self, idea_id: str, user_id: str | None) -> list[dict[str, Any]]:
         """Return the comments of a note a person may see, oldest first."""

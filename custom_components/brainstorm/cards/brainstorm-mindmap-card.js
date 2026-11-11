@@ -1,8 +1,8 @@
-import { LEVEL_CSS, SOCIAL_CSS, commentBadge, renderComments, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, repeatBadge, repeatOptions, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.11.4";
+import { LEVEL_CSS, SOCIAL_CSS, commentBadge, renderComments, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, repeatBadge, repeatOptions, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.11.5";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.11.4 - KI-Themen
+ * Version: 1.11.5 - Verdeckte Runde
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -4027,6 +4027,22 @@ class BrainstormMindmapCard extends HTMLElement {
       voteBar.addEventListener("click", (e) => {
         const end = e.target.closest("[data-end-vote]");
         if (end) this._endVoting(end.getAttribute("data-end-vote"));
+        const join = e.target.closest("[data-join-round]");
+        if (join) {
+          const category = join.getAttribute("data-join-round");
+          if (this._selectedCategory !== category) {
+            this._selectedCategory = category;
+            this._focusId = null;
+            this._saveSelectedCategory();
+            this._nodePositions.clear();
+            this._lastDataSignature = "";
+            this._centerLayout(true);
+            this._updateContent();
+          }
+          this._showBrainstorm();
+        }
+        const reveal = e.target.closest("[data-end-round]");
+        if (reveal) this._endRound(reveal.getAttribute("data-end-round"));
       });
     }
     const minimapBtn = this.shadowRoot.getElementById("minimapBtn");
@@ -4491,6 +4507,34 @@ class BrainstormMindmapCard extends HTMLElement {
     return (sensor && sensor.attributes.voting) || {};
   }
 
+  // Running hidden brainstorm rounds by category
+  _rounds() {
+    const sensor = this._getSensorEntity();
+    return (sensor && sensor.attributes.rounds) || {};
+  }
+
+  _roundEnd(round) {
+    const end = round && round.ends_at ? Date.parse(round.ends_at) : 0;
+    return Number.isFinite(end) ? end : 0;
+  }
+
+  async _endRound(category) {
+    try {
+      const result = await this._hass.callWS({
+        type: "call_service",
+        domain: "brainstorm",
+        service: "end_round",
+        service_data: { category },
+        return_response: true,
+      });
+      const revealed = (result && result.response && result.response.revealed) || 0;
+      this._showToast(t("Aufgedeckt: {count} Ideen", { count: revealed }));
+    } catch (err) {
+      console.error("[BrainstormMindmap] Ending the round failed:", err);
+      this._showToast((err && err.message) || t("Das ging nicht."));
+    }
+  }
+
   async _react(id, reaction) {
     try {
       await this._hass.callService("brainstorm", "react", { id, reaction });
@@ -4514,13 +4558,27 @@ class BrainstormMindmapCard extends HTMLElement {
     const bar = this.shadowRoot && this.shadowRoot.getElementById("voteBar");
     if (!bar) return;
     const voting = this._voting();
-    const categories = this._selectedCategory === "all" ? Object.keys(voting) : [this._selectedCategory].filter((c) => voting[c]);
-    if (!categories.length) {
+    const rounds = this._rounds();
+    const shown = (all) => (this._selectedCategory === "all" ? Object.keys(all) : [this._selectedCategory].filter((c) => all[c]));
+    const categories = shown(voting);
+    const roundCategories = shown(rounds);
+    if (!categories.length && !roundCategories.length) {
       bar.classList.remove("open");
       bar.innerHTML = "";
       return;
     }
-    bar.innerHTML = categories
+    const roundHtml = roundCategories
+      .map((category) => {
+        const round = rounds[category];
+        const end = this._roundEnd(round);
+        const until = end ? ` · ${t("bis {time}", { time: new Date(end).toLocaleTimeString(this._hass && this._hass.language ? this._hass.language : undefined, { hour: "2-digit", minute: "2-digit" }) })}` : "";
+        const hidden = round.hidden_count ? ` · ${t("{count} Ideen anderer verdeckt", { count: round.hidden_count })}` : "";
+        return `<span class="vote-info">🙈 ${t("Verdeckte Runde in {category}", { category: this._escapeHtml(category) })}${hidden}${until}</span>
+          <button type="button" data-join-round="${this._escapeHtml(category)}">${t("Mitmachen")}</button>
+          <button type="button" data-end-round="${this._escapeHtml(category)}">${t("Aufdecken")}</button>`;
+      })
+      .join("");
+    bar.innerHTML = roundHtml + categories
       .map((category) => {
         const round = voting[category];
         const left = Math.max(0, (round.votes || 0) - (round.used || 0));
@@ -7957,15 +8015,28 @@ class BrainstormMindmapCard extends HTMLElement {
         ? t("Ideen landen in „{category}“.", { category: this._escapeHtml(category) })
         : t("Ideen landen in der passenden Kategorie.");
     const state = { minutes: 5, endsAt: 0, timer: null, added: [] };
+    const running = category ? this._rounds()[category] : null;
+    if (running) {
+      // Join the round: its time limit counts for everyone
+      const end = this._roundEnd(running);
+      state.minutes = end ? Math.max(1, Math.ceil((end - Date.now()) / 60000)) : 0;
+      state.endsAt = end;
+    }
     this._openDialog(t("⚡ Brainstorm"), (body) => {
+      const roundRow = !category
+        ? ""
+        : running
+          ? `<div class="dialog-hint storm-round">🙈 ${t("Verdeckte Runde läuft: Deine Ideen sieht bis zum Aufdecken nur du.")}</div>`
+          : `<label class="dialog-check storm-round"><input type="checkbox" id="stormHidden"> 🙈 ${t("Verdeckt: Jeder sieht bis zum Ende nur die eigenen Ideen")}</label>`;
       body.innerHTML = `
         <div class="storm-head">
-          <div class="dialog-prio-grid storm-times" id="stormTimes">
+          <div class="dialog-prio-grid storm-times" id="stormTimes"${running ? ' style="display: none;"' : ""}>
             ${[3, 5, 10, 15, 0].map((m) => `<div class="dialog-prio-chip ${m === state.minutes ? "selected" : ""}" data-minutes="${m}">${m ? t("{minutes} Min.", { minutes: m }) : "∞"}</div>`).join("")}
           </div>
           <div class="storm-clock" id="stormClock" aria-live="polite">5:00</div>
         </div>
         <div class="dialog-hint">${where} ${t("Nicht bewerten, nur sammeln: Enter speichert und das Feld ist sofort wieder frei.")}</div>
+        ${roundRow}
         <div class="storm-input-row">
           <input class="dialog-input storm-input" id="stormInput" maxlength="300" autocomplete="off" placeholder="${t("Idee eintippen und Enter …")}">
           <button class="dialog-btn dialog-btn-primary" id="stormAdd">${t("Sammeln")}</button>
@@ -7973,8 +8044,9 @@ class BrainstormMindmapCard extends HTMLElement {
         <div class="storm-count" id="stormCount"></div>
         <div class="storm-notes" id="stormNotes"></div>
         <div class="dialog-footer">
-          ${this._aiAvailable() && this._sortInCategory() ? `<button class="dialog-btn dialog-btn-cancel" id="stormSortIn">${t("✨ Lose Ideen zuordnen")}</button>` : ""}
-          ${this._aiAvailable() && this._sortInCategory() ? `<button class="dialog-btn dialog-btn-cancel" id="stormCluster">${t("✨ Nach Themen gruppieren")}</button>` : ""}
+          ${this._aiAvailable() && this._sortInCategory() ? `<button class="dialog-btn dialog-btn-cancel" id="stormSortIn" title="${t("✨ Lose Ideen zuordnen")}">${t("✨ Zuordnen")}</button>` : ""}
+          ${this._aiAvailable() && this._sortInCategory() ? `<button class="dialog-btn dialog-btn-cancel" id="stormCluster" title="${t("✨ Nach Themen gruppieren")}">${t("✨ Themen")}</button>` : ""}
+          ${running ? `<button class="dialog-btn dialog-btn-cancel" id="stormReveal">🙈 ${t("Aufdecken")}</button>` : ""}
           <button class="dialog-btn dialog-btn-primary" id="stormDone">${t("Fertig")}</button>
         </div>
       `;
@@ -8007,9 +8079,29 @@ class BrainstormMindmapCard extends HTMLElement {
           if (navigator.vibrate) navigator.vibrate([120, 80, 120]);
         }
       };
-      const start = () => {
-        if (state.endsAt || !state.minutes) return;
-        state.endsAt = Date.now() + state.minutes * 60000;
+      const start = async () => {
+        const hiddenBox = body.querySelector("#stormHidden");
+        if (hiddenBox && hiddenBox.checked && !state.round) {
+          state.round = true;
+          hiddenBox.disabled = true;
+          body.querySelectorAll("#stormTimes [data-minutes]").forEach((chip) => chip.classList.add("disabled"));
+          try {
+            const result = await this._hass.callWS({
+              type: "call_service",
+              domain: "brainstorm",
+              service: "start_round",
+              service_data: { category, minutes: state.minutes },
+              return_response: true,
+            });
+            const end = this._roundEnd(result && result.response && result.response.round);
+            if (end) state.endsAt = end;
+          } catch (err) {
+            console.error("[BrainstormMindmap] Starting the hidden round failed:", err);
+            this._showToast((err && err.message) || t("Das ging nicht."));
+          }
+        }
+        if (state.timer || !state.minutes) return;
+        if (!state.endsAt) state.endsAt = Date.now() + state.minutes * 60000;
         state.timer = setInterval(showClock, 250);
       };
       const render = () => {
@@ -8033,7 +8125,7 @@ class BrainstormMindmapCard extends HTMLElement {
         if (!text) return;
         input.value = "";
         input.focus();
-        start();
+        await start();
         const item = { text, id: null };
         state.added.push(item);
         render();
@@ -8051,6 +8143,7 @@ class BrainstormMindmapCard extends HTMLElement {
       };
       body.querySelectorAll("#stormTimes [data-minutes]").forEach((chip) => {
         chip.addEventListener("click", () => {
+          if (state.round) return;
           body.querySelectorAll("#stormTimes [data-minutes]").forEach((c) => c.classList.remove("selected"));
           chip.classList.add("selected");
           state.minutes = Number(chip.getAttribute("data-minutes")) || 0;
@@ -8070,6 +8163,13 @@ class BrainstormMindmapCard extends HTMLElement {
       });
       body.querySelector("#stormAdd").addEventListener("click", add);
       body.querySelector("#stormDone").addEventListener("click", () => this._closeDialog());
+      const reveal = body.querySelector("#stormReveal");
+      if (reveal) {
+        reveal.addEventListener("click", () => {
+          this._closeDialog();
+          this._endRound(category);
+        });
+      }
       const sortIn = body.querySelector("#stormSortIn");
       if (sortIn) {
         sortIn.addEventListener("click", () => {
@@ -8094,6 +8194,7 @@ class BrainstormMindmapCard extends HTMLElement {
         this._showToast(t("{count} Ideen gesammelt. 🪄 ordnet die Map neu, ↶ nimmt alle heraus.", { count: ids.length }));
       };
       showClock();
+      if (running && state.endsAt) state.timer = setInterval(showClock, 250);
       setTimeout(() => input.focus(), 60);
     });
   }
@@ -10167,7 +10268,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.11.4 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.11.5 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

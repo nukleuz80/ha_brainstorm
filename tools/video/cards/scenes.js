@@ -1,4 +1,4 @@
-// Extra demo states for single video shots: index.html?scene=social|comments|aimap|cluster
+// Extra demo states for single video shots: index.html?scene=social|comments|aimap|cluster|round
 const PEOPLE = { u1: "Olaf", u2: "Frida", u3: "Ben" };
 const ago = (min) => new Date(Date.now() - min * 60000).toISOString();
 
@@ -63,6 +63,10 @@ export function setup(scene, hass) {
   if (scene === "cluster") {
     attrs.ai_subtasks = true;
   }
+  if (scene === "round") {
+    const ends = new Date(Date.now() + 4 * 60000 + 30000).toISOString();
+    attrs.rounds = { [hass._sceneCategory || "Haus & Garten"]: { since: ago(1), by: "u2", ends_at: ends, hidden_count: 3 } };
+  }
   if (scene === "aimap") {
     attrs.ai_subtasks = true;
     attrs.categories = [...attrs.categories, "Sommerfest"];
@@ -73,7 +77,7 @@ export function setup(scene, hass) {
     if (msg.type === "brainstorm/comments") return { comments: COMMENTS, can_edit: true };
     if (msg.type === "brainstorm/generate_map") return { nodes: MAP };
     if (msg.type === "brainstorm/cluster_ideas") return { themes: THEMES };
-    if (msg.type === "brainstorm/ideas") return { current_user: "u1" };
+    if (msg.type === "brainstorm/ideas") return { ...attrs, current_user: "u1" };
     return {};
   };
 }
@@ -84,6 +88,7 @@ export async function after(scene, el, hass) {
   if (scene === "social" && el._drawMinimap) el._drawMinimap();
   if (scene === "comments") el._showComments(hass._sceneIdea);
   if (scene === "cluster") el._showClusterDialog();
+  if (scene === "round") el._showBrainstorm();
   if (scene === "aimap") {
     el._showGenerateMapDialog("Sommerfest im Garten planen");
     await wait(100);

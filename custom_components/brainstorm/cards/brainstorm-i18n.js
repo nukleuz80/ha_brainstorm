@@ -594,6 +594,16 @@ const DICTIONARIES = {
     "{count} Notizen zugeordnet": "{count} notes sorted in",
     "✨ KI-Hilfe": "✨ AI help",
     "✨ Lose Ideen zuordnen": "✨ Sort in loose ideas",
+    "✨ Zuordnen": "✨ Sort in",
+    "✨ Themen": "✨ Themes",
+    "Aufgedeckt: {count} Ideen": "Revealed: {count} ideas",
+    "bis {time}": "until {time}",
+    "{count} Ideen anderer verdeckt": "{count} ideas of others hidden",
+    "Verdeckte Runde in {category}": "Hidden round in {category}",
+    "Mitmachen": "Join",
+    "Aufdecken": "Reveal",
+    "Verdeckte Runde läuft: Deine Ideen sieht bis zum Aufdecken nur du.": "Hidden round running: only you see your ideas until they are revealed.",
+    "Verdeckt: Jeder sieht bis zum Ende nur die eigenen Ideen": "Hidden: everyone sees only their own ideas until the end",
     "✨ Nach Themen gruppieren": "✨ Group into themes",
     "Zum Gruppieren braucht es mindestens vier lose Notizen ohne Unterpunkte.": "Grouping needs at least four loose notes without subtasks.",
     "Die KI hat keine Themen geliefert.": "The AI gave no themes.",
@@ -1195,7 +1205,10 @@ export function reactionLabel(key) {
 
 /** Whether a card needs the ideas as the signed-in user sees them. */
 export function needsPersonalData(attributes) {
-  return Boolean(attributes && (attributes.privacy || Object.keys(attributes.voting || {}).length));
+  return Boolean(
+    attributes &&
+      (attributes.privacy || Object.keys(attributes.voting || {}).length || Object.keys(attributes.rounds || {}).length),
+  );
 }
 
 /** All points a note got. */

@@ -814,6 +814,9 @@
     },
     "group_mixed_categories": {
       "message": "Gruppieren geht nur mit Notizen derselben Kategorie."
+    },
+    "no_hidden_round": {
+      "message": "In {category} läuft keine verdeckte Runde."
     }
   },
   "services": {
@@ -1320,6 +1323,30 @@
         "ids": {
           "name": "Notiz-IDs",
           "description": "Die Notizen, die darunter kommen, alle aus derselben Kategorie."
+        }
+      }
+    },
+    "start_round": {
+      "name": "Verdeckte Runde starten",
+      "description": "Startet eine verdeckte Brainstorm-Runde in einer Kategorie: Bis zum Ende sieht dort jede Person nur ihre eigenen neuen Notizen. Läuft schon eine Runde, bleibt sie, wie sie ist.",
+      "fields": {
+        "category": {
+          "name": "Kategorie",
+          "description": "Die Liste, für die die Runde gilt."
+        },
+        "minutes": {
+          "name": "Minuten",
+          "description": "Beendet die Runde nach dieser Zeit von selbst. 0 = bis jemand sie beendet."
+        }
+      }
+    },
+    "end_round": {
+      "name": "Verdeckte Runde beenden",
+      "description": "Beendet die verdeckte Runde einer Kategorie und zeigt allen die darin geschriebenen Notizen.",
+      "fields": {
+        "category": {
+          "name": "Kategorie",
+          "description": "Die Liste, deren Runde endet."
         }
       }
     }

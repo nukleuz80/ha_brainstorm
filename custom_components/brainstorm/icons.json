@@ -83,6 +83,12 @@
     },
     "group_ideas": {
       "service": "mdi:group"
+    },
+    "start_round": {
+      "service": "mdi:eye-off-outline"
+    },
+    "end_round": {
+      "service": "mdi:eye-outline"
     }
   }
 }
