@@ -310,6 +310,7 @@ With **Smart Text Optimization** (General Settings) spoken notes are tidied up a
 | **B** | brainstorm mode |
 | **S** | sort the subtasks (no selection: main notes) |
 | **Z** | AI: sort in loose ideas |
+| **K** | AI: group loose notes into themes |
 | **G** | AI: create a map from a topic or text |
 | **R** | rules: color notes that fit a saved filter |
 | **M** | overview (minimap) on/off |

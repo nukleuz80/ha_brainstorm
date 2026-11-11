@@ -18,6 +18,7 @@ from .store import get_loaded_store
 ERR_AI_NOT_CONFIGURED = "ai_not_configured"
 ERR_AI_FAILED = "ai_failed"
 ERR_AI_UNAVAILABLE = "ai_unavailable"
+ERR_TOO_FEW_NOTES = "too_few_notes"
 
 
 @callback
@@ -28,6 +29,7 @@ def async_register_commands(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, websocket_suggest_subtasks)
     websocket_api.async_register_command(hass, websocket_summarize_branch)
     websocket_api.async_register_command(hass, websocket_suggest_parents)
+    websocket_api.async_register_command(hass, websocket_cluster_ideas)
     websocket_api.async_register_command(hass, websocket_generate_map)
     websocket_api.async_register_command(hass, websocket_get_comments)
 
@@ -250,6 +252,48 @@ async def websocket_suggest_parents(
         )
         return
     connection.send_result(msg["id"], {"suggestions": suggestions})
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "brainstorm/cluster_ideas",
+        vol.Required("category"): vol.All(cv.string, vol.Length(max=100)),
+        vol.Optional("language"): vol.All(cv.string, vol.Length(max=10)),
+    }
+)
+@websocket_api.async_response
+async def websocket_cluster_ideas(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Let the AI group loose notes of a category into themes; nothing is stored."""
+    store = get_loaded_store(hass)
+    if store is None:
+        connection.send_error(
+            msg["id"], websocket_api.ERR_NOT_FOUND, "Brainstorm is not loaded"
+        )
+        return
+    if not store.ai_subtasks_available:
+        connection.send_error(
+            msg["id"], ERR_AI_NOT_CONFIGURED, "No AI task entity is set up"
+        )
+        return
+    try:
+        themes = await store.async_cluster_ideas(
+            msg["category"], connection.user.id, msg.get("language")
+        )
+    except AIUnavailableError:
+        connection.send_error(
+            msg["id"], ERR_AI_UNAVAILABLE, "The AI did not answer, try again later"
+        )
+        return
+    if themes is None:
+        connection.send_error(
+            msg["id"], ERR_TOO_FEW_NOTES, "There are too few loose notes to group"
+        )
+        return
+    connection.send_result(msg["id"], {"themes": themes})
 
 
 @websocket_api.websocket_command(

@@ -808,6 +808,12 @@
     },
     "comment_not_yours": {
       "message": "Only its author or whoever may change the note can remove comment {id}."
+    },
+    "group_title_empty": {
+      "message": "The new parent note needs a title."
+    },
+    "group_mixed_categories": {
+      "message": "Only notes of the same category can be grouped."
     }
   },
   "services": {
@@ -1300,6 +1306,20 @@
         "shares": {
           "name": "Shares",
           "description": "User ID (or `all`) and level, such as `all: view`. Levels are `view` and `edit`; `null` removes a share."
+        }
+      }
+    },
+    "group_ideas": {
+      "name": "Group notes",
+      "description": "Puts notes of one category below a new note with this title, for example a theme the AI suggested. The new note takes the place of the first note.",
+      "fields": {
+        "title": {
+          "name": "Title",
+          "description": "Text of the new parent note."
+        },
+        "ids": {
+          "name": "Note IDs",
+          "description": "The notes that go below it, all from the same category."
         }
       }
     }

@@ -572,3 +572,16 @@ delete_comment:
       required: true
       selector:
         text:
+group_ideas:
+  fields:
+    title:
+      required: true
+      example: "Garten"
+      selector:
+        text:
+    ids:
+      required: true
+      example: '["a1b2c3d4", "e5f6a7b8"]'
+      selector:
+        text:
+          multiple: true

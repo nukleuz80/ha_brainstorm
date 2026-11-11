@@ -9,7 +9,7 @@
 [![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.11.3-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.11.4-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -123,6 +123,7 @@ Brainstorm Hub turns every **Amazon Echo** device in your home into an instant, 
   - **Presentation mode (v1.8.10):** **P** (or ▶ in the view choice) shows the map full screen and walks through it note by note, branch by branch, with the description below. → / space for the next note, ← back, Esc ends it.
   - **Comments (v1.11.2):** 💬 in the list's context menu or under ⋯ in the mind map opens the thread of a note: who, when, what, with formatting. A note with comments shows 💬 and the count; tap it to open the thread. **@Name** tells that person over their channels under *Reminders ➔ Persons*. You can delete your own comments; whoever may change the note can delete any. People who may only view a shared note may still comment.
   - **AI: map from a topic or text (v1.11.1):** ✨ *Create map from a topic* on an empty map, key **G**, or ✨ *Create with AI* under 🖼️ ➔ *Insert an outline*. A topic such as “Plan a summer party” or a pasted text becomes a preview with up to three levels below a title. Untick what you do not want (its points move up), edit the texts, add them; ↶ takes it all back. It lands in the focused branch or the chosen category.
+  - **AI: group into themes (v1.11.4):** lots of loose notes in a category? Key **K**, ✨ *Group into themes* at the end of a brainstorm round, or in the *Sort in loose ideas* dialog when nothing fits there: the AI groups the main notes without subtasks into three to seven themes. In the preview you tick themes and notes and change the titles; each theme becomes a new parent note in the place of the first note, with the notes below it. ↶ takes it back. Needs at least four loose notes.
   - **AI help on the map (v1.8.9):** with an AI task entity, ✨ on a note with subtasks can also **summarize the branch** in a few sentences, which can become the description. **Sort in loose ideas** (key **Z**, or at the end of a brainstorm round) suggests a parent for every loose main note of the category; you tick what to keep. Nothing changes before you confirm, ↶ takes it back.
   - **Content templates (v1.8.8):** 🖼️ ➔ *Insert an outline* has ready branches such as SWOT analysis, pros and cons, project plan, week plan or packing list for a trip. Adjust the text, then insert.
   - **Templates and picture export:** Four templates (Standard, Clean, Sketch, Neon) set shape, lines and colors. Ten shapes are available, from card, cloud, speech and thought bubble to ellipse, hexagon, note slip and underlined text, for the whole map or per note. 🖼️ at the top right saves the map as SVG or PNG.
@@ -995,6 +996,17 @@ Removes a comment. Its author may, and whoever may change the note.
 | `id` | Yes | ID of the note. |
 | `comment_id` | Yes | ID of the comment. |
 
+### `brainstorm.group_ideas`
+
+▶️ [Try it in Home Assistant](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.group_ideas)
+
+Puts notes of one category below a new note with this title, for example a theme the AI suggested. The new note takes the place of the first note; the notes keep their order and subtasks. Answers with the ID of the new note (`id`).
+
+| Field | Required | Meaning |
+| :--- | :--- | :--- |
+| `title` | Yes | Text of the new parent note. |
+| `ids` | Yes | The notes that go below it, all from the same category. |
+
 ### `brainstorm.start_voting`
 
 ▶️ [Try it in Home Assistant](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.start_voting)
@@ -1107,6 +1119,7 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.11.4`** | 2026-11-11 | **AI: group into themes.** Key **K**, ✨ at the end of a brainstorm round, or from *Sort in loose ideas*: the AI groups loose main notes of a category into three to seven themes, you tick and rename them in the preview, and each theme becomes a parent note with the notes below it; ↶ takes it back. New service `brainstorm.group_ideas` and WebSocket command `brainstorm/cluster_ideas`. Dialog footers with many buttons now wrap. |
 | **`v1.11.3`** | 2026-11-11 | **Fixes:** in the list card's comment dialog, the buttons and the text field had no styling. In the *Create map from a topic* preview, long suggestions pushed the buttons out of view; the list now scrolls on its own, and an empty gap of 160 px above the buttons is gone. |
 | **`v1.11.2`** | 2026-11-11 | **Comments on notes.** A thread per note with name, time and text, 💬 with the count in both cards, the dialog from the context menu or ⋯. `@Name` tells that person over their channels under *Reminders ➔ Persons*, with privacy only when they may see the note. New services `brainstorm.add_comment` and `delete_comment`, WebSocket command `brainstorm/comments`, event `brainstorm_comment_added`. The sensor only counts them (`comment_count`); comments stay out of the JSON export. |
 | **`v1.11.1`** | 2026-11-11 | **AI: mind map from a topic or text.** ✨ *Create map from a topic* on an empty map, key **G**, or ✨ *Create with AI* in the *Insert an outline* dialog: the AI turns a topic into main branches with points, or structures a pasted text, at most three levels and 40 lines. Tick and edit in the preview, then add; ↶ takes it all back. New WebSocket command `brainstorm/generate_map`; nothing is stored before you confirm. |

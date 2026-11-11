@@ -9,7 +9,7 @@
 [![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.11.3-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.11.4-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -147,6 +147,7 @@ Brainstorm Hub verwandelt alle deine **Amazon Echo**-Geräte im Haus in sekunden
     - **Regeln (v1.8.12):** 🎨 in der Suchleiste oder **R** macht aus dem aktuellen Filter eine Regel mit Farbe und Zeichen, wie SmartRules in MindManager: *alles 🔥 Dringende rot*, *#garten grün mit ⭐* … Jede passende Notiz wird in der Map und in der Listenkarte eingefärbt, die erste passende Regel gilt. Regeln lassen sich ausschalten, nach oben schieben, bearbeiten und löschen (↶ holt eine zurück). Sie liegen bei deinem Home-Assistant-Benutzer und gelten so auf jedem Gerät.
     - **Kommentare (v1.11.2):** 💬 im Kontextmenü der Liste oder unter ⋯ in der Mindmap öffnet den Verlauf einer Notiz: wer, wann, was, mit Formatierung. Eine Notiz mit Kommentaren zeigt 💬 und die Anzahl, ein Tipp darauf öffnet ihn. **@Name** benachrichtigt die Person über ihre Kanäle unter *Erinnerungen ➔ Personen*. Eigene Kommentare lassen sich löschen; wer die Notiz ändern darf, kann alle löschen. Wer eine geteilte Notiz nur sehen darf, darf trotzdem kommentieren.
     - **KI: Map aus Thema oder Text (v1.11.1):** ✨ *Map aus Thema erzeugen* auf einer leeren Map, Taste **G** oder ✨ *Mit KI erzeugen* unter 🖼️ ➔ *Gliederung einfügen*. Ein Thema wie „Sommerfest planen“ oder ein eingefügter Text wird zu einer Vorschau mit bis zu drei Ebenen unter einem Titel. Haken weg bei allem, was du nicht willst (Unterpunkte rücken nach oben), Texte ändern, übernehmen; ↶ nimmt alles zurück. Landet im Fokus-Zweig oder in der gewählten Kategorie.
+    - **KI: Nach Themen gruppieren (v1.11.4):** Viele lose Notizen in einer Kategorie? Taste **K**, ✨ *Nach Themen gruppieren* am Ende einer Brainstorm-Runde oder im Dialog *Lose Ideen zuordnen*, wenn dort nichts passt: Die KI fasst die Hauptnotizen ohne Unterpunkte zu drei bis sieben Themen zusammen. In der Vorschau hakst du Themen und Notizen ab und änderst die Titel; jedes Thema wird ein neuer Oberpunkt an der Stelle der ersten Notiz, die Notizen kommen darunter. ↶ nimmt es zurück. Braucht mindestens vier lose Notizen.
     - **KI-Hilfe auf der Map (v1.8.9):** Mit einer KI-Aufgaben-Entität kann ✨ an einer Notiz mit Unterpunkten auch **den Ast zusammenfassen**, in ein paar Sätzen, die zur Beschreibung werden können. **Lose Ideen zuordnen** (Taste **Z** oder am Ende einer Brainstorm-Runde) schlägt für jede lose Hauptnotiz der Kategorie einen Oberpunkt vor; du hakst ab, was gelten soll. Vor deiner Bestätigung ändert sich nichts, ↶ nimmt es zurück.
     - **Inhaltsvorlagen (v1.8.8):** 🖼️ ➔ *Gliederung einfügen* hat fertige Zweige wie SWOT-Analyse, Pro und Contra, Projektplan, Wochenplan oder Packliste für die Reise. Text anpassen, dann einfügen.
     - **Vorlagen und Bild-Export:** Vier Vorlagen (Standard, Klar, Skizze, Neon) bestimmen Form, Linien und Farben. Zehn Formen stehen bereit, von Karte, Wolke, Sprech- und Gedankenblase bis Ellipse, Sechseck, Notizzettel und unterstrichenem Text, für die ganze Map oder pro Notiz. 🖼️ oben rechts speichert die Map als SVG oder PNG.
@@ -1047,6 +1048,17 @@ Entfernt einen Kommentar. Das darf, wer ihn geschrieben hat oder die Notiz ände
 | `id` | Ja | ID der Notiz. |
 | `comment_id` | Ja | ID des Kommentars. |
 
+### `brainstorm.group_ideas`
+
+▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.group_ideas)
+
+Hängt Notizen einer Kategorie unter eine neue Notiz mit diesem Titel, zum Beispiel ein Thema, das die KI vorgeschlagen hat. Die neue Notiz nimmt den Platz der ersten Notiz ein, die Notizen behalten Reihenfolge und Unterpunkte. Antwortet mit der ID der neuen Notiz (`id`).
+
+| Feld | Pflicht | Bedeutung |
+| :--- | :--- | :--- |
+| `title` | Ja | Text der neuen Oberpunkt-Notiz. |
+| `ids` | Ja | Die Notizen, die darunter kommen, alle aus derselben Kategorie. |
+
 ### `brainstorm.start_voting`
 
 ▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.start_voting)
@@ -1159,6 +1171,7 @@ Weitere Beispiele für Assist und Alexa liegen im Ordner [`examples/`](examples/
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.11.4`** | 11.11.2026 | **KI: Nach Themen gruppieren.** Taste **K**, ✨ am Ende einer Brainstorm-Runde oder aus *Lose Ideen zuordnen*: Die KI fasst lose Hauptnotizen einer Kategorie zu drei bis sieben Themen zusammen, du hakst in der Vorschau ab und änderst Titel, jedes Thema wird ein Oberpunkt mit den Notizen darunter; ↶ nimmt es zurück. Neuer Dienst `brainstorm.group_ideas` und WebSocket-Befehl `brainstorm/cluster_ideas`. Dialog-Fußzeilen mit vielen Knöpfen brechen jetzt um. |
 | **`v1.11.3`** | 11.11.2026 | **Fehlerbehebungen:** Im Kommentar-Dialog der Listenkarte hatten Knöpfe und Textfeld keine Gestaltung. In der KI-Vorschau *Map aus Thema erzeugen* rutschten die Knöpfe bei langen Vorschlägen aus dem Bild; die Liste scrollt jetzt für sich, und eine leere Fläche von 160 px über den Knöpfen ist weg. |
 | **`v1.11.2`** | 11.11.2026 | **Kommentare an Notizen.** Verlauf pro Notiz mit Name, Zeit und Text, 💬 mit Anzahl in beiden Karten, Dialog über das Kontextmenü bzw. ⋯. `@Name` benachrichtigt die Person über ihre Kanäle unter *Erinnerungen ➔ Personen*, mit Privatsphäre nur, wenn sie die Notiz sehen darf. Neue Dienste `brainstorm.add_comment` und `delete_comment`, WebSocket-Befehl `brainstorm/comments`, Ereignis `brainstorm_comment_added`. Der Sensor zählt nur (`comment_count`); Kommentare bleiben aus dem JSON-Export heraus. |
 | **`v1.11.1`** | 11.11.2026 | **KI: Mindmap aus Thema oder Text.** ✨ *Map aus Thema erzeugen* auf einer leeren Map, Taste **G** oder ✨ *Mit KI erzeugen* im Dialog *Gliederung einfügen*: Die KI macht aus einem Thema Hauptäste mit Unterpunkten oder gliedert einen eingefügten Text, höchstens drei Ebenen und 40 Zeilen. In der Vorschau abhaken und Texte ändern, dann übernehmen; ↶ nimmt alles zurück. Neuer WebSocket-Befehl `brainstorm/generate_map`, gespeichert wird erst nach deiner Bestätigung. |

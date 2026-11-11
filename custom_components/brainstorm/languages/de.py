@@ -1560,6 +1560,15 @@ MESSAGES: dict[str, str] = {
         "Mögliche Oberpunkte:\n{candidates}\n"
         "Lose Notizen:\n{loose}"
     ),
+    "cluster_prompt": (
+        "In der Liste „{category}“ stehen lose Notizen (L). Fasse sie zu drei bis "
+        "sieben Themen zusammen und gib jedem Thema einen kurzen deutschen Titel, "
+        "der als Oberpunkt taugt. Jede Notiz gehört zu höchstens einem Thema, ein "
+        "Thema hat mindestens zwei Notizen, und was nirgends passt, lässt du weg. "
+        "Antworte nur mit Zeilen wie „Garten: L1, L4, L7“, ein Thema pro Zeile, "
+        "ohne Erklärung.\n"
+        "Lose Notizen:\n{loose}"
+    ),
     "summarize_prompt": (
         "Fasse diese Erinnerung als kurzen, natürlichen deutschen Satz zum "
         "Vorlesen zusammen. Erfinde nichts dazu und lasse keinen Eintrag weg: "

@@ -80,6 +80,9 @@
     },
     "delete_comment": {
       "service": "mdi:comment-remove-outline"
+    },
+    "group_ideas": {
+      "service": "mdi:group"
     }
   }
 }

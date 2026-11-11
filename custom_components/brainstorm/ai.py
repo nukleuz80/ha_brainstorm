@@ -189,3 +189,46 @@ def parse_parent_suggestions(
         seen.add(loose)
         pairs.append((loose, candidate))
     return pairs
+
+
+# Grouping loose notes into themes: how many go in and how many themes come back
+CLUSTER_MIN_IDEAS = 4
+CLUSTER_MAX_IDEAS = 60
+CLUSTER_MAX_THEMES = 7
+_LOOSE_REF = re.compile(r"\bL\s*(\d+)\b", re.IGNORECASE)
+_TITLE_END = " \t:;,.|>-–—=→(["
+
+
+def parse_clusters(text: str | None, idea_count: int) -> list[tuple[str, list[int]]]:
+    """Read lines such as 'Garten: L1, L4, L7' as (title, 0-based indexes).
+
+    Each note lands in one theme only, a theme needs two notes, unknown numbers
+    are left out and at most CLUSTER_MAX_THEMES themes come back.
+    """
+    if not text:
+        return []
+    themes: list[tuple[str, list[int]]] = []
+    seen: set[int] = set()
+    titles: set[str] = set()
+    for line in text.splitlines():
+        first = _LOOSE_REF.search(line)
+        if not first:
+            continue
+        title = _LIST_MARK.sub("", line[: first.start()])
+        title = title.strip().strip("*_#`\"'„“”").rstrip(_TITLE_END).strip()
+        title = title.strip("*_#`\"'„“”").strip()[:MAX_SUBTASK_LENGTH].strip()
+        if not title or title.casefold() in titles:
+            continue
+        members: list[int] = []
+        for match in _LOOSE_REF.finditer(line, first.start()):
+            index = int(match.group(1)) - 1
+            if 0 <= index < idea_count and index not in seen and index not in members:
+                members.append(index)
+        if len(members) < 2:
+            continue
+        seen.update(members)
+        titles.add(title.casefold())
+        themes.append((title, members))
+        if len(themes) >= CLUSTER_MAX_THEMES:
+            break
+    return themes

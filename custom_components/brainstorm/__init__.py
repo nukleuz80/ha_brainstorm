@@ -78,6 +78,7 @@ from .const import (
     SERVICE_END_VOTING,
     SERVICE_ADD_COMMENT,
     SERVICE_DELETE_COMMENT,
+    SERVICE_GROUP_IDEAS,
     COMMENT_MAX_LENGTH,
     SERVICE_IMPORT_OUTLINE,
     SERVICE_DELETE_DONE,
@@ -286,6 +287,13 @@ SERVICE_ADD_COMMENT_SCHEMA = vol.Schema(
 
 SERVICE_DELETE_COMMENT_SCHEMA = vol.Schema(
     {vol.Required(ATTR_ID): cv.string, vol.Required("comment_id"): cv.string}
+)
+
+SERVICE_GROUP_IDEAS_SCHEMA = vol.Schema(
+    {
+        vol.Required("title"): vol.All(cv.string, vol.Length(max=200)),
+        vol.Required("ids"): vol.All(cv.ensure_list, [cv.string], vol.Length(min=1)),
+    }
 )
 
 SERVICE_IMPORT_OUTLINE_SCHEMA = vol.Schema(
@@ -729,6 +737,33 @@ def _register_services(hass: HomeAssistant) -> None:
         )
         return {"success": True}
 
+    async def handle_group_ideas(call: ServiceCall) -> dict[str, Any]:
+        """Put notes of one category below a new note, for example a theme."""
+        store = _require_store(hass)
+        title = " ".join(call.data["title"].split())
+        if not title:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="group_title_empty"
+            )
+        ids = list(dict.fromkeys(call.data["ids"]))
+        categories = set()
+        for idea_id in ids:
+            idea = store.get_idea(idea_id)
+            if idea is None or not store.can_access(idea, call.context.user_id):
+                raise ServiceValidationError(
+                    translation_domain=DOMAIN,
+                    translation_key="idea_not_found",
+                    translation_placeholders={"id": idea_id},
+                )
+            _check_idea_edit(store, idea_id, call)
+            categories.add(idea.get(ATTR_CATEGORY))
+        if len(categories) > 1:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="group_mixed_categories"
+            )
+        group = await store.async_group_ideas(title, ids, call.context)
+        return {"success": True, "id": group[ATTR_ID], "grouped": len(ids)}
+
     async def handle_sort_children(call: ServiceCall) -> dict[str, Any]:
         """Sort the subtasks of a note, or the main notes of a category."""
         store = _require_store(hass)
@@ -1154,6 +1189,7 @@ def _register_services(hass: HomeAssistant) -> None:
         (SERVICE_END_VOTING, handle_end_voting, SERVICE_END_VOTING_SCHEMA),
         (SERVICE_ADD_COMMENT, handle_add_comment, SERVICE_ADD_COMMENT_SCHEMA),
         (SERVICE_DELETE_COMMENT, handle_delete_comment, SERVICE_DELETE_COMMENT_SCHEMA),
+        (SERVICE_GROUP_IDEAS, handle_group_ideas, SERVICE_GROUP_IDEAS_SCHEMA),
     ):
         hass.services.async_register(
             DOMAIN,

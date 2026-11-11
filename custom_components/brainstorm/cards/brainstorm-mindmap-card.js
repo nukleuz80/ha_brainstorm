@@ -1,8 +1,8 @@
-import { LEVEL_CSS, SOCIAL_CSS, commentBadge, renderComments, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, repeatBadge, repeatOptions, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.11.3";
+import { LEVEL_CSS, SOCIAL_CSS, commentBadge, renderComments, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, repeatBadge, repeatOptions, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.11.4";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.11.3 - Kommentare
+ * Version: 1.11.4 - KI-Themen
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -3501,6 +3501,7 @@ class BrainstormMindmapCard extends HTMLElement {
           align-items: center;
           justify-content: flex-end;
           gap: 8px;
+          flex-wrap: wrap;
           margin-top: 6px;
         }
         .dialog-btn {
@@ -5105,10 +5106,12 @@ class BrainstormMindmapCard extends HTMLElement {
             <div class="dialog-hint">${t("Die KI hat für keine lose Notiz einen passenden Platz gefunden.")}</div>
             <div class="dialog-footer">
               <button class="dialog-btn dialog-btn-cancel" id="sortInRetry">${t("Nochmal versuchen")}</button>
+              <button class="dialog-btn dialog-btn-cancel" id="sortInCluster">${t("✨ Nach Themen gruppieren")}</button>
               <button class="dialog-btn dialog-btn-primary" id="sortInCancel">${t("Schließen")}</button>
             </div>`;
           body.querySelector("#sortInCancel").addEventListener("click", () => this._closeDialog());
           body.querySelector("#sortInRetry").addEventListener("click", load);
+          body.querySelector("#sortInCluster").addEventListener("click", () => this._showClusterDialog());
           return;
         }
         body.innerHTML = `
@@ -5151,6 +5154,134 @@ class BrainstormMindmapCard extends HTMLElement {
           this._pushUndo(t("{count} Notizen", { count: done.length }), async () => {
             for (const id of done) await this._hass.callService("brainstorm", "update_idea", { id, parent_id: null });
           });
+        });
+      };
+      load();
+    });
+  }
+
+  // The AI groups loose notes into themes; nothing moves until the person picks
+  _showClusterDialog() {
+    if (!this._hass) return;
+    const category = this._sortInCategory();
+    if (!category) {
+      this._showToast(t("Wähle zuerst eine Kategorie."));
+      return;
+    }
+    this._openDialog(t("✨ Nach Themen gruppieren"), (body) => {
+      const showMessage = (message, isError) => {
+        if (!this._isModalOpen) return;
+        body.innerHTML = `
+          <div class="${isError ? "dialog-error" : "dialog-hint"}" style="display: flex;">${message}</div>
+          <div class="dialog-footer">
+            <button class="dialog-btn dialog-btn-cancel" id="clusterCancel">${t("Schließen")}</button>
+            <button class="dialog-btn dialog-btn-primary" id="clusterRetry">${t("Nochmal versuchen")}</button>
+          </div>`;
+        body.querySelector("#clusterCancel").addEventListener("click", () => this._closeDialog());
+        body.querySelector("#clusterRetry").addEventListener("click", load);
+      };
+      const load = async () => {
+        body.innerHTML = `<div class="dialog-label suggest-status">${t("Die KI denkt nach …")}</div>`;
+        let themes;
+        try {
+          const result = await this._hass.callWS({
+            type: "brainstorm/cluster_ideas",
+            category,
+            ...(this._hass.language ? { language: this._hass.language } : {}),
+          });
+          themes = (result && result.themes) || [];
+        } catch (err) {
+          showMessage(
+            err && err.code === "too_few_notes"
+              ? t("Zum Gruppieren braucht es mindestens vier lose Notizen ohne Unterpunkte.")
+              : this._aiErrorText(err, t("Die KI hat keine Themen geliefert.")),
+            true,
+          );
+          return;
+        }
+        if (!this._isModalOpen) return;
+        if (!themes.length) {
+          showMessage(t("Die KI hat keine Themen gefunden, in die mehrere Notizen passen."), false);
+          return;
+        }
+        body.innerHTML = `
+          <div class="dialog-label">${t("Jedes Thema wird ein Oberpunkt, die Notizen kommen darunter. Haken weg bei allem, was bleiben soll, wo es ist. Die Titel kannst du ändern.")}</div>
+          <div class="suggest-list map-preview cluster-preview">
+            ${themes.map((theme, index) => `
+              <label class="suggest-row" data-depth="0" data-theme="${index}">
+                <input type="checkbox" class="suggest-check cluster-theme" data-theme="${index}" checked />
+                <input type="text" class="dialog-input suggest-text" data-theme="${index}" maxlength="200" value="${this._escapeHtml(theme.title)}" />
+              </label>
+              ${theme.ideas.map((idea, member) => `
+                <label class="suggest-row cluster-member" data-depth="1" style="padding-left: 18px;">
+                  <input type="checkbox" class="suggest-check cluster-note" data-theme="${index}" data-member="${member}" checked />
+                  <span class="sortin-text">${formatText(idea.text)}</span>
+                </label>`).join("")}`).join("")}
+          </div>
+          <div class="dialog-error" id="clusterError"></div>
+          <div class="dialog-footer">
+            <button class="dialog-btn dialog-btn-cancel" id="clusterRetry">${t("Neue Vorschläge")}</button>
+            <button class="dialog-btn dialog-btn-primary" id="clusterSave"></button>
+          </div>`;
+        const saveBtn = body.querySelector("#clusterSave");
+        const picked = () =>
+          themes
+            .map((theme, index) => {
+              const on = body.querySelector(`.cluster-theme[data-theme="${index}"]`).checked;
+              const title = body.querySelector(`.suggest-text[data-theme="${index}"]`).value.replace(/\s+/g, " ").trim();
+              const ids = theme.ideas
+                .filter((_, member) => body.querySelector(`.cluster-note[data-theme="${index}"][data-member="${member}"]`).checked)
+                .map((idea) => idea.idea_id);
+              const kept = on && Boolean(title);
+              body.querySelector(`.suggest-row[data-theme="${index}"]`).classList.toggle("off", !kept);
+              body.querySelectorAll(`.cluster-note[data-theme="${index}"]`).forEach((box) => {
+                box.closest(".suggest-row").classList.toggle("off", !kept || !box.checked);
+              });
+              return { title, ids, on };
+            })
+            .filter((theme) => theme.on && theme.title && theme.ids.length);
+        const update = () => {
+          const count = picked().length;
+          saveBtn.textContent = t("{count} Themen anlegen", { count });
+          saveBtn.disabled = count === 0;
+        };
+        body.querySelectorAll(".suggest-check, .suggest-text").forEach((el) => el.addEventListener("input", update));
+        update();
+        body.querySelector("#clusterRetry").addEventListener("click", load);
+        saveBtn.addEventListener("click", async () => {
+          const groups = picked();
+          if (!groups.length) return;
+          saveBtn.disabled = true;
+          const created = [];
+          for (const group of groups) {
+            try {
+              const result = await this._hass.callWS({
+                type: "call_service",
+                domain: "brainstorm",
+                service: "group_ideas",
+                service_data: { title: group.title, ids: group.ids },
+                return_response: true,
+              });
+              const id = result && result.response && result.response.id;
+              if (id) created.push(id);
+            } catch (err) {
+              console.error("[BrainstormMindmap] Failed to group notes:", err);
+              const error = body.querySelector("#clusterError");
+              if (error) {
+                error.textContent = err && err.message ? err.message : t("Gruppieren hat nicht geklappt.");
+                error.style.display = "flex";
+              }
+            }
+          }
+          if (created.length) {
+            this._showToast(t("{count} Themen angelegt", { count: created.length }));
+            // Deleting the new notes makes their notes main notes again
+            this._pushUndo(t("{count} Themen", { count: created.length }), () =>
+              Promise.all(created.map((id) => this._hass.callService("brainstorm", "delete_idea", { id }))),
+            );
+          }
+          if (created.length === groups.length) this._closeDialog();
+          else saveBtn.disabled = false;
         });
       };
       load();
@@ -6601,6 +6732,11 @@ class BrainstormMindmapCard extends HTMLElement {
       this._showSortInDialog();
       return;
     }
+    if (pro && (e.key === "k" || e.key === "K") && this._aiAvailable()) {
+      e.preventDefault();
+      this._showClusterDialog();
+      return;
+    }
     if (pro && (e.key === "r" || e.key === "R")) {
       e.preventDefault();
       this._showRulesDialog();
@@ -7838,6 +7974,7 @@ class BrainstormMindmapCard extends HTMLElement {
         <div class="storm-notes" id="stormNotes"></div>
         <div class="dialog-footer">
           ${this._aiAvailable() && this._sortInCategory() ? `<button class="dialog-btn dialog-btn-cancel" id="stormSortIn">${t("✨ Lose Ideen zuordnen")}</button>` : ""}
+          ${this._aiAvailable() && this._sortInCategory() ? `<button class="dialog-btn dialog-btn-cancel" id="stormCluster">${t("✨ Nach Themen gruppieren")}</button>` : ""}
           <button class="dialog-btn dialog-btn-primary" id="stormDone">${t("Fertig")}</button>
         </div>
       `;
@@ -7938,6 +8075,13 @@ class BrainstormMindmapCard extends HTMLElement {
         sortIn.addEventListener("click", () => {
           this._closeDialog();
           this._showSortInDialog();
+        });
+      }
+      const cluster = body.querySelector("#stormCluster");
+      if (cluster) {
+        cluster.addEventListener("click", () => {
+          this._closeDialog();
+          this._showClusterDialog();
         });
       }
       this._dialogCleanup = () => {
@@ -10023,7 +10167,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.11.3 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.11.4 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

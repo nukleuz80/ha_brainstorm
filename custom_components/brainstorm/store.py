@@ -139,6 +139,8 @@ from .const import (
     VOICE_MODE_NATIVE,
 )
 from .ai import (
+    CLUSTER_MAX_IDEAS,
+    CLUSTER_MIN_IDEAS,
     MAP_INPUT_MAX_LENGTH,
     MAP_MAX_NODES,
     MAX_BRANCH_LINES,
@@ -147,6 +149,7 @@ from .ai import (
     async_generate_text,
     async_request_text_with_retry,
     clean_summary,
+    parse_clusters,
     parse_map_outline,
     parse_parent_suggestions,
     parse_subtask_suggestions,
@@ -968,12 +971,7 @@ class BrainstormStore:
             and idea.get(ATTR_STATUS) == "active"
         ]
         parents = {idea.get(ATTR_PARENT_ID) for idea in notes}
-        loose = [
-            idea
-            for idea in notes
-            if not idea.get(ATTR_PARENT_ID) or idea.get(ATTR_PARENT_ID) not in self._ideas
-            if idea[ATTR_ID] not in parents and self.can_edit(idea, user_id)
-        ][:MAX_LOOSE_IDEAS]
+        loose = self.loose_ideas(category, user_id)[:MAX_LOOSE_IDEAS]
         # Notes with subtasks first, they are the likely homes
         candidates = sorted(notes, key=lambda idea: idea[ATTR_ID] not in parents)
         candidates = candidates[:MAX_PARENT_CANDIDATES]
@@ -1017,6 +1015,113 @@ class BrainstormStore:
                 }
             )
         return suggestions
+
+    def loose_ideas(self, category: str, user_id: str | None) -> list[dict[str, Any]]:
+        """Return the main notes of a category without subtasks this user may move."""
+        notes = [
+            idea
+            for idea in self.visible_ideas(user_id)
+            if idea.get(ATTR_CATEGORY) == category
+            and idea.get(ATTR_STATUS) == "active"
+        ]
+        parents = {idea.get(ATTR_PARENT_ID) for idea in notes}
+        return [
+            idea
+            for idea in notes
+            if not idea.get(ATTR_PARENT_ID) or idea.get(ATTR_PARENT_ID) not in self._ideas
+            if idea[ATTR_ID] not in parents and self.can_edit(idea, user_id)
+        ]
+
+    async def async_cluster_ideas(
+        self, category: str, user_id: str | None, language: str | None = None
+    ) -> list[dict[str, Any]] | None:
+        """Ask the AI to group the loose notes of a category into themes.
+
+        Returns themes with a suggested title and their notes; None when there
+        are too few loose notes. Nothing is stored. Raises AIUnavailableError
+        when the AI did not answer, even when asked twice.
+        """
+        entity = self.options.get(CONF_AI_ENTITY)
+        if not entity:
+            return None
+        loose = self.loose_ideas(category, user_id)[:CLUSTER_MAX_IDEAS]
+        if len(loose) < CLUSTER_MIN_IDEAS:
+            return None
+        instructions = self._pack(language).msg(
+            "cluster_prompt",
+            category=category,
+            loose="\n".join(
+                f"L{index}: {idea.get(ATTR_TEXT) or ''}"
+                for index, idea in enumerate(loose, 1)
+            ),
+        )
+        answer = await async_request_text_with_retry(self.hass, entity, instructions)
+        return [
+            {
+                "title": title,
+                "ideas": [
+                    {"idea_id": loose[i][ATTR_ID], "text": loose[i].get(ATTR_TEXT) or ""}
+                    for i in members
+                ],
+            }
+            for title, members in parse_clusters(answer, len(loose))
+        ]
+
+    async def async_group_ideas(
+        self, title: str, idea_ids: list[str], context: Context | None = None
+    ) -> dict[str, Any]:
+        """Put notes of one category below a new note with this title.
+
+        The new note takes the place of the first of them; the notes keep
+        their order and their subtasks.
+        """
+        ideas = [self._ideas[i] for i in dict.fromkeys(idea_ids) if i in self._ideas]
+        category = ideas[0].get(ATTR_CATEGORY) or self._fallback_category
+        author = context.user_id if context else None
+        if any(idea.get(ATTR_ORDER) is None for idea in ideas):
+            # Give every note a place first, as the cards show them now
+            for index, item in enumerate(self.ideas):
+                item[ATTR_ORDER] = index
+        top = ideas[0].get(ATTR_PARENT_ID)
+        now_iso = dt_util.now().isoformat()
+        group: dict[str, Any] = {
+            ATTR_ID: uuid.uuid4().hex[:8],
+            ATTR_TEXT: title,
+            ATTR_CATEGORY: category,
+            ATTR_PRIORITY: DEFAULT_PRIORITY,
+            ATTR_PARENT_ID: top if top in self._ideas else None,
+            ATTR_ORDER: min(int(idea[ATTR_ORDER]) for idea in ideas),
+            ATTR_SOURCE: "dashboard",
+            ATTR_DEVICE: None,
+            ATTR_TAGS: [],
+            ATTR_STATUS: "active",
+            ATTR_CREATED_AT: now_iso,
+            ATTR_UPDATED_AT: now_iso,
+            ATTR_DUE: None,
+            ATTR_ASSIGNEE: None,
+            ATTR_TRIGGER: None,
+            ATTR_OWNER: self.owner_for_new_idea(author, category, None),
+            ATTR_SHARES: {},
+        }
+        if author and group[ATTR_OWNER] != author:
+            group[ATTR_CREATED_BY] = author
+        self._ideas[group[ATTR_ID]] = group
+        for idea in ideas:
+            idea[ATTR_PARENT_ID] = group[ATTR_ID]
+            idea[ATTR_UPDATED_AT] = now_iso
+        await self.async_save()
+        act_context = context or Context()
+        self.hass.bus.async_fire(
+            EVENT_IDEA_ADDED, {**group, "entity_id": OVERVIEW_ENTITY_ID}, context=act_context
+        )
+        for idea in ideas:
+            self.hass.bus.async_fire(
+                EVENT_IDEA_UPDATED,
+                {**idea, "entity_id": OVERVIEW_ENTITY_ID},
+                context=act_context,
+            )
+        self._notify_listeners(context=act_context)
+        return group
 
     def async_cancel_ai_tasks(self) -> None:
         """Stop AI work that is still running when the integration unloads."""

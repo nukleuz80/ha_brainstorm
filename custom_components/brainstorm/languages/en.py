@@ -996,6 +996,14 @@ MESSAGES: dict[str, str] = {
         "Possible parents:\n{candidates}\n"
         "Loose notes:\n{loose}"
     ),
+    "cluster_prompt": (
+        "The list \"{category}\" has loose notes (L). Group them into three to "
+        "seven themes and give each theme a short English title that works as a "
+        "parent note. Each note belongs to one theme at most, a theme has at least "
+        "two notes, and leave out what fits nowhere. Answer only with lines such as "
+        "\"Garden: L1, L4, L7\", one theme per line, without an explanation.\n"
+        "Loose notes:\n{loose}"
+    ),
     "summarize_prompt": (
         "Summarize this reminder as a short, natural English sentence to read aloud. "
         "Do not add anything and do not leave out any entry: {message}"

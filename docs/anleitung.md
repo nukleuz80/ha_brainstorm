@@ -311,6 +311,7 @@ Mit **Intelligente Formatierung** (Allgemeine Einstellungen) werden gesprochene 
 | **B** | Brainstorm-Modus |
 | **S** | Unterpunkte sortieren (ohne Auswahl: Hauptnotizen) |
 | **Z** | KI: lose Ideen zuordnen |
+| **K** | KI: lose Notizen nach Themen gruppieren |
 | **G** | KI: Map aus Thema oder Text erzeugen |
 | **R** | Regeln: Notizen färben, die zu einem gespeicherten Filter passen |
 | **M** | Übersicht (Minimap) ein/aus |

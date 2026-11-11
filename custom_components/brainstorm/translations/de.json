@@ -808,6 +808,12 @@
     },
     "comment_not_yours": {
       "message": "Kommentar {id} darf nur entfernen, wer ihn geschrieben hat oder die Notiz ändern darf."
+    },
+    "group_title_empty": {
+      "message": "Die neue Oberpunkt-Notiz braucht einen Titel."
+    },
+    "group_mixed_categories": {
+      "message": "Gruppieren geht nur mit Notizen derselben Kategorie."
     }
   },
   "services": {
@@ -1300,6 +1306,20 @@
         "shares": {
           "name": "Freigaben",
           "description": "Benutzer-ID (oder \"all\") und Stufe, z. B. all: view. Stufen sind view und edit; null entfernt die Freigabe."
+        }
+      }
+    },
+    "group_ideas": {
+      "name": "Notizen gruppieren",
+      "description": "Hängt Notizen einer Kategorie unter eine neue Notiz mit diesem Titel, zum Beispiel ein Thema, das die KI vorgeschlagen hat. Die neue Notiz nimmt den Platz der ersten Notiz ein.",
+      "fields": {
+        "title": {
+          "name": "Titel",
+          "description": "Text der neuen Oberpunkt-Notiz."
+        },
+        "ids": {
+          "name": "Notiz-IDs",
+          "description": "Die Notizen, die darunter kommen, alle aus derselben Kategorie."
         }
       }
     }

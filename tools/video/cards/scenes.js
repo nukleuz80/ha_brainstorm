@@ -1,4 +1,4 @@
-// Extra demo states for single video shots: index.html?scene=social|comments|aimap
+// Extra demo states for single video shots: index.html?scene=social|comments|aimap|cluster
 const PEOPLE = { u1: "Olaf", u2: "Frida", u3: "Ben" };
 const ago = (min) => new Date(Date.now() - min * 60000).toISOString();
 
@@ -21,6 +21,12 @@ const MAP = [
   { text: "Deko", depth: 1 },
   { text: "Lichterketten aufhängen", depth: 2 },
 ];
+
+const THEMES = [
+  { title: "Garten", ideas: ["Rasen vertikutieren", "Hecke schneiden", "Regentonne aufstellen"] },
+  { title: "Haus & Reparaturen", ideas: ["Dachrinne reinigen", "Tür quietscht", "Fenster abdichten"] },
+  { title: "Smarthome", ideas: ["Bewegungsmelder im Flur", "Rollläden automatisieren"] },
+].map((theme, t) => ({ title: theme.title, ideas: theme.ideas.map((text, i) => ({ idea_id: `c${t}${i}`, text })) }));
 
 let n = 900;
 const note = (text, extra = {}) => ({
@@ -54,6 +60,9 @@ export function setup(scene, hass) {
     attrs.current_user = "u1";
     hass._sceneIdea = zoo;
   }
+  if (scene === "cluster") {
+    attrs.ai_subtasks = true;
+  }
   if (scene === "aimap") {
     attrs.ai_subtasks = true;
     attrs.categories = [...attrs.categories, "Sommerfest"];
@@ -63,6 +72,7 @@ export function setup(scene, hass) {
   hass.callWS = async (msg) => {
     if (msg.type === "brainstorm/comments") return { comments: COMMENTS, can_edit: true };
     if (msg.type === "brainstorm/generate_map") return { nodes: MAP };
+    if (msg.type === "brainstorm/cluster_ideas") return { themes: THEMES };
     if (msg.type === "brainstorm/ideas") return { current_user: "u1" };
     return {};
   };
@@ -73,6 +83,7 @@ export async function after(scene, el, hass) {
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   if (scene === "social" && el._drawMinimap) el._drawMinimap();
   if (scene === "comments") el._showComments(hass._sceneIdea);
+  if (scene === "cluster") el._showClusterDialog();
   if (scene === "aimap") {
     el._showGenerateMapDialog("Sommerfest im Garten planen");
     await wait(100);
