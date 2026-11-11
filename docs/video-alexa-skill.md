@@ -1,6 +1,6 @@
 # 🎬 Video: Eigenen Alexa-Skill für Brainstorm einrichten
 
-⬅️ [Alle Videos](videos.md) · [Anleitung](anleitung.md#12-alexa-mit-eigenem-skill) · 📄 [Schriftliche Anleitung in der README](../README_de.md#variante-c-eigener-alexa-skill-optional-ein-satz-eine-antwort)
+⬅️ [Alle Videos](videos.md) · [Beispiele](https://github.com/nukleuz80/ha_brainstorm/wiki/Sprachsteuerung#alexa-mit-eigenem-skill) · 📄 [Schriftliche Anleitung im Wiki](https://github.com/nukleuz80/ha_brainstorm/wiki/Sprachsteuerung#variante-c-eigener-alexa-skill-optional-ein-satz-eine-antwort)
 
 [![Video starten](video/poster-alexa-skill.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.9.0/brainstorm-alexa-skill.mp4)
 

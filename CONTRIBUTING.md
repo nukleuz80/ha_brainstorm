@@ -36,12 +36,14 @@ This project strictly adheres to the official Home Assistant developer documenta
 
 ## 4. Versioning, Releases & Documentation Maintenance
 - **Synchronized Versioning**: Versions across all touchpoints (`manifest.json`, `brainstorm-card.js`, `lovelace_resources`, `lovelace.yaml`, and Git tags) must strictly match and be bumped consistently on every feature or bugfix release.
-- **Repository README (`README.md`)**:
+- **Repository README (`README.md`, `README_de.md`)**: the landing page, kept short and searchable.
+  - Full documentation lives in `wiki/` (German and English page pairs). The workflow `wiki.yml` publishes it to the GitHub wiki on every push to `main`; `tests/test_wiki.py` checks links and language pairs. Edit the wiki only there, never in the GitHub web editor.
+  - The complete version history lives in `CHANGELOG.md` and `CHANGELOG_de.md`; the READMEs show the latest five versions.
   - Maintain an exhaustive, professional, and clear project description.
   - Document all supported voice command variants (Alexa Dialog, Alexa Direct, Assist Sentences, To-do list intents).
   - Include up-to-date installation instructions for both HACS and manual methods, card configuration, and screenshots.
   - Keep release notes clear and informative for users.
-- **Videos** (`tools/video`): Each storyboard `script_*.py` lists the README sections it shows in `COVERS`. On every release, check whether the change touches one of them; if so, update the scenes, rebuild with `build.py <script>` and attach the new MP4 to the release. Videos are never committed, only attached to GitHub releases, and the docs link to the release asset. English terms in the narration get phonemes in `tools/video/pron.py`; check new ones with `ph.py` and `saytest.py`.
+- **Videos** (`tools/video`): Each storyboard `script_*.py` lists the README and wiki sections it shows in `COVERS`. On every release, check whether the change touches one of them; if so, update the scenes, rebuild with `build.py <script>` and attach the new MP4 to the release. Videos are never committed, only attached to GitHub releases, and the docs link to the release asset. English terms in the narration get phonemes in `tools/video/pron.py`; check new ones with `ph.py` and `saytest.py`.
 
 ## 7. Add a Language
 

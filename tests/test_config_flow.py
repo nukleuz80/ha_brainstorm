@@ -608,19 +608,19 @@ async def test_person_rule_is_saved(
     await hass.async_block_till_done()
 
 
-@pytest.mark.parametrize("readme", ["README.md", "README_de.md"])
-async def test_every_setting_is_documented(readme: str) -> None:
-    """Test that the README names each field the way the forms show it."""
+@pytest.mark.parametrize("page", ["wiki/Settings.md", "wiki/Einstellungen.md"])
+async def test_every_setting_is_documented(page: str) -> None:
+    """Test that the settings page names each field the way the forms show it."""
     repo = Path(__file__).parent.parent
-    language = "translations/de.json" if readme == "README_de.md" else "strings.json"
+    language = "translations/de.json" if page.endswith("Einstellungen.md") else "strings.json"
     root = repo / "custom_components" / "brainstorm"
     texts = json.loads((root / language).read_text("utf-8"))
-    document = (repo / readme).read_text("utf-8")
+    document = (repo / page).read_text("utf-8")
     for flow in ("config", "options"):
         for step in texts[flow]["step"].values():
             for field, label in step.get("data", {}).items():
                 if field != "go_back":
-                    assert f"| {label} |" in document, (readme, field)
+                    assert f"| {label} |" in document, (page, field)
 
 
 async def test_glossary_can_be_cleared(

@@ -1,6 +1,6 @@
 # 🎬 Videos
 
-⬅️ [Zurück zur README](../README_de.md) · 📘 [Anleitung mit Beispielen](anleitung.md)
+⬅️ [Zurück zur README](../README_de.md) · 📚 [Wiki](https://github.com/nukleuz80/ha_brainstorm/wiki)
 
 Alle Videos sind deutsch gesprochen, mit dem Text als Untertitel im Bild. Die MP4-Dateien hängen an den GitHub-Releases und enthalten Kapitelmarken, die die meisten Player (VLC, QuickTime, Plex) anzeigen. Die Karten sind echte Screenshots mit Beispieldaten, Amazon- und Home-Assistant-Dialoge sind schematisch nachgezeichnet.
 
@@ -30,7 +30,7 @@ Alle Videos sind deutsch gesprochen, mit dem Text als Untertitel im Bild. Die MP
 
 [![Installation](video/poster-installation.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.22/brainstorm-installation.mp4)
 
-**[▶️ Video ansehen](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.22/brainstorm-installation.mp4)** · 📄 [Schriftlich in der README](../README_de.md#-installation)
+**[▶️ Video ansehen](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.22/brainstorm-installation.mp4)** · 📄 [Schriftlich im Wiki](https://github.com/nukleuz80/ha_brainstorm/wiki/Installation-und-Einrichtung)
 
 | Zeit | Kapitel |
 | :--- | :--- |
@@ -58,7 +58,7 @@ Ein Kapitel pro Einstellung in der Alexa-Entwicklerkonsole, mit Kapitelliste auf
 
 [![Erinnerungen & Benachrichtigungen](video/poster-erinnerungen.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.22/brainstorm-erinnerungen.mp4)
 
-**[▶️ Video ansehen](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.22/brainstorm-erinnerungen.mp4)** (3½ Minuten) · 📄 [Schriftlich in der README](../README_de.md#-erinnerungen--benachrichtigungen)
+**[▶️ Video ansehen](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.22/brainstorm-erinnerungen.mp4)** (3½ Minuten) · 📄 [Schriftlich im Wiki](https://github.com/nukleuz80/ha_brainstorm/wiki/Erinnerungen)
 
 | Zeit | Kapitel |
 | :--- | :--- |
@@ -80,7 +80,7 @@ Ein Kapitel pro Einstellung in der Alexa-Entwicklerkonsole, mit Kapitelliste auf
 
 [![iPhone-Kurzbefehl](video/poster-iphone.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.22/brainstorm-iphone.mp4)
 
-**[▶️ Video ansehen](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.22/brainstorm-iphone.mp4)** (2 Minuten) · 📄 [Schriftlich in der README](../README_de.md#3-iphone-kurzbefehl-mit-siri-action-taste-oder-rückseite)
+**[▶️ Video ansehen](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.22/brainstorm-iphone.mp4)** (2 Minuten) · 📄 [Schriftlich im Wiki](https://github.com/nukleuz80/ha_brainstorm/wiki/Sprachsteuerung#iphone-kurzbefehl-mit-siri-action-taste-oder-rückseite)
 
 | Zeit | Kapitel |
 | :--- | :--- |
@@ -95,7 +95,7 @@ Ein Kapitel pro Einstellung in der Alexa-Entwicklerkonsole, mit Kapitelliste auf
 
 [![Privatsphäre, Freigaben & KI-Backlog](video/poster-privatsphaere.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.22/brainstorm-privatsphaere.mp4)
 
-**[▶️ Video ansehen](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.22/brainstorm-privatsphaere.mp4)** (2 Minuten) · 📄 [Schriftlich in der README](../README_de.md#-privatsphäre--freigaben)
+**[▶️ Video ansehen](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.22/brainstorm-privatsphaere.mp4)** (2 Minuten) · 📄 [Schriftlich im Wiki](https://github.com/nukleuz80/ha_brainstorm/wiki/Zusammenarbeit)
 
 | Zeit | Kapitel |
 | :--- | :--- |
