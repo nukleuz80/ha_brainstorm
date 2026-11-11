@@ -9,7 +9,7 @@
 [![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.10.7-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.11.0-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20mit%20Hingabe-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -1134,6 +1134,7 @@ Weitere Beispiele für Assist und Alexa liegen im Ordner [`examples/`](examples/
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.11.0`** | 11.11.2026 | **Release: Übersicht, Abstimmen und Reaktionen.** Fasst v1.10.6 und v1.10.7 zusammen: Minimap in der Mindmap (🗺️ / **M**), Abstimmungen pro Kategorie (🗳️ / **V**, offen oder verdeckt, Rangliste beim Beenden) und Reaktionen 👍 ❤️ 😂 ❗ an jeder Notiz. |
 | **`v1.10.7`** | 11.11.2026 | **Abstimmen und Reaktionen.** 🗳️ oder **V** startet eine Abstimmung in einer Kategorie mit einer festen Zahl Stimmen pro Person (3/5/10), offen oder verdeckt; − / + an den Notizen in beiden Karten, eine Leiste zeigt die eigenen verbrauchten Stimmen. Beim Beenden kommt die Rangliste mit 🥇🥈🥉 und *Nach Stimmen sortieren*. Reaktionen 👍 ❤️ 😂 ❗ an jeder Notiz, Namen beim Darüberfahren. Neue Dienste `brainstorm.react`, `vote`, `start_voting`, `end_voting`; `sort_children` kann `by: votes`. Reaktionen und Stimmen bleiben aus dem JSON-Export heraus. |
 | **`v1.10.6`** | 11.11.2026 | **Übersicht (Minimap) in der Mindmap.** 🗺️ unten rechts oder **M** blendet unten links eine kleine Übersicht der ganzen Map ein, mit dem sichtbaren Ausschnitt als Rahmen; Tippen oder Ziehen springt dorthin. Gefilterte Notizen erscheinen blass, auf Kanban, Zeitleiste und Matrix sieht man die Spalten. Auf breiten Karten anfangs offen, am Handy zu, der Browser merkt sich die Wahl. Kartenoption `show_minimap` (Standard an). |
 | **`v1.10.5`** | 10.11.2026 | **Releases mit ZIP.** Jedes veröffentlichte Release bekommt jetzt per GitHub Action die Datei `brainstorm.zip`, und `hacs.json` setzt `zip_release`. HACS lädt bei Installation und Update diese Datei, GitHub zählt das als Download des Releases. Die letzten fünf Releases haben die ZIP nachträglich bekommen. An bestehenden Installationen ändert sich nichts. |

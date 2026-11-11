@@ -9,7 +9,7 @@
 [![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.10.7-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.11.0-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -1082,6 +1082,7 @@ More examples for Assist and Alexa are in the [`examples/`](examples/) folder.
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.11.0`** | 2026-11-11 | **Release: overview, voting and reactions.** Bundles v1.10.6 and v1.10.7: minimap in the mind map (🗺️ / **M**), votes per category (🗳️ / **V**, open or hidden, ranking at the end) and reactions 👍 ❤️ 😂 ❗ on every note. |
 | **`v1.10.7`** | 2026-11-11 | **Voting and reactions.** 🗳️ or **V** starts a vote in a category with a fixed number of votes per person (3/5/10), open or hidden; − / + on the notes in both cards, and a bar shows how many of your votes you used. Ending it shows the ranking with 🥇🥈🥉 and *Sort by votes*. Reactions 👍 ❤️ 😂 ❗ on every note, names on hover. New services `brainstorm.react`, `vote`, `start_voting`, `end_voting`; `sort_children` takes `by: votes`. Reactions and votes stay out of the JSON export. |
 | **`v1.10.6`** | 2026-11-11 | **Overview (minimap) in the mind map.** 🗺️ at the bottom right or **M** shows a small overview of the whole map at the bottom left, with the visible part as a frame; tap or drag to jump there. Filtered-out notes show faded, on Kanban, timeline and matrix the columns show too. Open at first on wide cards, closed on phones, and the browser remembers the choice. Card option `show_minimap` (default on). |
 | **`v1.10.5`** | 2026-11-10 | **Releases with a ZIP.** Every published release now gets `brainstorm.zip` attached by a GitHub Action, and `hacs.json` sets `zip_release`. HACS installs and updates download this file, so GitHub counts them as downloads of the release. The last five releases got the ZIP afterwards. Nothing changes for an existing installation. |
