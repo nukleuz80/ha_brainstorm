@@ -449,6 +449,9 @@ const DICTIONARIES = {
     "{minutes} Min.": "{minutes} min",
     "⚡ Brainstorm": "⚡ Brainstorm",
     "Ansicht wählen": "Choose a view",
+    "Übersicht ein- oder ausblenden (M)": "Show or hide the overview (M)",
+    "Übersicht: tippen oder ziehen, um dorthin zu springen": "Overview: tap or drag to jump there",
+    "Übersicht (Minimap) anzeigen": "Show the overview (minimap)",
     "Diese Woche": "This week",
     "Eisenhower-Matrix": "Eisenhower matrix",
     "Fällig in den nächsten drei Tagen bleibt dringend, ändere dafür das Datum": "Due within three days stays urgent, change the date for that",
@@ -1733,6 +1736,39 @@ export function boardDrop(kind, key, idea, now = new Date()) {
     return change;
   }
   return null;
+}
+
+/**
+ * Fit the notes and the visible part of the map into a minimap of w × h.
+ * rects and view are boxes {x, y, w, h} in map coordinates. Returns the scale
+ * and offset that turn a map point into a minimap point.
+ */
+export function minimapFrame(rects, view, w, h, pad = 6) {
+  let minX = view.x;
+  let minY = view.y;
+  let maxX = view.x + view.w;
+  let maxY = view.y + view.h;
+  rects.forEach((r) => {
+    minX = Math.min(minX, r.x);
+    minY = Math.min(minY, r.y);
+    maxX = Math.max(maxX, r.x + r.w);
+    maxY = Math.max(maxY, r.y + r.h);
+  });
+  const spanX = Math.max(1, maxX - minX);
+  const spanY = Math.max(1, maxY - minY);
+  const innerW = Math.max(1, w - pad * 2);
+  const innerH = Math.max(1, h - pad * 2);
+  const scale = Math.min(innerW / spanX, innerH / spanY);
+  return {
+    scale,
+    ox: pad + (innerW - spanX * scale) / 2 - minX * scale,
+    oy: pad + (innerH - spanY * scale) / 2 - minY * scale,
+  };
+}
+
+/** Turn a point on the minimap back into map coordinates. */
+export function minimapToMap(frame, x, y) {
+  return { x: (x - frame.ox) / frame.scale, y: (y - frame.oy) / frame.scale };
 }
 
 /**

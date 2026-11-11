@@ -1,8 +1,8 @@
-import { LEVEL_CSS, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, repeatBadge, repeatOptions, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.10.5";
+import { LEVEL_CSS, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, repeatBadge, repeatOptions, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.10.6";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.10.5 - Releases mit ZIP
+ * Version: 1.10.6 - Übersicht (Minimap)
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -17,6 +17,7 @@ const LAYOUT_LEVELS = { tree: "normal", outline: "normal", kanban: "normal", org
 const UNDO_LIMIT = 30;
 
 // The bulb lies next to this file, wherever Home Assistant serves it from
+const MINIMAP_KEY = "brainstorm_minimap";
 const BULB_URL = new URL("./brainstorm-bulb.svg", import.meta.url).href;
 
 const BRAINSTORM_MINDMAP_DEFAULTS = {
@@ -38,6 +39,7 @@ const BRAINSTORM_MINDMAP_DEFAULTS = {
   show_export_btn: true,
   show_filter: true,
   show_images: true,
+  show_minimap: true,
   hide_empty_categories: true,
   layout: "radial",
   map_template: "standard",
@@ -225,6 +227,13 @@ class BrainstormMindmapCard extends HTMLElement {
       savedLayout = localStorage.getItem(LAYOUT_KEY);
     } catch {}
     this._savedLayout = LAYOUTS.includes(savedLayout) ? savedLayout : null;
+    // Minimap open or closed, remembered per browser; null until chosen
+    this._minimapOpen = null;
+    try {
+      const savedMinimap = localStorage.getItem(MINIMAP_KEY);
+      if (savedMinimap === "1" || savedMinimap === "0") this._minimapOpen = savedMinimap === "1";
+    } catch {}
+    this._minimapRects = [];
     this._scale = 1;
     this._panX = 0;
     this._panY = 0;
@@ -2636,6 +2645,7 @@ class BrainstormMindmapCard extends HTMLElement {
         ha-card.presenting .top-bar,
         ha-card.presenting .controls-panel,
         ha-card.presenting .add-note-btn,
+        ha-card.presenting .minimap,
         ha-card.presenting .fullscreen-btn,
         ha-card.presenting .filter-bar,
         ha-card.presenting .selection-bar,
@@ -2981,6 +2991,57 @@ class BrainstormMindmapCard extends HTMLElement {
         }
         .control-btn:hover {
           background: var(--secondary-background-color, rgba(127, 127, 127, 0.1));
+          color: var(--primary-color, #03a9f4);
+          border-color: var(--primary-color, #03a9f4);
+        }
+
+        /* Minimap (Bottom Left, above the add button) */
+        .minimap {
+          position: absolute;
+          left: 16px;
+          bottom: 64px;
+          z-index: 24;
+          width: 168px;
+          height: 112px;
+          display: none;
+          border-radius: 10px;
+          overflow: hidden;
+          cursor: pointer;
+          touch-action: none;
+          background: color-mix(in srgb, var(--ha-card-background, var(--card-background-color, #ffffff)) 90%, transparent);
+          border: 1px solid var(--ha-card-border-color, var(--divider-color, rgba(127, 127, 127, 0.25)));
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        .minimap.open {
+          display: block;
+        }
+        .minimap.no-add {
+          bottom: 16px;
+        }
+        .minimap canvas {
+          display: block;
+          width: 100%;
+          height: 100%;
+        }
+        @container (max-width: 600px) {
+          .minimap {
+            left: 10px;
+            bottom: 52px;
+            width: 120px;
+            height: 80px;
+          }
+          .minimap.no-add {
+            bottom: 10px;
+          }
+        }
+        ha-card.is-fullscreen .minimap {
+          left: max(10px, env(safe-area-inset-left));
+          bottom: calc(58px + env(safe-area-inset-bottom));
+        }
+        ha-card.is-fullscreen .minimap.no-add {
+          bottom: calc(10px + env(safe-area-inset-bottom));
+        }
+        #minimapBtn[aria-pressed="true"] {
           color: var(--primary-color, #03a9f4);
           border-color: var(--primary-color, #03a9f4);
         }
@@ -3486,12 +3547,18 @@ class BrainstormMindmapCard extends HTMLElement {
           <button class="control-btn" id="zoomInBtn" title="${t("Vergrößern")}">+</button>
           <button class="control-btn" id="zoomOutBtn" title="${t("Verkleinern")}">−</button>
           <button class="control-btn" id="resetViewBtn" title="${t("Zentrieren / Anordnen")}">⟲</button>
+          <button class="control-btn" id="minimapBtn" data-lvl="normal" title="${t("Übersicht ein- oder ausblenden (M)")}" aria-pressed="false">🗺️</button>
           <button class="control-btn" id="lassoBtn" data-lvl="normal" title="${t("Auswählen: Rahmen um mehrere Notizen ziehen (oder Umschalt+Ziehen)")}" aria-pressed="false">⬚</button>
           <button class="control-btn" id="layoutBtn" data-lvl="normal" title="${t("Ansicht wählen")}">${this._layoutIcon()}</button>
           <button class="control-btn" id="stormBtn" data-lvl="pro" title="${t("Brainstorm: schnell viele Ideen sammeln (B)")}">⚡</button>
           <button class="control-btn" id="levelsBtn" data-lvl="normal" title="${t("Ebenen zeigen: 1, 2, 3 oder alle (Tasten 1–9, 0 = alle)")}">∞</button>
           <button class="control-btn" id="arrangeBtn" data-lvl="normal" title="${t("Neu ordnen: von Hand verschobene Notizen wieder automatisch platzieren")}">🪄</button>
           <button class="control-btn" id="undoBtn" title="${t("Rückgängig (Strg+Z)")}" disabled>↶</button>
+        </div>
+
+        <!-- Bottom Left, above the add button: overview of the whole map -->
+        <div class="minimap" id="minimap" role="button" aria-label="${t("Übersicht: tippen oder ziehen, um dorthin zu springen")}" title="${t("Übersicht: tippen oder ziehen, um dorthin zu springen")}">
+          <canvas id="minimapCanvas"></canvas>
         </div>
 
         <div class="map-toast" id="mapToast" role="status" aria-live="polite"></div>
@@ -3847,6 +3914,30 @@ class BrainstormMindmapCard extends HTMLElement {
         this._showLayoutDialog();
       });
     }
+    const minimapBtn = this.shadowRoot.getElementById("minimapBtn");
+    if (minimapBtn) minimapBtn.addEventListener("click", () => this._toggleMinimap());
+    const minimap = this.shadowRoot.getElementById("minimap");
+    if (minimap) {
+      minimap.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        try {
+          minimap.setPointerCapture(e.pointerId);
+        } catch {}
+        this._minimapDrag = true;
+        this._minimapJump(e);
+      });
+      minimap.addEventListener("pointermove", (e) => {
+        if (this._minimapDrag) this._minimapJump(e);
+      });
+      const endDrag = () => {
+        if (!this._minimapDrag) return;
+        this._minimapDrag = false;
+        this._drawMinimapSoon();
+      };
+      minimap.addEventListener("pointerup", endDrag);
+      minimap.addEventListener("pointercancel", endDrag);
+    }
     const levelsBtn = this.shadowRoot.getElementById("levelsBtn");
     if (levelsBtn) {
       levelsBtn.addEventListener("click", () => {
@@ -3923,6 +4014,157 @@ class BrainstormMindmapCard extends HTMLElement {
       gridBg.style.backgroundPosition = `${this._panX}px ${this._panY}px`;
       gridBg.style.backgroundSize = `${size}px ${size}px`;
     }
+    this._drawMinimapSoon();
+  }
+
+  // ---- Minimap: the whole map small, with the visible part as a frame ----
+
+  _minimapWanted() {
+    if (this._config.show_minimap === false) return false;
+    if (this._minimapOpen !== null) return this._minimapOpen;
+    // Not chosen yet: open on wide cards, closed on phones
+    const canvasArea = this.shadowRoot && this.shadowRoot.getElementById("canvasArea");
+    return Boolean(canvasArea && canvasArea.clientWidth >= 700);
+  }
+
+  _toggleMinimap() {
+    this._minimapOpen = !this._minimapWanted();
+    try {
+      localStorage.setItem(MINIMAP_KEY, this._minimapOpen ? "1" : "0");
+    } catch {}
+    this._refreshMinimap();
+  }
+
+  // Measure the notes again, then draw (after a change of notes or filter)
+  _refreshMinimap() {
+    this._minimapMeasure = true;
+    this._drawMinimapSoon();
+  }
+
+  _drawMinimapSoon() {
+    if (this._minimapRaf || !this.shadowRoot) return;
+    this._minimapRaf = requestAnimationFrame(() => {
+      this._minimapRaf = null;
+      if (this._minimapMeasure) {
+        this._minimapMeasure = false;
+        this._measureMinimap();
+      }
+      this._drawMinimap();
+    });
+  }
+
+  // Boxes of the notes in map coordinates, with their colors
+  _measureMinimap() {
+    const sr = this.shadowRoot;
+    const canvasArea = sr.getElementById("canvasArea");
+    this._minimapRects = [];
+    if (!canvasArea || !this._minimapWanted()) return;
+    const base = canvasArea.getBoundingClientRect();
+    const s = this._scale || 1;
+    const toMap = (r) => ({
+      x: (r.left - base.left - this._panX) / s,
+      y: (r.top - base.top - this._panY) / s,
+      w: r.width / s,
+      h: r.height / s,
+    });
+    const color = (el, prop) => getComputedStyle(el).getPropertyValue(prop).trim();
+    sr.querySelectorAll(".board-rect").forEach((el) => {
+      const r = el.getBoundingClientRect();
+      if (r.width) this._minimapRects.push({ ...toMap(r), color: color(el, "--board-color"), kind: "board" });
+    });
+    const centerNode = sr.getElementById("centerNode");
+    if (centerNode && centerNode.offsetParent) {
+      const r = centerNode.getBoundingClientRect();
+      if (r.width) this._minimapRects.push({ ...toMap(r), color: color(centerNode, "--cat-color"), kind: "center" });
+    }
+    sr.querySelectorAll("#notesContainer .note-cloud:not(.draft)").forEach((el) => {
+      const r = el.getBoundingClientRect();
+      if (!r.width) return;
+      this._minimapRects.push({
+        ...toMap(r),
+        color: color(el, "--cat-color"),
+        kind: el.classList.contains("filter-out") ? "faded" : "note",
+      });
+    });
+  }
+
+  _drawMinimap() {
+    const sr = this.shadowRoot;
+    const box = sr.getElementById("minimap");
+    const canvas = sr.getElementById("minimapCanvas");
+    const canvasArea = sr.getElementById("canvasArea");
+    const btn = sr.getElementById("minimapBtn");
+    if (!box || !canvas || !canvasArea) return;
+    const wanted = this._minimapWanted();
+    if (btn) {
+      btn.setAttribute("aria-pressed", wanted ? "true" : "false");
+      btn.style.display = this._config.show_minimap === false ? "none" : "";
+    }
+    // Opened before anything was measured
+    if (wanted && !this._minimapRects.length) this._measureMinimap();
+    const rects = this._minimapRects;
+    const show = wanted && rects.some((r) => r.kind === "note" || r.kind === "faded");
+    box.classList.toggle("open", show);
+    box.classList.toggle("no-add", this._config.show_add_btn !== true);
+    if (!show) return;
+
+    const w = box.clientWidth;
+    const h = box.clientHeight;
+    if (!w || !h) return;
+    const dpr = window.devicePixelRatio || 1;
+    if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+    }
+    const s = this._scale || 1;
+    const view = { x: -this._panX / s, y: -this._panY / s, w: canvasArea.clientWidth / s, h: canvasArea.clientHeight / s };
+    // While dragging inside the minimap its scale stays put, so it does not run away
+    const frame = this._minimapDrag && this._minimapFrame ? this._minimapFrame : minimapFrame(rects, view, w, h);
+    this._minimapFrame = frame;
+
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    const primary = getComputedStyle(this).getPropertyValue("--primary-color").trim() || "#03a9f4";
+    const box2d = (r) => {
+      const x = frame.ox + r.x * frame.scale;
+      const y = frame.oy + r.y * frame.scale;
+      return [x, y, Math.max(2, r.w * frame.scale), Math.max(2, r.h * frame.scale)];
+    };
+    const alpha = { board: 0.14, faded: 0.22, center: 0.95, note: 0.85 };
+    ["board", "faded", "note", "center"].forEach((kind) => {
+      rects.forEach((r) => {
+        if (r.kind !== kind) return;
+        ctx.globalAlpha = alpha[kind];
+        ctx.fillStyle = primary;
+        if (r.color) ctx.fillStyle = r.color;
+        const [x, y, bw, bh] = box2d(r);
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(x, y, bw, bh, Math.min(3, bw / 2, bh / 2));
+        else ctx.rect(x, y, bw, bh);
+        ctx.fill();
+      });
+    });
+    const [vx, vy, vw, vh] = box2d(view);
+    ctx.globalAlpha = 0.1;
+    ctx.fillStyle = primary;
+    ctx.fillRect(vx, vy, vw, vh);
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = primary;
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(vx + 0.75, vy + 0.75, Math.max(1, vw - 1.5), Math.max(1, vh - 1.5));
+  }
+
+  // Tap or drag on the minimap: that spot becomes the middle of the view
+  _minimapJump(e) {
+    const box = this.shadowRoot.getElementById("minimap");
+    const canvasArea = this.shadowRoot.getElementById("canvasArea");
+    if (!box || !canvasArea || !this._minimapFrame) return;
+    const r = box.getBoundingClientRect();
+    const p = minimapToMap(this._minimapFrame, e.clientX - r.left, e.clientY - r.top);
+    this._panX = canvasArea.clientWidth / 2 - p.x * this._scale;
+    this._panY = canvasArea.clientHeight / 2 - p.y * this._scale;
+    this._applyTransform();
   }
 
   _centerLayout(recomputeRadial = false) {
@@ -5590,6 +5832,7 @@ class BrainstormMindmapCard extends HTMLElement {
       clouds.forEach((el) => el.classList.remove("filter-hit", "filter-context", "filter-out", "filter-hidden-hits"));
       paths.forEach((el) => el.classList.remove("filter-out"));
       if (countEl) countEl.textContent = "";
+      this._refreshMinimap();
       return;
     }
     const now = new Date();
@@ -5622,6 +5865,7 @@ class BrainstormMindmapCard extends HTMLElement {
       el.classList.toggle("filter-out", !hits.has(id));
     });
     if (countEl) countEl.textContent = t("{hits} von {total}", { hits: hits.size, total: ideas.length });
+    this._refreshMinimap();
   }
 
   // Enter walks through the hits, unfolds their branch and brings them into view
@@ -5908,6 +6152,11 @@ class BrainstormMindmapCard extends HTMLElement {
       e.preventDefault();
       e.stopPropagation();
       this._cancelLink();
+      return;
+    }
+    if (normal && (e.key === "m" || e.key === "M") && this._config.show_minimap !== false) {
+      e.preventDefault();
+      this._toggleMinimap();
       return;
     }
     if (pro && (e.key === "p" || e.key === "P")) {
@@ -7038,6 +7287,7 @@ class BrainstormMindmapCard extends HTMLElement {
     });
 
     svg.innerHTML = `${this._framesSvg(activeIdeas)}${svgHtml}${this._linksSvg(activeIdeas)}`;
+    this._refreshMinimap();
   }
 
   // Where the line from the middle of a note towards a point leaves the note
@@ -9060,6 +9310,12 @@ class BrainstormMindmapCardEditor extends HTMLElement {
         selector: { boolean: {} },
       },
       {
+        name: "show_minimap",
+        label: t("Übersicht (Minimap) anzeigen"),
+        default: true,
+        selector: { boolean: {} },
+      },
+      {
         name: "show_export_btn",
         label: t("Schaltfläche zum Speichern als Bild (🖼️) anzeigen"),
         default: true,
@@ -9303,7 +9559,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.10.5 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.10.6 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

@@ -1,0 +1,33 @@
+<!doctype html>
+<!-- Browser test for the minimap math. Run: python3 -m http.server in the repo root,
+     open http://localhost:8000/tests/js/minimap.html, it shows PASS or the failures. --><meta charset="utf-8"><body><pre id="out">running</pre>
+<script type="module">
+import { minimapFrame, minimapToMap } from "../../custom_components/brainstorm/cards/brainstorm-i18n.js";
+const fails = [];
+const near = (a, b) => Math.abs(a - b) < 1e-6;
+const check = (name, ok) => { if (!ok) fails.push(name); };
+const at = (f, x, y) => ({ x: f.ox + x * f.scale, y: f.oy + y * f.scale });
+// Notes spread wider than the view: the notes decide the scale
+const notes = [{ x: -500, y: -100, w: 100, h: 50 }, { x: 900, y: 300, w: 100, h: 50 }];
+const view = { x: 0, y: 0, w: 400, h: 300 };
+let f = minimapFrame(notes, view, 168, 112, 6);
+check("scale from widest span", near(f.scale, 156 / 1500));
+const left = at(f, -500, -100);
+check("left edge on the margin", near(left.x, 6));
+const right = at(f, 1000, 0);
+check("right edge on the margin", near(right.x, 162));
+const top = at(f, 0, -100), bottom = at(f, 0, 350);
+check("centered vertically", near(top.y - 0, 112 - bottom.y));
+// The view far away still fits into the box
+f = minimapFrame(notes, { x: 3000, y: 3000, w: 400, h: 300 }, 168, 112, 6);
+const farCorner = at(f, 3400, 3300);
+check("far view inside", farCorner.x <= 162 + 1e-6 && farCorner.y <= 106 + 1e-6);
+// Round trip
+const back = minimapToMap(f, 40, 50);
+const again = at(f, back.x, back.y);
+check("round trip", near(again.x, 40) && near(again.y, 50));
+// Nothing but the view: no division by zero
+f = minimapFrame([], { x: 0, y: 0, w: 0, h: 0 }, 120, 80);
+check("empty is finite", Number.isFinite(f.scale) && Number.isFinite(f.ox) && Number.isFinite(f.oy));
+document.getElementById("out").textContent = fails.length ? "FAIL\n" + fails.join("\n") : "PASS";
+</script>

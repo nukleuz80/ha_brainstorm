@@ -245,6 +245,7 @@ With **Smart Text Optimization** (General Settings) spoken notes are tidied up a
 | Move the progress on | tap the ring of a note without subtasks: 0 ➔ 25 ➔ 50 ➔ 75 ➔ 100 % |
 | Show one branch only | 🎯 on the note or **F4**, back via the breadcrumb, **Shift+F4** or **Esc** |
 | Fold and unfold levels | ∞ at the bottom right: 1 ➔ 2 ➔ 3 ➔ all, or the keys **1–9**, **0** = all |
+| Overview (minimap) | 🗺️ at the bottom right or **M**; tap or drag in the overview at the bottom left to jump there |
 | Link two notes | 🔗 on the note or **L**, then tap the target note; two picked notes ➔ 🔗 *Link* |
 | Label or delete a link | tap the dashed line |
 | Frame around notes | pick notes ➔ ▢ *Frame*, or ✏️ Edit ➔ *Frame*; tapping the frame name renames it |
@@ -304,6 +305,7 @@ With **Smart Text Optimization** (General Settings) spoken notes are tidied up a
 | **S** | sort the subtasks (no selection: main notes) |
 | **Z** | AI: sort in loose ideas |
 | **R** | rules: color notes that fit a saved filter |
+| **M** | overview (minimap) on/off |
 | **P** | presentation mode |
 | **Esc** | clear the selection, go up one level in focus, cancel linking |
 | **Ctrl+Z** | undo |
@@ -441,6 +443,7 @@ A single note can get its own shape in the edit dialog or through a service (`no
 | `show_export_btn` | `true` | 🖼️ save as image or outline, insert an outline |
 | `show_filter` | `true` | 🔍 search and filter |
 | `show_images` | `true` | first picture attachment inside the note |
+| `show_minimap` | `true` | overview (minimap) and its button 🗺️ |
 | `show_fullscreen_btn` | `true` | ⛶ full screen |
 | `show_color_toggle` | `true` | 🎨/🌈 |
 | `hide_empty_categories` | `true` | hide empty categories |

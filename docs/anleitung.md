@@ -246,6 +246,7 @@ Mit **Intelligente Formatierung** (Allgemeine Einstellungen) werden gesprochene 
 | Fortschritt weiterschalten | auf den Ring an einer Notiz ohne Unteraufgaben tippen: 0 ➔ 25 ➔ 50 ➔ 75 ➔ 100 % |
 | Nur einen Zweig zeigen | 🎯 an der Notiz oder **F4**, zurück über die Brotkrumen, **Umschalt+F4** oder **Esc** |
 | Ebenen ein- und ausklappen | ∞ unten rechts: 1 ➔ 2 ➔ 3 ➔ alle, oder die Tasten **1–9**, **0** = alle |
+| Übersicht (Minimap) | 🗺️ unten rechts oder **M**; in der Übersicht unten links tippen oder ziehen springt dorthin |
 | Zwei Notizen verbinden | 🔗 an der Notiz oder **L**, dann die Ziel-Notiz antippen; zwei ausgewählte Notizen ➔ 🔗 *Verbinden* |
 | Verbindung beschriften oder löschen | auf die gestrichelte Linie tippen |
 | Rahmen um Notizen | Notizen auswählen ➔ ▢ *Rahmen*, oder ✏️ Bearbeiten ➔ *Rahmen*; ein Tipp auf den Rahmennamen benennt um |
@@ -305,6 +306,7 @@ Mit **Intelligente Formatierung** (Allgemeine Einstellungen) werden gesprochene 
 | **S** | Unterpunkte sortieren (ohne Auswahl: Hauptnotizen) |
 | **Z** | KI: lose Ideen zuordnen |
 | **R** | Regeln: Notizen färben, die zu einem gespeicherten Filter passen |
+| **M** | Übersicht (Minimap) ein/aus |
 | **P** | Präsentationsmodus |
 | **Esc** | Auswahl aufheben, im Fokus eine Ebene zurück, beim Verbinden abbrechen |
 | **Strg+Z** | rückgängig |
@@ -442,6 +444,7 @@ Pro Notiz kannst du die Form auch im Bearbeiten-Dialog wählen oder per Dienst s
 | `show_export_btn` | `true` | 🖼️ Als Bild oder Gliederung speichern, Gliederung einfügen |
 | `show_filter` | `true` | 🔍 Suchen und filtern |
 | `show_images` | `true` | erstes Bild der Anhänge in der Notiz |
+| `show_minimap` | `true` | Übersicht (Minimap) und ihr Knopf 🗺️ |
 | `show_fullscreen_btn` | `true` | ⛶ Vollbild |
 | `show_color_toggle` | `true` | 🎨/🌈 |
 | `hide_empty_categories` | `true` | leere Kategorien ausblenden |
