@@ -1,8 +1,8 @@
-import { LEVEL_CSS, SOCIAL_CSS, commentBadge, renderComments, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, repeatBadge, repeatOptions, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.11.6";
+import { LEVEL_CSS, SOCIAL_CSS, commentBadge, renderComments, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, repeatBadge, repeatOptions, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.11.7";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.11.6 - Pinnwand
+ * Version: 1.11.7 - Freihand zeichnen
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -12,6 +12,66 @@ import { LEVEL_CSS, SOCIAL_CSS, commentBadge, renderComments, needsPersonalData,
 const COLLAPSED_KEY = "brainstorm_mindmap_collapsed";
 const LAYOUT_KEY = "brainstorm_mindmap_layout";
 const LAYOUTS = ["radial", "tree", "org", "outline", "pin", "kanban", "timeline", "matrix"];
+// Pen colours and widths for drawing on the map
+const DRAW_COLORS = { red: "#e53935", orange: "#fb8c00", green: "#43a047", blue: "#1e88e5", purple: "#8e24aa", gray: "#78909c" };
+const DRAW_WIDTHS = [2, 4, 8];
+const DRAW_MAX_POINTS = 400;
+
+// Fewer points along a pen stroke, its shape stays (Ramer-Douglas-Peucker)
+function simplifyStroke(points, tolerance = 1.5) {
+  if (points.length < 3) return points;
+  const keep = new Array(points.length).fill(false);
+  keep[0] = keep[points.length - 1] = true;
+  const stack = [[0, points.length - 1]];
+  while (stack.length) {
+    const [first, last] = stack.pop();
+    const [ax, ay] = points[first];
+    const [bx, by] = points[last];
+    const len = Math.hypot(bx - ax, by - ay) || 1;
+    let worst = 0;
+    let index = -1;
+    for (let i = first + 1; i < last; i++) {
+      const [x, y] = points[i];
+      const dist = Math.abs((bx - ax) * (ay - y) - (ax - x) * (by - ay)) / len;
+      if (dist > worst) {
+        worst = dist;
+        index = i;
+      }
+    }
+    if (index > 0 && worst > tolerance) {
+      keep[index] = true;
+      stack.push([first, index], [index, last]);
+    }
+  }
+  let result = points.filter((_, i) => keep[i]);
+  if (result.length > DRAW_MAX_POINTS) {
+    const step = result.length / DRAW_MAX_POINTS;
+    result = Array.from({ length: DRAW_MAX_POINTS - 1 }, (_, i) => result[Math.floor(i * step)]).concat([result[result.length - 1]]);
+  }
+  return result;
+}
+
+// How far a point is from a drawn stroke, arrow or ellipse
+function strokeDistance(points, kind, x, y) {
+  if (kind === "ellipse") {
+    const [[x1, y1], [x2, y2]] = points;
+    const rx = Math.max(Math.abs(x2 - x1) / 2, 1);
+    const ry = Math.max(Math.abs(y2 - y1) / 2, 1);
+    const nx = (x - (x1 + x2) / 2) / rx;
+    const ny = (y - (y1 + y2) / 2) / ry;
+    return Math.abs(Math.hypot(nx, ny) - 1) * Math.min(rx, ry);
+  }
+  let best = Infinity;
+  for (let i = 0; i < points.length - 1; i++) {
+    const [ax, ay] = points[i];
+    const [bx, by] = points[i + 1];
+    const dx = bx - ax;
+    const dy = by - ay;
+    const t = dx || dy ? Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy))) : 0;
+    best = Math.min(best, Math.hypot(x - (ax + t * dx), y - (ay + t * dy)));
+  }
+  return best;
+}
 // Sticky note colours of the pinboard; a note without one is yellow
 const PIN_COLORS = { yellow: "#fff59d", pink: "#f8bbd0", green: "#c5e1a5", blue: "#b3e5fc", orange: "#ffcc80", purple: "#d1c4e9" };
 // The level a view needs; the round map is there for everyone
@@ -246,6 +306,12 @@ class BrainstormMindmapCard extends HTMLElement {
     // Positions just placed by hand, until Home Assistant sends them back
     this._mapPosOverrides = new Map(); // id -> {x, y} relative to the center, or null
     this._pinOverrides = new Map(); // id -> pinboard place just set here, or null
+    this._strokes = []; // drawn on the map of the shown category
+    this._strokesKey = null;
+    this._drawMode = false;
+    this._drawTool = "pen";
+    this._drawColor = "red";
+    this._drawWidth = 4;
     // Folded branches, remembered per device
     this._collapsed = this._loadCollapsed();
     this._centerPos = { x: 400, y: 300 };
@@ -1754,6 +1820,95 @@ class BrainstormMindmapCard extends HTMLElement {
           line-height: 20px;
           text-align: center;
           pointer-events: none;
+        }
+        svg.sketch-layer {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          overflow: visible;
+          pointer-events: none;
+          z-index: 30;
+        }
+        .sketch-capture {
+          display: none;
+          position: absolute;
+          inset: 0;
+          z-index: 40;
+          cursor: crosshair;
+          touch-action: none;
+        }
+        .canvas-area.draw-mode .sketch-capture {
+          display: block;
+        }
+        .sketch-bar {
+          display: none;
+          position: absolute;
+          top: 10px;
+          left: 50%;
+          transform: translateX(-50%);
+          z-index: 45;
+          max-width: calc(100% - 24px);
+          box-sizing: border-box;
+          flex-wrap: wrap;
+          justify-content: center;
+          align-items: center;
+          gap: 6px 10px;
+          padding: 6px 10px;
+          border-radius: 14px;
+          background: var(--ha-card-background, var(--card-background-color, #fff));
+          border: 1px solid var(--divider-color, rgba(127, 127, 127, 0.2));
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+        }
+        .canvas-area.draw-mode .sketch-bar {
+          display: flex;
+        }
+        .sketch-group {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+        .sketch-btn {
+          min-width: 36px;
+          height: 36px;
+          border-radius: 10px;
+          border: 1px solid transparent;
+          background: transparent;
+          color: var(--primary-text-color);
+          font-size: 17px;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0 6px;
+        }
+        .sketch-btn.active {
+          border-color: var(--primary-color, #03a9f4);
+          background: color-mix(in srgb, var(--primary-color, #03a9f4) 15%, transparent);
+        }
+        .sketch-width span {
+          display: block;
+          width: 20px;
+          border-radius: 4px;
+          background: var(--primary-text-color);
+        }
+        .sketch-done {
+          background: var(--primary-color, #03a9f4);
+          color: var(--text-primary-color, #fff);
+        }
+        .sketch-color {
+          width: 26px;
+          height: 26px;
+          border-radius: 50%;
+          border: 2px solid transparent;
+          background: var(--sketch-color);
+          cursor: pointer;
+          padding: 0;
+        }
+        .sketch-color.active {
+          border-color: var(--primary-text-color);
+          box-shadow: 0 0 0 2px var(--ha-card-background, var(--card-background-color, #fff)) inset;
         }
         .canvas-area.lasso-mode {
           cursor: crosshair;
@@ -3676,6 +3831,26 @@ class BrainstormMindmapCard extends HTMLElement {
             <button class="selection-btn danger" data-multi="delete" title="${t("Löschen")}">🗑️<span class="selection-label">${t("Löschen")}</span></button>
             <button class="selection-btn" data-multi="clear" title="${t("Auswahl aufheben (ESC)")}">✕</button>
           </div>
+          <div class="sketch-capture" id="sketchCapture"></div>
+          <div class="sketch-bar" id="sketchBar" role="toolbar" aria-label="${t("Zeichnen")}">
+            <div class="sketch-group">
+              <button class="sketch-btn" data-tool="pen" title="${t("Stift")}">🖊️</button>
+              <button class="sketch-btn" data-tool="arrow" title="${t("Pfeil")}">➚</button>
+              <button class="sketch-btn" data-tool="ellipse" title="${t("Kreis")}">◯</button>
+              <button class="sketch-btn" data-tool="erase" title="${t("Radierer: Striche antippen")}">🧽</button>
+            </div>
+            <div class="sketch-group">
+              ${Object.entries(DRAW_COLORS).map(([name, color]) => `<button class="sketch-color" data-color="${name}" style="--sketch-color: ${color};" aria-label="${t("Farbe")} ${name}"></button>`).join("")}
+            </div>
+            <div class="sketch-group">
+              ${DRAW_WIDTHS.map((width) => `<button class="sketch-btn sketch-width" data-width="${width}" title="${t("Strichstärke")} ${width}"><span style="height: ${width}px;"></span></button>`).join("")}
+            </div>
+            <div class="sketch-group">
+              <button class="sketch-btn" data-sketch="undo" title="${t("Rückgängig")}">↶</button>
+              <button class="sketch-btn" data-sketch="clear" title="${t("Alles löschen")}">🗑️</button>
+              <button class="sketch-btn sketch-done" data-sketch="done" title="${t("Fertig (Esc)")}">✓</button>
+            </div>
+          </div>
           <div class="grid-bg" id="gridBg" style="display: ${this._config.show_grid !== false ? 'block' : 'none'};"></div>
           <div class="viewport" id="viewport">
             <svg class="connectors" id="connectorsLayer"></svg>
@@ -3690,6 +3865,7 @@ class BrainstormMindmapCard extends HTMLElement {
               </div>
             </div>
             <div id="notesContainer"></div>
+            <svg class="sketch-layer" id="sketchLayer" aria-hidden="true"></svg>
             <div class="empty-state" id="emptyState" style="display: none;">
               ${t('Keine aktiven Notizen in dieser Kategorie.<br>Klicke unten links auf "+ Idee", um eine hinzuzufügen.')}
               <div><button class="empty-ai-btn" id="emptyAiBtn" data-lvl="normal" style="display: none;">✨ ${t("Map aus Thema erzeugen")}</button></div>
@@ -3710,6 +3886,7 @@ class BrainstormMindmapCard extends HTMLElement {
           <button class="control-btn" id="resetViewBtn" title="${t("Zentrieren / Anordnen")}">⟲</button>
           <button class="control-btn" id="minimapBtn" data-lvl="normal" title="${t("Übersicht ein- oder ausblenden (M)")}" aria-pressed="false">🗺️</button>
           <button class="control-btn" id="lassoBtn" data-lvl="normal" title="${t("Auswählen: Rahmen um mehrere Notizen ziehen (oder Umschalt+Ziehen)")}" aria-pressed="false">⬚</button>
+          <button class="control-btn" id="drawBtn" data-lvl="normal" title="${t("Zeichnen: Pfeile, Kreise und Skizzen auf der Map (D)")}" aria-pressed="false">🖍️</button>
           <button class="control-btn" id="layoutBtn" data-lvl="normal" title="${t("Ansicht wählen")}">${this._layoutIcon()}</button>
           <button class="control-btn" id="voteBtn" data-lvl="normal" title="${t("Abstimmen: Stimmen pro Person verteilen (V)")}">🗳️</button>
           <button class="control-btn" id="stormBtn" data-lvl="pro" title="${t("Brainstorm: schnell viele Ideen sammeln (B)")}">⚡</button>
@@ -4028,6 +4205,9 @@ class BrainstormMindmapCard extends HTMLElement {
     });
     const lassoBtn = this.shadowRoot.getElementById("lassoBtn");
     if (lassoBtn) lassoBtn.addEventListener("click", () => this._setLassoMode(!this._lassoMode));
+    const drawBtn = this.shadowRoot.getElementById("drawBtn");
+    if (drawBtn) drawBtn.addEventListener("click", () => this._setDrawMode(!this._drawMode));
+    this._bindSketch();
     this.shadowRoot.querySelectorAll(".selection-btn").forEach((btn) => {
       btn.addEventListener("click", (e) => {
         e.stopPropagation();
@@ -6210,6 +6390,7 @@ class BrainstormMindmapCard extends HTMLElement {
       color: getComputedStyle(sr.getElementById("centerTitle") || centerNode).color,
     };
 
+    const sketch = this._sketchMarkup(true);
     const pad = 40;
     let minX = center.x - centerSize / 2;
     let minY = center.y - centerSize / 2;
@@ -6221,6 +6402,12 @@ class BrainstormMindmapCard extends HTMLElement {
       maxX = Math.max(maxX, node.x + node.width);
       maxY = Math.max(maxY, node.y + node.height);
     });
+    if (sketch.box) {
+      minX = Math.min(minX, sketch.box.minX);
+      minY = Math.min(minY, sketch.box.minY);
+      maxX = Math.max(maxX, sketch.box.maxX);
+      maxY = Math.max(maxY, sketch.box.maxY);
+    }
     minX -= pad;
     minY -= pad;
     const width = Math.ceil(maxX + pad - minX);
@@ -6302,6 +6489,7 @@ class BrainstormMindmapCard extends HTMLElement {
       `<defs>${defs}</defs>` +
       `<rect x="${minX}" y="${minY}" width="${width}" height="${height}" fill="${xml(pageColor)}"/>` +
       body +
+      sketch.markup +
       `</svg>`;
     return { markup, width, height };
   }
@@ -6745,6 +6933,275 @@ class BrainstormMindmapCard extends HTMLElement {
 
   // --- Picking several notes: lasso, Shift+click and the bar above the map ---
 
+  // ---- Drawing: pen, arrows and circles above the map of one category ----
+
+  _syncDrawing(attributes) {
+    if (!this._hass || !this._usesSavedPositions()) {
+      this._strokes = [];
+      this._strokesKey = null;
+      if (this._drawMode) this._setDrawMode(false);
+      return;
+    }
+    const category = this._selectedCategory;
+    const revs = attributes.drawing_revs || {};
+    const key = `${category}:${revs[category] || 0}`;
+    if (key === this._strokesKey) return;
+    this._strokesKey = key;
+    if (!(category in revs)) {
+      this._strokes = [];
+      this._renderSketch();
+      return;
+    }
+    this._hass
+      .callWS({ type: "brainstorm/drawing", category })
+      .then((reply) => {
+        if (this._selectedCategory !== category) return;
+        this._strokes = reply.strokes || [];
+        this._renderSketch();
+      })
+      .catch((err) => console.error("[BrainstormMindmap] Failed to load the drawing:", err));
+  }
+
+  // Points of a stroke on the map, from their place relative to the center
+  _strokePoints(stroke) {
+    const c = this._centerPos || { x: 0, y: 0 };
+    return stroke.points.map(([x, y]) => [c.x + x, c.y + y]);
+  }
+
+  _strokeShape(stroke, color) {
+    const pts = this._strokePoints(stroke);
+    const w = stroke.width;
+    const attrs = `fill="none" stroke="${color}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"`;
+    const f = (n) => n.toFixed(1);
+    if (stroke.kind === "ellipse") {
+      const [[x1, y1], [x2, y2]] = pts;
+      return `<ellipse cx="${f((x1 + x2) / 2)}" cy="${f((y1 + y2) / 2)}" rx="${f(Math.abs(x2 - x1) / 2)}" ry="${f(Math.abs(y2 - y1) / 2)}" ${attrs}/>`;
+    }
+    if (stroke.kind === "arrow") {
+      const [[x1, y1], [x2, y2]] = pts;
+      const angle = Math.atan2(y2 - y1, x2 - x1);
+      const head = 10 + w * 2;
+      const side = (turn) => `L ${f(x2 - head * Math.cos(angle + turn))} ${f(y2 - head * Math.sin(angle + turn))}`;
+      return `<path d="M ${f(x1)} ${f(y1)} L ${f(x2)} ${f(y2)} M ${f(x2)} ${f(y2)} ${side(0.45)} M ${f(x2)} ${f(y2)} ${side(-0.45)}" ${attrs}/>`;
+    }
+    // A smooth line through the middles between the points
+    let d = `M ${f(pts[0][0])} ${f(pts[0][1])}`;
+    for (let i = 1; i < pts.length - 1; i++) {
+      const [x, y] = pts[i];
+      const [nx, ny] = pts[i + 1];
+      d += ` Q ${f(x)} ${f(y)} ${f((x + nx) / 2)} ${f((y + ny) / 2)}`;
+    }
+    const last = pts[pts.length - 1];
+    d += ` L ${f(last[0])} ${f(last[1])}`;
+    return `<path d="${d}" ${attrs}/>`;
+  }
+
+  _sketchMarkup(forImage = false) {
+    if (!this._usesSavedPositions() || !this._strokes.length) return { markup: "", box: null };
+    let box = null;
+    const markup = this._strokes.map((stroke) => {
+      this._strokePoints(stroke).forEach(([x, y]) => {
+        const pad = stroke.width + 14;
+        box = box
+          ? { minX: Math.min(box.minX, x - pad), minY: Math.min(box.minY, y - pad), maxX: Math.max(box.maxX, x + pad), maxY: Math.max(box.maxY, y + pad) }
+          : { minX: x - pad, minY: y - pad, maxX: x + pad, maxY: y + pad };
+      });
+      const shape = this._strokeShape(stroke, DRAW_COLORS[stroke.color] || DRAW_COLORS.gray);
+      return forImage ? shape : `<g data-stroke="${this._escapeHtml(stroke.id)}">${shape}</g>`;
+    }).join("");
+    return { markup, box };
+  }
+
+  _renderSketch() {
+    const layer = this.shadowRoot && this.shadowRoot.getElementById("sketchLayer");
+    if (!layer) return;
+    const preview = this._sketchDraft ? this._strokeShape(this._sketchDraft, DRAW_COLORS[this._sketchDraft.color]) : "";
+    layer.innerHTML = this._sketchMarkup().markup + preview;
+  }
+
+  _setDrawMode(on) {
+    if (on && !this._usesSavedPositions()) {
+      this._showToast(t("Zeichnen geht auf der runden Map einer einzelnen Kategorie."));
+      return;
+    }
+    this._drawMode = Boolean(on);
+    if (this._drawMode && this._lassoMode) this._setLassoMode(false);
+    const sr = this.shadowRoot;
+    const canvasArea = sr.getElementById("canvasArea");
+    if (canvasArea) canvasArea.classList.toggle("draw-mode", this._drawMode);
+    const btn = sr.getElementById("drawBtn");
+    if (btn) {
+      btn.classList.toggle("active", this._drawMode);
+      btn.setAttribute("aria-pressed", String(this._drawMode));
+    }
+    this._sketchDraft = null;
+    this._syncSketchBar();
+  }
+
+  _syncSketchBar() {
+    const bar = this.shadowRoot.getElementById("sketchBar");
+    if (!bar) return;
+    bar.querySelectorAll("[data-tool]").forEach((b) => b.classList.toggle("active", b.dataset.tool === this._drawTool));
+    bar.querySelectorAll("[data-color]").forEach((b) => b.classList.toggle("active", b.dataset.color === this._drawColor));
+    bar.querySelectorAll("[data-width]").forEach((b) => b.classList.toggle("active", Number(b.dataset.width) === this._drawWidth));
+  }
+
+  _sketchPoint(e) {
+    const canvasArea = this.shadowRoot.getElementById("canvasArea");
+    const rect = canvasArea.getBoundingClientRect();
+    const c = this._centerPos || { x: 0, y: 0 };
+    return [
+      Math.round(((e.clientX - rect.left - this._panX) / this._scale - c.x) * 10) / 10,
+      Math.round(((e.clientY - rect.top - this._panY) / this._scale - c.y) * 10) / 10,
+    ];
+  }
+
+  _bindSketch() {
+    const sr = this.shadowRoot;
+    const capture = sr.getElementById("sketchCapture");
+    const bar = sr.getElementById("sketchBar");
+    if (!capture || !bar) return;
+    bar.addEventListener("click", (e) => {
+      const btn = e.target.closest("button");
+      if (!btn) return;
+      e.stopPropagation();
+      if (btn.dataset.tool) this._drawTool = btn.dataset.tool;
+      if (btn.dataset.color) {
+        this._drawColor = btn.dataset.color;
+        if (this._drawTool === "erase") this._drawTool = "pen";
+      }
+      if (btn.dataset.width) {
+        this._drawWidth = Number(btn.dataset.width);
+        if (this._drawTool === "erase") this._drawTool = "pen";
+      }
+      if (btn.dataset.sketch === "undo") this._undo();
+      else if (btn.dataset.sketch === "clear") this._clearDrawing();
+      else if (btn.dataset.sketch === "done") this._setDrawMode(false);
+      this._syncSketchBar();
+    });
+    capture.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      this._zoomAtPoint(e.deltaY < 0 ? 1.1 : 0.9, e.clientX, e.clientY);
+    }, { passive: false });
+    capture.addEventListener("pointerdown", (e) => {
+      if (!this._drawMode || e.button > 0) return;
+      e.preventDefault();
+      try {
+        capture.setPointerCapture(e.pointerId);
+      } catch {}
+      const point = this._sketchPoint(e);
+      if (this._drawTool === "erase") {
+        this._erasing = [];
+        this._eraseAt(point);
+        return;
+      }
+      this._sketchDraft = { kind: this._drawTool, color: this._drawColor, width: this._drawWidth, points: [point, point] };
+      this._renderSketch();
+    });
+    capture.addEventListener("pointermove", (e) => {
+      if (!this._drawMode) return;
+      const point = this._sketchPoint(e);
+      if (this._erasing) {
+        this._eraseAt(point);
+        return;
+      }
+      const draft = this._sketchDraft;
+      if (!draft) return;
+      if (draft.kind === "pen") {
+        const [lx, ly] = draft.points[draft.points.length - 1];
+        if (Math.hypot(point[0] - lx, point[1] - ly) < 2 / this._scale) return;
+        if (draft.points.length === 2 && draft.points[0] === draft.points[1]) draft.points[1] = point;
+        else draft.points.push(point);
+      } else {
+        draft.points[1] = point;
+      }
+      this._renderSketch();
+    });
+    const finish = () => {
+      if (this._erasing) {
+        const erased = this._erasing;
+        this._erasing = null;
+        if (erased.length) {
+          this._pushUndo(t("Zeichnung"), async () => {
+            for (const stroke of erased) await this._addStroke(stroke);
+          });
+        }
+        return;
+      }
+      const draft = this._sketchDraft;
+      this._sketchDraft = null;
+      if (!draft) return;
+      const [a, b] = [draft.points[0], draft.points[draft.points.length - 1]];
+      if (Math.hypot(b[0] - a[0], b[1] - a[1]) < 4 && draft.points.length < 4) {
+        this._renderSketch();
+        return;
+      }
+      if (draft.kind === "pen") draft.points = simplifyStroke(draft.points);
+      this._addStroke(draft).then((stroke) => {
+        if (!stroke) return;
+        this._pushUndo(t("Zeichnung"), () => this._deleteStrokes([stroke.id]));
+      });
+    };
+    capture.addEventListener("pointerup", finish);
+    capture.addEventListener("pointercancel", finish);
+  }
+
+  async _addStroke(stroke) {
+    const category = this._selectedCategory;
+    try {
+      const reply = await this._hass.callWS({
+        type: "brainstorm/add_stroke",
+        category,
+        kind: stroke.kind,
+        points: stroke.points,
+        color: stroke.color,
+        width: stroke.width,
+      });
+      if (this._selectedCategory === category) this._strokes = [...this._strokes, reply.stroke];
+      this._renderSketch();
+      return reply.stroke;
+    } catch (err) {
+      console.error("[BrainstormMindmap] Failed to save the drawing:", err);
+      this._showToast(err && err.code === "drawing_full"
+        ? t("Die Map hat schon sehr viele Zeichnungen. Lösche zuerst welche.")
+        : t("Die Zeichnung konnte nicht gespeichert werden."));
+      this._renderSketch();
+      return null;
+    }
+  }
+
+  async _deleteStrokes(ids) {
+    const category = this._selectedCategory;
+    const gone = new Set(ids || this._strokes.map((stroke) => stroke.id));
+    this._strokes = this._strokes.filter((stroke) => !gone.has(stroke.id));
+    this._renderSketch();
+    try {
+      await this._hass.callWS({ type: "brainstorm/delete_strokes", category, ...(ids ? { ids } : {}) });
+    } catch (err) {
+      console.error("[BrainstormMindmap] Failed to delete the drawing:", err);
+    }
+  }
+
+  // The stroke under the eraser goes at once, undo brings back all of one wipe
+  _eraseAt(point) {
+    const c = this._centerPos || { x: 0, y: 0 };
+    const [px, py] = [point[0] + c.x, point[1] + c.y];
+    const hit = [...this._strokes].reverse().find((stroke) => strokeDistance(this._strokePoints(stroke), stroke.kind, px, py) <= 8 / this._scale + stroke.width / 2);
+    if (!hit) return;
+    this._erasing.push(hit);
+    this._deleteStrokes([hit.id]);
+  }
+
+  async _clearDrawing() {
+    const all = [...this._strokes];
+    if (!all.length) return;
+    await this._deleteStrokes(null);
+    this._showToast(t("Zeichnung gelöscht. ↶ holt sie zurück."));
+    this._pushUndo(t("Zeichnung"), async () => {
+      for (const stroke of all) await this._addStroke(stroke);
+    });
+  }
+
   _setLassoMode(on) {
     this._lassoMode = Boolean(on);
     const canvasArea = this.shadowRoot.getElementById("canvasArea");
@@ -6977,6 +7434,17 @@ class BrainstormMindmapCard extends HTMLElement {
       e.preventDefault();
       e.stopPropagation();
       this._cancelLink();
+      return;
+    }
+    if (this._drawMode && e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
+      this._setDrawMode(false);
+      return;
+    }
+    if (normal && (e.key === "d" || e.key === "D")) {
+      e.preventDefault();
+      this._setDrawMode(!this._drawMode);
       return;
     }
     if (normal && (e.key === "v" || e.key === "V")) {
@@ -8064,6 +8532,7 @@ class BrainstormMindmapCard extends HTMLElement {
   _drawConnections() {
     const svg = this.shadowRoot.getElementById("connectorsLayer");
     if (!svg) return;
+    this._renderSketch();
 
     if (!this._getSensorEntity()) {
       svg.innerHTML = "";
@@ -8694,6 +9163,7 @@ class BrainstormMindmapCard extends HTMLElement {
       const filteredIdeas = this._focusIdeas(listIdeas);
       this._renderFocusBar();
       this._renderVoteBar();
+      this._syncDrawing(attributes);
 
       // Reset node positions and layout when selected category changes
       if (this._lastRenderedCategory !== this._selectedCategory) {
@@ -10512,7 +10982,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.11.6 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.11.7 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

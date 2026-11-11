@@ -284,6 +284,8 @@ Mit **Intelligente Formatierung** (Allgemeine Einstellungen) werden gesprochene 
 
 **Layouts:** Der Knopf über ⚡ öffnet die Ansichtswahl: ◎ rund um die Mitte, ⇶ Baum nach rechts (Hauptnotizen in einer Spalte, Unterpunkte rechts daneben), ⊤ Organigramm nach unten und ☰ Gliederung (eine Notiz pro Zeile, Unterpunkte eingerückt darunter). Im Baum und im Organigramm steht eine Notiz mittig zu ihren Unterpunkten, und die Linien verlaufen rechtwinklig. Die Wahl merkt sich dieser Browser; die Kartenoption `layout` legt den Standard fest. Verschobene Notizen bleiben, wo du sie hingelegt hast, bis du das Layout wieder wechselst.
 
+**Zeichnen:** 🖍️ oder **D** öffnet oben eine Leiste mit Stift, Pfeil, Kreis und Radierer, sechs Farben und drei Stärken. Ziehen zeichnet, der Radierer löscht angetippte Striche, ↶ nimmt jeden Schritt zurück, Esc oder ✓ beendet. Das geht auf der runden Map einer einzelnen Kategorie; dort bleibt die Zeichnung gespeichert und kommt mit ins Bild und in den Export.
+
 **Pinnwand:** 📌 zeigt die Notizen als farbige Haftzettel, ohne Baum und Linien. Zieh einen Zettel irgendwohin, dort bleibt er auf jedem Gerät; noch nicht platzierte stehen in Reihen darunter. Die Farbe wählst du unter ⋯, für Gruppen markierst du Zettel und legst mit ▢ einen Rahmen darum.
 
 **Boards:** Drei weitere Ansichten zeigen die Notizen in Spalten statt als Map. **▥ Kanban** sortiert nach Status: *Offen*, *In Arbeit*, *Wartet* (blockierende Verbindung) und *Erledigt*. Zieh eine Notiz nach *In Arbeit*, um sie zu markieren, zurück nach *Offen*, um die Markierung zu entfernen, auf *Erledigt*, um sie abzuhaken. **📅 Zeitleiste** sortiert nach Fälligkeit: *Überfällig*, *Heute*, *Morgen*, *Diese Woche*, *Später*, *Ohne Datum*. Ziehen setzt das Datum und behält die Uhrzeit (09:00 bei einer Notiz ohne); *Ohne Datum* entfernt es. **⊞ Eisenhower-Matrix** sortiert nach Wichtigkeit (Priorität 🔥 oder 🔴) und Dringlichkeit (🔥 oder fällig in drei Tagen): *Sofort erledigen*, *Einplanen*, *Abgeben*, *Später oder gar nicht*. Ziehen setzt die Priorität; *Abgeben* gibt einer Notiz ohne nahes Datum eines für morgen. Spalten, die sich aus etwas anderem ergeben (*Wartet*, *Überfällig*, ein nahes Datum), erreicht man nicht durch Ziehen; ein kurzer Hinweis sagt warum. ↶ nimmt jeden Zug zurück.
@@ -314,6 +316,7 @@ Mit **Intelligente Formatierung** (Allgemeine Einstellungen) werden gesprochene 
 | **S** | Unterpunkte sortieren (ohne Auswahl: Hauptnotizen) |
 | **Z** | KI: lose Ideen zuordnen |
 | **K** | KI: lose Notizen nach Themen gruppieren |
+| **D** | Zeichnen: Stift, Pfeil, Kreis und Radierer über der Map |
 | **G** | KI: Map aus Thema oder Text erzeugen |
 | **R** | Regeln: Notizen färben, die zu einem gespeicherten Filter passen |
 | **M** | Übersicht (Minimap) ein/aus |

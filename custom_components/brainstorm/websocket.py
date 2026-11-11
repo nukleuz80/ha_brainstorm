@@ -11,7 +11,13 @@ from homeassistant.exceptions import ServiceValidationError
 import homeassistant.helpers.config_validation as cv
 
 from .ai import MAP_INPUT_MAX_LENGTH, AIUnavailableError
-from .const import CONF_SHARE_USERS, PIN_COLORS
+from .const import (
+    CONF_SHARE_USERS,
+    DRAW_COLORS,
+    DRAW_KINDS,
+    DRAW_MAX_POINTS,
+    PIN_COLORS,
+)
 from .store import get_loaded_store
 
 # Error codes the cards translate for the person
@@ -27,6 +33,9 @@ def async_register_commands(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, websocket_get_ideas)
     websocket_api.async_register_command(hass, websocket_set_map_positions)
     websocket_api.async_register_command(hass, websocket_set_pins)
+    websocket_api.async_register_command(hass, websocket_get_drawing)
+    websocket_api.async_register_command(hass, websocket_add_stroke)
+    websocket_api.async_register_command(hass, websocket_delete_strokes)
     websocket_api.async_register_command(hass, websocket_suggest_subtasks)
     websocket_api.async_register_command(hass, websocket_summarize_branch)
     websocket_api.async_register_command(hass, websocket_suggest_parents)
@@ -154,6 +163,108 @@ async def websocket_set_pins(
         return
     changed = await store.async_set_pins(msg["pins"], connection.user.id)
     connection.send_result(msg["id"], {"changed": changed})
+
+
+def _drawing_store(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg_id: int) -> Any:
+    store = get_loaded_store(hass)
+    if store is None:
+        connection.send_error(msg_id, websocket_api.ERR_NOT_FOUND, "Brainstorm is not loaded")
+    return store
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "brainstorm/drawing",
+        vol.Required("category"): cv.string,
+    }
+)
+@callback
+def websocket_get_drawing(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Send the strokes drawn on the map of a category."""
+    if (store := _drawing_store(hass, connection, msg["id"])) is None:
+        return
+    try:
+        strokes = store.drawing(msg["category"])
+    except ServiceValidationError as err:
+        connection.send_error(msg["id"], websocket_api.ERR_NOT_FOUND, str(err))
+        return
+    connection.send_result(msg["id"], {"strokes": strokes})
+
+
+POINT = vol.All(
+    vol.ExactSequence(
+        [
+            vol.All(vol.Coerce(float), vol.Range(-1e5, 1e5)),
+            vol.All(vol.Coerce(float), vol.Range(-1e5, 1e5)),
+        ]
+    )
+)
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "brainstorm/add_stroke",
+        vol.Required("category"): cv.string,
+        vol.Required("kind"): vol.In(DRAW_KINDS),
+        vol.Required("points"): vol.All(
+            [POINT], vol.Length(min=2, max=DRAW_MAX_POINTS)
+        ),
+        vol.Required("color"): vol.In(DRAW_COLORS),
+        vol.Required("width"): vol.All(vol.Coerce(int), vol.Range(1, 16)),
+    }
+)
+@websocket_api.async_response
+async def websocket_add_stroke(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Draw a stroke, an arrow or an ellipse on the map of a category."""
+    if (store := _drawing_store(hass, connection, msg["id"])) is None:
+        return
+    try:
+        stroke = await store.async_add_stroke(
+            msg["category"],
+            msg["kind"],
+            [list(point) for point in msg["points"]],
+            msg["color"],
+            msg["width"],
+        )
+    except ServiceValidationError as err:
+        # The card explains a full map or an unknown list in its own words
+        connection.send_error(
+            msg["id"], err.translation_key or websocket_api.ERR_INVALID_FORMAT, str(err)
+        )
+        return
+    connection.send_result(msg["id"], {"stroke": stroke})
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "brainstorm/delete_strokes",
+        vol.Required("category"): cv.string,
+        vol.Optional("ids"): vol.All([cv.string], vol.Length(max=500)),
+    }
+)
+@websocket_api.async_response
+async def websocket_delete_strokes(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Remove strokes from a map, all of them without IDs."""
+    if (store := _drawing_store(hass, connection, msg["id"])) is None:
+        return
+    try:
+        removed = await store.async_delete_strokes(msg["category"], msg.get("ids"))
+    except ServiceValidationError as err:
+        connection.send_error(msg["id"], websocket_api.ERR_NOT_FOUND, str(err))
+        return
+    connection.send_result(msg["id"], {"removed": removed})
 
 
 @websocket_api.websocket_command(

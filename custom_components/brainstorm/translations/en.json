@@ -817,6 +817,12 @@
     },
     "no_hidden_round": {
       "message": "No hidden round is running in {category}."
+    },
+    "drawing_full": {
+      "message": "The map of this category already has {max} drawings. Delete some first."
+    },
+    "drawing_invalid": {
+      "message": "This drawing cannot be saved."
     }
   },
   "services": {

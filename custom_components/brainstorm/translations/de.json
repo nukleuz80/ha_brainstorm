@@ -817,6 +817,12 @@
     },
     "no_hidden_round": {
       "message": "In {category} läuft keine verdeckte Runde."
+    },
+    "drawing_full": {
+      "message": "Die Map dieser Kategorie hat schon {max} Zeichnungen. Lösche zuerst welche."
+    },
+    "drawing_invalid": {
+      "message": "Diese Zeichnung lässt sich nicht speichern."
     }
   },
   "services": {

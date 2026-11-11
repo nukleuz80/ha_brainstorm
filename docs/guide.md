@@ -283,6 +283,8 @@ With **Smart Text Optimization** (General Settings) spoken notes are tidied up a
 
 **Layouts:** the button above ⚡ opens the choice of views: ◎ around the center, ⇶ a tree to the right (main notes in one column, subtasks to their right), ⊤ an org chart downwards and ☰ an outline (one note per row, subtasks indented below their parent). In the tree and the org chart a parent sits in the middle of its subtasks and the lines run at right angles. The choice stays in this browser; the card option `layout` sets the default. Dragged notes stay where you put them until you switch the layout again.
 
+**Drawing:** 🖍️ or **D** opens a bar at the top with pen, arrow, circle and eraser, six colours and three widths. Drag to draw, the eraser deletes the strokes you tap, ↶ takes back every step, Esc or ✓ ends. It works on the round map of a single category; there the drawing is kept and goes into the picture and the export.
+
 **Pinboard:** 📌 shows the notes as coloured sticky notes, without tree or lines. Drag a note anywhere and it stays there on every device; notes not placed yet line up in rows below. Pick the colour under ⋯; for groups, select notes and put a frame around them with ▢.
 
 **Boards:** three more views show the notes in columns instead of a map. **▥ Kanban** sorts by state: *Open*, *In progress*, *Waiting* (a blocking link) and *Done*. Drag a note to *In progress* to mark it, back to *Open* to unmark it, onto *Done* to tick it off. **📅 Timeline** sorts by due date: *Overdue*, *Today*, *Tomorrow*, *This week*, *Later*, *No date*. Dragging sets the date and keeps the time (09:00 for a note without one); *No date* removes it. **⊞ Eisenhower matrix** sorts by importance (priority 🔥 or 🔴) and urgency (🔥 or due within three days): *Do now*, *Schedule*, *Delegate*, *Later or never*. Dragging sets the priority; *Delegate* gives a note without a near date one for tomorrow. Columns that follow from something else (*Waiting*, *Overdue*, a near date) cannot be reached by dragging; a short note says why. ↶ takes every move back.
@@ -313,6 +315,7 @@ With **Smart Text Optimization** (General Settings) spoken notes are tidied up a
 | **S** | sort the subtasks (no selection: main notes) |
 | **Z** | AI: sort in loose ideas |
 | **K** | AI: group loose notes into themes |
+| **D** | Draw: pen, arrow, circle and eraser over the map |
 | **G** | AI: create a map from a topic or text |
 | **R** | rules: color notes that fit a saved filter |
 | **M** | overview (minimap) on/off |

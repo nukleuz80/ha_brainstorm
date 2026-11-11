@@ -35,6 +35,10 @@ from .const import (
     ATTR_MAP_POS,
     ATTR_OWNER,
     ATTR_PIN,
+    DRAW_COLORS,
+    DRAW_KINDS,
+    DRAW_MAX_POINTS,
+    DRAW_MAX_STROKES,
     PIN_COLORS,
     ATTR_SHARES,
     ACCESS_OWNER,
@@ -336,6 +340,8 @@ class BrainstormStore:
         # Hidden brainstorm rounds: category -> since, by, ends_at
         self._rounds: dict[str, dict[str, Any]] = {}
         self._round_timers: dict[str, Callable[[], None]] = {}
+        self._drawings: dict[str, list[dict[str, Any]]] = {}
+        self._drawing_revs: dict[str, int] = {}
         self.integration_version: str | None = None
         self.alexa_skill: AlexaSkill | None = None
         self.reminders: ReminderManager | None = None
@@ -669,6 +675,11 @@ class BrainstormStore:
                 category: {**round_, "hidden_count": self.round_hidden_count(category, user_id)}
                 for category, round_ in self._rounds.items()
             },
+            # The strokes come by WebSocket; this tells the cards when to fetch them
+            "drawing_revs": {
+                category: self._drawing_revs.get(category, 0)
+                for category in self._drawings
+            },
         }
 
     @property
@@ -763,6 +774,7 @@ class BrainstormStore:
             self._category_shares = data.get("category_shares", {})
             self._voting = data.get("voting", {})
             self._rounds = data.get("rounds", {})
+            self._drawings = data.get("drawings", {})
             for category in list(self._rounds):
                 self._schedule_round_end(category)
             _LOGGER.debug(
@@ -783,6 +795,7 @@ class BrainstormStore:
             "category_shares": self._category_shares,
             "voting": self._voting,
             "rounds": self._rounds,
+            "drawings": self._drawings,
             "ideas": list(self._ideas.values()),
         }
         await self._store.async_save(data)
@@ -2243,6 +2256,86 @@ class BrainstormStore:
             self._notify_listeners()
         return changed
 
+    def drawing(self, category: str) -> list[dict[str, Any]]:
+        """Return the strokes drawn on the map of a category."""
+        return list(self._drawings.get(self._known_category(category), []))
+
+    def _known_category(self, category: str) -> str:
+        """Return the category as it is spelled here, or raise."""
+        wanted = category.strip().lower()
+        for existing in self._categories:
+            if existing.lower() == wanted:
+                return existing
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="category_not_found",
+            translation_placeholders={"category": category},
+        )
+
+    async def async_add_stroke(
+        self,
+        category: str,
+        kind: str,
+        points: list[list[float]],
+        color: str,
+        width: int,
+    ) -> dict[str, Any]:
+        """Add a stroke, an arrow or an ellipse to the map of a category.
+
+        Points are relative to the center of the map, like the places of the
+        notes. An arrow and an ellipse keep only their first two points.
+        """
+        name = self._known_category(category)
+        strokes = self._drawings.setdefault(name, [])
+        if len(strokes) >= DRAW_MAX_STROKES:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="drawing_full",
+                translation_placeholders={"max": str(DRAW_MAX_STROKES)},
+            )
+        stroke = _clean_stroke(
+            {
+                "id": uuid.uuid4().hex[:8],
+                "kind": kind,
+                "color": color,
+                "width": width,
+                "points": points,
+            }
+        )
+        if stroke is None:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="drawing_invalid"
+            )
+        strokes.append(stroke)
+        self._drawing_revs[name] = self._drawing_revs.get(name, 0) + 1
+        await self.async_save()
+        self._notify_listeners()
+        return stroke
+
+    async def async_delete_strokes(
+        self, category: str, stroke_ids: list[str] | None = None
+    ) -> int:
+        """Remove strokes of a category, all of them without IDs."""
+        name = self._known_category(category)
+        strokes = self._drawings.get(name, [])
+        keep = (
+            []
+            if stroke_ids is None
+            else [stroke for stroke in strokes if stroke["id"] not in stroke_ids]
+        )
+        removed = len(strokes) - len(keep)
+        if not removed:
+            return 0
+        if keep:
+            self._drawings[name] = keep
+        else:
+            self._drawings.pop(name, None)
+        # The counter stays, so the cards notice the empty map
+        self._drawing_revs[name] = self._drawing_revs.get(name, 0) + 1
+        await self.async_save()
+        self._notify_listeners()
+        return removed
+
     async def async_set_pins(
         self,
         pins: dict[str, dict[str, Any] | None],
@@ -2982,6 +3075,7 @@ class BrainstormStore:
         self._categories.remove(clean_name)
         self._category_icons.pop(clean_name, None)
         self._category_colors.pop(clean_name, None)
+        self._drawings.pop(clean_name, None)
         # Move remaining ideas to Inbox
         for idea in self._ideas.values():
             if idea.get(ATTR_CATEGORY) == clean_name:
@@ -3282,6 +3376,9 @@ class BrainstormStore:
             "category_colors": {
                 c: v for c, v in self._category_colors.items() if c in categories
             },
+            "drawings": {
+                c: strokes for c, strokes in self._drawings.items() if c in categories
+            },
             "ideas": ideas,
         }
 
@@ -3516,6 +3613,29 @@ class BrainstormStore:
                     continue
                 self._category_colors[name] = value
 
+        drawn = 0
+        raw_drawings = data.get("drawings")
+        for name, strokes in (raw_drawings if isinstance(raw_drawings, dict) else {}).items():
+            category = next(
+                (c for c in self._categories if isinstance(name, str) and c.lower() == name.strip().lower()),
+                None,
+            )
+            if category is None or not isinstance(strokes, list):
+                continue
+            current = self._drawings.setdefault(category, [])
+            known = {stroke["id"] for stroke in current}
+            for raw in strokes:
+                stroke = _clean_stroke(raw)
+                if stroke is None or stroke["id"] in known or len(current) >= DRAW_MAX_STROKES:
+                    continue
+                current.append(stroke)
+                known.add(stroke["id"])
+                drawn += 1
+            if not current:
+                self._drawings.pop(category)
+            else:
+                self._drawing_revs[category] = self._drawing_revs.get(category, 0) + 1
+
         self._ideas.update(new_ideas)
         # A parent that came neither with the file nor exists here is dropped
         for idea_id, idea in new_ideas.items():
@@ -3526,7 +3646,7 @@ class BrainstormStore:
             ):
                 idea[ATTR_PARENT_ID] = None
 
-        if new_ideas or added_categories:
+        if new_ideas or added_categories or drawn:
             pack = self._pack()
             self._last_action = {
                 "action": "imported",
@@ -3554,6 +3674,48 @@ def _clean_map_pos(value: Any) -> dict[str, float] | None:
     ):
         return None
     return {"x": round(float(x), 1), "y": round(float(y), 1)}
+
+
+def _clean_points(value: Any) -> list[list[float]] | None:
+    """Return the points of a stroke if they are pairs of sane numbers."""
+    if not isinstance(value, list) or not 2 <= len(value) <= DRAW_MAX_POINTS:
+        return None
+    points: list[list[float]] = []
+    for point in value:
+        if not isinstance(point, (list, tuple)) or len(point) != 2:
+            return None
+        if not all(
+            isinstance(v, (int, float)) and not isinstance(v, bool)
+            and math.isfinite(v) and abs(v) <= 1e5
+            for v in point
+        ):
+            return None
+        points.append([round(float(point[0]), 1), round(float(point[1]), 1)])
+    return points
+
+
+def _clean_stroke(value: Any) -> dict[str, Any] | None:
+    """Return an imported stroke with known kind, colour and width only."""
+    if not isinstance(value, dict):
+        return None
+    stroke_id = _clean_import_id(value.get("id"))
+    points = _clean_points(value.get("points"))
+    kind = value.get("kind")
+    color = value.get("color")
+    width = value.get("width")
+    if (
+        stroke_id is None
+        or points is None
+        or kind not in DRAW_KINDS
+        or color not in DRAW_COLORS
+        or not isinstance(width, int)
+        or isinstance(width, bool)
+        or not 1 <= width <= 16
+    ):
+        return None
+    if kind != "pen":
+        points = points[:2]
+    return {"id": stroke_id, "kind": kind, "color": color, "width": width, "points": points}
 
 
 def _clean_pin(value: Any) -> dict[str, Any] | None:

@@ -282,6 +282,11 @@ ATTR_MAP_POS = "map_pos"
 # Place and colour of a note on the pinboard, free of the tree
 ATTR_PIN = "pin"
 PIN_COLORS = ("yellow", "pink", "green", "blue", "orange", "purple")
+# Freehand drawing on the map of a category
+DRAW_KINDS = ("pen", "arrow", "ellipse")
+DRAW_COLORS = ("red", "orange", "green", "blue", "purple", "gray")
+DRAW_MAX_STROKES = 300
+DRAW_MAX_POINTS = 400
 ATTR_SHARES = "shares"
 SHARE_ALL = "all"
 SHARE_VIEW = "view"
