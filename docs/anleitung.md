@@ -284,6 +284,8 @@ Mit **Intelligente Formatierung** (Allgemeine Einstellungen) werden gesprochene 
 
 **Layouts:** Der Knopf über ⚡ öffnet die Ansichtswahl: ◎ rund um die Mitte, ⇶ Baum nach rechts (Hauptnotizen in einer Spalte, Unterpunkte rechts daneben), ⊤ Organigramm nach unten und ☰ Gliederung (eine Notiz pro Zeile, Unterpunkte eingerückt darunter). Im Baum und im Organigramm steht eine Notiz mittig zu ihren Unterpunkten, und die Linien verlaufen rechtwinklig. Die Wahl merkt sich dieser Browser; die Kartenoption `layout` legt den Standard fest. Verschobene Notizen bleiben, wo du sie hingelegt hast, bis du das Layout wieder wechselst.
 
+**Wer ist da:** Oben links stehen die Personen, die dieselbe Liste gerade offen haben, als Kreis mit Initialen. Bearbeitet jemand eine Notiz, hat der Kreis einen Ring und an der Notiz hängt ✏️ mit dem Namen. Gespeichert wird davon nichts.
+
 **Zeichnen:** 🖍️ oder **D** öffnet oben eine Leiste mit Stift, Pfeil, Kreis und Radierer, sechs Farben und drei Stärken. Ziehen zeichnet, der Radierer löscht angetippte Striche, ↶ nimmt jeden Schritt zurück, Esc oder ✓ beendet. Das geht auf der runden Map einer einzelnen Kategorie; dort bleibt die Zeichnung gespeichert und kommt mit ins Bild und in den Export.
 
 **Pinnwand:** 📌 zeigt die Notizen als farbige Haftzettel, ohne Baum und Linien. Zieh einen Zettel irgendwohin, dort bleibt er auf jedem Gerät; noch nicht platzierte stehen in Reihen darunter. Die Farbe wählst du unter ⋯, für Gruppen markierst du Zettel und legst mit ▢ einen Rahmen darum.

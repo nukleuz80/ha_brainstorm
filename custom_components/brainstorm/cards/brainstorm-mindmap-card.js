@@ -1,8 +1,8 @@
-import { LEVEL_CSS, SOCIAL_CSS, commentBadge, renderComments, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, repeatBadge, repeatOptions, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.11.7";
+import { LEVEL_CSS, SOCIAL_CSS, commentBadge, renderComments, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, repeatBadge, repeatOptions, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.11.8";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.11.7 - Freihand zeichnen
+ * Version: 1.11.8 - Live-Präsenz
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -307,6 +307,12 @@ class BrainstormMindmapCard extends HTMLElement {
     this._mapPosOverrides = new Map(); // id -> {x, y} relative to the center, or null
     this._pinOverrides = new Map(); // id -> pinboard place just set here, or null
     this._strokes = []; // drawn on the map of the shown category
+    // Who else has a map open; this card is one of them under its token
+    this._presenceToken = Math.random().toString(36).slice(2, 12).padEnd(8, "0");
+    this._presenceSub = null;
+    this._present = [];
+    this._presenceEditing = null;
+    this._presenceSent = "";
     this._strokesKey = null;
     this._drawMode = false;
     this._drawTool = "pen";
@@ -349,10 +355,12 @@ class BrainstormMindmapCard extends HTMLElement {
 
   connectedCallback() {
     window.addEventListener("brainstorm-rules-changed", this._onRulesChanged);
+    if (this._hass) this._joinPresence();
   }
 
   disconnectedCallback() {
     window.removeEventListener("brainstorm-rules-changed", this._onRulesChanged);
+    this._leavePresence();
   }
 
   static async getConfigElement() {
@@ -502,6 +510,7 @@ class BrainstormMindmapCard extends HTMLElement {
     if (!this._initialized) {
       this._initDom();
     }
+    this._joinPresence();
     if (!this._rulesLoaded) {
       this._rulesLoaded = true;
       loadRules(hass).then((rules) => {
@@ -1820,6 +1829,60 @@ class BrainstormMindmapCard extends HTMLElement {
           line-height: 20px;
           text-align: center;
           pointer-events: none;
+        }
+        .presence-bar {
+          display: none;
+          position: absolute;
+          top: 10px;
+          left: 12px;
+          z-index: 25;
+          pointer-events: auto;
+        }
+        .presence-bar.open {
+          display: flex;
+        }
+        .presence-avatar {
+          width: 32px;
+          height: 32px;
+          margin-left: -6px;
+          border-radius: 50%;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 12px;
+          font-weight: 700;
+          color: #fff;
+          background: var(--person-color, #607d8b);
+          border: 2px solid var(--ha-card-background, var(--card-background-color, #fff));
+          box-sizing: border-box;
+          cursor: default;
+        }
+        .presence-avatar:first-child {
+          margin-left: 0;
+        }
+        .presence-avatar.editing {
+          box-shadow: 0 0 0 2px var(--person-color, #607d8b);
+        }
+        .presence-more {
+          background: var(--secondary-background-color, #e0e0e0);
+          color: var(--primary-text-color);
+        }
+        .presence-tag {
+          position: absolute;
+          bottom: -10px;
+          left: 10px;
+          max-width: 70%;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          padding: 1px 8px;
+          border-radius: 10px;
+          font-size: 11px;
+          font-weight: 600;
+          color: #fff;
+          background: var(--person-color, #607d8b);
+          pointer-events: none;
+          z-index: 2;
         }
         svg.sketch-layer {
           position: absolute;
@@ -3831,6 +3894,7 @@ class BrainstormMindmapCard extends HTMLElement {
             <button class="selection-btn danger" data-multi="delete" title="${t("Löschen")}">🗑️<span class="selection-label">${t("Löschen")}</span></button>
             <button class="selection-btn" data-multi="clear" title="${t("Auswahl aufheben (ESC)")}">✕</button>
           </div>
+          <div class="presence-bar" id="presenceBar" aria-live="polite"></div>
           <div class="sketch-capture" id="sketchCapture"></div>
           <div class="sketch-bar" id="sketchBar" role="toolbar" aria-label="${t("Zeichnen")}">
             <div class="sketch-group">
@@ -6933,6 +6997,115 @@ class BrainstormMindmapCard extends HTMLElement {
 
   // --- Picking several notes: lasso, Shift+click and the bar above the map ---
 
+  // ---- Live presence: who else has the map open, and what they edit ----
+
+  _joinPresence() {
+    if (this._presenceSub || !this.isConnected || !this._hass || !this._hass.connection) return;
+    if (this._presenceFailed) return;
+    const connection = this._hass.connection;
+    this._presenceSent = "";
+    this._presenceSub = connection
+      .subscribeMessage((event) => this._onPresence(event), {
+        type: "brainstorm/presence/subscribe",
+        token: this._presenceToken,
+        category: this._selectedCategory || null,
+      })
+      .catch((err) => {
+        // An older Brainstorm or too many open maps: just no avatars
+        console.debug("[BrainstormMindmap] Presence unavailable:", err);
+        this._presenceFailed = true;
+        this._presenceSub = null;
+        return null;
+      });
+  }
+
+  _leavePresence() {
+    const sub = this._presenceSub;
+    this._presenceSub = null;
+    this._present = [];
+    if (sub) sub.then((unsub) => unsub && unsub()).catch(() => {});
+  }
+
+  _sendPresence() {
+    if (!this._presenceSub || !this._hass) return;
+    const state = { category: this._selectedCategory || null, editing: this._presenceEditing };
+    const key = JSON.stringify(state);
+    if (key === this._presenceSent) return;
+    this._presenceSent = key;
+    this._presenceSub
+      .then((unsub) => unsub && this._hass.callWS({ type: "brainstorm/presence/update", token: this._presenceToken, ...state }))
+      .catch(() => {
+        // Lost while the subscription comes back; the next change tries again
+        this._presenceSent = "";
+      });
+  }
+
+  _setPresenceEditing(id) {
+    this._presenceEditing = id || null;
+    this._sendPresence();
+  }
+
+  _onPresence(event) {
+    this._present = ((event && event.present) || []).filter((entry) => entry.key !== this._presenceToken);
+    this._renderPresence();
+  }
+
+  // Others on the same list, one avatar per person, even with two devices
+  _presentPeople() {
+    const mine = this._selectedCategory;
+    const people = new Map();
+    this._present.forEach((entry) => {
+      if (mine && mine !== "all" && entry.category !== mine && entry.category !== "all") return;
+      const person = people.get(entry.user_id) || { user_id: entry.user_id, name: entry.name || "?", editing: [] };
+      if (entry.editing) person.editing.push(entry.editing);
+      people.set(entry.user_id, person);
+    });
+    return [...people.values()];
+  }
+
+  _personColor(userId) {
+    const seed = [...String(userId)].reduce((sum, ch) => (sum * 31 + ch.charCodeAt(0)) % 360, 7);
+    return `hsl(${seed}, 62%, 45%)`;
+  }
+
+  _initials(name) {
+    const parts = String(name).trim().split(/\s+/).filter(Boolean);
+    return ((parts[0] || "?")[0] + (parts.length > 1 ? parts[parts.length - 1][0] : "")).toUpperCase();
+  }
+
+  _renderPresence() {
+    const sr = this.shadowRoot;
+    const bar = sr && sr.getElementById("presenceBar");
+    if (!bar) return;
+    const people = this._presentPeople();
+    const ideaText = (id) => {
+      const idea = this._ideaById(id);
+      return idea ? idea.text : null;
+    };
+    bar.innerHTML = people.slice(0, 6).map((person) => {
+      const texts = person.editing.map(ideaText).filter(Boolean);
+      const title = texts.length
+        ? t("{name} bearbeitet „{text}“", { name: person.name, text: texts[0] })
+        : t("{name} schaut sich die Map an", { name: person.name });
+      return `<span class="presence-avatar${texts.length ? " editing" : ""}" style="--person-color: ${this._personColor(person.user_id)};" title="${this._escapeHtml(title)}" aria-label="${this._escapeHtml(title)}">${this._escapeHtml(this._initials(person.name))}</span>`;
+    }).join("") + (people.length > 6 ? `<span class="presence-avatar presence-more">+${people.length - 6}</span>` : "");
+    bar.classList.toggle("open", people.length > 0);
+    // A name tag on the notes somebody is editing right now
+    sr.querySelectorAll(".presence-tag").forEach((tag) => tag.remove());
+    people.forEach((person) => {
+      person.editing.forEach((id) => {
+        const cloud = sr.getElementById(`cloud_${id}`);
+        if (!cloud) return;
+        const tag = document.createElement("span");
+        tag.className = "presence-tag";
+        tag.style.setProperty("--person-color", this._personColor(person.user_id));
+        tag.textContent = `✏️ ${person.name}`;
+        tag.title = t("{name} bearbeitet diese Notiz gerade", { name: person.name });
+        cloud.appendChild(tag);
+      });
+    });
+  }
+
   // ---- Drawing: pen, arrows and circles above the map of one category ----
 
   _syncDrawing(attributes) {
@@ -7630,10 +7803,12 @@ class BrainstormMindmapCard extends HTMLElement {
     textEl.style.display = "none";
     textEl.after(textarea);
     cloud.classList.add("editing");
+    this._setPresenceEditing(id);
     const close = () => {
       textarea.remove();
       textEl.style.display = "";
       cloud.classList.remove("editing");
+      this._setPresenceEditing(null);
     };
     this._openInlineEditor(
       textarea,
@@ -8533,6 +8708,7 @@ class BrainstormMindmapCard extends HTMLElement {
     const svg = this.shadowRoot.getElementById("connectorsLayer");
     if (!svg) return;
     this._renderSketch();
+    this._renderPresence();
 
     if (!this._getSensorEntity()) {
       svg.innerHTML = "";
@@ -9164,6 +9340,7 @@ class BrainstormMindmapCard extends HTMLElement {
       this._renderFocusBar();
       this._renderVoteBar();
       this._syncDrawing(attributes);
+      this._sendPresence();
 
       // Reset node positions and layout when selected category changes
       if (this._lastRenderedCategory !== this._selectedCategory) {
@@ -9768,6 +9945,7 @@ class BrainstormMindmapCard extends HTMLElement {
     const dialog = this.shadowRoot.getElementById("mindmapDialog");
     if (dialog) dialog.style.display = "none";
     this._isModalOpen = false;
+    if (this._presenceEditing && !this._inlineEdit) this._setPresenceEditing(null);
     // Keys keep working on the map after a dialog
     if (this._selectedId) this._focusMap();
   }
@@ -9910,6 +10088,7 @@ class BrainstormMindmapCard extends HTMLElement {
   }
 
   _showEditDialog(id, currentText, currentCategory, currentPriority = "medium") {
+    this._setPresenceEditing(id);
     const sensor = this._getSensorEntity();
     const categories = sensor ? (sensor.attributes.categories || ["Inbox"]) : ["Inbox"];
     let selectedCat = currentCategory || "Inbox";
@@ -10982,7 +11161,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.11.7 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.11.8 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

@@ -283,6 +283,8 @@ With **Smart Text Optimization** (General Settings) spoken notes are tidied up a
 
 **Layouts:** the button above ⚡ opens the choice of views: ◎ around the center, ⇶ a tree to the right (main notes in one column, subtasks to their right), ⊤ an org chart downwards and ☰ an outline (one note per row, subtasks indented below their parent). In the tree and the org chart a parent sits in the middle of its subtasks and the lines run at right angles. The choice stays in this browser; the card option `layout` sets the default. Dragged notes stay where you put them until you switch the layout again.
 
+**Who is there:** the top left shows who has the same list open right now, as a circle with initials. When somebody edits a note, the circle gets a ring and the note shows ✏️ with the name. Nothing of it is stored.
+
 **Drawing:** 🖍️ or **D** opens a bar at the top with pen, arrow, circle and eraser, six colours and three widths. Drag to draw, the eraser deletes the strokes you tap, ↶ takes back every step, Esc or ✓ ends. It works on the round map of a single category; there the drawing is kept and goes into the picture and the export.
 
 **Pinboard:** 📌 shows the notes as coloured sticky notes, without tree or lines. Drag a note anywhere and it stays there on every device; notes not placed yet line up in rows below. Pick the colour under ⋯; for groups, select notes and put a frame around them with ▢.

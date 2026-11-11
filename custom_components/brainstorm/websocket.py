@@ -18,6 +18,7 @@ from .const import (
     DRAW_MAX_POINTS,
     PIN_COLORS,
 )
+from .presence import get_presence
 from .store import get_loaded_store
 
 # Error codes the cards translate for the person
@@ -34,6 +35,8 @@ def async_register_commands(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, websocket_set_map_positions)
     websocket_api.async_register_command(hass, websocket_set_pins)
     websocket_api.async_register_command(hass, websocket_get_drawing)
+    websocket_api.async_register_command(hass, websocket_presence_subscribe)
+    websocket_api.async_register_command(hass, websocket_presence_update)
     websocket_api.async_register_command(hass, websocket_add_stroke)
     websocket_api.async_register_command(hass, websocket_delete_strokes)
     websocket_api.async_register_command(hass, websocket_suggest_subtasks)
@@ -163,6 +166,73 @@ async def websocket_set_pins(
         return
     changed = await store.async_set_pins(msg["pins"], connection.user.id)
     connection.send_result(msg["id"], {"changed": changed})
+
+
+PRESENCE_TOKEN = vol.All(cv.string, vol.Match(r"^[A-Za-z0-9]{6,40}$"))
+PRESENCE_CATEGORY = vol.Any(None, vol.All(cv.string, vol.Length(max=100)))
+PRESENCE_EDITING = vol.Any(None, vol.All(cv.string, vol.Length(max=40)))
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "brainstorm/presence/subscribe",
+        vol.Required("token"): PRESENCE_TOKEN,
+        vol.Optional("category"): PRESENCE_CATEGORY,
+    }
+)
+@callback
+def websocket_presence_subscribe(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Show this open map to the others and tell it who else is there.
+
+    Nothing is stored: closing the map or losing the connection ends the
+    subscription and removes the person.
+    """
+    presence = get_presence(hass)
+    key = (id(connection), msg["token"])
+    msg_id = msg["id"]
+
+    @callback
+    def forward(present: list[dict[str, Any]]) -> None:
+        connection.send_message(
+            websocket_api.event_message(msg_id, {"present": present})
+        )
+
+    user = connection.user
+    if not presence.join(key, user.id, user.name or "", msg.get("category"), forward):
+        connection.send_error(msg_id, "too_many", "Too many open maps")
+        return
+    connection.subscriptions[msg_id] = lambda: presence.leave(key)
+    connection.send_result(msg_id)
+    forward(presence.entries)
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "brainstorm/presence/update",
+        vol.Required("token"): PRESENCE_TOKEN,
+        vol.Optional("category"): PRESENCE_CATEGORY,
+        vol.Optional("editing"): PRESENCE_EDITING,
+    }
+)
+@callback
+def websocket_presence_update(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Tell the others which list this map shows and which note it edits."""
+    presence = get_presence(hass)
+    key = (id(connection), msg["token"])
+    if not presence.knows(key):
+        connection.send_error(msg["id"], websocket_api.ERR_NOT_FOUND, "Not subscribed")
+        return
+    # The answer comes before the news it causes
+    connection.send_result(msg["id"])
+    presence.update(key, msg.get("category"), msg.get("editing"))
 
 
 def _drawing_store(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg_id: int) -> Any:
