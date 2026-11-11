@@ -16,7 +16,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Vibe Coding](https://img.shields.io/badge/Vibe%20Coding-100%25%20with%20Devotion-ff69b4?logo=sparkles&logoColor=white)](https://github.com/nukleuz80/ha_brainstorm)
 
-[![Brainstorm Hub for Home Assistant: list card and interactive mind map card with ideas captured by Alexa – watch the 3-minute feature video](docs/video/poster-features.jpg)](docs/videos.md)
+[![Brainstorm Hub for Home Assistant: list card and interactive mind map card with ideas captured by Alexa – watch the 4-minute feature video](docs/video/poster-features-en.jpg)](docs/videos_en.md)
 
 </div>
 
@@ -26,7 +26,7 @@
 > **🎉 In HACS since 9 November 2026:** Brainstorm Hub is part of the [HACS default list](https://github.com/hacs/default/pull/13619). Just search for **Brainstorm Hub** in HACS.
 
 > [!TIP]
-> **📚 [The wiki](https://github.com/nukleuz80/ha_brainstorm/wiki)** has the full documentation in English and German: [Quick Start](https://github.com/nukleuz80/ha_brainstorm/wiki/Quick-Start), every setting, every service, voice commands, examples and troubleshooting. **🎬 [Videos](docs/videos.md)** show the main features in 3 minutes.
+> **📚 [The wiki](https://github.com/nukleuz80/ha_brainstorm/wiki)** has the full documentation in English and German: [Quick Start](https://github.com/nukleuz80/ha_brainstorm/wiki/Quick-Start), every setting, every service, voice commands, examples and troubleshooting. **🎬 [Videos](docs/videos_en.md)** show the main features in 4 minutes, plus installation, the Alexa skill, reminders, the iPhone shortcut and privacy.
 
 ## 📑 Contents
 
@@ -159,7 +159,7 @@ The skill follows the language of your Echo, everything else the language of Hom
 
 ### Alexa skill (recommended)
 
-Your own skill is the most reliable way ([setup](https://github.com/nukleuz80/ha_brainstorm/wiki/Voice-Control#️-optional-your-own-alexa-skill-one-sentence-one-answer), 🎬 [video](docs/video-alexa-skill.md)). Start each sentence with *"Alexa, ask Brainstorm to"*:
+Your own skill is the most reliable way ([setup](https://github.com/nukleuz80/ha_brainstorm/wiki/Voice-Control#️-optional-your-own-alexa-skill-one-sentence-one-answer), 🎬 [video](docs/videos_en.md#your-own-alexa-skill-6-minutes)). Start each sentence with *"Alexa, ask Brainstorm to"*:
 
 | You say | What happens |
 | :--- | :--- |
@@ -247,7 +247,7 @@ See [Troubleshooting & FAQ](https://github.com/nukleuz80/ha_brainstorm/wiki/Trou
 | [Installation & Setup](https://github.com/nukleuz80/ha_brainstorm/wiki/Installation-and-Setup) | [List Card](https://github.com/nukleuz80/ha_brainstorm/wiki/List-Card) | [Settings](https://github.com/nukleuz80/ha_brainstorm/wiki/Settings) |
 | [Quick Start](https://github.com/nukleuz80/ha_brainstorm/wiki/Quick-Start) | [Mind Map & Pinboard](https://github.com/nukleuz80/ha_brainstorm/wiki/Mind-Map-and-Pinboard) | [Services & Events](https://github.com/nukleuz80/ha_brainstorm/wiki/Services-and-Events) |
 | [Troubleshooting & FAQ](https://github.com/nukleuz80/ha_brainstorm/wiki/Troubleshooting-and-FAQ) | [Collaboration](https://github.com/nukleuz80/ha_brainstorm/wiki/Collaboration) | [Entities & Attributes](https://github.com/nukleuz80/ha_brainstorm/wiki/Entities-and-Attributes) |
-| [🎬 Videos](docs/videos.md) | [Voice Control](https://github.com/nukleuz80/ha_brainstorm/wiki/Voice-Control) | [Import, Export & Storage](https://github.com/nukleuz80/ha_brainstorm/wiki/Import-Export-and-Storage) |
+| [🎬 Videos](docs/videos_en.md) | [Voice Control](https://github.com/nukleuz80/ha_brainstorm/wiki/Voice-Control) | [Import, Export & Storage](https://github.com/nukleuz80/ha_brainstorm/wiki/Import-Export-and-Storage) |
 | [📜 Changelog](CHANGELOG.md) | [AI Features](https://github.com/nukleuz80/ha_brainstorm/wiki/AI-Features) | |
 | | [Reminders](https://github.com/nukleuz80/ha_brainstorm/wiki/Reminders) | |
 | | [Automations & Examples](https://github.com/nukleuz80/ha_brainstorm/wiki/Automations-and-Examples) | |

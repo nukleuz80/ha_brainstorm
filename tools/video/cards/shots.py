@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import subprocess
+import sys
 from pathlib import Path
 
 from PIL import Image, ImageChops
@@ -24,9 +25,20 @@ SHOTS = [
 ]
 
 
+# English labels for the queries above, used with ``shots.py en`` (output in cards/en)
+EN = {"Projekte": "Projects", "Erledigt": "Completed", "Ausflug": "Day trip", "Sommerfest": "Summer party"}
+
+
 def main() -> None:
+    lang = sys.argv[1] if len(sys.argv) > 1 else "de"
+    out = HERE / "en" if lang == "en" else HERE
+    out.mkdir(exist_ok=True)
     for name, size, query, max_height in SHOTS:
-        raw = HERE / f"{name}.png"
+        if lang == "en":
+            for de, en in EN.items():
+                query = query.replace(de, en)
+            query += "&lang=en"
+        raw = out / f"{name}.png"
         subprocess.run([CHROMIUM, "--headless", "--no-sandbox", "--hide-scrollbars",
                         "--force-device-scale-factor=2", f"--window-size={size}",
                         "--virtual-time-budget=8000", f"--screenshot={raw}", URL + query],
@@ -37,10 +49,10 @@ def main() -> None:
         image = image.crop((box[0] - 4, box[1] - 4, box[2] + 4, box[3] + 4))
         if max_height and image.height > max_height:
             image = image.crop((0, 0, image.width, max_height))
-        image.save(HERE / f"crop_{name}.png")
+        image.save(out / f"crop_{name}.png")
         if name == "mindmap":
             # Zoomed onto the notes, so the text stays readable in the video
-            Image.open(raw).crop((400, 215, 1830, 1190)).save(HERE / "crop_mindmapzoom.png")
+            Image.open(raw).crop((400, 215, 1830, 1190)).save(out / "crop_mindmapzoom.png")
 
 
 if __name__ == "__main__":

@@ -10,3 +10,5 @@ chromium --headless --force-device-scale-factor=2 --window-size=640,1000 --virtu
 ```
 
 Parameter: `card=list|mindmap`, `w` (Breite in px), `cfg` (Kartenkonfiguration als JSON), `click` (Texte, die nacheinander angeklickt werden, getrennt mit `|`, z. B. `click=Projekte`). `vv/bin/python cards/shots.py` erzeugt alle Screenshots für die Videos als `crop_*.png`, `build.py` übernimmt sie in die Folien.
+
+**Englisch:** `lang=en` schaltet Karten und Beispieldaten auf Englisch um. `vv/bin/python cards/shots.py en` legt die englischen Screenshots in `cards/en/` ab, mit denselben Dateinamen; Drehbücher mit `LANG = "en"` holen sie von dort.

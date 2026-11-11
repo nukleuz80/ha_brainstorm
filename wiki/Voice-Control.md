@@ -60,7 +60,7 @@ Without a skill, Alexa often reports an error first when you say *"Alexa, note .
 
 The skill belongs to you and only talks to your own Home Assistant. **Requirements:** a free [Amazon developer account](https://developer.amazon.com/alexa/console/ask) on the same account as your Echos and a Home Assistant reachable over public HTTPS (for example through Home Assistant Cloud). Home Assistant offers the voice model in its own language. German and English exist, and other languages get the English one. The skill answers in the language of the request.
 
-> 🎬 **Prefer to watch?** The [setup video](https://github.com/nukleuz80/ha_brainstorm/blob/main/docs/video-alexa-skill.md) shows every setting in its own chapter (6 minutes, German narration, English console labels on screen).
+> 🎬 **Prefer to watch?** The [setup video](https://github.com/nukleuz80/ha_brainstorm/blob/main/docs/videos_en.md#your-own-alexa-skill-6-minutes) shows every setting in its own chapter (6 minutes, English narration). A [German version](https://github.com/nukleuz80/ha_brainstorm/blob/main/docs/video-alexa-skill.md) is available too.
 
 1. In Home Assistant, go to **Brainstorm Hub ➔ Configure ➔ Alexa Voice Input & Skill**, choose **Skill** or **Both** and continue. Keep this window open, it shows the two fields to copy.
 2. In the [Alexa developer console](https://developer.amazon.com/alexa/console/ask), click **Create Skill** and choose: name `Brainstorm`, the language of your Echo, such as **English (US)**, type **Custom**, hosting **Alexa-hosted (Python)**, template **Start from Scratch**.
@@ -81,6 +81,8 @@ The skill belongs to you and only talks to your own Home Assistant. **Requiremen
 ## 📱 iPhone: Shortcut with Siri, Action Button or Back Tap
 
 The fastest way from an iPhone: trigger, speak, done, without opening an app. It needs the Home Assistant companion app.
+
+> 🎬 **Prefer to watch?** The [iPhone video](https://github.com/nukleuz80/ha_brainstorm/blob/main/docs/videos_en.md#iphone-shortcut-2-minutes) builds the shortcut step by step.
 
 1. In the **Shortcuts** app, create a shortcut named **Brainstorm**. The name is also your Siri phrase.
 2. Add **Dictate Text**, choose your language, and stop listening **After Pause**.
@@ -123,7 +125,7 @@ Alexa does not know these commands, so it may answer with an error first. The sk
 
 ### Alexa with your own skill
 
-With the skill Alexa answers only once. The setup is [above](#️-optional-your-own-alexa-skill-one-sentence-one-answer). A 🎬 [video walkthrough](https://github.com/nukleuz80/ha_brainstorm/blob/main/docs/video-alexa-skill.md) with one chapter per setting is available in German, the console labels on screen are in English. Start each sentence with **"Alexa, ask Brainstorm to …"**.
+With the skill Alexa answers only once. The setup is [above](#️-optional-your-own-alexa-skill-one-sentence-one-answer). A 🎬 [video walkthrough](https://github.com/nukleuz80/ha_brainstorm/blob/main/docs/videos_en.md#your-own-alexa-skill-6-minutes) has one chapter per setting. Start each sentence with **"Alexa, ask Brainstorm to …"**.
 
 | Goal | Examples |
 |---|---|

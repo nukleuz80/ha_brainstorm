@@ -30,7 +30,7 @@
 | **Hilfe** | **Help** |
 | 🩺 [Fehlerbehebung & FAQ](Fehlerbehebung-und-FAQ) | 🩺 [Troubleshooting & FAQ](Troubleshooting-and-FAQ) |
 
-**Mehr / More:** 📖 [README (DE)](https://github.com/nukleuz80/ha_brainstorm/blob/main/README_de.md) · 📖 [README (EN)](https://github.com/nukleuz80/ha_brainstorm#readme) · 📜 [Changelog](https://github.com/nukleuz80/ha_brainstorm/blob/main/CHANGELOG.md) · 🎬 [Videos](https://github.com/nukleuz80/ha_brainstorm/blob/main/docs/videos.md) · 🐞 [Issues](https://github.com/nukleuz80/ha_brainstorm/issues)
+**Mehr / More:** 📖 [README (DE)](https://github.com/nukleuz80/ha_brainstorm/blob/main/README_de.md) · 📖 [README (EN)](https://github.com/nukleuz80/ha_brainstorm#readme) · 📜 [Changelog](https://github.com/nukleuz80/ha_brainstorm/blob/main/CHANGELOG.md) · 🎬 Videos ([DE](https://github.com/nukleuz80/ha_brainstorm/blob/main/docs/videos.md), [EN](https://github.com/nukleuz80/ha_brainstorm/blob/main/docs/videos_en.md)) · 🐞 [Issues](https://github.com/nukleuz80/ha_brainstorm/issues)
 
 > [!NOTE]
 > Dieses Wiki wird aus dem Ordner [`wiki/`](https://github.com/nukleuz80/ha_brainstorm/tree/main/wiki) im Repository erzeugt. Änderungen bitte dort als Pull Request vorschlagen.<br>

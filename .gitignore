@@ -18,5 +18,6 @@ tools/video/*.wav
 tools/video/icon.png
 tools/video/cards/brainstorm-*.js
 tools/video/cards/*.png
+tools/video/cards/en/
 tools/video/out_*/
 tools/video/tmp/

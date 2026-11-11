@@ -20,7 +20,7 @@ from piper import PiperVoice  # noqa: E402
 
 
 def main() -> None:
-    voice = PiperVoice.load(str(ROOT / "de_DE-thorsten-high.onnx"))
+    voice = PiperVoice.load(str(ROOT / os.environ.get("VOICE", "de_DE-thorsten-high.onnx")))
     model = WhisperModel(os.environ.get("WM", "base"), device="cpu", compute_type="int8")
     wav_path = ROOT / "tmp/saytest.wav"
     wav_path.parent.mkdir(exist_ok=True)

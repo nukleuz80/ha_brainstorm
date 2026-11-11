@@ -1,5 +1,7 @@
 🏠 [Home](Home) · 🇩🇪 [Deutsche Version](Zusammenarbeit)
 
+> 🎬 **Prefer to watch?** The [privacy video](https://github.com/nukleuz80/ha_brainstorm/blob/main/docs/videos_en.md#privacy-sharing--ai-backlog-2-minutes) shows owners, sharing and the AI backlog in two minutes.
+
 ## 👥 Privacy & Sharing
 
 By default, all users of your Home Assistant see all ideas. Change this under **Brainstorm Hub ➔ Configure ➔ Privacy & Users**, and choose a **main user** who owns all existing ideas.

@@ -1,8 +1,8 @@
 # 🎬 Videos
 
-⬅️ [Zurück zur README](../README_de.md) · 📚 [Wiki](https://github.com/nukleuz80/ha_brainstorm/wiki)
+⬅️ [Zurück zur README](../README_de.md) · 📚 [Wiki](https://github.com/nukleuz80/ha_brainstorm/wiki) · 🇬🇧 [English videos](videos_en.md)
 
-Alle Videos sind deutsch gesprochen, mit dem Text als Untertitel im Bild. Die MP4-Dateien hängen an den GitHub-Releases und enthalten Kapitelmarken, die die meisten Player (VLC, QuickTime, Plex) anzeigen. Die Karten sind echte Screenshots mit Beispieldaten, Amazon- und Home-Assistant-Dialoge sind schematisch nachgezeichnet.
+Alle Videos sind deutsch gesprochen (alle sechs gibt es auch [auf Englisch](videos_en.md)), mit dem Text als Untertitel im Bild. Die MP4-Dateien hängen an den GitHub-Releases und enthalten Kapitelmarken, die die meisten Player (VLC, QuickTime, Plex) anzeigen. Die Karten sind echte Screenshots mit Beispieldaten, Amazon- und Home-Assistant-Dialoge sind schematisch nachgezeichnet.
 
 ## Die wichtigsten Funktionen (gut 4 Minuten)
 

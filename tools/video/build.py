@@ -1,4 +1,8 @@
-"""Render the storyboard into an MP4 with German narration and chapters."""
+"""Render the storyboard into an MP4 with narration and chapters (German or English).
+
+A script with ``LANG = "en"`` gets the English voice, English card shots from
+``cards/en``, ``intro_en.mp4`` and English labels around the scenes.
+"""
 from __future__ import annotations
 
 import hashlib
@@ -17,12 +21,23 @@ _mod = importlib.import_module(SCRIPT)
 CHAPTERS, SPOKEN = _mod.CHAPTERS, _mod.SPOKEN
 VIDEO_TITLE = getattr(_mod, "TITLE", "Brainstorm: Eigenen Alexa-Skill einrichten")
 OUT_NAME = getattr(_mod, "OUT_NAME", "brainstorm-alexa-skill")
+LANG = getattr(_mod, "LANG", "de")
+EN = LANG == "en"
 
 ROOT = Path(__file__).parent
 OUT = ROOT / ("out" if SCRIPT == "script" else f"out_{SCRIPT}")
 FFMPEG = str(next((ROOT / "vv/lib").glob("python*/site-packages/imageio_ffmpeg/binaries/ffmpeg-*")))
 PIPER = str(ROOT / "vv/bin/piper")
-VOICE = str(ROOT / "de_DE-thorsten-high.onnx")
+VOICE = str(ROOT / ("en_US-ryan-high.onnx" if EN else "de_DE-thorsten-high.onnx"))
+# Labels around the scenes
+UI = {
+    "chapter": "Chapter" if EN else "Kapitel",
+    "intro": "Introduction" if EN else "Einleitung",
+    "schema": "Schematic view of the console" if EN else "Schematische Darstellung der Konsole",
+    "files": "FILES" if EN else "DATEIEN",
+    "you": "You" if EN else "Du",
+    "q": ("\u201c", "\u201d") if EN else ("\u201e", "\u201c"),
+}
 W, H = 1280, 720
 PAD_BEFORE, PAD_AFTER = 0.5, 1.1
 
@@ -147,7 +162,7 @@ def console(tab: str, active: str, body: str) -> str:
             cls = {"sec": "sec", "item": "", "sub": "sub"}[kind] + (" on" if on else "")
             nav += f'<div class="{cls}">{label}</div>'
     elif tab == "Code":
-        nav = ('<div class="sec">DATEIEN</div><div>📁 lambda</div>'
+        nav = (f'<div class="sec">{UI["files"]}</div><div>📁 lambda</div>'
                '<div class="sub on">lambda_function.py</div><div class="sub">requirements.txt</div>'
                '<div class="sub">utils.py</div>')
     else:
@@ -155,7 +170,7 @@ def console(tab: str, active: str, body: str) -> str:
     return (f'<div class="win"><div class="bar"><b>Alexa Developer Console</b>'
             f'<span style="color:#c9d3df">Brainstorm</span><div class="tabs">{tabs}</div></div>'
             f'<div class="side">{nav}</div><div class="main">{body}</div></div>'
-            '<div class="schema">Schematische Darstellung der Konsole</div>')
+            f'<div class="schema">{UI["schema"]}</div>')
 
 
 def console_body(kind: str) -> str:
@@ -174,7 +189,7 @@ def console_body(kind: str) -> str:
                 '<div class="row hl"><span class="tog"></span><b>Reminders</b></div>'
                 '<div class="row"><span class="tog off"></span>Lists Read</div>')
     if kind == "json":
-        code = ('<span class="c">// gesamten Inhalt ersetzen</span>\n{\n  <span class="s">"interactionModel"</span>: {\n'
+        code = ('<span class="c">// ' + ("replace the whole content" if EN else "gesamten Inhalt ersetzen") + '</span>\n{\n  <span class="s">"interactionModel"</span>: {\n'
                 '    <span class="s">"languageModel"</span>: {\n      <span class="s">"invocationName"</span>: '
                 '<span class="s">"brainstorm"</span>,\n      <span class="s">"intents"</span>: [ '
                 '<span class="s">"CaptureIdeaIntent"</span>, <span class="s">"ReminderIntent"</span>, …')
@@ -186,7 +201,8 @@ def console_body(kind: str) -> str:
         return ('<h3>Skill Invocation Name</h3>'
                 '<div class="field"><label>Skill Invocation Name</label>'
                 '<div class="val hl">brainstorm</div></div>'
-                '<p style="color:#545b64">„Alexa, sage <b>Brainstorm</b> …“ · „Alexa, öffne <b>Brainstorm</b>“</p>')
+                + ('<p style="color:#545b64">“Alexa, ask <b>Brainstorm</b> to …” · “Alexa, open <b>Brainstorm</b>”</p>' if EN else
+                '<p style="color:#545b64">„Alexa, sage <b>Brainstorm</b> …“ · „Alexa, öffne <b>Brainstorm</b>“</p>'))
     if kind == "code":
         code = ('<span class="s">"""Brainstorm Hub Alexa skill. Keep this code private …"""</span>\n'
                 '<span class="k">import</span> json\n<span class="k">import</span> urllib.request\n\n'
@@ -202,8 +218,10 @@ def console_body(kind: str) -> str:
     if kind == "testrun":
         return ('<div class="field"><label>Skill testing is enabled in:</label>'
                 '<div class="val" style="width:260px">Development ▾</div></div>'
-                '<div class="row hl">⌨️ sage brainstorm notiere testidee</div>'
-                '<div class="row" style="background:#e6f7ff">🔵 Gespeichert unter Inbox.</div>')
+                + ('<div class="row hl">⌨️ ask brainstorm to note test idea</div>'
+                   '<div class="row" style="background:#e6f7ff">🔵 Saved under Inbox.</div>' if EN else
+                   '<div class="row hl">⌨️ sage brainstorm notiere testidee</div>'
+                   '<div class="row" style="background:#e6f7ff">🔵 Gespeichert unter Inbox.</div>'))
     raise ValueError(kind)
 
 
@@ -237,7 +255,7 @@ def stage(v: tuple) -> str:
         return (f'<div class="path">{esc(v[3])}</div><div class="ha" style="top:20px"><div class="hd">{esc(v[1])}</div>'
                 f'<div class="bd">{rows}</div><div class="ft"><span>{esc(v[4]).upper()}</span></div></div>')
     if kind == "speech":
-        who = {"du": "Du", "alexa": "Alexa", "ha": "Home Assistant"}
+        who = {"du": UI["you"], "alexa": "Alexa", "ha": "Home Assistant"}
         bubs = "".join(f'<div class="bub {w if w != "ha" else "hab"}"><span class="who">{who[w]}</span>{esc(t)}</div>' for w, t in v[1])
         return f'<div class="sph">{esc(v[2])}</div><div class="sp">{bubs}</div>'
     if kind == "shot":
@@ -252,7 +270,7 @@ def stage(v: tuple) -> str:
     if kind == "transform":
         # ("transform", spoken sentence, result text, chips, note)
         chips = "".join(f'<span class="chip">{c}</span>' for c in v[3])
-        return (f'<div class="tf"><div class="tfin">🗣️ „{esc(v[1])}“</div><div class="tfarrow">⬇</div>'
+        return (f'<div class="tf"><div class="tfin">🗣️ {UI["q"][0]}{esc(v[1])}{UI["q"][1]}</div><div class="tfarrow">⬇</div>'
                 f'<div class="tfout"><div class="tftext">{esc(v[2])}</div><div>{chips}</div></div></div>'
                 f'<div class="note">{esc(v[4])}</div>')
     if kind == "grid":
@@ -281,6 +299,16 @@ def stage(v: tuple) -> str:
         bullets = "".join(f'<li><span class="ic">{i}</span><span>{t}</span></li>' for i, t in v[3])
         return (f'<div class="ph2"><div class="t">{esc(v[1])}</div>{items}</div>'
                 f'<div class="ph2side bl"><ul>{bullets}</ul></div><div class="note">{esc(v[4])}</div>')
+    if kind == "alexa_app" and EN:
+        return ('<div class="phone"><div class="t">Alexa app ➔ More ➔ Skills &amp; Games</div>'
+                '<div class="it">Your Skills</div><div class="it hl">Dev · <b>Brainstorm</b></div>'
+                '<div class="it">Settings ➔ Manage Permissions</div>'
+                '<div class="it hl"><span class="tog"></span>Reminders</div></div>'
+                '<div class="side2 bl"><ul>'
+                '<li><span class="ic">📱</span><span>Developer skills have their own section (Dev)</span></li>'
+                '<li><span class="ic">⏰</span><span>Allow the <b>Reminders</b> permission once, only with Permissions ➔ Reminders</span></li>'
+                '<li><span class="ic">🔁</span><span>If it is missing, Alexa asks for it with a card in the app after the first reminder</span></li>'
+                '</ul></div><div class="note">The labels in the app may differ slightly between versions.</div>')
     if kind == "alexa_app":
         return ('<div class="phone"><div class="t">Alexa-App ➔ Mehr ➔ Skills &amp; Spiele</div>'
                 '<div class="it">Meine Skills</div><div class="it hl">Dev · <b>Brainstorm</b></div>'
@@ -298,8 +326,8 @@ def page(chapter_no: int, total: int, title: str, v: tuple, caption: str) -> str
     prog = "".join(
         f'<div class="{"done" if i < chapter_no else "cur" if i == chapter_no else ""}"></div>'
         for i in range(total))
-    badge = "Intro" if chapter_no == 0 else f"Kapitel {chapter_no}"
-    return (f'<!doctype html><html><head><meta charset="utf-8"><style>{CSS}</style></head><body>'
+    badge = "Intro" if chapter_no == 0 else f"{UI['chapter']} {chapter_no}"
+    return (f'<!doctype html><html lang="{LANG}"><head><meta charset="utf-8"><style>{CSS}</style></head><body>'
             f'<div class="top"><span class="badge">{badge}</span><span class="ctitle">{esc(title)}</span>'
             '<span class="logo"><img src="icon.png">Brainstorm Hub</span></div>'
             f'<div class="stage">{stage(v)}</div><div class="cap">{esc(caption)}</div>'
@@ -322,10 +350,10 @@ def main() -> None:
     only_frames = "--frames" in sys.argv
     OUT.mkdir(exist_ok=True)
     (OUT / "icon.png").write_bytes((ROOT / "icon.png").read_bytes())
-    for shot in (ROOT / "cards").glob("crop_*.png"):
+    for shot in (ROOT / "cards" / ("en" if EN else "")).glob("crop_*.png"):
         (OUT / shot.name).write_bytes(shot.read_bytes())
     segments, chapters, t = [], [], 0.0
-    intro = ROOT / "intro.mp4"  # made by intro.py, reusable for other videos
+    intro = ROOT / ("intro_en.mp4" if EN else "intro.mp4")  # made by intro.py, reusable for other videos
     if intro.exists() and "--no-intro" not in sys.argv:
         segments.append(intro)
         t = float(subprocess.run([FFMPEG, "-i", str(intro)], capture_output=True, text=True)
@@ -363,7 +391,7 @@ def main() -> None:
     (OUT / "list.txt").write_text("".join(f"file '{s}'\n" for s in segments))
     meta = [";FFMETADATA1", f"title={VIDEO_TITLE}", "artist=Brainstorm Hub"]
     for i, (title, a, b) in enumerate(chapters):
-        label = "Einleitung" if i == 0 else f"{i}. {title}"
+        label = UI["intro"] if i == 0 else f"{i}. {title}"
         meta += ["[CHAPTER]", "TIMEBASE=1/1000", f"START={int(a * 1000)}", f"END={int(b * 1000)}", f"title={label}"]
     (OUT / "meta.txt").write_text("\n".join(meta) + "\n")
     final = ROOT / f"{OUT_NAME}.mp4"
