@@ -52,6 +52,7 @@ _TERMS: dict[str, str] = {
     "Tags": "tˈɛɡs",
     "nukleuz80": "nˈuːkleʊs ˈaxtsɪç",
     "Mindmap": "mˈaɪntmɛp",
+    "Minimap": "mˈɪnimɛp",
     "Todoist": "tuːdˈuːɪst",
     "English": "ˈɪŋlɪʃ",
     "Release": "rɪlˈiːs",

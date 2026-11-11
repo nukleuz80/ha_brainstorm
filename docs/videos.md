@@ -4,11 +4,11 @@
 
 Alle Videos sind deutsch gesprochen, mit dem Text als Untertitel im Bild. Die MP4-Dateien hängen an den GitHub-Releases und enthalten Kapitelmarken, die die meisten Player (VLC, QuickTime, Plex) anzeigen. Die Karten sind echte Screenshots mit Beispieldaten, Amazon- und Home-Assistant-Dialoge sind schematisch nachgezeichnet.
 
-## Die wichtigsten Funktionen (3½ Minuten)
+## Die wichtigsten Funktionen (gut 4 Minuten)
 
-[![Die wichtigsten Funktionen](video/poster-features.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.10.5/brainstorm-features.mp4)
+[![Die wichtigsten Funktionen](video/poster-features.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.11.3/brainstorm-features.mp4)
 
-**[▶️ Video ansehen](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.10.5/brainstorm-features.mp4)**
+**[▶️ Video ansehen](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.11.3/brainstorm-features.mp4)**
 
 | Zeit | Kapitel |
 | :--- | :--- |
@@ -18,12 +18,13 @@ Alle Videos sind deutsch gesprochen, mit dem Text als Untertitel im Bild. Die MP
 | 0:50 | Die Listenkarte und die Bedienstufen Einsteiger, Normal, Profi |
 | 1:21 | Unteraufgaben & Details |
 | 1:34 | Die Mindmap: Marker, Ansichten, Suche, Regeln, Präsentation, Export |
-| 2:19 | Erinnerungen und wiederkehrende Aufgaben |
-| 2:33 | Alexa-Skill & Echo Show |
-| 2:47 | Erledigt & Ergebnis |
-| 3:01 | Verbunden mit allem: To-do, Bring!, Markdown, JSON |
-| 3:14 | Privatsphäre & Freigaben |
-| 3:26 | Loslegen |
+| 2:19 | Gemeinsam & mit KI: Abstimmen, Reaktionen, Minimap, Kommentare, Map aus Thema |
+| 2:58 | Erinnerungen und wiederkehrende Aufgaben |
+| 3:13 | Alexa-Skill & Echo Show |
+| 3:27 | Erledigt & Ergebnis |
+| 3:40 | Verbunden mit allem: To-do, Bring!, Markdown, JSON |
+| 3:53 | Privatsphäre & Freigaben |
+| 4:06 | Loslegen |
 
 ## Installation (3 Minuten)
 

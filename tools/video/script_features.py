@@ -142,12 +142,51 @@ CHAPTERS: list[dict] = [
                     ("▶️", "Präsentieren", "Vollbild, Notiz für Notiz"),
                     ("⚡", "Brainstorm-Modus", "Mit Timer, jedes Enter eine Notiz"),
                     ("📄", "Export", "Bild, PDF, Markdown, OPML und FreeMind"),
-                    ("✨", "KI-Hilfe", "Fasst einen Ast zusammen, ordnet lose Ideen zu"),
+                    ("✨", "KI-Hilfe", "Fasst Äste zusammen, ordnet zu, baut ganze Maps"),
                 ], "Vorlagen wie SWOT-Analyse oder Packliste fügen fertige Zweige ein."),
                 "say": "Dazu kommen Suchen und Filtern, Regeln, die passende Notizen einfärben, "
                        "ein Präsentationsmodus und ein Brainstorm-Modus mit Timer. Exportieren "
                        "kannst du als Bild, PDF, Markdown, OPML oder FreeMind, und die KI fasst "
                        "einen ganzen Ast in ein paar Sätzen zusammen.",
+            },
+        ],
+    },
+    {
+        "title": "Gemeinsam & mit KI",
+        "scenes": [
+            {
+                "v": ("shot", "crop_social.png", 450, [
+                    ("🗳️", "<b>Abstimmen</b> mit Stimmen pro Person, auch verdeckt"),
+                    ("❤️", "<b>Reaktionen</b> wie Herz, Daumen oder Wichtig"),
+                    ("🗺️", "<b>Minimap</b> zeigt, wo du gerade auf der Mindmap bist"),
+                    ("🏆", "Nach der Runde nach <b>Stimmen sortieren</b>"),
+                ], "Abstimmung starten: 🗳️ unten rechts oder die Taste V."),
+                "say": "Brainstorm ist auch für die ganze Familie gemacht. Startet eine Abstimmung, "
+                       "verteilt jeder seine Stimmen auf die besten Ideen, auf Wunsch verdeckt. "
+                       "Mit Reaktionen wie Herz oder Daumen zeigst du schnell, was dir gefällt. "
+                       "Auf großen Karten hilft dir die Minimap.",
+            },
+            {
+                "v": ("shot", "crop_comments.png", 450, [
+                    ("💬", "<b>Kommentare</b> an jeder Notiz, auch in der Listenkarte"),
+                    ("📣", "<b>@Name</b> erwähnt eine Person"),
+                    ("📱", "Erwähnte bekommen eine <b>Benachrichtigung</b>"),
+                    ("🔒", "Nur wer die Notiz sehen darf, wird benachrichtigt"),
+                ], "Die Sprechblase an der Notiz zeigt, wie viele Kommentare es gibt."),
+                "say": "An jeder Notiz könnt ihr diskutieren. Erwähnst du jemanden mit dem Klammeraffen "
+                       "und seinem Namen, bekommt diese Person eine Benachrichtigung aufs Handy, aber nur, wenn sie "
+                       "die Notiz auch sehen darf.",
+            },
+            {
+                "v": ("shot", "crop_aimap.png", 450, [
+                    ("✨", "<b>Map aus Thema</b>: ein Stichwort oder ein langer Text"),
+                    ("🌳", "Die KI baut bis zu <b>drei Ebenen</b>"),
+                    ("☑️", "Vor dem Übernehmen <b>auswählen und umbenennen</b>"),
+                    ("🔁", "<b>Neue Vorschläge</b>, wenn es noch nicht passt"),
+                ], "Braucht eine KI in Home Assistant, zum Beispiel über AI Task."),
+                "say": "Und wenn dir der Anfang fehlt: Gib der KI ein Thema wie Sommerfest im "
+                       "Garten planen, und sie entwirft eine ganze Mindmap. Du hakst ab, was du "
+                       "nicht willst, änderst Texte und übernimmst den Rest mit einem Klick.",
             },
         ],
     },
@@ -240,7 +279,7 @@ CHAPTERS: list[dict] = [
         "scenes": [
             {
                 "v": ("bullets", "In drei Schritten startklar", [
-                    ("1", "In <b>HACS</b> das Repository <code>nukleuz80/ha_brainstorm</code> hinzufügen und installieren"),
+                    ("1", "In <b>HACS</b> nach <b>Brainstorm Hub</b> suchen und installieren"),
                     ("2", "Home Assistant neu starten, Integration <b>Brainstorm Hub</b> hinzufügen"),
                     ("3", "Karte <b>Brainstorm Card</b> ins Dashboard ziehen – fertig"),
                 ], "Anleitung und Videos: github.com/nukleuz80/ha_brainstorm"),
