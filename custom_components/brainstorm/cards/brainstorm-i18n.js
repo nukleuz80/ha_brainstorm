@@ -543,6 +543,17 @@ const DICTIONARIES = {
     "Jedes Jahr": "Every year",
     "Nicht wiederholen": "Do not repeat",
     "Zuständig: {mode}": "Assigned: {mode}",
+    "Morgens": "Morning",
+    "Tagsüber": "During the day",
+    "Abends": "Evening",
+    "Nicht für heute": "Not for today",
+    "Mein Tag: {part}": "My day: {part}",
+    "Mein Tag:": "My day:",
+    "Aus „Mein Tag“ nehmen": "Take out of My day",
+    "Für heute vornehmen": "Pick for today",
+    "☀️ Mein Tag": "☀️ My day",
+    "Nur Notizen, die du dir für heute vorgenommen hast": "Only notes you picked for today",
+    "Für heute vornehmen: morgens, tagsüber oder abends. Gilt nur heute und kommt ins Briefing.": "Pick it for today: morning, during the day or evening. Counts only today and goes into the briefing.",
     "Reihum": "Taking turns",
     "Wer am wenigsten erledigt hat": "Whoever did the least",
     "Zufällig": "At random",
@@ -921,7 +932,7 @@ const fold = (text) => String(text || "").normalize("NFD").replace(/\p{M}/gu, ""
 
 /** Return an empty filter: no words, priorities, dates or tags. */
 export function emptyFilter() {
-  return { query: "", prios: new Set(), overdue: false, soon: false, working: false, tags: new Set(), markers: new Set() };
+  return { query: "", prios: new Set(), overdue: false, soon: false, working: false, myDay: false, tags: new Set(), markers: new Set() };
 }
 
 /** Tell whether a filter asks for anything. */
@@ -933,6 +944,7 @@ export function filterActive(filter) {
         filter.overdue ||
         filter.soon ||
         filter.working ||
+        filter.myDay ||
         filter.tags.size ||
         (filter.markers && filter.markers.size)),
   );
@@ -969,6 +981,7 @@ export function ideaMatches(idea, filter, now = new Date()) {
     if (!((filter.overdue && overdue) || (filter.soon && soon))) return false;
   }
   if (filter.working && !idea.in_progress) return false;
+  if (filter.myDay && !idea.my_day) return false;
   for (const tag of filter.tags) {
     if (!tags.includes(tag)) return false;
   }
@@ -1077,6 +1090,35 @@ export function repeatBadge(idea) {
   const mode = rotationLabel(idea.rotation && idea.rotation.mode);
   if (mode) title += ` · ${t("Zuständig: {mode}", { mode })}`;
   return `<span class="repeat-badge" title="${escapeHtml(title)}">🔁</span>`;
+}
+
+/** The parts of today a note can be picked for in "My day". */
+export const MY_DAY_PARTS = ["morning", "day", "evening"];
+const MY_DAY_ICONS = { morning: "🌅", day: "☀️", evening: "🌙" };
+
+/** Return the name of a part of the day in the language of the user. */
+export function myDayLabel(part) {
+  return { morning: t("Morgens"), day: t("Tagsüber"), evening: t("Abends") }[part] || "";
+}
+
+/** The options of the "My day" field in the edit dialogs. */
+export function myDayOptions(current) {
+  return [`<option value="">${t("Nicht für heute")}</option>`]
+    .concat(MY_DAY_PARTS.map((part) => `<option value="${part}"${part === current ? " selected" : ""}>${MY_DAY_ICONS[part]} ${myDayLabel(part)}</option>`))
+    .join("");
+}
+
+/** A small sun, sunrise or moon for notes picked for today. */
+export function myDayBadge(idea) {
+  const part = idea && idea.my_day;
+  if (!MY_DAY_ICONS[part]) return "";
+  return `<span class="repeat-badge my-day-badge" title="${escapeHtml(t("Mein Tag: {part}", { part: myDayLabel(part) }))}">${MY_DAY_ICONS[part]}</span>`;
+}
+
+/** Sort key for "My day": morning first, evening last, the rest after. */
+export function myDayRank(idea) {
+  const index = MY_DAY_PARTS.indexOf(idea && idea.my_day);
+  return index < 0 ? MY_DAY_PARTS.length : index;
 }
 
 /** How a repeating note can change hands each round. */
@@ -1202,6 +1244,7 @@ export function filterToRule(filter) {
     overdue: Boolean(filter.overdue),
     soon: Boolean(filter.soon),
     working: Boolean(filter.working),
+    myDay: Boolean(filter.myDay),
     tags: [...filter.tags],
     markers: [...(filter.markers || [])],
   };
@@ -1216,6 +1259,7 @@ export function ruleFilter(rule) {
   filter.overdue = Boolean(when.overdue);
   filter.soon = Boolean(when.soon);
   filter.working = Boolean(when.working);
+  filter.myDay = Boolean(when.myDay);
   (when.tags || []).forEach((tag) => filter.tags.add(String(tag)));
   (when.markers || []).forEach((marker) => filter.markers.add(String(marker)));
   return filter;

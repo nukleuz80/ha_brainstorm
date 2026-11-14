@@ -14,7 +14,7 @@ Brainstorm reminds you of due ideas on its own, over the services you have alrea
 **Configure** under **Brainstorm Hub ➔ Configure ➔ Reminders & Notifications**. Every feature has its own switch:
 
 - **On/Off & Channels:** a master switch, the Alexa announcement (origin, most recent or fixed Echos, needs Alexa Media), any `notify` services (the companion app gets **Done**, **1 hour later** and **Tomorrow** buttons) and sending important open ideas to further services after a waiting time.
-- **Quiet Hours, Briefing & Weekly Review:** Urgent ideas still reach your notification services during quiet hours, but no Echo speaks. The briefing can wait until a sensor or person detects someone.
+- **Quiet Hours, Briefing & Weekly Review:** Urgent ideas still reach your notification services during quiet hours, but no Echo speaks. The briefing can wait until a sensor or person detects someone. It first names what was picked under ☀️ My day for the morning, the day and the evening (v1.12.2), then what is due.
 - **Rules per List:** normal channels, Alexa only, notifications only (private) or nothing, own services, sending a list on certain days or at a place.
 - **Places & Coming Home:** *"remind me to take out the trash when I get home"*, *"remind me of the milk when I get to the market"*, using your zones.
 - **People:** *"remind Alex tomorrow at 8 to call the dentist"*, with own channels per person.

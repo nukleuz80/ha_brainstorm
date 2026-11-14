@@ -10,7 +10,7 @@ const filter = emptyFilter();
 filter.prios.add("urgent");
 filter.tags.add("garten");
 const when = filterToRule(filter);
-check("filter to rule", when, { query: "", prios: ["urgent"], overdue: false, soon: false, working: false, tags: ["garten"], markers: [] });
+check("filter to rule", when, { query: "", prios: ["urgent"], overdue: false, soon: false, working: false, myDay: false, tags: ["garten"], markers: [] });
 check("and back", [...ruleFilter({ when }).prios], ["urgent"]);
 const rules = cleanRules([
   { id: "a", name: "Brennt", color: RULE_COLORS[0], icon: "🔥", when: { prios: ["urgent"] } },

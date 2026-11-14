@@ -235,6 +235,15 @@ update_idea:
             - biweekly
             - monthly
             - yearly
+    my_day:
+      required: false
+      selector:
+        select:
+          translation_key: my_day
+          options:
+            - morning
+            - day
+            - evening
     rotation:
       required: false
       example: '{"mode": "turn", "people": ["person.anna", "person.ben"]}'

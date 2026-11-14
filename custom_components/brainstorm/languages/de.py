@@ -1518,6 +1518,10 @@ MESSAGES: dict[str, str] = {
     "review_title": "Brainstorm: Wochenrückblick",
     "digest_one": "Heute steht an: {item}.",
     "digest_many": "Heute stehen {count} Dinge an: {items}.",
+    "digest_my_day": "Für heute vorgenommen: {parts}.",
+    "my_day_morning": "morgens {items}",
+    "my_day_day": "tagsüber {items}",
+    "my_day_evening": "abends {items}",
     "review": (
         "Wochenrückblick: {count} Einträge sind seit über {days} Tagen offen. "
         "Die ältesten sind: {items}. Kann davon etwas weg?"

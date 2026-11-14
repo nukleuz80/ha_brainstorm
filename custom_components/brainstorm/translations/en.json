@@ -693,6 +693,13 @@
         "below": "Reaches or falls below",
         "state": "Is exactly (state)"
       }
+    },
+    "my_day": {
+      "options": {
+        "morning": "Morning",
+        "day": "During the day",
+        "evening": "Evening"
+      }
     }
   },
   "entity": {
@@ -1031,6 +1038,10 @@
         "repeat": {
           "name": "Repeat",
           "description": "When the idea is ticked off, a new one with the same text, details and subtasks is added, due at the next date of the rule. Empty stops repeating."
+        },
+        "my_day": {
+          "name": "My day",
+          "description": "Picks the idea for today: morning, day (any time) or evening. It shows in the cards under ☀️ My day and in the daily briefing, and counts only today. Empty or null takes it out."
         },
         "rotation": {
           "name": "Rotation",

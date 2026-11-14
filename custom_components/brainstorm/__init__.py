@@ -50,6 +50,8 @@ from .const import (
     NUMBERING_STYLES,
     REPEAT_RULES,
     ATTR_ROTATION,
+    ATTR_MY_DAY,
+    MY_DAY_PARTS,
     ROTATION_MAX_PEOPLE,
     ROTATION_MODES,
     SORT_KEYS,
@@ -226,6 +228,7 @@ SERVICE_UPDATE_IDEA_SCHEMA = vol.Schema(
         ),
         vol.Optional(ATTR_NUMBERING): vol.Any(None, "", vol.In(NUMBERING_STYLES)),
         vol.Optional(ATTR_REPEAT): vol.Any(None, "", vol.In(REPEAT_RULES)),
+        vol.Optional(ATTR_MY_DAY): vol.Any(None, "", vol.In(MY_DAY_PARTS)),
         vol.Optional(ATTR_ROTATION): vol.Any(
             None,
             vol.Schema(
@@ -637,6 +640,8 @@ def _register_services(hass: HomeAssistant) -> None:
             update_repeat=ATTR_REPEAT in call.data,
             rotation=call.data.get(ATTR_ROTATION),
             update_rotation=ATTR_ROTATION in call.data,
+            my_day=call.data.get(ATTR_MY_DAY),
+            update_my_day=ATTR_MY_DAY in call.data,
         )
         if updated is not None and (
             ATTR_ASSIGNEE in call.data

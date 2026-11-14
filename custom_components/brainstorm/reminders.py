@@ -18,6 +18,7 @@ from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util, slugify
 
 from .const import (
+    MY_DAY_PARTS,
     ATTR_ALEXA_NATIVE,
     ATTR_ASSIGNEE,
     ATTR_CALENDAR_SYNCED,
@@ -89,6 +90,7 @@ from .ai import async_generate_text
 from .echo_locks import locked_echos
 from .languages import get_pack
 from .languages.common import LanguagePack
+from .store import my_day_part
 
 if TYPE_CHECKING:
     from .store import BrainstormStore
@@ -935,21 +937,41 @@ class ReminderManager:
         return {}
 
     def build_digest(self, now: datetime) -> str | None:
-        """Return the briefing of what is due today, None if nothing is."""
-        due_today = []
+        """Return the briefing of what is due or planned today, None if nothing is.
+
+        Notes picked for "My day" come first, by morning, day and evening;
+        a planned note is not named again among the due ones.
+        """
+        due_today: list[str] = []
+        planned: dict[str, list[str]] = {}
         for idea in self._spoken_ideas():
-            if idea.get("status") != "active" or not idea.get(ATTR_DUE):
+            if idea.get("status") != "active":
+                continue
+            if part := my_day_part(idea, now.date()):
+                planned.setdefault(part, []).append(str(idea.get(ATTR_TEXT)))
+                continue
+            if not idea.get(ATTR_DUE):
                 continue
             due = dt_util.parse_datetime(idea[ATTR_DUE])
             if due is not None and dt_util.as_local(due).date() <= now.date():
                 due_today.append(str(idea.get(ATTR_TEXT)))
-        if not due_today:
-            return None
+        sentences: list[str] = []
+        if planned:
+            parts = [
+                self._pack.msg(f"my_day_{part}", items=self._pack.join(planned[part]))
+                for part in MY_DAY_PARTS
+                if part in planned
+            ]
+            sentences.append(self._pack.msg("digest_my_day", parts="; ".join(parts)))
         if len(due_today) == 1:
-            return self._pack.msg("digest_one", item=due_today[0])
-        return self._pack.msg(
-            "digest_many", count=len(due_today), items=self._pack.join(due_today)
-        )
+            sentences.append(self._pack.msg("digest_one", item=due_today[0]))
+        elif due_today:
+            sentences.append(
+                self._pack.msg(
+                    "digest_many", count=len(due_today), items=self._pack.join(due_today)
+                )
+            )
+        return " ".join(sentences) or None
 
     def build_review(self, now: datetime) -> str | None:
         """Return the review of long open ideas, None if there are none."""

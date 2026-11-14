@@ -956,6 +956,10 @@ MESSAGES: dict[str, str] = {
     "review_title": "Brainstorm: Weekly review",
     "digest_one": "Due today: {item}.",
     "digest_many": "{count} things are due today: {items}.",
+    "digest_my_day": "Planned for today: {parts}.",
+    "my_day_morning": "in the morning {items}",
+    "my_day_day": "during the day {items}",
+    "my_day_evening": "in the evening {items}",
     "review": (
         "Weekly review: {count} entries have been open for more than {days} days. "
         "The oldest are: {items}. Can any of them go?"

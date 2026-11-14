@@ -693,6 +693,13 @@
         "below": "Erreicht oder unterschreitet",
         "state": "Ist genau (Zustand)"
       }
+    },
+    "my_day": {
+      "options": {
+        "morning": "Morgens",
+        "day": "Tagsüber",
+        "evening": "Abends"
+      }
     }
   },
   "entity": {
@@ -1031,6 +1038,10 @@
         "repeat": {
           "name": "Wiederholen",
           "description": "Wird die Idee abgehakt, kommt eine neue mit gleichem Text, gleichen Angaben und Unteraufgaben dazu, fällig zum nächsten Termin der Regel. Leer beendet das Wiederholen."
+        },
+        "my_day": {
+          "name": "Mein Tag",
+          "description": "Nimmt die Idee für heute vor: morgens, tagsüber oder abends. Sie erscheint in den Karten unter ☀️ Mein Tag und im täglichen Briefing und gilt nur heute. Leer oder null nimmt sie wieder heraus."
         },
         "rotation": {
           "name": "Wechselnde Zuständigkeit",

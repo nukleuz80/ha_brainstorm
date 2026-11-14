@@ -86,6 +86,7 @@ Changes an existing idea.
 | `frame` | No | Name of a frame on the mind map, up to 40 characters. Notes with the same name share one frame. Empty or `null` removes it. |
 | `callout` | No | Short remark shown in a speech bubble above the note, up to 200 characters. Empty or `null` removes it. |
 | `repeat` | No | Lets the idea come back when it is ticked off: `daily`, `weekdays`, `weekly`, `biweekly`, `monthly` or `yearly`. The new idea is due at the next date after now, with the same details and its subtasks open again. Empty or `null` stops it. |
+| `my_day` | No | Picks the idea for today (v1.12.2): `morning`, `day` or `evening`. Counts only today, shows in the cards under ☀️ My day and in the briefing. Empty or `null` takes it out. |
 | `rotation` | No | Changing assignee of a repeating idea (v1.12.0): `{mode: turn, people: [person.anna, person.ben]}`. `mode` is `turn` (taking turns), `fewest` (whoever finished the fewest of their own notes in the last 30 days, the next in turn on a tie) or `random` (never the same person twice in a row). `people` are 2 to 10 person entities. If the idea belongs to none of them, it goes to the first at once; every new round goes to the next one, with their subtasks and a reminder on arrival. `null` ends the rotation. |
 | `numbering` | No | Numbers the subtasks below the note and theirs: `decimal` (1., 1.1), `alpha` (a), b)) or `roman` (I., II.). Empty or `null` removes it. |
 

@@ -249,6 +249,9 @@ ATTR_REPEATED_AS = "repeated_as"
 ATTR_REPEAT_CLOSED = "repeat_closed"
 # At most this many subtasks come along with a repeating note
 REPEAT_MAX_SUBTASKS = 100
+# Picked for today in "My day": {date, part}, only counting on that date
+ATTR_MY_DAY = "my_day"
+MY_DAY_PARTS = ("morning", "day", "evening")
 # Who a repeating note goes to in the next round: mode and the people (person
 # entities) taking turns
 ATTR_ROTATION = "rotation"

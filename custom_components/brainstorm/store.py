@@ -13,7 +13,7 @@ import re
 import shutil
 import uuid
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from difflib import SequenceMatcher
 from typing import Any, Callable, TYPE_CHECKING
 
@@ -95,6 +95,8 @@ from .const import (
     REPEAT_MAX_SUBTASKS,
     REPEAT_RULES,
     ATTR_ROTATION,
+    ATTR_MY_DAY,
+    MY_DAY_PARTS,
     ROTATION_FEWEST,
     ROTATION_FEWEST_DAYS,
     ROTATION_MAX_PEOPLE,
@@ -623,6 +625,8 @@ class BrainstormStore:
                 result[ATTR_NUMBERING] = numbering
             if repeat := idea.get(ATTR_REPEAT):
                 result[ATTR_REPEAT] = repeat
+            if part := my_day_part(idea):
+                result[ATTR_MY_DAY] = part
             if rotation := idea.get(ATTR_ROTATION):
                 result[ATTR_ROTATION] = {
                     "mode": rotation["mode"],
@@ -1647,6 +1651,8 @@ class BrainstormStore:
         update_repeat: bool = False,
         rotation: dict[str, Any] | None = None,
         update_rotation: bool = False,
+        my_day: str | None = None,
+        update_my_day: bool = False,
     ) -> dict[str, Any] | None:
         """Update an existing idea.
 
@@ -1769,6 +1775,11 @@ class BrainstormStore:
                 idea[ATTR_REPEAT] = repeat
             else:
                 idea.pop(ATTR_REPEAT, None)
+        if update_my_day:
+            if my_day in MY_DAY_PARTS:
+                idea[ATTR_MY_DAY] = {"date": dt_util.now().date().isoformat(), "part": my_day}
+            else:
+                idea.pop(ATTR_MY_DAY, None)
         if update_rotation:
             if cleaned_rotation := _clean_rotation(rotation):
                 idea[ATTR_ROTATION] = cleaned_rotation
@@ -3989,6 +4000,15 @@ def _subtask_progress(ideas: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
             "percent": round(percent(idea, frozenset())),
         }
     return result
+
+
+def my_day_part(idea: dict[str, Any], today: date | None = None) -> str | None:
+    """Return when today an idea was picked for, None if not for today."""
+    picked = idea.get(ATTR_MY_DAY)
+    if not isinstance(picked, dict) or picked.get("part") not in MY_DAY_PARTS:
+        return None
+    day = (today or dt_util.now().date()).isoformat()
+    return picked["part"] if picked.get("date") == day else None
 
 
 def _clean_rotation(value: Any) -> dict[str, Any] | None:

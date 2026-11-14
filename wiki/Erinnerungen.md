@@ -19,7 +19,7 @@ Brainstorm erinnert dich von selbst an fällige Einträge, und zwar über die Di
 | | Benachrichtigungen senden | Beliebige `notify`-Dienste; die Companion-App bekommt die Knöpfe **Erledigt**, **1 Stunde später** und **Morgen** |
 | | Wichtige offene Einträge erneut senden | Hohe oder dringende Einträge gehen nach einer Wartezeit an weitere Dienste, z. B. Pushover |
 | **Ruhezeit, Briefing & Rückblick** | Ruhezeit nutzen | Erinnerungen warten; Dringendes erreicht das Handy, aber kein Echo spricht |
-| | Tägliches Briefing | Zu einer Uhrzeit, optional erst wenn ein Sensor oder eine Person jemanden meldet |
+| | Tägliches Briefing | Zu einer Uhrzeit, optional erst wenn ein Sensor oder eine Person jemanden meldet. Nennt zuerst, was unter ☀️ Mein Tag für morgens, tagsüber und abends vorgenommen ist (v1.12.2), dann was fällig ist |
 | | Wochenrückblick | Nennt lange offene Einträge |
 | **Regeln pro Liste** | Regeln pro Liste nutzen | Pro Liste: normale Kanäle, nur Alexa, nur Benachrichtigungen (privat) oder nichts; eigene Dienste; an bestimmten Tagen senden; an einem Ort senden |
 | **Orte & Heimkommen** | Beim Heimkommen erinnern | *„erinnere mich wenn ich heimkomme an den Müll“* |

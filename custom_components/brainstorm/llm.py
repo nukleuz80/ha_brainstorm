@@ -12,6 +12,7 @@ from homeassistant.helpers import config_validation as cv, llm
 
 from .const import (
     ATTR_CATEGORY,
+    ATTR_DUE,
     ATTR_ID,
     ATTR_PRIORITY,
     ATTR_STATUS,
@@ -19,7 +20,7 @@ from .const import (
     DOMAIN,
 )
 from .languages import get_pack
-from .store import BrainstormStore, get_loaded_store
+from .store import BrainstormStore, get_loaded_store, my_day_part
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -193,7 +194,8 @@ class BrainstormGetIdeasTool(llm.Tool):
     description = (
         "Fetch, query, or search ideas, notes, and tasks from Brainstorm Hub. "
         "Use when the user asks what is recorded, what tasks exist, or wants to check notes "
-        "in a specific category (e.g. 'Haus & Garten', 'Smarthome') or with a keyword."
+        "in a specific category (e.g. 'Haus & Garten', 'Smarthome') or with a keyword. "
+        "my_day tells whether a note was picked for today: morning, day or evening."
     )
 
     def __init__(self, hass: HomeAssistant) -> None:
@@ -265,6 +267,8 @@ class BrainstormGetIdeasTool(llm.Tool):
                 "priority": i.get(ATTR_PRIORITY, "medium"),
                 "status": i.get(ATTR_STATUS),
                 "created_at": i.get("created_at"),
+                **({"due": i[ATTR_DUE]} if i.get(ATTR_DUE) else {}),
+                **({"my_day": part} if (part := my_day_part(i)) else {}),
             }
             for i in ideas
         ]
