@@ -46,6 +46,8 @@ from .const import (
     RULE_ENTITY,
     RULE_ID,
     RULE_RESET,
+    RULE_RESET_ENTITY,
+    RESET_DOMAINS,
     RULE_TEXT,
     RULE_VALUE,
     SENSOR_CONDITIONS,
@@ -1906,6 +1908,9 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             vol.Optional(
                 RULE_RESET, description=_suggested(current, RULE_RESET)
             ): selector.TextSelector(),
+            vol.Optional(
+                RULE_RESET_ENTITY, description=_suggested(current, RULE_RESET_ENTITY)
+            ): selector.EntitySelector(selector.EntitySelectorConfig(domain=RESET_DOMAINS)),
         }
         if index is not None:
             schema[vol.Required(SENSOR_RULE_DELETE, default=False)] = (
@@ -1954,6 +1959,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             RULE_CATEGORY: category,
             RULE_AUTO_DONE: bool(user_input.get(RULE_AUTO_DONE, True)),
             RULE_RESET: reset,
+            RULE_RESET_ENTITY: user_input.get(RULE_RESET_ENTITY) or None,
         }
 
     async def _async_bring_category(

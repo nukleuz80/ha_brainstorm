@@ -9,7 +9,7 @@ import pytest
 from homeassistant.core import HomeAssistant, State
 from homeassistant.data_entry_flow import FlowResultType
 
-from custom_components.brainstorm.sensor_rules import rule_met
+from custom_components.brainstorm.sensor_rules import reset_call, rule_met
 from custom_components.brainstorm.store import BrainstormStore
 
 from .conftest import SetupEntry
@@ -248,3 +248,52 @@ async def test_options_add_change_and_delete_a_rule(
     )
     await hass.async_block_till_done()
     assert entry.options["sensor_rules"] == []
+
+
+async def test_ticking_off_sets_the_counter_back(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that a task ticked off by hand resets its counter, closing the case."""
+    calls: list[dict[str, Any]] = []
+
+    async def _reset(call: Any) -> None:
+        calls.append(dict(call.data))
+        _set_hours(hass, "0")
+
+    hass.services.async_register("counter", "reset", _reset)
+    hass.states.async_set("counter.filter", "312")
+    _set_hours(hass, "312")
+    store = await _setup(
+        setup_entry, {**FILTER_RULE, "sensor_reset_entity": "counter.filter"}
+    )
+    await store.async_update_idea(_tasks(store)[0]["id"], status="completed")
+    await hass.async_block_till_done()
+    assert calls == [{"entity_id": "counter.filter"}]
+    assert _tasks(store)[0]["sensor_rule_done"] is True
+
+    # A task that ticks itself off does not reset again
+    _set_hours(hass, "305")
+    await hass.async_block_till_done()
+    _set_hours(hass, "0")
+    await hass.async_block_till_done()
+    assert len(calls) == 1
+    assert sorted(task["status"] for task in _tasks(store)) == ["completed", "completed"]
+
+
+@pytest.mark.parametrize(
+    ("entity_id", "attributes", "expected"),
+    [
+        ("counter.x", {}, ("counter", "reset", {})),
+        ("input_button.x", {}, ("input_button", "press", {})),
+        ("button.x", {}, ("button", "press", {})),
+        ("input_number.x", {"min": 5, "max": 100}, ("input_number", "set_value", {"value": 5.0})),
+        ("number.x", {"min": -10, "max": 10}, ("number", "set_value", {"value": 0.0})),
+        ("script.x", {}, ("script", "turn_on", {})),
+        ("light.x", {}, None),
+    ],
+)
+def test_reset_call(
+    entity_id: str, attributes: dict[str, Any], expected: tuple | None
+) -> None:
+    """Test how each kind of entity is set back."""
+    assert reset_call(State(entity_id, "1", attributes)) == expected

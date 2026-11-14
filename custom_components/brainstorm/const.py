@@ -95,6 +95,9 @@ RULE_TEXT = "sensor_text"
 RULE_CATEGORY = "sensor_category"
 RULE_AUTO_DONE = "sensor_auto_done"
 RULE_RESET = "sensor_reset"
+# Entity set back when a sensor task is ticked off by hand
+RULE_RESET_ENTITY = "sensor_reset_entity"
+RESET_DOMAINS = ["counter", "button", "input_button", "input_number", "number", "script"]
 CONDITION_ABOVE = "above"
 CONDITION_BELOW = "below"
 CONDITION_STATE = "state"

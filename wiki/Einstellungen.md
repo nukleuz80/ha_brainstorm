@@ -276,6 +276,7 @@ Eine Regel hat diese Felder:
 | Kategorie | Wähle eine Kategorie oder tippe einen neuen Namen, sie wird beim Speichern angelegt. Vorgeschlagen wird *Smarthome*. |
 | Selbst abhaken | Hakt die Aufgabe ab, sobald der Sensor wieder im Normalbereich ist (Standard an). |
 | Wieder normal ab | Optional, nur für Zahlen: Erst dieser Wert gilt als wieder normal, etwa `0` für einen Zähler, den du nach dem Filterwechsel zurücksetzt. Er muss auf der normalen Seite der Grenze liegen. Ohne ihn gilt alles jenseits der Grenze als normal. |
+| Beim Abhaken zurücksetzen | Optional (v1.11.11): Hakst du die Aufgabe von Hand ab, wird diese Entität zurückgesetzt. Ein Zähler (`counter`) wird auf Anfang gesetzt, ein Knopf (`button`, `input_button`) gedrückt, eine Zahl (`input_number`, `number`) auf 0 oder ihr Minimum gestellt, ein Skript gestartet. So schließt ein Tipp den Wartungskreis: Filter gewechselt, abgehakt, Zähler wieder bei 0. Hakt sich die Aufgabe selbst ab, passiert nichts. |
 | Diese Regel löschen | Nur beim Bearbeiten: entfernt die Regel. Ihre offene Aufgabe bleibt stehen. |
 
 - **Eine Aufgabe pro Fall:** Solange die Bedingung erfüllt bleibt, entsteht keine zweite Aufgabe. Erst wenn der Sensor wieder normal war und die Bedingung erneut erfüllt ist, kommt eine neue.

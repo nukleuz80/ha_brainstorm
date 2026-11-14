@@ -20,6 +20,7 @@ from homeassistant.core import (
     State,
     callback,
 )
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.event import async_track_state_change_event
 
 from .const import (
@@ -31,12 +32,14 @@ from .const import (
     CONDITION_BELOW,
     CONDITION_STATE,
     CONF_SENSOR_RULES,
+    EVENT_IDEA_COMPLETED,
     RULE_AUTO_DONE,
     RULE_CATEGORY,
     RULE_CONDITION,
     RULE_ENTITY,
     RULE_ID,
     RULE_RESET,
+    RULE_RESET_ENTITY,
     RULE_TEXT,
     RULE_VALUE,
     SHARE_ALL,
@@ -89,6 +92,27 @@ def rule_met(rule: dict[str, Any], state: State | None) -> bool | None:
     return None
 
 
+def reset_call(state: State) -> tuple[str, str, dict[str, Any]] | None:
+    """Return the action that sets an entity back, such as a counter to 0."""
+    domain = state.domain
+    if domain == "counter":
+        return "counter", "reset", {}
+    if domain in ("button", "input_button"):
+        return domain, "press", {}
+    if domain in ("input_number", "number"):
+        low = to_number(state.attributes.get("min"))
+        high = to_number(state.attributes.get("max"))
+        value = 0.0
+        if low is not None:
+            value = max(value, low)
+        if high is not None:
+            value = min(value, high)
+        return domain, "set_value", {"value": value}
+    if domain == "script":
+        return "script", "turn_on", {}
+    return None
+
+
 def valid_rules(options: dict[str, Any]) -> list[dict[str, Any]]:
     """Return the complete rules of the settings."""
     return [
@@ -124,6 +148,10 @@ class SensorRuleWatcher:
                     self._handle_state_change,
                 )
             )
+        if any(rule.get(RULE_RESET_ENTITY) for rule in self.rules):
+            self._unsubs.append(
+                self.hass.bus.async_listen(EVENT_IDEA_COMPLETED, self._handle_completed)
+            )
         if self.hass.state is CoreState.running:
             await self.async_check_all()
         else:
@@ -153,6 +181,32 @@ class SensorRuleWatcher:
         for rule in self.rules:
             if rule[RULE_ENTITY] == entity_id:
                 await self._async_check(rule, event.data["new_state"])
+
+    async def _handle_completed(self, event: Event) -> None:
+        """Set the entity of a rule back once its open task is ticked off."""
+        rule_id = event.data.get(ATTR_SENSOR_RULE)
+        if not rule_id or event.data.get(ATTR_SENSOR_RULE_DONE):
+            # A task closed by the sensor itself needs no reset
+            return
+        rule = next((item for item in self.rules if item[RULE_ID] == rule_id), None)
+        entity_id = rule.get(RULE_RESET_ENTITY) if rule else None
+        state = self.hass.states.get(entity_id) if entity_id else None
+        call = reset_call(state) if state is not None else None
+        if call is None:
+            if entity_id:
+                _LOGGER.warning("Cannot set back %s after a sensor task", entity_id)
+            return
+        domain, service, data = call
+        try:
+            await self.hass.services.async_call(
+                domain,
+                service,
+                {"entity_id": entity_id, **data},
+                blocking=True,
+                context=event.context,
+            )
+        except HomeAssistantError as err:
+            _LOGGER.warning("Setting back %s failed: %s", entity_id, err)
 
     async def async_check_all(self) -> None:
         """Check every rule, for example after a restart."""
@@ -197,9 +251,10 @@ class SensorRuleWatcher:
             return
         if case is None:
             return
+        # Closed first, so ticking it off does not set the entity back
+        await self.store.async_set_fields({case[ATTR_ID]: {ATTR_SENSOR_RULE_DONE: True}})
         if rule.get(RULE_AUTO_DONE, True) and case.get(ATTR_STATUS) == "active":
             await self.store.async_update_idea(case[ATTR_ID], status="completed")
-        await self.store.async_set_fields({case[ATTR_ID]: {ATTR_SENSOR_RULE_DONE: True}})
 
     async def _async_create(self, rule: dict[str, Any], state: State) -> None:
         """Add the task of a rule that is met."""

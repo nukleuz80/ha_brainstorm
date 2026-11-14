@@ -276,6 +276,7 @@ A rule has these fields:
 | Category | Choose a category or type a new name, it is created on saving. *Smarthome* is suggested. |
 | Tick off by itself | Ticks the task off once the sensor is back to normal (on by default). |
 | Back to normal at | Optional, numbers only: only this value counts as back to normal, such as `0` for a counter you reset after changing the filter. It must lie on the normal side of the limit. Without it, anything beyond the limit counts as normal. |
+| Set back when ticked off | Optional (v1.11.11): when you tick the task off by hand, this entity is set back. A counter (`counter`) is reset, a button (`button`, `input_button`) is pressed, a number (`input_number`, `number`) goes to 0 or its minimum, a script runs. One tap closes the maintenance loop: filter changed, ticked off, counter back at 0. Nothing happens when the task ticks itself off. |
 | Delete this rule | Only when editing: removes the rule. Its open task stays. |
 
 - **One task per occurrence:** while the condition stays met, no second task is created. Only once the sensor has been back to normal and the condition is met again is there a new one.

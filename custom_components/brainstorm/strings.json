@@ -484,6 +484,7 @@
           "sensor_category": "Category",
           "sensor_auto_done": "Tick off by itself",
           "sensor_reset": "Back to normal at",
+          "sensor_reset_entity": "Set back when ticked off",
           "sensor_delete": "Delete this rule",
           "go_back": "⬅️ Back without saving"
         },
@@ -495,6 +496,7 @@
           "sensor_category": "Choose a category or type a new name, it is created on saving.",
           "sensor_auto_done": "Ticks the task off once the sensor is back to normal.",
           "sensor_reset": "Optional, numbers only. Only this value counts as back to normal, such as 0 for a counter that is reset, so a sensor around the limit does not keep creating tasks.",
+          "sensor_reset_entity": "Optional: when you tick the task off by hand, this entity is set back. A counter is reset, a button is pressed, a number goes to 0 (or its minimum), a script runs. Not used when the task ticks itself off.",
           "sensor_delete": "Removes the rule. Its open task stays.",
           "go_back": "Returns to the previous page without saving this form."
         }

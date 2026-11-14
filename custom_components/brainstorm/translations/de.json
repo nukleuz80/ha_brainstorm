@@ -484,6 +484,7 @@
           "sensor_category": "Kategorie",
           "sensor_auto_done": "Selbst abhaken",
           "sensor_reset": "Wieder normal ab",
+          "sensor_reset_entity": "Beim Abhaken zurücksetzen",
           "sensor_delete": "Diese Regel löschen",
           "go_back": "⬅️ Zurück ohne Speichern"
         },
@@ -495,6 +496,7 @@
           "sensor_category": "Wähle eine Kategorie oder tippe einen neuen Namen, sie wird beim Speichern angelegt.",
           "sensor_auto_done": "Hakt die Aufgabe ab, sobald der Sensor wieder im Normalbereich ist.",
           "sensor_reset": "Optional, nur für Zahlen. Erst dieser Wert gilt als wieder normal, etwa 0 für einen Zähler, der zurückgesetzt wird. So legt ein Sensor an der Grenze nicht ständig Aufgaben an.",
+          "sensor_reset_entity": "Optional: Hakst du die Aufgabe von Hand ab, wird diese Entität zurückgesetzt. Ein Zähler wird auf Anfang gesetzt, ein Knopf gedrückt, eine Zahl auf 0 (oder ihr Minimum) gestellt, ein Skript gestartet. Hakt sich die Aufgabe selbst ab, passiert nichts.",
           "sensor_delete": "Entfernt die Regel. Ihre offene Aufgabe bleibt.",
           "go_back": "Kehrt zur vorherigen Seite zurück, ohne dieses Formular zu speichern."
         }
