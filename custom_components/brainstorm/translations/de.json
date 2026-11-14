@@ -1056,7 +1056,7 @@
     },
     "restore_idea": {
       "name": "Idee wiederherstellen",
-      "description": "Holt eine Idee zurück, die seit dem letzten Start von Home Assistant gelöscht wurde, samt der Verbindung zu ihren Unteraufgaben. Das kann nur, wer sie gelöscht hat.",
+      "description": "Holt eine Idee aus dem Papierkorb zurück, samt der Verbindung zu ihren Unteraufgaben. Gelöschte Ideen bleiben 30 Tage im Papierkorb, auch über einen Neustart. Das kann, wer sie gelöscht hat oder sie bearbeiten darf.",
       "fields": {
         "id": {
           "name": "ID",

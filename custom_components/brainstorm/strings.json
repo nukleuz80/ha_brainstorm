@@ -1056,7 +1056,7 @@
     },
     "restore_idea": {
       "name": "Restore idea",
-      "description": "Brings back an idea deleted since the last start of Home Assistant, with the links to its subtasks. Only the person who deleted it can do this.",
+      "description": "Brings an idea back from the trash, with the links to its subtasks. Deleted ideas stay in the trash for 30 days, also across a restart. Whoever deleted it or may edit it can do this.",
       "fields": {
         "id": {
           "name": "ID",

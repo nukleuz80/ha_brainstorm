@@ -19,7 +19,7 @@ from .const import (
     PIN_COLORS,
 )
 from .presence import get_presence
-from .store import get_loaded_store
+from .store import TRASH_DAYS, BrainstormStore, get_loaded_store
 
 # Error codes the cards translate for the person
 ERR_AI_NOT_CONFIGURED = "ai_not_configured"
@@ -45,6 +45,9 @@ def async_register_commands(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, websocket_cluster_ideas)
     websocket_api.async_register_command(hass, websocket_generate_map)
     websocket_api.async_register_command(hass, websocket_get_comments)
+    websocket_api.async_register_command(hass, websocket_get_trash)
+    websocket_api.async_register_command(hass, websocket_restore_trash)
+    websocket_api.async_register_command(hass, websocket_purge_trash)
 
 
 @websocket_api.websocket_command({vol.Required("type"): "brainstorm/ideas"})
@@ -590,3 +593,73 @@ async def websocket_get_comments(
         comment["mine"] = author == user_id
         comment["can_delete"] = author == user_id or can_edit
     connection.send_result(msg["id"], {"comments": comments, "can_edit": can_edit})
+
+
+def _trash_store(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg_id: int
+) -> BrainstormStore | None:
+    """Return the store, or answer that Brainstorm is not loaded."""
+    store = get_loaded_store(hass)
+    if store is None:
+        connection.send_error(msg_id, websocket_api.ERR_NOT_FOUND, "Brainstorm is not loaded")
+    return store
+
+
+@websocket_api.websocket_command({vol.Required("type"): "brainstorm/trash"})
+@callback
+def websocket_get_trash(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Return the deleted notes this user may bring back, newest first."""
+    if (store := _trash_store(hass, connection, msg["id"])) is None:
+        return
+    connection.send_result(
+        msg["id"],
+        {"items": store.trash_items(connection.user.id), "days": TRASH_DAYS},
+    )
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "brainstorm/trash/restore",
+        vol.Required("ids"): vol.All(cv.ensure_list, [cv.string]),
+    }
+)
+@websocket_api.async_response
+async def websocket_restore_trash(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Bring notes back from the trash."""
+    if (store := _trash_store(hass, connection, msg["id"])) is None:
+        return
+    restored = [
+        idea_id
+        for idea_id in msg["ids"]
+        if await store.async_restore_idea(idea_id, connection.user.id) is not None
+    ]
+    connection.send_result(msg["id"], {"restored": restored})
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "brainstorm/trash/delete",
+        vol.Required("ids"): vol.All(cv.ensure_list, [cv.string]),
+    }
+)
+@websocket_api.async_response
+async def websocket_purge_trash(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Delete notes from the trash for good."""
+    if (store := _trash_store(hass, connection, msg["id"])) is None:
+        return
+    removed = await store.async_purge_trash(msg["ids"], connection.user.id)
+    if removed:
+        await store.async_cleanup_attachments()
+    connection.send_result(msg["id"], {"deleted": removed})

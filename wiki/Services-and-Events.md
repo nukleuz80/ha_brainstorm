@@ -92,7 +92,7 @@ Changes an existing idea.
 
 ▶️ [Try it in Home Assistant](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.delete_idea)
 
-Removes an idea. Until the next start of Home Assistant, `brainstorm.restore_idea` can bring it back.
+Removes an idea. It then stays in the trash for 30 days, and `brainstorm.restore_idea` brings it back.
 
 | Field | Required | Meaning |
 | :--- | :--- | :--- |
@@ -112,7 +112,7 @@ Deletes ideas that are done (ticked off or archived), in one go. With privacy on
 
 ▶️ [Try it in Home Assistant](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.restore_idea)
 
-Brings back an idea deleted since the last start of Home Assistant, with the links to its subtasks. Only the person who deleted it can do this. The mind map card uses it for undo.
+Brings an idea back from the trash, with the links to its subtasks. Deleted ideas stay in the trash for 30 days, also across a restart. Whoever deleted it or may edit it can do this. The mind map card uses it for undo, both cards for the 🗑️ trash. The cards read the trash through the WebSocket commands `brainstorm/trash`, `brainstorm/trash/restore` and `brainstorm/trash/delete`.
 
 | Field | Required | Meaning |
 | :--- | :--- | :--- |

@@ -92,7 +92,7 @@ Aktualisiert Text, Kategorie oder Status einer bestehenden Idee.
 
 ▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.delete_idea)
 
-Entfernt eine Idee. Bis zum nächsten Start von Home Assistant holt `brainstorm.restore_idea` sie zurück.
+Entfernt eine Idee. Sie liegt dann 30 Tage im Papierkorb, `brainstorm.restore_idea` holt sie zurück.
 
 | Feld | Pflicht | Bedeutung |
 | :--- | :--- | :--- |
@@ -112,7 +112,7 @@ Löscht erledigte (abgehakte oder archivierte) Einträge auf einmal. Mit eingesc
 
 ▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.restore_idea)
 
-Holt eine Idee zurück, die seit dem letzten Start von Home Assistant gelöscht wurde, samt der Verbindung zu ihren Unteraufgaben. Das kann nur, wer sie gelöscht hat. Die Mindmap-Karte nutzt das für „Rückgängig“.
+Holt eine Idee aus dem Papierkorb zurück, samt der Verbindung zu ihren Unteraufgaben. Gelöschte Ideen bleiben 30 Tage im Papierkorb, auch über einen Neustart. Das kann, wer sie gelöscht hat oder sie bearbeiten darf. Die Mindmap-Karte nutzt das für „Rückgängig“, beide Karten für den 🗑️ Papierkorb. Die Karten lesen den Papierkorb über die WebSocket-Befehle `brainstorm/trash`, `brainstorm/trash/restore` und `brainstorm/trash/delete`.
 
 | Feld | Pflicht | Bedeutung |
 | :--- | :--- | :--- |

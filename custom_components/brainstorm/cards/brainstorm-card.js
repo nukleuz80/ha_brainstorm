@@ -1,9 +1,9 @@
-import { LEVEL_CSS, SOCIAL_CSS, commentBadge, renderComments, needsPersonalData, reactionBadges, voteBadge, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, repeatBadge, repeatOptions, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.11.11";
+import { LEVEL_CSS, SOCIAL_CSS, commentBadge, renderComments, renderTrash, needsPersonalData, reactionBadges, voteBadge, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, repeatBadge, repeatOptions, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.11.12";
 
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.11.11 - Sensor-Aufgaben setzen zurück
+ * Version 1.11.12 - Papierkorb
  */
 // The bulb lies next to this file, wherever Home Assistant serves it from
 const BULB_URL = new URL("./brainstorm-bulb.svg", import.meta.url).href;
@@ -683,7 +683,14 @@ class BrainstormCard extends HTMLElement {
       ${attributes.privacy ? `${button("all", t("Alle"))}${button("mine", t("Meine"))}${button("shared", t("Mit mir geteilt"))}` : ""}
       ${canShareCategory ? `<button class="share-filter-btn share-category-btn" id="shareCategoryBtn">${t("👥 {category} freigeben", { category: this._escapeHtml(selected) })}</button>` : ""}
       ${canSelect ? `<button class="share-filter-btn ${this._selectionMode ? "active" : ""}" id="selectionToggleBtn" data-lvl="normal">${t("☑️ Auswählen")}</button>` : ""}
+      ${canSelect ? `<button class="share-filter-btn" id="trashBtn" data-lvl="normal" title="${t("Papierkorb: gelöschte Notizen zurückholen")}">${t("🗑️ Papierkorb")}</button>` : ""}
     `;
+    const trashBtn = bar.querySelector("#trashBtn");
+    if (trashBtn) {
+      trashBtn.addEventListener("click", () =>
+        this._openDialog(t("🗑️ Papierkorb"), (body) => renderTrash(body, { hass: this._hass, close: () => this._closeDialog(), prefix: "action-dialog" }))
+      );
+    }
     const selectionToggle = bar.querySelector("#selectionToggleBtn");
     if (selectionToggle) {
       selectionToggle.addEventListener("click", () => {
@@ -6131,7 +6138,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.11.11 ",
+  "%c BRAINSTORM-CARD %c v1.11.12 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

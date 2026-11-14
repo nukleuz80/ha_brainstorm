@@ -1,8 +1,8 @@
-import { LEVEL_CSS, SOCIAL_CSS, commentBadge, renderComments, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, repeatBadge, repeatOptions, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.11.11";
+import { LEVEL_CSS, SOCIAL_CSS, commentBadge, renderComments, renderTrash, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, repeatBadge, repeatOptions, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.11.12";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.11.11 - Sensor-Aufgaben setzen zurück
+ * Version: 1.11.12 - Papierkorb
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -3957,6 +3957,7 @@ class BrainstormMindmapCard extends HTMLElement {
           <button class="control-btn" id="levelsBtn" data-lvl="normal" title="${t("Ebenen zeigen: 1, 2, 3 oder alle (Tasten 1–9, 0 = alle)")}">∞</button>
           <button class="control-btn" id="arrangeBtn" data-lvl="normal" title="${t("Neu ordnen: von Hand verschobene Notizen wieder automatisch platzieren")}">🪄</button>
           <button class="control-btn" id="undoBtn" title="${t("Rückgängig (Strg+Z)")}" disabled>↶</button>
+          <button class="control-btn" id="trashBtn" data-lvl="normal" title="${t("Papierkorb: gelöschte Notizen zurückholen")}">🗑️</button>
         </div>
 
         <!-- Bottom Left, above the add button: overview of the whole map -->
@@ -4295,6 +4296,12 @@ class BrainstormMindmapCard extends HTMLElement {
     if (arrangeBtn) arrangeBtn.addEventListener("click", () => this._arrangeAgain());
     const undoBtn = this.shadowRoot.getElementById("undoBtn");
     if (undoBtn) undoBtn.addEventListener("click", () => this._undo());
+    const trashBtn = this.shadowRoot.getElementById("trashBtn");
+    if (trashBtn) {
+      trashBtn.addEventListener("click", () =>
+        this._openDialog(t("🗑️ Papierkorb"), (body) => renderTrash(body, { hass: this._hass, close: () => this._closeDialog() }))
+      );
+    }
     // Links and frames are drawn on the line layer, a tap on them opens their dialog
     const connectors = this.shadowRoot.getElementById("connectorsLayer");
     if (connectors) {
@@ -11161,7 +11168,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.11.11 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.11.12 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

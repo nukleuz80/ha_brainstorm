@@ -192,7 +192,9 @@ EXPORT_DIR_NAME = "brainstorm"
 # What an imported idea ID may look like; anything else gets a new ID
 IMPORT_ID_PATTERN = re.compile(r"[A-Za-z0-9_-]{1,64}")
 # How many deleted ideas can be brought back until the next start
-MAX_RESTORABLE = 50
+MAX_RESTORABLE = 200
+# Days a deleted idea stays in the trash before it is gone for good
+TRASH_DAYS = 30
 # Fields of an idea a JSON import takes over, everything else is left out
 IMPORT_FIELDS = (
     ATTR_RAW_TEXT,
@@ -779,6 +781,12 @@ class BrainstormStore:
             self._voting = data.get("voting", {})
             self._rounds = data.get("rounds", {})
             self._drawings = data.get("drawings", {})
+            self._deleted = {
+                entry["idea"][ATTR_ID]: entry
+                for entry in data.get("trash", [])
+                if isinstance(entry, dict) and isinstance(entry.get("idea"), dict)
+            }
+            self._purge_expired_trash()
             for category in list(self._rounds):
                 self._schedule_round_end(category)
             _LOGGER.debug(
@@ -801,6 +809,7 @@ class BrainstormStore:
             "rounds": self._rounds,
             "drawings": self._drawings,
             "ideas": list(self._ideas.values()),
+            "trash": list(self._deleted.values()),
         }
         await self._store.async_save(data)
         if self._auto_export:
@@ -2226,7 +2235,7 @@ class BrainstormStore:
         return await self.async_delete_done(days)
 
     def deleted_idea(self, idea_id: str) -> dict[str, Any] | None:
-        """Return an idea deleted since the start, as it would come back."""
+        """Return an idea from the trash, as it would come back."""
         deleted = self._deleted.get(idea_id)
         return deleted["idea"] if deleted else None
 
@@ -2985,6 +2994,7 @@ class BrainstormStore:
             "idea": deleted_idea,
             "orphans": orphans,
             "user_id": context.user_id if context else None,
+            "deleted_at": dt_util.now().isoformat(),
         }
         while len(self._deleted) > MAX_RESTORABLE:
             del self._deleted[next(iter(self._deleted))]
@@ -3011,16 +3021,79 @@ class BrainstormStore:
         return True
 
     def can_restore(self, idea_id: str, user_id: str | None) -> bool:
-        """Tell whether this user may bring back a deleted idea."""
+        """Tell whether this user may bring back a deleted idea.
+
+        Whoever deleted it may, and so may anyone who could edit it.
+        """
         deleted = self._deleted.get(idea_id)
         if deleted is None or idea_id in self._ideas:
             return False
-        return user_id is None or deleted["user_id"] in (None, user_id)
+        return (
+            user_id is None
+            or deleted.get("user_id") == user_id
+            or self.can_edit(deleted["idea"], user_id)
+        )
+
+    def trash_items(self, user_id: str | None = None) -> list[dict[str, Any]]:
+        """Return the deleted ideas this user may bring back, newest first."""
+        items = [
+            {
+                "id": idea_id,
+                "text": entry["idea"].get(ATTR_TEXT),
+                "category": entry["idea"].get(ATTR_CATEGORY),
+                "priority": entry["idea"].get(ATTR_PRIORITY),
+                "status": entry["idea"].get(ATTR_STATUS),
+                "deleted_at": entry.get("deleted_at"),
+                "subtasks": len(entry.get("orphans") or []),
+                "attachments": len(entry["idea"].get(ATTR_ATTACHMENTS) or []),
+            }
+            for idea_id, entry in self._deleted.items()
+            if self.can_restore(idea_id, user_id)
+        ]
+        items.sort(key=lambda item: str(item["deleted_at"] or ""), reverse=True)
+        return items
+
+    def _purge_expired_trash(self) -> int:
+        """Drop what has been in the trash too long, returning how many."""
+        limit = dt_util.now() - timedelta(days=TRASH_DAYS)
+        expired = []
+        for idea_id, entry in self._deleted.items():
+            deleted_at = dt_util.parse_datetime(str(entry.get("deleted_at") or ""))
+            # Entries from before the trash was kept have no date and start now
+            if deleted_at is None:
+                entry["deleted_at"] = dt_util.now().isoformat()
+            elif deleted_at < limit:
+                expired.append(idea_id)
+        for idea_id in expired:
+            del self._deleted[idea_id]
+        return len(expired)
+
+    async def async_purge_trash(
+        self,
+        idea_ids: list[str] | None = None,
+        user_id: str | None = None,
+    ) -> int:
+        """Delete ideas from the trash for good, or only the expired ones.
+
+        Without ids only what is older than the trash keeps is removed. The
+        attachments of removed ideas go with the next cleanup.
+        """
+        if idea_ids is None:
+            removed = self._purge_expired_trash()
+        else:
+            gone = [i for i in idea_ids if self.can_restore(i, user_id)]
+            for idea_id in gone:
+                del self._deleted[idea_id]
+            removed = len(gone)
+        if removed:
+            await self.async_save()
+            self._notify_listeners()
+        return removed
 
     async def async_restore_idea(
         self, idea_id: str, user_id: str | None = None
     ) -> dict[str, Any] | None:
-        """Bring back an idea deleted since the start, with its subtasks."""
+        """Bring back an idea from the trash, with its subtasks."""
         if not self.can_restore(idea_id, user_id):
             return None
         deleted = self._deleted.pop(idea_id)

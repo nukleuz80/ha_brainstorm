@@ -220,6 +220,10 @@ class AttachmentCleaner:
         except HomeAssistantError as err:
             _LOGGER.warning("Deleting done Brainstorm ideas failed: %s", err)
         try:
+            await self.store.async_purge_trash()
+        except HomeAssistantError as err:
+            _LOGGER.warning("Emptying the Brainstorm trash failed: %s", err)
+        try:
             await self.store.async_cleanup_attachments()
         except (OSError, HomeAssistantError) as err:
             _LOGGER.warning("Cleaning up Brainstorm attachments failed: %s", err)

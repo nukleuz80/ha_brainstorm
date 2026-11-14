@@ -11,6 +11,19 @@ const DICTIONARIES = {
     "{count} Kommentare": "{count} comments",
     "Kommentar löschen": "Delete comment",
     "Noch keine Kommentare.": "No comments yet.",
+    "🗑️ Papierkorb": "🗑️ Trash",
+    "Papierkorb: gelöschte Notizen zurückholen": "Trash: bring deleted notes back",
+    "Gelöschte Notizen bleiben {days} Tage hier, dann sind sie mit ihren Anhängen endgültig weg.": "Deleted notes stay here for {days} days, then they are gone for good with their attachments.",
+    "Der Papierkorb ist leer.": "The trash is empty.",
+    "Wiederherstellen": "Restore",
+    "Endgültig löschen": "Delete for good",
+    "Papierkorb leeren": "Empty trash",
+    "Wirklich alle {count} Notizen endgültig löschen?": "Really delete all {count} notes for good?",
+    "Ja, endgültig löschen": "Yes, delete for good",
+    "gelöscht {when}": "deleted {when}",
+    "+ {count} Unterpunkte": "+ {count} subitems",
+    "{count} Anhänge": "{count} attachments",
+    "Wiederhergestellt: {text}": "Restored: {text}",
     "Kommentar schreiben … @Name benachrichtigt die Person": "Write a comment … @Name tells that person",
     "Senden": "Send",
     "Das hat nicht geklappt.": "That did not work.",
@@ -1339,7 +1352,129 @@ export const SOCIAL_CSS = `
   .bs-c-text .bs-mention { color: var(--primary-color, #03a9f4); font-weight: 600; }
   .bs-c-del { margin-left: auto; min-width: 28px; min-height: 28px; border: none; background: none; cursor: pointer; color: var(--secondary-text-color, #727272); font: inherit; border-radius: 14px; }
   .bs-c-del:hover { color: var(--error-color, #db4437); }
+  .bs-trash { display: flex; flex-direction: column; gap: 6px; max-height: min(50vh, 420px); overflow-y: auto; margin: 6px 0 10px; }
+  .bs-trash-item {
+    display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 10px;
+    background: color-mix(in srgb, var(--secondary-text-color, #727272) 8%, transparent);
+  }
+  .bs-trash-main { flex: 1 1 auto; min-width: 0; }
+  .bs-trash-text { font-size: 0.9rem; color: var(--primary-text-color, #212121); overflow-wrap: anywhere; }
+  .bs-trash-meta { font-size: 0.75rem; color: var(--secondary-text-color, #727272); }
+  .bs-trash-btn {
+    flex: 0 0 auto; min-width: 36px; min-height: 36px; border-radius: 18px; cursor: pointer; font: inherit; font-size: 0.95rem;
+    border: 1px solid var(--divider-color, rgba(127, 127, 127, 0.25)); background: none; color: var(--primary-text-color, #212121);
+  }
+  .bs-trash-btn:hover { border-color: var(--primary-color, #03a9f4); }
+  .bs-trash-del:hover { border-color: var(--error-color, #db4437); color: var(--error-color, #db4437); }
+  .bs-trash-btn:disabled { opacity: 0.4; cursor: default; }
+  .bs-trash-notice { font-size: 0.82rem; color: var(--success-color, #43a047); margin-top: 4px; }
 `;
+
+/**
+ * Fill a dialog body with the trash: deleted notes with their age, to restore
+ * or delete for good one by one, or to empty all at once. Both cards use it.
+ */
+export function renderTrash(body, { hass, close, prefix = "dialog" }) {
+  const c = (names) => names.split(" ").map((n) => `${prefix}-${n}`).join(" ");
+  const when = (iso) => {
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toLocaleString(dateLocale(), { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  };
+  let items = [];
+  let days = 30;
+  let notice = "";
+  let confirming = false;
+  const draw = (error = "") => {
+    if (!body.isConnected) return;
+    body.innerHTML = `
+      <div class="${c("hint")}">${t("Gelöschte Notizen bleiben {days} Tage hier, dann sind sie mit ihren Anhängen endgültig weg.", { days })}</div>
+      ${notice ? `<div class="bs-trash-notice">${escapeHtml(notice)}</div>` : ""}
+      <div class="bs-trash">
+        ${
+          items.length
+            ? items
+                .map(
+                  (item) => `
+          <div class="bs-trash-item">
+            <div class="bs-trash-main">
+              <div class="bs-trash-text">${formatText(item.text || "")}</div>
+              <div class="bs-trash-meta">${escapeHtml(item.category || "")} · ${escapeHtml(t("gelöscht {when}", { when: when(item.deleted_at) }))}${
+                item.subtasks ? ` · ${escapeHtml(t("+ {count} Unterpunkte", { count: item.subtasks }))}` : ""
+              }${item.attachments ? ` · 📎 ${escapeHtml(t("{count} Anhänge", { count: item.attachments }))}` : ""}</div>
+            </div>
+            <button type="button" class="bs-trash-btn" data-restore="${escapeHtml(item.id)}" title="${t("Wiederherstellen")}" aria-label="${t("Wiederherstellen")}">↩️</button>
+            <button type="button" class="bs-trash-btn bs-trash-del" data-purge="${escapeHtml(item.id)}" title="${t("Endgültig löschen")}" aria-label="${t("Endgültig löschen")}">✕</button>
+          </div>`
+                )
+                .join("")
+            : `<div class="bs-comments-empty">${t("Der Papierkorb ist leer.")}</div>`
+        }
+      </div>
+      <div class="${c("error")}" style="display: ${error ? "flex" : "none"};">${escapeHtml(error)}</div>
+      ${
+        confirming
+          ? `<div class="${c("hint")}">${t("Wirklich alle {count} Notizen endgültig löschen?", { count: items.length })}</div>`
+          : ""
+      }
+      <div class="${c("footer")}">
+        ${
+          confirming
+            ? `<button class="${c("btn btn-cancel")}" id="bsTrashNo">${t("Abbrechen")}</button>
+               <button class="${c("btn btn-primary")}" id="bsTrashYes" style="background: var(--error-color, #db4437);">${t("Ja, endgültig löschen")}</button>`
+            : `${items.length ? `<button class="${c("btn btn-cancel")}" id="bsTrashEmpty" style="color: var(--error-color, #db4437);">${t("Papierkorb leeren")}</button>` : ""}
+               <button class="${c("btn btn-primary")}" id="bsTrashClose">${t("Schließen")}</button>`
+        }
+      </div>
+    `;
+    const on = (id, handler) => {
+      const el = body.querySelector(id);
+      if (el) el.addEventListener("click", handler);
+    };
+    on("#bsTrashClose", close);
+    on("#bsTrashEmpty", () => {
+      confirming = true;
+      draw();
+    });
+    on("#bsTrashNo", () => {
+      confirming = false;
+      draw();
+    });
+    on("#bsTrashYes", () => run({ type: "brainstorm/trash/delete", ids: items.map((item) => item.id) }));
+    body.querySelectorAll("[data-restore]").forEach((btn) =>
+      btn.addEventListener("click", () => {
+        const item = items.find((entry) => entry.id === btn.dataset.restore);
+        run({ type: "brainstorm/trash/restore", ids: [btn.dataset.restore] }, item ? t("Wiederhergestellt: {text}", { text: item.text || "" }) : "");
+      })
+    );
+    body.querySelectorAll("[data-purge]").forEach((btn) =>
+      btn.addEventListener("click", () => run({ type: "brainstorm/trash/delete", ids: [btn.dataset.purge] }))
+    );
+  };
+  const load = async () => {
+    try {
+      const result = await hass.callWS({ type: "brainstorm/trash" });
+      items = (result && result.items) || [];
+      days = (result && result.days) || days;
+      draw();
+    } catch (err) {
+      draw((err && err.message) || t("Das hat nicht geklappt."));
+    }
+  };
+  const run = async (message, done = "") => {
+    body.querySelectorAll("button").forEach((btn) => (btn.disabled = true));
+    try {
+      await hass.callWS(message);
+      notice = done;
+      confirming = false;
+      await load();
+    } catch (err) {
+      draw((err && err.message) || t("Das hat nicht geklappt."));
+    }
+  };
+  body.innerHTML = `<div class="${c("label")}">${t("Lädt …")}</div>`;
+  load();
+}
 
 /** Return the 💬 badge with the number of comments, nothing without any. */
 export function commentBadge(idea) {

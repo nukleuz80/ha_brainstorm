@@ -1,0 +1,45 @@
+<!doctype html>
+<!-- Browser test for the trash dialog. Run: python3 -m http.server in the repo root,
+     open http://localhost:8000/tests/js/trash.html, it shows PASS or the failures. --><meta charset="utf-8"><body><pre id="out">running</pre>
+<script type="module">
+import { renderTrash } from "../../custom_components/brainstorm/cards/brainstorm-i18n.js";
+const fails = [];
+const check = (name, got, want) => { if (JSON.stringify(got) !== JSON.stringify(want)) fails.push(`${name}: want ${JSON.stringify(want)}, got ${JSON.stringify(got)}`); };
+const tick = () => new Promise((r) => setTimeout(r, 0));
+let items = [
+  { id: "a", text: "Lampe <b>kaufen</b>", category: "Haus", deleted_at: "2026-11-14T10:00:00Z", subtasks: 2, attachments: 1 },
+  { id: "b", text: "Regal bauen", category: "Haus", deleted_at: "2026-11-13T10:00:00Z", subtasks: 0, attachments: 0 },
+];
+const sent = [];
+const hass = {
+  callWS: async (msg) => {
+    sent.push(msg.type + (msg.ids ? ":" + msg.ids.join(",") : ""));
+    if (msg.type === "brainstorm/trash") return { items, days: 30 };
+    items = items.filter((item) => !msg.ids.includes(item.id));
+    return {};
+  },
+};
+let closed = false;
+const body = document.createElement("div");
+document.body.appendChild(body);
+renderTrash(body, { hass, close: () => { closed = true; } });
+await tick(); await tick();
+check("two rows", body.querySelectorAll(".bs-trash-item").length, 2);
+check("text escaped", body.querySelector(".bs-trash-text").innerHTML.includes("<b>"), false);
+check("subtasks shown", body.querySelector(".bs-trash-meta").textContent.includes("2"), true);
+body.querySelector('[data-restore="a"]').click();
+await tick(); await tick(); await tick();
+check("restore sent", sent.includes("brainstorm/trash/restore:a"), true);
+check("one row left", body.querySelectorAll(".bs-trash-item").length, 1);
+check("notice", !!body.querySelector(".bs-trash-notice"), true);
+body.querySelector("#bsTrashEmpty").click();
+check("asks first", !!body.querySelector("#bsTrashYes"), true);
+body.querySelector("#bsTrashYes").click();
+await tick(); await tick(); await tick();
+check("delete sent", sent.includes("brainstorm/trash/delete:b"), true);
+check("empty text", body.querySelectorAll(".bs-trash-item").length, 0);
+check("no empty button", !!body.querySelector("#bsTrashEmpty"), false);
+body.querySelector("#bsTrashClose").click();
+check("closed", closed, true);
+document.getElementById("out").textContent = fails.length ? "FAIL\n" + fails.join("\n") : "PASS";
+</script>
