@@ -2,7 +2,7 @@
 <!-- Browser test for the changing assignee fields. Run: python3 -m http.server in the repo root,
      open http://localhost:8000/tests/js/rotation.html, it shows PASS or the failures. --><meta charset="utf-8"><body><pre id="out">running</pre>
 <script type="module">
-import { readRotation, repeatBadge, rotationFields, wireRotation } from "../../custom_components/brainstorm/cards/brainstorm-i18n.js";
+import { readRotation, repeatBadge, rotationFields, rotationInvalid, wireRotation } from "../../custom_components/brainstorm/cards/brainstorm-i18n.js";
 const fails = [];
 const check = (name, got, want) => { if (JSON.stringify(got) !== JSON.stringify(want)) fails.push(`${name}: want ${JSON.stringify(want)}, got ${JSON.stringify(got)}`); };
 const hass = { states: {
@@ -31,10 +31,13 @@ body.querySelector("#bsRotationMode").dispatchEvent(new Event("change"));
 body.querySelector('input[value="person.ben"]').checked = true;
 body.querySelector("#bsRotationPeople").dispatchEvent(new Event("change"));
 check("warns with one", body.querySelector("#bsRotationHint").classList.contains("bs-rotation-warn"), true);
-check("one is no change", readRotation(body, {}), undefined);
+check("one blocks saving", rotationInvalid(body), true);
+check("says why", body.querySelector("#bsRotationHint").textContent.startsWith("⚠️"), true);
 body.querySelector('input[value="person.anna"]').checked = true;
 body.querySelector("#bsRotationPeople").dispatchEvent(new Event("change"));
 check("no warning", body.querySelector("#bsRotationHint").classList.contains("bs-rotation-warn"), false);
+check("hint back", body.querySelector("#bsRotationHint").textContent.startsWith("⚠️"), false);
+check("two may save", rotationInvalid(body), false);
 check("new rotation", readRotation(body, {}), { mode: "turn", people: ["person.anna", "person.ben"] });
 
 const idea = { repeat: "weekly", rotation: { mode: "fewest", people: ["person.ben", "person.anna"] } };
@@ -43,6 +46,7 @@ check("turn order kept", [...body.querySelectorAll("#bsRotationPeople input")].m
 check("unchanged", readRotation(body, idea), undefined);
 body.querySelector("#editRepeat").value = "";
 check("repeat off ends it", readRotation(body, idea), null);
+check("no repeat may save", rotationInvalid(body), false);
 check("badge title", repeatBadge(idea).includes("Wer am wenigsten erledigt hat"), true);
 document.getElementById("out").textContent = fails.length ? "FAIL\n" + fails.join("\n") : "PASS";
 </script>

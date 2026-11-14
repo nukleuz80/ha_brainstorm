@@ -549,6 +549,7 @@ const DICTIONARIES = {
     "Zuständig im Wechsel:": "Changing assignee:",
     "Nicht wechseln": "Do not change",
     "Abgehakt geht die nächste Runde an die nächste Person. Wähle mindestens zwei.": "Once ticked off, the next round goes to the next person. Choose at least two.",
+    "⚠️ Für den Wechsel mindestens zwei Personen wählen oder „Nicht wechseln“ einstellen.": "⚠️ Choose at least two people for the rotation, or set it to “Do not change”.",
     "Wiederholt sich: {rule}": "Repeats: {rule}",
     "Wiederholen:": "Repeat:",
     "Abgehakt kommt die Notiz mit ihren Unteraufgaben zum nächsten Termin wieder.": "When ticked off, the note comes back with its subtasks at the next date.",
@@ -1120,8 +1121,31 @@ export function rotationFields(hass, idea, prefix = "dialog") {
     <div class="bs-rotation-people" id="bsRotationPeople">
       ${ordered.map((person) => `<label class="bs-rotation-person"><input type="checkbox" value="${escapeHtml(person.id)}"${chosen.has(person.id) ? " checked" : ""}> ${escapeHtml(person.name)}</label>`).join("")}
     </div>
-    <div class="${prefix}-hint bs-rotation-hint" id="bsRotationHint">${t("Abgehakt geht die nächste Runde an die nächste Person. Wähle mindestens zwei.")}</div>
+    <div class="${prefix}-hint bs-rotation-hint" id="bsRotationHint" role="status">${ROTATION_HINT()}</div>
   </div>`;
+}
+
+const ROTATION_HINT = () => t("Abgehakt geht die nächste Runde an die nächste Person. Wähle mindestens zwei.");
+
+/**
+ * Return true and point at the field when a rotation has too few people, so
+ * the dialog stays open instead of saving without it.
+ */
+export function rotationInvalid(body) {
+  const box = body.querySelector("#bsRotation");
+  const repeat = body.querySelector("#editRepeat");
+  if (!box || !repeat || !repeat.value) return false;
+  if (!box.querySelector("#bsRotationMode").value || rotationPeople(body).length >= 2) return false;
+  box.hidden = false;
+  box.querySelector("#bsRotationPeople").hidden = false;
+  const hint = box.querySelector("#bsRotationHint");
+  hint.hidden = false;
+  hint.classList.add("bs-rotation-warn");
+  hint.textContent = t("⚠️ Für den Wechsel mindestens zwei Personen wählen oder „Nicht wechseln“ einstellen.");
+  if (box.scrollIntoView) box.scrollIntoView({ block: "center", behavior: "smooth" });
+  const first = box.querySelector("#bsRotationPeople input:not(:checked)");
+  if (first) first.focus();
+  return true;
 }
 
 function rotationPeople(body) {
@@ -1139,7 +1163,10 @@ export function wireRotation(body) {
     box.querySelector("#bsRotationPeople").hidden = !mode.value;
     const hint = box.querySelector("#bsRotationHint");
     hint.hidden = !mode.value;
-    hint.classList.toggle("bs-rotation-warn", !!mode.value && rotationPeople(body).length < 2);
+    const tooFew = !!mode.value && rotationPeople(body).length < 2;
+    hint.classList.toggle("bs-rotation-warn", tooFew);
+    // The warning of a refused save stays until enough people are chosen
+    if (!tooFew) hint.textContent = ROTATION_HINT();
   };
   if (repeat) repeat.addEventListener("change", update);
   mode.addEventListener("change", update);
@@ -1149,7 +1176,7 @@ export function wireRotation(body) {
 
 /**
  * Return what the rotation fields changed: undefined for nothing, null to end
- * the rotation, or the new {mode, people}. Too few people change nothing.
+ * the rotation, or the new {mode, people}. Check rotationInvalid first.
  */
 export function readRotation(body, idea) {
   const box = body.querySelector("#bsRotation");
