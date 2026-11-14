@@ -891,6 +891,21 @@
     },
     "map_tab_invalid": {
       "message": "Der Map-Tab braucht einen Namen und eine Liste."
+    },
+    "choreops_missing": {
+      "message": "ChoreOps ist nicht installiert oder nicht geladen."
+    },
+    "choreops_done": {
+      "message": "Die Notiz ist schon erledigt."
+    },
+    "choreops_already": {
+      "message": "Die Notiz liegt schon bei ChoreOps."
+    },
+    "choreops_no_user": {
+      "message": "Keine Person in ChoreOps passt zu „{name}“. Zur Wahl: {users}."
+    },
+    "choreops_failed": {
+      "message": "ChoreOps hat die Aufgabe nicht angelegt."
     }
   },
   "services": {
@@ -1463,6 +1478,24 @@
         "category": {
           "name": "Kategorie",
           "description": "Die Liste, deren Runde endet."
+        }
+      }
+    },
+    "send_to_choreops": {
+      "name": "An ChoreOps übergeben",
+      "description": "Legt für eine Notiz eine ChoreOps-Aufgabe mit Punkten an. Die Person meldet sie in ChoreOps als erledigt; sobald ein Elternteil sie dort freigibt, wird die Notiz hier abgehakt. Braucht die ChoreOps-Integration.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "ID der Notiz."
+        },
+        "points": {
+          "name": "Punkte",
+          "description": "Punkte, die die Aufgabe in ChoreOps bringt."
+        },
+        "user": {
+          "name": "Person",
+          "description": "Person in ChoreOps; leer nimmt die Person, der die Notiz zugewiesen ist."
         }
       }
     }

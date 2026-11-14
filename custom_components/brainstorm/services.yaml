@@ -18,6 +18,25 @@ add_from_speech:
       selector:
         text:
 
+send_to_choreops:
+  fields:
+    id:
+      required: true
+      example: "a1b2c3d4"
+      selector:
+        text:
+    points:
+      default: 10
+      selector:
+        number:
+          min: 0
+          max: 10000
+          mode: box
+    user:
+      example: "Lenja"
+      selector:
+        text:
+
 add_idea:
   fields:
     text:

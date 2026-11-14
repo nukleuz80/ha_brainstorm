@@ -7,6 +7,7 @@ All parameters are [further down](#brainstormadd_idea) and under [**Developer to
 | Service | Short example |
 |---|---|
 | `brainstorm.add_idea` | `text: "Replace filter"`, `category: Smart Home`, `priority: high`, `due: "2026-12-01 18:00"` |
+| `brainstorm.send_to_choreops` | `id: …`, `points: 20` makes the note a ChoreOps chore |
 | `brainstorm.add_from_speech` | `text: "Call the plumber tomorrow at ten, Anna buys milk on Friday"` creates one note per task |
 | `brainstorm.update_idea` | `id: …`, `status: completed`, `in_progress: true`, `markers: [question, money]`, `progress: 50`, `links: [{to: …, label: needs, blocks: true}]`, `frame: Phase 1` or `callout: colour open` |
 | `brainstorm.delete_idea` | `id: …` |
@@ -71,6 +72,18 @@ Splits freely spoken text into single notes with due date and person (v1.12.4), 
 | `category` | No | Category of the new notes. If empty, it is detected per note. |
 | `device` | No | The Echo or device the text came from. |
 | `language` | No | Language of the text, such as `de` or `en`. |
+
+## `brainstorm.send_to_choreops`
+
+▶️ [Try it in Home Assistant](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.send_to_choreops)
+
+Hands a note to [ChoreOps](https://github.com/ccpk1/choreops) as a one-time chore with points (v1.13.1). Once a parent approves the chore in ChoreOps, the note is ticked off; when the child reports “done”, it shows ✋. Returns `chore_id` and `user`. Needs the ChoreOps integration; ChoreOps checks whether the caller may create chores.
+
+| Field | Required | Meaning |
+| :--- | :--- | :--- |
+| `id` | Yes | ID of the note. |
+| `points` | No | Points in ChoreOps, default 10. |
+| `user` | No | ChoreOps person. Empty takes the note's assignee (name or unique first name). |
 
 ## `brainstorm.update_idea`
 

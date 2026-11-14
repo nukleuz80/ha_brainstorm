@@ -7,6 +7,15 @@
  */
 const DICTIONARIES = {
   en: {
+    "🏅 Übergeben": "🏅 Hand over",
+    "An ChoreOps übergeben": "Hand over to ChoreOps",
+    "🏅 An ChoreOps übergeben": "🏅 Hand over to ChoreOps",
+    "Die Person meldet in ChoreOps „erledigt“. Sobald ein Elternteil freigibt, gibt es die Punkte und die Notiz wird hier abgehakt.": "The person reports “done” in ChoreOps. As soon as a parent approves it, the points are given and the note is ticked off here.",
+    "{user} hat es als erledigt gemeldet, wartet auf Freigabe in ChoreOps": "{user} reported it done, waiting for approval in ChoreOps",
+    "Wer erledigt es?": "Who does it?",
+    "Punkte": "Points",
+    "Von ChoreOps freigegeben: {points} Punkte für {user}": "Approved in ChoreOps: {points} points for {user}",
+    "Bei ChoreOps für {user}: {points} Punkte": "At ChoreOps for {user}: {points} points",
     "Map-Tabs": "Map tabs",
     "Map": "Map",
     "Nur für mich": "Only for me",
@@ -1608,6 +1617,38 @@ export function voteBadge(idea, voting, me) {
 
 /** Styles of reactions and points, the same in both cards. */
 export const SOCIAL_CSS = `
+  .chore-badge.chore-claimed {
+    background: rgba(245, 158, 11, 0.18);
+  }
+  .chore-badge.chore-done {
+    background: rgba(34, 197, 94, 0.18);
+  }
+  .bs-chore-points {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+  .bs-chore-chip {
+    min-width: 44px;
+    min-height: 40px;
+    border-radius: 20px;
+    border: 1px solid var(--divider-color, rgba(127, 127, 127, 0.3));
+    background: var(--secondary-background-color, transparent);
+    color: var(--primary-text-color);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .bs-chore-chip.selected {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: var(--text-primary-color, #fff);
+  }
+  .bs-chore-points .bs-chore-custom {
+    width: 96px;
+    flex: 0 0 auto;
+  }
   .bs-social { display: inline-flex; align-items: center; gap: 3px; flex-wrap: wrap; vertical-align: middle; }
   .bs-react, .bs-vote-btn {
     min-width: 28px; min-height: 26px; padding: 0 6px; display: inline-flex; align-items: center; justify-content: center; gap: 3px;
@@ -1696,6 +1737,94 @@ export function habitBadge(idea) {
   if (!habit) return "";
   const title = t("Gewohnheit: {streak} Tage in Folge, beste Serie {best}. Antippen zeigt den Kalender.", { streak: habit.streak, best: habit.best });
   return `<span class="due-badge habit-badge${habit.today ? " habit-done" : ""}" data-habit="${escapeHtml(idea.id)}" role="button" tabindex="0" title="${escapeHtml(title)}">🔥 ${Number(habit.streak) || 0}</span>`;
+}
+
+/** The ChoreOps person for a Brainstorm person, by name or a unique first name. */
+export function matchChoreUser(name, users) {
+  const wanted = String(name || "").replace(/\s+/g, " ").trim().toLowerCase();
+  if (!wanted || !Array.isArray(users)) return null;
+  const exact = users.find((user) => user.toLowerCase() === wanted);
+  if (exact) return exact;
+  const first = wanted.split(" ")[0];
+  const matches = users.filter((user) => user.toLowerCase().split(" ")[0] === first);
+  return matches.length === 1 ? matches[0] : null;
+}
+
+/** 🏅 at a note handed over to ChoreOps: open, reported done, approved. */
+export function choreopsBadge(idea) {
+  const chore = idea && idea.choreops;
+  if (!chore) return "";
+  const user = chore.done_by || chore.user || "";
+  if (chore.status === "approved") {
+    const points = chore.points_earned ?? chore.points ?? 0;
+    return `<span class="due-badge chore-badge chore-done" title="${escapeHtml(t("Von ChoreOps freigegeben: {points} Punkte für {user}", { points, user }))}">🏅 +${escapeHtml(points)}</span>`;
+  }
+  if (chore.status === "claimed") {
+    return `<span class="due-badge chore-badge chore-claimed" title="${escapeHtml(t("{user} hat es als erledigt gemeldet, wartet auf Freigabe in ChoreOps", { user }))}">🏅 ✋ ${escapeHtml(chore.points ?? 0)}</span>`;
+  }
+  return `<span class="due-badge chore-badge" title="${escapeHtml(t("Bei ChoreOps für {user}: {points} Punkte", { user, points: chore.points ?? 0 }))}">🏅 ${escapeHtml(chore.points ?? 0)}</span>`;
+}
+
+/** Whether the menu offers the hand-over for a note. */
+export function canHandOver(idea, choreops) {
+  return Boolean(choreops && Array.isArray(choreops.users) && choreops.users.length && idea && !idea.choreops && idea.status !== "completed");
+}
+
+const CHORE_POINTS = [5, 10, 20, 50];
+
+/** The dialog that hands a note to ChoreOps: who does it and for how many points. */
+export function renderChoreHandover(body, { hass, idea, users, close, done, prefix = "dialog" }) {
+  const c = (names) => names.split(" ").map((n) => `${prefix}-${n}`).join(" ");
+  let user = matchChoreUser(idea.assignee, users) || users[0];
+  let points = 10;
+  let busy = false;
+  const draw = (error = "") => {
+    if (!body.isConnected) return;
+    body.innerHTML = `
+      <div class="${c("hint")}">${formatText(idea.text || "")}</div>
+      <div class="${c("label")}">${t("Wer erledigt es?")}</div>
+      <select class="${c("input")}" id="bsChoreUser">${users.map((name) => `<option value="${escapeHtml(name)}"${name === user ? " selected" : ""}>${escapeHtml(name)}</option>`).join("")}</select>
+      <div class="${c("label")}">${t("Punkte")}</div>
+      <div class="bs-chore-points">
+        ${CHORE_POINTS.map((n) => `<button type="button" class="bs-chore-chip${n === points ? " selected" : ""}" data-points="${n}">${n}</button>`).join("")}
+        <input type="number" class="${c("input")} bs-chore-custom" id="bsChorePoints" min="0" max="10000" inputmode="numeric" value="${points}" aria-label="${escapeHtml(t("Punkte"))}">
+      </div>
+      <div class="${c("hint")}">${t("Die Person meldet in ChoreOps „erledigt“. Sobald ein Elternteil freigibt, gibt es die Punkte und die Notiz wird hier abgehakt.")}</div>
+      <div class="${c("error")}" style="display: ${error ? "flex" : "none"};">${escapeHtml(error)}</div>
+      <div class="${c("footer")}">
+        <button class="${c("btn btn-secondary")}" id="bsChoreCancel">${t("Abbrechen")}</button>
+        <button class="${c("btn btn-primary")}" id="bsChoreSend"${busy ? " disabled" : ""}>${t("🏅 Übergeben")}</button>
+      </div>`;
+    const input = body.querySelector("#bsChorePoints");
+    body.querySelector("#bsChoreUser").addEventListener("change", (e) => {
+      user = e.target.value;
+    });
+    body.querySelectorAll("[data-points]").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        points = Number(chip.dataset.points);
+        input.value = String(points);
+        body.querySelectorAll("[data-points]").forEach((other) => other.classList.toggle("selected", other === chip));
+      });
+    });
+    input.addEventListener("input", () => {
+      points = Math.max(0, Math.min(10000, Math.round(Number(input.value) || 0)));
+      body.querySelectorAll("[data-points]").forEach((chip) => chip.classList.toggle("selected", Number(chip.dataset.points) === points));
+    });
+    body.querySelector("#bsChoreCancel").addEventListener("click", () => close());
+    body.querySelector("#bsChoreSend").addEventListener("click", async () => {
+      if (busy) return;
+      busy = true;
+      try {
+        await hass.callService("brainstorm", "send_to_choreops", { id: idea.id, points, user });
+        close();
+        if (done) done(user, points);
+      } catch (err) {
+        busy = false;
+        draw((err && err.message) || t("Das ging nicht."));
+      }
+    });
+  };
+  draw();
 }
 
 /** The switch in the edit dialogs that turns a note into a daily habit. */

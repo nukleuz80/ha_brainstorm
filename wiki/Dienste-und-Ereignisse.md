@@ -7,6 +7,7 @@ Alle Parameter stehen [weiter unten](#brainstormadd_idea) und unter [**Entwickle
 | Dienst | Kurzbeispiel |
 |---|---|
 | `brainstorm.add_idea` | `text: "Filter tauschen"`, `category: Smarthome`, `priority: high`, `due: "2026-12-01 18:00"` |
+| `brainstorm.send_to_choreops` | `id: …`, `points: 20` macht die Notiz zur ChoreOps-Aufgabe |
 | `brainstorm.add_from_speech` | `text: "Morgen um zehn den Klempner anrufen, Anna kauft am Freitag Milch"` legt pro Aufgabe eine Notiz an |
 | `brainstorm.update_idea` | `id: …`, `status: completed`, `in_progress: true`, `markers: [question, money]`, `progress: 50`, `links: [{to: …, label: braucht, blocks: true}]`, `frame: Phase 1` oder `callout: Farbe offen` |
 | `brainstorm.delete_idea` | `id: …` |
@@ -71,6 +72,18 @@ Zerlegt frei gesprochenen Text in einzelne Notizen mit Termin und Person (v1.12.
 | `category` | Nein | Kategorie der neuen Notizen. Leer wird sie je Notiz erkannt. |
 | `device` | Nein | Der Echo oder das Gerät, von dem der Text kommt. |
 | `language` | Nein | Sprache des Textes, z. B. `de` oder `en`. |
+
+## `brainstorm.send_to_choreops`
+
+▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.send_to_choreops)
+
+Übergibt eine Notiz als einmalige Aufgabe mit Punkten an [ChoreOps](https://github.com/ccpk1/choreops) (v1.13.1). Sobald ein Elternteil die Aufgabe in ChoreOps freigibt, wird die Notiz abgehakt; meldet das Kind „erledigt“, zeigt sie ✋. Gibt `chore_id` und `user` zurück. Braucht die ChoreOps-Integration; ob der Aufrufer Aufgaben anlegen darf, prüft ChoreOps.
+
+| Feld | Pflicht | Bedeutung |
+| :--- | :--- | :--- |
+| `id` | Ja | ID der Notiz. |
+| `points` | Nein | Punkte in ChoreOps, Standard 10. |
+| `user` | Nein | Person in ChoreOps. Leer nimmt die zuständige Person der Notiz (Name oder eindeutiger Vorname). |
 
 ## `brainstorm.update_idea`
 

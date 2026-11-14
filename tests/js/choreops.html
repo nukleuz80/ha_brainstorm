@@ -1,0 +1,50 @@
+<!doctype html>
+<!-- Browser test for the ChoreOps hand-over. Run: python3 -m http.server in the repo root,
+     open http://localhost:8000/tests/js/choreops.html, it shows PASS or the failures. --><meta charset="utf-8"><body><pre id="out">running</pre>
+<script type="module">
+import { canHandOver, choreopsBadge, matchChoreUser, renderChoreHandover } from "../../custom_components/brainstorm/cards/brainstorm-i18n.js";
+const fails = [];
+const check = (name, got, want) => { if (JSON.stringify(got) !== JSON.stringify(want)) fails.push(`${name}: want ${JSON.stringify(want)}, got ${JSON.stringify(got)}`); };
+const users = ["Jan", "Jonathan", "Lenja Müller"];
+check("exact", matchChoreUser("jan", users), "Jan");
+check("first name", matchChoreUser("Lenja", users), "Lenja Müller");
+check("none", matchChoreUser("Anna", users), null);
+check("no badge", choreopsBadge({ id: "a" }), "");
+check("open badge", choreopsBadge({ choreops: { user: "Lenja", points: 10, status: "open" } }).includes("🏅 10"), true);
+check("claimed badge", choreopsBadge({ choreops: { user: "Lenja", points: 10, status: "claimed" } }).includes("chore-claimed"), true);
+check("done badge", choreopsBadge({ choreops: { user: "Lenja", points: 10, points_earned: 12, status: "approved" } }).includes("+12"), true);
+check("offer", canHandOver({ status: "active" }, { users }), true);
+check("no offer twice", canHandOver({ choreops: {} }, { users }), false);
+check("no offer done", canHandOver({ status: "completed" }, { users }), false);
+check("no offer without ChoreOps", canHandOver({ status: "active" }, null), false);
+
+const calls = [];
+let fail = false;
+const hass = { callService: async (domain, service, data) => { calls.push([domain, service, data]); if (fail) throw new Error("Nein"); } };
+const body = document.createElement("div");
+document.body.appendChild(body);
+let closed = 0;
+let doneWith = null;
+renderChoreHandover(body, { hass, idea: { id: "i1", text: "Müll raus", assignee: "lenja" }, users, close: () => { closed += 1; }, done: (user, points) => { doneWith = [user, points]; } });
+check("preselected", body.querySelector("#bsChoreUser").value, "Lenja Müller");
+body.querySelector('[data-points="20"]').click();
+check("chip sets input", body.querySelector("#bsChorePoints").value, "20");
+body.querySelector("#bsChoreSend").click();
+await new Promise((r) => setTimeout(r, 20));
+check("service", calls[0], ["brainstorm", "send_to_choreops", { id: "i1", points: 20, user: "Lenja Müller" }]);
+check("closed", closed, 1);
+check("done", doneWith, ["Lenja Müller", 20]);
+
+fail = true;
+renderChoreHandover(body, { hass, idea: { id: "i2", text: "x" }, users, close: () => { closed += 1; } });
+check("first user", body.querySelector("#bsChoreUser").value, "Jan");
+const input = body.querySelector("#bsChorePoints");
+input.value = "7";
+input.dispatchEvent(new Event("input"));
+body.querySelector("#bsChoreSend").click();
+await new Promise((r) => setTimeout(r, 20));
+check("custom points", calls[1][2].points, 7);
+check("error shown", body.querySelector(".dialog-error").textContent, "Nein");
+check("still open", closed, 1);
+document.getElementById("out").textContent = fails.length ? "FAIL\n" + fails.join("\n") : "PASS";
+</script>

@@ -21,6 +21,7 @@ from homeassistant.util import dt as dt_util
 from .alexa_skill import AlexaSkill
 from .attachments import AttachmentCleaner, async_register_views
 from .battery import BatteryWatcher
+from .choreops import ChoreOpsBridge
 from .bring import BRING_MESSAGES, bring_message_target
 from .const import (
     ATTR_CATEGORY,
@@ -114,6 +115,7 @@ CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 SERVICE_ADD_IDEA = "add_idea"
 SERVICE_ADD_FROM_SPEECH = "add_from_speech"
+SERVICE_SEND_TO_CHOREOPS = "send_to_choreops"
 SERVICE_UPDATE_IDEA = "update_idea"
 SERVICE_DELETE_IDEA = "delete_idea"
 SERVICE_RESTORE_IDEA = "restore_idea"
@@ -182,6 +184,16 @@ SERVICE_ADD_FROM_SPEECH_SCHEMA = vol.Schema(
         vol.Optional(ATTR_CATEGORY): vol.Any(None, cv.string),
         vol.Optional(ATTR_DEVICE): vol.Any(None, cv.string),
         vol.Optional(ATTR_LANGUAGE): vol.Any(None, cv.string),
+    }
+)
+
+SERVICE_SEND_TO_CHOREOPS_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_ID): cv.string,
+        vol.Optional("points", default=10): vol.All(
+            vol.Coerce(int), vol.Range(min=0, max=10000)
+        ),
+        vol.Optional("user"): vol.Any(None, cv.string),
     }
 )
 
@@ -462,6 +474,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) -
     await todo_sync.async_start()
     entry.async_on_unload(todo_sync.async_stop)
 
+    choreops = ChoreOpsBridge(hass, store)
+    store.choreops = choreops
+    await choreops.async_start()
+    entry.async_on_unload(choreops.async_stop)
+
     battery = BatteryWatcher(hass, store, {**entry.data, **entry.options})
     await battery.async_start()
     entry.async_on_unload(battery.async_stop)
@@ -608,6 +625,27 @@ def _register_services(hass: HomeAssistant) -> None:
             description=call.data.get(ATTR_DESCRIPTION),
         )
         return {"success": True, "idea": idea}
+
+    async def handle_send_to_choreops(call: ServiceCall) -> dict[str, Any]:
+        """Hand a task to ChoreOps as a chore with points."""
+        store = _require_store(hass)
+        idea_id = call.data[ATTR_ID]
+        idea = store.get_idea(idea_id)
+        if idea is None:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="idea_not_found",
+                translation_placeholders={"id": idea_id},
+            )
+        _check_idea_edit(store, idea_id, call)
+        if store.choreops is None:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="choreops_missing"
+            )
+        info = await store.choreops.async_hand_over(
+            idea, call.data.get("user"), call.data["points"], context=call.context
+        )
+        return {"chore_id": info["chore_id"], "user": info["user"]}
 
     async def handle_add_from_speech(call: ServiceCall) -> dict[str, Any]:
         """Split freely spoken text into notes with due date and person."""
@@ -1195,6 +1233,14 @@ def _register_services(hass: HomeAssistant) -> None:
         SERVICE_ADD_IDEA,
         handle_add_idea,
         schema=SERVICE_ADD_IDEA_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_SEND_TO_CHOREOPS,
+        handle_send_to_choreops,
+        schema=SERVICE_SEND_TO_CHOREOPS_SCHEMA,
         supports_response=SupportsResponse.OPTIONAL,
     )
 

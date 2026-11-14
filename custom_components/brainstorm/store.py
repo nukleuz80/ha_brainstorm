@@ -32,6 +32,7 @@ from .const import (
     ATTR_CREATED_AT,
     ATTR_ALEXA_NATIVE,
     ATTR_ASSIGNEE,
+    ATTR_CHOREOPS,
     ATTR_CREATED_BY,
     ATTR_MAP_POS,
     ATTR_OWNER,
@@ -189,6 +190,7 @@ from .languages.common import CATEGORY_PROJECTS, SPEECH_SPLIT, LanguagePack
 
 if TYPE_CHECKING:
     from .alexa_skill import AlexaSkill
+    from .choreops import ChoreOpsBridge
     from .reminders import ReminderManager
     from .todo_sync import TodoSyncManager
 
@@ -240,6 +242,7 @@ EXPORT_SKIPPED_FIELDS = (
     ATTR_ATTACHMENTS,
     ATTR_IN_PROGRESS,
     ATTR_TODO_LINK,
+    ATTR_CHOREOPS,
     ATTR_BRING_LIST,
     ATTR_BATTERY,
     ATTR_BATTERY_DONE,
@@ -373,6 +376,7 @@ class BrainstormStore:
         self.alexa_skill: AlexaSkill | None = None
         self.reminders: ReminderManager | None = None
         self.todo_sync: TodoSyncManager | None = None
+        self.choreops: ChoreOpsBridge | None = None
 
     @property
     def last_action(self) -> dict[str, Any] | None:
@@ -541,6 +545,7 @@ class BrainstormStore:
             "ai_subtasks": self.ai_subtasks_available,
             "ui_level": self.ui_level,
             "map_tabs_rev": self._map_tabs_rev,
+            "choreops": self._choreops_attributes(),
         }
 
     def get_overview_attributes(self, user_id: str | None = None) -> dict[str, Any]:
@@ -608,6 +613,12 @@ class BrainstormStore:
                 result[ATTR_SHAPE] = shape
             if note := idea.get(ATTR_RESULT):
                 result[ATTR_RESULT] = note
+            if isinstance(chore := idea.get(ATTR_CHOREOPS), dict):
+                result[ATTR_CHOREOPS] = {
+                    key: chore.get(key)
+                    for key in ("user", "points", "status", "done_by", "points_earned")
+                    if chore.get(key) is not None
+                }
             if description := idea.get(ATTR_DESCRIPTION):
                 result[ATTR_DESCRIPTION] = description
             if attachments := idea.get(ATTR_ATTACHMENTS):
@@ -685,6 +696,7 @@ class BrainstormStore:
             "ai_subtasks": self.ai_subtasks_available,
             "ui_level": self.ui_level,
             "map_tabs_rev": self._map_tabs_rev,
+            "choreops": self._choreops_attributes(),
             "category_counts": counts_by_cat,
             "priority_counts": counts_by_prio,
             "latest_idea": summary(active_ideas[0]) if active_ideas else None,
@@ -3255,6 +3267,55 @@ class BrainstormStore:
             or deleted.get("user_id") == user_id
             or self.can_edit(deleted["idea"], user_id)
         )
+
+    # ChoreOps hand-over
+
+    def _choreops_attributes(self) -> dict[str, Any] | None:
+        bridge = self.choreops
+        if bridge is None or not bridge.available:
+            return None
+        return {"users": list(bridge.users)}
+
+    @callback
+    def notify_choreops_changed(self) -> None:
+        """Let the cards know that the ChoreOps users changed."""
+        self._notify_listeners()
+
+    async def async_choreops_set(self, idea_id: str, info: dict[str, Any]) -> None:
+        """Remember the chore a task was handed over as."""
+        idea = self._ideas.get(idea_id)
+        if idea is None:
+            return
+        idea[ATTR_CHOREOPS] = dict(info)
+        idea[ATTR_UPDATED_AT] = dt_util.now().isoformat()
+        await self.async_save()
+        self._notify_listeners()
+
+    async def async_choreops_update(
+        self,
+        idea_id: str,
+        status: str,
+        done_by: str | None = None,
+        points: Any = None,
+    ) -> None:
+        """Follow the ChoreOps status; an approved chore ticks the task off."""
+        idea = self._ideas.get(idea_id)
+        info = idea.get(ATTR_CHOREOPS) if idea else None
+        if not isinstance(info, dict) or info.get("status") == status:
+            return
+        info["status"] = status
+        if done_by and status != "open":
+            info["done_by"] = str(done_by)
+        elif status == "open":
+            info.pop("done_by", None)
+        if status == "approved":
+            if isinstance(points, (int, float)) and not isinstance(points, bool):
+                info["points_earned"] = points
+            if idea.get(ATTR_STATUS) != "completed":
+                await self.async_update_idea(idea_id, status="completed")
+                return
+        await self.async_save()
+        self._notify_listeners()
 
     # Map tabs
 

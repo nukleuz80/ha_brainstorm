@@ -92,6 +92,9 @@
     },
     "end_round": {
       "service": "mdi:eye-outline"
+    },
+    "send_to_choreops": {
+      "service": "mdi:medal"
     }
   }
 }

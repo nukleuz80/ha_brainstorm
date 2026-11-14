@@ -9,7 +9,7 @@
 [![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.13.0-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.13.1-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![Wiki](https://img.shields.io/badge/Docs-Wiki-6f42c1.svg)](https://github.com/nukleuz80/ha_brainstorm/wiki)
@@ -68,7 +68,7 @@
 
 ### 📋 List card
 - Quick input with automatic category and priority, category pills, search with `#tags`, subtasks you can fold and drag.
-- Title and description, attachments (photos, screenshots, PDFs), markers, progress, repeating tasks (also taking turns between people), ☀️ My day for today's plan, 🔥 habits with streaks and a calendar, 🗣️ talking freely (the AI splits several tasks with date and person), links and a little Markdown.
+- Title and description, attachments (photos, screenshots, PDFs), markers, progress, repeating tasks (also taking turns between people), ☀️ My day for today's plan, 🔥 habits with streaks and a calendar, 🗣️ talking freely (the AI splits several tasks with date and person), 🏅 hand-over to ChoreOps with points, links and a little Markdown.
 - Long-press menu, multi-select, sharing, three operating levels from *Beginner* to *Pro*. → [List Card](https://github.com/nukleuz80/ha_brainstorm/wiki/List-Card)
 
 ### 🧠 Mind map card
@@ -261,11 +261,11 @@ The latest versions; every version is in [CHANGELOG.md](CHANGELOG.md).
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.13.1`** | 2026-11-14 | **🏅 ChoreOps bridge.** With the ChoreOps integration installed, the ⋯ menu of both cards offers *🏅 Hand over to ChoreOps*: pick the person and the points, Brainstorm creates a one-time ChoreOps chore. The note shows 🏅 with the points, ✋ once the child reports “done”, and ticks itself off as soon as a parent approves it in ChoreOps (also when that happened during a restart). New action `brainstorm.send_to_choreops`. |
 | **`v1.13.0`** | 2026-11-14 | **📑 Map tabs.** Saved views as tabs above the mind map: *📑 Save view as tab* (view choice or ＋) keeps the list, branch, filter, layout and visible area, for the whole household or 🔒 only for you. Tap again to rename, move or delete. *↗ Move to its own tab* in the ⋯ menu puts a big branch into its own tab; the main map keeps it as a link *↗ N notes*. Tabs live in Home Assistant and work on every device; new card option `show_tabs`. |
 | **`v1.12.4`** | 2026-11-14 | **🗣️ Talk freely.** New button *🗣️ Talk freely* below the quick input of the list card and 🗣️ in the controls of the mind map: say (🎙️) or type several tasks at once, such as “Call the plumber tomorrow at ten, Anna buys milk on Friday and then tidy up the basement”. The AI task entity splits it into single notes with due date and person; you check the list, change texts, dates and people, untick what you do not want and create the rest in one go. Without an AI, or when it does not answer, the text is split sentence by sentence and read like a spoken reminder. New action `brainstorm.add_from_speech` creates the notes directly, e.g. from a voice note in an automation; WebSocket `brainstorm/split_speech` gives the preview. |
 | **`v1.12.3`** | 2026-11-14 | **🔥 Habits with streaks.** New switch *Habit* in the edit dialog of both cards: the note is ticked off once a day and stays. The tick in the list counts today, a second tap takes it back; to-do lists, voice and Assist count the day the same way. A 🔥 badge shows the streak and turns green once today is done. Tapping it opens the calendar with the streak, the best streak, all days done and the last 18 weeks as a heatmap, where earlier days can be added or removed. At midnight the cards and to-do lists start the new day; the daily briefing names the habits still open. Turned off, the days are kept and come back when switched on again. Actions: `habit`, `habit_done`, `habit_date` in `brainstorm.update_idea`, WebSocket `brainstorm/habit`. |
 | **`v1.12.2`** | 2026-11-14 | **☀️ My day.** Pick notes for today: *My day* in the edit dialog of both cards (🌅 morning, ☀️ during the day, 🌙 evening) or *Pick for today* in the long-press menu of the list. Picks count only today and run out at midnight. The new *☀️ My day* button above the list and the filter of the same name in the mind map show only these notes, morning first. The daily briefing (also on the Echos) names the plan first, by part of the day, then what is due, without naming a note twice; the AI tool `brainstorm_get_ideas` tells Assist about it too. Action: `my_day` in `brainstorm.update_idea`. |
-| **`v1.12.1`** | 2026-11-14 | **Rotation cannot be saved half done.** With a rotation chosen but fewer than two people, the edit dialog now stays open, points at the field and says what is missing, instead of saving without the rotation. |
 
 ---
 

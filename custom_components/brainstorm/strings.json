@@ -891,6 +891,21 @@
     },
     "map_tab_invalid": {
       "message": "The map tab needs a name and a list."
+    },
+    "choreops_missing": {
+      "message": "ChoreOps is not installed or not loaded."
+    },
+    "choreops_done": {
+      "message": "The note is already done."
+    },
+    "choreops_already": {
+      "message": "The note is already at ChoreOps."
+    },
+    "choreops_no_user": {
+      "message": "No ChoreOps person matches “{name}”. Choose one of: {users}."
+    },
+    "choreops_failed": {
+      "message": "ChoreOps did not create the chore."
     }
   },
   "services": {
@@ -1463,6 +1478,24 @@
         "category": {
           "name": "Category",
           "description": "The list whose round ends."
+        }
+      }
+    },
+    "send_to_choreops": {
+      "name": "Hand over to ChoreOps",
+      "description": "Creates a ChoreOps chore with points for a note. The person reports it done in ChoreOps; once a parent approves it there, the note is ticked off here. Needs the ChoreOps integration.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "ID of the note."
+        },
+        "points": {
+          "name": "Points",
+          "description": "Points the chore is worth in ChoreOps."
+        },
+        "user": {
+          "name": "Person",
+          "description": "ChoreOps person; empty takes the person the note is assigned to."
         }
       }
     }

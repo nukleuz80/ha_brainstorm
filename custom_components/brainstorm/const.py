@@ -311,6 +311,8 @@ ATTR_REMINDED_AT = "reminded_at"
 ATTR_ESCALATED = "escalated"
 ATTR_PARSE_DUE = "parse_due"
 ATTR_ASSIGNEE = "assignee"
+# Hand-over to ChoreOps: chore_id, user, points, status, since
+ATTR_CHOREOPS = "choreops"
 ATTR_OWNER = "owner"
 ATTR_CREATED_BY = "created_by"
 ATTR_MAP_POS = "map_pos"

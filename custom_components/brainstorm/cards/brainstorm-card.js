@@ -1,9 +1,9 @@
-import { LEVEL_CSS, SOCIAL_CSS, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.13.0";
+import { LEVEL_CSS, SOCIAL_CSS, canHandOver, choreopsBadge, renderChoreHandover, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.13.1";
 
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.13.0 - Map-Tabs
+ * Version 1.13.1 - ChoreOps-Brücke
  */
 // The bulb lies next to this file, wherever Home Assistant serves it from
 const BULB_URL = new URL("./brainstorm-bulb.svg", import.meta.url).href;
@@ -2237,6 +2237,11 @@ class BrainstormCard extends HTMLElement {
     this._openDialog(t("💬 Kommentare"), (body) => renderComments(body, { hass: this._hass, idea, close: () => this._closeDialog(), prefix: "action-dialog" }));
   }
 
+  _showChoreHandover(idea) {
+    if (!this._hass || !idea || !this._choreops) return;
+    this._openDialog(t("🏅 An ChoreOps übergeben"), (body) => renderChoreHandover(body, { hass: this._hass, idea, users: this._choreops.users, close: () => this._closeDialog(), prefix: "action-dialog" }));
+  }
+
   async _react(id, reaction) {
     try {
       await this._hass.callService("brainstorm", "react", { id, reaction });
@@ -2407,6 +2412,16 @@ class BrainstormCard extends HTMLElement {
       `;
     }
 
+    // A task for the children, with points in ChoreOps
+    if (canHandOver(item, this._choreops)) {
+      actionsHtml += `
+        <button class="apple-menu-btn" data-act="choreops" data-lvl="normal">
+          <span class="btn-icon">🏅</span>
+          <div class="btn-content"><span>${t("An ChoreOps übergeben")}</span></div>
+        </button>
+      `;
+    }
+
     // Comments
     actionsHtml += `
       <button class="apple-menu-btn" data-act="comments" data-lvl="normal">
@@ -2454,6 +2469,11 @@ class BrainstormCard extends HTMLElement {
 
         if (act === "comments") {
           this._showComments(item);
+          return;
+        }
+
+        if (act === "choreops") {
+          this._showChoreHandover(item);
           return;
         }
 
@@ -5184,6 +5204,7 @@ class BrainstormCard extends HTMLElement {
         const aiSensor = this._getSensorEntity();
         const aiSubtasks = Boolean(aiSensor && aiSensor.attributes && aiSensor.attributes.ai_subtasks);
         this._aiSubtasks = aiSubtasks;
+        this._choreops = (aiSensor && aiSensor.attributes && aiSensor.attributes.choreops) || null;
 
         this._ideasById = Object.fromEntries(orderedIdeas.map((item) => [item.id, item]));
         const voting = (aiSensor && aiSensor.attributes && aiSensor.attributes.voting) || {};
@@ -5220,7 +5241,7 @@ class BrainstormCard extends HTMLElement {
                   ${isSub ? `<span class="subtask-badge" title="${t("Unteraufgabe")}">${t("Unteraufgabe")}</span>` : ""}
                   <span class="category-tag ${itemEdit ? "clickable" : ""}" title="${itemEdit ? t("Kategorie ändern") : t("Kategorie")}" data-id="${this._escapeHtml(item.id)}" data-cat="${this._escapeHtml(item.category)}" style="color: ${this._getCategoryColor(item.category)}; background: color-mix(in srgb, ${this._getCategoryColor(item.category)} 12%, var(--secondary-background-color, rgba(0,0,0,0.06))); border: 1px solid color-mix(in srgb, ${this._getCategoryColor(item.category)} 25%, transparent);"><ha-icon icon="${this._getCategoryIcon(item.category)}" style="--mdc-icon-size: 11px; width: 11px; height: 11px; margin-right: 3px; display: inline-flex; align-items: center; vertical-align: middle;"></ha-icon>${this._escapeHtml(item.category)}</span>
                   ${this._getPriorityBadge(item.priority, item.id)}
-                  ${item.due ? this._formatDueBadge(item.due) : ""}${repeatBadge(item)}${myDayBadge(item)}${isCompletedView ? "" : habitBadge(item)}
+                  ${item.due ? this._formatDueBadge(item.due) : ""}${repeatBadge(item)}${myDayBadge(item)}${isCompletedView ? "" : habitBadge(item)}${choreopsBadge(item)}
                   ${this._formatTargetBadges(item)}
                   ${this._formatShareBadge(item)}
                   ${this._formatAuthorBadge(item)}
@@ -6249,7 +6270,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.13.0 ",
+  "%c BRAINSTORM-CARD %c v1.13.1 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );
