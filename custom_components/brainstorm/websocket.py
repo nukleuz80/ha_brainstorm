@@ -10,7 +10,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ServiceValidationError
 import homeassistant.helpers.config_validation as cv
 
-from .ai import MAP_INPUT_MAX_LENGTH, AIUnavailableError
+from .ai import MAP_INPUT_MAX_LENGTH, SPEECH_INPUT_MAX_LENGTH, AIUnavailableError
 from .const import (
     CONF_SHARE_USERS,
     DRAW_COLORS,
@@ -40,6 +40,7 @@ def async_register_commands(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, websocket_add_stroke)
     websocket_api.async_register_command(hass, websocket_delete_strokes)
     websocket_api.async_register_command(hass, websocket_suggest_subtasks)
+    websocket_api.async_register_command(hass, websocket_split_speech)
     websocket_api.async_register_command(hass, websocket_summarize_branch)
     websocket_api.async_register_command(hass, websocket_suggest_parents)
     websocket_api.async_register_command(hass, websocket_cluster_ideas)
@@ -386,6 +387,30 @@ async def websocket_suggest_subtasks(
         connection.send_error(msg["id"], ERR_AI_FAILED, "The AI gave no subtasks")
         return
     connection.send_result(msg["id"], {"suggestions": suggestions})
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "brainstorm/split_speech",
+        vol.Required("text"): vol.All(cv.string, vol.Length(max=SPEECH_INPUT_MAX_LENGTH)),
+        vol.Optional("language"): vol.All(cv.string, vol.Length(max=10)),
+    }
+)
+@websocket_api.async_response
+async def websocket_split_speech(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Split freely spoken text into tasks to check first; nothing is stored."""
+    store = get_loaded_store(hass)
+    if store is None:
+        connection.send_error(
+            msg["id"], websocket_api.ERR_NOT_FOUND, "Brainstorm is not loaded"
+        )
+        return
+    result = await store.async_split_speech(msg["text"], msg.get("language"))
+    connection.send_result(msg["id"], result)
 
 
 @websocket_api.websocket_command(

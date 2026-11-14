@@ -1538,6 +1538,19 @@ MESSAGES: dict[str, str] = {
         "Kategorie: {category}\n"
         "Vorhandene Unteraufgaben: {existing}"
     ),
+    "speech_tasks_prompt": (
+        "Zerlege diesen frei gesprochenen Text in einzelne Aufgaben für eine "
+        "Aufgabenliste. Antworte nur mit einer Zeile pro Aufgabe im Format "
+        "Aufgabe | Termin | Person, ohne Nummern und ohne Einleitung. Die Aufgabe "
+        "ist ein knapper deutscher Stichpunkt ohne Termin und ohne Person. Der "
+        "Termin steht als JJJJ-MM-TT oder JJJJ-MM-TT HH:MM, sonst ein -. Rechne "
+        "Angaben wie morgen oder Freitag vom heutigen Tag aus um. Die Person ist "
+        "der Name von jemandem aus der Liste, der die Aufgabe übernehmen soll, "
+        "sonst ein -. Erfinde keine Aufgaben, Termine oder Namen.\n"
+        "Heute: {today}\n"
+        "Personen: {people}\n"
+        "Text: {text}"
+    ),
     "branch_summary_prompt": (
         "Fasse diesen Zweig einer Mindmap in zwei bis vier kurzen deutschen Sätzen "
         "zusammen: worum es geht, was erledigt ist (✓) und was noch offen ist. "

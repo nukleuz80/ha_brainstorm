@@ -113,6 +113,7 @@ _LOGGER = logging.getLogger(__name__)
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 SERVICE_ADD_IDEA = "add_idea"
+SERVICE_ADD_FROM_SPEECH = "add_from_speech"
 SERVICE_UPDATE_IDEA = "update_idea"
 SERVICE_DELETE_IDEA = "delete_idea"
 SERVICE_RESTORE_IDEA = "restore_idea"
@@ -173,6 +174,15 @@ SERVICE_ADD_IDEA_SCHEMA = vol.Schema(
         ),
     },
     extra=vol.ALLOW_EXTRA,
+)
+
+SERVICE_ADD_FROM_SPEECH_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_TEXT): vol.All(cv.string, vol.Length(min=1, max=4000)),
+        vol.Optional(ATTR_CATEGORY): vol.Any(None, cv.string),
+        vol.Optional(ATTR_DEVICE): vol.Any(None, cv.string),
+        vol.Optional(ATTR_LANGUAGE): vol.Any(None, cv.string),
+    }
 )
 
 SERVICE_UPDATE_IDEA_SCHEMA = vol.Schema(
@@ -598,6 +608,31 @@ def _register_services(hass: HomeAssistant) -> None:
             description=call.data.get(ATTR_DESCRIPTION),
         )
         return {"success": True, "idea": idea}
+
+    async def handle_add_from_speech(call: ServiceCall) -> dict[str, Any]:
+        """Split freely spoken text into notes with due date and person."""
+        store = _require_store(hass)
+        device = call.data.get(ATTR_DEVICE)
+        language = call.data.get(ATTR_LANGUAGE)
+        split = await store.async_split_speech(call.data[ATTR_TEXT], language)
+        ideas = []
+        for task in split["tasks"]:
+            due = task[ATTR_DUE]
+            ideas.append(
+                await store.async_add_idea(
+                    text=task[ATTR_TEXT],
+                    category=call.data.get(ATTR_CATEGORY),
+                    source="speech",
+                    device=device,
+                    context=call.context,
+                    due=dt_util.parse_datetime(due) if due else None,
+                    assignee=task[ATTR_ASSIGNEE],
+                    owner=call.context.user_id or store.voice_user_for(device),
+                    language=language,
+                    spoken=False,
+                )
+            )
+        return {"ai": split["ai"], "ideas": ideas}
 
     async def handle_update_idea(call: ServiceCall) -> dict[str, Any]:
         """Handle updating an existing idea."""
@@ -1160,6 +1195,14 @@ def _register_services(hass: HomeAssistant) -> None:
         SERVICE_ADD_IDEA,
         handle_add_idea,
         schema=SERVICE_ADD_IDEA_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_ADD_FROM_SPEECH,
+        handle_add_from_speech,
+        schema=SERVICE_ADD_FROM_SPEECH_SCHEMA,
         supports_response=SupportsResponse.OPTIONAL,
     )
 

@@ -888,6 +888,28 @@
     }
   },
   "services": {
+    "add_from_speech": {
+      "name": "Notizen aus freier Rede anlegen",
+      "description": "Zerlegt frei gesprochenen Text in einzelne Notizen mit Termin und Person, mit der KI-Aufgaben-Entität, falls eingerichtet, sonst Satz für Satz. Gibt die angelegten Notizen zurück.",
+      "fields": {
+        "text": {
+          "name": "Text",
+          "description": "Was gesagt wurde, zum Beispiel aus einer Sprachnotiz."
+        },
+        "category": {
+          "name": "Kategorie",
+          "description": "Kategorie der neuen Notizen; leer erkennt sie selbst."
+        },
+        "device": {
+          "name": "Gerät",
+          "description": "Echo oder Gerät, von dem der Text kommt."
+        },
+        "language": {
+          "name": "Sprache",
+          "description": "Sprache des Textes, zum Beispiel de oder en."
+        }
+      }
+    },
     "add_idea": {
       "name": "Idee hinzufügen",
       "description": "Fügt blitzschnell eine neue Brainstorm-Idee hinzu. Erkennt automatisch Kategorien im Text (z.B. 'Garten: Blumen pflanzen' oder '#smarthome').",

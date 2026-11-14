@@ -12,6 +12,9 @@
     }
   },
   "services": {
+    "add_from_speech": {
+      "service": "mdi:account-voice"
+    },
     "add_idea": {
       "service": "mdi:lightbulb-on-outline"
     },

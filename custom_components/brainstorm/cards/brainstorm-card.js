@@ -1,9 +1,9 @@
-import { LEVEL_CSS, SOCIAL_CSS, commentBadge, renderComments, renderTrash, needsPersonalData, reactionBadges, voteBadge, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.12.3";
+import { LEVEL_CSS, SOCIAL_CSS, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.12.4";
 
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.12.3 - Gewohnheiten
+ * Version 1.12.4 - Frei reden
  */
 // The bulb lies next to this file, wherever Home Assistant serves it from
 const BULB_URL = new URL("./brainstorm-bulb.svg", import.meta.url).href;
@@ -1196,6 +1196,28 @@ class BrainstormCard extends HTMLElement {
     } catch (err) {
       console.error("Failed to toggle priority", err);
     }
+  }
+
+  // Free speech: the AI splits several tasks with date and person into notes
+  _openSpeech() {
+    if (!this._hass) return;
+    const inputEl = this.shadowRoot.getElementById("ideaInput");
+    const catSelectEl = this.shadowRoot.getElementById("catSelect");
+    const selectedCat = catSelectEl ? catSelectEl.value : "";
+    let category = selectedCat && selectedCat !== "auto" ? selectedCat : null;
+    if (!category && this._selectedCategory && this._selectedCategory !== "all" && this._selectedCategory !== "__completed__") {
+      category = this._selectedCategory;
+    }
+    this._openDialog(t("🗣️ Frei reden"), (body) =>
+      renderSpeech(body, {
+        hass: this._hass,
+        category,
+        text: inputEl ? inputEl.value.trim() : "",
+        close: () => this._closeDialog(),
+        created: () => { if (inputEl) inputEl.value = ""; },
+        prefix: "action-dialog",
+      })
+    );
   }
 
   async _submitIdea() {
@@ -3336,6 +3358,20 @@ class BrainstormCard extends HTMLElement {
           padding-top: 4px;
           border-top: 1px solid var(--ha-card-border-color, var(--divider-color, rgba(127, 127, 127, 0.08)));
         }
+        .speech-btn {
+          flex: 0 0 auto;
+          min-height: 32px;
+          padding: 4px 10px;
+          border-radius: 16px;
+          border: 1px solid var(--divider-color, rgba(127, 127, 127, 0.3));
+          background: transparent;
+          color: var(--primary-text-color);
+          font: inherit;
+          font-size: 0.85rem;
+          cursor: pointer;
+          white-space: nowrap;
+        }
+        .speech-btn:hover { border-color: var(--primary-color); color: var(--primary-color); }
         .quick-meta-left {
           display: flex;
           align-items: center;
@@ -4640,6 +4676,7 @@ class BrainstormCard extends HTMLElement {
                     </select>
                   </div>
                 </div>
+                <button class="speech-btn" id="speechBtn" type="button" title="${t("Frei reden: mehrere Aufgaben auf einmal sagen oder tippen, die KI zerlegt sie")}">${t("🗣️ Frei reden")}</button>
               </div>
             </div>
           </div>
@@ -4703,6 +4740,8 @@ class BrainstormCard extends HTMLElement {
     if (cardDialogCloseBtn) {
       cardDialogCloseBtn.addEventListener("click", () => this._closeDialog());
     }
+    const speechBtn = this.shadowRoot.getElementById("speechBtn");
+    if (speechBtn) speechBtn.addEventListener("click", () => this._openSpeech());
     if (cardDialog) {
       cardDialog.addEventListener("click", (e) => {
         if (e.target === cardDialog) this._closeDialog();
@@ -6210,7 +6249,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.12.3 ",
+  "%c BRAINSTORM-CARD %c v1.12.4 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

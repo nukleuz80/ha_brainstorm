@@ -558,6 +558,22 @@ const DICTIONARIES = {
     "Heute erledigt – nochmal tippen nimmt es zurück": "Done today – tap again to take it back",
     "Für heute abhaken, die Gewohnheit bleibt": "Tick off for today, the habit stays",
     "🔥 Kalender": "🔥 Calendar",
+    "Einfach drauflos reden oder tippen, auch mehrere Aufgaben auf einmal, mit Termin und wer sie übernimmt. Die KI macht daraus einzelne Notizen, die du vor dem Anlegen prüfst.": "Just talk or type away, several tasks at once too, with a date and who takes them. The AI turns it into single notes that you check before they are created.",
+    "z. B. Morgen um zehn den Klempner anrufen, Anna kauft am Freitag Milch und dann noch den Keller aufräumen": "e.g. Call the plumber tomorrow at ten, Anna buys milk on Friday and then tidy up the basement",
+    "✨ Zerlegen": "✨ Split",
+    "Zerlege …": "Splitting …",
+    "Darin habe ich keine Aufgabe gefunden.": "I found no task in it.",
+    "Niemand": "Nobody",
+    "So hat die KI es verstanden. Ändere, was nicht passt, und wähle ab, was nicht angelegt werden soll.": "This is how the AI understood it. Change what does not fit and untick what should not be created.",
+    "Ohne KI Satz für Satz zerlegt. Ändere, was nicht passt, und wähle ab, was nicht angelegt werden soll.": "Split sentence by sentence without the AI. Change what does not fit and untick what should not be created.",
+    "Anlegen": "Create",
+    "Aufgabe": "Task",
+    "Datum": "Date",
+    "Uhrzeit": "Time",
+    "Zuständig": "Assignee",
+    "{count} anlegen": "Create {count}",
+    "🗣️ Frei reden": "🗣️ Talk freely",
+    "Frei reden: mehrere Aufgaben auf einmal sagen oder tippen, die KI zerlegt sie": "Talk freely: say or type several tasks at once, the AI splits them",
     "Aus „Mein Tag“ nehmen": "Take out of My day",
     "Für heute vornehmen": "Pick for today",
     "☀️ Mein Tag": "☀️ My day",
@@ -1549,6 +1565,13 @@ export const SOCIAL_CSS = `
   .bs-rotation-person { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 2px 10px; border: 1px solid var(--divider-color, #ccc); border-radius: 18px; cursor: pointer; font-size: 0.9rem; color: var(--primary-text-color); }
   .bs-rotation-warn { color: var(--error-color, #db4437); }
   .bs-trash-notice { font-size: 0.82rem; color: var(--success-color, #43a047); margin-top: 4px; }
+  .bs-speech-text { width: 100%; min-height: 110px; box-sizing: border-box; resize: vertical; font: inherit; }
+  .bs-speech-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 0; border-bottom: 1px solid var(--divider-color, rgba(127, 127, 127, 0.2)); }
+  .bs-speech-row input[type="checkbox"] { width: 22px; height: 22px; flex: 0 0 auto; }
+  .bs-speech-row .bs-speech-task { flex: 1 1 200px; min-width: 0; }
+  .bs-speech-row .bs-speech-meta { display: flex; flex-wrap: wrap; gap: 6px; flex: 1 1 100%; padding-left: 28px; }
+  .bs-speech-row .bs-speech-meta > * { flex: 1 1 110px; min-width: 0; min-height: 36px; }
+  .bs-speech-row.off .bs-speech-task, .bs-speech-row.off .bs-speech-meta { opacity: 0.45; }
   .habit-badge { cursor: pointer; white-space: nowrap; }
   .habit-badge.habit-done { color: var(--success-color, #43a047); }
   .bs-habit-stats { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 4px 0 10px; font-size: 0.95rem; color: var(--primary-text-color); }
@@ -1641,7 +1664,108 @@ export function renderHabit(body, { hass, idea, close, prefix = "dialog", today 
 }
 
 /**
- * Fill a dialog body with the trash: deleted notes with their age, to restore
+ * Fill a dialog body for free speech: what was said or typed goes to the AI,
+ * which splits it into notes with due date and person. The person checks and
+ * changes the list before anything is created.
+ */
+export function renderSpeech(body, { hass, category = null, text = "", close, created = () => {}, prefix = "dialog", language }) {
+  const c = (names) => names.split(" ").map((n) => `${prefix}-${n}`).join(" ");
+  const people = personsOf(hass);
+  let draft = text;
+  const ask = (error = "") => {
+    body.innerHTML = `
+      <div class="${c("hint")}">${t("Einfach drauflos reden oder tippen, auch mehrere Aufgaben auf einmal, mit Termin und wer sie übernimmt. Die KI macht daraus einzelne Notizen, die du vor dem Anlegen prüfst.")}</div>
+      <textarea class="${c("input")} bs-speech-text" id="bsSpeechText" placeholder="${escapeHtml(t("z. B. Morgen um zehn den Klempner anrufen, Anna kauft am Freitag Milch und dann noch den Keller aufräumen"))}">${escapeHtml(draft)}</textarea>
+      <div class="${c("error")}" style="display: ${error ? "flex" : "none"};">${escapeHtml(error)}</div>
+      <div class="${c("footer")}">
+        <button class="${c("btn btn-secondary")}" id="bsSpeechCancel">${t("Abbrechen")}</button>
+        <button class="${c("btn btn-primary")}" id="bsSpeechSplit">${t("✨ Zerlegen")}</button>
+      </div>`;
+    const area = body.querySelector("#bsSpeechText");
+    area.focus();
+    body.querySelector("#bsSpeechCancel").addEventListener("click", close);
+    body.querySelector("#bsSpeechSplit").addEventListener("click", async (event) => {
+      draft = area.value.trim();
+      if (!draft) return;
+      event.currentTarget.disabled = true;
+      event.currentTarget.textContent = t("Zerlege …");
+      try {
+        const result = await hass.callWS({ type: "brainstorm/split_speech", text: draft, language: language || code() });
+        if (!body.isConnected) return;
+        if (!result.tasks || !result.tasks.length) {
+          ask(t("Darin habe ich keine Aufgabe gefunden."));
+          return;
+        }
+        review(result.tasks, result.ai);
+      } catch (err) {
+        if (body.isConnected) ask((err && err.message) || t("Das hat nicht geklappt."));
+      }
+    });
+  };
+  const review = (tasks, ai, error = "") => {
+    const personOptions = (selected) =>
+      `<option value="">${t("Niemand")}</option>` +
+      people.map((p) => `<option value="${escapeHtml(p.id)}"${p.id === selected ? " selected" : ""}>${escapeHtml(p.name)}</option>`).join("");
+    body.innerHTML = `
+      <div class="${c("hint")}">${ai ? t("So hat die KI es verstanden. Ändere, was nicht passt, und wähle ab, was nicht angelegt werden soll.") : t("Ohne KI Satz für Satz zerlegt. Ändere, was nicht passt, und wähle ab, was nicht angelegt werden soll.")}</div>
+      <div class="bs-speech-list">${tasks.map((task, index) => {
+        const due = dueInputValues(task.due);
+        return `<div class="bs-speech-row" data-index="${index}">
+          <input type="checkbox" class="bs-speech-on" checked aria-label="${escapeHtml(t("Anlegen"))}">
+          <input type="text" class="${c("input")} bs-speech-task" value="${escapeHtml(task.text)}" aria-label="${escapeHtml(t("Aufgabe"))}">
+          <div class="bs-speech-meta">
+            <input type="date" class="${c("input")} bs-speech-date" value="${due.date}" aria-label="${escapeHtml(t("Datum"))}">
+            <input type="time" class="${c("input")} bs-speech-time" value="${due.time}" aria-label="${escapeHtml(t("Uhrzeit"))}">
+            ${people.length ? `<select class="${c("input")} bs-speech-person" aria-label="${escapeHtml(t("Zuständig"))}">${personOptions(task.assignee)}</select>` : ""}
+          </div>
+        </div>`;
+      }).join("")}</div>
+      <div class="${c("error")}" style="display: ${error ? "flex" : "none"};">${escapeHtml(error)}</div>
+      <div class="${c("footer")}">
+        <button class="${c("btn btn-secondary")}" id="bsSpeechBack">${t("Zurück")}</button>
+        <button class="${c("btn btn-primary")}" id="bsSpeechCreate"></button>
+      </div>`;
+    const rows = [...body.querySelectorAll(".bs-speech-row")];
+    const create = body.querySelector("#bsSpeechCreate");
+    const count = () => {
+      const n = rows.filter((row) => row.querySelector(".bs-speech-on").checked).length;
+      create.textContent = t("{count} anlegen", { count: n });
+      create.disabled = n === 0;
+      rows.forEach((row) => row.classList.toggle("off", !row.querySelector(".bs-speech-on").checked));
+    };
+    rows.forEach((row) => row.querySelector(".bs-speech-on").addEventListener("change", count));
+    count();
+    body.querySelector("#bsSpeechBack").addEventListener("click", () => ask());
+    create.addEventListener("click", async () => {
+      create.disabled = true;
+      const left = [];
+      for (const row of rows) {
+        const task = tasks[Number(row.dataset.index)];
+        const textValue = row.querySelector(".bs-speech-task").value.trim();
+        if (!row.querySelector(".bs-speech-on").checked || !textValue) continue;
+        const person = row.querySelector(".bs-speech-person");
+        const payload = { text: textValue, source: "dashboard" };
+        if (category) payload.category = category;
+        const due = dueFromInputValues(row.querySelector(".bs-speech-date").value, row.querySelector(".bs-speech-time").value);
+        if (due) payload.due = due;
+        if (person && person.value) payload.assignee = person.value;
+        try {
+          await hass.callService("brainstorm", "add_idea", payload);
+        } catch (err) {
+          left.push({ ...task, text: textValue, error: (err && err.message) || "" });
+        }
+      }
+      if (!body.isConnected) return;
+      if (left.length) {
+        review(left, ai, left[0].error || t("Das hat nicht geklappt."));
+        return;
+      }
+      created();
+      close();
+    });
+  };
+  ask();
+}
 
 /**
  * Fill a dialog body with the trash: deleted notes with their age, to restore

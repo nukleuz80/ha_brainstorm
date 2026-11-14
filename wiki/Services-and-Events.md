@@ -7,6 +7,7 @@ All parameters are [further down](#brainstormadd_idea) and under [**Developer to
 | Service | Short example |
 |---|---|
 | `brainstorm.add_idea` | `text: "Replace filter"`, `category: Smart Home`, `priority: high`, `due: "2026-12-01 18:00"` |
+| `brainstorm.add_from_speech` | `text: "Call the plumber tomorrow at ten, Anna buys milk on Friday"` creates one note per task |
 | `brainstorm.update_idea` | `id: …`, `status: completed`, `in_progress: true`, `markers: [question, money]`, `progress: 50`, `links: [{to: …, label: needs, blocks: true}]`, `frame: Phase 1` or `callout: colour open` |
 | `brainstorm.delete_idea` | `id: …` |
 | `brainstorm.delete_done` | delete done notes, optionally only older ones (`older_than_days`) |
@@ -57,6 +58,19 @@ Adds a new idea and detects the category in the text, such as `Garden: plant flo
 | `assignee` | No | The person to remind. |
 | `zone` | No | Reminds when entering this zone. |
 | `language` | No | Language of the text, such as `de` or `en`. Without it, the language of Home Assistant applies. |
+
+## `brainstorm.add_from_speech`
+
+▶️ [Try it in Home Assistant](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.add_from_speech)
+
+Splits freely spoken text into single notes with due date and person (v1.12.4), with the AI task entity under *Configure ➔ AI* if one is set, otherwise sentence by sentence. Returns `ai` (whether the AI split it) and the created `ideas`.
+
+| Field | Required | Meaning |
+| :--- | :--- | :--- |
+| `text` | Yes | What was said, up to 4000 characters. |
+| `category` | No | Category of the new notes. If empty, it is detected per note. |
+| `device` | No | The Echo or device the text came from. |
+| `language` | No | Language of the text, such as `de` or `en`. |
 
 ## `brainstorm.update_idea`
 

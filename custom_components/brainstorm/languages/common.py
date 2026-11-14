@@ -200,3 +200,11 @@ def validate_rewrite(
     if kept_words and found / len(kept_words) < 0.6:
         return None
     return text
+
+
+# Where freely spoken text without the AI is split into single tasks, in every
+# language at once, as a person may mix them
+SPEECH_SPLIT = re.compile(
+    r"[.;!?\n]+\s*|,?\s*\b(?:und\s+dann|außerdem|dann|and\s+then|then)\b\s*",
+    re.IGNORECASE,
+)

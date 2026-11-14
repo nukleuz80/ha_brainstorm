@@ -187,6 +187,11 @@ def _names_of(hass: HomeAssistant, domain: str) -> dict[str, str]:
     return names
 
 
+def person_names(hass: HomeAssistant) -> dict[str, str]:
+    """Return lower-case names and first names of the people and their entities."""
+    return _names_of(hass, "person")
+
+
 def _alternatives(names: dict[str, str]) -> str:
     """Return a regular expression group for names, longest first."""
     return "|".join(re.escape(name) for name in sorted(names, key=len, reverse=True))

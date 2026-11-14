@@ -1,3 +1,23 @@
+add_from_speech:
+  fields:
+    text:
+      required: true
+      example: "Morgen um zehn den Klempner anrufen, Anna kauft am Freitag Milch"
+      selector:
+        text:
+          multiline: true
+    category:
+      example: "Haushalt"
+      selector:
+        text:
+    device:
+      selector:
+        text:
+    language:
+      example: "de"
+      selector:
+        text:
+
 add_idea:
   fields:
     text:

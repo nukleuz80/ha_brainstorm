@@ -1,0 +1,60 @@
+<!doctype html>
+<!-- Browser test for free speech. Run: python3 -m http.server in the repo root,
+     open http://localhost:8000/tests/js/speech.html, it shows PASS or the failures. --><meta charset="utf-8"><body><pre id="out">running</pre>
+<script type="module">
+import { renderSpeech } from "../../custom_components/brainstorm/cards/brainstorm-i18n.js";
+const fails = [];
+const check = (name, got, want) => { if (JSON.stringify(got) !== JSON.stringify(want)) fails.push(`${name}: want ${JSON.stringify(want)}, got ${JSON.stringify(got)}`); };
+const tick = () => new Promise((resolve) => setTimeout(resolve, 20));
+const ws = [];
+const services = [];
+let answer = { ai: true, tasks: [
+  { text: "Klempner anrufen", due: "2026-11-16T10:00:00+01:00", assignee: "person.anna" },
+  { text: "Milch kaufen", due: null, assignee: null },
+  { text: "Keller aufräumen", due: null, assignee: null },
+] };
+const hass = {
+  states: { "person.anna": { entity_id: "person.anna", attributes: { friendly_name: "Anna" } }, "light.x": { entity_id: "light.x", attributes: {} } },
+  callWS: async (msg) => { ws.push(msg); return answer; },
+  callService: async (domain, service, data) => { services.push([domain, service, data]); },
+};
+const body = document.createElement("div");
+document.body.appendChild(body);
+let closed = 0;
+let created = 0;
+renderSpeech(body, { hass, category: "Haushalt", text: "vorher getippt", close: () => { closed += 1; }, created: () => { created += 1; }, language: "de" });
+check("prefilled", body.querySelector("#bsSpeechText").value, "vorher getippt");
+body.querySelector("#bsSpeechText").value = "Anna ruft Montag den Klempner an, Milch kaufen, Keller";
+body.querySelector("#bsSpeechSplit").click();
+await tick();
+check("asked", ws, [{ type: "brainstorm/split_speech", text: "Anna ruft Montag den Klempner an, Milch kaufen, Keller", language: "de" }]);
+const rows = [...body.querySelectorAll(".bs-speech-row")];
+check("rows", rows.length, 3);
+check("person picked", rows[0].querySelector(".bs-speech-person").value, "person.anna");
+check("only people", [...rows[0].querySelectorAll(".bs-speech-person option")].map((o) => o.value), ["", "person.anna"]);
+check("date", rows[0].querySelector(".bs-speech-date").value !== "", true);
+check("button", body.querySelector("#bsSpeechCreate").textContent.includes("3"), true);
+rows[2].querySelector(".bs-speech-on").checked = false;
+rows[2].querySelector(".bs-speech-on").dispatchEvent(new Event("change"));
+check("count", body.querySelector("#bsSpeechCreate").textContent.includes("2"), true);
+rows[1].querySelector(".bs-speech-task").value = "Hafermilch kaufen";
+rows[1].querySelector(".bs-speech-date").value = "2026-11-20";
+body.querySelector("#bsSpeechCreate").click();
+await tick();
+check("created", services.map((s) => [s[1], s[2].text, s[2].category, !!s[2].due, s[2].assignee || null]), [
+  ["add_idea", "Klempner anrufen", "Haushalt", true, "person.anna"],
+  ["add_idea", "Hafermilch kaufen", "Haushalt", true, null],
+]);
+check("morning without time", new Date(services[1][2].due).getHours(), 9);
+check("done", [created, closed], [1, 1]);
+
+// Nothing found leads back to the text with a hint
+answer = { ai: false, tasks: [] };
+renderSpeech(body, { hass, close: () => {} });
+body.querySelector("#bsSpeechText").value = "äh";
+body.querySelector("#bsSpeechSplit").click();
+await tick();
+check("back to text", body.querySelector("#bsSpeechText").value, "äh");
+check("hint", body.querySelector(".dialog-error").style.display, "flex");
+document.getElementById("out").textContent = fails.length ? "FAIL\n" + fails.join("\n") : "PASS";
+</script>

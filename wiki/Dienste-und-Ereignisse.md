@@ -7,6 +7,7 @@ Alle Parameter stehen [weiter unten](#brainstormadd_idea) und unter [**Entwickle
 | Dienst | Kurzbeispiel |
 |---|---|
 | `brainstorm.add_idea` | `text: "Filter tauschen"`, `category: Smarthome`, `priority: high`, `due: "2026-12-01 18:00"` |
+| `brainstorm.add_from_speech` | `text: "Morgen um zehn den Klempner anrufen, Anna kauft am Freitag Milch"` legt pro Aufgabe eine Notiz an |
 | `brainstorm.update_idea` | `id: …`, `status: completed`, `in_progress: true`, `markers: [question, money]`, `progress: 50`, `links: [{to: …, label: braucht, blocks: true}]`, `frame: Phase 1` oder `callout: Farbe offen` |
 | `brainstorm.delete_idea` | `id: …` |
 | `brainstorm.delete_done` | erledigte löschen, optional nur ältere (`older_than_days`) |
@@ -57,6 +58,19 @@ Fügt blitzschnell eine neue Brainstorm-Idee hinzu. Erkennt automatisch Kategori
 | `assignee` | Nein | Wer erinnert werden soll. |
 | `zone` | Nein | Erinnert beim Betreten dieser Zone. |
 | `language` | Nein | Sprache des Textes (z.B. "de" oder "en"). Ohne Angabe gilt die Sprache von Home Assistant. |
+
+## `brainstorm.add_from_speech`
+
+▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.add_from_speech)
+
+Zerlegt frei gesprochenen Text in einzelne Notizen mit Termin und Person (v1.12.4), mit der KI-Aufgaben-Entität unter *Konfigurieren ➔ KI*, falls gewählt, sonst Satz für Satz. Gibt `ai` (ob die KI zerlegt hat) und die angelegten `ideas` zurück.
+
+| Feld | Pflicht | Bedeutung |
+| :--- | :--- | :--- |
+| `text` | Ja | Was gesagt wurde, bis 4000 Zeichen. |
+| `category` | Nein | Kategorie der neuen Notizen. Leer wird sie je Notiz erkannt. |
+| `device` | Nein | Der Echo oder das Gerät, von dem der Text kommt. |
+| `language` | Nein | Sprache des Textes, z. B. `de` oder `en`. |
 
 ## `brainstorm.update_idea`
 

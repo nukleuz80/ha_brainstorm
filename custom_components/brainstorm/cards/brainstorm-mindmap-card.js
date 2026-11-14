@@ -1,8 +1,8 @@
-import { LEVEL_CSS, SOCIAL_CSS, commentBadge, renderComments, renderTrash, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.12.3";
+import { LEVEL_CSS, SOCIAL_CSS, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.12.4";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.12.3 - Gewohnheiten
+ * Version: 1.12.4 - Frei reden
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -3958,6 +3958,7 @@ class BrainstormMindmapCard extends HTMLElement {
           <button class="control-btn" id="arrangeBtn" data-lvl="normal" title="${t("Neu ordnen: von Hand verschobene Notizen wieder automatisch platzieren")}">🪄</button>
           <button class="control-btn" id="undoBtn" title="${t("Rückgängig (Strg+Z)")}" disabled>↶</button>
           <button class="control-btn" id="trashBtn" data-lvl="normal" title="${t("Papierkorb: gelöschte Notizen zurückholen")}">🗑️</button>
+          <button class="control-btn" id="speechBtn" title="${t("Frei reden: mehrere Aufgaben auf einmal sagen oder tippen, die KI zerlegt sie")}">🗣️</button>
         </div>
 
         <!-- Bottom Left, above the add button: overview of the whole map -->
@@ -4296,6 +4297,13 @@ class BrainstormMindmapCard extends HTMLElement {
     if (arrangeBtn) arrangeBtn.addEventListener("click", () => this._arrangeAgain());
     const undoBtn = this.shadowRoot.getElementById("undoBtn");
     if (undoBtn) undoBtn.addEventListener("click", () => this._undo());
+    const speechBtn = this.shadowRoot.getElementById("speechBtn");
+    if (speechBtn) {
+      speechBtn.addEventListener("click", () => {
+        const category = this._selectedCategory && this._selectedCategory !== "all" ? this._selectedCategory : null;
+        this._openDialog(t("🗣️ Frei reden"), (body) => renderSpeech(body, { hass: this._hass, category, close: () => this._closeDialog() }));
+      });
+    }
     const trashBtn = this.shadowRoot.getElementById("trashBtn");
     if (trashBtn) {
       trashBtn.addEventListener("click", () =>
@@ -11196,7 +11204,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.12.3 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.12.4 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

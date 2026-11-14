@@ -888,6 +888,28 @@
     }
   },
   "services": {
+    "add_from_speech": {
+      "name": "Add notes from free speech",
+      "description": "Splits freely spoken text into single notes with due date and person, with the AI task entity if one is set up, otherwise sentence by sentence. Returns the created notes.",
+      "fields": {
+        "text": {
+          "name": "Text",
+          "description": "What was said, for example from a voice note."
+        },
+        "category": {
+          "name": "Category",
+          "description": "Category of the new notes; empty detects it."
+        },
+        "device": {
+          "name": "Device",
+          "description": "Echo or device the text came from."
+        },
+        "language": {
+          "name": "Language",
+          "description": "Language of the text, for example de or en."
+        }
+      }
+    },
     "add_idea": {
       "name": "Add idea",
       "description": "Adds a new idea and detects the category in the text, such as `Garten: Blumen pflanzen` or `#smarthome`.",

@@ -975,6 +975,19 @@ MESSAGES: dict[str, str] = {
         "Category: {category}\n"
         "Existing subtasks: {existing}"
     ),
+    "speech_tasks_prompt": (
+        "Split this freely spoken text into single tasks for a to-do list. Answer "
+        "only with one line per task in the format Task | Due | Person, without "
+        "numbers and without an introduction. The task is a brief English to-do "
+        "item without the date and without the person. The due date is "
+        "YYYY-MM-DD or YYYY-MM-DD HH:MM, otherwise a -. Work out words such as "
+        "tomorrow or Friday from today. The person is the name of someone from "
+        "the list who should take the task, otherwise a -. Do not make up tasks, "
+        "dates or names.\n"
+        "Today: {today}\n"
+        "People: {people}\n"
+        "Text: {text}"
+    ),
     "branch_summary_prompt": (
         "Summarize this branch of a mind map in two to four short English "
         "sentences: what it is about, what is done (✓) and what is still open. "

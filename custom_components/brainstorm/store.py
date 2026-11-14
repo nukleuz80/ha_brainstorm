@@ -170,16 +170,19 @@ from .ai import (
     MAX_BRANCH_LINES,
     MAX_LOOSE_IDEAS,
     MAX_PARENT_CANDIDATES,
+    SPEECH_INPUT_MAX_LENGTH,
+    AIUnavailableError,
     async_generate_text,
     async_request_text_with_retry,
     clean_summary,
     parse_clusters,
     parse_map_outline,
+    parse_speech_tasks,
     parse_parent_suggestions,
     parse_subtask_suggestions,
 )
 from .languages import CATEGORY_KEYS, get_pack
-from .languages.common import CATEGORY_PROJECTS, LanguagePack
+from .languages.common import CATEGORY_PROJECTS, SPEECH_SPLIT, LanguagePack
 
 if TYPE_CHECKING:
     from .alexa_skill import AlexaSkill
@@ -967,6 +970,83 @@ class BrainstormStore:
             answer, [idea.get(ATTR_TEXT) or "", *children]
         )
         return suggestions or None
+
+    async def async_split_speech(
+        self, text: str, language: str | None = None
+    ) -> dict[str, Any]:
+        """Split freely spoken text into tasks with a due date and a person.
+
+        Nothing is stored. With an AI task entity the AI splits the text; without
+        one, or when it does not answer, sentences are split and read like a
+        spoken reminder. Returns the tasks and whether the AI did it.
+        """
+        # Imported here, the reminders import this module
+        from .reminders import build_reminder_request, person_names
+
+        text = " ".join((text or "").split())[:SPEECH_INPUT_MAX_LENGTH].strip()
+        if not text:
+            return {"tasks": [], "ai": False}
+        now = dt_util.now()
+        people = person_names(self.hass)
+        entity = self.options.get(CONF_AI_ENTITY)
+        if entity:
+            pack = self._pack(language)
+            names = sorted(
+                {
+                    str(state.attributes.get("friendly_name") or state.name)
+                    for state in self.hass.states.async_all("person")
+                }
+            )
+            instructions = pack.msg(
+                "speech_tasks_prompt",
+                today=f"{now:%Y-%m-%d %H:%M} ({now:%A})",
+                people=", ".join(names) if names else "–",
+                text=text,
+            )
+            try:
+                answer = await async_request_text_with_retry(
+                    self.hass, entity, instructions
+                )
+            except AIUnavailableError:
+                answer = None
+            tasks = []
+            for task in parse_speech_tasks(answer):
+                due: datetime | None = None
+                if task["due"]:
+                    with contextlib.suppress(ValueError):
+                        due = datetime.fromisoformat(task["due"])
+                        # A day without a time means the morning, as spoken
+                        if len(task["due"]) == 10:
+                            due = due.replace(hour=9)
+                        due = due.replace(tzinfo=now.tzinfo)
+                person = (task["person"] or "").lower()
+                tasks.append(
+                    {
+                        ATTR_TEXT: task["text"],
+                        ATTR_DUE: due.isoformat() if due else None,
+                        ATTR_ASSIGNEE: people.get(person)
+                        or people.get(person.split(" ")[0] if person else ""),
+                    }
+                )
+            if tasks:
+                return {"tasks": tasks, "ai": True}
+        tasks = []
+        for sentence in SPEECH_SPLIT.split(text):
+            sentence = sentence.strip(" ,")
+            if len(sentence) < 3:
+                continue
+            request = build_reminder_request(
+                self.hass, self.options, sentence, now, language
+            )
+            item = (request.text or sentence).strip(" ,")
+            tasks.append(
+                {
+                    ATTR_TEXT: item[:200],
+                    ATTR_DUE: request.due.isoformat() if request.due else None,
+                    ATTR_ASSIGNEE: request.assignee,
+                }
+            )
+        return {"tasks": tasks[:15], "ai": False}
 
     async def async_summarize_branch(
         self, idea: dict[str, Any], user_id: str | None, language: str | None = None

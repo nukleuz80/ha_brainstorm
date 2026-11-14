@@ -110,6 +110,47 @@ def parse_subtask_suggestions(text: str | None, known: list[str]) -> list[str]:
     return suggestions
 
 
+# Free speech split into tasks: how much goes in and how many come back
+SPEECH_INPUT_MAX_LENGTH = 4000
+MAX_SPEECH_TASKS = 15
+_DUE_VALUE = re.compile(r"(\d{4}-\d{2}-\d{2})(?:[ T]+(\d{1,2}):(\d{2}))?")
+
+
+def parse_speech_tasks(text: str | None) -> list[dict[str, str | None]]:
+    """Read lines such as 'Call the plumber | 2026-11-16 10:00 | Anna'.
+
+    Returns the task, the due date as 'YYYY-MM-DD' or 'YYYY-MM-DD HH:MM' and the
+    spoken name of the person, each None when missing. Repeats are left out.
+    """
+    if not text:
+        return []
+    tasks: list[dict[str, str | None]] = []
+    seen: set[str] = set()
+    for line in text.splitlines():
+        if _FENCE.match(line):
+            continue
+        parts = [part.strip() for part in line.split("|")]
+        item = _LIST_MARK.sub("", parts[0]).strip().strip("*_\"'„“”` ").strip()
+        if not item or item.endswith(":") or item.casefold() in {"task", "aufgabe"}:
+            continue
+        item = item[:MAX_SUBTASK_LENGTH].strip()
+        if item.casefold() in seen:
+            continue
+        due: str | None = None
+        if len(parts) > 1 and (match := _DUE_VALUE.search(parts[1])):
+            due = match.group(1)
+            if match.group(2):
+                due += f" {int(match.group(2)):02d}:{match.group(3)}"
+        person = parts[2].strip("*_\"'„“”`@ ") if len(parts) > 2 else ""
+        seen.add(item.casefold())
+        if person in {"", "-", "–"}:
+            person = None
+        tasks.append({"text": item, "due": due, "person": person})
+        if len(tasks) >= MAX_SPEECH_TASKS:
+            break
+    return tasks
+
+
 # A mind map from a topic or a text: how much goes in and comes back
 MAP_INPUT_MAX_LENGTH = 6000
 MAP_MAX_NODES = 40
