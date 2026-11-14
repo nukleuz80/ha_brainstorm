@@ -40,6 +40,9 @@ from .const import (
     DRAW_KINDS,
     DRAW_MAX_POINTS,
     DRAW_MAX_STROKES,
+    MAP_TAB_LAYOUTS,
+    MAP_TAB_NAME_MAX,
+    MAP_TABS_MAX,
     PIN_COLORS,
     ATTR_SHARES,
     ACCESS_OWNER,
@@ -363,6 +366,9 @@ class BrainstormStore:
         self._round_timers: dict[str, Callable[[], None]] = {}
         self._drawings: dict[str, list[dict[str, Any]]] = {}
         self._drawing_revs: dict[str, int] = {}
+        # Saved map views; owner None means the whole household sees the tab
+        self._map_tabs: list[dict[str, Any]] = []
+        self._map_tabs_rev = 0
         self.integration_version: str | None = None
         self.alexa_skill: AlexaSkill | None = None
         self.reminders: ReminderManager | None = None
@@ -534,6 +540,7 @@ class BrainstormStore:
             "voice_mode": self.voice_mode,
             "ai_subtasks": self.ai_subtasks_available,
             "ui_level": self.ui_level,
+            "map_tabs_rev": self._map_tabs_rev,
         }
 
     def get_overview_attributes(self, user_id: str | None = None) -> dict[str, Any]:
@@ -677,6 +684,7 @@ class BrainstormStore:
             "voice_mode": self.voice_mode,
             "ai_subtasks": self.ai_subtasks_available,
             "ui_level": self.ui_level,
+            "map_tabs_rev": self._map_tabs_rev,
             "category_counts": counts_by_cat,
             "priority_counts": counts_by_prio,
             "latest_idea": summary(active_ideas[0]) if active_ideas else None,
@@ -805,6 +813,11 @@ class BrainstormStore:
             self._voting = data.get("voting", {})
             self._rounds = data.get("rounds", {})
             self._drawings = data.get("drawings", {})
+            self._map_tabs = [
+                tab
+                for tab in (_clean_map_tab(raw) for raw in data.get("map_tabs") or [])
+                if tab is not None
+            ]
             self._deleted = {
                 entry["idea"][ATTR_ID]: entry
                 for entry in data.get("trash", [])
@@ -832,6 +845,7 @@ class BrainstormStore:
             "voting": self._voting,
             "rounds": self._rounds,
             "drawings": self._drawings,
+            "map_tabs": self._map_tabs,
             "ideas": list(self._ideas.values()),
             "trash": list(self._deleted.values()),
         }
@@ -3242,6 +3256,83 @@ class BrainstormStore:
             or self.can_edit(deleted["idea"], user_id)
         )
 
+    # Map tabs
+
+    def map_tabs(self, user_id: str | None = None) -> list[dict[str, Any]]:
+        """Return the tabs a user sees, shared ones and their own."""
+        return [
+            {**tab, "private": tab["owner"] is not None}
+            for tab in self._map_tabs
+            if tab["owner"] is None or tab["owner"] == user_id
+        ]
+
+    def _visible_tab(self, tab_id: str, user_id: str | None) -> dict[str, Any] | None:
+        return next(
+            (
+                tab
+                for tab in self._map_tabs
+                if tab["id"] == tab_id and tab["owner"] in (None, user_id)
+            ),
+            None,
+        )
+
+    async def async_save_map_tab(
+        self, data: dict[str, Any], user_id: str | None = None
+    ) -> dict[str, Any]:
+        """Create a tab, or change one the user sees."""
+        current = self._visible_tab(data["id"], user_id) if data.get("id") else None
+        if current is None and len(self._map_tabs) >= MAP_TABS_MAX:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="map_tabs_full",
+                translation_placeholders={"max": str(MAP_TABS_MAX)},
+            )
+        merged = {**(current or {}), **data}
+        merged["id"] = current["id"] if current else uuid.uuid4().hex[:8]
+        if "private" in data:
+            merged["owner"] = user_id if data["private"] and user_id else None
+        elif current is None:
+            merged["owner"] = None
+        tab = _clean_map_tab(merged)
+        if tab is None:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="map_tab_invalid"
+            )
+        if current is None:
+            self._map_tabs.append(tab)
+        else:
+            self._map_tabs[self._map_tabs.index(current)] = tab
+        await self._async_map_tabs_changed()
+        return {**tab, "private": tab["owner"] is not None}
+
+    async def async_delete_map_tab(self, tab_id: str, user_id: str | None = None) -> bool:
+        """Remove a tab the user sees."""
+        tab = self._visible_tab(tab_id, user_id)
+        if tab is None:
+            return False
+        self._map_tabs.remove(tab)
+        await self._async_map_tabs_changed()
+        return True
+
+    async def async_order_map_tabs(
+        self, tab_ids: list[str], user_id: str | None = None
+    ) -> None:
+        """Put the tabs a user sees in a new order, hidden ones keep their place."""
+        visible = [t for t in self._map_tabs if t["owner"] in (None, user_id)]
+        rank = {tab_id: index for index, tab_id in enumerate(tab_ids)}
+        ordered = iter(
+            sorted(visible, key=lambda t: rank.get(t["id"], len(rank) + visible.index(t)))
+        )
+        self._map_tabs = [
+            next(ordered) if t["owner"] in (None, user_id) else t for t in self._map_tabs
+        ]
+        await self._async_map_tabs_changed()
+
+    async def _async_map_tabs_changed(self) -> None:
+        self._map_tabs_rev += 1
+        await self.async_save()
+        self._notify_listeners()
+
     def trash_items(self, user_id: str | None = None) -> list[dict[str, Any]]:
         """Return the deleted ideas this user may bring back, newest first."""
         items = [
@@ -3361,6 +3452,11 @@ class BrainstormStore:
         self._category_icons.pop(clean_name, None)
         self._category_colors.pop(clean_name, None)
         self._drawings.pop(clean_name, None)
+        # Tabs follow their notes to the Inbox
+        for tab in self._map_tabs:
+            if tab["category"] == clean_name:
+                tab["category"] = "Inbox"
+                self._map_tabs_rev += 1
         # Move remaining ideas to Inbox
         for idea in self._ideas.values():
             if idea.get(ATTR_CATEGORY) == clean_name:
@@ -3992,6 +4088,62 @@ def _clean_points(value: Any) -> list[list[float]] | None:
         points.append([round(float(point[0]), 1), round(float(point[1]), 1)])
     return points
 
+
+
+def _clean_map_tab(raw: Any) -> dict[str, Any] | None:
+    """Return a stored map tab in a known shape, or None when it is unusable."""
+    if not isinstance(raw, dict):
+        return None
+    tab_id = str(raw.get("id") or "").strip()[:16]
+    name = " ".join(str(raw.get("name") or "").split())[:MAP_TAB_NAME_MAX]
+    category = str(raw.get("category") or "").strip()[:100]
+    if not tab_id or not name or not category:
+        return None
+    owner = raw.get("owner")
+    focus = raw.get("focus")
+    layout = raw.get("layout")
+    raw_filter = raw.get("filter") if isinstance(raw.get("filter"), dict) else {}
+
+    def _texts(value: Any) -> list[str]:
+        if not isinstance(value, list):
+            return []
+        return [str(item)[:60] for item in value if isinstance(item, (str, int))][:20]
+
+    tab_filter = {
+        "query": str(raw_filter.get("query") or "")[:100],
+        "prios": _texts(raw_filter.get("prios")),
+        "tags": _texts(raw_filter.get("tags")),
+        "markers": _texts(raw_filter.get("markers")),
+        **{
+            flag: bool(raw_filter.get(flag))
+            for flag in ("overdue", "soon", "working", "myDay")
+        },
+    }
+    view = raw.get("view") if isinstance(raw.get("view"), dict) else None
+    clean_view = None
+    if view is not None:
+        try:
+            clean_view = {
+                "x": round(float(view.get("x", 0)), 1),
+                "y": round(float(view.get("y", 0)), 1),
+                "scale": min(4.0, max(0.1, round(float(view.get("scale", 1)), 3))),
+            }
+        except (TypeError, ValueError):
+            clean_view = None
+        if clean_view and not all(math.isfinite(v) for v in clean_view.values()):
+            clean_view = None
+    return {
+        "id": tab_id,
+        "name": name,
+        "icon": str(raw.get("icon") or "")[:8],
+        "category": category,
+        "focus": str(focus)[:16] if focus else None,
+        "branch": bool(raw.get("branch")) and bool(focus),
+        "layout": layout if layout in MAP_TAB_LAYOUTS else None,
+        "filter": tab_filter,
+        "view": clean_view,
+        "owner": str(owner) if owner else None,
+    }
 
 def _clean_stroke(value: Any) -> dict[str, Any] | None:
     """Return an imported stroke with known kind, colour and width only."""

@@ -1,0 +1,42 @@
+<!doctype html>
+<!-- Browser test for map tabs. Run: python3 -m http.server in the repo root,
+     open http://localhost:8000/tests/js/map_tabs.html, it shows PASS or the failures. --><meta charset="utf-8"><body><pre id="out">running</pre>
+<script type="module">
+import { activeMapTab, branchTabs, mapTabBar, filterToRule, ruleFilter, emptyFilter } from "../../custom_components/brainstorm/cards/brainstorm-i18n.js";
+const fails = [];
+const check = (name, got, want) => { if (JSON.stringify(got) !== JSON.stringify(want)) fails.push(`${name}: want ${JSON.stringify(want)}, got ${JSON.stringify(got)}`); };
+const tabs = [
+  { id: "a", name: "Garten <alle>", icon: "🌱", category: "Garten", focus: null, branch: false, private: false },
+  { id: "b", name: "Beete", icon: "", category: "Garten", focus: "n1", branch: true, private: true },
+  { id: "c", name: "Doppelt", icon: "", category: "Garten", focus: "n1", branch: true, private: false },
+];
+check("no tabs, no bar", mapTabBar([], null), "");
+const bar = document.createElement("div");
+bar.innerHTML = mapTabBar(tabs, tabs[1]);
+check("main + tabs + add", bar.querySelectorAll(".map-tab").length, 5);
+check("active", bar.querySelector(".map-tab.active").dataset.tab, "b");
+check("main not active", bar.querySelector(".map-tab-main").classList.contains("active"), false);
+check("escaped", bar.querySelector('[data-tab="a"] .map-tab-name').textContent, "Garten <alle>");
+check("lock only private", bar.querySelectorAll(".map-tab-lock").length, 1);
+check("branch icon", bar.querySelector('[data-tab="b"] .map-tab-icon').textContent, "↗");
+bar.innerHTML = mapTabBar(tabs, null);
+check("main active", bar.querySelector(".map-tab.active").dataset.tab, "");
+
+check("active matches", activeMapTab(tabs, "a", "Garten", null), tabs[0]);
+check("other list", activeMapTab(tabs, "a", "Keller", null), null);
+check("other focus", activeMapTab(tabs, "b", "Garten", "n2"), null);
+check("unknown", activeMapTab(tabs, "x", "Garten", null), null);
+
+const byBranch = branchTabs(tabs);
+check("first tab wins", byBranch.get("n1").id, "b");
+check("only branches", byBranch.size, 1);
+
+const filter = emptyFilter();
+filter.query = "Beet";
+filter.tags.add("#bio");
+filter.overdue = true;
+const back = ruleFilter({ when: filterToRule(filter) });
+check("filter round trip", [back.query, [...back.tags], back.overdue], ["Beet", ["#bio"], true]);
+
+document.getElementById("out").textContent = fails.length ? `FAIL\n${fails.join("\n")}` : "PASS";
+</script>

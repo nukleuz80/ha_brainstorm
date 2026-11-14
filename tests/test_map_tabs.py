@@ -1,0 +1,174 @@
+"""Tests for the saved map views shown as tabs above the mind map."""
+
+from __future__ import annotations
+
+from typing import Any
+
+import pytest
+
+from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ServiceValidationError
+from pytest_homeassistant_custom_component.typing import WebSocketGenerator
+
+from custom_components.brainstorm.const import MAP_TABS_MAX
+from custom_components.brainstorm.store import BrainstormStore, _clean_map_tab
+
+from .conftest import SetupEntry
+
+
+async def _setup(setup_entry: SetupEntry, **stored: Any) -> BrainstormStore:
+    entry = await setup_entry(
+        stored={"ideas": [], "categories": ["Inbox", "Garten", "Keller"], **stored}
+    )
+    return entry.runtime_data
+
+
+async def test_tabs_survive_a_restart(
+    hass: HomeAssistant, setup_entry: SetupEntry, hass_storage: dict[str, Any]
+) -> None:
+    """Test that a saved view is stored with its filter, layout and viewport."""
+    store = await _setup(setup_entry)
+    rev = store.get_public_attributes()["map_tabs_rev"]
+    tab = await store.async_save_map_tab(
+        {
+            "name": "  Beete   vorne ",
+            "icon": "🌱",
+            "category": "Garten",
+            "layout": "tree",
+            "filter": {"query": "Beet", "prios": ["high"], "overdue": True},
+            "view": {"x": 12.345, "y": -3, "scale": 9},
+        },
+        "anna",
+    )
+    assert tab["name"] == "Beete vorne"
+    assert tab["private"] is False
+    assert tab["view"] == {"x": 12.3, "y": -3.0, "scale": 4.0}
+    assert tab["filter"]["prios"] == ["high"] and tab["filter"]["soon"] is False
+    assert store.get_public_attributes()["map_tabs_rev"] == rev + 1
+
+    saved = next(v for k, v in hass_storage.items() if "brainstorm" in k)["data"]
+    assert saved["map_tabs"][0]["id"] == tab["id"]
+
+    other = BrainstormStore(hass, {})
+    other._store = store._store
+    await other.async_load()
+    assert [t["name"] for t in other.map_tabs("bert")] == ["Beete vorne"]
+
+
+async def test_private_tabs_and_order(setup_entry: SetupEntry) -> None:
+    """Test that a tab only for me stays hidden and others keep their place."""
+    store = await _setup(setup_entry)
+    shared = await store.async_save_map_tab({"name": "Alle", "category": "all"}, "anna")
+    mine = await store.async_save_map_tab(
+        {"name": "Meins", "category": "Keller", "private": True}, "anna"
+    )
+    berts = await store.async_save_map_tab(
+        {"name": "Bert", "category": "Garten", "private": True}, "bert"
+    )
+    assert [t["id"] for t in store.map_tabs("anna")] == [shared["id"], mine["id"]]
+    assert [t["id"] for t in store.map_tabs("bert")] == [shared["id"], berts["id"]]
+
+    # Someone else may neither change nor delete a private tab
+    assert not await store.async_delete_map_tab(mine["id"], "bert")
+    with pytest.raises(ServiceValidationError):  # becomes a new tab without a list
+        await store.async_save_map_tab({"id": mine["id"], "name": "Fremd"}, "bert")
+    assert store.map_tabs("anna")[1]["name"] == "Meins"
+
+    await store.async_order_map_tabs([mine["id"], shared["id"]], "anna")
+    assert [t["id"] for t in store.map_tabs("anna")] == [mine["id"], shared["id"]]
+    assert [t["id"] for t in store.map_tabs("bert")] == [shared["id"], berts["id"]]
+
+    # Sharing a private tab makes it visible for everyone
+    await store.async_save_map_tab({"id": mine["id"], "private": False}, "anna")
+    assert mine["id"] in [t["id"] for t in store.map_tabs("bert")]
+
+
+async def test_removed_list_moves_tabs_to_inbox(setup_entry: SetupEntry) -> None:
+    """Test that a tab of a deleted list follows its notes to the Inbox."""
+    store = await _setup(setup_entry)
+    tab = await store.async_save_map_tab({"name": "Keller", "category": "Keller"})
+    assert await store.async_remove_category("Keller")
+    assert store.map_tabs()[0]["category"] == "Inbox"
+    assert store.map_tabs()[0]["id"] == tab["id"]
+
+
+async def test_limit_and_invalid(setup_entry: SetupEntry) -> None:
+    """Test the tab limit and a tab without a name."""
+    store = await _setup(setup_entry)
+    with pytest.raises(ServiceValidationError):
+        await store.async_save_map_tab({"name": " ", "category": "Garten"})
+    store._map_tabs = [
+        {"id": f"t{i}", "name": "x", "category": "Garten", "owner": None}
+        for i in range(MAP_TABS_MAX)
+    ]
+    with pytest.raises(ServiceValidationError):
+        await store.async_save_map_tab({"name": "Zu viel", "category": "Garten"})
+
+
+def test_clean_map_tab() -> None:
+    """Test that broken stored tabs are dropped or repaired."""
+    assert _clean_map_tab("x") is None
+    assert _clean_map_tab({"id": "a", "name": "A"}) is None
+    tab = _clean_map_tab(
+        {
+            "id": "a",
+            "name": "A",
+            "category": "Garten",
+            "layout": "spiral",
+            "branch": True,
+            "view": {"x": "nan", "y": 0, "scale": 1},
+            "filter": {"tags": ["#x", {"bad": 1}]},
+        }
+    )
+    assert tab["layout"] is None
+    assert tab["branch"] is False  # a branch tab needs a branch
+    assert tab["view"] is None
+    assert tab["filter"]["tags"] == ["#x"]
+
+
+async def test_websocket_commands(
+    hass: HomeAssistant, setup_entry: SetupEntry, hass_ws_client: WebSocketGenerator
+) -> None:
+    """Test the commands the mind map card uses."""
+    store = await _setup(setup_entry)
+    idea = await store.async_add_idea("Beete", category="Garten")
+    client = await hass_ws_client(hass)
+
+    await client.send_json_auto_id(
+        {
+            "type": "brainstorm/map_tabs/save",
+            "name": "Beete",
+            "category": "Garten",
+            "focus": idea["id"],
+            "branch": True,
+            "private": True,
+        }
+    )
+    tab = (await client.receive_json())["result"]["tab"]
+    assert tab["branch"] is True and tab["private"] is True
+
+    await client.send_json_auto_id(
+        {"type": "brainstorm/map_tabs/save", "tab_id": tab["id"], "name": "Gemüse"}
+    )
+    assert (await client.receive_json())["result"]["tab"]["name"] == "Gemüse"
+
+    second = await store.async_save_map_tab({"name": "Alle", "category": "all"})
+    await client.send_json_auto_id(
+        {"type": "brainstorm/map_tabs/order", "ids": [second["id"], tab["id"]]}
+    )
+    ordered = (await client.receive_json())["result"]["tabs"]
+    assert [t["id"] for t in ordered] == [second["id"], tab["id"]]
+
+    await client.send_json_auto_id({"type": "brainstorm/map_tabs/delete", "tab_id": tab["id"]})
+    assert (await client.receive_json())["success"]
+    await client.send_json_auto_id({"type": "brainstorm/map_tabs/delete", "tab_id": tab["id"]})
+    assert not (await client.receive_json())["success"]
+
+    await client.send_json_auto_id({"type": "brainstorm/map_tabs"})
+    assert [t["name"] for t in (await client.receive_json())["result"]["tabs"]] == ["Alle"]
+
+    await client.send_json_auto_id(
+        {"type": "brainstorm/map_tabs/save", "name": " ", "category": "Garten"}
+    )
+    reply = await client.receive_json()
+    assert not reply["success"]

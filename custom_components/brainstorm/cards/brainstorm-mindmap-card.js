@@ -1,8 +1,8 @@
-import { LEVEL_CSS, SOCIAL_CSS, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.12.4";
+import { LEVEL_CSS, SOCIAL_CSS, MAP_TAB_CSS, activeMapTab, branchTabs, mapTabBar, ruleFilter, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.13.0";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.12.4 - Frei reden
+ * Version: 1.13.0 - Map-Tabs
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -100,6 +100,7 @@ const BRAINSTORM_MINDMAP_DEFAULTS = {
   show_add_btn: true,
   show_export_btn: true,
   show_filter: true,
+  show_tabs: true,
   show_images: true,
   show_minimap: true,
   hide_empty_categories: true,
@@ -340,6 +341,12 @@ class BrainstormMindmapCard extends HTMLElement {
     this._undoStack = [];
     // Search and filter: hits stay bright, the rest of the map fades
     this._filter = emptyFilter();
+    // Saved views above the map, shared ones and the user's own
+    this._mapTabs = [];
+    this._mapTabsRev = null;
+    this._activeTabId = null;
+    this._tabReturn = null;
+    this._tabBarKey = "";
     this._filterOpen = false;
     this._filterHits = null; // Set of ids while a filter is on
     this._filterContext = new Set(); // parents of hits, half faded
@@ -986,6 +993,7 @@ class BrainstormMindmapCard extends HTMLElement {
       <style>
         ${LEVEL_CSS}
         ${SOCIAL_CSS}
+        ${MAP_TAB_CSS}
         * {
           box-sizing: border-box;
           user-select: none;
@@ -2097,6 +2105,26 @@ class BrainstormMindmapCard extends HTMLElement {
           box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
         }
         .branch-toggle:hover {
+          filter: brightness(1.1);
+        }
+        .tab-link {
+          position: absolute;
+          top: -14px;
+          right: -12px;
+          min-height: 28px;
+          padding: 0 10px;
+          border-radius: 14px;
+          border: 2px solid var(--ha-card-background, var(--card-background-color, #ffffff));
+          background: var(--primary-color, #03a9f4);
+          color: var(--text-primary-color, #ffffff);
+          font: inherit;
+          font-size: 0.75rem;
+          font-weight: 700;
+          white-space: nowrap;
+          cursor: pointer;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+        .tab-link:hover {
           filter: brightness(1.1);
         }
         .note-cloud:hover {
@@ -3866,6 +3894,9 @@ class BrainstormMindmapCard extends HTMLElement {
           </div>
         </div>
 
+        <!-- Saved views as tabs -->
+        <nav class="map-tabs" id="mapTabs" role="tablist" aria-label="${t("Map-Tabs")}"></nav>
+
         <!-- Search and filter -->
         <div class="filter-bar" id="filterBar" role="search">
           <label class="filter-search">
@@ -4853,9 +4884,14 @@ class BrainstormMindmapCard extends HTMLElement {
         </div>
         <div class="dialog-hint">${t("In Kanban, Zeitleiste und Matrix ändert das Ziehen in eine andere Spalte Status, Fälligkeit oder Priorität.")}</div>
         <div class="dialog-hint">${t("Auf der Pinnwand bleibt jeder Zettel, wo du ihn hinziehst. Die Farbe wählst du unter ⋯, Gruppen bekommen einen Rahmen.")}</div>
-        <div class="dialog-footer" data-lvl="pro">
-          <button class="dialog-btn dialog-btn-primary" id="presentStart">▶ ${t("Präsentieren (P)")}</button>
+        <div class="dialog-footer">
+          <button class="dialog-btn dialog-btn-cancel" id="tabSave" data-lvl="normal">📑 ${t("Ansicht als Tab speichern")}</button>
+          <button class="dialog-btn dialog-btn-primary" id="presentStart" data-lvl="pro">▶ ${t("Präsentieren (P)")}</button>
         </div>`;
+      body.querySelector("#tabSave").addEventListener("click", () => {
+        this._closeDialog();
+        this._showTabDialog(null);
+      });
       body.querySelector("#presentStart").addEventListener("click", () => {
         this._closeDialog();
         this._startPresentation();
@@ -4949,6 +4985,293 @@ class BrainstormMindmapCard extends HTMLElement {
     this._centerLayout(true);
     this._updateContent();
     this._focusMap();
+  }
+
+  // Map tabs: saved views of a list, a branch, a filter and a layout
+
+  _syncMapTabs(attributes) {
+    const rev = attributes.map_tabs_rev;
+    if (rev !== undefined && rev !== this._mapTabsRev && this._hass && !this._mapTabsLoading) {
+      this._mapTabsRev = rev;
+      this._loadMapTabs();
+    }
+    this._renderMapTabs();
+  }
+
+  async _loadMapTabs() {
+    this._mapTabsLoading = true;
+    try {
+      const result = await this._hass.callWS({ type: "brainstorm/map_tabs" });
+      const before = JSON.stringify(this._mapTabs.map((tab) => [tab.id, tab.focus, tab.branch]));
+      this._mapTabs = Array.isArray(result && result.tabs) ? result.tabs : [];
+      this._renderMapTabs();
+      // A branch tab added or removed elsewhere changes what the map shows
+      if (before !== JSON.stringify(this._mapTabs.map((tab) => [tab.id, tab.focus, tab.branch]))) {
+        this._lastDataSignature = "";
+        this._lastLayoutKey = "";
+        this._updateContent();
+      }
+    } catch (err) {
+      // An older Brainstorm without tabs simply shows none
+      this._mapTabs = [];
+    } finally {
+      this._mapTabsLoading = false;
+    }
+  }
+
+  _activeTab() {
+    return activeMapTab(this._mapTabs, this._activeTabId, this._selectedCategory, this._focusId);
+  }
+
+  _renderMapTabs() {
+    const bar = this.shadowRoot && this.shadowRoot.getElementById("mapTabs");
+    if (!bar) return;
+    const show = this._config.show_tabs !== false;
+    const active = this._activeTab();
+    const key = show ? JSON.stringify([this._mapTabs, active && active.id]) : "";
+    if (key === this._tabBarKey) return;
+    this._tabBarKey = key;
+    bar.innerHTML = show ? mapTabBar(this._mapTabs, active) : "";
+    bar.querySelectorAll(".map-tab[data-tab]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-tab");
+        const tab = this._mapTabs.find((item) => item.id === id) || null;
+        // Tapping the open tab again edits it, so touch screens need no long press
+        if (tab && this._activeTab() === tab) this._showTabDialog(tab);
+        else this._applyTab(tab);
+      });
+      btn.addEventListener("contextmenu", (e) => {
+        const tab = this._mapTabs.find((item) => item.id === btn.getAttribute("data-tab"));
+        if (!tab) return;
+        e.preventDefault();
+        this._showTabDialog(tab);
+      });
+    });
+    const add = bar.querySelector("[data-tab-add]");
+    if (add) add.addEventListener("click", () => this._showTabDialog(null));
+    const current = bar.querySelector(".map-tab.active");
+    if (current && current.scrollIntoView) current.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }
+
+  _currentView() {
+    return {
+      category: this._selectedCategory || "all",
+      focus: this._focusId || null,
+      layout: this._layout(),
+      filter: filterActive(this._filter) ? filterToRule(this._filter) : {},
+      view: { x: Math.round(this._panX), y: Math.round(this._panY), scale: Math.round(this._scale * 1000) / 1000 },
+    };
+  }
+
+  // Open a tab, or with null go back to where the person was before the first tab
+  _applyTab(tab) {
+    const sensor = this._getSensorEntity();
+    if (!sensor) return;
+    const attributes = sensor.attributes || {};
+    if (tab && !this._activeTab()) {
+      this._tabReturn = { category: this._selectedCategory, focus: this._focusId, layout: this._layout() };
+    }
+    const target = tab || this._tabReturn || { category: this._selectedCategory, focus: null };
+    const categories = attributes.categories || [];
+    const category = ["all", "__completed__"].includes(target.category) || categories.includes(target.category)
+      ? target.category
+      : "all";
+    const ideas = attributes.ideas || [];
+    this._activeTabId = tab ? tab.id : null;
+    if (!tab) this._tabReturn = null;
+    this._selectedCategory = category;
+    this._saveSelectedCategory();
+    this._focusId = target.focus && ideas.some((i) => i.id === target.focus) ? target.focus : null;
+    if (tab && target.focus && !this._focusId) this._showToast(t("Der Zweig dieses Tabs ist nicht mehr da, die ganze Liste wird gezeigt."));
+    // The filter of the tab, or none
+    const wanted = tab && tab.filter ? ruleFilter({ when: tab.filter }) : null;
+    if (wanted && filterActive(wanted)) {
+      this._filter = wanted;
+      this._hitIndex = -1;
+      this._filterOpen = true;
+      const bar = this.shadowRoot.getElementById("filterBar");
+      const input = this.shadowRoot.getElementById("filterInput");
+      const filterBtn = this.shadowRoot.getElementById("filterBtn");
+      if (bar) bar.classList.add("open");
+      if (filterBtn) filterBtn.setAttribute("aria-pressed", "true");
+      if (input) input.value = wanted.query;
+      this._renderFilterChips();
+    } else if (this._filterOpen) {
+      this._setFilterOpen(false);
+    }
+    this._nodePositions.clear();
+    if (this._userMovedNodes) this._userMovedNodes.clear();
+    this._mapPosOverrides.clear();
+    this._lastDataSignature = "";
+    this._lastLayoutKey = "";
+    if (target.layout && target.layout !== this._layout()) this._setLayout(target.layout);
+    this._centerLayout(true);
+    this._updateContent();
+    this._applyFilter();
+    if (tab && tab.view) {
+      this._scale = tab.view.scale;
+      this._panX = tab.view.x;
+      this._panY = tab.view.y;
+      this._applyTransform();
+    }
+    this._renderMapTabs();
+  }
+
+  async _saveMapTab(data) {
+    try {
+      const result = await this._hass.callWS({ type: "brainstorm/map_tabs/save", ...data });
+      const tab = result && result.tab;
+      if (tab) {
+        const index = this._mapTabs.findIndex((item) => item.id === tab.id);
+        if (index >= 0) this._mapTabs.splice(index, 1, tab);
+        else this._mapTabs.push(tab);
+      }
+      return tab || null;
+    } catch (err) {
+      console.error("[BrainstormMindmap] Saving the tab failed:", err);
+      this._showToast(err && err.code === "map_tabs_full" ? err.message : t("Der Tab konnte nicht gespeichert werden."));
+      return null;
+    }
+  }
+
+  async _deleteMapTab(tab) {
+    try {
+      await this._hass.callWS({ type: "brainstorm/map_tabs/delete", tab_id: tab.id });
+    } catch (err) {
+      console.error("[BrainstormMindmap] Deleting the tab failed:", err);
+      this._showToast(t("Das ging nicht."));
+      return;
+    }
+    const wasActive = this._activeTab() === tab;
+    this._mapTabs = this._mapTabs.filter((item) => item.id !== tab.id);
+    if (wasActive) this._applyTab(null);
+    this._lastDataSignature = "";
+    this._lastLayoutKey = "";
+    this._updateContent();
+    this._pushUndo(tab.name, async () => {
+      const { id, private: own, owner, ...rest } = tab;
+      await this._saveMapTab({ ...rest, private: Boolean(own) });
+      this._lastDataSignature = "";
+      this._lastLayoutKey = "";
+      this._updateContent();
+    });
+  }
+
+  async _moveMapTab(tab, step) {
+    const ids = this._mapTabs.map((item) => item.id);
+    const from = ids.indexOf(tab.id);
+    const to = from + step;
+    if (from < 0 || to < 0 || to >= ids.length) return;
+    ids.splice(to, 0, ...ids.splice(from, 1));
+    try {
+      const result = await this._hass.callWS({ type: "brainstorm/map_tabs/order", ids });
+      if (result && Array.isArray(result.tabs)) this._mapTabs = result.tabs;
+      this._renderMapTabs();
+    } catch (err) {
+      console.error("[BrainstormMindmap] Sorting the tabs failed:", err);
+    }
+  }
+
+  // A big branch moves into its own tab and stays on the map as a link
+  async _branchToTab(idea) {
+    const text = String(idea.text || "").replace(/\s+/g, " ").trim();
+    const tab = await this._saveMapTab({
+      name: text.length > 40 ? `${text.slice(0, 39)}…` : text || t("Zweig"),
+      category: idea.category || "Inbox",
+      focus: idea.id,
+      branch: true,
+    });
+    if (!tab) return;
+    this._lastDataSignature = "";
+    this._lastLayoutKey = "";
+    this._updateContent();
+    this._renderMapTabs();
+    this._showToast(t("Zweig liegt jetzt im Tab „{name}“", { name: tab.name }));
+    this._pushUndo(tab.name, async () => {
+      await this._hass.callWS({ type: "brainstorm/map_tabs/delete", tab_id: tab.id });
+      this._mapTabs = this._mapTabs.filter((item) => item.id !== tab.id);
+      this._lastDataSignature = "";
+      this._lastLayoutKey = "";
+      this._updateContent();
+    });
+  }
+
+  // Save the current view as a new tab, or rename, move and delete one
+  _showTabDialog(tab) {
+    const view = this._currentView();
+    const focusIdea = this._focusIdea();
+    const focusText = focusIdea ? String(focusIdea.text || "").replace(/\s+/g, " ").trim() : "";
+    const listName = view.category === "all" ? t("Alle") : view.category === "__completed__" ? t("Erledigt") : view.category;
+    const suggested = (focusText || listName).slice(0, 40);
+    const index = tab ? this._mapTabs.indexOf(tab) : -1;
+    this._openDialog(tab ? t("📑 Tab bearbeiten") : t("📑 Ansicht als Tab speichern"), (body) => {
+      body.innerHTML = `
+        <div class="dialog-label">${t("Name")}</div>
+        <input type="text" class="dialog-input" id="tabName" maxlength="40" value="${this._escapeHtml(tab ? tab.name : suggested)}" />
+        <div class="dialog-label">${t("Symbol")}</div>
+        <input type="text" class="dialog-input" id="tabIcon" maxlength="8" placeholder="📑" value="${this._escapeHtml(tab ? tab.icon : "")}" />
+        <label class="dialog-check"><input type="checkbox" id="tabPrivate"${tab && tab.private ? " checked" : ""}> ${t("Nur für mich")}</label>
+        ${tab ? `<label class="dialog-check"><input type="checkbox" id="tabTake"> ${t("Aktuelle Ansicht übernehmen")}</label>` : ""}
+        <div class="dialog-hint">${tab && tab.branch
+          ? t("Dieser Tab zeigt einen ausgelagerten Zweig. Löschst du ihn, steht der Zweig wieder ganz in der Map.")
+          : t("Gespeichert werden Liste, Zweig, Filter, Ansicht und Ausschnitt. Ohne „Nur für mich“ sieht jeder im Haushalt den Tab.")}</div>
+        <div class="dialog-footer">
+          ${tab ? `<button class="dialog-btn dialog-btn-danger" id="tabDelete">${tab.branch ? t("Zurück in die Map") : t("Löschen")}</button>` : ""}
+          ${tab ? `<button class="dialog-btn dialog-btn-cancel" id="tabLeft"${index <= 0 ? " disabled" : ""} aria-label="${t("Nach links")}">◀</button>` : ""}
+          ${tab ? `<button class="dialog-btn dialog-btn-cancel" id="tabRight"${index >= this._mapTabs.length - 1 ? " disabled" : ""} aria-label="${t("Nach rechts")}">▶</button>` : ""}
+          <button class="dialog-btn dialog-btn-cancel" id="tabCancel">${t("Abbrechen")}</button>
+          <button class="dialog-btn dialog-btn-primary" id="tabOk">${t("Speichern")}</button>
+        </div>`;
+      const nameInput = body.querySelector("#tabName");
+      setTimeout(() => nameInput.select(), 0);
+      body.querySelector("#tabCancel").addEventListener("click", () => this._closeDialog());
+      const remove = body.querySelector("#tabDelete");
+      if (remove) remove.addEventListener("click", () => {
+        this._closeDialog();
+        this._deleteMapTab(tab);
+      });
+      const left = body.querySelector("#tabLeft");
+      if (left) left.addEventListener("click", () => {
+        this._closeDialog();
+        this._moveMapTab(tab, -1);
+      });
+      const right = body.querySelector("#tabRight");
+      if (right) right.addEventListener("click", () => {
+        this._closeDialog();
+        this._moveMapTab(tab, 1);
+      });
+      const save = async () => {
+        const name = nameInput.value.replace(/\s+/g, " ").trim();
+        if (!name) {
+          nameInput.focus();
+          return;
+        }
+        const data = {
+          name,
+          icon: body.querySelector("#tabIcon").value.trim(),
+          private: body.querySelector("#tabPrivate").checked,
+        };
+        const take = body.querySelector("#tabTake");
+        if (tab) data.tab_id = tab.id;
+        if (!tab || (take && take.checked)) {
+          Object.assign(data, view);
+          if (tab && tab.branch && view.focus !== tab.focus) data.branch = false;
+        }
+        const saved = await this._saveMapTab(data);
+        if (!saved) return;
+        this._closeDialog();
+        if (!tab || (take && take.checked)) this._activeTabId = saved.id;
+        this._lastDataSignature = "";
+        this._lastLayoutKey = "";
+        this._updateContent();
+        this._renderMapTabs();
+        if (!tab) this._showToast(t("Tab „{name}“ gespeichert", { name: saved.name }));
+      };
+      body.querySelector("#tabOk").addEventListener("click", save);
+      nameInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") save();
+      });
+    });
   }
 
   // One level up: to the parent of the focused branch, or back to the whole list
@@ -5258,11 +5581,13 @@ class BrainstormMindmapCard extends HTMLElement {
     if (this._isPinboard()) return ideas;
     const ids = new Set(ideas.map((i) => i.id));
     const byId = new Map(ideas.map((i) => [i.id, i]));
+    // A branch with its own tab stays on the map as a link to that tab
+    const tabbed = branchTabs(this._mapTabs);
     return ideas.filter((idea) => {
       const seen = new Set();
       let parent = this._branchParent(idea, ids);
       while (parent && !seen.has(parent)) {
-        if (this._collapsed.has(parent)) return false;
+        if (this._collapsed.has(parent) || tabbed.has(parent)) return false;
         seen.add(parent);
         parent = this._branchParent(byId.get(parent), ids);
       }
@@ -9359,6 +9684,7 @@ class BrainstormMindmapCard extends HTMLElement {
       // Numbers come from the whole list, so they stay the same in a focused branch
       const numbers = numberLabels(listIdeas);
       const filteredIdeas = this._focusIdeas(listIdeas);
+      this._syncMapTabs(attributes);
       this._renderFocusBar();
       this._renderVoteBar();
       this._syncDrawing(attributes);
@@ -9560,10 +9886,13 @@ class BrainstormMindmapCard extends HTMLElement {
         const prioClass = prio === "urgent" ? "cloud-urgent" : prio === "high" ? "cloud-high" : "";
         const prioBadge = this._getPriorityBadge(idea.priority, idea.id);
         const hasBranch = filteredIdeas.some((i) => i.id !== idea.id && i.parent_id === idea.id && listIds.has(i.id));
-        const folded = hasBranch && this._collapsed.has(idea.id);
+        const branchTab = hasBranch && !this._isPinboard() ? branchTabs(this._mapTabs).get(idea.id) : null;
+        const folded = hasBranch && (this._collapsed.has(idea.id) || Boolean(branchTab));
         const hiddenCount = folded ? this._descendantIds(idea.id, filteredIdeas).length : 0;
         const cover = this._config.show_images !== false ? coverAttachment(idea) : null;
-        const branchToggle = hasBranch
+        const branchToggle = branchTab
+          ? `<button class="tab-link" data-tab="${this._escapeHtml(branchTab.id)}" title="${this._escapeHtml(t("Im eigenen Tab öffnen: {name}", { name: branchTab.name }))}">↗ ${this._escapeHtml(t("{count} Notizen", { count: hiddenCount }))}</button>`
+          : hasBranch
           ? `<button class="branch-toggle" data-id="${this._escapeHtml(idea.id)}" title="${folded ? t("Zweig aufklappen") : t("Zweig einklappen")}">${folded ? `+${hiddenCount}` : "−"}</button>`
           : "";
 
@@ -9605,6 +9934,7 @@ class BrainstormMindmapCard extends HTMLElement {
                 ${this._isPinboard() && this._canEditIdea(idea) ? `<div class="menu-pins">${Object.entries(PIN_COLORS).map(([name, bg]) => `<button class="pin-swatch${((this._pinOf(idea) || {}).color || "yellow") === name ? " active" : ""}" data-pin-color="${name}" style="--pin-bg: ${bg};" title="${this._escapeHtml(this._pinColorName(name))}" aria-label="${this._escapeHtml(this._pinColorName(name))}"></button>`).join("")}</div>` : ""}
                 <button class="action-btn menu-item" role="menuitem" data-act="comments" data-lvl="normal" data-id="${this._escapeHtml(idea.id)}"><span>💬</span>${t("Kommentare")}${idea.comment_count ? ` (${idea.comment_count})` : ""}</button>
                 <button class="action-btn menu-item" role="menuitem" data-act="link" data-lvl="pro" data-id="${this._escapeHtml(idea.id)}"><span>🔗</span>${t("Mit einer anderen Notiz verbinden (L)")}</button>
+                ${hasBranch && !branchTab && !this._isPinboard() ? `<button class="action-btn menu-item" role="menuitem" data-act="tab" data-lvl="normal" data-id="${this._escapeHtml(idea.id)}"><span>↗</span>${t("In eigenen Tab auslagern")}</button>` : ""}
                 ${hasBranch ? `<button class="action-btn menu-item" role="menuitem" data-act="focus" data-lvl="normal" data-id="${this._escapeHtml(idea.id)}"><span>🎯</span>${t("Nur diesen Zweig zeigen (F4)")}</button>` : ""}
                 ${aiSubtasks ? `<button class="action-btn menu-item" role="menuitem" data-act="suggest" data-lvl="normal" data-id="${this._escapeHtml(idea.id)}"><span>✨</span>${t("Unteraufgaben von der KI vorschlagen lassen")}</button>` : ""}
                 <button class="action-btn menu-item" role="menuitem" data-act="move" data-id="${this._escapeHtml(idea.id)}"><span>📁</span>${t("Kategorie ändern")}</button>
@@ -9851,6 +10181,14 @@ class BrainstormMindmapCard extends HTMLElement {
           });
         }
 
+        const tabLinkEl = cloud.querySelector(".tab-link");
+        if (tabLinkEl) {
+          tabLinkEl.addEventListener("click", (e) => {
+            e.stopPropagation();
+            this._applyTab(this._mapTabs.find((tab) => tab.id === tabLinkEl.getAttribute("data-tab")));
+          });
+        }
+
         // Category Tag click -> Category Picker
         const catTagEl = cloud.querySelector(".cat-tag");
         if (catTagEl) {
@@ -9882,6 +10220,7 @@ class BrainstormMindmapCard extends HTMLElement {
             if (act === "done") this._completeIdea(idea.id);
             else if (act === "branch") this._showAddDialog(idea);
             else if (act === "focus") this._setFocus(idea.id);
+            else if (act === "tab") this._branchToTab(idea);
             else if (act === "link") this._startLink(idea.id);
             else if (act === "comments") this._showComments(idea);
             else if (act === "suggest") this._showAiChooser(idea);
@@ -10979,6 +11318,12 @@ class BrainstormMindmapCardEditor extends HTMLElement {
         selector: { boolean: {} },
       },
       {
+        name: "show_tabs",
+        label: t("Gespeicherte Ansichten als Tabs über der Map zeigen"),
+        default: true,
+        selector: { boolean: {} },
+      },
+      {
         name: "show_add_btn",
         label: t("Neue Notiz-Schaltfläche (+ Idee) anzeigen"),
         default: true,
@@ -11204,7 +11549,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.12.4 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.13.0 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

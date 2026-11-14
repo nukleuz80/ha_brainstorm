@@ -885,6 +885,12 @@
     },
     "habit_date_invalid": {
       "message": "Der Tag {date} kann nicht markiert werden: Er liegt in der Zukunft oder mehr als 400 Tage zurück."
+    },
+    "map_tabs_full": {
+      "message": "Es gibt schon {max} Map-Tabs. Lösche einen, bevor du einen neuen speicherst."
+    },
+    "map_tab_invalid": {
+      "message": "Der Map-Tab braucht einen Namen und eine Liste."
     }
   },
   "services": {

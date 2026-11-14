@@ -7,6 +7,28 @@
  */
 const DICTIONARIES = {
   en: {
+    "Map-Tabs": "Map tabs",
+    "Map": "Map",
+    "Nur für mich": "Only for me",
+    "Noch einmal tippen: Tab bearbeiten": "Tap again: edit tab",
+    "Ansicht als Tab speichern": "Save view as tab",
+    "Im eigenen Tab öffnen: {name}": "Open in its own tab: {name}",
+    "In eigenen Tab auslagern": "Move to its own tab",
+    "Der Zweig dieses Tabs ist nicht mehr da, die ganze Liste wird gezeigt.": "The branch of this tab is gone, the whole list is shown.",
+    "Der Tab konnte nicht gespeichert werden.": "The tab could not be saved.",
+    "Zweig": "Branch",
+    "Zweig liegt jetzt im Tab „{name}“": "Branch now lives in the tab “{name}”",
+    "📑 Tab bearbeiten": "📑 Edit tab",
+    "📑 Ansicht als Tab speichern": "📑 Save view as tab",
+    "Symbol": "Icon",
+    "Aktuelle Ansicht übernehmen": "Use the current view",
+    "Dieser Tab zeigt einen ausgelagerten Zweig. Löschst du ihn, steht der Zweig wieder ganz in der Map.": "This tab shows a branch moved out of the map. Delete it and the branch is back in the map in full.",
+    "Gespeichert werden Liste, Zweig, Filter, Ansicht und Ausschnitt. Ohne „Nur für mich“ sieht jeder im Haushalt den Tab.": "The list, branch, filter, layout and visible area are saved. Without “Only for me” everyone in the household sees the tab.",
+    "Zurück in die Map": "Back into the map",
+    "Nach links": "Move left",
+    "Nach rechts": "Move right",
+    "Tab „{name}“ gespeichert": "Tab “{name}” saved",
+    "Gespeicherte Ansichten als Tabs über der Map zeigen": "Show saved views as tabs above the map",
     "1 Kommentar": "1 comment",
     "{count} Kommentare": "{count} comments",
     "Kommentar löschen": "Delete comment",
@@ -1289,6 +1311,91 @@ export function ruleFilter(rule) {
   (when.markers || []).forEach((marker) => filter.markers.add(String(marker)));
   return filter;
 }
+
+/** The tabs that fold a branch out of the main map, by the id of that branch. */
+export function branchTabs(tabs) {
+  const byBranch = new Map();
+  (tabs || []).forEach((tab) => {
+    if (tab && tab.branch && tab.focus && !byBranch.has(tab.focus)) byBranch.set(tab.focus, tab);
+  });
+  return byBranch;
+}
+
+/** The tab that shows what the map shows now, or null for the main map. */
+export function activeMapTab(tabs, activeId, category, focus) {
+  const tab = (tabs || []).find((item) => item.id === activeId);
+  if (!tab) return null;
+  return tab.category === category && (tab.focus || null) === (focus || null) ? tab : null;
+}
+
+/** The bar of map tabs, empty while there is no tab yet. */
+export function mapTabBar(tabs, active) {
+  if (!tabs || !tabs.length) return "";
+  const activeId = active ? active.id : null;
+  const items = tabs.map((tab) => {
+    const icon = tab.icon || (tab.branch ? "↗" : "📑");
+    const lock = tab.private ? `<span class="map-tab-lock" title="${escapeHtml(t("Nur für mich"))}">🔒</span>` : "";
+    return `<button class="map-tab${tab.id === activeId ? " active" : ""}" data-tab="${escapeHtml(tab.id)}" role="tab" aria-selected="${tab.id === activeId}" title="${escapeHtml(t("Noch einmal tippen: Tab bearbeiten"))}"><span class="map-tab-icon">${escapeHtml(icon)}</span><span class="map-tab-name">${escapeHtml(tab.name)}</span>${lock}</button>`;
+  });
+  return `<button class="map-tab map-tab-main${activeId ? "" : " active"}" data-tab="" role="tab" aria-selected="${!activeId}"><span class="map-tab-icon">🗺️</span><span class="map-tab-name">${escapeHtml(t("Map"))}</span></button>${items.join("")}<button class="map-tab map-tab-add" data-tab-add="1" data-lvl="normal" title="${escapeHtml(t("Ansicht als Tab speichern"))}" aria-label="${escapeHtml(t("Ansicht als Tab speichern"))}">＋</button>`;
+}
+
+export const MAP_TAB_CSS = `
+  .map-tabs {
+    display: flex;
+    gap: 6px;
+    padding: 6px 12px 0;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+  .map-tabs:empty {
+    display: none;
+  }
+  .map-tab {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 36px;
+    max-width: 220px;
+    padding: 4px 12px;
+    border: 1px solid var(--divider-color, rgba(127, 127, 127, 0.3));
+    border-bottom: none;
+    border-radius: 10px 10px 0 0;
+    background: var(--secondary-background-color, rgba(127, 127, 127, 0.08));
+    color: var(--secondary-text-color);
+    font: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .map-tab.active {
+    background: var(--card-background-color, #fff);
+    color: var(--primary-text-color);
+    border-color: var(--primary-color);
+    box-shadow: inset 0 3px 0 var(--primary-color);
+    font-weight: 600;
+  }
+  .map-tab:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 1px;
+  }
+  .map-tab-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .map-tab-lock {
+    font-size: 0.7rem;
+    opacity: 0.7;
+  }
+  .map-tab-add {
+    min-width: 36px;
+    justify-content: center;
+    font-weight: 600;
+  }
+`;
 
 /** Keep only rules that make sense, so a broken entry cannot hurt the map. */
 export function cleanRules(rules) {

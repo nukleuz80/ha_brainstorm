@@ -885,6 +885,12 @@
     },
     "habit_date_invalid": {
       "message": "The day {date} cannot be marked: it lies in the future or more than 400 days back."
+    },
+    "map_tabs_full": {
+      "message": "There are already {max} map tabs. Delete one before saving another."
+    },
+    "map_tab_invalid": {
+      "message": "The map tab needs a name and a list."
     }
   },
   "services": {

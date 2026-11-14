@@ -16,6 +16,8 @@ from .const import (
     DRAW_COLORS,
     DRAW_KINDS,
     DRAW_MAX_POINTS,
+    MAP_TAB_LAYOUTS,
+    MAP_TAB_NAME_MAX,
     PIN_COLORS,
 )
 from .presence import get_presence
@@ -50,6 +52,10 @@ def async_register_commands(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, websocket_get_habit)
     websocket_api.async_register_command(hass, websocket_restore_trash)
     websocket_api.async_register_command(hass, websocket_purge_trash)
+    websocket_api.async_register_command(hass, websocket_get_map_tabs)
+    websocket_api.async_register_command(hass, websocket_save_map_tab)
+    websocket_api.async_register_command(hass, websocket_delete_map_tab)
+    websocket_api.async_register_command(hass, websocket_order_map_tabs)
 
 
 @websocket_api.websocket_command({vol.Required("type"): "brainstorm/ideas"})
@@ -709,3 +715,114 @@ async def websocket_purge_trash(
     if removed:
         await store.async_cleanup_attachments()
     connection.send_result(msg["id"], {"deleted": removed})
+
+
+@websocket_api.websocket_command({vol.Required("type"): "brainstorm/map_tabs"})
+@callback
+def websocket_get_map_tabs(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Return the shared map tabs and the user's own."""
+    if (store := _trash_store(hass, connection, msg["id"])) is None:
+        return
+    connection.send_result(msg["id"], {"tabs": store.map_tabs(connection.user.id)})
+
+
+_TAB_FILTER = vol.Schema(
+    {
+        vol.Optional("query"): vol.All(cv.string, vol.Length(max=100)),
+        vol.Optional("prios"): [cv.string],
+        vol.Optional("tags"): [cv.string],
+        vol.Optional("markers"): [cv.string],
+        vol.Optional("overdue"): cv.boolean,
+        vol.Optional("soon"): cv.boolean,
+        vol.Optional("working"): cv.boolean,
+        vol.Optional("myDay"): cv.boolean,
+    }
+)
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "brainstorm/map_tabs/save",
+        vol.Optional("tab_id"): cv.string,
+        vol.Optional("name"): vol.All(cv.string, vol.Length(min=1, max=MAP_TAB_NAME_MAX)),
+        vol.Optional("icon"): vol.All(cv.string, vol.Length(max=8)),
+        vol.Optional("category"): vol.All(cv.string, vol.Length(min=1, max=100)),
+        vol.Optional("focus"): vol.Any(None, cv.string),
+        vol.Optional("branch"): cv.boolean,
+        vol.Optional("layout"): vol.Any(None, vol.In(MAP_TAB_LAYOUTS)),
+        vol.Optional("filter"): _TAB_FILTER,
+        vol.Optional("view"): vol.Any(
+            None,
+            vol.Schema(
+                {
+                    vol.Required("x"): vol.Coerce(float),
+                    vol.Required("y"): vol.Coerce(float),
+                    vol.Required("scale"): vol.Coerce(float),
+                }
+            ),
+        ),
+        vol.Optional("private"): cv.boolean,
+    }
+)
+@websocket_api.async_response
+async def websocket_save_map_tab(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Save the current view as a tab, or change a tab."""
+    if (store := _trash_store(hass, connection, msg["id"])) is None:
+        return
+    # "id" is the message number, the tab comes as tab_id
+    data = {k: v for k, v in msg.items() if k not in ("type", "id", "tab_id")}
+    if "tab_id" in msg:
+        data["id"] = msg["tab_id"]
+    try:
+        tab = await store.async_save_map_tab(data, connection.user.id)
+    except ServiceValidationError as err:
+        connection.send_error(
+            msg["id"], err.translation_key or "invalid_tab", str(err)
+        )
+        return
+    connection.send_result(msg["id"], {"tab": tab})
+
+
+@websocket_api.websocket_command(
+    {vol.Required("type"): "brainstorm/map_tabs/delete", vol.Required("tab_id"): cv.string}
+)
+@websocket_api.async_response
+async def websocket_delete_map_tab(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Remove a map tab."""
+    if (store := _trash_store(hass, connection, msg["id"])) is None:
+        return
+    if not await store.async_delete_map_tab(msg["tab_id"], connection.user.id):
+        connection.send_error(msg["id"], websocket_api.ERR_NOT_FOUND, "No such tab")
+        return
+    connection.send_result(msg["id"], {"deleted": msg["tab_id"]})
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "brainstorm/map_tabs/order",
+        vol.Required("ids"): vol.All(cv.ensure_list, [cv.string]),
+    }
+)
+@websocket_api.async_response
+async def websocket_order_map_tabs(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Put the map tabs in a new order."""
+    if (store := _trash_store(hass, connection, msg["id"])) is None:
+        return
+    await store.async_order_map_tabs(msg["ids"], connection.user.id)
+    connection.send_result(msg["id"], {"tabs": store.map_tabs(connection.user.id)})

@@ -321,6 +321,20 @@ PIN_COLORS = ("yellow", "pink", "green", "blue", "orange", "purple")
 DRAW_KINDS = ("pen", "arrow", "ellipse")
 DRAW_COLORS = ("red", "orange", "green", "blue", "purple", "gray")
 DRAW_MAX_STROKES = 300
+
+# Saved map views (tabs above the mind map)
+MAP_TABS_MAX = 40
+MAP_TAB_NAME_MAX = 40
+MAP_TAB_LAYOUTS = (
+    "radial",
+    "tree",
+    "org",
+    "outline",
+    "pin",
+    "kanban",
+    "timeline",
+    "matrix",
+)
 DRAW_MAX_POINTS = 400
 ATTR_SHARES = "shares"
 SHARE_ALL = "all"
