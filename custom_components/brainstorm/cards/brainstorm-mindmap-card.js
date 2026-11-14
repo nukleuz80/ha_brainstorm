@@ -1,8 +1,8 @@
-import { LEVEL_CSS, SOCIAL_CSS, commentBadge, renderComments, renderTrash, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.12.2";
+import { LEVEL_CSS, SOCIAL_CSS, commentBadge, renderComments, renderTrash, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.12.3";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.12.2 - Mein Tag
+ * Version: 1.12.3 - Gewohnheiten
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -5920,6 +5920,12 @@ class BrainstormMindmapCard extends HTMLElement {
     });
   }
 
+  // The calendar of a habit: streak, best streak and the days to tick off
+  _showHabit(idea) {
+    if (!this._hass || !idea || !idea.habit) return;
+    this._openDialog(t("🔥 Kalender"), (body) => renderHabit(body, { hass: this._hass, idea, close: () => this._closeDialog() }));
+  }
+
   // The comments of a note: read, write, delete your own
   _showComments(idea) {
     if (!this._hass || !idea) return;
@@ -9563,7 +9569,7 @@ class BrainstormMindmapCard extends HTMLElement {
                 <ha-icon icon="${this._getCategoryIcon(idea.category)}" style="--mdc-icon-size: 12px; width: 12px; height: 12px; display: inline-flex; align-items: center; vertical-align: middle;"></ha-icon> ${this._escapeHtml(idea.category)}
               </span>
               ${prioBadge}
-              ${this._getReminderBadges(idea)}${repeatBadge(idea)}${myDayBadge(idea)}
+              ${this._getReminderBadges(idea)}${repeatBadge(idea)}${myDayBadge(idea)}${habitBadge(idea)}
               ${inProgressBadge(idea)}
               ${blockedBadge(idea)}
               ${attachmentBadge(idea)}
@@ -9811,6 +9817,12 @@ class BrainstormMindmapCard extends HTMLElement {
           btn.addEventListener("click", (e) => {
             e.stopPropagation();
             this._showComments(idea);
+          });
+        });
+        cloud.querySelectorAll("[data-habit]").forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            this._showHabit(idea);
           });
         });
 
@@ -10185,6 +10197,7 @@ class BrainstormMindmapCard extends HTMLElement {
         ${rotationFields(this._hass, idea, "dialog")}
         <div class="dialog-label">${t("Mein Tag:")}</div>
         <select class="dialog-input" id="editMyDay" title="${t("Für heute vornehmen: morgens, tagsüber oder abends. Gilt nur heute und kommt ins Briefing.")}">${myDayOptions(idea.my_day)}</select>
+        ${habitField(idea)}
 
         ${echos.length ? `
           <details class="dialog-echo-details" data-lvl="pro">
@@ -10395,6 +10408,8 @@ class BrainstormMindmapCard extends HTMLElement {
         if (newRotation !== undefined) payload.rotation = newRotation;
         const newMyDay = body.querySelector("#editMyDay").value || "";
         if (newMyDay !== (idea.my_day || "")) payload.my_day = newMyDay || null;
+        const newHabit = readHabit(body, idea);
+        if (newHabit !== undefined) payload.habit = newHabit;
         const newDescription = (body.querySelector("#editDescription").value || "").trim();
         if (newDescription !== (idea.description || "")) {
           payload.description = newDescription;
@@ -10433,6 +10448,7 @@ class BrainstormMindmapCard extends HTMLElement {
         if ("repeat" in payload) before.repeat = idea.repeat || "";
         if ("rotation" in payload) before.rotation = idea.rotation || null;
         if ("my_day" in payload) before.my_day = idea.my_day || null;
+        if ("habit" in payload) before.habit = Boolean(idea.habit);
         try {
           await this._hass.callService("brainstorm", "update_idea", payload);
           this._pushUndo(currentText, () => this._hass.callService("brainstorm", "update_idea", before));
@@ -11180,7 +11196,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.12.2 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.12.3 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

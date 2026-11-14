@@ -19,7 +19,7 @@ from .const import (
     PIN_COLORS,
 )
 from .presence import get_presence
-from .store import TRASH_DAYS, BrainstormStore, get_loaded_store
+from .store import TRASH_DAYS, BrainstormStore, get_loaded_store, habit_summary
 
 # Error codes the cards translate for the person
 ERR_AI_NOT_CONFIGURED = "ai_not_configured"
@@ -46,6 +46,7 @@ def async_register_commands(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, websocket_generate_map)
     websocket_api.async_register_command(hass, websocket_get_comments)
     websocket_api.async_register_command(hass, websocket_get_trash)
+    websocket_api.async_register_command(hass, websocket_get_habit)
     websocket_api.async_register_command(hass, websocket_restore_trash)
     websocket_api.async_register_command(hass, websocket_purge_trash)
 
@@ -603,6 +604,26 @@ def _trash_store(
     if store is None:
         connection.send_error(msg_id, websocket_api.ERR_NOT_FOUND, "Brainstorm is not loaded")
     return store
+
+
+@websocket_api.websocket_command(
+    {vol.Required("type"): "brainstorm/habit", vol.Required("idea_id"): cv.string}
+)
+@callback
+def websocket_get_habit(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Return the streak and recent days of a habit, for its calendar."""
+    if (store := _trash_store(hass, connection, msg["id"])) is None:
+        return
+    idea = store.get_idea(msg["idea_id"])
+    summary = habit_summary(idea) if idea is not None else None
+    if summary is None or not store.can_access(idea, connection.user.id):
+        connection.send_error(msg["id"], websocket_api.ERR_NOT_FOUND, "No such habit")
+        return
+    connection.send_result(msg["id"], summary)
 
 
 @websocket_api.websocket_command({vol.Required("type"): "brainstorm/trash"})

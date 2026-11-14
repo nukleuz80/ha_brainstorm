@@ -957,6 +957,7 @@ MESSAGES: dict[str, str] = {
     "digest_one": "Due today: {item}.",
     "digest_many": "{count} things are due today: {items}.",
     "digest_my_day": "Planned for today: {parts}.",
+    "digest_habits": "Habits for today: {items}.",
     "my_day_morning": "in the morning {items}",
     "my_day_day": "during the day {items}",
     "my_day_evening": "in the evening {items}",

@@ -1,0 +1,45 @@
+<!doctype html>
+<!-- Browser test for habits. Run: python3 -m http.server in the repo root,
+     open http://localhost:8000/tests/js/habit.html, it shows PASS or the failures. --><meta charset="utf-8"><body><pre id="out">running</pre>
+<script type="module">
+import { habitBadge, habitField, readHabit, renderHabit } from "../../custom_components/brainstorm/cards/brainstorm-i18n.js";
+const fails = [];
+const check = (name, got, want) => { if (JSON.stringify(got) !== JSON.stringify(want)) fails.push(`${name}: want ${JSON.stringify(want)}, got ${JSON.stringify(got)}`); };
+const habit = { today: true, streak: 3, best: 5, total: 9, days: ["2026-11-12", "2026-11-13", "2026-11-14"] };
+check("no badge", habitBadge({ id: "a" }), "");
+check("badge streak", habitBadge({ id: "a", habit }).includes("🔥 3"), true);
+check("badge done", habitBadge({ id: "a", habit }).includes("habit-done"), true);
+const form = document.createElement("div");
+form.innerHTML = habitField({ habit });
+check("field checked", form.querySelector("#editHabit").checked, true);
+check("unchanged", readHabit(form, { habit }), undefined);
+form.querySelector("#editHabit").checked = false;
+check("turned off", readHabit(form, { habit }), false);
+check("turned on", readHabit(form, {}), undefined);
+
+const calls = [];
+const hass = {
+  callService: async (domain, service, data) => { calls.push(data); },
+  callWS: async () => ({ ...habit, today: true, streak: 4, total: 10, days: [...habit.days, "2026-11-11"] }),
+};
+const body = document.createElement("div");
+document.body.appendChild(body);
+let closed = false;
+// Saturday, 14 November 2026: the last column ends on Sunday the 15th
+renderHabit(body, { hass, idea: { id: "a", text: "Lesen", habit }, close: () => { closed = true; }, today: new Date(2026, 10, 14) });
+const cells = [...body.querySelectorAll(".bs-habit-cell")];
+check("18 weeks", cells.length, 126);
+check("starts monday", new Date(cells[0].dataset.day + "T12:00").getDay(), 1);
+check("ends sunday", cells[125].dataset.day, "2026-11-15");
+check("future hidden", cells[125].disabled, true);
+check("today marked", body.querySelector(".today").dataset.day, "2026-11-14");
+check("done days", cells.filter((c) => c.classList.contains("on")).map((c) => c.dataset.day), habit.days);
+body.querySelector('[data-day="2026-11-11"]').click();
+await new Promise((resolve) => setTimeout(resolve, 20));
+check("service", calls, [{ id: "a", habit_done: true, habit_date: "2026-11-11" }]);
+check("redrawn", body.querySelector('[data-day="2026-11-11"]').classList.contains("on"), true);
+check("stats", body.querySelector(".bs-habit-stats").textContent.includes("4"), true);
+body.querySelector("#bsHabitClose").click();
+check("closes", closed, true);
+document.getElementById("out").textContent = fails.length ? "FAIL\n" + fails.join("\n") : "PASS";
+</script>

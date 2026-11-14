@@ -32,7 +32,7 @@ from .const import (
     DOMAIN,
 )
 from .languages import get_pack
-from .store import BrainstormConfigEntry, BrainstormStore
+from .store import BrainstormConfigEntry, BrainstormStore, habit_summary
 
 PARALLEL_UPDATES = 0
 
@@ -146,7 +146,9 @@ class BrainstormTodoList(TodoListEntity):
         for item in items:
             if item.get(ATTR_STATUS) == "archived":
                 continue
-            is_done = item.get(ATTR_STATUS) == "completed"
+            habit = habit_summary(item)
+            # A habit ticked off today shows as done until midnight
+            is_done = item.get(ATTR_STATUS) == "completed" or bool(habit and habit["today"])
             status = TodoItemStatus.COMPLETED if is_done else TodoItemStatus.NEEDS_ACTION
             todo_items.append(
                 TodoItem(

@@ -90,7 +90,7 @@ from .ai import async_generate_text
 from .echo_locks import locked_echos
 from .languages import get_pack
 from .languages.common import LanguagePack
-from .store import my_day_part
+from .store import habit_summary, my_day_part
 
 if TYPE_CHECKING:
     from .store import BrainstormStore
@@ -944,8 +944,13 @@ class ReminderManager:
         """
         due_today: list[str] = []
         planned: dict[str, list[str]] = {}
+        habits: list[str] = []
         for idea in self._spoken_ideas():
             if idea.get("status") != "active":
+                continue
+            if habit := habit_summary(idea, now.date()):
+                if not habit["today"]:
+                    habits.append(str(idea.get(ATTR_TEXT)))
                 continue
             if part := my_day_part(idea, now.date()):
                 planned.setdefault(part, []).append(str(idea.get(ATTR_TEXT)))
@@ -971,6 +976,8 @@ class ReminderManager:
                     "digest_many", count=len(due_today), items=self._pack.join(due_today)
                 )
             )
+        if habits:
+            sentences.append(self._pack.msg("digest_habits", items=self._pack.join(habits)))
         return " ".join(sentences) or None
 
     def build_review(self, now: datetime) -> str | None:

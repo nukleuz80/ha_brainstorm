@@ -244,6 +244,18 @@ update_idea:
             - morning
             - day
             - evening
+    habit:
+      required: false
+      selector:
+        boolean:
+    habit_done:
+      required: false
+      selector:
+        boolean:
+    habit_date:
+      required: false
+      selector:
+        date:
     rotation:
       required: false
       example: '{"mode": "turn", "people": ["person.anna", "person.ben"]}'

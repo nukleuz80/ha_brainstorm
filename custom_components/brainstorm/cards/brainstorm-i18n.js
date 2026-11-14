@@ -549,6 +549,15 @@ const DICTIONARIES = {
     "Nicht für heute": "Not for today",
     "Mein Tag: {part}": "My day: {part}",
     "Mein Tag:": "My day:",
+    "Gewohnheit: {streak} Tage in Folge, beste Serie {best}. Antippen zeigt den Kalender.": "Habit: {streak} days in a row, best streak {best}. Tap to see the calendar.",
+    "🔥 Gewohnheit: jeden Tag abhaken, mit Serie": "🔥 Habit: tick off every day, with a streak",
+    "Serie: {count}": "Streak: {count}",
+    "Beste Serie: {count}": "Best streak: {count}",
+    "Erledigt gesamt: {count}": "Done in total: {count}",
+    "Tippe auf einen Tag, um ihn nachzutragen oder zu entfernen.": "Tap a day to add or remove it.",
+    "Heute erledigt – nochmal tippen nimmt es zurück": "Done today – tap again to take it back",
+    "Für heute abhaken, die Gewohnheit bleibt": "Tick off for today, the habit stays",
+    "🔥 Kalender": "🔥 Calendar",
     "Aus „Mein Tag“ nehmen": "Take out of My day",
     "Für heute vornehmen": "Pick for today",
     "☀️ Mein Tag": "☀️ My day",
@@ -1540,7 +1549,99 @@ export const SOCIAL_CSS = `
   .bs-rotation-person { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 2px 10px; border: 1px solid var(--divider-color, #ccc); border-radius: 18px; cursor: pointer; font-size: 0.9rem; color: var(--primary-text-color); }
   .bs-rotation-warn { color: var(--error-color, #db4437); }
   .bs-trash-notice { font-size: 0.82rem; color: var(--success-color, #43a047); margin-top: 4px; }
+  .habit-badge { cursor: pointer; white-space: nowrap; }
+  .habit-badge.habit-done { color: var(--success-color, #43a047); }
+  .bs-habit-stats { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 4px 0 10px; font-size: 0.95rem; color: var(--primary-text-color); }
+  .bs-habit-grid { display: grid; grid-template-rows: repeat(7, 1fr); grid-auto-flow: column; grid-auto-columns: 1fr; gap: 3px; max-width: 100%; }
+  .bs-habit-cell { aspect-ratio: 1; min-width: 0; min-height: 14px; padding: 0; border: none; border-radius: 3px; background: var(--divider-color, #ddd); cursor: pointer; }
+  .bs-habit-cell.on { background: var(--success-color, #43a047); }
+  .bs-habit-cell.today { outline: 2px solid var(--primary-color); outline-offset: 1px; }
+  .bs-habit-cell:disabled { visibility: hidden; cursor: default; }
+  .bs-habit-cell:focus-visible { outline: 2px solid var(--primary-text-color); }
 `;
+
+/** A small flame with the streak of a habit, green once today is done. */
+export function habitBadge(idea) {
+  const habit = idea && idea.habit;
+  if (!habit) return "";
+  const title = t("Gewohnheit: {streak} Tage in Folge, beste Serie {best}. Antippen zeigt den Kalender.", { streak: habit.streak, best: habit.best });
+  return `<span class="due-badge habit-badge${habit.today ? " habit-done" : ""}" data-habit="${escapeHtml(idea.id)}" role="button" tabindex="0" title="${escapeHtml(title)}">🔥 ${Number(habit.streak) || 0}</span>`;
+}
+
+/** The switch in the edit dialogs that turns a note into a daily habit. */
+export function habitField(idea, prefix = "dialog") {
+  return `<label class="${prefix}-label bs-habit-switch" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+    <input type="checkbox" id="editHabit"${idea && idea.habit ? " checked" : ""}> ${t("🔥 Gewohnheit: jeden Tag abhaken, mit Serie")}
+  </label>`;
+}
+
+/** Return true or false when the habit switch changed, undefined if not. */
+export function readHabit(body, idea) {
+  const box = body.querySelector("#editHabit");
+  if (!box) return undefined;
+  return box.checked === Boolean(idea && idea.habit) ? undefined : box.checked;
+}
+
+const isoDay = (date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+
+/**
+ * Fill a dialog body with the calendar of a habit: the streak, the best one,
+ * all days done, and the last 18 weeks to tick off or take back day by day.
+ */
+export function renderHabit(body, { hass, idea, close, prefix = "dialog", today = new Date() }) {
+  const c = (names) => names.split(" ").map((n) => `${prefix}-${n}`).join(" ");
+  let data = idea.habit || { days: [], streak: 0, best: 0, total: 0, today: false };
+  let busy = false;
+  const first = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  // Weeks run from Monday, the last column is the current week
+  first.setDate(first.getDate() + (6 - ((first.getDay() + 6) % 7)) - 18 * 7 + 1);
+  const todayIso = isoDay(today);
+  const draw = (error = "") => {
+    if (!body.isConnected) return;
+    const done = new Set(data.days || []);
+    const cells = [];
+    for (let i = 0; i < 18 * 7; i += 1) {
+      const day = new Date(first.getFullYear(), first.getMonth(), first.getDate() + i);
+      const iso = isoDay(day);
+      const label = day.toLocaleDateString(dateLocale(), { weekday: "short", day: "numeric", month: "short" });
+      const on = done.has(iso);
+      cells.push(`<button type="button" class="bs-habit-cell${on ? " on" : ""}${iso === todayIso ? " today" : ""}" data-day="${iso}" aria-pressed="${on}" title="${escapeHtml(label)}" aria-label="${escapeHtml(label)}"${iso > todayIso ? " disabled" : ""}></button>`);
+    }
+    body.innerHTML = `
+      <div class="${c("hint")}">${formatText(idea.text || "")}</div>
+      <div class="bs-habit-stats">
+        <span>🔥 ${escapeHtml(t("Serie: {count}", { count: data.streak }))}</span>
+        <span>🏆 ${escapeHtml(t("Beste Serie: {count}", { count: data.best }))}</span>
+        <span>✅ ${escapeHtml(t("Erledigt gesamt: {count}", { count: data.total }))}</span>
+      </div>
+      <div class="bs-habit-grid">${cells.join("")}</div>
+      <div class="${c("hint")}">${t("Tippe auf einen Tag, um ihn nachzutragen oder zu entfernen.")}</div>
+      <div class="${c("error")}" style="display: ${error ? "flex" : "none"};">${escapeHtml(error)}</div>
+      <div class="${c("footer")}"><button class="${c("btn btn-primary")}" id="bsHabitClose">${t("Schließen")}</button></div>
+    `;
+    body.querySelector("#bsHabitClose").addEventListener("click", close);
+    body.querySelectorAll(".bs-habit-cell").forEach((cell) =>
+      cell.addEventListener("click", async () => {
+        if (busy || cell.disabled) return;
+        busy = true;
+        const day = cell.getAttribute("data-day");
+        try {
+          await hass.callService("brainstorm", "update_idea", { id: idea.id, habit_done: !done.has(day), habit_date: day });
+          data = await hass.callWS({ type: "brainstorm/habit", idea_id: idea.id });
+          busy = false;
+          draw();
+        } catch (err) {
+          busy = false;
+          draw((err && err.message) || t("Das hat nicht geklappt."));
+        }
+      })
+    );
+  };
+  draw();
+}
+
+/**
+ * Fill a dialog body with the trash: deleted notes with their age, to restore
 
 /**
  * Fill a dialog body with the trash: deleted notes with their age, to restore

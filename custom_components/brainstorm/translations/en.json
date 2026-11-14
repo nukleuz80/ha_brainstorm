@@ -882,6 +882,9 @@
     },
     "drawing_invalid": {
       "message": "This drawing cannot be saved."
+    },
+    "habit_date_invalid": {
+      "message": "The day {date} cannot be marked: it lies in the future or more than 400 days back."
     }
   },
   "services": {
@@ -1042,6 +1045,18 @@
         "my_day": {
           "name": "My day",
           "description": "Picks the idea for today: morning, day (any time) or evening. It shows in the cards under ☀️ My day and in the daily briefing, and counts only today. Empty or null takes it out."
+        },
+        "habit": {
+          "name": "Habit",
+          "description": "Turns the idea into a daily habit (true) or back into a normal note (false). A habit is never done: ticking it off counts the day, and the cards show the streak and a calendar."
+        },
+        "habit_done": {
+          "name": "Habit done",
+          "description": "Marks a day of the habit as done (true) or not (false); today unless habit_date is given. Ticking off a habit with status: completed also counts today, status: active takes today back."
+        },
+        "habit_date": {
+          "name": "Habit day",
+          "description": "The day for habit_done, today or up to 400 days back."
         },
         "rotation": {
           "name": "Rotation",

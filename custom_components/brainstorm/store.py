@@ -18,7 +18,7 @@ from difflib import SequenceMatcher
 from typing import Any, Callable, TYPE_CHECKING
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import Context, HomeAssistant
+from homeassistant.core import Context, HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers.event import async_track_point_in_utc_time
 from homeassistant.helpers.storage import Store
@@ -97,6 +97,9 @@ from .const import (
     ATTR_ROTATION,
     ATTR_MY_DAY,
     MY_DAY_PARTS,
+    ATTR_HABIT,
+    HABIT_MAX_DAYS,
+    HABIT_RECENT_DAYS,
     ROTATION_FEWEST,
     ROTATION_FEWEST_DAYS,
     ROTATION_MAX_PEOPLE,
@@ -627,6 +630,8 @@ class BrainstormStore:
                 result[ATTR_REPEAT] = repeat
             if part := my_day_part(idea):
                 result[ATTR_MY_DAY] = part
+            if habit := habit_summary(idea):
+                result[ATTR_HABIT] = habit
             if rotation := idea.get(ATTR_ROTATION):
                 result[ATTR_ROTATION] = {
                     "mode": rotation["mode"],
@@ -1653,6 +1658,9 @@ class BrainstormStore:
         update_rotation: bool = False,
         my_day: str | None = None,
         update_my_day: bool = False,
+        habit: bool | None = None,
+        habit_done: bool | None = None,
+        habit_date: date | None = None,
     ) -> dict[str, Any] | None:
         """Update an existing idea.
 
@@ -1681,6 +1689,19 @@ class BrainstormStore:
         )
 
         idea = self._ideas[idea_id]
+        if habit is True and not isinstance(idea.get(ATTR_HABIT), dict):
+            # Turned on again, the days from before come back
+            idea[ATTR_HABIT] = {"days": idea.pop("habit_paused", None) or []}
+        elif habit is False and isinstance(idea.get(ATTR_HABIT), dict):
+            idea["habit_paused"] = idea.pop(ATTR_HABIT).get("days") or []
+        if isinstance(idea.get(ATTR_HABIT), dict):
+            if idea.get(ATTR_STATUS) == "active" and status in ("completed", "active"):
+                # Ticking off a habit counts today, it stays for tomorrow
+                if habit_done is None:
+                    habit_done = status == "completed"
+                status = None
+            if habit_done is not None:
+                self._set_habit_day(idea, habit_date or dt_util.now().date(), habit_done)
         newly_completed = status == "completed" and idea.get(ATTR_STATUS) != "completed"
         reopened = status == "active" and idea.get(ATTR_STATUS) in ("completed", "archived")
         if text is not None:
@@ -1927,6 +1948,28 @@ class BrainstormStore:
             first[ATTR_DUE],
         )
         return first
+
+    def _set_habit_day(self, idea: dict[str, Any], day: date, done: bool) -> None:
+        """Mark or unmark one day of a habit, today or a day before."""
+        today = dt_util.now().date()
+        if day > today or day < today - timedelta(days=HABIT_MAX_DAYS):
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="habit_date_invalid",
+                translation_placeholders={"date": day.isoformat()},
+            )
+        oldest = (today - timedelta(days=HABIT_MAX_DAYS)).isoformat()
+        days = {d for d in idea[ATTR_HABIT].get("days") or [] if d >= oldest}
+        if done:
+            days.add(day.isoformat())
+        else:
+            days.discard(day.isoformat())
+        idea[ATTR_HABIT] = {**idea[ATTR_HABIT], "days": sorted(days)}
+
+    @callback
+    def async_new_day(self, _now: datetime | None = None) -> None:
+        """Tell the cards and lists that a new day began, for habits and My day."""
+        self._notify_listeners()
 
     def _assign(self, idea: dict[str, Any], person: str) -> None:
         """Give an idea to a person, who may then see and edit it."""
@@ -3751,6 +3794,15 @@ class BrainstormStore:
                 idea.pop(ATTR_NUMBERING)
             if ATTR_REPEAT in idea and idea[ATTR_REPEAT] not in REPEAT_RULES:
                 idea.pop(ATTR_REPEAT)
+            if ATTR_HABIT in idea:
+                if isinstance(idea[ATTR_HABIT], dict):
+                    idea[ATTR_HABIT] = {
+                        "days": sorted(
+                            {d for d in idea[ATTR_HABIT].get("days") or [] if isinstance(d, str)}
+                        )[-HABIT_MAX_DAYS:]
+                    }
+                else:
+                    idea.pop(ATTR_HABIT)
             if ATTR_ROTATION in idea:
                 if cleaned_rotation := _clean_rotation(idea[ATTR_ROTATION]):
                     idea[ATTR_ROTATION] = cleaned_rotation
@@ -4000,6 +4052,40 @@ def _subtask_progress(ideas: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
             "percent": round(percent(idea, frozenset())),
         }
     return result
+
+
+def habit_summary(idea: dict[str, Any], today: date | None = None) -> dict[str, Any] | None:
+    """Return the streak, the best streak and the recent days of a habit.
+
+    A streak still counts on a day not ticked off yet, from yesterday back.
+    """
+    habit = idea.get(ATTR_HABIT)
+    if not isinstance(habit, dict):
+        return None
+    today = today or dt_util.now().date()
+    days: set[date] = set()
+    for value in habit.get("days") or []:
+        with contextlib.suppress(TypeError, ValueError):
+            days.add(date.fromisoformat(str(value)))
+    streak = 0
+    day = today if today in days else today - timedelta(days=1)
+    while day in days:
+        streak += 1
+        day -= timedelta(days=1)
+    best = run = 0
+    previous: date | None = None
+    for day in sorted(days):
+        run = run + 1 if previous is not None and day - previous == timedelta(days=1) else 1
+        best = max(best, run)
+        previous = day
+    since = today - timedelta(days=HABIT_RECENT_DAYS)
+    return {
+        "today": today in days,
+        "streak": streak,
+        "best": best,
+        "total": len(days),
+        "days": sorted(d.isoformat() for d in days if since < d <= today),
+    }
 
 
 def my_day_part(idea: dict[str, Any], today: date | None = None) -> str | None:

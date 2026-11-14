@@ -1,9 +1,9 @@
-import { LEVEL_CSS, SOCIAL_CSS, commentBadge, renderComments, renderTrash, needsPersonalData, reactionBadges, voteBadge, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.12.2";
+import { LEVEL_CSS, SOCIAL_CSS, commentBadge, renderComments, renderTrash, needsPersonalData, reactionBadges, voteBadge, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.12.3";
 
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.12.2 - Mein Tag
+ * Version 1.12.3 - Gewohnheiten
  */
 // The bulb lies next to this file, wherever Home Assistant serves it from
 const BULB_URL = new URL("./brainstorm-bulb.svg", import.meta.url).href;
@@ -1555,6 +1555,7 @@ class BrainstormCard extends HTMLElement {
         ${rotationFields(this._hass, idea, "action-dialog")}
         <div class="action-dialog-label">${t("Mein Tag:")}</div>
         <select class="action-dialog-input" id="editMyDay" title="${t("Für heute vornehmen: morgens, tagsüber oder abends. Gilt nur heute und kommt ins Briefing.")}">${myDayOptions(idea.my_day)}</select>
+        ${habitField(idea, "action-dialog")}
 
         ${echos.length ? `
           <details class="action-dialog-echo-details" data-lvl="pro">
@@ -1798,6 +1799,8 @@ class BrainstormCard extends HTMLElement {
         if (newRotation !== undefined) payload.rotation = newRotation;
         const newMyDay = body.querySelector("#editMyDay").value || "";
         if (newMyDay !== (idea.my_day || "")) payload.my_day = newMyDay || null;
+        const newHabit = readHabit(body, idea);
+        if (newHabit !== undefined) payload.habit = newHabit;
         const newMarkers = MARKERS.filter((marker) => selectedMarkers.has(marker));
         if (newMarkers.join() !== currentMarkers.join()) {
           payload.markers = newMarkers;
@@ -2198,6 +2201,12 @@ class BrainstormCard extends HTMLElement {
   _currentUserId() {
     const sensor = this._getSensorEntity();
     return (sensor && sensor.attributes.current_user) || (this._hass && this._hass.user && this._hass.user.id) || "";
+  }
+
+  // The calendar of a habit: streak, best streak and the days to tick off
+  _showHabit(idea) {
+    if (!this._hass || !idea || !idea.habit) return;
+    this._openDialog(t("🔥 Kalender"), (body) => renderHabit(body, { hass: this._hass, idea, close: () => this._closeDialog(), prefix: "action-dialog" }));
   }
 
   // The comments of a note: read, write, delete your own
@@ -5154,12 +5163,13 @@ class BrainstormCard extends HTMLElement {
             <div class="idea-item ${isSub ? "is-subtask" : ""} ${isCompletedView ? "completed" : ""} ${(searching || (this._myDayOnly && !isCompletedView)) && !this._searchHits.has(item.id) ? "search-context" : ""}${rule && rule.color ? " rule-hit" : ""}" data-id="${this._escapeHtml(item.id)}" data-idx="${idx}" style="--item-cat-color: ${itemColor};">
               ${!isCompletedView && itemEdit ? `<span class="drag-handle" title="${t("Halten & Ziehen zum Sortieren oder Unteraufgabe zuordnen")}" data-id="${this._escapeHtml(item.id)}">⠿</span>` : ""}
               <button 
-                class="check-btn ${isCompletedView ? "checked" : ""}" 
-                title="${isCompletedView ? t("Wieder als aktiv markieren") : t("Als erledigt markieren")}" 
+                class="check-btn ${isCompletedView || (item.habit && item.habit.today) ? "checked" : ""}" 
+                title="${isCompletedView ? t("Wieder als aktiv markieren") : item.habit ? (item.habit.today ? t("Heute erledigt – nochmal tippen nimmt es zurück") : t("Für heute abhaken, die Gewohnheit bleibt")) : t("Als erledigt markieren")}" 
                 data-id="${this._escapeHtml(item.id)}"
                 data-completed="${isCompletedView ? "true" : "false"}"
+                ${!isCompletedView && item.habit ? `data-habit-today="${item.habit.today ? "true" : "false"}"` : ""}
                 ${item.access === "view" ? "disabled" : ""}
-              >${isCompletedView ? "✓" : ""}</button>
+              >${isCompletedView || (item.habit && item.habit.today) ? "✓" : ""}</button>
               <div class="idea-content">
                 <div class="idea-text" title="${itemEdit ? t("Klicken zum Bearbeiten (Lange drücken für Kontextmenü)") : ""}" data-id="${this._escapeHtml(item.id)}" style="${itemEdit ? "" : "cursor: default;"}">
                   ${isSub ? `<span class="subtask-indicator" title="${t("Unteraufgabe")}">↳</span>` : ""}${numbers.has(item.id) ? `<span class="idea-number">${numbers.get(item.id)}</span> ` : ""}${rule && rule.icon ? `<span class="rule-icon" title="${this._escapeHtml(rule.name)}">${this._escapeHtml(rule.icon)}</span> ` : ""}${formatText(item.text)}
@@ -5171,7 +5181,7 @@ class BrainstormCard extends HTMLElement {
                   ${isSub ? `<span class="subtask-badge" title="${t("Unteraufgabe")}">${t("Unteraufgabe")}</span>` : ""}
                   <span class="category-tag ${itemEdit ? "clickable" : ""}" title="${itemEdit ? t("Kategorie ändern") : t("Kategorie")}" data-id="${this._escapeHtml(item.id)}" data-cat="${this._escapeHtml(item.category)}" style="color: ${this._getCategoryColor(item.category)}; background: color-mix(in srgb, ${this._getCategoryColor(item.category)} 12%, var(--secondary-background-color, rgba(0,0,0,0.06))); border: 1px solid color-mix(in srgb, ${this._getCategoryColor(item.category)} 25%, transparent);"><ha-icon icon="${this._getCategoryIcon(item.category)}" style="--mdc-icon-size: 11px; width: 11px; height: 11px; margin-right: 3px; display: inline-flex; align-items: center; vertical-align: middle;"></ha-icon>${this._escapeHtml(item.category)}</span>
                   ${this._getPriorityBadge(item.priority, item.id)}
-                  ${item.due ? this._formatDueBadge(item.due) : ""}${repeatBadge(item)}${myDayBadge(item)}
+                  ${item.due ? this._formatDueBadge(item.due) : ""}${repeatBadge(item)}${myDayBadge(item)}${isCompletedView ? "" : habitBadge(item)}
                   ${this._formatTargetBadges(item)}
                   ${this._formatShareBadge(item)}
                   ${this._formatAuthorBadge(item)}
@@ -5224,6 +5234,16 @@ class BrainstormCard extends HTMLElement {
             this._vote(btn.getAttribute("data-id"), Number(btn.getAttribute("data-vote")));
           });
         });
+        ideasList.querySelectorAll("[data-habit]").forEach((btn) => {
+          const open = (e) => {
+            e.stopPropagation();
+            const sensorNow = this._getSensorEntity();
+            const idea = sensorNow && (sensorNow.attributes.ideas || []).find((i) => i.id === btn.getAttribute("data-habit"));
+            if (idea) this._showHabit(idea);
+          };
+          btn.addEventListener("click", open);
+          btn.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(e); } });
+        });
         ideasList.querySelectorAll("[data-comment]").forEach((btn) => {
           btn.addEventListener("click", (e) => {
             e.stopPropagation();
@@ -5239,7 +5259,12 @@ class BrainstormCard extends HTMLElement {
           btn.addEventListener("click", () => {
             const id = btn.getAttribute("data-id");
             const wasCompleted = btn.getAttribute("data-completed") === "true";
-            if (wasCompleted) {
+            const habitToday = btn.getAttribute("data-habit-today");
+            if (habitToday !== null) {
+              // A habit is ticked off for today only and stays in the list
+              this._hass.callService("brainstorm", "update_idea", { id, habit_done: habitToday !== "true" })
+                .catch((err) => console.error("Failed to tick off habit", err));
+            } else if (wasCompleted) {
               this._uncompleteIdea(id);
             } else {
               this._completeIdea(id);
@@ -6185,7 +6210,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.12.2 ",
+  "%c BRAINSTORM-CARD %c v1.12.3 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

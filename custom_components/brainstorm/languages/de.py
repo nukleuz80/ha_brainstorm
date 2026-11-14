@@ -1519,6 +1519,7 @@ MESSAGES: dict[str, str] = {
     "digest_one": "Heute steht an: {item}.",
     "digest_many": "Heute stehen {count} Dinge an: {items}.",
     "digest_my_day": "Für heute vorgenommen: {parts}.",
+    "digest_habits": "Gewohnheiten für heute: {items}.",
     "my_day_morning": "morgens {items}",
     "my_day_day": "tagsüber {items}",
     "my_day_evening": "abends {items}",

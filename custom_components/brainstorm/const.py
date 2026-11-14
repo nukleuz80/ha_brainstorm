@@ -251,6 +251,11 @@ ATTR_REPEAT_CLOSED = "repeat_closed"
 REPEAT_MAX_SUBTASKS = 100
 # Picked for today in "My day": {date, part}, only counting on that date
 ATTR_MY_DAY = "my_day"
+# A habit is ticked off once a day and never ends: {"days": [ISO dates]}
+ATTR_HABIT = "habit"
+HABIT_MAX_DAYS = 400
+# The days of a habit the cards get for the calendar
+HABIT_RECENT_DAYS = 126
 MY_DAY_PARTS = ("morning", "day", "evening")
 # Who a repeating note goes to in the next round: mode and the people (person
 # entities) taking turns

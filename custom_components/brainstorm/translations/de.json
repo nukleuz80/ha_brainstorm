@@ -882,6 +882,9 @@
     },
     "drawing_invalid": {
       "message": "Diese Zeichnung lässt sich nicht speichern."
+    },
+    "habit_date_invalid": {
+      "message": "Der Tag {date} kann nicht markiert werden: Er liegt in der Zukunft oder mehr als 400 Tage zurück."
     }
   },
   "services": {
@@ -1042,6 +1045,18 @@
         "my_day": {
           "name": "Mein Tag",
           "description": "Nimmt die Idee für heute vor: morgens, tagsüber oder abends. Sie erscheint in den Karten unter ☀️ Mein Tag und im täglichen Briefing und gilt nur heute. Leer oder null nimmt sie wieder heraus."
+        },
+        "habit": {
+          "name": "Gewohnheit",
+          "description": "Macht die Idee zur täglichen Gewohnheit (true) oder wieder zur normalen Notiz (false). Eine Gewohnheit wird nie erledigt: Abhaken zählt den Tag, die Karten zeigen die Serie und einen Kalender."
+        },
+        "habit_done": {
+          "name": "Gewohnheit erledigt",
+          "description": "Markiert einen Tag der Gewohnheit als erledigt (true) oder nicht (false); heute, wenn habit_date fehlt. Abhaken einer Gewohnheit mit status: completed zählt ebenfalls heute, status: active nimmt heute zurück."
+        },
+        "habit_date": {
+          "name": "Tag der Gewohnheit",
+          "description": "Der Tag für habit_done, heute oder bis zu 400 Tage zurück."
         },
         "rotation": {
           "name": "Wechselnde Zuständigkeit",

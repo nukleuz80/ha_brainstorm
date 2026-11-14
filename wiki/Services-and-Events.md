@@ -87,6 +87,9 @@ Changes an existing idea.
 | `callout` | No | Short remark shown in a speech bubble above the note, up to 200 characters. Empty or `null` removes it. |
 | `repeat` | No | Lets the idea come back when it is ticked off: `daily`, `weekdays`, `weekly`, `biweekly`, `monthly` or `yearly`. The new idea is due at the next date after now, with the same details and its subtasks open again. Empty or `null` stops it. |
 | `my_day` | No | Picks the idea for today (v1.12.2): `morning`, `day` or `evening`. Counts only today, shows in the cards under ☀️ My day and in the briefing. Empty or `null` takes it out. |
+| `habit` | No | Makes the idea a daily habit (v1.12.3) or an ordinary note again (`false`; the days are kept for switching it on again). A habit never gets done: ticking it off (`status: completed`) counts today, `status: active` takes today back. |
+| `habit_done` | No | Marks (`true`) or unmarks (`false`) one day of a habit, today unless `habit_date` is given. |
+| `habit_date` | No | The day for `habit_done`, e.g. `2026-11-13`. Not in the future and at most 400 days back. |
 | `rotation` | No | Changing assignee of a repeating idea (v1.12.0): `{mode: turn, people: [person.anna, person.ben]}`. `mode` is `turn` (taking turns), `fewest` (whoever finished the fewest of their own notes in the last 30 days, the next in turn on a tie) or `random` (never the same person twice in a row). `people` are 2 to 10 person entities. If the idea belongs to none of them, it goes to the first at once; every new round goes to the next one, with their subtasks and a reminder on arrival. `null` ends the rotation. |
 | `numbering` | No | Numbers the subtasks below the note and theirs: `decimal` (1., 1.1), `alpha` (a), b)) or `roman` (I., II.). Empty or `null` removes it. |
 
