@@ -249,6 +249,16 @@ ATTR_REPEATED_AS = "repeated_as"
 ATTR_REPEAT_CLOSED = "repeat_closed"
 # At most this many subtasks come along with a repeating note
 REPEAT_MAX_SUBTASKS = 100
+# Who a repeating note goes to in the next round: mode and the people (person
+# entities) taking turns
+ATTR_ROTATION = "rotation"
+ROTATION_TURN = "turn"
+ROTATION_FEWEST = "fewest"
+ROTATION_RANDOM = "random"
+ROTATION_MODES = (ROTATION_TURN, ROTATION_FEWEST, ROTATION_RANDOM)
+ROTATION_MAX_PEOPLE = 10
+# How far back "who did the least" counts the done notes of each person
+ROTATION_FEWEST_DAYS = 30
 # What the subtasks of a note can be sorted by
 SORT_KEYS = ("text", "priority", "due", "created", "votes")
 # Quick reactions of people to a note: reaction -> user IDs

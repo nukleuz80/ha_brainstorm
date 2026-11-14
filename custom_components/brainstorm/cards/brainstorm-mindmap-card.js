@@ -1,8 +1,8 @@
-import { LEVEL_CSS, SOCIAL_CSS, commentBadge, renderComments, renderTrash, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, repeatBadge, repeatOptions, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.11.12";
+import { LEVEL_CSS, SOCIAL_CSS, commentBadge, renderComments, renderTrash, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, repeatBadge, repeatOptions, readRotation, rotationFields, wireRotation, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.12.0";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.11.12 - Papierkorb
+ * Version: 1.12.0 - Wechselnde Zuständigkeit
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -10181,6 +10181,7 @@ class BrainstormMindmapCard extends HTMLElement {
         <div class="dialog-hint">${t("Ohne Uhrzeit erinnert Brainstorm um 9:00.")}</div>
         <div class="lvl" data-lvl="normal"><div class="dialog-label">${t("Wiederholen:")}</div>
         <select class="dialog-input" id="editRepeat" title="${t("Abgehakt kommt die Notiz mit ihren Unteraufgaben zum nächsten Termin wieder.")}">${repeatOptions(idea.repeat)}</select></div>
+        ${rotationFields(this._hass, idea, "dialog")}
 
         ${echos.length ? `
           <details class="dialog-echo-details" data-lvl="pro">
@@ -10296,6 +10297,7 @@ class BrainstormMindmapCard extends HTMLElement {
       const dueDate = body.querySelector("#editDueDate");
       const dueTime = body.querySelector("#editDueTime");
 
+      wireRotation(body);
       body.querySelector("#editDueClear").addEventListener("click", () => {
         dueDate.value = "";
         dueTime.value = "";
@@ -10385,6 +10387,8 @@ class BrainstormMindmapCard extends HTMLElement {
         if (newRepeat !== (idea.repeat || "")) {
           payload.repeat = newRepeat;
         }
+        const newRotation = readRotation(body, idea);
+        if (newRotation !== undefined) payload.rotation = newRotation;
         const newDescription = (body.querySelector("#editDescription").value || "").trim();
         if (newDescription !== (idea.description || "")) {
           payload.description = newDescription;
@@ -10421,6 +10425,7 @@ class BrainstormMindmapCard extends HTMLElement {
         if ("frame" in payload) before.frame = idea.frame || null;
         if ("parent_id" in payload) before.parent_id = currentParentId || "";
         if ("repeat" in payload) before.repeat = idea.repeat || "";
+        if ("rotation" in payload) before.rotation = idea.rotation || null;
         try {
           await this._hass.callService("brainstorm", "update_idea", payload);
           this._pushUndo(currentText, () => this._hass.callService("brainstorm", "update_idea", before));
@@ -11168,7 +11173,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.11.12 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.12.0 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

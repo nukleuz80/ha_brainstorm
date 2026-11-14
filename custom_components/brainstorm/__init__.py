@@ -49,6 +49,9 @@ from .const import (
     FRAME_MAX_LENGTH,
     NUMBERING_STYLES,
     REPEAT_RULES,
+    ATTR_ROTATION,
+    ROTATION_MAX_PEOPLE,
+    ROTATION_MODES,
     SORT_KEYS,
     REACTIONS,
     VOTING_MAX_VOTES,
@@ -223,6 +226,19 @@ SERVICE_UPDATE_IDEA_SCHEMA = vol.Schema(
         ),
         vol.Optional(ATTR_NUMBERING): vol.Any(None, "", vol.In(NUMBERING_STYLES)),
         vol.Optional(ATTR_REPEAT): vol.Any(None, "", vol.In(REPEAT_RULES)),
+        vol.Optional(ATTR_ROTATION): vol.Any(
+            None,
+            vol.Schema(
+                {
+                    vol.Required("mode"): vol.In(ROTATION_MODES),
+                    vol.Required("people"): vol.All(
+                        cv.entity_ids,
+                        [cv.entity_domain("person")],
+                        vol.Length(min=2, max=ROTATION_MAX_PEOPLE),
+                    ),
+                }
+            ),
+        ),
     },
     extra=vol.ALLOW_EXTRA,
 )
@@ -619,6 +635,8 @@ def _register_services(hass: HomeAssistant) -> None:
             update_numbering=ATTR_NUMBERING in call.data,
             repeat=call.data.get(ATTR_REPEAT),
             update_repeat=ATTR_REPEAT in call.data,
+            rotation=call.data.get(ATTR_ROTATION),
+            update_rotation=ATTR_ROTATION in call.data,
         )
         if updated is not None and (
             ATTR_ASSIGNEE in call.data

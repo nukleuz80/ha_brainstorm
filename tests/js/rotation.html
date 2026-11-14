@@ -1,0 +1,48 @@
+<!doctype html>
+<!-- Browser test for the changing assignee fields. Run: python3 -m http.server in the repo root,
+     open http://localhost:8000/tests/js/rotation.html, it shows PASS or the failures. --><meta charset="utf-8"><body><pre id="out">running</pre>
+<script type="module">
+import { readRotation, repeatBadge, rotationFields, wireRotation } from "../../custom_components/brainstorm/cards/brainstorm-i18n.js";
+const fails = [];
+const check = (name, got, want) => { if (JSON.stringify(got) !== JSON.stringify(want)) fails.push(`${name}: want ${JSON.stringify(want)}, got ${JSON.stringify(got)}`); };
+const hass = { states: {
+  "person.ben": { entity_id: "person.ben", attributes: { friendly_name: "Ben" } },
+  "person.anna": { entity_id: "person.anna", attributes: { friendly_name: "Anna" } },
+  "light.x": { entity_id: "light.x", attributes: {} },
+} };
+const dialog = (idea) => {
+  const body = document.createElement("div");
+  body.innerHTML = `<select id="editRepeat"><option value=""></option><option value="weekly"${idea.repeat ? " selected" : ""}>w</option></select>${rotationFields(hass, idea)}`;
+  document.body.appendChild(body);
+  wireRotation(body);
+  return body;
+};
+check("no fields with one person", rotationFields({ states: { "person.a": { entity_id: "person.a", attributes: {} } } }, {}), "");
+
+let body = dialog({});
+check("hidden without repeat", body.querySelector("#bsRotation").hidden, true);
+check("nothing changed", readRotation(body, {}), undefined);
+body.querySelector("#editRepeat").value = "weekly";
+body.querySelector("#editRepeat").dispatchEvent(new Event("change"));
+check("shown with repeat", body.querySelector("#bsRotation").hidden, false);
+check("people sorted", [...body.querySelectorAll("#bsRotationPeople input")].map((b) => b.value), ["person.anna", "person.ben"]);
+body.querySelector("#bsRotationMode").value = "turn";
+body.querySelector("#bsRotationMode").dispatchEvent(new Event("change"));
+body.querySelector('input[value="person.ben"]').checked = true;
+body.querySelector("#bsRotationPeople").dispatchEvent(new Event("change"));
+check("warns with one", body.querySelector("#bsRotationHint").classList.contains("bs-rotation-warn"), true);
+check("one is no change", readRotation(body, {}), undefined);
+body.querySelector('input[value="person.anna"]').checked = true;
+body.querySelector("#bsRotationPeople").dispatchEvent(new Event("change"));
+check("no warning", body.querySelector("#bsRotationHint").classList.contains("bs-rotation-warn"), false);
+check("new rotation", readRotation(body, {}), { mode: "turn", people: ["person.anna", "person.ben"] });
+
+const idea = { repeat: "weekly", rotation: { mode: "fewest", people: ["person.ben", "person.anna"] } };
+body = dialog(idea);
+check("turn order kept", [...body.querySelectorAll("#bsRotationPeople input")].map((b) => b.value), ["person.ben", "person.anna"]);
+check("unchanged", readRotation(body, idea), undefined);
+body.querySelector("#editRepeat").value = "";
+check("repeat off ends it", readRotation(body, idea), null);
+check("badge title", repeatBadge(idea).includes("Wer am wenigsten erledigt hat"), true);
+document.getElementById("out").textContent = fails.length ? "FAIL\n" + fails.join("\n") : "PASS";
+</script>

@@ -1,9 +1,9 @@
-import { LEVEL_CSS, SOCIAL_CSS, commentBadge, renderComments, renderTrash, needsPersonalData, reactionBadges, voteBadge, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, repeatBadge, repeatOptions, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.11.12";
+import { LEVEL_CSS, SOCIAL_CSS, commentBadge, renderComments, renderTrash, needsPersonalData, reactionBadges, voteBadge, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, repeatBadge, repeatOptions, readRotation, rotationFields, wireRotation, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.12.0";
 
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.11.12 - Papierkorb
+ * Version 1.12.0 - Wechselnde Zuständigkeit
  */
 // The bulb lies next to this file, wherever Home Assistant serves it from
 const BULB_URL = new URL("./brainstorm-bulb.svg", import.meta.url).href;
@@ -1542,6 +1542,7 @@ class BrainstormCard extends HTMLElement {
         <div class="action-dialog-hint">${t("Ohne Uhrzeit erinnert Brainstorm um 9:00.")}</div>
         <div class="lvl" data-lvl="normal"><div class="action-dialog-label" style="margin-top: 6px;">${t("Wiederholen:")}</div>
         <select class="action-dialog-input" id="editRepeat" title="${t("Abgehakt kommt die Notiz mit ihren Unteraufgaben zum nächsten Termin wieder.")}">${repeatOptions(idea.repeat)}</select></div>
+        ${rotationFields(this._hass, idea, "action-dialog")}
 
         ${echos.length ? `
           <details class="action-dialog-echo-details" data-lvl="pro">
@@ -1686,6 +1687,7 @@ class BrainstormCard extends HTMLElement {
       const dueDate = body.querySelector("#editDueDate");
       const dueTime = body.querySelector("#editDueTime");
 
+      wireRotation(body);
       body.querySelector("#editDueClear").addEventListener("click", () => {
         dueDate.value = "";
         dueTime.value = "";
@@ -1779,6 +1781,8 @@ class BrainstormCard extends HTMLElement {
         if (newRepeat !== (idea.repeat || "")) {
           payload.repeat = newRepeat;
         }
+        const newRotation = readRotation(body, idea);
+        if (newRotation !== undefined) payload.rotation = newRotation;
         const newMarkers = MARKERS.filter((marker) => selectedMarkers.has(marker));
         if (newMarkers.join() !== currentMarkers.join()) {
           payload.markers = newMarkers;
@@ -6138,7 +6142,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.11.12 ",
+  "%c BRAINSTORM-CARD %c v1.12.0 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

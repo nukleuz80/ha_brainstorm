@@ -1031,6 +1031,10 @@
         "repeat": {
           "name": "Wiederholen",
           "description": "Wird die Idee abgehakt, kommt eine neue mit gleichem Text, gleichen Angaben und Unteraufgaben dazu, fällig zum nächsten Termin der Regel. Leer beendet das Wiederholen."
+        },
+        "rotation": {
+          "name": "Wechselnde Zuständigkeit",
+          "description": "An wen eine wiederkehrende Idee in der nächsten Runde geht, als {mode, people}. mode ist turn (reihum), fewest (wer in den letzten 30 Tagen am wenigsten eigene Notizen erledigt hat) oder random (Zufall); people listet 2 bis 10 Personen. Gehört die Idee keiner dieser Personen, geht sie sofort an die erste. Leer beendet den Wechsel."
         }
       }
     },

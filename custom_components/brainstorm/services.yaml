@@ -235,6 +235,11 @@ update_idea:
             - biweekly
             - monthly
             - yearly
+    rotation:
+      required: false
+      example: '{"mode": "turn", "people": ["person.anna", "person.ben"]}'
+      selector:
+        object:
 
 delete_idea:
   fields:

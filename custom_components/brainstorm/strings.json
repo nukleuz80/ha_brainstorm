@@ -1031,6 +1031,10 @@
         "repeat": {
           "name": "Repeat",
           "description": "When the idea is ticked off, a new one with the same text, details and subtasks is added, due at the next date of the rule. Empty stops repeating."
+        },
+        "rotation": {
+          "name": "Rotation",
+          "description": "Who a repeating idea goes to in the next round, as {mode, people}. mode is turn (taking turns), fewest (whoever finished the fewest of their notes in the last 30 days) or random; people lists 2 to 10 person entities. The idea goes to the first person at once if its assignee is not among them. Empty ends the rotation."
         }
       }
     },

@@ -8,6 +8,7 @@ import json
 import logging
 import math
 import os
+import random
 import re
 import shutil
 import uuid
@@ -93,6 +94,12 @@ from .const import (
     NUMBERING_STYLES,
     REPEAT_MAX_SUBTASKS,
     REPEAT_RULES,
+    ATTR_ROTATION,
+    ROTATION_FEWEST,
+    ROTATION_FEWEST_DAYS,
+    ROTATION_MAX_PEOPLE,
+    ROTATION_MODES,
+    ROTATION_RANDOM,
     LINK_LABEL_MAX_LENGTH,
     LINKS_MAX_COUNT,
     ATTR_SHAPE,
@@ -616,6 +623,11 @@ class BrainstormStore:
                 result[ATTR_NUMBERING] = numbering
             if repeat := idea.get(ATTR_REPEAT):
                 result[ATTR_REPEAT] = repeat
+            if rotation := idea.get(ATTR_ROTATION):
+                result[ATTR_ROTATION] = {
+                    "mode": rotation["mode"],
+                    "people": list(rotation["people"]),
+                }
             if reactions := idea.get(ATTR_REACTIONS):
                 result[ATTR_REACTIONS] = {k: list(v) for k, v in reactions.items()}
             if comments := idea.get(ATTR_COMMENTS):
@@ -1633,6 +1645,8 @@ class BrainstormStore:
         update_numbering: bool = False,
         repeat: str | None = None,
         update_repeat: bool = False,
+        rotation: dict[str, Any] | None = None,
+        update_rotation: bool = False,
     ) -> dict[str, Any] | None:
         """Update an existing idea.
 
@@ -1755,6 +1769,14 @@ class BrainstormStore:
                 idea[ATTR_REPEAT] = repeat
             else:
                 idea.pop(ATTR_REPEAT, None)
+        if update_rotation:
+            if cleaned_rotation := _clean_rotation(rotation):
+                idea[ATTR_ROTATION] = cleaned_rotation
+                # Someone of the turn has the note from now on
+                if idea.get(ATTR_ASSIGNEE) not in cleaned_rotation["people"]:
+                    self._assign(idea, cleaned_rotation["people"][0])
+            else:
+                idea.pop(ATTR_ROTATION, None)
         repeated: dict[str, Any] | None = None
         if newly_completed and idea.get(ATTR_REPEAT) in REPEAT_RULES:
             repeated = self._repeat_idea(idea)
@@ -1843,7 +1865,10 @@ class BrainstormStore:
                 }
             )
             self._ideas[new_id] = new
+            cloned.append(new)
             return new
+
+        cloned: list[dict[str, Any]] = []
 
         parent = idea.get(ATTR_PARENT_ID)
         if parent and self._ideas.get(parent, {}).get(ATTR_STATUS) not in (None, "active"):
@@ -1875,6 +1900,14 @@ class BrainstormStore:
                     closed.append(child[ATTR_ID])
         if closed:
             idea[ATTR_REPEAT_CLOSED] = closed
+        if rotation := idea.pop(ATTR_ROTATION, None):
+            first[ATTR_ROTATION] = rotation
+            previous = idea.get(ATTR_ASSIGNEE)
+            following = self._next_in_rotation(rotation, previous)
+            # Subtasks of the person whose turn it was go along to the next one
+            for new in cloned:
+                if new is first or (previous and new.get(ATTR_ASSIGNEE) == previous):
+                    self._assign(new, following)
         _LOGGER.info(
             "Brainstorm idea [%s] repeats %s as [%s], due %s",
             idea[ATTR_ID],
@@ -1883,6 +1916,45 @@ class BrainstormStore:
             first[ATTR_DUE],
         )
         return first
+
+    def _assign(self, idea: dict[str, Any], person: str) -> None:
+        """Give an idea to a person, who may then see and edit it."""
+        previous = idea.get(ATTR_ASSIGNEE)
+        idea[ATTR_ASSIGNEE] = person
+        trigger = idea.get(ATTR_TRIGGER)
+        if isinstance(trigger, dict) and trigger.get("person") in (None, previous):
+            # A reminder on arrival is for whoever has the note
+            idea[ATTR_TRIGGER] = {**trigger, "person": person}
+        if user := self._person_user(person):
+            shares = dict(idea.get(ATTR_SHARES) or {})
+            shares.setdefault(user, SHARE_EDIT)
+            idea[ATTR_SHARES] = shares
+
+    def _next_in_rotation(self, rotation: dict[str, Any], current: str | None) -> str:
+        """Return whose turn a repeating idea is in its next round.
+
+        Taking turns goes to the person after the current one. "Fewest" goes
+        to whoever finished the fewest notes they had in the last days, the
+        next in turn on a tie. Random never picks the same person twice.
+        """
+        people: list[str] = rotation["people"]
+        start = people.index(current) + 1 if current in people else 0
+        in_turn = people[start:] + people[:start]
+        mode = rotation["mode"]
+        if mode == ROTATION_RANDOM:
+            return random.choice([p for p in people if p != current] or people)
+        if mode == ROTATION_FEWEST:
+            since = dt_util.now() - timedelta(days=ROTATION_FEWEST_DAYS)
+            done = dict.fromkeys(people, 0)
+            for other in self._ideas.values():
+                person = other.get(ATTR_ASSIGNEE)
+                if other.get(ATTR_STATUS) != "completed" or person not in done:
+                    continue
+                finished = dt_util.parse_datetime(str(other.get(ATTR_COMPLETED_AT) or ""))
+                if finished is not None and finished >= since:
+                    done[person] += 1
+            return min(in_turn, key=done.__getitem__)
+        return in_turn[0]
 
     def _take_back_repeat(self, idea: dict[str, Any]) -> None:
         """Remove the next round of a reopened idea, unless work began on it."""
@@ -1897,6 +1969,8 @@ class BrainstormStore:
                 child[ATTR_STATUS] = "active"
                 child.pop(ATTR_COMPLETED_AT, None)
         idea[ATTR_REPEAT] = new.get(ATTR_REPEAT, idea.get(ATTR_REPEAT))
+        if rotation := new.get(ATTR_ROTATION):
+            idea[ATTR_ROTATION] = rotation
         removed = {new_id}
         changed = True
         while changed:
@@ -3666,6 +3740,11 @@ class BrainstormStore:
                 idea.pop(ATTR_NUMBERING)
             if ATTR_REPEAT in idea and idea[ATTR_REPEAT] not in REPEAT_RULES:
                 idea.pop(ATTR_REPEAT)
+            if ATTR_ROTATION in idea:
+                if cleaned_rotation := _clean_rotation(idea[ATTR_ROTATION]):
+                    idea[ATTR_ROTATION] = cleaned_rotation
+                else:
+                    idea.pop(ATTR_ROTATION)
             new_ideas[idea_id] = idea
         known = set(new_ideas) | set(self._ideas)
         for idea_id, idea in new_ideas.items():
@@ -3910,6 +3989,19 @@ def _subtask_progress(ideas: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
             "percent": round(percent(idea, frozenset())),
         }
     return result
+
+
+def _clean_rotation(value: Any) -> dict[str, Any] | None:
+    """Return a valid rotation of at least two people, or None."""
+    if not isinstance(value, dict) or value.get("mode") not in ROTATION_MODES:
+        return None
+    people: list[str] = []
+    for person in value.get("people") or []:
+        if isinstance(person, str) and person.startswith("person.") and person not in people:
+            people.append(person)
+    if len(people) < 2:
+        return None
+    return {"mode": value["mode"], "people": people[:ROTATION_MAX_PEOPLE]}
 
 
 def _clean_short_text(value: Any, limit: int) -> str | None:

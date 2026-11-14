@@ -542,6 +542,13 @@ const DICTIONARIES = {
     "Jeden Monat": "Every month",
     "Jedes Jahr": "Every year",
     "Nicht wiederholen": "Do not repeat",
+    "Zuständig: {mode}": "Assigned: {mode}",
+    "Reihum": "Taking turns",
+    "Wer am wenigsten erledigt hat": "Whoever did the least",
+    "Zufällig": "At random",
+    "Zuständig im Wechsel:": "Changing assignee:",
+    "Nicht wechseln": "Do not change",
+    "Abgehakt geht die nächste Runde an die nächste Person. Wähle mindestens zwei.": "Once ticked off, the next round goes to the next person. Choose at least two.",
     "Wiederholt sich: {rule}": "Repeats: {rule}",
     "Wiederholen:": "Repeat:",
     "Abgehakt kommt die Notiz mit ihren Unteraufgaben zum nächsten Termin wieder.": "When ticked off, the note comes back with its subtasks at the next date.",
@@ -1061,10 +1068,100 @@ export function repeatOptions(current) {
     .join("");
 }
 
-/** A small 🔁 for notes that come back. */
+/** A small 🔁 for notes that come back, saying how the person changes. */
 export function repeatBadge(idea) {
   const label = repeatLabel(idea && idea.repeat);
-  return label ? `<span class="repeat-badge" title="${t("Wiederholt sich: {rule}", { rule: label })}">🔁</span>` : "";
+  if (!label) return "";
+  let title = t("Wiederholt sich: {rule}", { rule: label });
+  const mode = rotationLabel(idea.rotation && idea.rotation.mode);
+  if (mode) title += ` · ${t("Zuständig: {mode}", { mode })}`;
+  return `<span class="repeat-badge" title="${escapeHtml(title)}">🔁</span>`;
+}
+
+/** How a repeating note can change hands each round. */
+export const ROTATIONS = ["turn", "fewest", "random"];
+
+/** Return the name of a rotation mode in the language of the user. */
+export function rotationLabel(mode) {
+  const labels = {
+    turn: t("Reihum"),
+    fewest: t("Wer am wenigsten erledigt hat"),
+    random: t("Zufällig"),
+  };
+  return labels[mode] || "";
+}
+
+function personsOf(hass) {
+  return Object.values((hass && hass.states) || {})
+    .filter((state) => state.entity_id.startsWith("person."))
+    .map((state) => ({ id: state.entity_id, name: (state.attributes && state.attributes.friendly_name) || state.entity_id.slice(7) }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/**
+ * The fields that let a repeating note go to someone else every round.
+ * Shown below the repeat field once a rule is chosen; empty without two people.
+ */
+export function rotationFields(hass, idea, prefix = "dialog") {
+  const people = personsOf(hass);
+  const current = (idea && idea.rotation) || { mode: "", people: [] };
+  if (people.length < 2 && !current.mode) return "";
+  const chosen = new Set(current.people || []);
+  // People of the turn come first in their order, the others after them
+  const ordered = (current.people || [])
+    .map((id) => people.find((person) => person.id === id) || { id, name: id.slice(7) })
+    .concat(people.filter((person) => !chosen.has(person.id)));
+  return `<div class="lvl bs-rotation" data-lvl="normal" id="bsRotation">
+    <div class="${prefix}-label">${t("Zuständig im Wechsel:")}</div>
+    <select class="${prefix}-input" id="bsRotationMode">
+      <option value="">${t("Nicht wechseln")}</option>
+      ${ROTATIONS.map((mode) => `<option value="${mode}"${mode === current.mode ? " selected" : ""}>🔄 ${rotationLabel(mode)}</option>`).join("")}
+    </select>
+    <div class="bs-rotation-people" id="bsRotationPeople">
+      ${ordered.map((person) => `<label class="bs-rotation-person"><input type="checkbox" value="${escapeHtml(person.id)}"${chosen.has(person.id) ? " checked" : ""}> ${escapeHtml(person.name)}</label>`).join("")}
+    </div>
+    <div class="${prefix}-hint bs-rotation-hint" id="bsRotationHint">${t("Abgehakt geht die nächste Runde an die nächste Person. Wähle mindestens zwei.")}</div>
+  </div>`;
+}
+
+function rotationPeople(body) {
+  return [...body.querySelectorAll("#bsRotationPeople input:checked")].map((box) => box.value);
+}
+
+/** Show the rotation only for repeating notes and warn about too few people. */
+export function wireRotation(body) {
+  const box = body.querySelector("#bsRotation");
+  if (!box) return;
+  const repeat = body.querySelector("#editRepeat");
+  const mode = box.querySelector("#bsRotationMode");
+  const update = () => {
+    box.hidden = !(repeat && repeat.value);
+    box.querySelector("#bsRotationPeople").hidden = !mode.value;
+    const hint = box.querySelector("#bsRotationHint");
+    hint.hidden = !mode.value;
+    hint.classList.toggle("bs-rotation-warn", !!mode.value && rotationPeople(body).length < 2);
+  };
+  if (repeat) repeat.addEventListener("change", update);
+  mode.addEventListener("change", update);
+  box.querySelector("#bsRotationPeople").addEventListener("change", update);
+  update();
+}
+
+/**
+ * Return what the rotation fields changed: undefined for nothing, null to end
+ * the rotation, or the new {mode, people}. Too few people change nothing.
+ */
+export function readRotation(body, idea) {
+  const box = body.querySelector("#bsRotation");
+  if (!box) return undefined;
+  const repeat = body.querySelector("#editRepeat");
+  const mode = repeat && repeat.value ? box.querySelector("#bsRotationMode").value : "";
+  const before = (idea && idea.rotation) || null;
+  if (!mode) return before ? null : undefined;
+  const people = rotationPeople(body);
+  if (people.length < 2) return undefined;
+  if (before && before.mode === mode && before.people.join() === people.join()) return undefined;
+  return { mode, people };
 }
 
 /** Colors a rule can paint a note with. */
@@ -1367,6 +1464,10 @@ export const SOCIAL_CSS = `
   .bs-trash-btn:hover { border-color: var(--primary-color, #03a9f4); }
   .bs-trash-del:hover { border-color: var(--error-color, #db4437); color: var(--error-color, #db4437); }
   .bs-trash-btn:disabled { opacity: 0.4; cursor: default; }
+  .bs-rotation[hidden], .bs-rotation [hidden] { display: none; }
+  .bs-rotation-people { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 2px; }
+  .bs-rotation-person { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 2px 10px; border: 1px solid var(--divider-color, #ccc); border-radius: 18px; cursor: pointer; font-size: 0.9rem; color: var(--primary-text-color); }
+  .bs-rotation-warn { color: var(--error-color, #db4437); }
   .bs-trash-notice { font-size: 0.82rem; color: var(--success-color, #43a047); margin-top: 4px; }
 `;
 
