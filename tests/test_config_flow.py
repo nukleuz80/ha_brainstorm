@@ -244,6 +244,7 @@ async def test_saving_applies_at_once_and_returns_to_menu(
         (["reminders", "reminder_extras"], "reminders"),
         (["reminders", "reminder_locks"], "reminders"),
         (["battery"], "init"),
+        (["sensor_rules"], "init"),
         (["reminders", "reminder_test"], "reminders"),
     ],
 )
@@ -374,6 +375,11 @@ async def test_all_errors_and_aborts_have_a_text() -> None:
         "bring_category_missing",
         "battery_category_missing",
         "lock_time_missing",
+        "sensor_text_missing",
+        "sensor_category_missing",
+        "sensor_value_missing",
+        "sensor_value_number",
+        "sensor_reset_invalid",
     }
     assert aborts == {"reconfigure_successful", "store_not_ready"}
     for name in ("strings.json", "translations/en.json", "translations/de.json"):

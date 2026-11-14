@@ -96,6 +96,7 @@ from .frontend import async_register_frontend
 from .llm import async_register_llm_api
 from .reminders import ReminderManager, build_reminder_request, find_mentions
 from .repairs import async_check_issues, async_delete_issues
+from .sensor_rules import SensorRuleWatcher
 from .store import BrainstormConfigEntry, BrainstormStore, get_loaded_store
 from .todo_sync import TodoSyncManager
 from .websocket import async_register_commands
@@ -425,6 +426,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) -
     battery = BatteryWatcher(hass, store, {**entry.data, **entry.options})
     await battery.async_start()
     entry.async_on_unload(battery.async_stop)
+
+    sensor_rules = SensorRuleWatcher(hass, store, {**entry.data, **entry.options})
+    await sensor_rules.async_start()
+    entry.async_on_unload(sensor_rules.async_stop)
 
     attachment_cleaner = AttachmentCleaner(hass, store)
     attachment_cleaner.async_start()

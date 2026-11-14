@@ -945,6 +945,7 @@ MESSAGES: dict[str, str] = {
     "reminder_spoken": "Reminder: {text}.",
     "battery_task": "Replace the battery: {name}",
     "battery_task_level": "Replace the battery: {name} ({level} %)",
+    "sensor_task_description": "Triggered by {name}: {value}",
     "reminder_title": "Brainstorm: Reminder",
     "comment_title": "Brainstorm: {author} commented",
     "comment_message": "\"{text}\": {comment}",

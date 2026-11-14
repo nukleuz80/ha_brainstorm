@@ -461,6 +461,44 @@
           "go_back": "Kehrt zur vorherigen Seite zurück, ohne dieses Formular zu speichern."
         }
       },
+      "sensor_rules": {
+        "title": "Brainstorm › 📟 Sensor-Aufgaben",
+        "description": "Legt eine Aufgabe an, sobald ein Sensor einen Wert erreicht, etwa ein Filter nach 300 Betriebsstunden, eine zu trockene Pflanze oder eine fertige Waschmaschine. Ist der Sensor wieder im Normalbereich, hakt sich die Aufgabe selbst ab.\n\n{rules}\n\n{notice}",
+        "data": {
+          "sensor_rule": "Regel",
+          "go_back": "⬅️ Zurück ohne Speichern"
+        },
+        "data_description": {
+          "sensor_rule": "Wähle eine Regel, um sie zu ändern oder zu löschen, oder lege eine neue an.",
+          "go_back": "Kehrt zur vorherigen Seite zurück, ohne dieses Formular zu speichern."
+        }
+      },
+      "sensor_rule_edit": {
+        "title": "Brainstorm › 📟 Sensor-Aufgaben › Regel",
+        "description": "Die Aufgabe entsteht einmal, sobald die Bedingung erfüllt ist. Von Hand abgehakt kommt sie erst wieder, wenn der Sensor zwischendurch im Normalbereich war.",
+        "data": {
+          "sensor_entity": "Entität",
+          "sensor_condition": "Bedingung",
+          "sensor_value": "Wert",
+          "sensor_text": "Aufgabe",
+          "sensor_category": "Kategorie",
+          "sensor_auto_done": "Selbst abhaken",
+          "sensor_reset": "Wieder normal ab",
+          "sensor_delete": "Diese Regel löschen",
+          "go_back": "⬅️ Zurück ohne Speichern"
+        },
+        "data_description": {
+          "sensor_entity": "Jede Entität, etwa ein Sensor, ein Zähler, ein Zahlen-Helfer oder ein Binärsensor.",
+          "sensor_condition": "Erreicht oder übersteigt und erreicht oder unterschreitet vergleichen Zahlen, ist genau vergleicht den Zustand als Text.",
+          "sensor_value": "Eine Zahl für Grenzen, etwa 300, oder ein Zustand, etwa off oder fertig.",
+          "sensor_text": "Der Text der Aufgabe, etwa Wasserfilter wechseln. Ihre Beschreibung nennt den Sensor und seinen Wert.",
+          "sensor_category": "Wähle eine Kategorie oder tippe einen neuen Namen, sie wird beim Speichern angelegt.",
+          "sensor_auto_done": "Hakt die Aufgabe ab, sobald der Sensor wieder im Normalbereich ist.",
+          "sensor_reset": "Optional, nur für Zahlen. Erst dieser Wert gilt als wieder normal, etwa 0 für einen Zähler, der zurückgesetzt wird. So legt ein Sensor an der Grenze nicht ständig Aufgaben an.",
+          "sensor_delete": "Entfernt die Regel. Ihre offene Aufgabe bleibt.",
+          "go_back": "Kehrt zur vorherigen Seite zurück, ohne dieses Formular zu speichern."
+        }
+      },
       "reminder_locks": {
         "title": "Brainstorm › Erinnerungen › Sperrzeiten pro Echo",
         "description": "Echos in ihrer Sperrzeit bleiben für Brainstorm still: Andere Echos einer Erinnerung sprechen weiter, und ist keines mehr übrig, geht sie sofort aufs Handy. Bis zu drei Sperrzeiten, jede für ein oder mehrere Echos. Eine Sperrzeit darf über Mitternacht gehen. Echos leeren entfernt eine Sperrzeit.",
@@ -516,7 +554,12 @@
       "todo_sync_duplicate": "Jede To-do-Liste kann nur mit einer Kategorie gekoppelt werden.",
       "bring_category_missing": "Bitte wähle oder tippe eine Kategorie.",
       "battery_category_missing": "Bitte wähle oder tippe eine Kategorie.",
-      "lock_time_missing": "Bitte beide Zeiten für diese Echos setzen, und zwar verschieden."
+      "lock_time_missing": "Bitte beide Zeiten für diese Echos setzen, und zwar verschieden.",
+      "sensor_text_missing": "Gib den Text der Aufgabe ein.",
+      "sensor_category_missing": "Wähle eine Kategorie.",
+      "sensor_value_missing": "Gib den Zustand ein, bei dem die Aufgabe entsteht.",
+      "sensor_value_number": "Diese Bedingung braucht eine Zahl.",
+      "sensor_reset_invalid": "Gib eine Zahl auf der normalen Seite der Grenze ein: darunter bei erreicht oder übersteigt, darüber bei erreicht oder unterschreitet."
     },
     "abort": {
       "store_not_ready": "Brainstorm wird gerade neu geladen. Bitte öffne die Einstellungen in ein paar Sekunden noch einmal."
@@ -640,6 +683,13 @@
         "heart": "❤️ Liebe ich",
         "laugh": "😂 Lustig",
         "important": "❗ Wichtig"
+      }
+    },
+    "sensor_condition": {
+      "options": {
+        "above": "Erreicht oder übersteigt",
+        "below": "Erreicht oder unterschreitet",
+        "state": "Ist genau (Zustand)"
       }
     }
   },

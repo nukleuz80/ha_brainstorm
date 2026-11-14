@@ -27,7 +27,7 @@ DEFAULT_UI_LEVEL = UI_LEVEL_PRO
 NEW_UI_LEVEL = UI_LEVEL_NORMAL
 # Menu entries of the settings that only pros see
 PRO_MENU_STEPS = frozenset(
-    {"battery", "privacy_voice", "reminder_lists", "reminder_locks"}
+    {"battery", "sensor_rules", "privacy_voice", "reminder_lists", "reminder_locks"}
 )
 CONF_PRIVACY_ENABLED = "privacy_enabled"
 CONF_PRIVACY_OWNER = "privacy_owner"
@@ -85,6 +85,20 @@ CONF_BATTERY_CATEGORY = "battery_category"
 CONF_BATTERY_EXCLUDE = "battery_exclude"
 CONF_BATTERY_PHONES = "battery_phones"
 DEFAULT_BATTERY_THRESHOLD = 20
+# Rules that turn a sensor reaching a value into a task
+CONF_SENSOR_RULES = "sensor_rules"
+RULE_ID = "id"
+RULE_ENTITY = "sensor_entity"
+RULE_CONDITION = "sensor_condition"
+RULE_VALUE = "sensor_value"
+RULE_TEXT = "sensor_text"
+RULE_CATEGORY = "sensor_category"
+RULE_AUTO_DONE = "sensor_auto_done"
+RULE_RESET = "sensor_reset"
+CONDITION_ABOVE = "above"
+CONDITION_BELOW = "below"
+CONDITION_STATE = "state"
+SENSOR_CONDITIONS = [CONDITION_ABOVE, CONDITION_BELOW, CONDITION_STATE]
 
 DEFAULT_CATEGORIES = [
     "Inbox",
@@ -309,6 +323,10 @@ ATTR_BATTERY = "battery"
 ATTR_BATTERY_DONE = "battery_done"
 SOURCE_BRING = "bring"
 SOURCE_BATTERY = "battery"
+# The sensor rule a task is for, and whether its sensor is back to normal
+ATTR_SENSOR_RULE = "sensor_rule"
+ATTR_SENSOR_RULE_DONE = "sensor_rule_done"
+SOURCE_SENSOR = "sensor"
 # The amount or note of an item on a linked list, such as "1,5 l"
 ATTR_SPEC = "spec"
 # Format of the JSON export, raised when its layout changes incompatibly

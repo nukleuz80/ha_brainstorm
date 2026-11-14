@@ -1507,6 +1507,7 @@ MESSAGES: dict[str, str] = {
     "reminder_spoken": "Erinnerung: {text}.",
     "battery_task": "Batterie wechseln: {name}",
     "battery_task_level": "Batterie wechseln: {name} ({level} %)",
+    "sensor_task_description": "Ausgelöst von {name}: {value}",
     "reminder_title": "Brainstorm: Erinnerung",
     "comment_title": "Brainstorm: {author} hat kommentiert",
     "comment_message": "„{text}“: {comment}",

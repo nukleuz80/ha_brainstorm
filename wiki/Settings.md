@@ -257,6 +257,33 @@ Turns low batteries into tasks (v1.7.5). Every battery sensor counts: a level in
 - **Ticked off by hand** before the battery is replaced, the task does not come back. The next weak battery makes a new one.
 - **After a restart**, all batteries are checked once.
 
+### Brainstorm › 📟 Sensor tasks
+
+Turns a sensor value into a task (v1.11.10), such as *Change the water filter* after 300 operating hours, *Water the monstera* when soil moisture falls below 20 %, or *Empty the washing machine* once it has finished. The first page lists your rules:
+
+| Field | What it does |
+| :--- | :--- |
+| Rule | Choose a rule to change or delete it, or *➕ New rule*. |
+
+A rule has these fields:
+
+| Field | What it does |
+| :--- | :--- |
+| Entity | Any entity, such as a sensor, a counter, a number helper or a binary sensor. |
+| Condition | *Reaches or exceeds* and *Reaches or falls below* compare numbers, *Is exactly (state)* compares the state as text, ignoring upper and lower case. |
+| Value | A number for limits, such as `300` or `19.5`, or a state, such as `off` or `finished`. |
+| Task | The text of the task. Its description names the sensor and its value, such as *Triggered by Water filter operating hours: 300 h*. |
+| Category | Choose a category or type a new name, it is created on saving. *Smarthome* is suggested. |
+| Tick off by itself | Ticks the task off once the sensor is back to normal (on by default). |
+| Back to normal at | Optional, numbers only: only this value counts as back to normal, such as `0` for a counter you reset after changing the filter. It must lie on the normal side of the limit. Without it, anything beyond the limit counts as normal. |
+| Delete this rule | Only when editing: removes the rule. Its open task stays. |
+
+- **One task per occurrence:** while the condition stays met, no second task is created. Only once the sensor has been back to normal and the condition is met again is there a new one.
+- **Ticked off by hand** before the sensor is back to normal, the task does not come straight back.
+- **Without *Tick off by itself*** the task stays open until you tick it off, and also stands for the next occurrence until then.
+- **After a restart** and after saving, every rule is checked once; a rule already met creates its task at once. *Unavailable* and *Unknown* are skipped.
+- The task carries the source 📟 *Sensor* with the name of the entity and reaches reminders and automations like any new note.
+
 ### Brainstorm › Privacy & Users
 
 | Field | What it does |
@@ -279,7 +306,7 @@ Under **Configure ➔ General Settings & Export ➔ Operating level** you choose
 
 | Level | List card and edit dialog | Mind map | Configure menu |
 |---|---|---|---|
-| **Beginner** | input, microphone, categories, ticking off, search; in the dialog title, description, category, priority and due date | only *Around the center*, New idea, zoom, full screen | without batteries, lock times, rules per list, Echos & apps and AI text cleanup |
+| **Beginner** | input, microphone, categories, ticking off, search; in the dialog title, description, category, priority and due date | only *Around the center*, New idea, zoom, full screen | without batteries, sensor tasks, lock times, rules per list, Echos & apps and AI text cleanup |
 | **Normal** | also subtasks, multi-select, markers, repeating, attachments, sharing, AI suggestions | also *Tree*, *Outline*, *Kanban*, focus, levels, search and filter, multi-select, export as picture, PDF and Markdown | like Beginner |
 | **Pro** | everything: progress, numbering and sorting, callout, frame, shape, remind on Echos, original text, "in progress" | everything: *Org chart*, *Timeline*, *Matrix*, rules, cross links, frames, brainstorm and presentation mode, OPML/FreeMind, summing up a branch, all shortcuts | everything |
 
@@ -309,4 +336,5 @@ Hiding deletes nothing: markers, progress or frames that are set stay visible on
 | **Assign Echos & Apps to People** | the bedroom Echo belongs to Anna |
 | **🛒 Bring!** | Bring lists as main notes, items as subtasks, both ways (only with the Bring integration) |
 | **🔋 Batteries** | below 20 % the task *Change battery: hallway motion sensor (18 %)*, completes itself after the change |
+| **📟 Sensor tasks** | from 300 operating hours the task *Change the water filter*, completes itself once the counter is reset |
 | **🧹 Delete done entries** | remove done notes after 30 days automatically |

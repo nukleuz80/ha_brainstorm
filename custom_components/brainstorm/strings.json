@@ -461,6 +461,44 @@
           "go_back": "Returns to the previous page without saving this form."
         }
       },
+      "sensor_rules": {
+        "title": "Brainstorm › 📟 Sensor tasks",
+        "description": "Creates a task as soon as a sensor reaches a value, such as a filter after 300 operating hours, a plant that is too dry or a washing machine that has finished. Once the sensor is back to normal, the task ticks itself off.\n\n{rules}\n\n{notice}",
+        "data": {
+          "sensor_rule": "Rule",
+          "go_back": "⬅️ Back without saving"
+        },
+        "data_description": {
+          "sensor_rule": "Choose a rule to change or delete it, or create a new one.",
+          "go_back": "Returns to the previous page without saving this form."
+        }
+      },
+      "sensor_rule_edit": {
+        "title": "Brainstorm › 📟 Sensor tasks › Rule",
+        "description": "The task is created once when the condition is met. Ticked off by hand, it only comes back after the sensor has been back to normal.",
+        "data": {
+          "sensor_entity": "Entity",
+          "sensor_condition": "Condition",
+          "sensor_value": "Value",
+          "sensor_text": "Task",
+          "sensor_category": "Category",
+          "sensor_auto_done": "Tick off by itself",
+          "sensor_reset": "Back to normal at",
+          "sensor_delete": "Delete this rule",
+          "go_back": "⬅️ Back without saving"
+        },
+        "data_description": {
+          "sensor_entity": "Any entity, such as a sensor, a counter, a number helper or a binary sensor.",
+          "sensor_condition": "Reaches or exceeds and reaches or falls below compare numbers, is exactly compares the state as text.",
+          "sensor_value": "A number for limits, such as 300, or a state, such as off or finished.",
+          "sensor_text": "The text of the task, such as Change the water filter. Its description names the sensor and its value.",
+          "sensor_category": "Choose a category or type a new name, it is created on saving.",
+          "sensor_auto_done": "Ticks the task off once the sensor is back to normal.",
+          "sensor_reset": "Optional, numbers only. Only this value counts as back to normal, such as 0 for a counter that is reset, so a sensor around the limit does not keep creating tasks.",
+          "sensor_delete": "Removes the rule. Its open task stays.",
+          "go_back": "Returns to the previous page without saving this form."
+        }
+      },
       "reminder_locks": {
         "title": "Brainstorm › Reminders › Lock times per Echo",
         "description": "Echos in their lock time stay silent for Brainstorm: other Echos of a reminder still speak, and if none is left it goes to the phone right away. Up to three lock times, each for one or more Echos. A lock time may span midnight. Leave the Echos empty to remove one.",
@@ -516,7 +554,12 @@
       "todo_sync_duplicate": "Each to-do list can only be linked to one category.",
       "bring_category_missing": "Please choose or type a category.",
       "battery_category_missing": "Please choose or type a category.",
-      "lock_time_missing": "Please set both times for these Echos, and make them differ."
+      "lock_time_missing": "Please set both times for these Echos, and make them differ.",
+      "sensor_text_missing": "Enter the text of the task.",
+      "sensor_category_missing": "Choose a category.",
+      "sensor_value_missing": "Enter the state the task is created at.",
+      "sensor_value_number": "This condition needs a number.",
+      "sensor_reset_invalid": "Enter a number on the normal side of the limit: below it for reaches or exceeds, above it for reaches or falls below."
     },
     "abort": {
       "store_not_ready": "Brainstorm is reloading. Please open the settings again in a few seconds."
@@ -640,6 +683,13 @@
         "heart": "❤️ Love",
         "laugh": "😂 Funny",
         "important": "❗ Important"
+      }
+    },
+    "sensor_condition": {
+      "options": {
+        "above": "Reaches or exceeds",
+        "below": "Reaches or falls below",
+        "state": "Is exactly (state)"
       }
     }
   },

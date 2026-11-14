@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 from typing import Any
+import uuid
 
 import voluptuous as vol
 
@@ -35,6 +36,19 @@ from .const import (
     CONF_BATTERY_EXCLUDE,
     CONF_BATTERY_PHONES,
     CONF_BATTERY_THRESHOLD,
+    CONF_SENSOR_RULES,
+    CONDITION_ABOVE,
+    CONDITION_BELOW,
+    CONDITION_STATE,
+    RULE_AUTO_DONE,
+    RULE_CATEGORY,
+    RULE_CONDITION,
+    RULE_ENTITY,
+    RULE_ID,
+    RULE_RESET,
+    RULE_TEXT,
+    RULE_VALUE,
+    SENSOR_CONDITIONS,
     CONF_BRING_CATEGORY,
     CONF_ECHO_LOCKS,
     CONF_BRING_DEFAULT_LIST,
@@ -110,9 +124,13 @@ from .bring import bring_lists
 from .echo_locks import LOCK_DND, LOCK_ECHOS, LOCK_END, LOCK_SLOTS, LOCK_START
 from .languages import get_pack
 from .reminders import format_due, phone_service_for
+from .sensor_rules import to_number
 from .store import BrainstormStore, get_loaded_store
 
 BACK_FIELD = "go_back"
+SENSOR_RULE_PICK = "sensor_rule"
+SENSOR_RULE_DELETE = "sensor_delete"
+NEW_SENSOR_RULE = "new"
 STORE_WAIT_ATTEMPTS = 50
 STORE_WAIT_SECONDS = 0.1
 
@@ -242,6 +260,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         self._rule_enabled: bool = False
         self._rule_category: str = ""
         self._rule_person: str = ""
+        self._sensor_rule_id: str = ""
         self._notice: str = ""
         self._test_results: str = ""
 
@@ -260,6 +279,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "todo_sync": "To-do-Listen koppeln",
                 "bring": "🛒 Bring!",
                 "battery": "🔋 Batterien",
+                "sensor_rules": "📟 Sensor-Aufgaben",
                 "privacy": "Privatsphäre & Benutzer",
                 "privacy_voice": "Echos & Apps Personen zuordnen",
                 "close": "✅ Fertig",
@@ -294,6 +314,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "todo_sync": "Link To-do Lists",
                 "bring": "🛒 Bring!",
                 "battery": "🔋 Batteries",
+                "sensor_rules": "📟 Sensor tasks",
                 "privacy": "Privacy & Users",
                 "privacy_voice": "Assign Echos & Apps to People",
                 "close": "✅ Done",
@@ -1758,6 +1779,182 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             data_schema=vol.Schema(_with_back(schema)),
             errors=errors,
         )
+
+    async def async_step_sensor_rules(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """List the sensor rules and choose one to edit, or a new one."""
+        if user_input is not None and user_input.pop(BACK_FIELD, False):
+            return await self.async_step_init()
+        options = dict(self.config_entry.options or self.config_entry.data)
+        rules = list(options.get(CONF_SENSOR_RULES) or [])
+        if user_input is not None:
+            self._sensor_rule_id = str(user_input.get(SENSOR_RULE_PICK) or "")
+            return await self.async_step_sensor_rule_edit()
+
+        choices = [
+            selector.SelectOptionDict(value=NEW_SENSOR_RULE, label=self._text(
+                "➕ Neue Regel", "➕ New rule"
+            ))
+        ] + [
+            selector.SelectOptionDict(value=rule[RULE_ID], label=self._rule_label(rule))
+            for rule in rules
+        ]
+        overview = "\n".join(f"• {self._rule_label(rule)}" for rule in rules) or self._text(
+            "Noch keine Regel.", "No rule yet."
+        )
+        return self.async_show_form(
+            step_id="sensor_rules",
+            data_schema=vol.Schema(
+                _with_back(
+                    {
+                        vol.Required(
+                            SENSOR_RULE_PICK, default=NEW_SENSOR_RULE
+                        ): selector.SelectSelector(
+                            selector.SelectSelectorConfig(
+                                options=choices,
+                                mode=selector.SelectSelectorMode.LIST,
+                            )
+                        ),
+                    }
+                )
+            ),
+            description_placeholders={
+                "rules": overview,
+                "notice": self._take_notice(),
+            },
+        )
+
+    def _rule_label(self, rule: dict[str, Any]) -> str:
+        """Return a rule as one line, such as its text and its condition."""
+        state = self.hass.states.get(str(rule.get(RULE_ENTITY)))
+        name = state.name if state is not None else rule.get(RULE_ENTITY)
+        sign = {CONDITION_ABOVE: "≥", CONDITION_BELOW: "≤", CONDITION_STATE: "="}.get(
+            str(rule.get(RULE_CONDITION)), "?"
+        )
+        return f"{rule.get(RULE_TEXT)} ({name} {sign} {rule.get(RULE_VALUE)})"
+
+    async def async_step_sensor_rule_edit(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Add, change or delete one sensor rule."""
+        if user_input is not None and user_input.pop(BACK_FIELD, False):
+            return await self.async_step_sensor_rules()
+        store = await self._async_store()
+        options = dict(self.config_entry.options or self.config_entry.data)
+        rules = [dict(rule) for rule in options.get(CONF_SENSOR_RULES) or []]
+        index = next(
+            (i for i, rule in enumerate(rules) if rule.get(RULE_ID) == self._sensor_rule_id),
+            None,
+        )
+        rule = rules[index] if index is not None else {}
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            if index is not None and user_input.get(SENSOR_RULE_DELETE):
+                rules.pop(index)
+                options[CONF_SENSOR_RULES] = rules
+                return await self._async_saved(options, "sensor_rules")
+            new_rule = self._sensor_rule_from(user_input, errors)
+            if not errors:
+                category = new_rule[RULE_CATEGORY]
+                if not any(c.casefold() == category.casefold() for c in store.categories):
+                    await store.async_add_category(category)
+                new_rule[RULE_ID] = rule.get(RULE_ID) or uuid.uuid4().hex[:8]
+                if index is None:
+                    rules.append(new_rule)
+                else:
+                    rules[index] = new_rule
+                options[CONF_SENSOR_RULES] = rules
+                return await self._async_saved(options, "sensor_rules")
+
+        current = {**rule, **(user_input or {})}
+        categories = list(store.categories)
+        default_category = current.get(RULE_CATEGORY) or next(
+            (c for c in categories if c.casefold() == "smarthome"),
+            categories[0] if categories else "Inbox",
+        )
+        schema: dict[Any, Any] = {
+            vol.Required(
+                RULE_ENTITY, description=_suggested(current, RULE_ENTITY)
+            ): selector.EntitySelector(selector.EntitySelectorConfig()),
+            vol.Required(
+                RULE_CONDITION,
+                default=current.get(RULE_CONDITION, CONDITION_ABOVE),
+            ): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=SENSOR_CONDITIONS,
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                    translation_key=RULE_CONDITION,
+                )
+            ),
+            vol.Required(
+                RULE_VALUE, description=_suggested(current, RULE_VALUE)
+            ): selector.TextSelector(),
+            vol.Required(
+                RULE_TEXT, description=_suggested(current, RULE_TEXT)
+            ): selector.TextSelector(),
+            vol.Required(RULE_CATEGORY, default=default_category): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=categories,
+                    custom_value=True,
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                )
+            ),
+            vol.Required(
+                RULE_AUTO_DONE, default=bool(current.get(RULE_AUTO_DONE, True))
+            ): selector.BooleanSelector(),
+            vol.Optional(
+                RULE_RESET, description=_suggested(current, RULE_RESET)
+            ): selector.TextSelector(),
+        }
+        if index is not None:
+            schema[vol.Required(SENSOR_RULE_DELETE, default=False)] = (
+                selector.BooleanSelector()
+            )
+        return self.async_show_form(
+            step_id="sensor_rule_edit",
+            data_schema=vol.Schema(_with_back(schema)),
+            errors=errors,
+        )
+
+    @staticmethod
+    def _sensor_rule_from(
+        user_input: dict[str, Any], errors: dict[str, str]
+    ) -> dict[str, Any]:
+        """Return a rule from the form, noting what is wrong in errors."""
+        condition = user_input.get(RULE_CONDITION, CONDITION_ABOVE)
+        value = str(user_input.get(RULE_VALUE) or "").strip()
+        reset = str(user_input.get(RULE_RESET) or "").strip()
+        text = str(user_input.get(RULE_TEXT) or "").strip()
+        category = str(user_input.get(RULE_CATEGORY) or "").strip()
+        if not text:
+            errors[RULE_TEXT] = "sensor_text_missing"
+        if not category:
+            errors[RULE_CATEGORY] = "sensor_category_missing"
+        if condition == CONDITION_STATE:
+            if not value:
+                errors[RULE_VALUE] = "sensor_value_missing"
+            reset = ""
+        else:
+            limit = to_number(value)
+            if limit is None:
+                errors[RULE_VALUE] = "sensor_value_number"
+            elif reset:
+                level = to_number(reset)
+                # The reset value lies on the normal side of the limit
+                if level is None or (
+                    level >= limit if condition == CONDITION_ABOVE else level <= limit
+                ):
+                    errors[RULE_RESET] = "sensor_reset_invalid"
+        return {
+            RULE_ENTITY: user_input.get(RULE_ENTITY),
+            RULE_CONDITION: condition,
+            RULE_VALUE: value,
+            RULE_TEXT: text,
+            RULE_CATEGORY: category,
+            RULE_AUTO_DONE: bool(user_input.get(RULE_AUTO_DONE, True)),
+            RULE_RESET: reset,
+        }
 
     async def _async_bring_category(
         self,

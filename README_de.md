@@ -9,7 +9,7 @@
 [![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.11.9-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.11.10-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![Wiki](https://img.shields.io/badge/Doku-Wiki-6f42c1.svg)](https://github.com/nukleuz80/ha_brainstorm/wiki)
@@ -93,6 +93,7 @@
 ### 🔁 Listen, Abgleich & Daten
 - Jede Kategorie ist eine echte **To-do-Liste** in Home Assistant (`todo.*`).
 - Abgleich in beide Richtungen mit **Bring!**, **Google Tasks**, **Todoist** oder jeder anderen To-do-Liste.
+- **Aufgaben aus Sensoren:** Filter nach 300 Betriebsstunden, zu trockene Pflanze, fertige Waschmaschine oder schwache Batterie werden zur Aufgabe, die sich selbst abhakt. → [Einstellungen](https://github.com/nukleuz80/ha_brainstorm/wiki/Einstellungen#brainstorm---sensor-aufgaben)
 - Automatischer **Markdown-Export** für Obsidian, Logseq oder Nextcloud; JSON-Export und -Import; erledigte Einträge räumen sich auf Wunsch selbst auf. → [Import, Export & Speicherung](https://github.com/nukleuz80/ha_brainstorm/wiki/Import-Export-und-Speicherung)
 
 ---
@@ -260,11 +261,11 @@ Die letzten Versionen; alle stehen in [CHANGELOG_de.md](CHANGELOG_de.md).
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.11.10`** | 14.11.2026 | **Aufgaben aus Sensoren.** Neuer Bereich *📟 Sensor-Aufgaben* in den Einstellungen: Eine Regel legt eine Aufgabe an, sobald eine Entität einen Wert erreicht oder unterschreitet oder einen bestimmten Zustand hat, etwa *Wasserfilter wechseln* nach 300 Betriebsstunden oder *Waschmaschine ausräumen*, sobald sie fertig ist. Ist der Sensor wieder normal, hakt sich die Aufgabe selbst ab; ein optionaler Wert *Wieder normal ab* verhindert ständiges Anlegen und Abhaken an der Grenze. Eine Aufgabe pro Fall, von Hand abgehakt kommt sie erst nach dem nächsten Fall wieder. Die Beschreibung nennt Sensor und Wert, die Karten zeigen die Quelle 📟 Sensor. |
 | **`v1.11.9`** | 11.11.2026 | **Dokumentation im Wiki.** Die vollständige Doku steht jetzt im [GitHub-Wiki](https://github.com/nukleuz80/ha_brainstorm/wiki), auf Deutsch und Englisch: 14 Seiten pro Sprache von *Schnellstart* bis *Dienste & Ereignisse*, mit Seitenleiste und einem Link zur anderen Sprache auf jeder Seite. Eine GitHub Action baut das Wiki aus dem neuen Ordner `wiki/`, ein Test prüft jeden Link. Die READMEs sind kürzer und sagen zuerst, was Brainstorm Hub kann, die vollständige Versionshistorie steht in `CHANGELOG_de.md` und `CHANGELOG.md`, `docs/anleitung.md` und `docs/guide.md` verweisen ins Wiki, und `manifest.json` nennt das Wiki als Dokumentation. |
 | **`v1.11.8`** | 11.11.2026 | **Live-Präsenz.** Avatare oben links in der Mindmap zeigen, wer dieselbe Liste gerade offen hat; wer eine Notiz bearbeitet (Dialog oder direkt auf der Map), bekommt einen Ring, und die Notiz zeigt ✏️ mit dem Namen. Neue WebSocket-Befehle `brainstorm/presence/subscribe` und `presence/update`, nur im Speicher: Schließen der Karte oder eine verlorene Verbindung nimmt die Person heraus. |
 | **`v1.11.7`** | 11.11.2026 | **Freihand zeichnen.** 🖍️ oder **D** auf der runden Map einer Kategorie: Stift, Pfeil und Kreis in sechs Farben und drei Stärken, Radierer, alles löschen, ↶ für jeden Schritt. Gespeichert pro Kategorie (höchstens 300 Striche), sichtbar auf jedem Gerät, mit im Bild-, PDF- und JSON-Export. Neue WebSocket-Befehle `brainstorm/drawing`, `add_stroke` und `delete_strokes`; der Sensor zählt Änderungen in `drawing_revs`. |
 | **`v1.11.6`** | 11.11.2026 | **Pinnwand.** Neue Ansicht 📌 (`layout: pin`): Notizen als farbige Haftzettel ohne Baum, frei verschiebbar; der Platz bleibt pro Notiz gespeichert und gilt auf jedem Gerät, die Farbe kommt aus ⋯. Rahmen fassen Gruppen zusammen, ↶ nimmt Verschieben und Farbe zurück. Neuer WebSocket-Befehl `brainstorm/pins`; Platz und Farbe gehen mit in den JSON-Export und fallen beim Kategoriewechsel weg. |
-| **`v1.11.5`** | 11.11.2026 | **Verdeckte Brainstorm-Runde.** *🙈 Verdeckt* im ⚡ Brainstorm-Dialog: Bis zum Aufdecken sieht jede Person nur die eigenen neuen Ideen der Kategorie. Hinweis über der Map mit *Mitmachen* und *Aufdecken*, mit Timer deckt die Runde von selbst auf, auch nach einem Neustart. Verdeckte Notizen anderer lassen sich nicht ändern, der gemeinsame Sensor zeigt sie nicht, der Export enthält keine Personen-IDs. Neue Dienste `brainstorm.start_round` und `end_round`, Ereignis `brainstorm_round_ended`. Kürzere Knöpfe am Ende der Brainstorm-Runde. |
 
 ---
 

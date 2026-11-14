@@ -9,7 +9,7 @@
 [![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.11.9-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.11.10-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![Wiki](https://img.shields.io/badge/Docs-Wiki-6f42c1.svg)](https://github.com/nukleuz80/ha_brainstorm/wiki)
@@ -93,6 +93,7 @@
 ### 🔁 Lists, sync & data
 - Every category is a native Home Assistant **to-do list** (`todo.*`).
 - Two-way sync with **Bring!**, **Google Tasks**, **Todoist** or any other to-do list.
+- **Tasks from sensors:** a filter after 300 operating hours, a plant that is too dry, a finished washing machine or a low battery becomes a task that ticks itself off. → [Settings](https://github.com/nukleuz80/ha_brainstorm/wiki/Settings#brainstorm---sensor-tasks)
 - Automatic **Markdown export** for Obsidian, Logseq or Nextcloud; JSON export and import; automatic cleanup of done entries. → [Import, Export & Storage](https://github.com/nukleuz80/ha_brainstorm/wiki/Import-Export-and-Storage)
 
 ---
@@ -260,11 +261,11 @@ The latest versions; every version is in [CHANGELOG.md](CHANGELOG.md).
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.11.10`** | 2026-11-14 | **Tasks from sensors.** New section *📟 Sensor tasks* in the settings: a rule creates a task as soon as an entity reaches or exceeds a value, falls to one or has a given state, such as *Change the water filter* after 300 operating hours or *Empty the washing machine* once it has finished. Once the sensor is back to normal, the task ticks itself off; an optional *Back to normal at* value stops a sensor at the limit from creating and closing tasks all the time. One task per occurrence; ticked off by hand, it only comes back with the next occurrence. The description names the sensor and its value, and the cards show the source 📟 Sensor. |
 | **`v1.11.9`** | 2026-11-11 | **Documentation in the wiki.** The full documentation moved to the [GitHub wiki](https://github.com/nukleuz80/ha_brainstorm/wiki) in English and German: 14 pages per language from *Quick Start* to *Services & Events*, with a sidebar and a link to the other language on every page. A GitHub Action builds the wiki from the new `wiki/` folder, and a test checks every link. The READMEs are shorter and lead with what Brainstorm Hub does, the complete version history is in `CHANGELOG.md` and `CHANGELOG_de.md`, `docs/guide.md` and `docs/anleitung.md` point to the wiki, and `manifest.json` links the wiki as documentation. |
 | **`v1.11.8`** | 2026-11-11 | **Live presence.** Avatars at the top left of the mind map show who has the same list open right now; whoever edits a note (dialog or right on the map) gets a ring, and the note shows ✏️ with the name. New WebSocket commands `brainstorm/presence/subscribe` and `presence/update`, in memory only: closing the card or losing the connection removes the person. |
 | **`v1.11.7`** | 2026-11-11 | **Freehand drawing.** 🖍️ or **D** on the round map of a category: pen, arrow and circle in six colours and three widths, eraser, delete all, ↶ for every step. Kept per category (up to 300 strokes), shown on every device, part of the picture, PDF and JSON export. New WebSocket commands `brainstorm/drawing`, `add_stroke` and `delete_strokes`; the sensor counts changes in `drawing_revs`. |
 | **`v1.11.6`** | 2026-11-11 | **Pinboard.** New view 📌 (`layout: pin`): notes as coloured sticky notes without a tree, free to move; the place is kept per note and holds on every device, the colour comes from ⋯. Frames group notes, ↶ takes back moves and colours. New WebSocket command `brainstorm/pins`; place and colour go into the JSON export and are dropped when a note changes category. |
-| **`v1.11.5`** | 2026-11-11 | **Hidden brainstorm round.** *🙈 Hidden* in the ⚡ brainstorm dialog: until the reveal, everyone sees only their own new ideas in the category. A bar above the map offers *Join* and *Reveal*; with a timer the round reveals itself, also after a restart. Hidden notes of others cannot be changed, the shared sensor leaves them out, and the export holds no user IDs. New services `brainstorm.start_round` and `end_round`, event `brainstorm_round_ended`. Shorter buttons at the end of a brainstorm round. |
 
 ---
 

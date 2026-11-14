@@ -257,6 +257,33 @@ Macht aus schwachen Batterien Aufgaben (v1.7.5). Jeder Batterie-Sensor zählt: e
 - **Von Hand abgehakt**, bevor die Batterie gewechselt ist, kommt die Aufgabe nicht wieder. Erst die nächste schwache Batterie legt eine neue an.
 - **Nach einem Neustart** werden alle Batterien einmal geprüft.
 
+### Brainstorm › 📟 Sensor-Aufgaben
+
+Macht aus einem Sensorwert eine Aufgabe (v1.11.10), etwa *Wasserfilter wechseln* nach 300 Betriebsstunden, *Monstera gießen*, wenn die Bodenfeuchte unter 20 % fällt, oder *Waschmaschine ausräumen*, sobald sie fertig ist. Die erste Seite listet deine Regeln:
+
+| Feld | Was es bewirkt |
+| :--- | :--- |
+| Regel | Wähle eine Regel, um sie zu ändern oder zu löschen, oder *➕ Neue Regel*. |
+
+Eine Regel hat diese Felder:
+
+| Feld | Was es bewirkt |
+| :--- | :--- |
+| Entität | Jede Entität, etwa ein Sensor, ein Zähler, ein Zahlen-Helfer oder ein Binärsensor. |
+| Bedingung | *Erreicht oder übersteigt* und *Erreicht oder unterschreitet* vergleichen Zahlen, *Ist genau (Zustand)* vergleicht den Zustand als Text, ohne auf Groß- und Kleinschreibung zu achten. |
+| Wert | Eine Zahl für Grenzen, etwa `300` oder `19,5`, oder ein Zustand, etwa `off` oder `Fertig`. |
+| Aufgabe | Der Text der Aufgabe. Ihre Beschreibung nennt Sensor und Wert, etwa *Ausgelöst von Wasserfilter Betriebsstunden: 300 h*. |
+| Kategorie | Wähle eine Kategorie oder tippe einen neuen Namen, sie wird beim Speichern angelegt. Vorgeschlagen wird *Smarthome*. |
+| Selbst abhaken | Hakt die Aufgabe ab, sobald der Sensor wieder im Normalbereich ist (Standard an). |
+| Wieder normal ab | Optional, nur für Zahlen: Erst dieser Wert gilt als wieder normal, etwa `0` für einen Zähler, den du nach dem Filterwechsel zurücksetzt. Er muss auf der normalen Seite der Grenze liegen. Ohne ihn gilt alles jenseits der Grenze als normal. |
+| Diese Regel löschen | Nur beim Bearbeiten: entfernt die Regel. Ihre offene Aufgabe bleibt stehen. |
+
+- **Eine Aufgabe pro Fall:** Solange die Bedingung erfüllt bleibt, entsteht keine zweite Aufgabe. Erst wenn der Sensor wieder normal war und die Bedingung erneut erfüllt ist, kommt eine neue.
+- **Von Hand abgehakt**, bevor der Sensor wieder normal ist, kommt die Aufgabe nicht sofort wieder.
+- **Ohne *Selbst abhaken*** bleibt die Aufgabe offen, bis du sie abhakst, und steht dann auch für den nächsten Fall.
+- **Nach einem Neustart** und nach dem Speichern werden alle Regeln einmal geprüft; ist eine schon erfüllt, entsteht die Aufgabe sofort. *Nicht verfügbar* und *Unbekannt* werden übergangen.
+- Die Aufgabe trägt die Quelle 📟 *Sensor* mit dem Namen der Entität und kommt wie jede neue Notiz in Erinnerungen und Automationen an.
+
 ### Brainstorm › Privatsphäre & Benutzer
 
 | Feld | Was es bewirkt |
@@ -279,7 +306,7 @@ Unter **Konfigurieren ➔ Allgemeine Einstellungen & Export ➔ Bedienstufe** w�
 
 | Stufe | Listenkarte und Bearbeiten-Dialog | Mindmap | Konfigurieren-Menü |
 |---|---|---|---|
-| **Einsteiger** | Eingabe, Mikrofon, Kategorien, Abhaken, Suche; im Dialog Titel, Beschreibung, Kategorie, Priorität und Termin | nur *Rund um die Mitte*, Neue Idee, Zoom, Vollbild | ohne Batterien, Sperrzeiten, Regeln pro Liste, Echos & Apps und KI-Textaufräumen |
+| **Einsteiger** | Eingabe, Mikrofon, Kategorien, Abhaken, Suche; im Dialog Titel, Beschreibung, Kategorie, Priorität und Termin | nur *Rund um die Mitte*, Neue Idee, Zoom, Vollbild | ohne Batterien, Sensor-Aufgaben, Sperrzeiten, Regeln pro Liste, Echos & Apps und KI-Textaufräumen |
 | **Normal** | zusätzlich Unterpunkte, Mehrfachauswahl, Marker, Wiederholen, Anhänge, Freigeben, KI-Vorschläge | zusätzlich *Baum*, *Gliederung*, *Kanban*, Fokus, Ebenen, Suche und Filter, Mehrfachauswahl, Export als Bild, PDF und Markdown | wie Einsteiger |
 | **Profi** | alles: Fortschritt, Nummerierung und Sortieren, Callout, Rahmen, Form, Erinnern auf Echos, Originaltext, „In Arbeit“ | alles: *Organigramm*, *Zeitleiste*, *Matrix*, Regeln, Querverbindungen, Rahmen, Brainstorm- und Präsentationsmodus, OPML/FreeMind, Ast zusammenfassen, alle Tastenkürzel | alles |
 
@@ -309,4 +336,5 @@ Ausblenden löscht nichts: Gesetzte Marker, Fortschritt oder Rahmen bleiben auf 
 | **Echos & Apps Personen zuordnen** | Echo Schlafzimmer gehört zu Anna |
 | **🛒 Bring!** | Bring-Listen als Hauptnotizen, Einträge als Unteraufgaben, in beide Richtungen (nur mit Bring-Integration) |
 | **🔋 Batterien** | unter 20 % die Aufgabe *Batterie wechseln: Bewegungsmelder Flur (18 %)*, hakt sich nach dem Wechsel selbst ab |
+| **📟 Sensor-Aufgaben** | ab 300 Betriebsstunden die Aufgabe *Wasserfilter wechseln*, hakt sich nach dem Zurücksetzen des Zählers selbst ab |
 | **🧹 Erledigte Einträge löschen** | Erledigte nach 30 Tagen automatisch entfernen |
