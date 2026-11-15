@@ -235,6 +235,19 @@ Since v1.13.16. Shown once [Waste Collection Schedule](https://github.com/mampfe
 - **Restart:** if Home Assistant was off at the time, tomorrow's tasks come about a minute after the start.
 - As source the card shows *🗑️ Waste calendar* with the name of the calendar.
 
+### Brainstorm › 🔗 Connected integrations › 🔋 Battery Notes
+
+Since v1.13.18. Shown when [Battery Notes](https://github.com/andrew-codechimp/HA-Battery-Notes) is installed, and only works together with *🔋 Batteries*.
+
+| Field | What it does |
+| :--- | :--- |
+| Show the battery type | Battery tasks name the type and number, such as *Replace the battery: Hallway sensor (8 %) · 2× AA* (default on). |
+| Report the battery as replaced | Ticking off a battery task by hand calls `battery_notes.set_battery_replaced` for its device (default on). A task that closes because the level rose reports nothing. |
+| Put the batteries on Bring! now | Only with Bring!: once, on saving, puts the batteries of all open battery tasks on the default Bring list. |
+
+- **Bring! button in the card:** in the category of the battery tasks the card shows *🛒 Batteries to Bring!*. It puts e.g. *Batteries AA* with *4×* on the default list; types already open there are left out. The action `brainstorm.batteries_to_bring` does the same (optionally with `list`).
+- Only devices whose battery type Battery Notes knows are counted.
+
 ### Brainstorm › 🔗 Connected integrations › 🛒 Bring!
 
 Only shown when the [Bring!](https://www.home-assistant.io/integrations/bring/) integration is set up. All your Bring lists land in one category: each list becomes a main note, and its items become its subtasks.

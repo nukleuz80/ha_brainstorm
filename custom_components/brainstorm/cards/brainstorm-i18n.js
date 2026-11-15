@@ -7,6 +7,9 @@
  */
 const DICTIONARIES = {
   en: {
+    "🛒 Batterien auf Bring!": "🛒 Batteries to Bring!",
+    "Für die offenen Batterie-Aufgaben: {list}": "For the open battery tasks: {list}",
+    "🛒 Auf {name}: {items}": "🛒 On {name}: {items}",
     "📋 Verbunden mit der lokalen To-do-Liste „{name}“": "📋 Linked to the local to-do list “{name}”",
     "🔗 Verbunden mit der To-do-Liste „{name}“": "🔗 Linked to the to-do list “{name}”",
     "✨ Vorschlagen": "✨ Suggest",
@@ -1970,6 +1973,25 @@ export function linkedListMark(sensor, category) {
 export function linkedListSign(sensor, category) {
   const link = linkedListOf(sensor, category);
   return link ? (link.local ? " 📋" : " 🔗") : "";
+}
+
+/**
+ * The batteries the open battery tasks of a category need, as "4× AA, 1× CR2032",
+ * or "" when the card should not offer putting them on Bring.
+ */
+export function batteriesNeeded(info, category) {
+  if (!info || !info.needed || !Array.isArray(info.categories)) return "";
+  if (!category || category === "all" || !info.categories.includes(category)) return "";
+  return Object.entries(info.needed).map(([kind, count]) => `${count}× ${kind}`).join(", ");
+}
+
+/** What putting the batteries on Bring did, for a short message. */
+export function batteriesBringText(response, bring) {
+  const item = ((bring && bring.lists) || []).find((entry) => entry.entity === (response && response.entity_id));
+  const name = (item && item.name) || "Bring!";
+  const added = (response && Array.isArray(response.added)) ? response.added : [];
+  if (!added.length) return t("Steht schon alles auf {name}.", { name });
+  return t("🛒 Auf {name}: {items}", { name, items: added.join(", ") });
 }
 
 /** The badge of a note that was sent to a Bring list: how much is still to buy. */

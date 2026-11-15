@@ -500,6 +500,15 @@ send_to_bring:
         text:
           multiple: true
 
+batteries_to_bring:
+  fields:
+    list:
+      required: false
+      selector:
+        entity:
+          domain: todo
+          integration: bring
+
 reorder_ideas:
   fields:
     idea_ids:

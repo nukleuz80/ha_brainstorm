@@ -381,6 +381,10 @@ ATTR_BRING_SENT = "bring_sent"
 # The device (or sensor) a battery task is for, and whether it got a new battery
 ATTR_BATTERY = "battery"
 ATTR_BATTERY_DONE = "battery_done"
+# Battery Notes: the battery type of a device and when it was replaced
+BATTERY_NOTES_DOMAIN = "battery_notes"
+CONF_BATTERY_NOTES = "battery_notes_enabled"
+CONF_BATTERY_NOTES_REPLACED = "battery_notes_replaced"
 SOURCE_BRING = "bring"
 SOURCE_BATTERY = "battery"
 # The sensor rule a task is for, and whether its sensor is back to normal

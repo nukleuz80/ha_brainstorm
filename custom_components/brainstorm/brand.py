@@ -28,7 +28,7 @@ BRAND_URL = f"/api/{DOMAIN}/brand"
 BRANDS_CDN = "https://brands.home-assistant.io"
 # Only the logos of the integrations Brainstorm connects to are served
 BRAND_DOMAINS = frozenset(
-    {"bring", "choreops", "local_todo", "waste_collection_schedule"}
+    {"battery_notes", "bring", "choreops", "local_todo", "waste_collection_schedule"}
 )
 BRAND_SIZE = 96
 DATA_BRAND_CACHE = f"{DOMAIN}_brand_cache"

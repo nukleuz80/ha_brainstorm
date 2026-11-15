@@ -23,6 +23,7 @@ from .attachments import AttachmentCleaner, async_register_views
 from .battery import BatteryWatcher
 from .choreops import ChoreOpsBridge
 from .bring import (
+    async_batteries_to_bring,
     BRING_MESSAGES,
     BringSendError,
     async_send_to_bring,
@@ -142,6 +143,7 @@ SERVICE_EXPORT_JSON = "export_json"
 SERVICE_IMPORT_JSON = "import_json"
 SERVICE_BRING_MESSAGE = "bring_message"
 SERVICE_SEND_TO_BRING = "send_to_bring"
+SERVICE_BATTERIES_TO_BRING = "batteries_to_bring"
 
 SERVICE_BRING_MESSAGE_SCHEMA = vol.Schema(
     {
@@ -149,6 +151,8 @@ SERVICE_BRING_MESSAGE_SCHEMA = vol.Schema(
         vol.Required("message"): vol.In(BRING_MESSAGES),
     }
 )
+
+SERVICE_BATTERIES_TO_BRING_SCHEMA = vol.Schema({vol.Optional("list"): cv.entity_id})
 
 SERVICE_SEND_TO_BRING_SCHEMA = vol.Schema(
     {
@@ -1156,6 +1160,14 @@ def _register_services(hass: HomeAssistant) -> None:
                 translation_domain=DOMAIN, translation_key=err.key
             ) from err
 
+    async def handle_batteries_to_bring(call: ServiceCall) -> dict[str, Any]:
+        """Put the batteries of the open battery tasks on a Bring list."""
+        store = _require_store(hass)
+        settings = store.todo_sync.bring if store.todo_sync is not None else None
+        return await async_batteries_to_bring(
+            hass, store, settings, call.data.get("list"), call.context
+        )
+
     async def handle_restore_idea(call: ServiceCall) -> dict[str, Any]:
         """Handle bringing back a deleted idea."""
         store = _require_store(hass)
@@ -1461,6 +1473,14 @@ def _register_services(hass: HomeAssistant) -> None:
         SERVICE_SEND_TO_BRING,
         handle_send_to_bring,
         schema=SERVICE_SEND_TO_BRING_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_BATTERIES_TO_BRING,
+        handle_batteries_to_bring,
+        schema=SERVICE_BATTERIES_TO_BRING_SCHEMA,
         supports_response=SupportsResponse.OPTIONAL,
     )
 

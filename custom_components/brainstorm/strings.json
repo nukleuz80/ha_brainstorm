@@ -407,6 +407,7 @@
           "choreops": "🏅 ChoreOps",
           "local_todo": "📋 Local To-do",
           "waste_collection_schedule": "🗑️ Waste calendar",
+          "battery_notes": "🔋 Battery Notes",
           "init": "⬅️ Back",
           "close": "✅ Done"
         },
@@ -414,7 +415,8 @@
           "bring": "{status_bring}",
           "choreops": "{status_choreops}",
           "local_todo": "{status_local_todo}",
-          "waste_collection_schedule": "{status_waste}"
+          "waste_collection_schedule": "{status_waste}",
+          "battery_notes": "{status_battery_notes}"
         }
       },
       "choreops": {
@@ -626,6 +628,22 @@
           "waste_choreops_points": "Optional: points per chore. Empty uses the default points of the ChoreOps page.",
           "go_back": "Returns to the previous page without saving this form."
         }
+      },
+      "battery_notes": {
+        "title": "Brainstorm › 🔗 Connected integrations › 🔋 Battery Notes",
+        "description": "Uses what Battery Notes knows about the batteries of your devices for the tasks of *🔋 Batteries*: a task names the battery type, such as *Replace the battery: Hallway sensor (8 %) · 2× AA*, and ticking it off tells Battery Notes the battery was replaced. Only works while *🔋 Batteries* is switched on.",
+        "data": {
+          "battery_notes_enabled": "Show the battery type",
+          "battery_notes_replaced": "Report the battery as replaced",
+          "battery_notes_bring": "Put the batteries on Bring! now",
+          "go_back": "⬅️ Back without saving"
+        },
+        "data_description": {
+          "battery_notes_enabled": "Battery tasks name the type and number of batteries from Battery Notes.",
+          "battery_notes_replaced": "Ticking off a battery task by hand calls `battery_notes.set_battery_replaced` for its device. A task that closes because the level rose is not reported, as Battery Notes notices that itself.",
+          "battery_notes_bring": "Once, on saving: puts the batteries of all open battery tasks on the default Bring list, such as *Batteries AA* with *4×*. Types already open on the list are left out.",
+          "go_back": "Returns to the previous page without saving this form."
+        }
       }
     },
     "error": {
@@ -641,7 +659,10 @@
       "sensor_value_number": "This condition needs a number.",
       "sensor_reset_invalid": "Enter a number on the normal side of the limit: below it for reaches or exceeds, above it for reaches or falls below.",
       "local_todo_duplicate": "A category can only be linked to one list.",
-      "local_todo_failed": "Local To-do could not create the list."
+      "local_todo_failed": "Local To-do could not create the list.",
+      "bring_off": "Bring! is switched off in the Brainstorm settings.",
+      "bring_list_unknown": "The default Bring list is not synced with Brainstorm.",
+      "battery_bring_nothing": "No open battery task with a battery type from Battery Notes."
     },
     "abort": {
       "store_not_ready": "Brainstorm is reloading. Please open the settings again in a few seconds."
@@ -1010,6 +1031,9 @@
     },
     "local_todo_failed": {
       "message": "Local To-do could not create the list {name}."
+    },
+    "battery_bring_nothing": {
+      "message": "No open battery task with a battery type from Battery Notes."
     }
   },
   "services": {
@@ -1390,6 +1414,16 @@
         "items": {
           "name": "Subtasks",
           "description": "IDs of open subtasks of the note to send instead of the note itself."
+        }
+      }
+    },
+    "batteries_to_bring": {
+      "name": "Batteries to Bring!",
+      "description": "Puts the batteries of all open battery tasks on a Bring list, using the battery types of Battery Notes, such as *Batteries AA* with *4×*. Types already open on the list are left out.",
+      "fields": {
+        "list": {
+          "name": "List",
+          "description": "The Bring list. Without one the default list from the settings is used."
         }
       }
     },

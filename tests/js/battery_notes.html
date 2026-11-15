@@ -1,0 +1,26 @@
+<!doctype html>
+<meta charset="utf-8">
+<pre id="out">RUNNING</pre>
+<script type="module">
+import { batteriesNeeded, batteriesBringText, setLanguage } from "../../custom_components/brainstorm/cards/brainstorm-i18n.js";
+const out = document.getElementById("out");
+const fails = [];
+const eq = (a, b, what) => { if (JSON.stringify(a) !== JSON.stringify(b)) fails.push(`${what}: ${JSON.stringify(a)} != ${JSON.stringify(b)}`); };
+try {
+  const info = { categories: ["Smarthome"], needed: { AA: 4, CR2032: 1 } };
+  eq(batteriesNeeded(info, "Smarthome"), "4× AA, 1× CR2032", "needed");
+  eq(batteriesNeeded(info, "Inbox"), "", "other category");
+  eq(batteriesNeeded(info, "all"), "", "all");
+  eq(batteriesNeeded(null, "Smarthome"), "", "none");
+  const bring = { lists: [{ entity: "todo.zu_hause", name: "Zu Hause" }] };
+  if (typeof setLanguage === "function") setLanguage({ language: "de" });
+  eq(batteriesBringText({ entity_id: "todo.zu_hause", added: ["Batterien AA"], skipped: [] }, bring), "🛒 Auf Zu Hause: Batterien AA", "added de");
+  eq(batteriesBringText({ entity_id: "todo.zu_hause", added: [], skipped: ["Batterien AA"] }, bring), "Steht schon alles auf Zu Hause.", "nothing de");
+  if (typeof setLanguage === "function") {
+    setLanguage({ language: "en" });
+    eq(batteriesBringText({ entity_id: "todo.x", added: ["Batterien AA"] }, bring), "🛒 On Bring!: Batterien AA", "added en");
+  }
+  await import("../../custom_components/brainstorm/cards/brainstorm-card.js");
+} catch (err) { fails.push(String(err && err.stack || err)); }
+out.textContent = fails.length ? "FAIL\n" + fails.join("\n") : "PASS";
+</script>

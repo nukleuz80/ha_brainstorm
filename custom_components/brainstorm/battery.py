@@ -32,13 +32,17 @@ from .const import (
     CONF_BATTERY_CATEGORY,
     CONF_BATTERY_ENABLED,
     CONF_BATTERY_EXCLUDE,
+    CONF_BATTERY_NOTES,
+    CONF_BATTERY_NOTES_REPLACED,
     CONF_BATTERY_PHONES,
     CONF_BATTERY_THRESHOLD,
     DEFAULT_BATTERY_THRESHOLD,
+    EVENT_IDEA_COMPLETED,
     SHARE_ALL,
     SHARE_EDIT,
     SOURCE_BATTERY,
 )
+from .battery_notes import async_mark_replaced, battery_type
 from .languages import get_pack
 
 if TYPE_CHECKING:
@@ -107,6 +111,11 @@ class BatteryWatcher:
         self.category = (options.get(CONF_BATTERY_CATEGORY) or "").strip()
         self.exclude = set(options.get(CONF_BATTERY_EXCLUDE) or [])
         self.phones = bool(options.get(CONF_BATTERY_PHONES, False))
+        # Battery Notes: name the type and report a battery ticked off as new
+        self.notes = bool(options.get(CONF_BATTERY_NOTES, True))
+        self.notes_replaced = self.notes and bool(
+            options.get(CONF_BATTERY_NOTES_REPLACED, True)
+        )
         self._unsubs: list[CALLBACK_TYPE] = []
         self._unsub_started: CALLBACK_TYPE | None = None
 
@@ -121,6 +130,10 @@ class BatteryWatcher:
                 event_filter=self._is_watched_event,
             )
         )
+        if self.notes_replaced:
+            self._unsubs.append(
+                self.hass.bus.async_listen(EVENT_IDEA_COMPLETED, self._handle_completed)
+            )
         if self.hass.state is CoreState.running:
             await self.async_check_all()
         else:
@@ -143,6 +156,15 @@ class BatteryWatcher:
         # The listener is gone once it fired, so it must not be removed on stop
         self._unsub_started = None
         await self.async_check_all()
+
+    async def _handle_completed(self, event: Event) -> None:
+        """Tell Battery Notes about a battery task ticked off by hand."""
+        key = event.data.get(ATTR_BATTERY)
+        if not key or event.data.get(ATTR_BATTERY_DONE):
+            # Closed by the sensor itself: Battery Notes sees the new level too
+            return
+        if await async_mark_replaced(self.hass, str(key), event.context):
+            _LOGGER.info("Battery Notes told about the new battery of %s", key)
 
     @callback
     def _is_watched_event(self, data: EventStateChangedData) -> bool:
@@ -229,21 +251,33 @@ class BatteryWatcher:
             )
             await self._async_create(key, state)
         elif not low and task is not None:
-            # A new battery: tick the task off, or just close the case if done
+            # A new battery: tick the task off, or just close the case if done.
+            # Closed first, so ticking it off is not reported as done by hand.
+            await self.store.async_set_fields(
+                {task[ATTR_ID]: {ATTR_BATTERY_DONE: True}}
+            )
             if task.get(ATTR_STATUS) == "active":
                 await self.store.async_update_idea(task[ATTR_ID], status="completed")
-            await self.store.async_set_fields({task[ATTR_ID]: {ATTR_BATTERY_DONE: True}})
 
     async def _async_create(self, key: str, state: State) -> None:
         """Add the task for a low battery."""
         pack = get_pack(self.hass.config.language)
         name = self.device_name(state)
         level = battery_level(state)
-        text = (
-            pack.msg("battery_task_level", name=name, level=round(level))
-            if level is not None
-            else pack.msg("battery_task", name=name)
-        )
+        kind = battery_type(self.hass, key) if self.notes else None
+        if kind is not None and level is not None:
+            text = pack.msg(
+                "battery_task_level_type",
+                name=name,
+                level=round(level),
+                battery=kind.label,
+            )
+        elif kind is not None:
+            text = pack.msg("battery_task_type", name=name, battery=kind.label)
+        elif level is not None:
+            text = pack.msg("battery_task_level", name=name, level=round(level))
+        else:
+            text = pack.msg("battery_task", name=name)
         idea = await self.store.async_add_idea(
             text=text,
             category=self.category or None,

@@ -235,6 +235,19 @@ Seit v1.13.16. Erscheint, wenn [Waste Collection Schedule](https://github.com/ma
 - **Neustart:** War Home Assistant zur Uhrzeit aus, kommen die Aufgaben für morgen etwa eine Minute nach dem Start.
 - Als Quelle zeigt die Karte *🗑️ Abfallkalender* mit dem Namen des Kalenders.
 
+### Brainstorm › 🔗 Verbundene Integrationen › 🔋 Battery Notes
+
+Seit v1.13.18. Erscheint, wenn [Battery Notes](https://github.com/andrew-codechimp/HA-Battery-Notes) installiert ist, und wirkt nur zusammen mit *🔋 Batterien*.
+
+| Feld | Was es bewirkt |
+| :--- | :--- |
+| Batterietyp anzeigen | Batterie-Aufgaben nennen Typ und Anzahl, z. B. *Batterie wechseln: Bewegungsmelder Flur (8 %) · 2× AA* (Standard an). |
+| Batteriewechsel melden | Hakst du eine Batterie-Aufgabe von Hand ab, ruft Brainstorm `battery_notes.set_battery_replaced` für ihr Gerät auf (Standard an). Schließt sich die Aufgabe, weil der Stand gestiegen ist, wird nichts gemeldet. |
+| Batterien jetzt auf Bring! setzen | Nur mit Bring!: einmalig beim Speichern die Batterien aller offenen Batterie-Aufgaben auf die Standard-Bring-Liste setzen. |
+
+- **Bring!-Knopf in der Karte:** In der Kategorie der Batterie-Aufgaben zeigt die Karte *🛒 Batterien auf Bring!*. Der Knopf setzt z. B. *Batterien AA* mit *4×* auf die Standardliste; Typen, die dort schon offen sind, bleiben weg. Dasselbe macht die Aktion `brainstorm.batteries_to_bring` (optional mit `list`).
+- Nur Geräte, für die Battery Notes einen Batterietyp kennt, zählen mit.
+
 ### Brainstorm › 🔗 Verbundene Integrationen › 🛒 Bring!
 
 Erscheint nur, wenn die Integration [Bring!](https://www.home-assistant.io/integrations/bring/) eingerichtet ist. Alle Bring-Listen landen in einer Kategorie: Jede Liste wird eine Hauptnotiz, ihre Artikel werden zu Unteraufgaben.

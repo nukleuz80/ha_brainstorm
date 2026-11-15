@@ -12,7 +12,8 @@ from datetime import datetime, timedelta
 import logging
 from typing import Any
 
-from homeassistant.core import HomeAssistant
+from homeassistant.core import Context, HomeAssistant
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.util import dt as dt_util
 
@@ -32,10 +33,13 @@ from .const import (
     CONF_BRING_ENABLED,
     CONF_BRING_LISTS,
     DEFAULT_BRING_DONE_DAYS,
+    DOMAIN,
     SHARE_ALL,
     SHARE_EDIT,
     SOURCE_BRING,
 )
+from .battery_notes import needed_batteries
+from .languages import get_pack
 from .store import BrainstormStore
 
 _LOGGER = logging.getLogger(__name__)
@@ -335,3 +339,59 @@ async def async_send_to_bring(
         },
     )
     return {"entity_id": entity_id, "added": len(added), "skipped": skipped}
+
+
+async def async_batteries_to_bring(
+    hass: HomeAssistant,
+    store: BrainstormStore,
+    settings: BringSettings | None,
+    entity_id: str | None = None,
+    context: Context | None = None,
+) -> dict[str, Any]:
+    """Put the batteries of all open battery tasks on a Bring list.
+
+    The items go to Bring directly, with the number as its specification,
+    and come back as subtasks through the to-do sync. A type already open
+    on the list is not added again.
+    """
+    if settings is None:
+        raise ServiceValidationError(translation_domain=DOMAIN, translation_key="bring_off")
+    lists = chosen_lists(hass, settings)
+    if entity_id is None:
+        fallback = default_list(lists, settings)
+        entity_id = fallback.entity_id if fallback else None
+    if entity_id is None or entity_id not in {item.entity_id for item in lists}:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN, translation_key="bring_list_unknown"
+        )
+    needed = needed_batteries(hass, store)
+    if not needed:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN, translation_key="battery_bring_nothing"
+        )
+    response = await hass.services.async_call(
+        "todo",
+        "get_items",
+        {"entity_id": entity_id, "status": "needs_action"},
+        blocking=True,
+        return_response=True,
+    )
+    items = ((response or {}).get(entity_id) or {}).get("items") or []
+    on_list = {str(item.get("summary") or "").strip().casefold() for item in items}
+    pack = get_pack(hass.config.language)
+    added: list[str] = []
+    skipped: list[str] = []
+    for kind, count in sorted(needed.items()):
+        name = pack.msg("battery_bring_item", type=kind)
+        if name.casefold() in on_list:
+            skipped.append(name)
+            continue
+        await hass.services.async_call(
+            "todo",
+            "add_item",
+            {"entity_id": entity_id, "item": name, "description": f"{count}×"},
+            blocking=True,
+            context=context,
+        )
+        added.append(name)
+    return {"entity_id": entity_id, "added": added, "skipped": skipped}

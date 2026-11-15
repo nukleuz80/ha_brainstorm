@@ -138,6 +138,8 @@ from .const import (
     ATTR_CALENDAR_SYNCED,
     CONF_ALLOWED_ECHOS,
     CONF_PRIVACY_ENABLED,
+    CONF_BATTERY_ENABLED,
+    CONF_BATTERY_NOTES,
     CONF_PRIVACY_EXPORT,
     CONF_PRIVACY_OWNER,
     CONF_VOICE_OWNERS,
@@ -193,6 +195,7 @@ from .ai import (
     parse_parent_suggestions,
     parse_subtask_suggestions,
 )
+from .battery_notes import battery_type, needed_batteries
 from .choreops import (
     POINTS_MAX,
     REWARD_COST_MAX,
@@ -569,6 +572,7 @@ class BrainstormStore:
             "map_tabs_rev": self._map_tabs_rev,
             "choreops": self._choreops_attributes(),
             "bring": self._bring_attributes(),
+            "battery_notes": self._battery_notes_attributes(),
             "linked_lists": self._linked_lists_attributes(),
         }
 
@@ -746,6 +750,7 @@ class BrainstormStore:
             "map_tabs_rev": self._map_tabs_rev,
             "choreops": self._choreops_attributes(),
             "bring": self._bring_attributes(),
+            "battery_notes": self._battery_notes_attributes(),
             "linked_lists": self._linked_lists_attributes(),
             "category_counts": counts_by_cat,
             "priority_counts": counts_by_prio,
@@ -3406,6 +3411,27 @@ class BrainstormStore:
         )
 
     # Bring! lists
+
+    def _battery_notes_attributes(self) -> dict[str, Any] | None:
+        """Return what the card needs for its button to put batteries on Bring."""
+        if self.todo_sync is None or self.todo_sync.bring is None:
+            return None
+        if not self.options.get(CONF_BATTERY_ENABLED) or not self.options.get(
+            CONF_BATTERY_NOTES, True
+        ):
+            return None
+        needed = needed_batteries(self.hass, self)
+        if not needed:
+            return None
+        categories = {
+            str(idea.get(ATTR_CATEGORY))
+            for idea in self._ideas.values()
+            if idea.get(ATTR_BATTERY)
+            and not idea.get(ATTR_BATTERY_DONE)
+            and idea.get(ATTR_STATUS) == "active"
+            and battery_type(self.hass, str(idea[ATTR_BATTERY])) is not None
+        }
+        return {"categories": sorted(categories), "needed": dict(sorted(needed.items()))}
 
     def _bring_attributes(self) -> dict[str, Any] | None:
         """Return the Bring category and its lists, while Bring is switched on."""

@@ -1,9 +1,9 @@
-import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, bringBadge, bringSentText, unblockedText, canSendToBring, renderBringSend, canHandOver, canHandOverProject, canMakeReward, choreopsBadge, choreopsRewardBadge, renderChoreHandover, renderChoreProject, renderChoreReward, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t, linkedListMark, linkedListOf, linkedListSign, linkedListText } from "./brainstorm-i18n.js?v=1.13.17";
+import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, bringBadge, bringSentText, unblockedText, canSendToBring, renderBringSend, canHandOver, canHandOverProject, canMakeReward, choreopsBadge, choreopsRewardBadge, renderChoreHandover, renderChoreProject, renderChoreReward, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t, linkedListMark, linkedListOf, linkedListSign, linkedListText, batteriesBringText, batteriesNeeded } from "./brainstorm-i18n.js?v=1.13.18";
 
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.13.17 - Abfallkalender: Kalender einzeln lesen
+ * Version 1.13.18 - Abfallkalender: Kalender einzeln lesen
  */
 // The bulb lies next to this file, wherever Home Assistant serves it from
 const BULB_URL = new URL("./brainstorm-bulb.svg", import.meta.url).href;
@@ -696,16 +696,38 @@ class BrainstormCard extends HTMLElement {
     const filter = this._shareFilter || "all";
     const canShareCategory =
       attributes.privacy && selected && selected !== "all" && !isCompletedView;
+    const batteries = isCompletedView ? "" : batteriesNeeded(attributes.battery_notes, selected);
     const button = (value, label) =>
       `<button class="share-filter-btn ${filter === value ? "active" : ""}" data-filter="${value}">${label}</button>`;
     bar.style.display = "flex";
     bar.innerHTML = `
       ${attributes.privacy ? `${button("all", t("Alle"))}${button("mine", t("Meine"))}${button("shared", t("Mit mir geteilt"))}` : ""}
+      ${batteries ? `<button class="share-filter-btn" id="batteriesBringBtn" title="${this._escapeHtml(t("Für die offenen Batterie-Aufgaben: {list}", { list: batteries }))}">${t("🛒 Batterien auf Bring!")}</button>` : ""}
       ${canShareCategory ? `<button class="share-filter-btn share-category-btn" id="shareCategoryBtn">${t("👥 {category} freigeben", { category: this._escapeHtml(selected) })}</button>` : ""}
       ${isCompletedView ? "" : `<button class="share-filter-btn ${this._myDayOnly ? "active" : ""}" id="myDayBtn" aria-pressed="${!!this._myDayOnly}" title="${t("Nur Notizen, die du dir für heute vorgenommen hast")}">${t("☀️ Mein Tag")}</button>`}
       ${canSelect ? `<button class="share-filter-btn ${this._selectionMode ? "active" : ""}" id="selectionToggleBtn" data-lvl="normal">${t("☑️ Auswählen")}</button>` : ""}
       ${canSelect ? `<button class="share-filter-btn" id="trashBtn" data-lvl="normal" title="${t("Papierkorb: gelöschte Notizen zurückholen")}">${t("🗑️ Papierkorb")}</button>` : ""}
     `;
+    const batteriesBtn = bar.querySelector("#batteriesBringBtn");
+    if (batteriesBtn) {
+      batteriesBtn.addEventListener("click", async () => {
+        batteriesBtn.disabled = true;
+        try {
+          const result = await this._hass.callWS({
+            type: "call_service",
+            domain: "brainstorm",
+            service: "batteries_to_bring",
+            service_data: {},
+            return_response: true,
+          });
+          this._notify(batteriesBringText((result && result.response) || {}, attributes.bring));
+        } catch (err) {
+          this._notify((err && err.message) || t("Das hat nicht geklappt."));
+        } finally {
+          batteriesBtn.disabled = false;
+        }
+      });
+    }
     const myDayBtn = bar.querySelector("#myDayBtn");
     if (myDayBtn) {
       myDayBtn.addEventListener("click", () => {
@@ -6378,7 +6400,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.13.17 ",
+  "%c BRAINSTORM-CARD %c v1.13.18 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

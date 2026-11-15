@@ -57,6 +57,9 @@
     "send_to_bring": {
       "service": "mdi:cart-plus"
     },
+    "batteries_to_bring": {
+      "service": "mdi:battery-plus"
+    },
     "reorder_ideas": {
       "service": "mdi:sort"
     },

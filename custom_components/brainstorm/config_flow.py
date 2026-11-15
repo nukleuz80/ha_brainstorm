@@ -10,13 +10,15 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import AbortFlow, FlowResult
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import selector
 from homeassistant.helpers.entity import entity_sources
 from homeassistant.helpers.network import NoURLAvailableError
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    CONF_BATTERY_NOTES,
+    CONF_BATTERY_NOTES_REPLACED,
     CONF_WASTE_CALENDARS,
     CONF_WASTE_CATEGORY,
     CONF_WASTE_CHOREOPS_POINTS,
@@ -139,18 +141,21 @@ from .const import (
     VOICE_MODES,
 )
 
-from .bring import bring_lists
+from .bring import async_batteries_to_bring, bring_lists
 from .brand import brand_strip
 from .choreops import choreops_available
 from .echo_locks import LOCK_DND, LOCK_ECHOS, LOCK_END, LOCK_SLOTS, LOCK_START
 from .languages import get_pack
 from .local_todo import CHOICE_NEW, CHOICE_NONE, LocalList, async_create_list, local_lists
 from .waste import waste_available, waste_calendars
+from .battery_notes import battery_notes_available
 from .reminders import format_due, phone_service_for
 from .sensor_rules import to_number
 from .store import BrainstormStore, get_loaded_store
 
 BACK_FIELD = "go_back"
+# A one-off action on the Battery Notes page, not stored
+CONF_BATTERY_NOTES_BRING = "battery_notes_bring"
 SENSOR_RULE_PICK = "sensor_rule"
 SENSOR_RULE_DELETE = "sensor_delete"
 NEW_SENSOR_RULE = "new"
@@ -324,6 +329,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "choreops": "🏅 ChoreOps",
                 "local_todo": "📋 Lokale To-do",
                 "waste_collection_schedule": "🗑️ Abfallkalender",
+                "battery_notes": "🔋 Battery Notes",
                 "init": "⬅️ Zurück",
                 "close": "✅ Fertig",
             },
@@ -367,6 +373,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "choreops": "🏅 ChoreOps",
                 "local_todo": "📋 Local To-do",
                 "waste_collection_schedule": "🗑️ Waste calendar",
+                "battery_notes": "🔋 Battery Notes",
                 "init": "⬅️ Back",
                 "close": "✅ Done",
             },
@@ -388,6 +395,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             "choreops",
             "local_todo",
             "waste_collection_schedule",
+            "battery_notes",
         }:
             # Only offered where a connected integration is installed
             menu = {key: label for key, label in menu.items() if key != "integrations"}
@@ -414,12 +422,15 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             "choreops": bool(options.get(CONF_CHOREOPS_ENABLED, True)),
             "local_todo": bool(self._local_links(options)),
             "waste_collection_schedule": bool(options.get(CONF_WASTE_ENABLED)),
+            "battery_notes": bool(options.get(CONF_BATTERY_ENABLED))
+            and bool(options.get(CONF_BATTERY_NOTES, True)),
         }
         names = {
             "bring": "Bring!",
             "choreops": "ChoreOps",
             "local_todo": self._text("Lokale To-do", "Local To-do"),
             "waste_collection_schedule": self._text("Abfallkalender", "Waste calendar"),
+            "battery_notes": "Battery Notes",
         }
         on, off = self._text("an", "on"), self._text("aus", "off")
         return [
@@ -434,6 +445,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             "bring": bool(bring_lists(self.hass)),
             "choreops": choreops_available(self.hass),
             "waste_collection_schedule": waste_available(self.hass),
+            "battery_notes": battery_notes_available(self.hass),
         }
         return {
             key: label
@@ -466,6 +478,11 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         if options.get(CONF_WASTE_ENABLED):
             time_of_day = str(options.get(CONF_WASTE_TIME) or DEFAULT_WASTE_TIME)
             waste = f"{on} · {time_of_day[:5]}"
+        notes = off
+        if options.get(CONF_BATTERY_ENABLED) and options.get(CONF_BATTERY_NOTES, True):
+            notes = on
+        elif options.get(CONF_BATTERY_NOTES, True):
+            notes = self._text("aus · 🔋 Batterien ist aus", "off · 🔋 Batteries is off")
         return self.async_show_menu(
             step_id="integrations",
             menu_options=self._integrations_menu(),
@@ -476,6 +493,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "status_choreops": choreops,
                 "status_local_todo": local,
                 "status_waste": waste,
+                "status_battery_notes": notes,
             },
         )
 
@@ -665,6 +683,57 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         return self.async_show_form(
             step_id="waste_collection_schedule",
             data_schema=vol.Schema(_with_back(schema)),
+        )
+
+    async def async_step_battery_notes(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Use the battery types and replacement dates of Battery Notes."""
+        if user_input is not None and user_input.pop(BACK_FIELD, False):
+            return await self.async_step_integrations()
+        store = await self._async_store()
+        options = dict(self.config_entry.options or self.config_entry.data)
+        bring = store.todo_sync.bring if store.todo_sync is not None else None
+        errors: dict[str, str] = {}
+        sent = ""
+        if user_input is not None:
+            options[CONF_BATTERY_NOTES] = bool(user_input.get(CONF_BATTERY_NOTES))
+            options[CONF_BATTERY_NOTES_REPLACED] = bool(
+                user_input.get(CONF_BATTERY_NOTES_REPLACED)
+            )
+            if user_input.get(CONF_BATTERY_NOTES_BRING):
+                try:
+                    result = await async_batteries_to_bring(self.hass, store, bring)
+                except ServiceValidationError as err:
+                    errors["base"] = err.translation_key or "battery_bring_nothing"
+                else:
+                    added = ", ".join(result["added"]) or "—"
+                    sent = self._text(f"🛒 Auf Bring!: {added}", f"🛒 On Bring!: {added}")
+            if not errors:
+                self.hass.config_entries.async_update_entry(
+                    self.config_entry, options=options
+                )
+                self._notice = sent or self._text(
+                    "✅ Gespeichert und aktiv.", "✅ Saved and active."
+                )
+                return await self.async_step_integrations()
+        schema: dict[Any, Any] = {
+            vol.Required(
+                CONF_BATTERY_NOTES, default=bool(options.get(CONF_BATTERY_NOTES, True))
+            ): selector.BooleanSelector(),
+            vol.Required(
+                CONF_BATTERY_NOTES_REPLACED,
+                default=bool(options.get(CONF_BATTERY_NOTES_REPLACED, True)),
+            ): selector.BooleanSelector(),
+        }
+        if bring is not None:
+            schema[vol.Optional(CONF_BATTERY_NOTES_BRING, default=False)] = (
+                selector.BooleanSelector()
+            )
+        return self.async_show_form(
+            step_id="battery_notes",
+            data_schema=vol.Schema(_with_back(schema)),
+            errors=errors,
         )
 
     async def async_step_choreops(

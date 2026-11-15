@@ -9,7 +9,7 @@
 [![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.13.17-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.13.18-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![Wiki](https://img.shields.io/badge/Docs-Wiki-6f42c1.svg)](https://github.com/nukleuz80/ha_brainstorm/wiki)
@@ -262,11 +262,11 @@ The latest versions; every version is in [CHANGELOG.md](CHANGELOG.md).
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.13.18`** | 2026-11-15 | **🔋 Battery Notes.** New page *🔋 Battery Notes* under *🔗 Connected integrations*: battery tasks name the battery type, such as *· 2× AA*. Ticking one off by hand calls `battery_notes.set_battery_replaced`. New button *🛒 Batteries to Bring!* in the card and new action `brainstorm.batteries_to_bring` put the batteries of all open battery tasks on the Bring list. Battery Notes shows its logo in the integration list. |
 | **`v1.13.17`** | 2026-11-15 | **🐞 Waste calendar: unavailable calendar.** The waste calendars are now read one by one. An unavailable calendar, such as an old one of Waste Collection Schedule, is skipped instead of failing the query of all calendars. |
 | **`v1.13.16`** | 2026-11-15 | **🗑️ Waste calendar.** New page *🗑️ Waste calendar* under *🔗 Connected integrations*, once Waste Collection Schedule is set up. On the evening before every pickup, a task like *🟡 Put out: Recycling* is added at the chosen time (default 18:00) in the chosen category; it ticks itself off after the pickup day. Words like *Pickup* and remarks in brackets are dropped, the sign follows the waste type, several pickups on one day become several tasks. Optionally the tasks of a pickup day go to ChoreOps people in turn, with points. If Home Assistant was off at the time, the tasks are caught up after the start. Logo in the strip, source *🗑️ Waste calendar* in the card. |
 | **`v1.13.15`** | 2026-11-15 | **📋 Origin of linked categories shown.** A category linked to a to-do list now carries a sign everywhere: 📋 for a list of Local To-do, 🔗 for a list of another integration. It is shown on the category tab of both cards, on the category label of every note, in the category dialogs and in the dropdowns. The tooltip names the list and its entity. New browser test `tests/js/linked_list.html`. |
 | **`v1.13.14`** | 2026-11-15 | **🏷️ Subtasks marked on to-do lists.** To-do lists such as Local To-do know no subtasks. A subtask therefore shows the text of its note in front, e.g. *Party › Cake*, so it can be told where it belongs. In Brainstorm the text stays *Cake*; renaming the note changes the prefix too. An item *Party › Candles* added on the list becomes a subtask of *Party*. Items linked before get the prefix at the next sync. |
-| **`v1.13.13`** | 2026-11-15 | **📋 Local To-do.** New page *📋 Local To-do* under *🔗 Connected integrations*: every list of the Local To-do integration can be taken over as a new category or linked to an existing category. For a category without a list, Brainstorm creates a new local list on request. Items are synced both ways. The card shows above the list which to-do list the category is linked to. The page *Link To-do Lists* no longer shows local lists and keeps their links when saving. |
 
 ---
 

@@ -407,6 +407,7 @@
           "choreops": "🏅 ChoreOps",
           "local_todo": "📋 Lokale To-do",
           "waste_collection_schedule": "🗑️ Abfallkalender",
+          "battery_notes": "🔋 Battery Notes",
           "init": "⬅️ Zurück",
           "close": "✅ Fertig"
         },
@@ -414,7 +415,8 @@
           "bring": "{status_bring}",
           "choreops": "{status_choreops}",
           "local_todo": "{status_local_todo}",
-          "waste_collection_schedule": "{status_waste}"
+          "waste_collection_schedule": "{status_waste}",
+          "battery_notes": "{status_battery_notes}"
         }
       },
       "choreops": {
@@ -626,6 +628,22 @@
           "waste_choreops_points": "Optional: Punkte pro Aufgabe. Leer nimmt die Standardpunkte der ChoreOps-Seite.",
           "go_back": "Kehrt ohne Speichern zur vorherigen Seite zurück."
         }
+      },
+      "battery_notes": {
+        "title": "Brainstorm › 🔗 Verbundene Integrationen › 🔋 Battery Notes",
+        "description": "Nutzt, was Battery Notes über die Batterien deiner Geräte weiß, für die Aufgaben von *🔋 Batterien*: Eine Aufgabe nennt den Batterietyp, etwa *Batterie wechseln: Flur-Sensor (8 %) · 2× AA*, und das Abhaken meldet Battery Notes den Batteriewechsel. Wirkt nur, solange *🔋 Batterien* eingeschaltet ist.",
+        "data": {
+          "battery_notes_enabled": "Batterietyp anzeigen",
+          "battery_notes_replaced": "Batteriewechsel melden",
+          "battery_notes_bring": "Batterien jetzt auf Bring! setzen",
+          "go_back": "⬅️ Zurück ohne Speichern"
+        },
+        "data_description": {
+          "battery_notes_enabled": "Batterie-Aufgaben nennen Typ und Anzahl der Batterien aus Battery Notes.",
+          "battery_notes_replaced": "Hakst du eine Batterie-Aufgabe von Hand ab, ruft Brainstorm `battery_notes.set_battery_replaced` für ihr Gerät auf. Eine Aufgabe, die sich schließt, weil der Stand gestiegen ist, wird nicht gemeldet; das merkt Battery Notes selbst.",
+          "battery_notes_bring": "Einmalig beim Speichern: setzt die Batterien aller offenen Batterie-Aufgaben auf die Standard-Bring-Liste, etwa *Batterien AA* mit *4×*. Typen, die dort schon offen sind, bleiben weg.",
+          "go_back": "Kehrt ohne Speichern zur vorherigen Seite zurück."
+        }
       }
     },
     "error": {
@@ -641,7 +659,10 @@
       "sensor_value_number": "Diese Bedingung braucht eine Zahl.",
       "sensor_reset_invalid": "Gib eine Zahl auf der normalen Seite der Grenze ein: darunter bei erreicht oder übersteigt, darüber bei erreicht oder unterschreitet.",
       "local_todo_duplicate": "Eine Kategorie kann nur mit einer Liste verbunden sein.",
-      "local_todo_failed": "Local To-do konnte die Liste nicht anlegen."
+      "local_todo_failed": "Local To-do konnte die Liste nicht anlegen.",
+      "bring_off": "Bring! ist in den Brainstorm-Einstellungen ausgeschaltet.",
+      "bring_list_unknown": "Die Standard-Bring-Liste wird nicht mit Brainstorm abgeglichen.",
+      "battery_bring_nothing": "Keine offene Batterie-Aufgabe mit Batterietyp aus Battery Notes."
     },
     "abort": {
       "store_not_ready": "Brainstorm wird gerade neu geladen. Bitte öffne die Einstellungen in ein paar Sekunden noch einmal."
@@ -1010,6 +1031,9 @@
     },
     "local_todo_failed": {
       "message": "Local To-do konnte die Liste {name} nicht anlegen."
+    },
+    "battery_bring_nothing": {
+      "message": "Keine offene Batterie-Aufgabe mit Batterietyp aus Battery Notes."
     }
   },
   "services": {
@@ -1390,6 +1414,16 @@
         "items": {
           "name": "Unteraufgaben",
           "description": "IDs offener Unteraufgaben der Notiz, die statt der Notiz selbst gesendet werden."
+        }
+      }
+    },
+    "batteries_to_bring": {
+      "name": "Batterien auf Bring!",
+      "description": "Setzt die Batterien aller offenen Batterie-Aufgaben auf eine Bring-Liste, mit den Batterietypen aus Battery Notes, etwa *Batterien AA* mit *4×*. Typen, die dort schon offen sind, bleiben weg.",
+      "fields": {
+        "list": {
+          "name": "Liste",
+          "description": "Die Bring-Liste. Ohne Angabe wird die Standardliste aus den Einstellungen genommen."
         }
       }
     },
