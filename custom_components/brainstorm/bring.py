@@ -18,6 +18,7 @@ from homeassistant.util import dt as dt_util
 
 from .const import (
     ATTR_BRING_LIST,
+    ATTR_BRING_SENT,
     ATTR_CATEGORY,
     ATTR_ID,
     ATTR_PARENT_ID,
@@ -238,3 +239,99 @@ def bring_message_target(
     if parent and (note := parent.get(ATTR_BRING_LIST)):
         return note["entity"], idea[ATTR_TEXT]
     return None
+
+
+def list_notes(store: BrainstormStore) -> dict[str, dict[str, Any]]:
+    """Return the open main notes of the Bring lists by list."""
+    notes: dict[str, dict[str, Any]] = {}
+    for idea in store.ideas:
+        entity_id = (idea.get(ATTR_BRING_LIST) or {}).get("entity")
+        if entity_id and idea.get(ATTR_STATUS) != "archived":
+            notes.setdefault(entity_id, idea)
+    return notes
+
+
+class BringSendError(Exception):
+    """A note that cannot be sent to Bring, with the reason as key."""
+
+    def __init__(self, key: str) -> None:
+        """Remember the translation key of the reason."""
+        super().__init__(key)
+        self.key = key
+
+
+async def async_send_to_bring(
+    hass: HomeAssistant,
+    store: BrainstormStore,
+    settings: BringSettings,
+    idea: dict[str, Any],
+    entity_id: str | None = None,
+    item_ids: list[str] | None = None,
+) -> dict[str, Any]:
+    """Put a note, or some of its open subtasks, on a Bring list as items.
+
+    The items become subtasks of the list note, and the to-do sync brings
+    them to Bring. What is already open on that list is not added twice.
+    """
+    if idea.get(ATTR_CATEGORY) == settings.category or idea.get(ATTR_BRING_LIST):
+        raise BringSendError("bring_send_own")
+    lists = chosen_lists(hass, settings)
+    if entity_id is None:
+        fallback = default_list(lists, settings)
+        entity_id = fallback.entity_id if fallback else None
+    notes = list_notes(store)
+    note = notes.get(entity_id or "")
+    if note is None or entity_id not in {bring.entity_id for bring in lists}:
+        raise BringSendError("bring_list_unknown")
+
+    if item_ids is None:
+        texts = [idea[ATTR_TEXT]]
+    else:
+        wanted = set(item_ids)
+        texts = [
+            child[ATTR_TEXT]
+            for child in store.ideas
+            if child.get(ATTR_ID) in wanted
+            and child.get(ATTR_PARENT_ID) == idea[ATTR_ID]
+            and child.get(ATTR_STATUS) == "active"
+        ]
+        if not texts:
+            raise BringSendError("bring_send_nothing")
+
+    on_list = {
+        child[ATTR_TEXT].strip().casefold()
+        for child in store.ideas
+        if child.get(ATTR_PARENT_ID) == note[ATTR_ID]
+        and child.get(ATTR_STATUS) == "active"
+    }
+    added: list[str] = []
+    skipped: list[str] = []
+    for text in texts:
+        key = text.strip().casefold()
+        if not key or key in on_list:
+            skipped.append(text)
+            continue
+        on_list.add(key)
+        item = await store.async_add_idea(
+            text=text,
+            category=settings.category,
+            parent_id=note[ATTR_ID],
+            source=SOURCE_BRING,
+            verbatim=True,
+            shares={SHARE_ALL: SHARE_EDIT} if store.privacy_enabled else None,
+        )
+        added.append(item[ATTR_ID])
+
+    sent = idea.get(ATTR_BRING_SENT) or {}
+    items = list(sent.get("items") or []) if sent.get("entity") == entity_id else []
+    await store.async_mark_fields(
+        idea[ATTR_ID],
+        {
+            ATTR_BRING_SENT: {
+                "entity": entity_id,
+                "name": note[ATTR_TEXT],
+                "items": items + added,
+            }
+        },
+    )
+    return {"entity_id": entity_id, "added": len(added), "skipped": skipped}

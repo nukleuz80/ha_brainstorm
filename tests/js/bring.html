@@ -1,0 +1,95 @@
+<!doctype html>
+<!-- Browser test for sending notes to Bring!. Run: python3 -m http.server in the repo root,
+     open http://localhost:8000/tests/js/bring.html, it shows PASS or the failures. --><meta charset="utf-8"><body><pre id="out">running</pre>
+<script type="module">
+import { BRING_TAB_ID, activeMapTab, bringBadge, bringSentText, bringTab, canSendToBring, mapTabBar, renderBringSend } from "../../custom_components/brainstorm/cards/brainstorm-i18n.js";
+const fails = [];
+const check = (name, got, want) => { if (JSON.stringify(got) !== JSON.stringify(want)) fails.push(`${name}: want ${JSON.stringify(want)}, got ${JSON.stringify(got)}`); };
+const bring = {
+  category: "Einkauf",
+  lists: [{ entity: "todo.camper", name: "Camper", note: "n1" }, { entity: "todo.zu_hause", name: "Zu Hause", note: "n2" }],
+  default: "todo.zu_hause",
+};
+
+// Which notes can go to Bring
+check("other category", canSendToBring({ id: "a", category: "Alltag", status: "active" }, bring), true);
+check("own category", canSendToBring({ id: "a", category: "Einkauf", status: "active" }, bring), false);
+check("list note", canSendToBring({ id: "a", category: "Alltag", status: "active", bring_list: "todo.camper" }, bring), false);
+check("done", canSendToBring({ id: "a", category: "Alltag", status: "completed" }, bring), false);
+check("bring off", canSendToBring({ id: "a", category: "Alltag", status: "active" }, null), false);
+
+// The badge
+check("no badge", bringBadge({ id: "a" }), "");
+const badge = document.createElement("div");
+badge.innerHTML = bringBadge({ bring_sent: { name: "Camper", open: 1, total: 3 } });
+check("badge text", badge.textContent, "🛒 1/3");
+badge.innerHTML = bringBadge({ bring_sent: { name: "Camper", open: 0, total: 3 } });
+check("badge done", badge.querySelector(".bring-done") !== null, true);
+
+// The tab opens the Bring category
+const tab = bringTab(bring);
+check("tab", [tab.id, tab.category, tab.focus], [BRING_TAB_ID, "Einkauf", null]);
+check("no tab", bringTab(null), null);
+check("tab active", activeMapTab([tab], BRING_TAB_ID, "Einkauf", null) === tab, true);
+check("tab left", activeMapTab([tab], BRING_TAB_ID, "Alltag", null), null);
+const bar = document.createElement("div");
+bar.innerHTML = mapTabBar([], null, { bring: tab });
+check("tab shown", bar.querySelector(".map-tab-bring").getAttribute("data-tab"), BRING_TAB_ID);
+bar.innerHTML = mapTabBar([], tab, { bring: tab, chores: true });
+check("tab marked", bar.querySelector(".map-tab-bring").classList.contains("active"), true);
+check("map not marked", bar.querySelector(".map-tab-main").classList.contains("active"), false);
+check("order", [...bar.querySelectorAll(".map-tab")].map((b) => b.className.split(" ")[1] || ""), ["map-tab-main", "map-tab-bring", "map-tab-chores", "map-tab-add"]);
+
+// The toast
+check("toast one", bringSentText({ entity_id: "todo.camper", added: 1, skipped: [] }, bring), "1 Artikel auf Camper");
+check("toast skipped", bringSentText({ entity_id: "todo.camper", added: 2, skipped: ["Gas"] }, bring), "2 Artikel auf Camper · 1 war schon drauf");
+check("toast nothing", bringSentText({ entity_id: "todo.zu_hause", added: 0, skipped: ["Gas"] }, bring), "Steht schon alles auf Zu Hause.");
+
+// The dialog sends the chosen subtasks to the chosen list
+const calls = [];
+const hass = { callService: async (...args) => { calls.push(args); return { response: { entity_id: args[2].list, added: 1, skipped: [] } }; } };
+const body = document.createElement("div");
+document.body.appendChild(body);
+let closed = false;
+let answer = null;
+const idea = { id: "t1", text: "Campingtrip", category: "Alltag", status: "active", bring_sent: { entity: "todo.camper" } };
+const children = [
+  { id: "c1", text: "Gas", status: "active", parent_id: "t1" },
+  { id: "c2", text: "Zelt", status: "active", parent_id: "t1" },
+  { id: "c3", text: "Kocher", status: "completed", parent_id: "t1" },
+];
+renderBringSend(body, { hass, idea, bring, children, close: () => { closed = true; }, done: (r) => { answer = r; } });
+check("list from before", body.querySelector("#bsBringList").value, "todo.camper");
+check("open subtasks", body.querySelectorAll("[data-bring-item]").length, 2);
+const zelt = body.querySelector('[data-bring-item="c2"]');
+zelt.checked = false;
+zelt.dispatchEvent(new Event("change"));
+body.querySelector("#bsBringSend").click();
+await new Promise((r) => setTimeout(r, 0));
+check("call", calls[0].slice(0, 3), ["brainstorm", "send_to_bring", { id: "t1", list: "todo.camper", items: ["c1"] }]);
+check("response wanted", calls[0][5], true);
+check("closed", closed, true);
+check("answer", answer && answer.added, 1);
+
+// The note itself, on the default list, without subtasks
+const body2 = document.createElement("div");
+document.body.appendChild(body2);
+renderBringSend(body2, { hass, idea: { id: "p1", text: "Wandfarbe", category: "Alltag", status: "active" }, bring, children: [], close: () => {} });
+check("default list", body2.querySelector("#bsBringList").value, "todo.zu_hause");
+check("no choice", body2.querySelector('input[name="bsBringMode"]'), null);
+body2.querySelector("#bsBringSend").click();
+await new Promise((r) => setTimeout(r, 0));
+check("note call", calls[1][2], { id: "p1", list: "todo.zu_hause" });
+
+// Nothing chosen asks for a choice instead of calling
+const body3 = document.createElement("div");
+document.body.appendChild(body3);
+renderBringSend(body3, { hass, idea, bring, children, close: () => {} });
+body3.querySelectorAll("[data-bring-item]").forEach((box) => { box.checked = false; box.dispatchEvent(new Event("change")); });
+body3.querySelector("#bsBringSend").click();
+await new Promise((r) => setTimeout(r, 0));
+check("no empty call", calls.length, 2);
+check("error shown", body3.querySelector(".dialog-error").style.display, "flex");
+
+document.getElementById("out").textContent = fails.length ? `FAIL\n${fails.join("\n")}` : "PASS";
+</script>

@@ -226,6 +226,7 @@ Erscheint nur, wenn die Integration [Bring!](https://www.home-assistant.io/integ
 - **Beide Richtungen:** Neue Artikel, Abhaken und Löschen gehen zwischen Brainstorm und Bring hin und her. Abhaken schiebt den Artikel in Bring unter *Zuletzt verwendet*.
 - **Verschieben:** Hängst du eine Unteraufgabe unter eine andere Listen-Notiz, wandert der Artikel auf diese Liste.
 - **Schon mal gekauft:** Eine Notiz mit dem Namen eines Artikels aus *Zuletzt verwendet* holt diesen zurück, statt ihn doppelt anzulegen, denn Bring erlaubt jeden Namen nur einmal pro Liste.
+- **Aus anderen Kategorien (v1.13.4):** *🛒 An Bring! senden* im ⋯-Menü setzt jede andere Notiz oder ihre offenen Unteraufgaben auf eine Liste; die Standardliste ist vorausgewählt.
 - **Mengen:** Die Spezifikation eines Bring-Artikels, etwa *1,5 l*, wird an der Notiz gespeichert (Feld `spec`).
 - **Listen-Notizen** übernehmen ihren Namen von Bring. Eine gelöschte Listen-Notiz kommt mit ihren Artikeln zurück, die Notiz einer nicht mehr abgeglichenen Liste wird archiviert.
 - **Schnell:** Änderungen anderer werden über die Aktivitäts-Ereignisse von Bring erkannt, zusätzlich wird alle 5 Minuten verglichen.

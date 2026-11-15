@@ -358,6 +358,8 @@ ATTR_TODO_LINK = "todo_link"
 SOURCE_TODO_SYNC = "todo_sync"
 # The main note that stands for a Bring! list, and where it came from
 ATTR_BRING_LIST = "bring_list"
+# The Bring! list a note was sent to, with the items it gave there
+ATTR_BRING_SENT = "bring_sent"
 # The device (or sensor) a battery task is for, and whether it got a new battery
 ATTR_BATTERY = "battery"
 ATTR_BATTERY_DONE = "battery_done"

@@ -45,6 +45,7 @@ Click `⛶` at the top right to enlarge the mindmap to the full screen.
 - **☀️ My day (v1.12.2):** *My day* in the edit dialog picks a note for today, in the morning, during the day or in the evening; it then shows 🌅, ☀️ or 🌙. The filter *☀️ My day* highlights only these notes. The pick runs out at midnight. Action: `my_day` in `brainstorm.update_idea`.
 - **🔥 Habits (v1.12.3):** The switch *Habit* in the edit dialog makes a note a daily habit. It shows 🔥 with its streak; tapping the badge opens the calendar with the last 18 weeks, where days are ticked off or taken back.
 - **🏅 ChoreOps (v1.13.1):** *🏅 Hand over to ChoreOps* in the ⋯ menu of a note, as in the list card: the note becomes a ChoreOps chore with points and ticks itself off once a parent approves it.
+- **🛒 Bring! (v1.13.4):** With Bring switched on, the tab bar shows *🛒 Bring!*: it opens the Bring category, one branch per list with its items. *🛒 Send to Bring!* in the ⋯ menu of any open note outside it puts the note or a choice of its open subtasks on a list; the note then shows *🛒 1/3* until everything is bought.
 - **🏅 ChoreOps live view (v1.13.2):** With ChoreOps installed, the tab bar shows *🏅 ChoreOps*. It shows a branch for every person with their points and chores, live from ChoreOps: ⏰ overdue, ✋ reported and waiting for approval, ○ open. Done chores are hidden; *Show done* shows them with the points earned. 💡 marks chores handed over from Brainstorm. The view is only for looking: approving and points stay in ChoreOps. *🗺️ Map* leads back. Turn the tab off with `show_choreops: false`.
 - **📑 Map tabs (v1.13.0):** Saved views sit as tabs above the map. *📑 Save view as tab* in the view choice (or ＋ in the tab bar) keeps the list, the focused branch, the filter, the layout and the visible area under a name with an icon. Without *Only for me* the whole household sees the tab, with 🔒 only you. A tap opens the tab, *🗺️ Map* leads back; a second tap on the open tab (or a right click) renames it, moves it with ◀ ▶, takes over the current view or deletes it. **↗ Move to its own tab** in the ⋯ menu of a note with subtasks puts the branch into its own tab: the main map keeps the note as a link with *↗ N notes*, a tap on it jumps into the tab. *Back into the map* in the tab dialog brings the branch back. That keeps a big map easy to read.
 - **🗣️ Talk freely (v1.12.4):** 🗣️ in the controls opens the same dialog as in the list card: say or type several tasks, the AI splits them into notes with date and person, you check them and create them in the category shown.
@@ -214,6 +215,7 @@ A single note can get its own shape in the edit dialog or through a service (`no
 | `show_filter` | `true` | 🔍 search and filter |
 | `show_tabs` | `true` | 📑 saved views as tabs above the map |
 | `show_choreops` | `true` | 🏅 live ChoreOps tab (only while ChoreOps is installed) |
+| `show_bring` | `true` | 🛒 Bring! tab that opens the shopping lists (only while Bring is switched on) |
 | `show_images` | `true` | first picture attachment inside the note |
 | `show_minimap` | `true` | overview (minimap) and its button 🗺️ |
 | `show_fullscreen_btn` | `true` | ⛶ full screen |

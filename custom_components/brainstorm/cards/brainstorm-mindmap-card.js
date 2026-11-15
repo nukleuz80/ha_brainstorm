@@ -1,8 +1,8 @@
-import { LEVEL_CSS, SOCIAL_CSS, CHORE_MAP_CSS, choreMapData, renderChoreMap, canHandOver, choreopsBadge, renderChoreHandover, MAP_TAB_CSS, activeMapTab, branchTabs, mapTabBar, ruleFilter, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.13.3";
+import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, BRING_TAB_ID, bringBadge, bringSentText, bringTab, canSendToBring, renderBringSend, CHORE_MAP_CSS, choreMapData, renderChoreMap, canHandOver, choreopsBadge, renderChoreHandover, MAP_TAB_CSS, activeMapTab, branchTabs, mapTabBar, ruleFilter, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.13.4";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.13.3 - Verbundene Integrationen
+ * Version: 1.13.4 - An Bring! senden
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -102,6 +102,7 @@ const BRAINSTORM_MINDMAP_DEFAULTS = {
   show_filter: true,
   show_tabs: true,
   show_choreops: true,
+  show_bring: true,
   show_images: true,
   show_minimap: true,
   hide_empty_categories: true,
@@ -1001,6 +1002,7 @@ class BrainstormMindmapCard extends HTMLElement {
         ${SOCIAL_CSS}
         ${MAP_TAB_CSS}
         ${CHORE_MAP_CSS}
+        ${BRING_SEND_CSS}
         ha-card.chore-view .chore-map {
           display: block;
         }
@@ -5014,6 +5016,7 @@ class BrainstormMindmapCard extends HTMLElement {
 
   _syncMapTabs(attributes) {
     this._choreops = attributes.choreops || null;
+    this._bring = attributes.bring || null;
     if (this._choreView && !this._choreTabShown()) this._setChoreView(false);
     const rev = attributes.map_tabs_rev;
     if (rev !== undefined && rev !== this._mapTabsRev && this._hass && !this._mapTabsLoading) {
@@ -5045,7 +5048,13 @@ class BrainstormMindmapCard extends HTMLElement {
   }
 
   _activeTab() {
-    return activeMapTab(this._mapTabs, this._activeTabId, this._selectedCategory, this._focusId);
+    const shop = this._bringTab();
+    return activeMapTab(shop ? [...this._mapTabs, shop] : this._mapTabs, this._activeTabId, this._selectedCategory, this._focusId);
+  }
+
+  // The Bring tab: opens the Bring category, shown while Bring is switched on
+  _bringTab() {
+    return this._config.show_bring !== false ? bringTab(this._bring) : null;
   }
 
   _renderMapTabs() {
@@ -5053,22 +5062,27 @@ class BrainstormMindmapCard extends HTMLElement {
     if (!bar) return;
     const show = this._config.show_tabs !== false;
     const chores = this._choreTabShown();
+    const shop = this._bringTab();
     const active = this._activeTab();
-    const key = show || chores ? JSON.stringify([show ? this._mapTabs : [], active && active.id, chores, this._choreView]) : "";
+    const any = show || chores || Boolean(shop);
+    const key = any ? JSON.stringify([show ? this._mapTabs : [], active && active.id, chores, this._choreView, shop]) : "";
     if (key === this._tabBarKey) return;
     this._tabBarKey = key;
-    bar.innerHTML = show || chores ? mapTabBar(show ? this._mapTabs : [], active, { chores, choreView: this._choreView }) : "";
+    bar.innerHTML = any ? mapTabBar(show ? this._mapTabs : [], active, { chores, choreView: this._choreView, bring: shop }) : "";
     bar.querySelectorAll(".map-tab[data-tab]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const id = btn.getAttribute("data-tab");
-        const tab = this._mapTabs.find((item) => item.id === id) || null;
+        const shop = this._bringTab();
+        const tab = (shop && id === BRING_TAB_ID ? shop : this._mapTabs.find((item) => item.id === id)) || null;
         if (this._choreView) {
           // Back from ChoreOps to the map as it was, or into another tab
           this._setChoreView(false);
           if (!tab || this._activeTab() === tab) return;
         }
         // Tapping the open tab again edits it, so touch screens need no long press
-        if (tab && this._activeTab() === tab) this._showTabDialog(tab);
+        if (tab && this._activeTab() === tab) {
+          if (!tab.virtual) this._showTabDialog(tab);
+        }
         else this._applyTab(tab);
       });
       btn.addEventListener("contextmenu", (e) => {
@@ -6333,6 +6347,13 @@ class BrainstormMindmapCard extends HTMLElement {
   _showHabit(idea) {
     if (!this._hass || !idea || !idea.habit) return;
     this._openDialog(t("🔥 Kalender"), (body) => renderHabit(body, { hass: this._hass, idea, close: () => this._closeDialog() }));
+  }
+
+  _showBringSend(idea) {
+    if (!this._hass || !idea || !this._bring) return;
+    const sensor = this._getSensorEntity();
+    const children = ((sensor && sensor.attributes.ideas) || []).filter((item) => item.parent_id === idea.id);
+    this._openDialog(t("🛒 An Bring! senden"), (body) => renderBringSend(body, { hass: this._hass, idea, bring: this._bring, children, close: () => this._closeDialog(), done: (response) => this._showToast(bringSentText(response, this._bring)) }));
   }
 
   _showChoreHandover(idea) {
@@ -9957,6 +9978,7 @@ class BrainstormMindmapCard extends HTMLElement {
       const aiSubtasks = Boolean(sensor && sensor.attributes && sensor.attributes.ai_subtasks);
       const choreops = (sensor && sensor.attributes && sensor.attributes.choreops) || null;
       this._choreops = choreops;
+      const bring = (sensor && sensor.attributes && sensor.attributes.bring) || null;
       const voting = (sensor && sensor.attributes && sensor.attributes.voting) || {};
       const me = this._currentUserId();
       shownIdeas.forEach((idea) => {
@@ -9989,7 +10011,7 @@ class BrainstormMindmapCard extends HTMLElement {
                 <ha-icon icon="${this._getCategoryIcon(idea.category)}" style="--mdc-icon-size: 12px; width: 12px; height: 12px; display: inline-flex; align-items: center; vertical-align: middle;"></ha-icon> ${this._escapeHtml(idea.category)}
               </span>
               ${prioBadge}
-              ${this._getReminderBadges(idea)}${repeatBadge(idea)}${myDayBadge(idea)}${habitBadge(idea)}${choreopsBadge(idea)}
+              ${this._getReminderBadges(idea)}${repeatBadge(idea)}${myDayBadge(idea)}${habitBadge(idea)}${choreopsBadge(idea)}${bringBadge(idea)}
               ${inProgressBadge(idea)}
               ${blockedBadge(idea)}
               ${attachmentBadge(idea)}
@@ -10020,6 +10042,7 @@ class BrainstormMindmapCard extends HTMLElement {
                 ${hasBranch && !branchTab && !this._isPinboard() ? `<button class="action-btn menu-item" role="menuitem" data-act="tab" data-lvl="normal" data-id="${this._escapeHtml(idea.id)}"><span>↗</span>${t("In eigenen Tab auslagern")}</button>` : ""}
                 ${hasBranch ? `<button class="action-btn menu-item" role="menuitem" data-act="focus" data-lvl="normal" data-id="${this._escapeHtml(idea.id)}"><span>🎯</span>${t("Nur diesen Zweig zeigen (F4)")}</button>` : ""}
                 ${aiSubtasks ? `<button class="action-btn menu-item" role="menuitem" data-act="suggest" data-lvl="normal" data-id="${this._escapeHtml(idea.id)}"><span>✨</span>${t("Unteraufgaben von der KI vorschlagen lassen")}</button>` : ""}
+                ${canSendToBring(idea, bring) ? `<button class="action-btn menu-item" role="menuitem" data-act="bring-send" data-lvl="normal" data-id="${this._escapeHtml(idea.id)}"><span>🛒</span>${t("An Bring! senden")}</button>` : ""}
                 ${canHandOver(idea, choreops) ? `<button class="action-btn menu-item" role="menuitem" data-act="choreops" data-lvl="normal" data-id="${this._escapeHtml(idea.id)}"><span>🏅</span>${t("An ChoreOps übergeben")}</button>` : ""}
                 <button class="action-btn menu-item" role="menuitem" data-act="move" data-id="${this._escapeHtml(idea.id)}"><span>📁</span>${t("Kategorie ändern")}</button>
                 <button class="action-btn menu-item del-btn" role="menuitem" data-act="delete" data-id="${this._escapeHtml(idea.id)}"><span>🗑️</span>${t("Löschen")}</button>
@@ -10306,6 +10329,7 @@ class BrainstormMindmapCard extends HTMLElement {
             else if (act === "focus") this._setFocus(idea.id);
             else if (act === "tab") this._branchToTab(idea);
             else if (act === "choreops") this._showChoreHandover(idea);
+            else if (act === "bring-send") this._showBringSend(idea);
             else if (act === "link") this._startLink(idea.id);
             else if (act === "comments") this._showComments(idea);
             else if (act === "suggest") this._showAiChooser(idea);
@@ -11415,6 +11439,12 @@ class BrainstormMindmapCardEditor extends HTMLElement {
         selector: { boolean: {} },
       },
       {
+        name: "show_bring",
+        label: t("Bring!-Tab zeigen (öffnet die Einkaufslisten)"),
+        default: true,
+        selector: { boolean: {} },
+      },
+      {
         name: "show_add_btn",
         label: t("Neue Notiz-Schaltfläche (+ Idee) anzeigen"),
         default: true,
@@ -11640,7 +11670,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.13.3 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.13.4 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

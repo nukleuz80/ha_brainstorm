@@ -54,6 +54,9 @@
     "bring_message": {
       "service": "mdi:cart-arrow-right"
     },
+    "send_to_bring": {
+      "service": "mdi:cart-plus"
+    },
     "reorder_ideas": {
       "service": "mdi:sort"
     },

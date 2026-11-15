@@ -22,7 +22,12 @@ from .alexa_skill import AlexaSkill
 from .attachments import AttachmentCleaner, async_register_views
 from .battery import BatteryWatcher
 from .choreops import ChoreOpsBridge
-from .bring import BRING_MESSAGES, bring_message_target
+from .bring import (
+    BRING_MESSAGES,
+    BringSendError,
+    async_send_to_bring,
+    bring_message_target,
+)
 from .const import (
     ATTR_CATEGORY,
     CONF_CHOREOPS_ENABLED,
@@ -131,11 +136,20 @@ SERVICE_GET_ANNOUNCEMENT = "get_announcement"
 SERVICE_EXPORT_JSON = "export_json"
 SERVICE_IMPORT_JSON = "import_json"
 SERVICE_BRING_MESSAGE = "bring_message"
+SERVICE_SEND_TO_BRING = "send_to_bring"
 
 SERVICE_BRING_MESSAGE_SCHEMA = vol.Schema(
     {
         vol.Required(ATTR_ID): cv.string,
         vol.Required("message"): vol.In(BRING_MESSAGES),
+    }
+)
+
+SERVICE_SEND_TO_BRING_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_ID): cv.string,
+        vol.Optional("list"): cv.entity_id,
+        vol.Optional("items"): vol.All(cv.ensure_list, [cv.string]),
     }
 )
 
@@ -1039,6 +1053,36 @@ def _register_services(hass: HomeAssistant) -> None:
         )
         return {"entity_id": entity_id, "message": message}
 
+    async def handle_send_to_bring(call: ServiceCall) -> dict[str, Any]:
+        """Put a note, or some of its subtasks, on a Bring list."""
+        store = _require_store(hass)
+        idea_id = call.data[ATTR_ID]
+        idea = store.get_idea(idea_id)
+        if idea is None or store.access_level(idea, call.context.user_id) is None:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="idea_not_found",
+                translation_placeholders={"id": idea_id},
+            )
+        settings = store.todo_sync.bring if store.todo_sync is not None else None
+        if settings is None:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="bring_off"
+            )
+        try:
+            return await async_send_to_bring(
+                hass,
+                store,
+                settings,
+                idea,
+                call.data.get("list"),
+                call.data.get("items"),
+            )
+        except BringSendError as err:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key=err.key
+            ) from err
+
     async def handle_restore_idea(call: ServiceCall) -> dict[str, Any]:
         """Handle bringing back a deleted idea."""
         store = _require_store(hass)
@@ -1328,6 +1372,14 @@ def _register_services(hass: HomeAssistant) -> None:
         SERVICE_BRING_MESSAGE,
         handle_bring_message,
         schema=SERVICE_BRING_MESSAGE_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_SEND_TO_BRING,
+        handle_send_to_bring,
+        schema=SERVICE_SEND_TO_BRING_SCHEMA,
         supports_response=SupportsResponse.OPTIONAL,
     )
 

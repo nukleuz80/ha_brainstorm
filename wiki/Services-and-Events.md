@@ -19,6 +19,7 @@ All parameters are [further down](#brainstormadd_idea) and under [**Developer to
 | `brainstorm.set_category_style` | icon and color |
 | `brainstorm.export_markdown` / `export_json` / `import_json` | back up and transfer |
 | `brainstorm.bring_message` | message to Bring! |
+| `brainstorm.send_to_bring` | `id: …`, `list: todo.camper` puts the note or chosen subtasks on a Bring list |
 | `brainstorm.reorder_ideas` | set the order |
 | `brainstorm.import_outline` | add an outline: `text: …`, `category: …` or `parent_id: …`, `format: auto` |
 | `brainstorm.sort_children` | sort subtasks: `parent_id: …`, `by: text`, `priority`, `due`, `created` or `votes` |
@@ -259,6 +260,18 @@ Tells everyone on a Bring list something, through Bring's own notifications. In 
 | :--- | :--- | :--- |
 | `id` | Yes | ID of a Bring list note, or of an item on such a list. |
 | `message` | Yes | `going_shopping`, `changed_list`, `shopping_done` or `urgent_message`. An urgent message needs an item, whose text Bring sends along. |
+
+## `brainstorm.send_to_bring`
+
+▶️ [Try it in Home Assistant](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.send_to_bring)
+
+Puts a note of any other category, or some of its open subtasks, on a Bring list as items (v1.13.4). The items become subtasks of the list note and the sync brings them to Bring; what is already open on that list is not added twice. The note then shows *🛒 open/total*. Returns `entity_id`, `added` and the texts that were `skipped`. Errors: `bring_off` (Bring switched off), `bring_list_unknown` (list not synced), `bring_send_own` (note already in the Bring category), `bring_send_nothing` (none of the subtasks open).
+
+| Field | Required | Meaning |
+| :--- | :--- | :--- |
+| `id` | Yes | ID of the note. |
+| `list` | No | Bring to-do list such as `todo.camper`; without it the default list from the settings. |
+| `items` | No | IDs of open subtasks of the note to send instead of the note itself. |
 
 ## `brainstorm.reorder_ideas`
 

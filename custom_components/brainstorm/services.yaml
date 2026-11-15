@@ -457,6 +457,24 @@ bring_message:
             - shopping_done
             - urgent_message
 
+send_to_bring:
+  fields:
+    id:
+      required: true
+      selector:
+        text:
+    list:
+      required: false
+      selector:
+        entity:
+          domain: todo
+          integration: bring
+    items:
+      required: false
+      selector:
+        text:
+          multiple: true
+
 reorder_ideas:
   fields:
     idea_ids:

@@ -19,6 +19,7 @@ Alle Parameter stehen [weiter unten](#brainstormadd_idea) und unter [**Entwickle
 | `brainstorm.set_category_style` | Icon und Farbe |
 | `brainstorm.export_markdown` / `export_json` / `import_json` | Sichern und Übertragen |
 | `brainstorm.bring_message` | Nachricht an Bring! |
+| `brainstorm.send_to_bring` | `id: …`, `list: todo.camper` setzt die Notiz oder gewählte Unteraufgaben auf eine Bring-Liste |
 | `brainstorm.reorder_ideas` | Reihenfolge setzen |
 | `brainstorm.import_outline` | Gliederung anlegen: `text: …`, `category: …` oder `parent_id: …`, `format: auto` |
 | `brainstorm.sort_children` | Unterpunkte sortieren: `parent_id: …`, `by: text`, `priority`, `due`, `created` oder `votes` |
@@ -259,6 +260,18 @@ Sagt allen auf einer Bring-Liste etwas, über die Benachrichtigungen von Bring s
 | :--- | :--- | :--- |
 | `id` | Ja | ID einer Bring-Listen-Notiz oder eines Eintrags auf so einer Liste. |
 | `message` | Ja | `going_shopping`, `changed_list`, `shopping_done` oder `urgent_message`. Eine dringende Nachricht braucht einen Eintrag, dessen Text Bring mitschickt. |
+
+## `brainstorm.send_to_bring`
+
+▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.send_to_bring)
+
+Setzt eine Notiz aus einer beliebigen anderen Kategorie oder einige ihrer offenen Unteraufgaben als Artikel auf eine Bring-Liste (v1.13.4). Die Artikel werden Unteraufgaben der Listen-Notiz, der Abgleich bringt sie zu Bring; was dort schon offen ist, kommt nicht doppelt dazu. Die Notiz zeigt danach *🛒 offen/gesamt*. Gibt `entity_id`, `added` und die übersprungenen Texte (`skipped`) zurück. Fehler: `bring_off` (Bring ausgeschaltet), `bring_list_unknown` (Liste nicht abgeglichen), `bring_send_own` (Notiz liegt schon in der Bring-Kategorie), `bring_send_nothing` (keine der Unteraufgaben offen).
+
+| Feld | Pflicht | Bedeutung |
+| :--- | :--- | :--- |
+| `id` | Ja | ID der Notiz. |
+| `list` | Nein | Bring-To-do-Liste wie `todo.camper`; ohne Angabe die Standardliste aus den Einstellungen. |
+| `items` | Nein | IDs offener Unteraufgaben der Notiz, die statt der Notiz selbst gesendet werden. |
 
 ## `brainstorm.reorder_ideas`
 

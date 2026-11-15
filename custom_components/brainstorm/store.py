@@ -128,6 +128,7 @@ from .const import (
     ATTR_TODO_LINK,
     ATTR_SPEC,
     ATTR_BRING_LIST,
+    ATTR_BRING_SENT,
     ATTR_UPDATED_AT,
     ATTR_CALENDAR_SYNCED,
     CONF_ALLOWED_ECHOS,
@@ -244,6 +245,7 @@ EXPORT_SKIPPED_FIELDS = (
     ATTR_TODO_LINK,
     ATTR_CHOREOPS,
     ATTR_BRING_LIST,
+    ATTR_BRING_SENT,
     ATTR_BATTERY,
     ATTR_BATTERY_DONE,
     ATTR_SENSOR_RULE,
@@ -546,6 +548,7 @@ class BrainstormStore:
             "ui_level": self.ui_level,
             "map_tabs_rev": self._map_tabs_rev,
             "choreops": self._choreops_attributes(),
+            "bring": self._bring_attributes(),
         }
 
     def get_overview_attributes(self, user_id: str | None = None) -> dict[str, Any]:
@@ -596,6 +599,8 @@ class BrainstormStore:
             }
             if note := idea.get(ATTR_BRING_LIST):
                 result[ATTR_BRING_LIST] = note.get("entity")
+            if isinstance(sent := idea.get(ATTR_BRING_SENT), dict):
+                result[ATTR_BRING_SENT] = self._bring_sent_summary(sent)
             if self._privacy_enabled:
                 access = self.access_level(idea, user_id)
                 result["access"] = access
@@ -697,6 +702,7 @@ class BrainstormStore:
             "ui_level": self.ui_level,
             "map_tabs_rev": self._map_tabs_rev,
             "choreops": self._choreops_attributes(),
+            "bring": self._bring_attributes(),
             "category_counts": counts_by_cat,
             "priority_counts": counts_by_prio,
             "latest_idea": summary(active_ideas[0]) if active_ideas else None,
@@ -3267,6 +3273,46 @@ class BrainstormStore:
             or deleted.get("user_id") == user_id
             or self.can_edit(deleted["idea"], user_id)
         )
+
+    # Bring! lists
+
+    def _bring_attributes(self) -> dict[str, Any] | None:
+        """Return the Bring category and its lists, while Bring is switched on."""
+        settings = self.todo_sync.bring if self.todo_sync is not None else None
+        if settings is None:
+            return None
+        lists = sorted(
+            (
+                {
+                    "entity": note["entity"],
+                    "name": idea.get(ATTR_TEXT),
+                    "note": idea.get(ATTR_ID),
+                }
+                for idea in self._ideas.values()
+                if isinstance(note := idea.get(ATTR_BRING_LIST), dict)
+                and note.get("entity")
+                and idea.get(ATTR_STATUS) != "archived"
+            ),
+            key=lambda item: str(item["name"] or "").casefold(),
+        )
+        entities = [item["entity"] for item in lists]
+        default = settings.default_list if settings.default_list in entities else None
+        return {
+            "category": settings.category,
+            "lists": lists,
+            "default": default or (entities[0] if entities else None),
+        }
+
+    def _bring_sent_summary(self, sent: dict[str, Any]) -> dict[str, Any]:
+        """Return the list a note was sent to and how much of it is still open."""
+        items = [self._ideas.get(item_id) for item_id in sent.get("items") or []]
+        found = [item for item in items if item is not None]
+        return {
+            "entity": sent.get("entity"),
+            "name": sent.get("name"),
+            "open": sum(1 for item in found if item.get(ATTR_STATUS) == "active"),
+            "total": len(found),
+        }
 
     # ChoreOps hand-over
 

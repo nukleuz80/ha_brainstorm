@@ -226,6 +226,7 @@ Only shown when the [Bring!](https://www.home-assistant.io/integrations/bring/) 
 - **Both ways:** New items, ticks and deletions travel between Brainstorm and Bring. Ticking off moves the item to *Recently used* in Bring.
 - **Moving:** Hang a subtask under another list note, and the item moves to that list.
 - **Bought before:** A note with the name of an item in *Recently used* brings that item back instead of adding it twice, as Bring allows each name only once per list.
+- **From other categories (v1.13.4):** *🛒 Send to Bring!* in the ⋯ menu puts any other note, or its open subtasks, on a list; the default list is preselected.
 - **Amounts:** The specification of a Bring item, such as *1.5 l*, is kept with the note (field `spec`).
 - **List notes** take their name from Bring. A deleted list note comes back with its items, and the note of a list that is no longer synced is archived.
 - **Fast:** Changes by others are picked up through Bring's activity events, and everything is compared every 5 minutes as well.

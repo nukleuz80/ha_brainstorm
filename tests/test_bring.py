@@ -602,3 +602,93 @@ async def test_messages_go_to_the_right_list(
         with pytest.raises(ServiceValidationError) as err:
             await send(idea_id, message)
         assert err.value.translation_key == key
+
+
+async def test_sending_a_note_or_its_subtasks_to_bring(
+    hass: HomeAssistant, setup_entry: SetupEntry, bring: dict[str, FakeBringList]
+) -> None:
+    """Test that notes of other categories go to a Bring list as items."""
+    store = await _setup(setup_entry)
+    await _sync(hass, store)
+    home, camper = _note(store, HOME), _note(store, CAMPER)
+    overview = store.get_overview_attributes()["bring"]
+    assert overview == {
+        "category": "Einkauf",
+        "lists": [
+            {"entity": CAMPER, "name": "Camper", "note": camper["id"]},
+            {"entity": HOME, "name": "Zu Hause", "note": home["id"]},
+        ],
+        "default": HOME,
+    }
+
+    async def send(data: dict[str, Any]) -> dict[str, Any]:
+        return await hass.services.async_call(
+            DOMAIN, "send_to_bring", data, blocking=True, return_response=True
+        )
+
+    # The note itself goes to the default list
+    paint = await store.async_add_idea("Wandfarbe", category="Alltag", source="dashboard")
+    assert await send({"id": paint["id"]}) == {
+        "entity_id": HOME, "added": 1, "skipped": []
+    }
+    await _sync(hass, store)
+    assert _summaries(bring[HOME]) == {"Wandfarbe"}
+    item = next(
+        i for i in store.ideas if i["text"] == "Wandfarbe" and i["category"] == "Einkauf"
+    )
+    assert item["parent_id"] == home["id"]
+
+    # Chosen open subtasks go to the chosen list, what is open there only once
+    trip = await store.async_add_idea("Campingtrip", category="Alltag", source="dashboard")
+    children = [
+        await store.async_add_idea(
+            text, category="Alltag", source="dashboard", parent_id=trip["id"]
+        )
+        for text in ("Gas", "Würstchen", "Zelt")
+    ]
+    await store.async_add_idea(
+        "gas", category="Einkauf", source="dashboard", parent_id=camper["id"]
+    )
+    response = await send(
+        {"id": trip["id"], "list": CAMPER, "items": [c["id"] for c in children[:2]]}
+    )
+    assert response == {"entity_id": CAMPER, "added": 1, "skipped": ["Gas"]}
+    await _sync(hass, store)
+    assert _summaries(bring[CAMPER]) == {"Gas", "Würstchen"}
+
+    details = {i["id"]: i for i in store.get_overview_attributes()["ideas"]}
+    assert details[trip["id"]]["bring_sent"] == {
+        "entity": CAMPER, "name": "Camper", "open": 1, "total": 1
+    }
+    sausages = next(
+        i for i in store.ideas if i["text"] == "Würstchen" and i["category"] == "Einkauf"
+    )
+    await store.async_update_idea(sausages["id"], status="completed")
+    details = {i["id"]: i for i in store.get_overview_attributes()["ideas"]}
+    assert details[trip["id"]]["bring_sent"]["open"] == 0
+    assert "bring_sent" not in store.export_json()["ideas"][0]
+
+    for data, key in (
+        ({"id": home["id"]}, "bring_send_own"),
+        ({"id": item["id"]}, "bring_send_own"),
+        ({"id": paint["id"], "list": "todo.unknown"}, "bring_list_unknown"),
+        ({"id": trip["id"], "items": [paint["id"]]}, "bring_send_nothing"),
+        ({"id": "unknown"}, "idea_not_found"),
+    ):
+        with pytest.raises(ServiceValidationError) as err:
+            await send(data)
+        assert err.value.translation_key == key
+
+
+async def test_sending_needs_bring_switched_on(
+    hass: HomeAssistant, setup_entry: SetupEntry, bring: dict[str, FakeBringList]
+) -> None:
+    """Test that nothing is sent while Bring is switched off."""
+    store = await _setup(setup_entry, bring_enabled=False)
+    assert store.get_overview_attributes()["bring"] is None
+    idea = await store.async_add_idea("Wandfarbe", category="Alltag", source="dashboard")
+    with pytest.raises(ServiceValidationError) as err:
+        await hass.services.async_call(
+            DOMAIN, "send_to_bring", {"id": idea["id"]}, blocking=True
+        )
+    assert err.value.translation_key == "bring_off"

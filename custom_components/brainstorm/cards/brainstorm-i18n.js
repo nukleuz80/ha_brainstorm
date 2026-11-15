@@ -7,6 +7,23 @@
  */
 const DICTIONARIES = {
   en: {
+    "Bring!-Tab zeigen (öffnet die Einkaufslisten)": "Show Bring! tab (opens the shopping lists)",
+    "Auf der Bring!-Liste {name}: alles gekauft": "On the Bring! list {name}: all bought",
+    "Auf der Bring!-Liste {name}: {open} von {total} noch offen": "On the Bring! list {name}: {open} of {total} still open",
+    "Was kommt auf die Liste?": "What goes on the list?",
+    "Unteraufgaben ({count})": "Subtasks ({count})",
+    "Diese Notiz als ein Artikel": "This note as one item",
+    "Liste": "List",
+    "Was auf der Liste schon offen ist, kommt nicht doppelt dazu. Gekaufte Artikel werden hier abgehakt.": "What is already open on the list is not added twice. Bought items are ticked off here.",
+    "🛒 Senden": "🛒 Send",
+    "Bitte mindestens eine Unteraufgabe auswählen.": "Please choose at least one subtask.",
+    "Steht schon alles auf {name}.": "Everything is already on {name}.",
+    "1 Artikel auf {name}": "1 item on {name}",
+    "{count} Artikel auf {name}": "{count} items on {name}",
+    "{count} war schon drauf": "{count} already there",
+    "Die Bring!-Listen als Map": "The Bring! lists as a map",
+    "An Bring! senden": "Send to Bring!",
+    "🛒 An Bring! senden": "🛒 Send to Bring!",
     "ChoreOps-Tab zeigen (live, nur zum Ansehen)": "Show ChoreOps tab (live, view only)",
     "erledigt": "done",
     "gemeldet, wartet auf Freigabe": "reported, waiting for approval",
@@ -1358,9 +1375,9 @@ export function activeMapTab(tabs, activeId, category, focus) {
 }
 
 /** The bar of map tabs, empty while there is no tab yet. */
-export function mapTabBar(tabs, active, { chores = false, choreView = false } = {}) {
+export function mapTabBar(tabs, active, { chores = false, choreView = false, bring = null } = {}) {
   tabs = tabs || [];
-  if (!tabs.length && !chores) return "";
+  if (!tabs.length && !chores && !bring) return "";
   const activeId = active && !choreView ? active.id : null;
   const items = tabs.map((tab) => {
     const icon = tab.icon || (tab.branch ? "↗" : "📑");
@@ -1368,10 +1385,13 @@ export function mapTabBar(tabs, active, { chores = false, choreView = false } = 
     return `<button class="map-tab${tab.id === activeId ? " active" : ""}" data-tab="${escapeHtml(tab.id)}" role="tab" aria-selected="${tab.id === activeId}" title="${escapeHtml(t("Noch einmal tippen: Tab bearbeiten"))}"><span class="map-tab-icon">${escapeHtml(icon)}</span><span class="map-tab-name">${escapeHtml(tab.name)}</span>${lock}</button>`;
   });
   const main = !activeId && !choreView;
+  const shop = bring
+    ? `<button class="map-tab map-tab-bring${bring.id === activeId ? " active" : ""}" data-tab="${escapeHtml(bring.id)}" role="tab" aria-selected="${bring.id === activeId}" title="${escapeHtml(t("Die Bring!-Listen als Map"))}"><span class="map-tab-icon">🛒</span><span class="map-tab-name">Bring!</span></button>`
+    : "";
   const chore = chores
     ? `<button class="map-tab map-tab-chores${choreView ? " active" : ""}" data-chore-tab="1" role="tab" aria-selected="${choreView}" title="${escapeHtml(t("Live aus ChoreOps, nur zum Ansehen"))}"><span class="map-tab-icon">🏅</span><span class="map-tab-name">ChoreOps</span></button>`
     : "";
-  return `<button class="map-tab map-tab-main${main ? " active" : ""}" data-tab="" role="tab" aria-selected="${main}"><span class="map-tab-icon">🗺️</span><span class="map-tab-name">${escapeHtml(t("Map"))}</span></button>${items.join("")}${chore}<button class="map-tab map-tab-add" data-tab-add="1" data-lvl="normal" title="${escapeHtml(t("Ansicht als Tab speichern"))}" aria-label="${escapeHtml(t("Ansicht als Tab speichern"))}">＋</button>`;
+  return `<button class="map-tab map-tab-main${main ? " active" : ""}" data-tab="" role="tab" aria-selected="${main}"><span class="map-tab-icon">🗺️</span><span class="map-tab-name">${escapeHtml(t("Map"))}</span></button>${items.join("")}${shop}${chore}<button class="map-tab map-tab-add" data-tab-add="1" data-lvl="normal" title="${escapeHtml(t("Ansicht als Tab speichern"))}" aria-label="${escapeHtml(t("Ansicht als Tab speichern"))}">＋</button>`;
 }
 
 export const MAP_TAB_CSS = `
@@ -1789,6 +1809,154 @@ export function choreopsBadge(idea) {
   }
   return `<span class="due-badge chore-badge" title="${escapeHtml(t("Bei ChoreOps für {user}: {points} Punkte", { user, points: chore.points ?? 0 }))}">🏅 ${escapeHtml(chore.points ?? 0)}</span>`;
 }
+
+/** The badge of a note that was sent to a Bring list: how much is still to buy. */
+export function bringBadge(idea) {
+  const sent = idea && idea.bring_sent;
+  if (!sent || !sent.total) return "";
+  const name = sent.name || "Bring!";
+  if (!sent.open) {
+    return `<span class="due-badge bring-badge bring-done" title="${escapeHtml(t("Auf der Bring!-Liste {name}: alles gekauft", { name }))}">🛒 ✓</span>`;
+  }
+  return `<span class="due-badge bring-badge" title="${escapeHtml(t("Auf der Bring!-Liste {name}: {open} von {total} noch offen", { name, open: sent.open, total: sent.total }))}">🛒 ${escapeHtml(sent.open)}/${escapeHtml(sent.total)}</span>`;
+}
+
+/** Whether the menu offers sending a note to Bring: any open note outside the Bring category. */
+export function canSendToBring(idea, bring) {
+  return Boolean(bring && Array.isArray(bring.lists) && bring.lists.length && idea && !idea.bring_list && idea.category !== bring.category && idea.status === "active");
+}
+
+export const BRING_TAB_ID = "__bring__";
+
+/** The tab that opens the Bring category on the map, while Bring is switched on. */
+export function bringTab(bring) {
+  if (!bring || !bring.category) return null;
+  return { id: BRING_TAB_ID, name: "Bring!", icon: "🛒", category: bring.category, focus: null, virtual: true };
+}
+
+/**
+ * Fill a dialog body with sending a note to Bring: a list, and the note
+ * itself or a choice of its open subtasks as items.
+ */
+export function renderBringSend(body, { hass, idea, bring, children = [], close, done, prefix = "dialog" }) {
+  const c = (names) => names.split(" ").map((n) => `${prefix}-${n}`).join(" ");
+  const lists = bring.lists || [];
+  const open = (children || []).filter((child) => child && child.status === "active");
+  const sentTo = idea.bring_sent && idea.bring_sent.entity;
+  let list = [sentTo, bring.default].find((entity) => lists.some((item) => item.entity === entity)) || (lists[0] && lists[0].entity);
+  let mode = open.length ? "items" : "note";
+  const picked = new Set(open.map((child) => child.id));
+  let busy = false;
+  const draw = (error = "") => {
+    if (!body.isConnected) return;
+    const choice = open.length
+      ? `<div class="${c("label")}">${t("Was kommt auf die Liste?")}</div>
+        <div class="bs-bring-modes" role="radiogroup">
+          <label class="bs-bring-mode"><input type="radio" name="bsBringMode" value="items"${mode === "items" ? " checked" : ""}> ${t("Unteraufgaben ({count})", { count: open.length })}</label>
+          <label class="bs-bring-mode"><input type="radio" name="bsBringMode" value="note"${mode === "note" ? " checked" : ""}> ${t("Diese Notiz als ein Artikel")}</label>
+        </div>
+        <div class="bs-bring-items" style="display: ${mode === "items" ? "flex" : "none"};">
+          ${open.map((child) => `<label class="bs-bring-item"><input type="checkbox" data-bring-item="${escapeHtml(child.id)}"${picked.has(child.id) ? " checked" : ""}> <span>${formatText(child.text || "")}</span></label>`).join("")}
+        </div>`
+      : "";
+    body.innerHTML = `
+      <div class="${c("hint")}">${formatText(idea.text || "")}</div>
+      <div class="${c("label")}">${t("Liste")}</div>
+      <select class="${c("input")}" id="bsBringList">${lists.map((item) => `<option value="${escapeHtml(item.entity)}"${item.entity === list ? " selected" : ""}>${escapeHtml(item.name || item.entity)}</option>`).join("")}</select>
+      ${choice}
+      <div class="${c("hint")}">${t("Was auf der Liste schon offen ist, kommt nicht doppelt dazu. Gekaufte Artikel werden hier abgehakt.")}</div>
+      <div class="${c("error")}" style="display: ${error ? "flex" : "none"};">${escapeHtml(error)}</div>
+      <div class="${c("footer")}">
+        <button class="${c("btn btn-secondary")}" id="bsBringCancel">${t("Abbrechen")}</button>
+        <button class="${c("btn btn-primary")}" id="bsBringSend"${busy ? " disabled" : ""}>${t("🛒 Senden")}</button>
+      </div>`;
+    body.querySelector("#bsBringList").addEventListener("change", (e) => {
+      list = e.target.value;
+    });
+    body.querySelectorAll('input[name="bsBringMode"]').forEach((radio) => {
+      radio.addEventListener("change", () => {
+        mode = radio.value;
+        const box = body.querySelector(".bs-bring-items");
+        if (box) box.style.display = mode === "items" ? "flex" : "none";
+      });
+    });
+    body.querySelectorAll("[data-bring-item]").forEach((box) => {
+      box.addEventListener("change", () => {
+        if (box.checked) picked.add(box.dataset.bringItem);
+        else picked.delete(box.dataset.bringItem);
+      });
+    });
+    body.querySelector("#bsBringCancel").addEventListener("click", () => close());
+    body.querySelector("#bsBringSend").addEventListener("click", async () => {
+      if (busy) return;
+      const data = { id: idea.id, list };
+      if (mode === "items") {
+        data.items = open.map((child) => child.id).filter((id) => picked.has(id));
+        if (!data.items.length) {
+          draw(t("Bitte mindestens eine Unteraufgabe auswählen."));
+          return;
+        }
+      }
+      busy = true;
+      try {
+        const result = await hass.callService("brainstorm", "send_to_bring", data, undefined, true, true);
+        close();
+        if (done) done((result && result.response) || {});
+      } catch (err) {
+        busy = false;
+        draw((err && err.message) || t("Das ging nicht."));
+      }
+    });
+  };
+  draw();
+}
+
+/** What the toast says after sending to Bring. */
+export function bringSentText(response, bring) {
+  const item = ((bring && bring.lists) || []).find((entry) => entry.entity === response.entity_id);
+  const name = (item && item.name) || "Bring!";
+  const added = Number(response.added) || 0;
+  const skipped = Array.isArray(response.skipped) ? response.skipped.length : 0;
+  if (!added) return t("Steht schon alles auf {name}.", { name });
+  const text = added === 1 ? t("1 Artikel auf {name}", { name }) : t("{count} Artikel auf {name}", { count: added, name });
+  return skipped ? `${text} · ${t("{count} war schon drauf", { count: skipped })}` : text;
+}
+
+export const BRING_SEND_CSS = `
+  .bring-badge.bring-done {
+    opacity: 0.7;
+  }
+  .bs-bring-modes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    margin-bottom: 8px;
+  }
+  .bs-bring-mode,
+  .bs-bring-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+    cursor: pointer;
+  }
+  .bs-bring-items {
+    flex-direction: column;
+    gap: 2px;
+    max-height: 40vh;
+    overflow: auto;
+    padding: 4px 8px;
+    border: 1px solid var(--divider-color, rgba(127, 127, 127, 0.3));
+    border-radius: 8px;
+    margin-bottom: 8px;
+  }
+  .bs-bring-item input,
+  .bs-bring-mode input {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+  }
+`;
 
 /** Whether the menu offers the hand-over for a note. */
 export function canHandOver(idea, choreops) {

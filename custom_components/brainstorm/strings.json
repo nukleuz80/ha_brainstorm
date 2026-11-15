@@ -852,6 +852,18 @@
     "bring_not_linked": {
       "message": "This note is not on a Bring list."
     },
+    "bring_send_nothing": {
+      "message": "None of these subtasks is open."
+    },
+    "bring_send_own": {
+      "message": "This note is already on a Bring list."
+    },
+    "bring_list_unknown": {
+      "message": "This Bring list is not synced with Brainstorm."
+    },
+    "bring_off": {
+      "message": "Bring! is switched off in the Brainstorm settings."
+    },
     "bring_urgent_needs_item": {
       "message": "An urgent message needs an item. Choose an item on the list, not the list itself."
     },
@@ -1300,6 +1312,24 @@
         "message": {
           "name": "Message",
           "description": "What Bring should tell the others."
+        }
+      }
+    },
+    "send_to_bring": {
+      "name": "Send to Bring!",
+      "description": "Puts a note, or some of its open subtasks, on a Bring list as items. What is already open on that list is not added twice.",
+      "fields": {
+        "id": {
+          "name": "Note",
+          "description": "ID of the note. It must not be in the Bring category itself."
+        },
+        "list": {
+          "name": "List",
+          "description": "The Bring list. Without one the default list from the settings is used."
+        },
+        "items": {
+          "name": "Subtasks",
+          "description": "IDs of open subtasks of the note to send instead of the note itself."
         }
       }
     },

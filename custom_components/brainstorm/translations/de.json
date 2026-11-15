@@ -852,6 +852,18 @@
     "bring_not_linked": {
       "message": "Diese Notiz steht auf keiner Bring-Liste."
     },
+    "bring_send_nothing": {
+      "message": "Keine dieser Unteraufgaben ist offen."
+    },
+    "bring_send_own": {
+      "message": "Diese Notiz steht schon auf einer Bring-Liste."
+    },
+    "bring_list_unknown": {
+      "message": "Diese Bring-Liste wird nicht mit Brainstorm abgeglichen."
+    },
+    "bring_off": {
+      "message": "Bring! ist in den Brainstorm-Einstellungen ausgeschaltet."
+    },
     "bring_urgent_needs_item": {
       "message": "Eine dringende Nachricht braucht einen Eintrag. Wähle einen Eintrag der Liste, nicht die Liste selbst."
     },
@@ -1300,6 +1312,24 @@
         "message": {
           "name": "Nachricht",
           "description": "Was Bring den anderen sagen soll."
+        }
+      }
+    },
+    "send_to_bring": {
+      "name": "An Bring! senden",
+      "description": "Setzt eine Notiz oder einige ihrer offenen Unteraufgaben als Artikel auf eine Bring-Liste. Was dort schon offen ist, kommt nicht doppelt dazu.",
+      "fields": {
+        "id": {
+          "name": "Notiz",
+          "description": "ID der Notiz. Sie darf nicht selbst in der Bring-Kategorie liegen."
+        },
+        "list": {
+          "name": "Liste",
+          "description": "Die Bring-Liste. Ohne Angabe nimmt Brainstorm die Standardliste aus den Einstellungen."
+        },
+        "items": {
+          "name": "Unteraufgaben",
+          "description": "IDs offener Unteraufgaben der Notiz, die statt der Notiz selbst gesendet werden."
         }
       }
     },
