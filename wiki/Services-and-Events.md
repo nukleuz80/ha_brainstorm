@@ -434,6 +434,7 @@ Shares several ideas or a whole category. Needs privacy to be switched on.
 | `brainstorm_reminder_due` | a reminder is due |
 | `brainstorm_comment_added` | a new comment (`idea_id`, `idea_text`, `text`, `by`, `mentions`) |
 | `brainstorm_round_ended` | a hidden round was revealed (`category`, `revealed`) |
+| `brainstorm_idea_unblocked` | a note no longer waits: the last open note blocking it was ticked off (`id`, `text`, `category`, `assignee`, `by_id`, `by_text`); since v1.13.7 |
 
 The event data holds the whole note (`id`, `text`, `category`, `priority`, `source`, …):
 

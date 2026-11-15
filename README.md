@@ -9,7 +9,7 @@
 [![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.13.6-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.13.7-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![Wiki](https://img.shields.io/badge/Docs-Wiki-6f42c1.svg)](https://github.com/nukleuz80/ha_brainstorm/wiki)
@@ -261,11 +261,11 @@ The latest versions; every version is in [CHANGELOG.md](CHANGELOG.md).
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.13.7`** | 2026-11-15 | **🔓 Dependencies tell when they are done.** Once the last note another one waits for (blocking link) is ticked off, the card shows *🔓 "…" can start now*, the logbook gets an entry, and a message goes to the channels a reminder of the waiting note would use (its person, the rule of its list or the default services). New event `brainstorm_idea_unblocked` with `id`, `text`, `category`, `assignee`, `by_id` and `by_text` for own automations. |
 | **`v1.13.6`** | 2026-11-15 | **◐ Compact mind map notes.** A new button ◐ in the map controls switches between *automatic* (default: only title, a status dot and the number of subtasks while zoomed out, everything when zoomed in), *compact* (titles only) and *normal* (everything). A tap opens a single compact note, a tap beside it closes it. Zooming moves no note. Card option `node_detail`; each browser remembers the choice. |
 | **`v1.13.5`** | 2026-11-15 | **🔗 Integration logos in the settings.** The main menu of the settings shows the logos of the connected integrations (Bring!, ChoreOps), in colour while switched on and grey while off, and the entry *🔗 Connected integrations* shows their state (🟢/⚪). The logos are the official brand images: the one a custom integration brings along, or the one of the Home Assistant brands service. |
 | **`v1.13.4`** | 2026-11-15 | **🛒 Send to Bring!** New tab *🛒 Bring!* above the mind map opens the Bring category with one branch per list (card option `show_bring`). The ⋯ menu of both cards offers *🛒 Send to Bring!* for any open note outside the Bring category: choose the list (default list from the settings) and send the note itself or a choice of its open subtasks as items; what is already open on that list is not added twice. A badge *🛒 1/3* on the note shows how much is still to buy. New action `brainstorm.send_to_bring`, the sensor shows the Bring lists. |
 | **`v1.13.3`** | 2026-11-15 | **🔗 Connected integrations.** New settings page *🔗 Connected integrations* with a sub-page each for 🛒 Bring! (so far directly in the main menu) and 🏅 ChoreOps; it shows only installed integrations with their status. ChoreOps can be switched on and off there and gets *Default points*, preselected in the hand-over dialog and used by `brainstorm.send_to_choreops` without points. |
-| **`v1.13.2`** | 2026-11-15 | **🏅 ChoreOps live in the mind map.** New tab *🏅 ChoreOps* above the mind map once ChoreOps is installed: a branch per person with their points and all chores, live from the ChoreOps sensors. ⏰ overdue, ✋ reported and waiting for approval, ✅ done (*Show done* shows them); 💡 marks chores that came from Brainstorm. View only, approving and points stay with ChoreOps. *🗺️ Map* leads back; new card option `show_choreops`. |
 
 ---
 

@@ -163,6 +163,8 @@ EVENT_IDEA_UPDATED = "brainstorm_idea_updated"
 EVENT_REMINDER_DUE = "brainstorm_reminder_due"
 EVENT_COMMENT_ADDED = "brainstorm_comment_added"
 EVENT_ROUND_ENDED = "brainstorm_round_ended"
+# A note no longer waits: the last open note blocking it was ticked off
+EVENT_IDEA_UNBLOCKED = "brainstorm_idea_unblocked"
 
 # Attributes
 ATTR_ID = "id"

@@ -1,8 +1,8 @@
-import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, BRING_TAB_ID, bringBadge, bringSentText, compactNodeInfo, nextNodeDetail, nodeDetailButton, nodeDetailCompact, nodeDetailMode, bringTab, canSendToBring, renderBringSend, CHORE_MAP_CSS, choreMapData, renderChoreMap, canHandOver, choreopsBadge, renderChoreHandover, MAP_TAB_CSS, activeMapTab, branchTabs, mapTabBar, ruleFilter, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.13.6";
+import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, BRING_TAB_ID, bringBadge, bringSentText, unblockedText, compactNodeInfo, nextNodeDetail, nodeDetailButton, nodeDetailCompact, nodeDetailMode, bringTab, canSendToBring, renderBringSend, CHORE_MAP_CSS, choreMapData, renderChoreMap, canHandOver, choreopsBadge, renderChoreHandover, MAP_TAB_CSS, activeMapTab, branchTabs, mapTabBar, ruleFilter, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.13.7";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.13.6 - Kompakte Mindmap-Knoten
+ * Version: 1.13.7 - Hinweis bei Abhängigkeiten
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -8089,9 +8089,16 @@ class BrainstormMindmapCard extends HTMLElement {
     return [...ids].sort((a, b) => (deepestFirst ? depth(b) - depth(a) : depth(a) - depth(b)));
   }
 
+  // The notes as they were, to tell afterwards which ones no longer wait
+  _unblockSnapshot() {
+    const sensor = this._getSensorEntity();
+    return ((sensor && sensor.attributes && sensor.attributes.ideas) || []).map((i) => ({ ...i }));
+  }
+
   async _completeSelected() {
     const ids = [...this._multi];
     if (!ids.length || !this._hass) return;
+    const before = this._unblockSnapshot();
     const done = [];
     for (const id of ids) {
       try {
@@ -8103,7 +8110,8 @@ class BrainstormMindmapCard extends HTMLElement {
     }
     this._clearMulti();
     if (!done.length) return;
-    this._showToast(t("{count} Notizen erledigt", { count: done.length }));
+    const hint = unblockedText(before, done);
+    this._showToast(hint ? `${t("{count} Notizen erledigt", { count: done.length })} · ${hint}` : t("{count} Notizen erledigt", { count: done.length }));
     this._pushUndo(t("{count} Notizen", { count: done.length }), async () => {
       for (const id of done) {
         await this._hass.callService("brainstorm", "update_idea", { id, status: "active" });
@@ -11245,11 +11253,14 @@ class BrainstormMindmapCard extends HTMLElement {
       el.style.opacity = "0.2";
       el.style.transform = "scale(0.85)";
     }
+    const before = this._unblockSnapshot();
     try {
       await this._hass.callService("brainstorm", "update_idea", {
         id: id,
         status: "completed",
       });
+      const hint = unblockedText(before, [id]);
+      if (hint) this._showToast(hint);
       this._pushUndo(this._ideaText(id), () =>
         this._hass.callService("brainstorm", "update_idea", { id, status: "active" })
       );
@@ -11846,7 +11857,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.13.6 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.13.7 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

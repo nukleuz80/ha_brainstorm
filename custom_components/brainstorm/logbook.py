@@ -23,6 +23,7 @@ from .const import (
     EVENT_IDEA_ADDED,
     EVENT_IDEA_COMPLETED,
     EVENT_IDEA_DELETED,
+    EVENT_IDEA_UNBLOCKED,
     EVENT_IDEA_UPDATED,
     OVERVIEW_ENTITY_ID,
 )
@@ -132,8 +133,27 @@ def async_describe_events(
             LOGBOOK_ENTRY_ICON: "mdi:delete-outline",
         }
 
+    @callback
+    def async_describe_idea_unblocked(
+        event: LazyEventPartialState | Event,
+    ) -> dict[str, Any]:
+        """Describe a note that no longer waits for another one."""
+        data = event.data or {}
+        text = _visible_text(hass, data)
+        by = _visible_text(hass, {ATTR_TEXT: data.get("by_text", "")})
+        category = data.get(ATTR_CATEGORY)
+        cat_prefix = f" ({category})" if category else ""
+        display_text = text if len(text) <= 120 else f"{text[:117]}..."
+        return {
+            LOGBOOK_ENTRY_NAME: f"Brainstorm{cat_prefix}: {display_text}",
+            LOGBOOK_ENTRY_MESSAGE: pack.msg("log_unblocked", by=by),
+            LOGBOOK_ENTRY_ENTITY_ID: OVERVIEW_ENTITY_ID,
+            LOGBOOK_ENTRY_ICON: "mdi:lock-open-variant-outline",
+        }
+
     async_describe_event(DOMAIN, EVENT_IDEA_ADDED, async_describe_idea_added)
     async_describe_event(DOMAIN, EVENT_IDEA_COMPLETED, async_describe_idea_completed)
     async_describe_event(DOMAIN, EVENT_IDEA_UPDATED, async_describe_idea_updated)
     async_describe_event(DOMAIN, EVENT_IDEA_DELETED, async_describe_idea_deleted)
+    async_describe_event(DOMAIN, EVENT_IDEA_UNBLOCKED, async_describe_idea_unblocked)
 

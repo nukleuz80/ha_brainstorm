@@ -1,0 +1,21 @@
+<!doctype html>
+<!-- Browser test for the hint that a note no longer waits. Run: python3 -m http.server in the repo root,
+     open http://localhost:8000/tests/js/unblocked.html, it shows PASS or the failures. --><meta charset="utf-8"><body><pre id="out">running</pre>
+<script type="module">
+import { unblockedText } from "../../custom_components/brainstorm/cards/brainstorm-i18n.js";
+const fails = [];
+const check = (name, got, want) => { if (JSON.stringify(got) !== JSON.stringify(want)) fails.push(`${name}: want ${JSON.stringify(want)}, got ${JSON.stringify(got)}`); };
+const ideas = [
+  { id: "roof", text: "Dach decken", status: "active", blocked_by: [{ id: "offer" }, { id: "order" }] },
+  { id: "paint", text: "Streichen", status: "active", blocked_by: [{ id: "order" }] },
+  { id: "old", text: "Alt", status: "completed", blocked_by: [{ id: "order" }] },
+  { id: "offer", text: "Angebot", status: "active" },
+  { id: "order", text: "Bestellen", status: "active" },
+];
+check("one", unblockedText(ideas, ["order"]), "🔓 „Streichen“ kann jetzt losgehen");
+check("still waits", unblockedText(ideas, ["offer"]), "");
+check("both", unblockedText(ideas, ["offer", "order"]), "🔓 2 Notizen können jetzt losgehen");
+check("nothing", unblockedText(ideas, ["paint"]), "");
+check("empty", unblockedText(null, ["x"]), "");
+document.getElementById("out").textContent = fails.length ? `FAIL\n${fails.join("\n")}` : "PASS";
+</script>

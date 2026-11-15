@@ -7,6 +7,8 @@
  */
 const DICTIONARIES = {
   en: {
+    "🔓 „{text}“ kann jetzt losgehen": "🔓 \"{text}\" can start now",
+    "🔓 {count} Notizen können jetzt losgehen": "🔓 {count} notes can start now",
     "Notizen: kompakt (nur Titel) – tippen für normal": "Notes: compact (titles only) – tap for normal",
     "Notizen: mit allen Angaben – tippen für automatisch": "Notes: with all details – tap for automatic",
     "Notizen: automatisch nach Zoom – tippen für kompakt": "Notes: automatic by zoom – tap for compact",
@@ -3622,4 +3624,19 @@ export function compactNodeInfo(idea, childCount, now = Date.now()) {
     ? `<span class="node-kids" title="${escapeHtml(t("{count} Unteraufgaben", { count: childCount }))}">${childCount}</span>`
     : "";
   return `<span class="cloud-compact">${dot}${kids}</span>`;
+}
+
+/**
+ * Return the hint for notes that waited only for the notes just done, or
+ * nothing. The ideas are those from before, with their blocked_by lists.
+ */
+export function unblockedText(ideas, doneIds) {
+  const done = new Set(doneIds || []);
+  const free = (ideas || []).filter((idea) => {
+    const waits = idea.blocked_by || [];
+    return idea.status === "active" && !done.has(idea.id) && waits.length > 0 && waits.every((w) => done.has(w.id));
+  });
+  if (!free.length) return "";
+  if (free.length === 1) return t("🔓 „{text}“ kann jetzt losgehen", { text: free[0].text || "" });
+  return t("🔓 {count} Notizen können jetzt losgehen", { count: free.length });
 }

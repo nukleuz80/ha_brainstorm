@@ -434,6 +434,7 @@ Gibt mehrere Einträge oder eine ganze Kategorie für Personen frei. Braucht ein
 | `brainstorm_reminder_due` | Erinnerung ist fällig |
 | `brainstorm_comment_added` | neuer Kommentar (`idea_id`, `idea_text`, `text`, `by`, `mentions`) |
 | `brainstorm_round_ended` | verdeckte Runde aufgedeckt (`category`, `revealed`) |
+| `brainstorm_idea_unblocked` | eine Notiz wartet nicht mehr: die letzte offene Notiz, die sie blockierte, ist abgehakt (`id`, `text`, `category`, `assignee`, `by_id`, `by_text`); seit v1.13.7 |
 
 In den Ereignisdaten steckt die ganze Notiz (`id`, `text`, `category`, `priority`, `source`, …):
 

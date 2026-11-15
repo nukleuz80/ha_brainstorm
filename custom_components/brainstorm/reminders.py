@@ -31,6 +31,7 @@ from .const import (
     ATTR_ID,
     ATTR_PRIORITY,
     ATTR_REMINDED_AT,
+    ATTR_STATUS,
     ATTR_TEXT,
     ATTR_TRIGGER,
     ATTR_URGENT_SENT,
@@ -66,6 +67,7 @@ from .const import (
     CONF_URGENT_NOTIFY,
     DEFAULT_REVIEW_DAYS,
     DEFAULT_URGENT_DELAY,
+    EVENT_IDEA_UNBLOCKED,
     EVENT_REMINDER_DUE,
     PRIORITY_HIGH,
     PRIORITY_URGENT,
@@ -351,6 +353,7 @@ class ReminderManager:
             self.hass.bus.async_listen(
                 "mobile_app_notification_action", self._async_handle_action
             ),
+            self.hass.bus.async_listen(EVENT_IDEA_UNBLOCKED, self._async_handle_unblocked),
         ]
         if self._uses_places:
             self._unsubs.append(
@@ -628,6 +631,28 @@ class ReminderManager:
             if services:
                 told.append(person)
         return told
+
+    async def _async_handle_unblocked(self, event: Event) -> None:
+        """Tell that a note can start, as the last note it waited for is done.
+
+        The message goes where a reminder of the note would go: to its
+        person, its list's channels or the default services.
+        """
+        idea = self._ideas.get_idea(str(event.data.get(ATTR_ID) or ""))
+        if idea is None or idea.get(ATTR_STATUS) != "active":
+            return
+        title = self._pack.msg("unblocked_title")
+        message = self._pack.msg(
+            "unblocked_message",
+            text=idea.get(ATTR_TEXT) or "",
+            by=event.data.get("by_text") or "",
+        )
+        for configured in self._idea_services(idea):
+            service = phone_service_for(self.hass, configured)
+            data = None
+            if service.startswith(f"notify.{MOBILE_APP_SERVICE_PREFIX}"):
+                data = {"tag": f"brainstorm_unblocked_{idea[ATTR_ID]}"}
+            await self._async_send(service, title, message, data)
 
     async def _async_notify_idea(self, idea: dict[str, Any]) -> None:
         """Send a reminder to the phones and other services."""

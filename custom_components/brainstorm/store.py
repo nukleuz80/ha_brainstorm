@@ -154,6 +154,7 @@ from .const import (
     EVENT_IDEA_DELETED,
     EVENT_IDEA_UPDATED,
     EVENT_ROUND_ENDED,
+    EVENT_IDEA_UNBLOCKED,
     JSON_EXPORT_FORMAT,
     JSON_EXPORT_VERSION,
     OVERVIEW_ENTITY_ID,
@@ -1962,6 +1963,21 @@ class BrainstormStore:
             "entity_id": OVERVIEW_ENTITY_ID,
         }
         self.hass.bus.async_fire(event_name, event_data, context=act_context)
+        if newly_completed:
+            for waiting in unblocked_by(list(self._ideas.values()), idea):
+                self.hass.bus.async_fire(
+                    EVENT_IDEA_UNBLOCKED,
+                    {
+                        ATTR_ID: waiting[ATTR_ID],
+                        ATTR_TEXT: waiting.get(ATTR_TEXT),
+                        ATTR_CATEGORY: waiting.get(ATTR_CATEGORY),
+                        ATTR_ASSIGNEE: waiting.get(ATTR_ASSIGNEE),
+                        "by_id": idea_id,
+                        "by_text": idea.get(ATTR_TEXT),
+                        "entity_id": OVERVIEW_ENTITY_ID,
+                    },
+                    context=act_context,
+                )
         if repeated is not None:
             self.hass.bus.async_fire(
                 EVENT_IDEA_ADDED,
@@ -4481,6 +4497,25 @@ def _clean_links(links: Any, own_id: str, known: set[str]) -> list[dict[str, Any
         if len(cleaned) >= LINKS_MAX_COUNT:
             break
     return cleaned
+
+
+def unblocked_by(
+    ideas: list[dict[str, Any]], done: dict[str, Any]
+) -> list[dict[str, Any]]:
+    """Return the open notes that waited for a note just done and now wait for nothing."""
+    targets = {
+        link.get("to") for link in done.get(ATTR_LINKS) or [] if link.get("blocks")
+    }
+    if not targets:
+        return []
+    still_waiting = _blocked_by(ideas)
+    return [
+        idea
+        for idea in ideas
+        if str(idea.get(ATTR_ID)) in targets
+        and idea.get(ATTR_STATUS) == "active"
+        and str(idea.get(ATTR_ID)) not in still_waiting
+    ]
 
 
 def _blocked_by(ideas: list[dict[str, Any]]) -> dict[str, list[dict[str, str]]]:

@@ -11,6 +11,7 @@ from custom_components.brainstorm.const import (
     EVENT_IDEA_ADDED,
     EVENT_IDEA_COMPLETED,
     EVENT_IDEA_DELETED,
+    EVENT_IDEA_UNBLOCKED,
     EVENT_IDEA_UPDATED,
     OVERVIEW_ENTITY_ID,
 )
@@ -24,6 +25,7 @@ from custom_components.brainstorm.logbook import async_describe_events
         (EVENT_IDEA_COMPLETED, "Idee erledigt"),
         (EVENT_IDEA_UPDATED, "Idee geändert"),
         (EVENT_IDEA_DELETED, "Idee gelöscht"),
+        (EVENT_IDEA_UNBLOCKED, "Kann losgehen"),
     ],
 )
 def test_describe_events(hass: HomeAssistant, event_type: str, message: str) -> None:

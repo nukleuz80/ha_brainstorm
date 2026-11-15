@@ -16,6 +16,7 @@ from homeassistant.util import dt as dt_util
 import pytest
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
+    async_capture_events,
     async_fire_time_changed,
     async_mock_service,
 )
@@ -1564,3 +1565,45 @@ async def test_person_arriving_from_the_same_or_unknown_state_is_ignored(
     await hass.async_block_till_done()
     assert not alexa
     assert entry.runtime_data.ideas == []
+
+
+async def test_note_that_no_longer_waits_is_announced(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test the hint once the last note another one waits for is done."""
+    entry, _, push = await _setup(hass, setup_entry, reminder_notify=[PUSH])
+    store = entry.runtime_data
+    roof = await store.async_add_idea("Dach decken", category="Inbox")
+    offer = await store.async_add_idea("Angebot einholen", category="Inbox")
+    order = await store.async_add_idea("Ziegel bestellen", category="Inbox")
+    for first in (offer, order):
+        await hass.services.async_call(
+            "brainstorm",
+            "update_idea",
+            {"id": first["id"], "links": [{"to": roof["id"], "blocks": True}]},
+            blocking=True,
+        )
+    events = async_capture_events(hass, "brainstorm_idea_unblocked")
+
+    # The roof still waits for the order
+    await store.async_update_idea(offer["id"], status="completed")
+    await hass.async_block_till_done()
+    assert events == []
+    assert push == []
+
+    await store.async_update_idea(order["id"], status="completed")
+    await hass.async_block_till_done()
+    assert len(events) == 1
+    assert events[0].data["id"] == roof["id"]
+    assert events[0].data["by_text"] == "Ziegel bestellen"
+    assert len(push) == 1
+    assert "dach decken" in push[0].data["message"].casefold()
+    assert "Ziegel bestellen" in push[0].data["message"]
+    assert push[0].data["data"] == {"tag": f"brainstorm_unblocked_{roof['id']}"}
+
+    # A note that is done already gets no hint
+    await store.async_update_idea(order["id"], status="active")
+    await store.async_update_idea(roof["id"], status="completed")
+    await store.async_update_idea(order["id"], status="completed")
+    await hass.async_block_till_done()
+    assert len(events) == 1
