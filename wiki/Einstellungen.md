@@ -188,7 +188,20 @@ Ein Feld pro Kategorie. Wähle eine To-do-Liste einer anderen Integration, etwa 
 - **Entkoppeln:** Ein geleertes Feld entkoppelt die Liste. Ihre Einträge bleiben, wo sie sind.
 - Jede Liste lässt sich nur mit einer Kategorie koppeln, und die eigenen Listen von Brainstorm stehen nicht zur Wahl.
 
-### Brainstorm › 🛒 Bring!
+### Brainstorm › 🔗 Verbundene Integrationen
+
+Seit v1.13.3 haben die Integrationen, mit denen Brainstorm zusammenarbeitet, eine eigene Seite. Sie erscheint nur, wenn mindestens eine davon installiert ist, und zeigt nur die installierten, jeweils mit Status (an/aus und wichtigste Einstellung).
+
+### Brainstorm › 🔗 Verbundene Integrationen › 🏅 ChoreOps
+
+Erscheint nur, wenn [ChoreOps](https://github.com/ccpk1/choreops) installiert ist. Notizen werden als einmalige Aufgaben mit Punkten übergeben; sobald ein Elternteil die Aufgabe in ChoreOps freigibt, wird die Notiz abgehakt.
+
+| Feld | Was es bewirkt |
+| :--- | :--- |
+| ChoreOps verbinden | Schaltet die Brücke ein oder aus (Standard: an). Ausgeschaltet bieten die Karten kein *🏅 An ChoreOps übergeben* an und die Mindmap zeigt keinen ChoreOps-Tab; bereits übergebene Aufgaben bleiben in ChoreOps. |
+| Standardpunkte | Vorauswahl im Übergabe-Dialog (Standard 10) und Wert für `brainstorm.send_to_choreops`, wenn keine Punkte angegeben sind. |
+
+### Brainstorm › 🔗 Verbundene Integrationen › 🛒 Bring!
 
 Erscheint nur, wenn die Integration [Bring!](https://www.home-assistant.io/integrations/bring/) eingerichtet ist. Alle Bring-Listen landen in einer Kategorie: Jede Liste wird eine Hauptnotiz, ihre Artikel werden zu Unteraufgaben.
 

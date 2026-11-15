@@ -2070,10 +2070,10 @@ export const CHORE_MAP_CSS = `
 const CHORE_POINTS = [5, 10, 20, 50];
 
 /** The dialog that hands a note to ChoreOps: who does it and for how many points. */
-export function renderChoreHandover(body, { hass, idea, users, close, done, prefix = "dialog" }) {
+export function renderChoreHandover(body, { hass, idea, users, points: preset = 10, close, done, prefix = "dialog" }) {
   const c = (names) => names.split(" ").map((n) => `${prefix}-${n}`).join(" ");
   let user = matchChoreUser(idea.assignee, users) || users[0];
-  let points = 10;
+  let points = typeof preset === "number" && Number.isFinite(preset) ? preset : 10;
   let busy = false;
   const draw = (error = "") => {
     if (!body.isConnected) return;

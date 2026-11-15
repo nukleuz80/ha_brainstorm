@@ -3274,7 +3274,7 @@ class BrainstormStore:
         bridge = self.choreops
         if bridge is None or not bridge.available:
             return None
-        return {"users": list(bridge.users)}
+        return {"users": list(bridge.users), "points": bridge.default_points}
 
     @callback
     def notify_choreops_changed(self) -> None:

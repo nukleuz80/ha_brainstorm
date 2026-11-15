@@ -46,5 +46,9 @@ await new Promise((r) => setTimeout(r, 20));
 check("custom points", calls[1][2].points, 7);
 check("error shown", body.querySelector(".dialog-error").textContent, "Nein");
 check("still open", closed, 1);
+renderChoreHandover(body, { hass, idea: { id: "i3", text: "x" }, users, points: 25, close: () => {} });
+check("default points", body.querySelector("#bsChorePoints").value, "25");
+renderChoreHandover(body, { hass, idea: { id: "i4", text: "x" }, users, points: null, close: () => {} });
+check("fallback points", body.querySelector("#bsChorePoints").value, "10");
 document.getElementById("out").textContent = fails.length ? "FAIL\n" + fails.join("\n") : "PASS";
 </script>

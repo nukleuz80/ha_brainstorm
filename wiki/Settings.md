@@ -188,7 +188,20 @@ One field per category. Pick a to-do list of another integration, such as Bring!
 - **Unlinking:** Clearing a field unlinks the list. Its items stay where they are.
 - Each list can be linked to one category only, and Brainstorm's own lists cannot be chosen.
 
-### Brainstorm › 🛒 Bring!
+### Brainstorm › 🔗 Connected integrations
+
+Since v1.13.3 the integrations Brainstorm works together with have their own page. It is only shown when at least one of them is installed, and it lists only the installed ones, each with its status (on/off and the main setting).
+
+### Brainstorm › 🔗 Connected integrations › 🏅 ChoreOps
+
+Only shown when [ChoreOps](https://github.com/ccpk1/choreops) is installed. Notes are handed over as one-time chores with points; once a parent approves the chore in ChoreOps, the note is ticked off.
+
+| Field | What it does |
+| :--- | :--- |
+| Connect ChoreOps | Switches the bridge on or off (default on). Switched off, the cards offer no *🏅 Hand over to ChoreOps* and the mind map shows no ChoreOps tab; chores already handed over stay in ChoreOps. |
+| Default points | Preselected in the hand-over dialog (default 10) and used by `brainstorm.send_to_choreops` when no points are given. |
+
+### Brainstorm › 🔗 Connected integrations › 🛒 Bring!
 
 Only shown when the [Bring!](https://www.home-assistant.io/integrations/bring/) integration is set up. All your Bring lists land in one category: each list becomes a main note, and its items become its subtasks.
 

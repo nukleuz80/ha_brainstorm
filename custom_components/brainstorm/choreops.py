@@ -78,10 +78,13 @@ def _parse_time(value: Any) -> datetime | None:
 class ChoreOpsBridge:
     """Watch the ChoreOps status of handed over tasks."""
 
-    def __init__(self, hass: HomeAssistant, store: BrainstormStore) -> None:
+    def __init__(
+        self, hass: HomeAssistant, store: BrainstormStore, default_points: int = 10
+    ) -> None:
         """Initialize the bridge."""
         self.hass = hass
         self.store = store
+        self.default_points = default_points
         self.users: list[str] = []
         # Status sensor -> idea it reports for
         self._entities: dict[str, str] = {}
@@ -223,7 +226,7 @@ class ChoreOpsBridge:
         self,
         idea: dict[str, Any],
         user: str | None,
-        points: int,
+        points: int | None,
         context: Context | None = None,
     ) -> dict[str, Any]:
         """Create a chore for a Brainstorm task and remember it."""
@@ -240,6 +243,8 @@ class ChoreOpsBridge:
             raise ServiceValidationError(
                 translation_domain=DOMAIN, translation_key="choreops_already"
             )
+        if points is None:
+            points = self.default_points
         if not self.users:
             self._refresh()
         wanted = user or idea.get(ATTR_ASSIGNEE)

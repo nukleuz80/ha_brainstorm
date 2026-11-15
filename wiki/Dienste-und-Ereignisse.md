@@ -77,12 +77,12 @@ Zerlegt frei gesprochenen Text in einzelne Notizen mit Termin und Person (v1.12.
 
 ▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.send_to_choreops)
 
-Übergibt eine Notiz als einmalige Aufgabe mit Punkten an [ChoreOps](https://github.com/ccpk1/choreops) (v1.13.1). Sobald ein Elternteil die Aufgabe in ChoreOps freigibt, wird die Notiz abgehakt; meldet das Kind „erledigt“, zeigt sie ✋. Gibt `chore_id` und `user` zurück. Braucht die ChoreOps-Integration; ob der Aufrufer Aufgaben anlegen darf, prüft ChoreOps.
+Übergibt eine Notiz als einmalige Aufgabe mit Punkten an [ChoreOps](https://github.com/ccpk1/choreops) (v1.13.1). Sobald ein Elternteil die Aufgabe in ChoreOps freigibt, wird die Notiz abgehakt; meldet das Kind „erledigt“, zeigt sie ✋. Gibt `chore_id` und `user` zurück. Braucht die ChoreOps-Integration und die in den Einstellungen eingeschaltete Brücke (sonst Fehler `choreops_off`); ob der Aufrufer Aufgaben anlegen darf, prüft ChoreOps.
 
 | Feld | Pflicht | Bedeutung |
 | :--- | :--- | :--- |
 | `id` | Ja | ID der Notiz. |
-| `points` | Nein | Punkte in ChoreOps, Standard 10. |
+| `points` | Nein | Punkte in ChoreOps; ohne Angabe die Standardpunkte aus *🔗 Verbundene Integrationen › 🏅 ChoreOps* (10, solange nicht geändert). |
 | `user` | Nein | Person in ChoreOps. Leer nimmt die zuständige Person der Notiz (Name oder eindeutiger Vorname). |
 
 ## `brainstorm.update_idea`

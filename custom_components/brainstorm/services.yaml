@@ -26,7 +26,6 @@ send_to_choreops:
       selector:
         text:
     points:
-      default: 10
       selector:
         number:
           min: 0

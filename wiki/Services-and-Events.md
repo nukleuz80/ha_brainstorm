@@ -77,12 +77,12 @@ Splits freely spoken text into single notes with due date and person (v1.12.4), 
 
 ▶️ [Try it in Home Assistant](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.send_to_choreops)
 
-Hands a note to [ChoreOps](https://github.com/ccpk1/choreops) as a one-time chore with points (v1.13.1). Once a parent approves the chore in ChoreOps, the note is ticked off; when the child reports “done”, it shows ✋. Returns `chore_id` and `user`. Needs the ChoreOps integration; ChoreOps checks whether the caller may create chores.
+Hands a note to [ChoreOps](https://github.com/ccpk1/choreops) as a one-time chore with points (v1.13.1). Once a parent approves the chore in ChoreOps, the note is ticked off; when the child reports “done”, it shows ✋. Returns `chore_id` and `user`. Needs the ChoreOps integration and the bridge switched on in the settings (error `choreops_off` otherwise); ChoreOps checks whether the caller may create chores.
 
 | Field | Required | Meaning |
 | :--- | :--- | :--- |
 | `id` | Yes | ID of the note. |
-| `points` | No | Points in ChoreOps, default 10. |
+| `points` | No | Points in ChoreOps; without it the default points from *🔗 Connected integrations › 🏅 ChoreOps* (10 unless changed). |
 | `user` | No | ChoreOps person. Empty takes the note's assignee (name or unique first name). |
 
 ## `brainstorm.update_idea`

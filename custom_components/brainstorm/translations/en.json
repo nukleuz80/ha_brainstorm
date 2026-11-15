@@ -52,7 +52,8 @@
           "cleanup": "🧹 Delete done entries",
           "close": "✅ Done",
           "privacy": "Privacy & Users",
-          "privacy_voice": "Assign Echos & Apps to People"
+          "privacy_voice": "Assign Echos & Apps to People",
+          "integrations": "🔗 Connected integrations"
         }
       },
       "categories": {
@@ -392,6 +393,34 @@
           "bring_default_list": "Notes added to the category without a list, for example by voice, go to this list. If it is not one of the chosen lists, the first chosen list is used.",
           "bring_done_days": "Ticked off items leave the completed view of Brainstorm after this many days; they stay in Bring for buying again. 0 keeps them.",
           "bring_share_all": "With privacy on, only notes shared with everyone are synced, as everyone with access to Bring sees them. This shares the whole category with everyone.",
+          "go_back": "Returns to the previous page without saving this form."
+        }
+      },
+      "integrations": {
+        "title": "Brainstorm › 🔗 Connected integrations",
+        "description": "Integrations Brainstorm works together with. Only installed ones are shown.\n\n{notice}",
+        "menu_options": {
+          "bring": "🛒 Bring!",
+          "choreops": "🏅 ChoreOps",
+          "init": "⬅️ Back",
+          "close": "✅ Done"
+        },
+        "menu_option_descriptions": {
+          "bring": "{status_bring}",
+          "choreops": "{status_choreops}"
+        }
+      },
+      "choreops": {
+        "title": "Brainstorm › 🏅 ChoreOps",
+        "description": "Hands notes to ChoreOps as one-time chores with points. A child reports them done in ChoreOps, a parent approves them, and the note is ticked off here. The ⋯ menu of the cards offers *🏅 Hand over to ChoreOps*, the mind map shows the tab *🏅 ChoreOps*.",
+        "data": {
+          "choreops_enabled": "Connect ChoreOps",
+          "choreops_points": "Default points",
+          "go_back": "⬅️ Back without saving"
+        },
+        "data_description": {
+          "choreops_enabled": "Switched off, the cards offer no hand-over and the mind map shows no ChoreOps tab. Chores already handed over stay in ChoreOps.",
+          "choreops_points": "Preselected in the hand-over dialog and used by the action brainstorm.send_to_choreops without points.",
           "go_back": "Returns to the previous page without saving this form."
         }
       },
@@ -894,6 +923,9 @@
     },
     "choreops_missing": {
       "message": "ChoreOps is not installed or not loaded."
+    },
+    "choreops_off": {
+      "message": "The ChoreOps bridge is switched off in the Brainstorm settings."
     },
     "choreops_done": {
       "message": "The note is already done."
@@ -1491,7 +1523,7 @@
         },
         "points": {
           "name": "Points",
-          "description": "Points the chore is worth in ChoreOps."
+          "description": "Points the chore is worth in ChoreOps. Without a value, the default points from the settings are used."
         },
         "user": {
           "name": "Person",

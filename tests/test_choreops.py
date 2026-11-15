@@ -8,6 +8,7 @@ from typing import Any
 import pytest
 
 from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
+from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
@@ -90,7 +91,7 @@ async def test_hand_over_and_approve(hass: HomeAssistant, setup_entry: SetupEntr
     assert store.get_idea(idea["id"])["choreops"]["status"] == "open"
 
     overview = store.get_overview_attributes()
-    assert overview["choreops"] == {"users": ["Jonathan", "Lenja"]}
+    assert overview["choreops"] == {"users": ["Jonathan", "Lenja"], "points": 10}
     shown = next(i for i in overview["ideas"] if i["id"] == idea["id"])
     assert shown["choreops"] == {"user": "Lenja", "points": 20, "status": "open"}
 
@@ -178,3 +179,48 @@ async def test_approved_while_off(hass: HomeAssistant, setup_entry: SetupEntry) 
     stored = await setup_entry(stored={"ideas": [idea], "categories": ["Inbox"]})
     await hass.async_block_till_done()
     assert stored.runtime_data.get_idea("a1")["status"] == "completed"
+
+
+async def test_settings_page(hass: HomeAssistant, setup_entry: SetupEntry) -> None:
+    """Test the ChoreOps page under connected integrations."""
+    _choreops_user(hass, "Lenja")
+    calls = _fake_choreops(hass)
+    entry = await setup_entry(stored={"ideas": [], "categories": ["Inbox"]})
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    assert "integrations" in result["menu_options"]
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "integrations"}
+    )
+    assert "choreops" in result["menu_options"]
+    assert "bring" not in result["menu_options"]
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "choreops"}
+    )
+    assert result["type"] is FlowResultType.FORM
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"choreops_enabled": True, "choreops_points": 25}
+    )
+    assert result["step_id"] == "integrations"
+    await hass.async_block_till_done()
+    store = entry.runtime_data
+    assert store.get_overview_attributes()["choreops"]["points"] == 25
+
+    # Without points the action takes the default from the settings
+    idea = await store.async_add_idea("Rasen mähen", assignee="Lenja")
+    await hass.services.async_call(
+        DOMAIN, "send_to_choreops", {"id": idea["id"]}, blocking=True
+    )
+    assert calls[0]["points"] == 25
+
+    hass.config_entries.async_update_entry(
+        entry, options={**entry.options, "choreops_enabled": False}
+    )
+    await hass.async_block_till_done()
+    store = entry.runtime_data
+    assert store.get_overview_attributes()["choreops"] is None
+    other = await store.async_add_idea("Laub fegen", assignee="Lenja")
+    with pytest.raises(ServiceValidationError) as err:
+        await hass.services.async_call(
+            DOMAIN, "send_to_choreops", {"id": other["id"]}, blocking=True
+        )
+    assert err.value.translation_key == "choreops_off"

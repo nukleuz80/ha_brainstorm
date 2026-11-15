@@ -25,6 +25,9 @@ from .choreops import ChoreOpsBridge
 from .bring import BRING_MESSAGES, bring_message_target
 from .const import (
     ATTR_CATEGORY,
+    CONF_CHOREOPS_ENABLED,
+    CONF_CHOREOPS_POINTS,
+    DEFAULT_CHOREOPS_POINTS,
     ATTR_COLOR,
     ATTR_ASSIGNEE,
     ATTR_LANGUAGE,
@@ -190,9 +193,7 @@ SERVICE_ADD_FROM_SPEECH_SCHEMA = vol.Schema(
 SERVICE_SEND_TO_CHOREOPS_SCHEMA = vol.Schema(
     {
         vol.Required(ATTR_ID): cv.string,
-        vol.Optional("points", default=10): vol.All(
-            vol.Coerce(int), vol.Range(min=0, max=10000)
-        ),
+        vol.Optional("points"): vol.All(vol.Coerce(int), vol.Range(min=0, max=10000)),
         vol.Optional("user"): vol.Any(None, cv.string),
     }
 )
@@ -474,10 +475,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) -
     await todo_sync.async_start()
     entry.async_on_unload(todo_sync.async_stop)
 
-    choreops = ChoreOpsBridge(hass, store)
-    store.choreops = choreops
-    await choreops.async_start()
-    entry.async_on_unload(choreops.async_stop)
+    options = {**entry.data, **entry.options}
+    if options.get(CONF_CHOREOPS_ENABLED, True):
+        choreops = ChoreOpsBridge(
+            hass,
+            store,
+            int(options.get(CONF_CHOREOPS_POINTS, DEFAULT_CHOREOPS_POINTS)),
+        )
+        store.choreops = choreops
+        await choreops.async_start()
+        entry.async_on_unload(choreops.async_stop)
 
     battery = BatteryWatcher(hass, store, {**entry.data, **entry.options})
     await battery.async_start()
@@ -640,10 +647,10 @@ def _register_services(hass: HomeAssistant) -> None:
         _check_idea_edit(store, idea_id, call)
         if store.choreops is None:
             raise ServiceValidationError(
-                translation_domain=DOMAIN, translation_key="choreops_missing"
+                translation_domain=DOMAIN, translation_key="choreops_off"
             )
         info = await store.choreops.async_hand_over(
-            idea, call.data.get("user"), call.data["points"], context=call.context
+            idea, call.data.get("user"), call.data.get("points"), context=call.context
         )
         return {"chore_id": info["chore_id"], "user": info["user"]}
 

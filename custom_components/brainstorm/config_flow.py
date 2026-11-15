@@ -52,6 +52,9 @@ from .const import (
     RULE_VALUE,
     SENSOR_CONDITIONS,
     CONF_BRING_CATEGORY,
+    CONF_CHOREOPS_ENABLED,
+    CONF_CHOREOPS_POINTS,
+    DEFAULT_CHOREOPS_POINTS,
     CONF_ECHO_LOCKS,
     CONF_BRING_DEFAULT_LIST,
     CONF_BRING_DONE_DAYS,
@@ -123,6 +126,7 @@ from .const import (
 )
 
 from .bring import bring_lists
+from .choreops import choreops_available
 from .echo_locks import LOCK_DND, LOCK_ECHOS, LOCK_END, LOCK_SLOTS, LOCK_START
 from .languages import get_pack
 from .reminders import format_due, phone_service_for
@@ -279,7 +283,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "ai": "KI",
                 "cleanup": "🧹 Erledigte Einträge löschen",
                 "todo_sync": "To-do-Listen koppeln",
-                "bring": "🛒 Bring!",
+                "integrations": "🔗 Verbundene Integrationen",
                 "battery": "🔋 Batterien",
                 "sensor_rules": "📟 Sensor-Aufgaben",
                 "privacy": "Privatsphäre & Benutzer",
@@ -295,6 +299,12 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "reminder_extras": "Kalender & Alexa-Erinnerungen",
                 "reminder_locks": "Sperrzeiten pro Echo",
                 "reminder_test": "🧪 Kanäle jetzt testen",
+                "init": "⬅️ Zurück",
+                "close": "✅ Fertig",
+            },
+            "integrations": {
+                "bring": "🛒 Bring!",
+                "choreops": "🏅 ChoreOps",
                 "init": "⬅️ Zurück",
                 "close": "✅ Fertig",
             },
@@ -314,7 +324,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "ai": "AI",
                 "cleanup": "🧹 Delete done entries",
                 "todo_sync": "Link To-do Lists",
-                "bring": "🛒 Bring!",
+                "integrations": "🔗 Connected integrations",
                 "battery": "🔋 Batteries",
                 "sensor_rules": "📟 Sensor tasks",
                 "privacy": "Privacy & Users",
@@ -333,6 +343,12 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "init": "⬅️ Back",
                 "close": "✅ Done",
             },
+            "integrations": {
+                "bring": "🛒 Bring!",
+                "choreops": "🏅 ChoreOps",
+                "init": "⬅️ Back",
+                "close": "✅ Done",
+            },
             "category_style_done": {
                 "category_style": "Customize another category",
                 "init": "Back to main menu",
@@ -346,13 +362,79 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
     ) -> FlowResult:
         """Show options menu."""
         menu = self._level_menu(self._get_localized_menu("init"))
-        if not bring_lists(self.hass):
-            # Only offered where the Bring! integration has lists
-            menu = {key: label for key, label in menu.items() if key != "bring"}
+        if not set(self._integrations_menu()) & {"bring", "choreops"}:
+            # Only offered where Bring! or ChoreOps is installed
+            menu = {key: label for key, label in menu.items() if key != "integrations"}
         return self.async_show_menu(
             step_id="init",
             menu_options=menu,
             description_placeholders={"notice": self._take_notice()},
+        )
+
+    def _integrations_menu(self) -> dict[str, str]:
+        """Return the connected integrations that are installed."""
+        installed = {
+            "bring": bool(bring_lists(self.hass)),
+            "choreops": choreops_available(self.hass),
+        }
+        return {
+            key: label
+            for key, label in self._get_localized_menu("integrations").items()
+            if installed.get(key, True)
+        }
+
+    async def async_step_integrations(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Show the integrations Brainstorm works together with."""
+        options = self.config_entry.options or self.config_entry.data
+        on, off = self._text("an", "on"), self._text("aus", "off")
+        bring = off
+        if options.get(CONF_BRING_ENABLED):
+            bring = f"{on} · {options.get(CONF_BRING_CATEGORY, '')}"
+        choreops = off
+        if options.get(CONF_CHOREOPS_ENABLED, True):
+            points = int(options.get(CONF_CHOREOPS_POINTS, DEFAULT_CHOREOPS_POINTS))
+            choreops = f"{on} · {points} " + self._text("Punkte", "points")
+        return self.async_show_menu(
+            step_id="integrations",
+            menu_options=self._integrations_menu(),
+            description_placeholders={
+                "notice": self._take_notice(),
+                "status_bring": bring,
+                "status_choreops": choreops,
+            },
+        )
+
+    async def async_step_choreops(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Hand notes to ChoreOps as chores with points."""
+        if user_input is not None and user_input.pop(BACK_FIELD, False):
+            return await self.async_step_integrations()
+        options = dict(self.config_entry.options or self.config_entry.data)
+        if user_input is not None:
+            options[CONF_CHOREOPS_ENABLED] = bool(user_input.get(CONF_CHOREOPS_ENABLED))
+            options[CONF_CHOREOPS_POINTS] = int(
+                user_input.get(CONF_CHOREOPS_POINTS, DEFAULT_CHOREOPS_POINTS)
+            )
+            return await self._async_saved(options, "integrations")
+        schema = {
+            vol.Required(
+                CONF_CHOREOPS_ENABLED,
+                default=bool(options.get(CONF_CHOREOPS_ENABLED, True)),
+            ): selector.BooleanSelector(),
+            vol.Required(
+                CONF_CHOREOPS_POINTS,
+                default=int(options.get(CONF_CHOREOPS_POINTS, DEFAULT_CHOREOPS_POINTS)),
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=0, max=10000, step=1, mode=selector.NumberSelectorMode.BOX
+                )
+            ),
+        }
+        return self.async_show_form(
+            step_id="choreops", data_schema=vol.Schema(_with_back(schema))
         )
 
     async def async_step_category_style(
@@ -1578,7 +1660,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
     ) -> FlowResult:
         """Sync all Bring! lists into one category, each list a main note."""
         if user_input is not None and user_input.pop(BACK_FIELD, False):
-            return await self.async_step_init()
+            return await self.async_step_integrations()
         store = await self._async_store()
         lists = bring_lists(self.hass)
         options = dict(self.config_entry.options or self.config_entry.data)
@@ -1618,7 +1700,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                         ),
                     }
                 )
-                return await self._async_saved(options, "init")
+                return await self._async_saved(options, "integrations")
 
         current = {**options, **(user_input or {})}
         list_options = [

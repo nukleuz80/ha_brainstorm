@@ -52,7 +52,8 @@
           "cleanup": "🧹 Erledigte Einträge löschen",
           "close": "✅ Fertig",
           "privacy": "Privatsphäre & Benutzer",
-          "privacy_voice": "Echos & Apps Personen zuordnen"
+          "privacy_voice": "Echos & Apps Personen zuordnen",
+          "integrations": "🔗 Verbundene Integrationen"
         }
       },
       "categories": {
@@ -393,6 +394,34 @@
           "bring_done_days": "Abgehakte Einträge verschwinden nach so vielen Tagen aus der Erledigt-Ansicht von Brainstorm; in Bring bleiben sie zum erneuten Kaufen. 0 behält sie.",
           "bring_share_all": "Mit Privatsphäre werden nur Notizen abgeglichen, die mit allen geteilt sind, denn jeder mit Zugriff auf Bring sieht sie. Das teilt die ganze Kategorie mit allen.",
           "go_back": "Kehrt zur vorherigen Seite zurück, ohne dieses Formular zu speichern."
+        }
+      },
+      "integrations": {
+        "title": "Brainstorm › 🔗 Verbundene Integrationen",
+        "description": "Integrationen, mit denen Brainstorm zusammenarbeitet. Es erscheinen nur installierte.\n\n{notice}",
+        "menu_options": {
+          "bring": "🛒 Bring!",
+          "choreops": "🏅 ChoreOps",
+          "init": "⬅️ Zurück",
+          "close": "✅ Fertig"
+        },
+        "menu_option_descriptions": {
+          "bring": "{status_bring}",
+          "choreops": "{status_choreops}"
+        }
+      },
+      "choreops": {
+        "title": "Brainstorm › 🏅 ChoreOps",
+        "description": "Übergibt Notizen als einmalige Aufgaben mit Punkten an ChoreOps. Ein Kind meldet sie dort als erledigt, ein Elternteil gibt frei, und die Notiz wird hier abgehakt. Im ⋯-Menü der Karten gibt es *🏅 An ChoreOps übergeben*, in der Mindmap den Tab *🏅 ChoreOps*.",
+        "data": {
+          "choreops_enabled": "ChoreOps verbinden",
+          "choreops_points": "Standardpunkte",
+          "go_back": "⬅️ Zurück ohne Speichern"
+        },
+        "data_description": {
+          "choreops_enabled": "Ausgeschaltet bieten die Karten keine Übergabe an und die Mindmap zeigt keinen ChoreOps-Tab. Bereits übergebene Aufgaben bleiben in ChoreOps.",
+          "choreops_points": "Vorauswahl im Übergabe-Dialog und Wert für die Aktion brainstorm.send_to_choreops ohne Punkte.",
+          "go_back": "Kehrt ohne Speichern dieses Formulars zur vorherigen Seite zurück."
         }
       },
       "reminder_test": {
@@ -894,6 +923,9 @@
     },
     "choreops_missing": {
       "message": "ChoreOps ist nicht installiert oder nicht geladen."
+    },
+    "choreops_off": {
+      "message": "Die ChoreOps-Brücke ist in den Brainstorm-Einstellungen ausgeschaltet."
     },
     "choreops_done": {
       "message": "Die Notiz ist schon erledigt."
@@ -1491,7 +1523,7 @@
         },
         "points": {
           "name": "Punkte",
-          "description": "Punkte, die die Aufgabe in ChoreOps bringt."
+          "description": "Punkte, die die Aufgabe in ChoreOps bringt. Ohne Angabe gelten die Standardpunkte aus den Einstellungen."
         },
         "user": {
           "name": "Person",
