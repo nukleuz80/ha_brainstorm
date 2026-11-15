@@ -1406,6 +1406,8 @@ export function mapTabBar(tabs, active, { chores = false, choreView = false, bri
 export const MAP_TAB_CSS = `
   .map-tabs {
     display: flex;
+    /* A long ChoreOps or Bring view below must not squeeze the tabs */
+    flex-shrink: 0;
     gap: 6px;
     padding: 6px 12px 0;
     overflow-x: auto;
