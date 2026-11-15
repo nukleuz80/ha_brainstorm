@@ -16,6 +16,11 @@ from homeassistant.helpers.network import NoURLAvailableError
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    RULE_CHOREOPS_POINTS,
+    RULE_CHOREOPS_USER,
+    DEFAULT_CHOREOPS_STREAK_BONUS,
+    CONF_CHOREOPS_STREAK_BONUS,
+    CONF_CHOREOPS_DIGEST,
     CONF_UI_LEVEL,
     DEFAULT_UI_LEVEL,
     NEW_UI_LEVEL,
@@ -444,6 +449,10 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             options[CONF_CHOREOPS_POINTS] = int(
                 user_input.get(CONF_CHOREOPS_POINTS, DEFAULT_CHOREOPS_POINTS)
             )
+            options[CONF_CHOREOPS_DIGEST] = bool(user_input.get(CONF_CHOREOPS_DIGEST, True))
+            options[CONF_CHOREOPS_STREAK_BONUS] = int(
+                user_input.get(CONF_CHOREOPS_STREAK_BONUS, DEFAULT_CHOREOPS_STREAK_BONUS)
+            )
             return await self._async_saved(options, "integrations")
         schema = {
             vol.Required(
@@ -456,6 +465,20 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             ): selector.NumberSelector(
                 selector.NumberSelectorConfig(
                     min=0, max=10000, step=1, mode=selector.NumberSelectorMode.BOX
+                )
+            ),
+            vol.Required(
+                CONF_CHOREOPS_DIGEST,
+                default=bool(options.get(CONF_CHOREOPS_DIGEST, True)),
+            ): selector.BooleanSelector(),
+            vol.Required(
+                CONF_CHOREOPS_STREAK_BONUS,
+                default=int(
+                    options.get(CONF_CHOREOPS_STREAK_BONUS, DEFAULT_CHOREOPS_STREAK_BONUS)
+                ),
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=0, max=1000, step=1, mode=selector.NumberSelectorMode.BOX
                 )
             ),
         }
@@ -2020,6 +2043,31 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 RULE_RESET_ENTITY, description=_suggested(current, RULE_RESET_ENTITY)
             ): selector.EntitySelector(selector.EntitySelectorConfig(domain=RESET_DOMAINS)),
         }
+        if store.choreops is not None:
+            users = list(store.choreops.users)
+            if (wanted := current.get(RULE_CHOREOPS_USER)) and wanted not in users:
+                users.append(wanted)
+            schema[
+                vol.Optional(
+                    RULE_CHOREOPS_USER, description=_suggested(current, RULE_CHOREOPS_USER)
+                )
+            ] = selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=users,
+                    custom_value=True,
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                )
+            )
+            schema[
+                vol.Optional(
+                    RULE_CHOREOPS_POINTS,
+                    description=_suggested(current, RULE_CHOREOPS_POINTS),
+                )
+            ] = selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=0, max=10000, step=1, mode=selector.NumberSelectorMode.BOX
+                )
+            )
         if index is not None:
             schema[vol.Required(SENSOR_RULE_DELETE, default=False)] = (
                 selector.BooleanSelector()
@@ -2068,6 +2116,11 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             RULE_AUTO_DONE: bool(user_input.get(RULE_AUTO_DONE, True)),
             RULE_RESET: reset,
             RULE_RESET_ENTITY: user_input.get(RULE_RESET_ENTITY) or None,
+            RULE_CHOREOPS_USER: str(user_input.get(RULE_CHOREOPS_USER) or "").strip()
+            or None,
+            RULE_CHOREOPS_POINTS: int(points)
+            if (points := user_input.get(RULE_CHOREOPS_POINTS)) not in (None, "")
+            else None,
         }
 
     async def _async_bring_category(

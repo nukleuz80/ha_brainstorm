@@ -200,6 +200,8 @@ Only shown when [ChoreOps](https://github.com/ccpk1/choreops) is installed. Note
 | :--- | :--- |
 | Connect ChoreOps | Switches the bridge on or off (default on). Switched off, the cards offer no *🏅 Hand over to ChoreOps* and the mind map shows no ChoreOps tab; chores already handed over stay in ChoreOps. |
 | Default points | Preselected in the hand-over dialog (default 10) and used by `brainstorm.send_to_choreops` when no points are given. |
+| Points in the briefing | On by default (v1.13.11): the [daily briefing](Reminders), on the Echos as well, ends with the points of every ChoreOps person, such as *Points: Jonathan 80 and Lenja 120.* |
+| Streak bonus | Bonus points (v1.13.11, default 0 = off) when the streak of a habit reaches 7, 30 or 100 days. They go to the ChoreOps person the habit is assigned to, through `choreops.manual_adjust_points` with the reason *7-day streak: …*. Each milestone counts once per streak; after a break, a new streak earns it again. A habit nobody is assigned to earns nothing. |
 
 ### Brainstorm › 🔗 Connected integrations › 🛒 Bring!
 
@@ -291,6 +293,8 @@ A rule has these fields:
 | Tick off by itself | Ticks the task off once the sensor is back to normal (on by default). |
 | Back to normal at | Optional, numbers only: only this value counts as back to normal, such as `0` for a counter you reset after changing the filter. It must lie on the normal side of the limit. Without it, anything beyond the limit counts as normal. |
 | Set back when ticked off | Optional (v1.11.11): when you tick the task off by hand, this entity is set back. A counter (`counter`) is reset, a button (`button`, `input_button`) is pressed, a number (`input_number`, `number`) goes to 0 or its minimum, a script runs. One tap closes the maintenance loop: filter changed, ticked off, counter back at 0. Nothing happens when the task ticks itself off. |
+| ChoreOps person | Optional, only with ChoreOps (v1.13.11): the task goes to ChoreOps for this person as soon as it is created. A parent approves it there, and it is ticked off here. If the hand-over fails, the task stays in Brainstorm and the log names the reason. |
+| ChoreOps points | Optional: points of that chore. Empty means the *Default points* of the ChoreOps settings. |
 | Delete this rule | Only when editing: removes the rule. Its open task stays. |
 
 - **One task per occurrence:** while the condition stays met, no second task is created. Only once the sensor has been back to normal and the condition is met again is there a new one.

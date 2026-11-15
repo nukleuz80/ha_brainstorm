@@ -419,11 +419,15 @@
         "data": {
           "choreops_enabled": "Connect ChoreOps",
           "choreops_points": "Default points",
+          "choreops_digest": "Points in the briefing",
+          "choreops_streak_bonus": "Streak bonus",
           "go_back": "⬅️ Back without saving"
         },
         "data_description": {
           "choreops_enabled": "Switched off, the cards offer no hand-over and the mind map shows no ChoreOps tab. Chores already handed over stay in ChoreOps.",
           "choreops_points": "Preselected in the hand-over dialog and used by the action brainstorm.send_to_choreops without points.",
+          "choreops_digest": "The daily briefing, on the Echos as well, ends with the points of every ChoreOps person.",
+          "choreops_streak_bonus": "Bonus points when the streak of a habit reaches 7, 30 or 100 days. They go to the ChoreOps person the habit is assigned to, once per streak. 0 turns the bonus off.",
           "go_back": "Returns to the previous page without saving this form."
         }
       },
@@ -517,6 +521,8 @@
           "sensor_auto_done": "Tick off by itself",
           "sensor_reset": "Back to normal at",
           "sensor_reset_entity": "Set back when ticked off",
+          "sensor_choreops_user": "ChoreOps person",
+          "sensor_choreops_points": "ChoreOps points",
           "sensor_delete": "Delete this rule",
           "go_back": "⬅️ Back without saving"
         },
@@ -529,6 +535,8 @@
           "sensor_auto_done": "Ticks the task off once the sensor is back to normal.",
           "sensor_reset": "Optional, numbers only. Only this value counts as back to normal, such as 0 for a counter that is reset, so a sensor around the limit does not keep creating tasks.",
           "sensor_reset_entity": "Optional: when you tick the task off by hand, this entity is set back. A counter is reset, a button is pressed, a number goes to 0 (or its minimum), a script runs. Not used when the task ticks itself off.",
+          "sensor_choreops_user": "Optional: the task goes to ChoreOps for this person right away. A parent approves it there, and it is ticked off here.",
+          "sensor_choreops_points": "Optional: points of the chore. Empty means the default points of ChoreOps settings.",
           "sensor_delete": "Removes the rule. Its open task stays.",
           "go_back": "Returns to the previous page without saving this form."
         }

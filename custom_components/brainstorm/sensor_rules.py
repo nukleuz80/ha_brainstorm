@@ -37,6 +37,8 @@ from .const import (
     RULE_CATEGORY,
     RULE_CONDITION,
     RULE_ENTITY,
+    RULE_CHOREOPS_POINTS,
+    RULE_CHOREOPS_USER,
     RULE_ID,
     RULE_RESET,
     RULE_RESET_ENTITY,
@@ -272,3 +274,15 @@ class SensorRuleWatcher:
         )
         await self.store.async_set_fields({idea[ATTR_ID]: {ATTR_SENSOR_RULE: rule[RULE_ID]}})
         _LOGGER.info("Sensor task added for %s", state.entity_id)
+        bridge = self.store.choreops
+        if (user := rule.get(RULE_CHOREOPS_USER)) and bridge is not None:
+            points = rule.get(RULE_CHOREOPS_POINTS)
+            try:
+                await bridge.async_hand_over(
+                    idea, str(user), int(points) if points is not None else None
+                )
+            except HomeAssistantError as err:
+                # The task stays in Brainstorm, only the chore is missing
+                _LOGGER.warning(
+                    "Sensor task for %s not handed to ChoreOps: %s", state.entity_id, err
+                )

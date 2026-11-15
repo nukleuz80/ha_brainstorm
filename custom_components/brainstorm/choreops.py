@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 import re
 from typing import TYPE_CHECKING, Any
@@ -27,12 +27,14 @@ from .const import (
     ATTR_CHOREOPS,
     ATTR_CHOREOPS_REWARD,
     ATTR_DESCRIPTION,
+    ATTR_HABIT_BONUS,
     ATTR_PRIORITY,
     ATTR_VOTES,
     ATTR_DUE,
     ATTR_STATUS,
     ATTR_TEXT,
     DOMAIN,
+    STREAK_MILESTONES,
 )
 
 if TYPE_CHECKING:
@@ -43,6 +45,9 @@ _LOGGER = logging.getLogger(__name__)
 CHOREOPS_DOMAIN = "choreops"
 CHOREOPS_CREATE = "create_chore"
 CHOREOPS_REWARD = "create_reward"
+CHOREOPS_ADJUST = "manual_adjust_points"
+POINTS_PURPOSE = "purpose_points"
+HABIT_BONUS_KEEP = 20
 REWARD_NAME_MAX = 80
 REWARD_COST_MAX = 100000
 POINTS_MAX = 10000
@@ -133,12 +138,17 @@ class ChoreOpsBridge:
     """Watch the ChoreOps status of handed over tasks."""
 
     def __init__(
-        self, hass: HomeAssistant, store: BrainstormStore, default_points: int = 10
+        self,
+        hass: HomeAssistant,
+        store: BrainstormStore,
+        default_points: int = 10,
+        streak_bonus: int = 0,
     ) -> None:
         """Initialize the bridge."""
         self.hass = hass
         self.store = store
         self.default_points = default_points
+        self.streak_bonus = streak_bonus
         self.users: list[str] = []
         # Status sensor -> idea it reports for
         self._entities: dict[str, str] = {}
@@ -222,6 +232,84 @@ class ChoreOpsBridge:
                 self._apply(idea_id, state)
         if changed_users:
             self.store.notify_choreops_changed()
+
+    def points(self) -> dict[str, float]:
+        """Return the points of every ChoreOps person, by name."""
+        result: dict[str, float] = {}
+        for entry in er.async_get(self.hass).entities.values():
+            if entry.platform != CHOREOPS_DOMAIN or entry.domain != "sensor":
+                continue
+            state = self.hass.states.get(entry.entity_id)
+            if state is None or state.attributes.get("purpose") != POINTS_PURPOSE:
+                continue
+            name = state.attributes.get("user_name")
+            try:
+                value = float(state.state)
+            except (TypeError, ValueError):
+                continue
+            if isinstance(name, str):
+                result[name] = value
+        return dict(sorted(result.items(), key=lambda item: item[0].casefold()))
+
+    def open_chores(self) -> list[dict[str, Any]]:
+        """Return the handed over tasks that are not approved yet."""
+        return [
+            {
+                "id": idea_id,
+                "text": (self.store.get_idea(idea_id) or {}).get(ATTR_TEXT),
+                "user": info.get("user"),
+                "points": info.get("points"),
+                "status": info.get("status"),
+            }
+            for idea_id, info in self._handed_over().items()
+        ]
+
+    async def async_habit_bonus(
+        self, idea_id: str, reason: str, context: Context | None = None
+    ) -> int | None:
+        """Give bonus points once the streak of a habit reaches a milestone.
+
+        reason holds {days} and {text}. A milestone counts once per streak,
+        a new streak after a break may earn it again.
+        """
+        from .store import habit_summary  # noqa: PLC0415
+
+        idea = self.store.get_idea(idea_id)
+        if self.streak_bonus <= 0 or idea is None or not self.available:
+            return None
+        summary = habit_summary(idea)
+        if summary is None or not summary["today"]:
+            return None
+        streak = summary["streak"]
+        if streak not in STREAK_MILESTONES:
+            return None
+        if not self.users:
+            self._refresh()
+        user = match_user(idea.get(ATTR_ASSIGNEE), self.users)
+        if user is None:
+            return None
+        start = dt_util.now().date() - timedelta(days=streak - 1)
+        key = f"{start.isoformat()}:{streak}"
+        earned = [str(k) for k in idea.get(ATTR_HABIT_BONUS) or []]
+        if key in earned:
+            return None
+        text = " ".join(str(idea.get(ATTR_TEXT) or "").split())
+        await self.hass.services.async_call(
+            CHOREOPS_DOMAIN,
+            CHOREOPS_ADJUST,
+            {
+                "user_name": user,
+                "amount": self.streak_bonus,
+                "reason": reason.format(days=streak, text=text)[:200],
+            },
+            blocking=True,
+            context=context,
+        )
+        await self.store.async_set_fields(
+            {idea_id: {ATTR_HABIT_BONUS: [*earned, key][-HABIT_BONUS_KEEP:]}}
+        )
+        _LOGGER.info("ChoreOps streak bonus for %s: %s days", user, streak)
+        return self.streak_bonus
 
     def _handed_over(self) -> dict[str, dict[str, Any]]:
         return {

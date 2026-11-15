@@ -4,7 +4,7 @@
 
 - 🤖 **Assist LLM Tools & Function-Calling API:**
   - **Natural Conversational AI:** Native integration with Home Assistant's LLM API (`homeassistant.helpers.llm`). Works with OpenAI, Google Gemini, Ollama, and local models.
-  - **5 AI Tools Included:** `brainstorm_add_idea`, `brainstorm_get_ideas`, `brainstorm_complete_idea`, `brainstorm_delete_idea`, and `brainstorm_list_categories`.
+  - **5 AI Tools Included:** `brainstorm_add_idea`, `brainstorm_get_ideas`, `brainstorm_complete_idea`, `brainstorm_delete_idea`, and `brainstorm_list_categories`, plus `brainstorm_choreops_status` with ChoreOps (v1.13.11).
 - **Subtasks from the AI (v1.6.26):** With an AI task entity set under *Configure ➔ AI*, ✨ on a note asks it for up to 8 subtasks. You untick what you do not want, can change the texts, and only what you save is added under the note. Only this note and its subtasks go to the AI, and only when you press the button. One undo removes them all again. The list card has ✨ too (v1.6.28): next to ✎ on every main task, and in the menu on a long press or right click. If the AI's provider refuses because it is overloaded, Brainstorm asks once more after 2 seconds and otherwise says that the AI cannot be reached right now (v1.6.29).
 - **Talk freely (v1.12.4):** *🗣️ Talk freely* in the list card or 🗣️ on the map: several tasks spoken or typed in one go become single notes with date, time and person. You check the list before anything is created. The action `brainstorm.add_from_speech` does the same without a check, for automations and voice notes. Without the AI, the text is split sentence by sentence.- **AI: map from a topic or text (v1.11.1):** ✨ *Create map from a topic* on an empty map, key **G**, or ✨ *Create with AI* under 🖼️ ➔ *Insert an outline*. A topic such as “Plan a summer party” or a pasted text becomes a preview with up to three levels below a title. Untick what you do not want (its points move up), edit the texts, add them; ↶ takes it all back. It lands in the focused branch or the chosen category.
 - **AI: group into themes (v1.11.4):** lots of loose notes in a category? Key **K**, ✨ *Group into themes* at the end of a brainstorm round, or in the *Sort in loose ideas* dialog when nothing fits there: the AI groups the main notes without subtasks into three to seven themes. In the preview you tick themes and notes and change the titles; each theme becomes a new parent note in the place of the first note, with the notes below it. ↶ takes it back. Needs at least four loose notes.
@@ -21,6 +21,7 @@ A conversation agent such as OpenAI, Google Gemini or Ollama can use Brainstorm 
 | `brainstorm_complete_idea` | "I bought the charcoal." |
 | `brainstorm_delete_idea` | "Delete the note about the bike lock." |
 | `brainstorm_list_categories` | "Which lists are there?" |
+| `brainstorm_choreops_status` | "How many points does Lenja have?", "Which ChoreOps chores are still open?" (v1.13.11, only when ChoreOps is connected: the points of every person and the handed over tasks not approved yet) |
 
 Under **Configure ➔ AI** you can also pick an AI service that cleans up spoken text.
 

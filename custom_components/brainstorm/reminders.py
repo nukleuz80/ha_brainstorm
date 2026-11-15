@@ -18,6 +18,7 @@ from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util, slugify
 
 from .const import (
+    CONF_CHOREOPS_DIGEST,
     MY_DAY_PARTS,
     ATTR_ALEXA_NATIVE,
     ATTR_ASSIGNEE,
@@ -1008,7 +1009,29 @@ class ReminderManager:
             )
         if habits:
             sentences.append(self._pack.msg("digest_habits", items=self._pack.join(habits)))
+        if points := self._digest_points():
+            sentences.append(points)
         return " ".join(sentences) or None
+
+    def _digest_points(self) -> str | None:
+        """Return the sentence with the ChoreOps points, None without ChoreOps."""
+        bridge = self._ideas.choreops
+        if (
+            bridge is None
+            or not self._options.get(CONF_CHOREOPS_DIGEST, True)
+            or not bridge.available
+            or not (points := bridge.points())
+        ):
+            return None
+        entries = [
+            self._pack.msg(
+                "points_entry",
+                name=name,
+                points=int(value) if float(value).is_integer() else round(value, 1),
+            )
+            for name, value in points.items()
+        ]
+        return self._pack.msg("digest_points", items=self._pack.join(entries))
 
     def build_review(self, now: datetime) -> str | None:
         """Return the review of long open ideas, None if there are none."""

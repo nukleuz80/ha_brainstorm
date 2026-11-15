@@ -34,6 +34,7 @@ from .const import (
     ATTR_ASSIGNEE,
     ATTR_CHOREOPS,
     ATTR_CHOREOPS_REWARD,
+    ATTR_HABIT_BONUS,
     ATTR_CREATED_BY,
     ATTR_MAP_POS,
     ATTR_OWNER,
@@ -257,6 +258,7 @@ EXPORT_SKIPPED_FIELDS = (
     ATTR_TODO_LINK,
     ATTR_CHOREOPS,
     ATTR_CHOREOPS_REWARD,
+    ATTR_HABIT_BONUS,
     ATTR_BRING_LIST,
     ATTR_BRING_SENT,
     ATTR_BATTERY,
@@ -1903,6 +1905,8 @@ class BrainstormStore:
                 status = None
             if habit_done is not None:
                 self._set_habit_day(idea, habit_date or dt_util.now().date(), habit_done)
+                if habit_done and self.choreops is not None and self.choreops.streak_bonus:
+                    self.hass.async_create_task(self._async_habit_bonus(idea_id))
         newly_completed = status == "completed" and idea.get(ATTR_STATUS) != "completed"
         reopened = status == "active" and idea.get(ATTR_STATUS) in ("completed", "archived")
         if text is not None:
@@ -3430,6 +3434,18 @@ class BrainstormStore:
             "rewards": rewards_available(self.hass),
             "ai": bool(self.options.get(CONF_AI_ENTITY)),
         }
+
+    async def _async_habit_bonus(self, idea_id: str) -> None:
+        """Give the ChoreOps streak bonus of a habit, if one is due."""
+        if self.choreops is None:
+            return
+        try:
+            # ChoreOps only lets a parent change points, the bonus is set up by one
+            await self.choreops.async_habit_bonus(
+                idea_id, self._pack().messages["streak_bonus_reason"]
+            )
+        except HomeAssistantError as err:
+            _LOGGER.warning("ChoreOps streak bonus failed: %s", err)
 
     @callback
     def notify_choreops_changed(self) -> None:

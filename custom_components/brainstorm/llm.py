@@ -19,6 +19,7 @@ from .const import (
     ATTR_TEXT,
     DOMAIN,
 )
+from .choreops import match_user
 from .languages import get_pack
 from .store import BrainstormStore, get_loaded_store, my_day_part
 
@@ -501,6 +502,56 @@ class BrainstormListCategoriesTool(llm.Tool):
         )
 
 
+class BrainstormChoreOpsTool(llm.Tool):
+    """Tool to tell the ChoreOps points and the tasks handed over to ChoreOps."""
+
+    name = "brainstorm_choreops_status"
+    integration = DOMAIN
+    annotations = llm.ToolAnnotations(
+        read_only=True,
+        destructive=False,
+        idempotent=True,
+        open_world=False,
+    )
+    description = (
+        "Get the ChoreOps points of every person and the Brainstorm tasks handed over "
+        "to ChoreOps that a parent has not approved yet, optionally for one person."
+    )
+
+    def __init__(self, hass: HomeAssistant) -> None:
+        """Initialize the tool."""
+        self.hass = hass
+        self.parameters = vol.Schema(
+            {vol.Optional("person", description="Name of a ChoreOps person"): cv.string}
+        )
+
+    async def async_call(
+        self,
+        hass: HomeAssistant,
+        tool_input: llm.ToolInput,
+        llm_context: llm.LLMContext,
+    ) -> llm.ToolResult:
+        """Execute the tool."""
+        store = get_loaded_store(hass)
+        if not store or store.choreops is None or not store.choreops.available:
+            return _error("ChoreOps is not available")
+        bridge = store.choreops
+        points = bridge.points()
+        chores = [
+            chore
+            for chore in bridge.open_chores()
+            if (idea := store.get_idea(chore["id"]))
+            and store.can_access(idea, _user_id(store, llm_context))
+        ]
+        if person := str(tool_input.tool_args.get("person") or "").strip():
+            user = match_user(person, list(points) or bridge.users)
+            if user is None:
+                return _error(f"Unknown ChoreOps person. Known: {', '.join(points)}")
+            points = {user: points[user]} if user in points else {}
+            chores = [chore for chore in chores if chore["user"] == user]
+        return llm.ToolResult(data={"points": points, "open_chores": chores})
+
+
 class BrainstormLlmAPI(llm.API):
     """LLM API exposing Brainstorm Hub tools to conversation agents."""
 
@@ -527,6 +578,12 @@ class BrainstormLlmAPI(llm.API):
             "Use brainstorm_delete_idea to discard an idea. "
             "Use brainstorm_list_categories to see available categories."
         )
+        choreops = store is not None and store.choreops is not None and store.choreops.available
+        if choreops:
+            api_prompt += (
+                " Use brainstorm_choreops_status for the ChoreOps points of the family "
+                "and the tasks handed over to ChoreOps."
+            )
 
         tools: list[llm.Tool] = [
             BrainstormAddIdeaTool(self.hass),
@@ -535,6 +592,8 @@ class BrainstormLlmAPI(llm.API):
             BrainstormDeleteIdeaTool(self.hass),
             BrainstormListCategoriesTool(self.hass),
         ]
+        if choreops:
+            tools.append(BrainstormChoreOpsTool(self.hass))
 
         return llm.APIInstance(
             api=self,
@@ -549,7 +608,7 @@ def async_register_llm_api(hass: HomeAssistant) -> Callable[[], None]:
     try:
         api = BrainstormLlmAPI(hass)
         unregister = llm.async_register_api(hass, api)
-        _LOGGER.info("Registered Brainstorm Hub LLM API with 5 tools for Assist/Conversation Agents")
+        _LOGGER.info("Registered Brainstorm Hub LLM API for Assist/Conversation Agents")
         return unregister
     except Exception as err:
         _LOGGER.warning("Could not register Brainstorm Hub LLM API: %s", err)

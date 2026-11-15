@@ -10,6 +10,7 @@
     - `brainstorm_complete_idea`: Hakt Aufgaben per natürlicher Sprache ab (per ID oder Volltextsuche, z. B. *„Die Hecke ist geschnitten“*).
     - `brainstorm_delete_idea`: Löscht Notizen unwiderruflich per Sprachbefehl.
     - `brainstorm_list_categories`: Gibt der KI Überblick über alle Kategorien und Aufgabenstatistiken.
+    - `brainstorm_choreops_status` (v1.13.11, nur mit ChoreOps): Punktestand und offene ChoreOps-Aufgaben.
   - **Universell einsetzbar:** Direkt in den Einstellungen jedes Sprachassistenten unter *LLM API: „Brainstorm Hub“* aktivierbar ([Sprachassistenten öffnen](https://my.home-assistant.io/redirect/voice_assistants/)).
 - 🧠 **Intelligente Text-Optimierung & NLP-Bereinigung (v1.4.0):**
   - **Ganze Sätze statt Satzreste (v1.5.8):** *„der Rasen muss gemäht werden“* ➔ *„Rasen mähen“*. Verneinungen, Fragen und nicht vollständig umbaubare Sätze behalten ihren Wortlaut. Getippter Text bekommt nur eine Rechtschreibkorrektur.
@@ -37,6 +38,7 @@ Ein Gesprächsagent wie OpenAI, Google Gemini oder Ollama kann Brainstorm bedien
 | `brainstorm_complete_idea` | „Die Grillkohle habe ich gekauft.“ |
 | `brainstorm_delete_idea` | „Lösch die Notiz mit dem Fahrradschloss.“ |
 | `brainstorm_list_categories` | „Welche Listen gibt es?“ |
+| `brainstorm_choreops_status` | „Wie viele Punkte hat Lenja?“, „Welche ChoreOps-Aufgaben sind noch offen?“ (v1.13.11, nur wenn ChoreOps verbunden ist: Punktestand jeder Person und übergebene Aufgaben, die noch nicht freigegeben sind) |
 
 Unter **Konfigurieren ➔ KI** kannst du außerdem einen KI-Dienst wählen, der gesprochene Texte aufräumt (Füllwörter, Satzzeichen).
 

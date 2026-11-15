@@ -200,6 +200,8 @@ Erscheint nur, wenn [ChoreOps](https://github.com/ccpk1/choreops) installiert is
 | :--- | :--- |
 | ChoreOps verbinden | Schaltet die Brücke ein oder aus (Standard: an). Ausgeschaltet bieten die Karten kein *🏅 An ChoreOps übergeben* an und die Mindmap zeigt keinen ChoreOps-Tab; bereits übergebene Aufgaben bleiben in ChoreOps. |
 | Standardpunkte | Vorauswahl im Übergabe-Dialog (Standard 10) und Wert für `brainstorm.send_to_choreops`, wenn keine Punkte angegeben sind. |
+| Punktestand im Briefing | Standard an (v1.13.11): Das [tägliche Briefing](Erinnerungen), auch auf den Echos, nennt am Ende die Punkte jeder ChoreOps-Person, etwa *Punktestand: Jonathan 80 und Lenja 120.* |
+| Serien-Bonus | Bonuspunkte (v1.13.11, Standard 0 = aus), wenn die Serie einer Gewohnheit 7, 30 oder 100 Tage erreicht. Sie gehen an die ChoreOps-Person, der die Gewohnheit zugewiesen ist, über `choreops.manual_adjust_points` mit dem Grund *7 Tage Serie: …*. Jeder Meilenstein zählt einmal pro Serie; nach einer Pause verdient eine neue Serie ihn wieder. Eine Gewohnheit ohne Zuständige bekommt nichts. |
 
 ### Brainstorm › 🔗 Verbundene Integrationen › 🛒 Bring!
 
@@ -291,6 +293,8 @@ Eine Regel hat diese Felder:
 | Selbst abhaken | Hakt die Aufgabe ab, sobald der Sensor wieder im Normalbereich ist (Standard an). |
 | Wieder normal ab | Optional, nur für Zahlen: Erst dieser Wert gilt als wieder normal, etwa `0` für einen Zähler, den du nach dem Filterwechsel zurücksetzt. Er muss auf der normalen Seite der Grenze liegen. Ohne ihn gilt alles jenseits der Grenze als normal. |
 | Beim Abhaken zurücksetzen | Optional (v1.11.11): Hakst du die Aufgabe von Hand ab, wird diese Entität zurückgesetzt. Ein Zähler (`counter`) wird auf Anfang gesetzt, ein Knopf (`button`, `input_button`) gedrückt, eine Zahl (`input_number`, `number`) auf 0 oder ihr Minimum gestellt, ein Skript gestartet. So schließt ein Tipp den Wartungskreis: Filter gewechselt, abgehakt, Zähler wieder bei 0. Hakt sich die Aufgabe selbst ab, passiert nichts. |
+| ChoreOps-Person | Optional, nur mit ChoreOps (v1.13.11): Die Aufgabe geht beim Anlegen sofort für diese Person an ChoreOps. Ein Elternteil gibt sie dort frei, dann wird sie hier abgehakt. Klappt die Übergabe nicht, bleibt die Aufgabe in Brainstorm und das Protokoll nennt den Grund. |
+| ChoreOps-Punkte | Optional: Punkte dieser Aufgabe. Leer bedeutet die *Standardpunkte* aus den ChoreOps-Einstellungen. |
 | Diese Regel löschen | Nur beim Bearbeiten: entfernt die Regel. Ihre offene Aufgabe bleibt stehen. |
 
 - **Eine Aufgabe pro Fall:** Solange die Bedingung erfüllt bleibt, entsteht keine zweite Aufgabe. Erst wenn der Sensor wieder normal war und die Bedingung erneut erfüllt ist, kommt eine neue.

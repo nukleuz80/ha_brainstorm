@@ -81,6 +81,12 @@ DEFAULT_BRING_DONE_DAYS = 3
 CONF_CHOREOPS_ENABLED = "choreops_enabled"
 CONF_CHOREOPS_POINTS = "choreops_points"
 DEFAULT_CHOREOPS_POINTS = 10
+# The daily briefing names the points of every ChoreOps person
+CONF_CHOREOPS_DIGEST = "choreops_digest"
+# Bonus points when the streak of a habit reaches a milestone, 0 for none
+CONF_CHOREOPS_STREAK_BONUS = "choreops_streak_bonus"
+DEFAULT_CHOREOPS_STREAK_BONUS = 0
+STREAK_MILESTONES = (7, 30, 100)
 CONF_ECHO_LOCKS = "echo_locks"
 CONF_BATTERY_ENABLED = "battery_enabled"
 CONF_BATTERY_THRESHOLD = "battery_threshold"
@@ -100,6 +106,9 @@ RULE_AUTO_DONE = "sensor_auto_done"
 RULE_RESET = "sensor_reset"
 # Entity set back when a sensor task is ticked off by hand
 RULE_RESET_ENTITY = "sensor_reset_entity"
+# A task of the rule goes to ChoreOps for this person, with these points
+RULE_CHOREOPS_USER = "sensor_choreops_user"
+RULE_CHOREOPS_POINTS = "sensor_choreops_points"
 RESET_DOMAINS = ["counter", "button", "input_button", "input_number", "number", "script"]
 CONDITION_ABOVE = "above"
 CONDITION_BELOW = "below"
@@ -319,6 +328,8 @@ ATTR_ASSIGNEE = "assignee"
 # Hand-over to ChoreOps: chore_id, user, points, status, since
 ATTR_CHOREOPS = "choreops"
 ATTR_CHOREOPS_REWARD = "choreops_reward"
+# Streak milestones a habit already earned bonus points for, as "start:days"
+ATTR_HABIT_BONUS = "habit_bonus"
 ATTR_OWNER = "owner"
 ATTR_CREATED_BY = "created_by"
 ATTR_MAP_POS = "map_pos"

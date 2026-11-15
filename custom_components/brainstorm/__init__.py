@@ -32,7 +32,9 @@ from .const import (
     ATTR_CATEGORY,
     CONF_CHOREOPS_ENABLED,
     CONF_CHOREOPS_POINTS,
+    CONF_CHOREOPS_STREAK_BONUS,
     DEFAULT_CHOREOPS_POINTS,
+    DEFAULT_CHOREOPS_STREAK_BONUS,
     ATTR_COLOR,
     ATTR_ASSIGNEE,
     ATTR_LANGUAGE,
@@ -514,6 +516,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) -
             hass,
             store,
             int(options.get(CONF_CHOREOPS_POINTS, DEFAULT_CHOREOPS_POINTS)),
+            int(options.get(CONF_CHOREOPS_STREAK_BONUS, DEFAULT_CHOREOPS_STREAK_BONUS)),
         )
         store.choreops = choreops
         await choreops.async_start()
