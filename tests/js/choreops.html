@@ -2,7 +2,7 @@
 <!-- Browser test for the ChoreOps hand-over. Run: python3 -m http.server in the repo root,
      open http://localhost:8000/tests/js/choreops.html, it shows PASS or the failures. --><meta charset="utf-8"><body><pre id="out">running</pre>
 <script type="module">
-import { canHandOver, choreopsBadge, matchChoreUser, renderChoreHandover } from "../../custom_components/brainstorm/cards/brainstorm-i18n.js";
+import { canHandOver, canHandOverProject, canMakeReward, choreopsBadge, choreopsRewardBadge, matchChoreUser, projectChores, renderChoreHandover, renderChoreProject, renderChoreReward } from "../../custom_components/brainstorm/cards/brainstorm-i18n.js";
 const fails = [];
 const check = (name, got, want) => { if (JSON.stringify(got) !== JSON.stringify(want)) fails.push(`${name}: want ${JSON.stringify(want)}, got ${JSON.stringify(got)}`); };
 const users = ["Jan", "Jonathan", "Lenja Müller"];
@@ -50,5 +50,64 @@ renderChoreHandover(body, { hass, idea: { id: "i3", text: "x" }, users, points: 
 check("default points", body.querySelector("#bsChorePoints").value, "25");
 renderChoreHandover(body, { hass, idea: { id: "i4", text: "x" }, users, points: null, close: () => {} });
 check("fallback points", body.querySelector("#bsChorePoints").value, "10");
+// ChoreOps II: rewards, projects, suggested points
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+const co = { users, points: 10, rewards: true };
+check("reward offered", canMakeReward({ id: "w", status: "active" }, co), true);
+check("reward not twice", canMakeReward({ id: "w", status: "active", choreops_reward: { cost: 5 } }, co), false);
+check("reward needs ChoreOps rewards", canMakeReward({ id: "w", status: "active" }, { users }), false);
+check("reward badge", choreopsRewardBadge({ choreops_reward: { cost: 120 } }).includes("🎁 120"), true);
+check("no reward badge", choreopsRewardBadge({}), "");
+const project = [
+  { id: "p", text: "Keller", status: "active" },
+  { id: "a", text: "Regal", status: "active", parent_id: "p" },
+  { id: "a1", text: "Schrauben", status: "active", parent_id: "a" },
+  { id: "a2", text: "Bretter", status: "completed", parent_id: "a" },
+  { id: "b", text: "Fegen", status: "active", parent_id: "p", assignee: "jonathan" },
+  { id: "c", text: "Schon da", status: "active", parent_id: "p", choreops: { status: "open" } },
+];
+check("project leaves ids", projectChores(project[0], project).map((i) => i.id).sort(), ["a1", "b"]);
+check("project offered", canHandOverProject(project[0], project, co), true);
+check("leaf no project", canHandOverProject(project[4], project, co), false);
+const calls2 = [];
+const hass2 = {
+  language: "de",
+  callService: async (domain, service, data) => {
+    calls2.push([service, data]);
+    if (data.id === "b" && service === "send_to_choreops" && calls2.filter((c) => c[1].id === "b").length === 1) throw new Error("Nein");
+    return {};
+  },
+  callWS: async (msg) => ({ points: Object.fromEntries(msg.ids.map((id, i) => [id, msg.kind === "reward" ? 300 : 15 + i])), source: "ai" }),
+};
+const pbody = document.createElement("div");
+document.body.appendChild(pbody);
+let pclosed = 0, pdone = null;
+renderChoreProject(pbody, { hass: hass2, idea: { ...project[0], assignee: "Lenja" }, ideas: project, users, points: 10, close: () => { pclosed += 1; }, done: (n) => { pdone = n; } });
+check("project rows", pbody.querySelectorAll(".bs-chore-row").length, 2);
+check("project person from note", [...pbody.querySelectorAll("[data-row-user]")].map((s) => s.value).sort(), ["Jonathan", "Lenja Müller"]);
+pbody.querySelector("#bsProjectSuggest").click(); await wait(20);
+check("project suggested", [...pbody.querySelectorAll("[data-row-points]")].map((i) => i.value), ["15", "16"]);
+pbody.querySelector("#bsProjectSend").click(); await wait(30);
+check("project failure stays", [pclosed, pbody.querySelectorAll(".bs-chore-row").length], [0, 1]);
+check("project error shown", pbody.textContent.includes("Nein"), true);
+pbody.querySelector("#bsProjectSend").click(); await wait(30);
+check("project done", [pclosed, pdone], [1, 1]);
+check("project points sent", calls2.filter((c) => c[0] === "send_to_choreops").map((c) => c[1].points), [15, 16, 16]);
+const rbody = document.createElement("div");
+document.body.appendChild(rbody);
+let rdone = null;
+calls2.length = 0;
+renderChoreReward(rbody, { hass: hass2, idea: { id: "w", text: "Kino", votes: { u1: 2 } }, users, points: 10, close: () => {}, done: (name, cost) => { rdone = [name, cost]; } });
+check("reward default cost", rbody.querySelector("#bsRewardCost").value, "60");
+check("reward votes", rbody.textContent.includes("2"), true);
+rbody.querySelector("#bsRewardSuggest").click(); await wait(20);
+check("reward suggested", rbody.querySelector("#bsRewardCost").value, "300");
+rbody.querySelector("#bsRewardSend").click(); await wait(20);
+check("reward everybody", calls2[0], ["send_reward_to_choreops", { id: "w", cost: 300, name: "Kino" }]);
+check("reward done", rdone, ["Kino", 300]);
+renderChoreReward(rbody, { hass: hass2, idea: { id: "w2", text: "Eis" }, users, points: 10, close: () => {} });
+rbody.querySelector('[data-reward-user="Jan"]').click();
+rbody.querySelector("#bsRewardSend").click(); await wait(20);
+check("reward some", calls2[1][1].users, ["Jonathan", "Lenja Müller"]);
 document.getElementById("out").textContent = fails.length ? "FAIL\n" + fails.join("\n") : "PASS";
 </script>

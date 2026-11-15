@@ -33,6 +33,7 @@ from .const import (
     ATTR_ALEXA_NATIVE,
     ATTR_ASSIGNEE,
     ATTR_CHOREOPS,
+    ATTR_CHOREOPS_REWARD,
     ATTR_CREATED_BY,
     ATTR_MAP_POS,
     ATTR_OWNER,
@@ -180,6 +181,7 @@ from .ai import (
     SPEECH_INPUT_MAX_LENGTH,
     AIUnavailableError,
     async_generate_text,
+    async_request_text,
     async_request_text_with_retry,
     clean_summary,
     parse_clusters,
@@ -187,6 +189,14 @@ from .ai import (
     parse_speech_tasks,
     parse_parent_suggestions,
     parse_subtask_suggestions,
+)
+from .choreops import (
+    POINTS_MAX,
+    REWARD_COST_MAX,
+    SUGGEST_MAX_ITEMS,
+    parse_points,
+    rewards_available,
+    rule_points,
 )
 from .languages import CATEGORY_KEYS, get_pack
 from .languages.common import CATEGORY_PROJECTS, SPEECH_SPLIT, LanguagePack
@@ -246,6 +256,7 @@ EXPORT_SKIPPED_FIELDS = (
     ATTR_IN_PROGRESS,
     ATTR_TODO_LINK,
     ATTR_CHOREOPS,
+    ATTR_CHOREOPS_REWARD,
     ATTR_BRING_LIST,
     ATTR_BRING_SENT,
     ATTR_BATTERY,
@@ -620,6 +631,12 @@ class BrainstormStore:
                 result[ATTR_SHAPE] = shape
             if note := idea.get(ATTR_RESULT):
                 result[ATTR_RESULT] = note
+            if isinstance(reward := idea.get(ATTR_CHOREOPS_REWARD), dict):
+                result[ATTR_CHOREOPS_REWARD] = {
+                    key: reward.get(key)
+                    for key in ("name", "cost", "users")
+                    if reward.get(key) is not None
+                }
             if isinstance(chore := idea.get(ATTR_CHOREOPS), dict):
                 result[ATTR_CHOREOPS] = {
                     key: chore.get(key)
@@ -3407,7 +3424,12 @@ class BrainstormStore:
         bridge = self.choreops
         if bridge is None or not bridge.available:
             return None
-        return {"users": list(bridge.users), "points": bridge.default_points}
+        return {
+            "users": list(bridge.users),
+            "points": bridge.default_points,
+            "rewards": rewards_available(self.hass),
+            "ai": bool(self.options.get(CONF_AI_ENTITY)),
+        }
 
     @callback
     def notify_choreops_changed(self) -> None:
@@ -3423,6 +3445,76 @@ class BrainstormStore:
         idea[ATTR_UPDATED_AT] = dt_util.now().isoformat()
         await self.async_save()
         self._notify_listeners()
+
+    async def async_choreops_reward_set(
+        self, idea_id: str, info: dict[str, Any]
+    ) -> None:
+        """Remember the reward a wish became."""
+        idea = self._ideas.get(idea_id)
+        if idea is None:
+            return
+        idea[ATTR_CHOREOPS_REWARD] = dict(info)
+        idea[ATTR_UPDATED_AT] = dt_util.now().isoformat()
+        await self.async_save()
+        self._notify_listeners()
+
+    async def async_suggest_points(
+        self, idea_ids: list[str], kind: str, language: str | None = None
+    ) -> dict[str, Any]:
+        """Suggest ChoreOps points for tasks, or costs for wishes.
+
+        The AI is asked when one is set up; whatever it leaves out, or all of
+        it when it does not answer, is worked out from priority, subtasks and
+        votes. Nothing is stored.
+        """
+        ideas = [
+            self._ideas[i] for i in dict.fromkeys(idea_ids) if i in self._ideas
+        ][:SUGGEST_MAX_ITEMS]
+        bridge = self.choreops
+        base = bridge.default_points if bridge is not None else 10
+        children: dict[str, int] = {}
+        for item in self._ideas.values():
+            parent = item.get(ATTR_PARENT_ID)
+            if parent and item.get(ATTR_STATUS) == "active":
+                children[parent] = children.get(parent, 0) + 1
+        points = {
+            idea[ATTR_ID]: rule_points(idea, kind, base, children.get(idea[ATTR_ID], 0))
+            for idea in ideas
+        }
+        source = "rule"
+        entity = self.options.get(CONF_AI_ENTITY)
+        if entity and ideas:
+            pack = self._pack(language)
+            lines = []
+            for index, idea in enumerate(ideas, 1):
+                text = " ".join(str(idea.get(ATTR_TEXT) or "").split())[:200]
+                if kind == "reward":
+                    votes = sum(
+                        int(n)
+                        for n in (idea.get(ATTR_VOTES) or {}).values()
+                        if isinstance(n, int)
+                    )
+                    extra = pack.msg("points_votes", count=votes) if votes else ""
+                else:
+                    count = children.get(idea[ATTR_ID], 0)
+                    extra = pack.msg("points_subtasks", count=count) if count else ""
+                lines.append(f"L{index}: {text}{extra}")
+            instructions = pack.msg(
+                "reward_cost_prompt" if kind == "reward" else "chore_points_prompt",
+                base=base,
+                items="\n".join(lines),
+            )
+            try:
+                answer = await async_request_text(self.hass, entity, instructions)
+            except AIUnavailableError:
+                answer = None
+            limit = REWARD_COST_MAX if kind == "reward" else POINTS_MAX
+            found = parse_points(answer, len(ideas), limit)
+            for index, value in found.items():
+                points[ideas[index][ATTR_ID]] = value
+            if found:
+                source = "ai"
+        return {"points": points, "source": source}
 
     async def async_choreops_update(
         self,

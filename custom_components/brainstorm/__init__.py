@@ -96,6 +96,7 @@ from .const import (
     SERVICE_DELETE_COMMENT,
     SERVICE_GROUP_IDEAS,
     SERVICE_MOVE_BRANCH,
+    SERVICE_SEND_REWARD_TO_CHOREOPS,
     SERVICE_START_ROUND,
     SERVICE_END_ROUND,
     ROUND_MAX_MINUTES,
@@ -210,6 +211,15 @@ SERVICE_SEND_TO_CHOREOPS_SCHEMA = vol.Schema(
         vol.Required(ATTR_ID): cv.string,
         vol.Optional("points"): vol.All(vol.Coerce(int), vol.Range(min=0, max=10000)),
         vol.Optional("user"): vol.Any(None, cv.string),
+    }
+)
+
+SERVICE_SEND_REWARD_TO_CHOREOPS_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_ID): cv.string,
+        vol.Required("cost"): vol.All(vol.Coerce(int), vol.Range(min=0, max=100000)),
+        vol.Optional("users"): vol.All(cv.ensure_list, [cv.string]),
+        vol.Optional("name"): vol.All(cv.string, vol.Length(max=80)),
     }
 )
 
@@ -676,6 +686,31 @@ def _register_services(hass: HomeAssistant) -> None:
             idea, call.data.get("user"), call.data.get("points"), context=call.context
         )
         return {"chore_id": info["chore_id"], "user": info["user"]}
+
+    async def handle_send_reward_to_choreops(call: ServiceCall) -> dict[str, Any]:
+        """Make a wish a ChoreOps reward that costs points."""
+        store = _require_store(hass)
+        idea_id = call.data[ATTR_ID]
+        idea = store.get_idea(idea_id)
+        if idea is None:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="idea_not_found",
+                translation_placeholders={"id": idea_id},
+            )
+        _check_idea_edit(store, idea_id, call)
+        if store.choreops is None:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="choreops_off"
+            )
+        info = await store.choreops.async_make_reward(
+            idea,
+            call.data["cost"],
+            call.data.get("users"),
+            call.data.get("name"),
+            context=call.context,
+        )
+        return {"reward_id": info["reward_id"], "cost": info["cost"]}
 
     async def handle_add_from_speech(call: ServiceCall) -> dict[str, Any]:
         """Split freely spoken text into notes with due date and person."""
@@ -1322,6 +1357,14 @@ def _register_services(hass: HomeAssistant) -> None:
         SERVICE_SEND_TO_CHOREOPS,
         handle_send_to_choreops,
         schema=SERVICE_SEND_TO_CHOREOPS_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_SEND_REWARD_TO_CHOREOPS,
+        handle_send_reward_to_choreops,
+        schema=SERVICE_SEND_REWARD_TO_CHOREOPS_SCHEMA,
         supports_response=SupportsResponse.OPTIONAL,
     )
 

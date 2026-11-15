@@ -7,6 +7,26 @@
  */
 const DICTIONARIES = {
   en: {
+    "✨ Vorschlagen": "✨ Suggest",
+    "✨ Punkte vorschlagen": "✨ Suggest points",
+    "Punkte nach Aufwand vorschlagen, mit KI wenn eingerichtet": "Suggest points by effort, with AI if set up",
+    "Preis nach Größe und Stimmen vorschlagen, mit KI wenn eingerichtet": "Suggest a price by size and votes, with AI if set up",
+    "Belohnung in ChoreOps: {cost} Punkte": "Reward in ChoreOps: {cost} points",
+    "Jede offene Unteraufgabe von „{name}“ wird eine eigene Aufgabe in ChoreOps.": "Every open subtask of \"{name}\" becomes a chore of its own in ChoreOps.",
+    "🏅 {count} übergeben": "🏅 Hand over {count}",
+    "🗳️ {count} Stimmen für diesen Wunsch": "🗳️ {count} votes for this wish",
+    "Name der Belohnung": "Name of the reward",
+    "Preis in Punkten": "Price in points",
+    "Wer darf sie einlösen?": "Who may redeem it?",
+    "Die Belohnung erscheint in ChoreOps und kostet dort Punkte, die sich die Familie mit Aufgaben verdient.": "The reward appears in ChoreOps and costs points there that the family earns with chores.",
+    "🎁 Anlegen": "🎁 Create",
+    "Bitte mindestens eine Person wählen.": "Please choose at least one person.",
+    "🎁 Als ChoreOps-Belohnung anlegen": "🎁 Make it a ChoreOps reward",
+    "Als ChoreOps-Belohnung anlegen": "Make it a ChoreOps reward",
+    "🏅 Projekt an ChoreOps übergeben": "🏅 Hand the project to ChoreOps",
+    "Projekt an ChoreOps übergeben": "Hand the project to ChoreOps",
+    "🎁 „{name}“ ist jetzt eine Belohnung für {cost} Punkte": "🎁 \"{name}\" is now a reward for {cost} points",
+    "🏅 {count} Aufgaben an ChoreOps übergeben": "🏅 {count} chores handed to ChoreOps",
     "Offene Notizen als Zahl an den Tabs zeigen": "Show the number of open notes on the tabs",
     "{count} offen": "{count} open",
     "Fest in der Kartenkonfiguration": "Set in the card configuration",
@@ -1733,6 +1753,77 @@ export const SOCIAL_CSS = `
     width: 96px;
     flex: 0 0 auto;
   }
+  .reward-badge {
+    background: rgba(236, 72, 153, 0.16);
+  }
+  .bs-chore-suggest {
+    min-height: 40px;
+    padding: 0 12px;
+    border-radius: 20px;
+    border: 1px dashed var(--primary-color);
+    background: transparent;
+    color: var(--primary-color);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .bs-chore-suggest:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+  .bs-chore-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 46vh;
+    overflow-y: auto;
+  }
+  .bs-chore-row {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 4px 8px;
+    align-items: center;
+    padding: 6px 8px;
+    border-radius: 10px;
+    background: var(--secondary-background-color, rgba(127, 127, 127, 0.08));
+  }
+  .bs-chore-row input[type="checkbox"] {
+    width: 22px;
+    height: 22px;
+  }
+  .bs-chore-row-text {
+    overflow-wrap: anywhere;
+  }
+  .bs-chore-row-fields {
+    grid-column: 2;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .bs-chore-row-fields select {
+    flex: 1 1 120px;
+    min-height: 36px;
+  }
+  .bs-chore-row-fields input {
+    width: 84px;
+    min-height: 36px;
+  }
+  .bs-chore-users {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+  }
+  .bs-chore-user {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 36px;
+    cursor: pointer;
+  }
+  .bs-chore-user input {
+    width: 20px;
+    height: 20px;
+  }
   .bs-social { display: inline-flex; align-items: center; gap: 3px; flex-wrap: wrap; vertical-align: middle; }
   .bs-react, .bs-vote-btn {
     min-width: 28px; min-height: 26px; padding: 0 6px; display: inline-flex; align-items: center; justify-content: center; gap: 3px;
@@ -2292,6 +2383,7 @@ export function renderChoreHandover(body, { hass, idea, users, points: preset = 
       <div class="bs-chore-points">
         ${CHORE_POINTS.map((n) => `<button type="button" class="bs-chore-chip${n === points ? " selected" : ""}" data-points="${n}">${n}</button>`).join("")}
         <input type="number" class="${c("input")} bs-chore-custom" id="bsChorePoints" min="0" max="10000" inputmode="numeric" value="${points}" aria-label="${escapeHtml(t("Punkte"))}">
+        <button type="button" class="bs-chore-suggest" id="bsChoreSuggest" title="${escapeHtml(t("Punkte nach Aufwand vorschlagen, mit KI wenn eingerichtet"))}">${t("✨ Vorschlagen")}</button>
       </div>
       <div class="${c("hint")}">${t("Die Person meldet in ChoreOps „erledigt“. Sobald ein Elternteil freigibt, gibt es die Punkte und die Notiz wird hier abgehakt.")}</div>
       <div class="${c("error")}" style="display: ${error ? "flex" : "none"};">${escapeHtml(error)}</div>
@@ -2314,6 +2406,18 @@ export function renderChoreHandover(body, { hass, idea, users, points: preset = 
       points = Math.max(0, Math.min(10000, Math.round(Number(input.value) || 0)));
       body.querySelectorAll("[data-points]").forEach((chip) => chip.classList.toggle("selected", Number(chip.dataset.points) === points));
     });
+    const suggest = body.querySelector("#bsChoreSuggest");
+    suggest.addEventListener("click", async () => {
+      suggest.disabled = true;
+      const result = await suggestPoints(hass, [idea.id], "chore");
+      const value = result && result.points[idea.id];
+      if (typeof value === "number") {
+        points = value;
+        input.value = String(points);
+        body.querySelectorAll("[data-points]").forEach((chip) => chip.classList.toggle("selected", Number(chip.dataset.points) === points));
+      }
+      suggest.disabled = false;
+    });
     body.querySelector("#bsChoreCancel").addEventListener("click", () => close());
     body.querySelector("#bsChoreSend").addEventListener("click", async () => {
       if (busy) return;
@@ -2322,6 +2426,234 @@ export function renderChoreHandover(body, { hass, idea, users, points: preset = 
         await hass.callService("brainstorm", "send_to_choreops", { id: idea.id, points, user });
         close();
         if (done) done(user, points);
+      } catch (err) {
+        busy = false;
+        draw((err && err.message) || t("Das ging nicht."));
+      }
+    });
+  };
+  draw();
+}
+
+/** Ask Brainstorm for points (tasks) or costs (wishes); null when it did not work. */
+export async function suggestPoints(hass, ids, kind = "chore") {
+  try {
+    const result = await hass.callWS({ type: "brainstorm/choreops/suggest_points", ids, kind, language: hass.language });
+    return result && result.points ? result : null;
+  } catch (err) {
+    console.error("[Brainstorm] Suggesting points failed:", err);
+    return null;
+  }
+}
+
+/** The badge of a wish that became a ChoreOps reward. */
+export function choreopsRewardBadge(idea) {
+  const reward = idea && idea.choreops_reward;
+  if (!reward) return "";
+  return `<span class="due-badge reward-badge" title="${escapeHtml(t("Belohnung in ChoreOps: {cost} Punkte", { cost: reward.cost ?? 0 }))}">🎁 ${escapeHtml(reward.cost ?? 0)}</span>`;
+}
+
+/** Whether the menu offers making a note a ChoreOps reward. */
+export function canMakeReward(idea, choreops) {
+  return Boolean(choreops && choreops.rewards && idea && !idea.choreops_reward && idea.status === "active");
+}
+
+/** The open subtasks of a project that can still go to ChoreOps: the lowest level of each branch. */
+export function projectChores(idea, ideas) {
+  const below = new Map();
+  (ideas || []).forEach((item) => {
+    if (!item || !item.parent_id || item.status !== "active") return;
+    if (!below.has(item.parent_id)) below.set(item.parent_id, []);
+    below.get(item.parent_id).push(item);
+  });
+  const found = [];
+  const seen = new Set();
+  const walk = (id) => {
+    (below.get(id) || []).forEach((child) => {
+      if (seen.has(child.id)) return;
+      seen.add(child.id);
+      if (below.has(child.id)) walk(child.id);
+      else if (!child.choreops) found.push(child);
+    });
+  };
+  if (idea) walk(idea.id);
+  return found;
+}
+
+/** Whether the menu offers handing a whole project to ChoreOps. */
+export function canHandOverProject(idea, ideas, choreops) {
+  return Boolean(choreops && Array.isArray(choreops.users) && choreops.users.length && idea && idea.status === "active" && projectChores(idea, ideas).length);
+}
+
+/**
+ * Fill a dialog body with handing a project to ChoreOps: every open subtask
+ * with a person and points, all sent at once.
+ */
+export function renderChoreProject(body, { hass, idea, ideas, users, points: preset = 10, close, done, prefix = "dialog" }) {
+  const c = (names) => names.split(" ").map((n) => `${prefix}-${n}`).join(" ");
+  const base = typeof preset === "number" && Number.isFinite(preset) ? preset : 10;
+  const fallback = matchChoreUser(idea.assignee, users) || users[0];
+  const rows = projectChores(idea, ideas).map((item) => ({
+    item,
+    on: true,
+    user: matchChoreUser(item.assignee, users) || fallback,
+    points: base,
+    error: "",
+  }));
+  let busy = false;
+  let suggesting = false;
+  const draw = (error = "") => {
+    if (!body.isConnected) return;
+    const count = rows.filter((row) => row.on).length;
+    body.innerHTML = `
+      <div class="${c("hint")}">${t("Jede offene Unteraufgabe von „{name}“ wird eine eigene Aufgabe in ChoreOps.", { name: escapeHtml(idea.text || "") })}</div>
+      <div class="bs-chore-rows">
+        ${rows.map((row, index) => `
+          <div class="bs-chore-row">
+            <input type="checkbox" data-row-on="${index}"${row.on ? " checked" : ""} aria-label="${escapeHtml(row.item.text || "")}">
+            <div class="bs-chore-row-text">${formatText(row.item.text || "")}${row.error ? `<div class="${c("error")}" style="display: flex;">${escapeHtml(row.error)}</div>` : ""}</div>
+            <div class="bs-chore-row-fields">
+              <select class="${c("input")}" data-row-user="${index}" aria-label="${escapeHtml(t("Wer erledigt es?"))}">${users.map((name) => `<option value="${escapeHtml(name)}"${name === row.user ? " selected" : ""}>${escapeHtml(name)}</option>`).join("")}</select>
+              <input type="number" class="${c("input")}" data-row-points="${index}" min="0" max="10000" inputmode="numeric" value="${row.points}" aria-label="${escapeHtml(t("Punkte"))}">
+            </div>
+          </div>`).join("")}
+      </div>
+      <div class="bs-chore-points">
+        <button type="button" class="bs-chore-suggest" id="bsProjectSuggest"${suggesting ? " disabled" : ""}>${t("✨ Punkte vorschlagen")}</button>
+      </div>
+      <div class="${c("error")}" style="display: ${error ? "flex" : "none"};">${escapeHtml(error)}</div>
+      <div class="${c("footer")}">
+        <button class="${c("btn btn-secondary")}" id="bsProjectCancel">${t("Abbrechen")}</button>
+        <button class="${c("btn btn-primary")}" id="bsProjectSend"${busy || !count ? " disabled" : ""}>${t("🏅 {count} übergeben", { count })}</button>
+      </div>`;
+    body.querySelectorAll("[data-row-on]").forEach((box) => box.addEventListener("change", () => {
+      rows[Number(box.dataset.rowOn)].on = box.checked;
+      const send = body.querySelector("#bsProjectSend");
+      const count = rows.filter((row) => row.on).length;
+      send.textContent = t("🏅 {count} übergeben", { count });
+      send.disabled = !count;
+    }));
+    body.querySelectorAll("[data-row-user]").forEach((select) => select.addEventListener("change", () => {
+      rows[Number(select.dataset.rowUser)].user = select.value;
+    }));
+    body.querySelectorAll("[data-row-points]").forEach((input) => input.addEventListener("input", () => {
+      rows[Number(input.dataset.rowPoints)].points = Math.max(0, Math.min(10000, Math.round(Number(input.value) || 0)));
+    }));
+    body.querySelector("#bsProjectSuggest").addEventListener("click", async () => {
+      suggesting = true;
+      draw();
+      const result = await suggestPoints(hass, rows.map((row) => row.item.id), "chore");
+      suggesting = false;
+      if (result) rows.forEach((row) => {
+        if (typeof result.points[row.item.id] === "number") row.points = result.points[row.item.id];
+      });
+      draw(result ? "" : t("Das ging nicht."));
+    });
+    body.querySelector("#bsProjectCancel").addEventListener("click", () => close());
+    body.querySelector("#bsProjectSend").addEventListener("click", async () => {
+      if (busy) return;
+      busy = true;
+      draw();
+      let sent = 0;
+      for (const row of rows.filter((item) => item.on)) {
+        try {
+          await hass.callService("brainstorm", "send_to_choreops", { id: row.item.id, points: row.points, user: row.user });
+          row.on = false;
+          row.sent = true;
+          row.error = "";
+          sent += 1;
+        } catch (err) {
+          row.error = (err && err.message) || t("Das ging nicht.");
+        }
+      }
+      busy = false;
+      if (rows.every((row) => !row.error)) {
+        close();
+        if (done) done(sent);
+        return;
+      }
+      // Keep only what is still to send, with the reason next to it
+      for (let i = rows.length - 1; i >= 0; i--) if (rows[i].sent) rows.splice(i, 1);
+      draw();
+    });
+  };
+  draw();
+}
+
+/**
+ * Fill a dialog body with making a wish a ChoreOps reward: its name, its
+ * cost in points and who may redeem it.
+ */
+export function renderChoreReward(body, { hass, idea, users, points: preset = 10, close, done, prefix = "dialog" }) {
+  const c = (names) => names.split(" ").map((n) => `${prefix}-${n}`).join(" ");
+  const base = typeof preset === "number" && Number.isFinite(preset) ? preset : 10;
+  const votes = voteTotal(idea);
+  let name = String(idea.text || "").replace(/\s+/g, " ").trim().slice(0, 80);
+  let cost = base * 5 + Math.round((base * votes) / 2);
+  const chosen = new Set(users);
+  let busy = false;
+  let suggesting = false;
+  const draw = (error = "") => {
+    if (!body.isConnected) return;
+    body.innerHTML = `
+      ${votes ? `<div class="${c("hint")}">${t("🗳️ {count} Stimmen für diesen Wunsch", { count: votes })}</div>` : ""}
+      <div class="${c("label")}">${t("Name der Belohnung")}</div>
+      <input type="text" class="${c("input")}" id="bsRewardName" maxlength="80" value="${escapeHtml(name)}">
+      <div class="${c("label")}">${t("Preis in Punkten")}</div>
+      <div class="bs-chore-points">
+        <input type="number" class="${c("input")} bs-chore-custom" id="bsRewardCost" min="0" max="100000" inputmode="numeric" value="${cost}" aria-label="${escapeHtml(t("Preis in Punkten"))}">
+        <button type="button" class="bs-chore-suggest" id="bsRewardSuggest"${suggesting ? " disabled" : ""} title="${escapeHtml(t("Preis nach Größe und Stimmen vorschlagen, mit KI wenn eingerichtet"))}">${t("✨ Vorschlagen")}</button>
+      </div>
+      <div class="${c("label")}">${t("Wer darf sie einlösen?")}</div>
+      <div class="bs-chore-users">
+        ${users.map((user) => `<label class="bs-chore-user"><input type="checkbox" data-reward-user="${escapeHtml(user)}"${chosen.has(user) ? " checked" : ""}> ${escapeHtml(user)}</label>`).join("")}
+      </div>
+      <div class="${c("hint")}">${t("Die Belohnung erscheint in ChoreOps und kostet dort Punkte, die sich die Familie mit Aufgaben verdient.")}</div>
+      <div class="${c("error")}" style="display: ${error ? "flex" : "none"};">${escapeHtml(error)}</div>
+      <div class="${c("footer")}">
+        <button class="${c("btn btn-secondary")}" id="bsRewardCancel">${t("Abbrechen")}</button>
+        <button class="${c("btn btn-primary")}" id="bsRewardSend"${busy ? " disabled" : ""}>${t("🎁 Anlegen")}</button>
+      </div>`;
+    const nameInput = body.querySelector("#bsRewardName");
+    nameInput.addEventListener("input", () => {
+      name = nameInput.value;
+    });
+    const costInput = body.querySelector("#bsRewardCost");
+    costInput.addEventListener("input", () => {
+      cost = Math.max(0, Math.min(100000, Math.round(Number(costInput.value) || 0)));
+    });
+    body.querySelectorAll("[data-reward-user]").forEach((box) => box.addEventListener("change", () => {
+      if (box.checked) chosen.add(box.dataset.rewardUser);
+      else chosen.delete(box.dataset.rewardUser);
+    }));
+    body.querySelector("#bsRewardSuggest").addEventListener("click", async () => {
+      suggesting = true;
+      draw();
+      const result = await suggestPoints(hass, [idea.id], "reward");
+      suggesting = false;
+      if (result && typeof result.points[idea.id] === "number") cost = result.points[idea.id];
+      draw(result ? "" : t("Das ging nicht."));
+    });
+    body.querySelector("#bsRewardCancel").addEventListener("click", () => close());
+    body.querySelector("#bsRewardSend").addEventListener("click", async () => {
+      if (busy) return;
+      const clean = name.replace(/\s+/g, " ").trim();
+      if (!clean) {
+        nameInput.focus();
+        return;
+      }
+      if (!chosen.size) {
+        draw(t("Bitte mindestens eine Person wählen."));
+        return;
+      }
+      busy = true;
+      try {
+        const data = { id: idea.id, cost, name: clean };
+        // Everybody chosen: also people who join ChoreOps later
+        if (chosen.size < users.length) data.users = [...chosen];
+        await hass.callService("brainstorm", "send_reward_to_choreops", data);
+        close();
+        if (done) done(clean, cost);
       } catch (err) {
         busy = false;
         draw((err && err.message) || t("Das ging nicht."));

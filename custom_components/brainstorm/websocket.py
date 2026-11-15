@@ -11,6 +11,7 @@ from homeassistant.exceptions import ServiceValidationError
 import homeassistant.helpers.config_validation as cv
 
 from .ai import MAP_INPUT_MAX_LENGTH, SPEECH_INPUT_MAX_LENGTH, AIUnavailableError
+from .choreops import POINT_KINDS, SUGGEST_MAX_ITEMS
 from .const import (
     CONF_SHARE_USERS,
     DRAW_COLORS,
@@ -47,6 +48,7 @@ def async_register_commands(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, websocket_summarize_branch)
     websocket_api.async_register_command(hass, websocket_suggest_parents)
     websocket_api.async_register_command(hass, websocket_cluster_ideas)
+    websocket_api.async_register_command(hass, websocket_suggest_points)
     websocket_api.async_register_command(hass, websocket_generate_map)
     websocket_api.async_register_command(hass, websocket_get_comments)
     websocket_api.async_register_command(hass, websocket_get_trash)
@@ -547,6 +549,39 @@ async def websocket_cluster_ideas(
         )
         return
     connection.send_result(msg["id"], {"themes": themes})
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "brainstorm/choreops/suggest_points",
+        vol.Required("ids"): vol.All(
+            cv.ensure_list, [cv.string], vol.Length(min=1, max=SUGGEST_MAX_ITEMS)
+        ),
+        vol.Optional("kind", default="chore"): vol.In(POINT_KINDS),
+        vol.Optional("language"): vol.All(cv.string, vol.Length(max=10)),
+    }
+)
+@websocket_api.async_response
+async def websocket_suggest_points(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Suggest ChoreOps points for tasks or costs for wishes; nothing is stored."""
+    store = get_loaded_store(hass)
+    if store is None:
+        connection.send_error(
+            msg["id"], websocket_api.ERR_NOT_FOUND, "Brainstorm is not loaded"
+        )
+        return
+    visible = [
+        idea_id
+        for idea_id in msg["ids"]
+        if (idea := store.get_idea(idea_id)) is not None
+        and store.can_access(idea, connection.user.id)
+    ]
+    result = await store.async_suggest_points(visible, msg["kind"], msg.get("language"))
+    connection.send_result(msg["id"], result)
 
 
 @websocket_api.websocket_command(

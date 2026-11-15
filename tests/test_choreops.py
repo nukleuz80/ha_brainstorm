@@ -13,8 +13,9 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import async_fire_time_changed
+from pytest_homeassistant_custom_component.typing import WebSocketGenerator
 
-from custom_components.brainstorm.choreops import match_user
+from custom_components.brainstorm.choreops import match_user, parse_points, rule_points
 from custom_components.brainstorm.const import DOMAIN
 from custom_components.brainstorm.store import BrainstormStore
 
@@ -91,7 +92,12 @@ async def test_hand_over_and_approve(hass: HomeAssistant, setup_entry: SetupEntr
     assert store.get_idea(idea["id"])["choreops"]["status"] == "open"
 
     overview = store.get_overview_attributes()
-    assert overview["choreops"] == {"users": ["Jonathan", "Lenja"], "points": 10}
+    assert overview["choreops"] == {
+        "users": ["Jonathan", "Lenja"],
+        "points": 10,
+        "rewards": False,
+        "ai": False,
+    }
     shown = next(i for i in overview["ideas"] if i["id"] == idea["id"])
     assert shown["choreops"] == {"user": "Lenja", "points": 20, "status": "open"}
 
@@ -233,3 +239,142 @@ async def test_settings_page(hass: HomeAssistant, setup_entry: SetupEntry) -> No
             DOMAIN, "send_to_choreops", {"id": other["id"]}, blocking=True
         )
     assert err.value.translation_key == "choreops_off"
+
+
+def _fake_rewards(hass: HomeAssistant) -> list[dict[str, Any]]:
+    calls: list[dict[str, Any]] = []
+
+    async def create(call: ServiceCall) -> dict[str, Any]:
+        calls.append(dict(call.data))
+        return {"id": f"rw{len(calls)}"}
+
+    hass.services.async_register(
+        "choreops", "create_reward", create, supports_response=SupportsResponse.OPTIONAL
+    )
+    return calls
+
+
+async def test_wish_becomes_reward(hass: HomeAssistant, setup_entry: SetupEntry) -> None:
+    """Test that a wish becomes a ChoreOps reward, once."""
+    store = await _setup(setup_entry)
+    _choreops_user(hass, "Lenja")
+    _choreops_user(hass, "Jonathan")
+    _fake_choreops(hass)
+    calls = _fake_rewards(hass)
+    wish = await store.async_add_idea(
+        "Kino mit Popcorn", category="Haushalt", description="Freitagabend"
+    )
+    response = await hass.services.async_call(
+        DOMAIN,
+        "send_reward_to_choreops",
+        {"id": wish["id"], "cost": 120},
+        blocking=True,
+        return_response=True,
+    )
+    assert response == {"reward_id": "rw1", "cost": 120}
+    assert calls[0] == {
+        "name": "Kino mit Popcorn",
+        "cost": 120,
+        "labels": ["brainstorm"],
+        "assigned_user_names": ["*"],
+        "description": "Freitagabend",
+    }
+    overview = store.get_overview_attributes()
+    assert overview["choreops"]["rewards"] is True
+    shown = next(i for i in overview["ideas"] if i["id"] == wish["id"])
+    assert shown["choreops_reward"] == {"name": "Kino mit Popcorn", "cost": 120, "users": []}
+    # The reward is not part of an export to another Home Assistant
+    assert "choreops_reward" not in store.export_json()["ideas"][0]
+
+    with pytest.raises(ServiceValidationError) as err:
+        await hass.services.async_call(
+            DOMAIN, "send_reward_to_choreops", {"id": wish["id"], "cost": 5}, blocking=True
+        )
+    assert err.value.translation_key == "choreops_reward_already"
+
+    other = await store.async_add_idea("Eis essen", category="Haushalt")
+    await hass.services.async_call(
+        DOMAIN,
+        "send_reward_to_choreops",
+        {"id": other["id"], "cost": 30, "users": ["lenja", "Lenja"], "name": "Eis"},
+        blocking=True,
+    )
+    assert calls[1]["assigned_user_names"] == ["Lenja"]
+    assert calls[1]["name"] == "Eis"
+    with pytest.raises(ServiceValidationError) as err:
+        third = await store.async_add_idea("Zoo", category="Haushalt")
+        await hass.services.async_call(
+            DOMAIN,
+            "send_reward_to_choreops",
+            {"id": third["id"], "cost": 30, "users": ["Anna"]},
+            blocking=True,
+        )
+    assert err.value.translation_key == "choreops_no_user"
+
+
+def test_rule_points_and_parsing() -> None:
+    """Test the points without AI and reading the answer of the AI."""
+    assert rule_points({"priority": "medium"}, "chore", 10) == 10
+    assert rule_points({"priority": "urgent"}, "chore", 10) == 20
+    assert rule_points({"priority": "low"}, "chore", 10) == 5
+    assert rule_points({"priority": "medium"}, "chore", 10, open_subtasks=2) == 20
+    assert rule_points({"priority": "medium"}, "chore", 10, open_subtasks=40) == 40
+    assert rule_points({}, "reward", 10) == 50
+    assert rule_points({"votes": {"u1": 3, "u2": 1}}, "reward", 10) == 70
+    assert rule_points({}, "chore", 2) == 2
+    assert parse_points("L1: 15\n- L3 = 40 Punkte\nL9: 5\nL1: 99\nquatsch", 3, 30) == {
+        0: 15,
+        2: 30,
+    }
+    assert parse_points(None, 3, 30) == {}
+
+
+async def test_suggest_points(
+    hass: HomeAssistant, setup_entry: SetupEntry, hass_ws_client: WebSocketGenerator
+) -> None:
+    """Test points from the AI, with the rule for what it leaves out."""
+    entry = await setup_entry(stored={"ideas": [], "categories": ["Inbox", "Haushalt"]})
+    store: BrainstormStore = entry.runtime_data
+    big = await store.async_add_idea("Keller aufräumen", category="Haushalt", priority="high")
+    await store.async_add_idea("Regal", category="Haushalt", parent_id=big["id"])
+    small = await store.async_add_idea("Müll rausbringen", category="Haushalt")
+    client = await hass_ws_client(hass)
+
+    await client.send_json_auto_id(
+        {"type": "brainstorm/choreops/suggest_points", "ids": [big["id"], small["id"], "weg"]}
+    )
+    reply = await client.receive_json()
+    assert reply["result"] == {"points": {big["id"]: 20, small["id"]: 10}, "source": "rule"}
+
+    prompts: list[str] = []
+
+    async def generate(call: ServiceCall) -> dict[str, Any]:
+        prompts.append(call.data["instructions"])
+        return {"data": "L1: 35"}
+
+    hass.services.async_register(
+        "ai_task", "generate_data", generate, supports_response=SupportsResponse.ONLY
+    )
+    hass.config_entries.async_update_entry(
+        entry, options={**entry.options, "ai_entity": "ai_task.test"}
+    )
+    await hass.async_block_till_done()
+    await client.send_json_auto_id(
+        {
+            "type": "brainstorm/choreops/suggest_points",
+            "ids": [big["id"], small["id"]],
+            "language": "de",
+        }
+    )
+    reply = await client.receive_json()
+    assert reply["result"]["source"] == "ai"
+    assert reply["result"]["points"][big["id"]] == 35
+    assert reply["result"]["points"][small["id"]] == 10
+    assert "L1: Keller aufräumen (Unteraufgaben: 1)" in prompts[0]
+
+    await client.send_json_auto_id(
+        {"type": "brainstorm/choreops/suggest_points", "ids": [small["id"]], "kind": "reward"}
+    )
+    reply = await client.receive_json()
+    assert reply["result"]["points"] == {small["id"]: 35}
+    assert "ChoreOps" in prompts[1]

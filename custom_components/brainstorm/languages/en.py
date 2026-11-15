@@ -1015,6 +1015,25 @@ MESSAGES: dict[str, str] = {
         "Possible parents:\n{candidates}\n"
         "Loose notes:\n{loose}"
     ),
+    "chore_points_prompt": (
+        "Suggest points for these household tasks. They go to ChoreOps, a "
+        "points system for the family: whoever does a task gets the points. A "
+        "short task of about five minutes is worth {base} points, longer or "
+        "unpopular tasks accordingly more. Answer only with lines like "
+        "\"L1: {base}\", one task per line, whole numbers, no explanation.\n"
+        "Tasks:\n{items}"
+    ),
+    "reward_cost_prompt": (
+        "Suggest a price in points for these wishes. They become rewards in "
+        "ChoreOps, a points system for the family: a short task earns about "
+        "{base} points. A small reward should cost several tasks, a big wish "
+        "clearly more; votes show how much a wish is wanted. Answer only with "
+        "lines like \"L1: {base}0\", one wish per line, whole numbers, no "
+        "explanation.\n"
+        "Wishes:\n{items}"
+    ),
+    "points_subtasks": " (subtasks: {count})",
+    "points_votes": " (votes: {count})",
     "cluster_prompt": (
         "The list \"{category}\" has loose notes (L). Group them into three to "
         "seven themes and give each theme a short English title that works as a "

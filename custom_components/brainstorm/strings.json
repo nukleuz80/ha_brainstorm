@@ -956,6 +956,9 @@
     },
     "move_category_empty": {
       "message": "The category name is empty."
+    },
+    "choreops_reward_already": {
+      "message": "This note is already a ChoreOps reward."
     }
   },
   "services": {
@@ -1582,6 +1585,28 @@
         "parent_id": {
           "name": "Parent note",
           "description": "Optional: a note in the new category the branch goes below; without it, the note becomes a main note."
+        }
+      }
+    },
+    "send_reward_to_choreops": {
+      "name": "Make a ChoreOps reward",
+      "description": "Creates a ChoreOps reward from a note, for example the winner of a vote on a wish map. The reward costs points that the family earns with chores. Needs the ChoreOps integration.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "ID of the note."
+        },
+        "cost": {
+          "name": "Cost",
+          "description": "Points the reward costs in ChoreOps."
+        },
+        "users": {
+          "name": "People",
+          "description": "ChoreOps people who may redeem it; empty means everybody."
+        },
+        "name": {
+          "name": "Name",
+          "description": "Name of the reward; empty takes the text of the note."
         }
       }
     }

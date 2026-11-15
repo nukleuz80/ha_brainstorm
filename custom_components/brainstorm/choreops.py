@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 import logging
+import re
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.const import EVENT_STATE_CHANGED
@@ -24,7 +25,10 @@ from homeassistant.util import dt as dt_util
 from .const import (
     ATTR_ASSIGNEE,
     ATTR_CHOREOPS,
+    ATTR_CHOREOPS_REWARD,
     ATTR_DESCRIPTION,
+    ATTR_PRIORITY,
+    ATTR_VOTES,
     ATTR_DUE,
     ATTR_STATUS,
     ATTR_TEXT,
@@ -38,6 +42,15 @@ _LOGGER = logging.getLogger(__name__)
 
 CHOREOPS_DOMAIN = "choreops"
 CHOREOPS_CREATE = "create_chore"
+CHOREOPS_REWARD = "create_reward"
+REWARD_NAME_MAX = 80
+REWARD_COST_MAX = 100000
+POINTS_MAX = 10000
+SUGGEST_MAX_ITEMS = 30
+POINT_KINDS = ("chore", "reward")
+# How much more than a normal task a priority is worth
+PRIORITY_WEIGHT = {"low": 0.5, "medium": 1.0, "high": 1.5, "urgent": 2.0}
+_POINTS_LINE = re.compile(r"\bL\s*(\d+)\b\D{0,12}?(\d{1,6})")
 STATUS_SUFFIX = "_chore_status"
 CHORE_NAME_MAX = 80
 CHORE_LABEL = "brainstorm"
@@ -54,6 +67,47 @@ STATUS_COMPLETED = "completed"
 def choreops_available(hass: HomeAssistant) -> bool:
     """Tell whether ChoreOps is installed and takes new chores."""
     return hass.services.has_service(CHOREOPS_DOMAIN, CHOREOPS_CREATE)
+
+
+def rewards_available(hass: HomeAssistant) -> bool:
+    """Tell whether ChoreOps takes new rewards."""
+    return hass.services.has_service(CHOREOPS_DOMAIN, CHOREOPS_REWARD)
+
+
+def _round_to(value: float, step: int) -> int:
+    return max(step, int(round(value / step)) * step)
+
+
+def rule_points(idea: dict[str, Any], kind: str, base: int, open_subtasks: int = 0) -> int:
+    """Suggest points without AI: by priority and subtasks, or by votes for a wish.
+
+    A chore is worth the default points, more for a high priority and for
+    every open subtask. A reward costs about five chores, more the more votes
+    the wish got.
+    """
+    base = max(1, int(base or 10))
+    if kind == "reward":
+        votes = sum(
+            int(n) for n in (idea.get(ATTR_VOTES) or {}).values() if isinstance(n, int)
+        )
+        step = 10 if base * 5 >= 50 else 5
+        return min(REWARD_COST_MAX, _round_to(base * 5 + base * votes / 2, step))
+    weight = PRIORITY_WEIGHT.get(str(idea.get(ATTR_PRIORITY) or "medium"), 1.0)
+    points = base * weight + base / 2 * min(open_subtasks, 6)
+    return min(POINTS_MAX, _round_to(points, 5 if base >= 5 else 1))
+
+
+def parse_points(text: str | None, count: int, limit: int) -> dict[int, int]:
+    """Read lines such as 'L2: 15' as 0-based index -> points, unknown ones left out."""
+    found: dict[int, int] = {}
+    for line in (text or "").splitlines():
+        match = _POINTS_LINE.search(line)
+        if not match:
+            continue
+        index = int(match.group(1)) - 1
+        if 0 <= index < count and index not in found:
+            found[index] = max(0, min(limit, int(match.group(2))))
+    return found
 
 
 def match_user(name: str | None, users: list[str]) -> str | None:
@@ -293,4 +347,70 @@ class ChoreOpsBridge:
         }
         await self.store.async_choreops_set(idea["id"], info)
         self._refresh()
+        return info
+
+    async def async_make_reward(
+        self,
+        idea: dict[str, Any],
+        cost: int,
+        users: list[str] | None = None,
+        name: str | None = None,
+        context: Context | None = None,
+    ) -> dict[str, Any]:
+        """Create a ChoreOps reward from a wish and remember it on the note."""
+        if not rewards_available(self.hass):
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="choreops_missing"
+            )
+        if isinstance(idea.get(ATTR_CHOREOPS_REWARD), dict):
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="choreops_reward_already"
+            )
+        if not self.users:
+            self._refresh()
+        targets: list[str] = []
+        for wanted in users or []:
+            target = match_user(wanted, self.users)
+            if target is None:
+                raise ServiceValidationError(
+                    translation_domain=DOMAIN,
+                    translation_key="choreops_no_user",
+                    translation_placeholders={
+                        "name": str(wanted),
+                        "users": ", ".join(self.users) or "–",
+                    },
+                )
+            if target not in targets:
+                targets.append(target)
+        text = " ".join(str(name or idea.get(ATTR_TEXT) or "").split())
+        data: dict[str, Any] = {
+            "name": text[:REWARD_NAME_MAX],
+            "cost": cost,
+            "labels": [CHORE_LABEL],
+            # Without a choice every person may redeem it
+            "assigned_user_names": targets or ["*"],
+        }
+        if description := idea.get(ATTR_DESCRIPTION):
+            data["description"] = str(description)[:500]
+        response = await self.hass.services.async_call(
+            CHOREOPS_DOMAIN,
+            CHOREOPS_REWARD,
+            data,
+            blocking=True,
+            context=context,
+            return_response=True,
+        )
+        reward_id = (response or {}).get("id") if isinstance(response, dict) else None
+        if not reward_id:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN, translation_key="choreops_failed"
+            )
+        info = {
+            "reward_id": str(reward_id),
+            "name": data["name"],
+            "cost": cost,
+            "users": targets,
+            "since": dt_util.utcnow().isoformat(),
+        }
+        await self.store.async_choreops_reward_set(idea["id"], info)
         return info

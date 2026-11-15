@@ -1579,6 +1579,26 @@ MESSAGES: dict[str, str] = {
         "Mögliche Oberpunkte:\n{candidates}\n"
         "Lose Notizen:\n{loose}"
     ),
+    "chore_points_prompt": (
+        "Schlage Punkte für diese Aufgaben im Haushalt vor. Sie gehen an "
+        "ChoreOps, ein Punktesystem für die Familie: Wer eine Aufgabe erledigt, "
+        "bekommt die Punkte. Eine kurze Aufgabe von etwa fünf Minuten ist "
+        "{base} Punkte wert, längere oder unbeliebte Aufgaben entsprechend mehr. "
+        "Antworte nur mit Zeilen wie „L1: {base}“, eine Aufgabe pro Zeile, ganze "
+        "Zahlen, ohne Erklärung.\n"
+        "Aufgaben:\n{items}"
+    ),
+    "reward_cost_prompt": (
+        "Schlage für diese Wünsche einen Preis in Punkten vor. Sie werden "
+        "Belohnungen in ChoreOps, einem Punktesystem für die Familie: Eine kurze "
+        "Aufgabe bringt etwa {base} Punkte. Eine kleine Belohnung soll mehrere "
+        "Aufgaben kosten, ein großer Wunsch deutlich mehr; Stimmen zeigen, wie "
+        "begehrt ein Wunsch ist. Antworte nur mit Zeilen wie „L1: {base}0“, ein "
+        "Wunsch pro Zeile, ganze Zahlen, ohne Erklärung.\n"
+        "Wünsche:\n{items}"
+    ),
+    "points_subtasks": " (Unteraufgaben: {count})",
+    "points_votes": " (Stimmen: {count})",
     "cluster_prompt": (
         "In der Liste „{category}“ stehen lose Notizen (L). Fasse sie zu drei bis "
         "sieben Themen zusammen und gib jedem Thema einen kurzen deutschen Titel, "

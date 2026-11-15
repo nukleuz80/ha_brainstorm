@@ -1,8 +1,8 @@
-import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, BRING_TAB_ID, bringBadge, bringSentText, unblockedText, compactNodeInfo, nextNodeDetail, nodeDetailButton, nodeDetailCompact, nodeDetailMode, bringTab, canSendToBring, renderBringSend, CHORE_MAP_CSS, choreMapData, renderChoreMap, canHandOver, choreopsBadge, renderChoreHandover, MAP_TAB_CSS, activeMapTab, branchTabs, configTabs, mapTabBar, tabCounts, ruleFilter, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.13.9";
+import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, BRING_TAB_ID, bringBadge, bringSentText, unblockedText, compactNodeInfo, nextNodeDetail, nodeDetailButton, nodeDetailCompact, nodeDetailMode, bringTab, canSendToBring, renderBringSend, CHORE_MAP_CSS, choreMapData, renderChoreMap, canHandOver, canHandOverProject, canMakeReward, choreopsBadge, choreopsRewardBadge, renderChoreHandover, renderChoreProject, renderChoreReward, MAP_TAB_CSS, activeMapTab, branchTabs, configTabs, mapTabBar, tabCounts, ruleFilter, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.13.10";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.13.9 - Ast als eigene Map, feste Tabs, Tab-Zähler
+ * Version: 1.13.10 - ChoreOps II: Belohnungen, Projekte, Punktevorschlag
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -6668,6 +6668,20 @@ class BrainstormMindmapCard extends HTMLElement {
     this._openDialog(t("🏅 An ChoreOps übergeben"), (body) => renderChoreHandover(body, { hass: this._hass, idea, users: this._choreops.users, points: this._choreops.points, close: () => this._closeDialog() }));
   }
 
+  _showChoreProject(idea) {
+    if (!this._hass || !idea || !this._choreops) return;
+    const sensor = this._getSensorEntity();
+    const ideas = (sensor && sensor.attributes.ideas) || [];
+    const done = (count) => this._showToast(t("🏅 {count} Aufgaben an ChoreOps übergeben", { count }));
+    this._openDialog(t("🏅 Projekt an ChoreOps übergeben"), (body) => renderChoreProject(body, { hass: this._hass, idea, ideas, users: this._choreops.users, points: this._choreops.points, close: () => this._closeDialog(), done }));
+  }
+
+  _showChoreReward(idea) {
+    if (!this._hass || !idea || !this._choreops) return;
+    const done = (name, cost) => this._showToast(t("🎁 „{name}“ ist jetzt eine Belohnung für {cost} Punkte", { name, cost }));
+    this._openDialog(t("🎁 Als ChoreOps-Belohnung anlegen"), (body) => renderChoreReward(body, { hass: this._hass, idea, users: this._choreops.users, points: this._choreops.points, close: () => this._closeDialog(), done }));
+  }
+
   // The comments of a note: read, write, delete your own
   _showComments(idea) {
     if (!this._hass || !idea) return;
@@ -10342,7 +10356,7 @@ class BrainstormMindmapCard extends HTMLElement {
                 <ha-icon icon="${this._getCategoryIcon(idea.category)}" style="--mdc-icon-size: 12px; width: 12px; height: 12px; display: inline-flex; align-items: center; vertical-align: middle;"></ha-icon> ${this._escapeHtml(idea.category)}
               </span>
               ${prioBadge}
-              ${this._getReminderBadges(idea)}${repeatBadge(idea)}${myDayBadge(idea)}${habitBadge(idea)}${choreopsBadge(idea)}${bringBadge(idea)}
+              ${this._getReminderBadges(idea)}${repeatBadge(idea)}${myDayBadge(idea)}${habitBadge(idea)}${choreopsBadge(idea)}${choreopsRewardBadge(idea)}${bringBadge(idea)}
               ${inProgressBadge(idea)}
               ${blockedBadge(idea)}
               ${attachmentBadge(idea)}
@@ -10372,11 +10386,13 @@ class BrainstormMindmapCard extends HTMLElement {
                 <button class="action-btn menu-item" role="menuitem" data-act="comments" data-lvl="normal" data-id="${this._escapeHtml(idea.id)}"><span>💬</span>${t("Kommentare")}${idea.comment_count ? ` (${idea.comment_count})` : ""}</button>
                 <button class="action-btn menu-item" role="menuitem" data-act="link" data-lvl="pro" data-id="${this._escapeHtml(idea.id)}"><span>🔗</span>${t("Mit einer anderen Notiz verbinden (L)")}</button>
                 ${hasBranch && !branchTab && !this._isPinboard() ? `<button class="action-btn menu-item" role="menuitem" data-act="tab" data-lvl="normal" data-id="${this._escapeHtml(idea.id)}"><span>↗</span>${t("In eigenen Tab auslagern")}</button>` : ""}
-                ${hasBranch && !this._isPinboard() ? `<button class="action-btn menu-item" role="menuitem" data-act="own-map" data-lvl="advanced" data-id="${this._escapeHtml(idea.id)}"><span>🗺️</span>${t("Als eigene Map auslagern")}</button>` : ""}
+                ${hasBranch && !this._isPinboard() ? `<button class="action-btn menu-item" role="menuitem" data-act="own-map" data-lvl="normal" data-id="${this._escapeHtml(idea.id)}"><span>🗺️</span>${t("Als eigene Map auslagern")}</button>` : ""}
                 ${hasBranch ? `<button class="action-btn menu-item" role="menuitem" data-act="focus" data-lvl="normal" data-id="${this._escapeHtml(idea.id)}"><span>🎯</span>${t("Nur diesen Zweig zeigen (F4)")}</button>` : ""}
                 ${aiSubtasks ? `<button class="action-btn menu-item" role="menuitem" data-act="suggest" data-lvl="normal" data-id="${this._escapeHtml(idea.id)}"><span>✨</span>${t("Unteraufgaben von der KI vorschlagen lassen")}</button>` : ""}
                 ${canSendToBring(idea, bring) ? `<button class="action-btn menu-item" role="menuitem" data-act="bring-send" data-lvl="normal" data-id="${this._escapeHtml(idea.id)}"><span>🛒</span>${t("An Bring! senden")}</button>` : ""}
                 ${canHandOver(idea, choreops) ? `<button class="action-btn menu-item" role="menuitem" data-act="choreops" data-lvl="normal" data-id="${this._escapeHtml(idea.id)}"><span>🏅</span>${t("An ChoreOps übergeben")}</button>` : ""}
+                ${canHandOverProject(idea, activeIdeas, choreops) ? `<button class="action-btn menu-item" role="menuitem" data-act="choreops-project" data-lvl="normal" data-id="${this._escapeHtml(idea.id)}"><span>🏅</span>${t("Projekt an ChoreOps übergeben")}</button>` : ""}
+                ${canMakeReward(idea, choreops) ? `<button class="action-btn menu-item" role="menuitem" data-act="choreops-reward" data-lvl="normal" data-id="${this._escapeHtml(idea.id)}"><span>🎁</span>${t("Als ChoreOps-Belohnung anlegen")}</button>` : ""}
                 <button class="action-btn menu-item" role="menuitem" data-act="move" data-id="${this._escapeHtml(idea.id)}"><span>📁</span>${t("Kategorie ändern")}</button>
                 <button class="action-btn menu-item del-btn" role="menuitem" data-act="delete" data-id="${this._escapeHtml(idea.id)}"><span>🗑️</span>${t("Löschen")}</button>
               </div>
@@ -10668,6 +10684,8 @@ class BrainstormMindmapCard extends HTMLElement {
             else if (act === "tab") this._branchToTab(idea);
             else if (act === "own-map") this._showOwnMapDialog(idea);
             else if (act === "choreops") this._showChoreHandover(idea);
+            else if (act === "choreops-project") this._showChoreProject(idea);
+            else if (act === "choreops-reward") this._showChoreReward(idea);
             else if (act === "bring-send") this._showBringSend(idea);
             else if (act === "link") this._startLink(idea.id);
             else if (act === "comments") this._showComments(idea);
@@ -12033,7 +12051,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.13.9 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.13.10 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

@@ -956,6 +956,9 @@
     },
     "move_category_empty": {
       "message": "Der Name der Kategorie ist leer."
+    },
+    "choreops_reward_already": {
+      "message": "Diese Notiz ist schon eine ChoreOps-Belohnung."
     }
   },
   "services": {
@@ -1582,6 +1585,28 @@
         "parent_id": {
           "name": "Übergeordnete Notiz",
           "description": "Optional: eine Notiz in der neuen Kategorie, unter die der Ast kommt; ohne sie wird die Notiz eine Hauptnotiz."
+        }
+      }
+    },
+    "send_reward_to_choreops": {
+      "name": "ChoreOps-Belohnung anlegen",
+      "description": "Legt aus einer Notiz eine Belohnung in ChoreOps an, zum Beispiel den Gewinner einer Abstimmung auf einer Wunsch-Map. Die Belohnung kostet Punkte, die sich die Familie mit Aufgaben verdient. Braucht die ChoreOps-Integration.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "ID der Notiz."
+        },
+        "cost": {
+          "name": "Preis",
+          "description": "So viele Punkte kostet die Belohnung in ChoreOps."
+        },
+        "users": {
+          "name": "Personen",
+          "description": "ChoreOps-Personen, die sie einlösen dürfen; leer heißt alle."
+        },
+        "name": {
+          "name": "Name",
+          "description": "Name der Belohnung; leer nimmt den Text der Notiz."
         }
       }
     }

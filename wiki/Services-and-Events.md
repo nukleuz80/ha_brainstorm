@@ -8,6 +8,7 @@ All parameters are [further down](#brainstormadd_idea) and under [**Developer to
 |---|---|
 | `brainstorm.add_idea` | `text: "Replace filter"`, `category: Smart Home`, `priority: high`, `due: "2026-12-01 18:00"` |
 | `brainstorm.send_to_choreops` | `id: …`, `points: 20` makes the note a ChoreOps chore |
+| `brainstorm.send_reward_to_choreops` | `id: …`, `cost: 100` makes the note a ChoreOps reward |
 | `brainstorm.add_from_speech` | `text: "Call the plumber tomorrow at ten, Anna buys milk on Friday"` creates one note per task |
 | `brainstorm.update_idea` | `id: …`, `status: completed`, `in_progress: true`, `markers: [question, money]`, `progress: 50`, `links: [{to: …, label: needs, blocks: true}]`, `frame: Phase 1` or `callout: colour open` |
 | `brainstorm.delete_idea` | `id: …` |
@@ -86,6 +87,19 @@ Hands a note to [ChoreOps](https://github.com/ccpk1/choreops) as a one-time chor
 | `id` | Yes | ID of the note. |
 | `points` | No | Points in ChoreOps; without it the default points from *🔗 Connected integrations › 🏅 ChoreOps* (10 unless changed). |
 | `user` | No | ChoreOps person. Empty takes the note's assignee (name or unique first name). |
+
+## `brainstorm.send_reward_to_choreops`
+
+▶️ [Try it in Home Assistant](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.send_reward_to_choreops)
+
+Creates a ChoreOps reward from a note, for example the winner of a vote on a wish map. The reward costs points that the family earns with chores; the note shows 🎁 with the price. A note becomes a reward only once. Needs the [ChoreOps](https://github.com/ccpk1/choreops) integration. Answers with `reward_id` and `cost`.
+
+| Field | Required | Meaning |
+| :--- | :--- | :--- |
+| `id` | Yes | ID of the note. |
+| `cost` | Yes | Points the reward costs (0–100000). |
+| `users` | No | ChoreOps people who may redeem it; empty means everybody. |
+| `name` | No | Name of the reward; empty takes the text of the note. |
 
 ## `brainstorm.update_idea`
 

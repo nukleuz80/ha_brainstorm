@@ -36,6 +36,31 @@ send_to_choreops:
       selector:
         text:
 
+send_reward_to_choreops:
+  fields:
+    id:
+      required: true
+      example: "a1b2c3d4"
+      selector:
+        text:
+    cost:
+      required: true
+      example: 100
+      selector:
+        number:
+          min: 0
+          max: 100000
+          mode: box
+    users:
+      example: "['Lenja']"
+      selector:
+        text:
+          multiple: true
+    name:
+      example: "Kino mit Popcorn"
+      selector:
+        text:
+
 add_idea:
   fields:
     text:

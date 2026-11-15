@@ -8,6 +8,7 @@ Alle Parameter stehen [weiter unten](#brainstormadd_idea) und unter [**Entwickle
 |---|---|
 | `brainstorm.add_idea` | `text: "Filter tauschen"`, `category: Smarthome`, `priority: high`, `due: "2026-12-01 18:00"` |
 | `brainstorm.send_to_choreops` | `id: …`, `points: 20` macht die Notiz zur ChoreOps-Aufgabe |
+| `brainstorm.send_reward_to_choreops` | `id: …`, `cost: 100` macht die Notiz zur ChoreOps-Belohnung |
 | `brainstorm.add_from_speech` | `text: "Morgen um zehn den Klempner anrufen, Anna kauft am Freitag Milch"` legt pro Aufgabe eine Notiz an |
 | `brainstorm.update_idea` | `id: …`, `status: completed`, `in_progress: true`, `markers: [question, money]`, `progress: 50`, `links: [{to: …, label: braucht, blocks: true}]`, `frame: Phase 1` oder `callout: Farbe offen` |
 | `brainstorm.delete_idea` | `id: …` |
@@ -86,6 +87,19 @@ Zerlegt frei gesprochenen Text in einzelne Notizen mit Termin und Person (v1.12.
 | `id` | Ja | ID der Notiz. |
 | `points` | Nein | Punkte in ChoreOps; ohne Angabe die Standardpunkte aus *🔗 Verbundene Integrationen › 🏅 ChoreOps* (10, solange nicht geändert). |
 | `user` | Nein | Person in ChoreOps. Leer nimmt die zuständige Person der Notiz (Name oder eindeutiger Vorname). |
+
+## `brainstorm.send_reward_to_choreops`
+
+▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.send_reward_to_choreops)
+
+Legt aus einer Notiz eine Belohnung in ChoreOps an, zum Beispiel den Gewinner einer Abstimmung auf einer Wunsch-Map. Die Belohnung kostet Punkte, die sich die Familie mit Aufgaben verdient; die Notiz zeigt 🎁 mit dem Preis. Eine Notiz wird nur einmal zur Belohnung. Braucht die Integration [ChoreOps](https://github.com/ccpk1/choreops). Antwortet mit `reward_id` und `cost`.
+
+| Feld | Pflicht | Bedeutung |
+| :--- | :--- | :--- |
+| `id` | Ja | ID der Notiz. |
+| `cost` | Ja | So viele Punkte kostet die Belohnung (0–100000). |
+| `users` | Nein | ChoreOps-Personen, die sie einlösen dürfen; leer heißt alle. |
+| `name` | Nein | Name der Belohnung; leer nimmt den Text der Notiz. |
 
 ## `brainstorm.update_idea`
 

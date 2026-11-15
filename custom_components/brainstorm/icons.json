@@ -101,6 +101,9 @@
     },
     "send_to_choreops": {
       "service": "mdi:medal"
+    },
+    "send_reward_to_choreops": {
+      "service": "mdi:gift"
     }
   }
 }
