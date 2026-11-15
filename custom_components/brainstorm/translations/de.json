@@ -406,13 +406,15 @@
           "bring": "🛒 Bring!",
           "choreops": "🏅 ChoreOps",
           "local_todo": "📋 Lokale To-do",
+          "waste_collection_schedule": "🗑️ Abfallkalender",
           "init": "⬅️ Zurück",
           "close": "✅ Fertig"
         },
         "menu_option_descriptions": {
           "bring": "{status_bring}",
           "choreops": "{status_choreops}",
-          "local_todo": "{status_local_todo}"
+          "local_todo": "{status_local_todo}",
+          "waste_collection_schedule": "{status_waste}"
         }
       },
       "choreops": {
@@ -601,6 +603,28 @@
         "data_description": {
           "local_todo_new": "Optional: legt eine neue Local-To-do-Liste mit dem Namen dieser Kategorie an und verbindet sie sofort, etwa für die Home-Assistant-App, Sprachassistenten oder Automationen.",
           "go_back": "Kehrt zur vorherigen Seite zurück, ohne dieses Formular zu speichern."
+        }
+      },
+      "waste_collection_schedule": {
+        "title": "Brainstorm › 🔗 Verbundene Integrationen › 🗑️ Abfallkalender",
+        "description": "Legt am Vorabend jeder Abholung aus den Abfallkalendern, etwa denen von Waste Collection Schedule, zur gewählten Uhrzeit eine Aufgabe wie *🟡 Gelbe Tonne rausstellen* an. Die Aufgabe hakt sich selbst ab, sobald der Abholtag vorbei ist. Mehrere Abholungen an einem Tag werden mehrere Aufgaben.",
+        "data": {
+          "waste_enabled": "Aufgaben für Abholungen",
+          "waste_calendars": "Abfallkalender",
+          "waste_category": "Kategorie",
+          "waste_time": "Uhrzeit am Vorabend",
+          "waste_choreops_users": "Im Wechsel für (ChoreOps)",
+          "waste_choreops_points": "Punkte pro Aufgabe",
+          "go_back": "⬅️ Zurück ohne Speichern"
+        },
+        "data_description": {
+          "waste_enabled": "Legt am Vorabend jeder Abholung eine Aufgabe an.",
+          "waste_calendars": "Kalender mit den Abholungen. Leer heißt: alle Kalender von Waste Collection Schedule.",
+          "waste_category": "Die Kategorie, in die die Aufgaben kommen.",
+          "waste_time": "Wann die Aufgabe am Vorabend erscheint, zugleich ihr Fälligkeitszeitpunkt.",
+          "waste_choreops_users": "Optional: Die Aufgaben eines Abholtags gehen im Wechsel an diese ChoreOps-Personen, als Aufgaben mit Punkten.",
+          "waste_choreops_points": "Optional: Punkte pro Aufgabe. Leer nimmt die Standardpunkte der ChoreOps-Seite.",
+          "go_back": "Kehrt ohne Speichern zur vorherigen Seite zurück."
         }
       }
     },

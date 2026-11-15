@@ -82,6 +82,10 @@ class LanguagePack:
     garden_match: str
     # None means this language has no AI step
     ai_cleanup_prompt: Callable[[str, str], str] | None = field(default=None)
+    # Waste collection: a word of the waste type and its sign, first match wins,
+    # and the words before the type in a calendar entry, such as "Pickup"
+    waste_icons: tuple[tuple[str, str], ...] = field(default=())
+    waste_prefixes: tuple[str, ...] = field(default=())
 
     def msg(self, key: str, **values: object) -> str:
         """Return a text of this language with its values filled in."""

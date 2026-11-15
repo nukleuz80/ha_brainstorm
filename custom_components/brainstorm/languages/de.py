@@ -1508,6 +1508,8 @@ MESSAGES: dict[str, str] = {
     "battery_task": "Batterie wechseln: {name}",
     "battery_task_level": "Batterie wechseln: {name} ({level} %)",
     "sensor_task_description": "Ausgelöst von {name}: {value}",
+    "waste_task": "{icon} {name} rausstellen",
+    "waste_task_description": "Laut {calendar}: {summary}",
     "reminder_title": "Brainstorm: Erinnerung",
     "comment_title": "Brainstorm: {author} hat kommentiert",
     "comment_message": "„{text}“: {comment}",
@@ -1738,6 +1740,27 @@ def count_entries(count: int) -> str:
     return f"{words.get(count, str(count))} Einträge"
 
 
+# Waste types in calendar entries and their sign, more specific words first
+WASTE_ICONS: tuple[tuple[str, str], ...] = (
+    ("gelb", "🟡"),
+    ("verpackung", "🟡"),
+    ("wertstoff", "🟡"),
+    ("bio", "🟤"),
+    ("kompost", "🟤"),
+    ("papier", "🔵"),
+    ("pappe", "🔵"),
+    ("glas", "🟢"),
+    ("grün", "🌿"),
+    ("garten", "🌿"),
+    ("laub", "🌿"),
+    ("baum", "🎄"),
+    ("sperr", "🛋️"),
+    ("schadstoff", "☣️"),
+    ("rest", "⚫"),
+    ("haus", "⚫"),
+)
+
+
 PACK = LanguagePack(
     code="de",
     default_categories=tuple(DEFAULT_CATEGORIES),
@@ -1827,4 +1850,6 @@ PACK = LanguagePack(
     garden_words=("garten", "haus"),
     garden_match="garten",
     ai_cleanup_prompt=ai_cleanup_prompt,
+    waste_icons=WASTE_ICONS,
+    waste_prefixes=("abfuhr", "abholung", "leerung", "entsorgung", "termin"),
 )

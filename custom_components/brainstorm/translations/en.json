@@ -406,13 +406,15 @@
           "bring": "🛒 Bring!",
           "choreops": "🏅 ChoreOps",
           "local_todo": "📋 Local To-do",
+          "waste_collection_schedule": "🗑️ Waste calendar",
           "init": "⬅️ Back",
           "close": "✅ Done"
         },
         "menu_option_descriptions": {
           "bring": "{status_bring}",
           "choreops": "{status_choreops}",
-          "local_todo": "{status_local_todo}"
+          "local_todo": "{status_local_todo}",
+          "waste_collection_schedule": "{status_waste}"
         }
       },
       "choreops": {
@@ -600,6 +602,28 @@
         },
         "data_description": {
           "local_todo_new": "Optional: creates a new Local To-do list named after this category and links it right away, for the Home Assistant app, voice assistants or automations.",
+          "go_back": "Returns to the previous page without saving this form."
+        }
+      },
+      "waste_collection_schedule": {
+        "title": "Brainstorm › 🔗 Connected integrations › 🗑️ Waste calendar",
+        "description": "Creates a task like *🟡 Put out: Gelbe Tonne* at the chosen time on the evening before every pickup in the waste calendars, such as the ones of Waste Collection Schedule. The task ticks itself off once the pickup day is over. Several pickups on one day become several tasks.",
+        "data": {
+          "waste_enabled": "Tasks for pickups",
+          "waste_calendars": "Waste calendars",
+          "waste_category": "Category",
+          "waste_time": "Time on the evening before",
+          "waste_choreops_users": "In turn for (ChoreOps)",
+          "waste_choreops_points": "Points per task",
+          "go_back": "⬅️ Back without saving"
+        },
+        "data_description": {
+          "waste_enabled": "Creates a task on the evening before every pickup.",
+          "waste_calendars": "Calendars with the pickups. Empty means all calendars of Waste Collection Schedule.",
+          "waste_category": "The category the tasks go to.",
+          "waste_time": "When the task appears on the evening before; its due time as well.",
+          "waste_choreops_users": "Optional: the tasks of a pickup day go to these ChoreOps people in turn, as chores with points.",
+          "waste_choreops_points": "Optional: points per chore. Empty uses the default points of the ChoreOps page.",
           "go_back": "Returns to the previous page without saving this form."
         }
       }

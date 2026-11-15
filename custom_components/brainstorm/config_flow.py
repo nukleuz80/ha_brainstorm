@@ -17,6 +17,13 @@ from homeassistant.helpers.network import NoURLAvailableError
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    CONF_WASTE_CALENDARS,
+    CONF_WASTE_CATEGORY,
+    CONF_WASTE_CHOREOPS_POINTS,
+    CONF_WASTE_CHOREOPS_USERS,
+    CONF_WASTE_ENABLED,
+    CONF_WASTE_TIME,
+    DEFAULT_WASTE_TIME,
     CONF_LOCAL_TODO_NEW,
     RULE_CHOREOPS_POINTS,
     RULE_CHOREOPS_USER,
@@ -138,6 +145,7 @@ from .choreops import choreops_available
 from .echo_locks import LOCK_DND, LOCK_ECHOS, LOCK_END, LOCK_SLOTS, LOCK_START
 from .languages import get_pack
 from .local_todo import CHOICE_NEW, CHOICE_NONE, LocalList, async_create_list, local_lists
+from .waste import waste_available, waste_calendars
 from .reminders import format_due, phone_service_for
 from .sensor_rules import to_number
 from .store import BrainstormStore, get_loaded_store
@@ -315,6 +323,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "bring": "🛒 Bring!",
                 "choreops": "🏅 ChoreOps",
                 "local_todo": "📋 Lokale To-do",
+                "waste_collection_schedule": "🗑️ Abfallkalender",
                 "init": "⬅️ Zurück",
                 "close": "✅ Fertig",
             },
@@ -357,6 +366,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "bring": "🛒 Bring!",
                 "choreops": "🏅 ChoreOps",
                 "local_todo": "📋 Local To-do",
+                "waste_collection_schedule": "🗑️ Waste calendar",
                 "init": "⬅️ Back",
                 "close": "✅ Done",
             },
@@ -373,7 +383,12 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
     ) -> FlowResult:
         """Show options menu."""
         menu = self._level_menu(self._get_localized_menu("init"))
-        if not set(self._integrations_menu()) & {"bring", "choreops", "local_todo"}:
+        if not set(self._integrations_menu()) & {
+            "bring",
+            "choreops",
+            "local_todo",
+            "waste_collection_schedule",
+        }:
             # Only offered where a connected integration is installed
             menu = {key: label for key, label in menu.items() if key != "integrations"}
         connected = self._connected_integrations()
@@ -398,11 +413,13 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             "bring": bool(options.get(CONF_BRING_ENABLED)),
             "choreops": bool(options.get(CONF_CHOREOPS_ENABLED, True)),
             "local_todo": bool(self._local_links(options)),
+            "waste_collection_schedule": bool(options.get(CONF_WASTE_ENABLED)),
         }
         names = {
             "bring": "Bring!",
             "choreops": "ChoreOps",
             "local_todo": self._text("Lokale To-do", "Local To-do"),
+            "waste_collection_schedule": self._text("Abfallkalender", "Waste calendar"),
         }
         on, off = self._text("an", "on"), self._text("aus", "off")
         return [
@@ -416,6 +433,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         installed = {
             "bring": bool(bring_lists(self.hass)),
             "choreops": choreops_available(self.hass),
+            "waste_collection_schedule": waste_available(self.hass),
         }
         return {
             key: label
@@ -444,6 +462,10 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 for item in local_lists(self.hass)
                 if (category := links.get(item.entity_id))
             )
+        waste = off
+        if options.get(CONF_WASTE_ENABLED):
+            time_of_day = str(options.get(CONF_WASTE_TIME) or DEFAULT_WASTE_TIME)
+            waste = f"{on} · {time_of_day[:5]}"
         return self.async_show_menu(
             step_id="integrations",
             menu_options=self._integrations_menu(),
@@ -453,6 +475,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "status_bring": bring,
                 "status_choreops": choreops,
                 "status_local_todo": local,
+                "status_waste": waste,
             },
         )
 
@@ -559,6 +582,89 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             step_id="local_todo",
             data_schema=vol.Schema(_with_back(schema)),
             errors=errors,
+        )
+
+    async def async_step_waste_collection_schedule(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Create a task on the eve of every pickup of a waste calendar."""
+        if user_input is not None and user_input.pop(BACK_FIELD, False):
+            return await self.async_step_integrations()
+        store = await self._async_store()
+        options = dict(self.config_entry.options or self.config_entry.data)
+        users = list(store.choreops.users) if store.choreops is not None else []
+        if user_input is not None:
+            options[CONF_WASTE_ENABLED] = bool(user_input.get(CONF_WASTE_ENABLED))
+            options[CONF_WASTE_CALENDARS] = list(
+                user_input.get(CONF_WASTE_CALENDARS) or []
+            )
+            options[CONF_WASTE_CATEGORY] = str(
+                user_input.get(CONF_WASTE_CATEGORY) or ""
+            )
+            options[CONF_WASTE_TIME] = str(
+                user_input.get(CONF_WASTE_TIME) or DEFAULT_WASTE_TIME
+            )
+            if users:
+                options[CONF_WASTE_CHOREOPS_USERS] = list(
+                    user_input.get(CONF_WASTE_CHOREOPS_USERS) or []
+                )
+                points = user_input.get(CONF_WASTE_CHOREOPS_POINTS)
+                options[CONF_WASTE_CHOREOPS_POINTS] = (
+                    int(points) if points not in (None, "") else None
+                )
+            return await self._async_saved(options, "integrations")
+        categories = list(store.categories)
+        category = str(options.get(CONF_WASTE_CATEGORY) or "")
+        if category not in categories:
+            category = categories[0] if categories else ""
+        schema: dict[Any, Any] = {
+            vol.Required(
+                CONF_WASTE_ENABLED, default=bool(options.get(CONF_WASTE_ENABLED))
+            ): selector.BooleanSelector(),
+            vol.Optional(
+                CONF_WASTE_CALENDARS,
+                default=list(
+                    options.get(CONF_WASTE_CALENDARS) or waste_calendars(self.hass)
+                ),
+            ): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="calendar", multiple=True)
+            ),
+            vol.Required(
+                CONF_WASTE_CATEGORY, default=category
+            ): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=categories, mode=selector.SelectSelectorMode.DROPDOWN
+                )
+            ),
+            vol.Required(
+                CONF_WASTE_TIME,
+                default=str(options.get(CONF_WASTE_TIME) or DEFAULT_WASTE_TIME),
+            ): selector.TimeSelector(),
+        }
+        if users:
+            chosen = [u for u in options.get(CONF_WASTE_CHOREOPS_USERS) or [] if u]
+            schema[vol.Optional(CONF_WASTE_CHOREOPS_USERS, default=chosen)] = (
+                selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=sorted({*users, *chosen}, key=str.casefold),
+                        multiple=True,
+                        mode=selector.SelectSelectorMode.LIST,
+                    )
+                )
+            )
+            schema[
+                vol.Optional(
+                    CONF_WASTE_CHOREOPS_POINTS,
+                    description=_suggested(options, CONF_WASTE_CHOREOPS_POINTS),
+                )
+            ] = selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=0, max=10000, step=1, mode=selector.NumberSelectorMode.BOX
+                )
+            )
+        return self.async_show_form(
+            step_id="waste_collection_schedule",
+            data_schema=vol.Schema(_with_back(schema)),
         )
 
     async def async_step_choreops(

@@ -9,7 +9,7 @@
 [![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.13.15-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.13.16-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![Wiki](https://img.shields.io/badge/Doku-Wiki-6f42c1.svg)](https://github.com/nukleuz80/ha_brainstorm/wiki)
@@ -94,6 +94,7 @@
 - Jede Kategorie ist eine echte **To-do-Liste** in Home Assistant (`todo.*`).
 - Abgleich in beide Richtungen mit **Bring!**, **Google Tasks**, **Todoist** oder jeder anderen To-do-Liste.
 - **Aufgaben aus Sensoren:** Filter nach 300 Betriebsstunden, zu trockene Pflanze, fertige Waschmaschine oder schwache Batterie werden zur Aufgabe, die sich selbst abhakt. → [Einstellungen](https://github.com/nukleuz80/ha_brainstorm/wiki/Einstellungen#brainstorm---sensor-aufgaben)
+- **🗑️ Abfallkalender:** Am Vorabend jeder Abholung aus Waste Collection Schedule erscheint *🟡 Gelbe Tonne rausstellen* und hakt sich danach selbst ab, auf Wunsch im Wechsel für die Kinder mit ChoreOps-Punkten. → [Einstellungen](https://github.com/nukleuz80/ha_brainstorm/wiki/Einstellungen#brainstorm---verbundene-integrationen---abfallkalender)
 - Automatischer **Markdown-Export** für Obsidian, Logseq oder Nextcloud; JSON-Export und -Import; erledigte Einträge räumen sich auf Wunsch selbst auf; Gelöschtes liegt 30 Tage im 🗑️ Papierkorb. → [Import, Export & Speicherung](https://github.com/nukleuz80/ha_brainstorm/wiki/Import-Export-und-Speicherung)
 
 ---
@@ -261,11 +262,11 @@ Die letzten Versionen; alle stehen in [CHANGELOG_de.md](CHANGELOG_de.md).
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.13.16`** | 15.11.2026 | **🗑️ Abfallkalender.** Neue Seite *🗑️ Abfallkalender* unter *🔗 Verbundene Integrationen*, sobald Waste Collection Schedule eingerichtet ist. Am Vorabend jeder Abholung entsteht zur gewählten Uhrzeit (Standard 18:00) eine Aufgabe wie *🟡 Gelbe Tonne rausstellen* in der gewählten Kategorie; sie hakt sich nach dem Abholtag selbst ab. Wörter wie *Abfuhr* und Bemerkungen in Klammern fallen weg, das Zeichen richtet sich nach der Abfallart, mehrere Abholungen an einem Tag werden mehrere Aufgaben. Optional gehen die Aufgaben eines Abholtags im Wechsel an ChoreOps-Personen, mit Punkten. War Home Assistant zur Uhrzeit aus, werden die Aufgaben nach dem Start nachgeholt. Logo in der Leiste, Quelle *🗑️ Abfallkalender* in der Karte. |
 | **`v1.13.15`** | 15.11.2026 | **📋 Herkunft verbundener Kategorien sichtbar.** Eine Kategorie, die mit einer To-do-Liste verbunden ist, trägt jetzt überall ein Zeichen: 📋 für eine Liste von Local To-do, 🔗 für eine Liste einer anderen Integration. Es steht am Kategorie-Reiter beider Karten, am Kategorie-Etikett jeder Notiz, in den Kategorie-Dialogen und in den Auswahllisten. Der Tooltip nennt die Liste und ihre Entität. Neuer Browser-Test `tests/js/linked_list.html`. |
 | **`v1.13.14`** | 15.11.2026 | **🏷️ Unteraufgaben auf To-do-Listen gekennzeichnet.** To-do-Listen wie Local To-do kennen keine Unteraufgaben. Eine Unteraufgabe steht dort deshalb mit dem Text ihrer Notiz davor, z. B. *Party › Kuchen*, damit die Zugehörigkeit erkennbar bleibt. In Brainstorm bleibt der Text *Kuchen*; eine umbenannte Notiz ändert das Präfix mit. Ein auf der Liste angelegter Eintrag *Party › Kerzen* wird Unteraufgabe von *Party*. Bereits verbundene Einträge erhalten das Präfix beim nächsten Abgleich. |
 | **`v1.13.13`** | 15.11.2026 | **📋 Lokale To-do.** Neue Seite *📋 Lokale To-do* unter *🔗 Verbundene Integrationen*: Jede Liste der Integration Local To-do lässt sich als neue Kategorie übernehmen oder mit einer vorhandenen Kategorie verbinden. Für eine Kategorie ohne Liste legt Brainstorm auf Wunsch eine neue lokale Liste an. Einträge werden in beide Richtungen abgeglichen. Die Karte zeigt über der Liste, mit welcher To-do-Liste die Kategorie verbunden ist. Die Seite *To-do-Listen koppeln* zeigt lokale Listen nicht mehr und behält ihre Verbindungen beim Speichern. |
 | **`v1.13.12`** | 15.11.2026 | **🐞 Hassfest-Prüfung repariert.** Die Beschreibungen der Felder `links` und `rotation` beim Dienst `brainstorm.update_idea` enthielten geschweifte Klammern wie `{mode, people}`. Die strengere hassfest-Prüfung von Home Assistant hält sie für ungültige Platzhalter, deshalb schlug die Prüfung auf GitHub fehl. Die Felder sind jetzt in Worten beschrieben; ein neuer Test prüft jeden Platzhalter in den Übersetzungen. |
-| **`v1.13.11`** | 15.11.2026 | **🏅 ChoreOps III.** Das tägliche Briefing, auch auf den Echos, nennt am Ende den Punktestand jeder ChoreOps-Person. Neuer *Serien-Bonus*: Erreicht die Serie einer Gewohnheit 7, 30 oder 100 Tage, bekommt die zuständige Person Bonuspunkte in ChoreOps, einmal pro Serie. Sensor-Aufgaben können mit *ChoreOps-Person* und *ChoreOps-Punkte* sofort an ChoreOps gehen. Neues Assist-Werkzeug `brainstorm_choreops_status` beantwortet *„Wie viele Punkte hat Lenja?“* und nennt die offenen ChoreOps-Aufgaben. |
 
 ---
 

@@ -70,6 +70,8 @@ from .const import (
     ATTR_BATTERY,
     ATTR_ATTACHMENTS,
     ATTR_BATTERY_DONE,
+    ATTR_WASTE,
+    ATTR_WASTE_DONE,
     ATTR_SENSOR_RULE,
     ATTR_SENSOR_RULE_DONE,
     ATTR_COMPLETED_AT,
@@ -266,6 +268,8 @@ EXPORT_SKIPPED_FIELDS = (
     ATTR_BATTERY_DONE,
     ATTR_SENSOR_RULE,
     ATTR_SENSOR_RULE_DONE,
+    ATTR_WASTE,
+    ATTR_WASTE_DONE,
     ATTR_CALENDAR_SYNCED,
     ATTR_ALEXA_NATIVE,
     # Reactions, votes and comments name users of this Home Assistant

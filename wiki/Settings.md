@@ -217,6 +217,24 @@ Since v1.13.13. Local To-do is built into Home Assistant, so this page is always
 - **Display:** the list card shows *📋 Linked to the local to-do list “…”* above the notes of a linked category (🔗 for other linked lists). The logo strip shows *Local To-do* in colour once a list is linked, and the menu entry names the pairs *list ↔ category*. Since v1.13.15 a linked category also carries a sign everywhere it is named: 📋 for a Local To-do list, 🔗 for another list, on the category tabs of both cards, on the label of every note, in the category dialogs and in the dropdowns. Its tooltip names the list and the entity.
 - **Unlinking:** *— not linked —* unlinks the list. Its items and the notes stay.
 
+### Brainstorm › 🔗 Connected integrations › 🗑️ Waste calendar
+
+Since v1.13.16. Shown once [Waste Collection Schedule](https://github.com/mampfes/hacs_waste_collection_schedule) is set up. On the evening before every pickup, Brainstorm adds a task at the chosen time, such as *🟡 Put out: Yellow bin*, and ticks it off itself once the pickup day is over.
+
+| Field | What it does |
+| :--- | :--- |
+| Tasks for pickups | Switches the tasks on (default off). |
+| Waste calendars | The calendars with the pickups. Empty means all calendars of Waste Collection Schedule. Any other calendar works as well. |
+| Category | The category the tasks go to. |
+| Time on the evening before | When the task appears (default 18:00); its due time as well. |
+| In turn for (ChoreOps) | Only with ChoreOps: the tasks of a pickup day go together to one of these people, the next pickup day to the next one, as ChoreOps chores with points. |
+| Points per task | Only with ChoreOps: points per chore. Empty uses the default points of the ChoreOps page. |
+
+- **Texts:** *Collection: Recycling (fortnightly)* becomes *🟡 Put out: Recycling*. Words like *Pickup* or *Collection* at the start and remarks in brackets are dropped. The sign follows the waste type: 🟡 recycling/packaging, 🟤 organic, 🔵 paper, 🟢 glass, 🌿 garden, 🎄 tree, 🛋️ bulky, ☣️ hazardous, ⚫ residual, otherwise 🗑️. An entry like *Paper, Organic* becomes two tasks.
+- **Ticking off:** after midnight of the pickup day an open task ticks itself off. Ticked off earlier, it is not added again.
+- **Restart:** if Home Assistant was off at the time, tomorrow's tasks come about a minute after the start.
+- As source the card shows *🗑️ Waste calendar* with the name of the calendar.
+
 ### Brainstorm › 🔗 Connected integrations › 🛒 Bring!
 
 Only shown when the [Bring!](https://www.home-assistant.io/integrations/bring/) integration is set up. All your Bring lists land in one category: each list becomes a main note, and its items become its subtasks.

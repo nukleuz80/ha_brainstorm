@@ -217,6 +217,24 @@ Seit v1.13.13. Local To-do ist in Home Assistant eingebaut, deshalb erscheint di
 - **Anzeige:** Die Listenkarte zeigt über den Notizen einer verbundenen Kategorie *📋 Verbunden mit der lokalen To-do-Liste „…“* (bei anderen gekoppelten Listen 🔗). Die Logo-Leiste zeigt *Lokale To-do* farbig, sobald eine Liste verbunden ist, der Menüeintrag nennt die Paare *Liste ↔ Kategorie*. Seit v1.13.15 trägt eine verbundene Kategorie außerdem überall, wo sie genannt wird, ein Zeichen: 📋 für eine Liste von Local To-do, 🔗 für eine andere Liste, an den Kategorie-Reitern beider Karten, am Etikett jeder Notiz, in den Kategorie-Dialogen und in den Auswahllisten. Der Tooltip nennt die Liste und die Entität.
 - **Trennen:** *— nicht verbunden —* trennt die Liste. Ihre Einträge und die Notizen bleiben.
 
+### Brainstorm › 🔗 Verbundene Integrationen › 🗑️ Abfallkalender
+
+Seit v1.13.16. Erscheint, wenn [Waste Collection Schedule](https://github.com/mampfes/hacs_waste_collection_schedule) eingerichtet ist. Am Vorabend jeder Abholung legt Brainstorm zur gewählten Uhrzeit eine Aufgabe an, z. B. *🟡 Gelbe Tonne rausstellen*, und hakt sie selbst ab, sobald der Abholtag vorbei ist.
+
+| Feld | Was es bewirkt |
+| :--- | :--- |
+| Aufgaben für Abholungen | Schaltet die Aufgaben ein (Standard aus). |
+| Abfallkalender | Die Kalender mit den Abholungen. Leer heißt: alle Kalender von Waste Collection Schedule. Jeder andere Kalender geht auch. |
+| Kategorie | Die Kategorie, in die die Aufgaben kommen. |
+| Uhrzeit am Vorabend | Wann die Aufgabe erscheint (Standard 18:00), zugleich ihr Fälligkeitszeitpunkt. |
+| Im Wechsel für (ChoreOps) | Nur mit ChoreOps: Die Aufgaben eines Abholtags gehen zusammen an eine dieser Personen, der nächste Abholtag an die nächste, als ChoreOps-Aufgabe mit Punkten. |
+| Punkte pro Aufgabe | Nur mit ChoreOps: Punkte pro Aufgabe. Leer nimmt die Standardpunkte der ChoreOps-Seite. |
+
+- **Texte:** Aus *Abfuhr Restabfall (14tägige Abfuhr)* wird *⚫ Restabfall rausstellen*. Wörter wie *Abfuhr* oder *Abholung* am Anfang und Bemerkungen in Klammern fallen weg. Das Zeichen richtet sich nach der Abfallart: 🟡 Gelbe Tonne/Verpackung, 🟤 Bio, 🔵 Papier, 🟢 Glas, 🌿 Grünschnitt, 🎄 Weihnachtsbaum, 🛋️ Sperrmüll, ☣️ Schadstoffe, ⚫ Restmüll, sonst 🗑️. Ein Eintrag wie *Abfuhr Altpapier, Abfuhr Bioabfall* wird zwei Aufgaben.
+- **Abhaken:** Nach Mitternacht des Abholtags hakt sich eine offene Aufgabe selbst ab. Hakst du sie vorher ab, entsteht sie nicht neu.
+- **Neustart:** War Home Assistant zur Uhrzeit aus, kommen die Aufgaben für morgen etwa eine Minute nach dem Start.
+- Als Quelle zeigt die Karte *🗑️ Abfallkalender* mit dem Namen des Kalenders.
+
 ### Brainstorm › 🔗 Verbundene Integrationen › 🛒 Bring!
 
 Erscheint nur, wenn die Integration [Bring!](https://www.home-assistant.io/integrations/bring/) eingerichtet ist. Alle Bring-Listen landen in einer Kategorie: Jede Liste wird eine Hauptnotiz, ihre Artikel werden zu Unteraufgaben.

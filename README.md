@@ -9,7 +9,7 @@
 [![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.13.15-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.13.16-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![Wiki](https://img.shields.io/badge/Docs-Wiki-6f42c1.svg)](https://github.com/nukleuz80/ha_brainstorm/wiki)
@@ -94,6 +94,7 @@
 - Every category is a native Home Assistant **to-do list** (`todo.*`).
 - Two-way sync with **Bring!**, **Google Tasks**, **Todoist** or any other to-do list.
 - **Tasks from sensors:** a filter after 300 operating hours, a plant that is too dry, a finished washing machine or a low battery becomes a task that ticks itself off. → [Settings](https://github.com/nukleuz80/ha_brainstorm/wiki/Settings#brainstorm---sensor-tasks)
+- **🗑️ Waste calendar:** on the evening before every pickup from Waste Collection Schedule, *🟡 Put out: Recycling* appears and ticks itself off afterwards, optionally taking turns between the kids with ChoreOps points. → [Settings](https://github.com/nukleuz80/ha_brainstorm/wiki/Settings#brainstorm---connected-integrations---waste-calendar)
 - Automatic **Markdown export** for Obsidian, Logseq or Nextcloud; JSON export and import; automatic cleanup of done entries; deleted notes stay in the 🗑️ trash for 30 days. → [Import, Export & Storage](https://github.com/nukleuz80/ha_brainstorm/wiki/Import-Export-and-Storage)
 
 ---
@@ -261,11 +262,11 @@ The latest versions; every version is in [CHANGELOG.md](CHANGELOG.md).
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.13.16`** | 2026-11-15 | **🗑️ Waste calendar.** New page *🗑️ Waste calendar* under *🔗 Connected integrations*, once Waste Collection Schedule is set up. On the evening before every pickup, a task like *🟡 Put out: Recycling* is added at the chosen time (default 18:00) in the chosen category; it ticks itself off after the pickup day. Words like *Pickup* and remarks in brackets are dropped, the sign follows the waste type, several pickups on one day become several tasks. Optionally the tasks of a pickup day go to ChoreOps people in turn, with points. If Home Assistant was off at the time, the tasks are caught up after the start. Logo in the strip, source *🗑️ Waste calendar* in the card. |
 | **`v1.13.15`** | 2026-11-15 | **📋 Origin of linked categories shown.** A category linked to a to-do list now carries a sign everywhere: 📋 for a list of Local To-do, 🔗 for a list of another integration. It is shown on the category tab of both cards, on the category label of every note, in the category dialogs and in the dropdowns. The tooltip names the list and its entity. New browser test `tests/js/linked_list.html`. |
 | **`v1.13.14`** | 2026-11-15 | **🏷️ Subtasks marked on to-do lists.** To-do lists such as Local To-do know no subtasks. A subtask therefore shows the text of its note in front, e.g. *Party › Cake*, so it can be told where it belongs. In Brainstorm the text stays *Cake*; renaming the note changes the prefix too. An item *Party › Candles* added on the list becomes a subtask of *Party*. Items linked before get the prefix at the next sync. |
 | **`v1.13.13`** | 2026-11-15 | **📋 Local To-do.** New page *📋 Local To-do* under *🔗 Connected integrations*: every list of the Local To-do integration can be taken over as a new category or linked to an existing category. For a category without a list, Brainstorm creates a new local list on request. Items are synced both ways. The card shows above the list which to-do list the category is linked to. The page *Link To-do Lists* no longer shows local lists and keeps their links when saving. |
 | **`v1.13.12`** | 2026-11-15 | **🐞 Hassfest check fixed.** The descriptions of the fields `links` and `rotation` of the service `brainstorm.update_idea` used curly braces such as `{mode, people}`. The stricter hassfest check of Home Assistant takes them for invalid placeholders, so the check on GitHub failed. The fields are now described in words; a new test checks every placeholder in the translations. |
-| **`v1.13.11`** | 2026-11-15 | **🏅 ChoreOps III.** The daily briefing, on the Echos as well, ends with the points of every ChoreOps person. New *streak bonus*: when the streak of a habit reaches 7, 30 or 100 days, the person it is assigned to gets bonus points in ChoreOps, once per streak. Sensor tasks can go to ChoreOps right away with *ChoreOps person* and *ChoreOps points*. New Assist tool `brainstorm_choreops_status` answers *"How many points does Lenja have?"* and names the open ChoreOps chores. |
 
 ---
 

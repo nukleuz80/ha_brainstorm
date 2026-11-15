@@ -246,6 +246,7 @@ const DICTIONARIES = {
     "Markierung „In Arbeit“ entfernen": "Remove the “in progress” mark",
     "Unteraufgaben einklappen": "Collapse subtasks",
     "Batterie": "Battery",
+    "Abfallkalender": "Waste calendar",
     "Titel:": "Title:",
     "Beschreibung:": "Description:",
     "Optional: Details, Links, Notizen …": "Optional: details, links, notes …",
