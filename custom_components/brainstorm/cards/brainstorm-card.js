@@ -1,9 +1,9 @@
-import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, bringBadge, bringSentText, unblockedText, canSendToBring, renderBringSend, canHandOver, canHandOverProject, canMakeReward, choreopsBadge, choreopsRewardBadge, renderChoreHandover, renderChoreProject, renderChoreReward, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.13.14";
+import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, bringBadge, bringSentText, unblockedText, canSendToBring, renderBringSend, canHandOver, canHandOverProject, canMakeReward, choreopsBadge, choreopsRewardBadge, renderChoreHandover, renderChoreProject, renderChoreReward, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t, linkedListMark, linkedListOf, linkedListSign, linkedListText } from "./brainstorm-i18n.js?v=1.13.15";
 
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.13.14 - Unteraufgaben auf To-do-Listen gekennzeichnet
+ * Version 1.13.15 - Herkunft verbundener Kategorien sichtbar
  */
 // The bulb lies next to this file, wherever Home Assistant serves it from
 const BULB_URL = new URL("./brainstorm-bulb.svg", import.meta.url).href;
@@ -328,16 +328,13 @@ class BrainstormCard extends HTMLElement {
     const hint = this.shadowRoot && this.shadowRoot.getElementById("linkedListHint");
     if (!hint) return;
     const sensor = this._getSensorEntity();
-    const lists = (sensor && sensor.attributes && sensor.attributes.linked_lists) || {};
-    const link = this._selectedCategory !== "all" ? lists[this._selectedCategory] : null;
+    const link = this._selectedCategory !== "all" ? linkedListOf(sensor, this._selectedCategory) : null;
     if (!link) {
       hint.style.display = "none";
       hint.textContent = "";
       return;
     }
-    hint.textContent = link.local
-      ? t("📋 Verbunden mit der lokalen To-do-Liste „{name}“", { name: link.name })
-      : t("🔗 Verbunden mit der To-do-Liste „{name}“", { name: link.name });
+    hint.textContent = linkedListText(link);
     hint.title = link.entity;
     hint.style.display = "block";
   }
@@ -1063,7 +1060,7 @@ class BrainstormCard extends HTMLElement {
     this._openDialog(t("🏷️ {count} Einträge verschieben", { count: items.length }), (body) => {
       body.innerHTML = `
         <select class="action-dialog-input" id="bulkMoveSelect" style="cursor: pointer; width: 100%;">
-          ${categories.map((cat) => `<option value="${this._escapeHtml(cat)}">${this._escapeHtml(cat)}</option>`).join("")}
+          ${categories.map((cat) => `<option value="${this._escapeHtml(cat)}">${this._escapeHtml(cat)}${linkedListSign(sensor, cat)}</option>`).join("")}
         </select>
         <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px;">
           <button class="action-dialog-btn action-dialog-btn-cancel" id="cancelBulkMove">${t("Abbrechen")}</button>
@@ -1585,7 +1582,7 @@ class BrainstormCard extends HTMLElement {
               return `
                 <div class="action-dialog-cat-chip ${isSel ? "selected" : ""}" data-cat="${this._escapeHtml(cat)}" style="--chip-color: ${color};">
                   <span class="action-dialog-cat-dot"></span>
-                  <span class="action-dialog-cat-name">${this._escapeHtml(cat)}</span>
+                  <span class="action-dialog-cat-name">${this._escapeHtml(cat)}${linkedListMark(sensor, cat)}</span>
                 </div>
               `;
             })
@@ -1912,7 +1909,7 @@ class BrainstormCard extends HTMLElement {
               return `
                 <div class="action-dialog-cat-chip ${isSel ? "selected" : ""}" data-cat="${this._escapeHtml(cat)}" style="--chip-color: ${color};">
                   <span class="action-dialog-cat-dot"></span>
-                  <span class="action-dialog-cat-name">${this._escapeHtml(cat)}</span>
+                  <span class="action-dialog-cat-name">${this._escapeHtml(cat)}${linkedListMark(sensor, cat)}</span>
                   <span class="action-dialog-cat-count">${isSel ? "✓" : count}</span>
                 </div>
               `;
@@ -5109,7 +5106,7 @@ class BrainstormCard extends HTMLElement {
       if (existingOptions.join(",") !== newValues.join(",")) {
         catSelectEl.innerHTML = `
           <option value="auto">${t("Auto (Erkennen)")}</option>
-          ${categories.map((c) => `<option value="${this._escapeHtml(c)}">${this._escapeHtml(c)}</option>`).join("")}
+          ${categories.map((c) => `<option value="${this._escapeHtml(c)}">${this._escapeHtml(c)}${linkedListSign(sensorEntity, c)}</option>`).join("")}
         `;
         catSelectEl.value = currentVal;
       }
@@ -5153,7 +5150,7 @@ class BrainstormCard extends HTMLElement {
             return `
               <div class="pill ${isActive ? "active" : ""}" data-cat="${this._escapeHtml(cat)}" style="${pillStyle}">
                 <ha-icon icon="${this._escapeHtml(catIcon)}" style="--mdc-icon-size: 14px; width: 14px; height: 14px; margin-right: 4px; display: inline-flex; align-items: center; vertical-align: middle; color: ${isActive ? '#ffffff' : catColor};"></ha-icon>
-                <span>${this._escapeHtml(cat)}</span>
+                <span>${this._escapeHtml(cat)}</span>${linkedListMark(sensorEntity, cat)}
                 <span class="pill-count">${count}</span>
                 ${isActive ? `<span class="style-cat-btn" title="${t("Design für '{name}' anpassen", { name: this._escapeHtml(cat) })}" data-stylecat="${this._escapeHtml(cat)}" style="margin-left: 4px; font-size: 0.72rem; cursor: pointer; opacity: 0.85;">🎨</span>` : ""}
                 ${canDelete ? `<span class="remove-cat-btn" title="${t("Kategorie '{name}' löschen", { name: this._escapeHtml(cat) })}" data-delcat="${this._escapeHtml(cat)}">✕</span>` : ""}
@@ -5347,7 +5344,7 @@ class BrainstormCard extends HTMLElement {
                 ${item.callout ? `<div class="idea-callout" title="${t("Callout")}">💬 ${formatText(item.callout)}</div>` : ""}
                 <div class="idea-meta">
                   ${isSub ? `<span class="subtask-badge" title="${t("Unteraufgabe")}">${t("Unteraufgabe")}</span>` : ""}
-                  <span class="category-tag ${itemEdit ? "clickable" : ""}" title="${itemEdit ? t("Kategorie ändern") : t("Kategorie")}" data-id="${this._escapeHtml(item.id)}" data-cat="${this._escapeHtml(item.category)}" style="color: ${this._getCategoryColor(item.category)}; background: color-mix(in srgb, ${this._getCategoryColor(item.category)} 12%, var(--secondary-background-color, rgba(0,0,0,0.06))); border: 1px solid color-mix(in srgb, ${this._getCategoryColor(item.category)} 25%, transparent);"><ha-icon icon="${this._getCategoryIcon(item.category)}" style="--mdc-icon-size: 11px; width: 11px; height: 11px; margin-right: 3px; display: inline-flex; align-items: center; vertical-align: middle;"></ha-icon>${this._escapeHtml(item.category)}</span>
+                  <span class="category-tag ${itemEdit ? "clickable" : ""}" title="${itemEdit ? t("Kategorie ändern") : t("Kategorie")}" data-id="${this._escapeHtml(item.id)}" data-cat="${this._escapeHtml(item.category)}" style="color: ${this._getCategoryColor(item.category)}; background: color-mix(in srgb, ${this._getCategoryColor(item.category)} 12%, var(--secondary-background-color, rgba(0,0,0,0.06))); border: 1px solid color-mix(in srgb, ${this._getCategoryColor(item.category)} 25%, transparent);"><ha-icon icon="${this._getCategoryIcon(item.category)}" style="--mdc-icon-size: 11px; width: 11px; height: 11px; margin-right: 3px; display: inline-flex; align-items: center; vertical-align: middle;"></ha-icon>${this._escapeHtml(item.category)}${linkedListMark(sensorEntity, item.category)}</span>
                   ${this._getPriorityBadge(item.priority, item.id)}
                   ${item.due ? this._formatDueBadge(item.due) : ""}${repeatBadge(item)}${myDayBadge(item)}${isCompletedView ? "" : habitBadge(item)}${choreopsBadge(item)}${choreopsRewardBadge(item)}${bringBadge(item)}
                   ${this._formatTargetBadges(item)}
@@ -6378,7 +6375,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.13.14 ",
+  "%c BRAINSTORM-CARD %c v1.13.15 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

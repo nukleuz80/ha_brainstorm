@@ -214,7 +214,7 @@ Since v1.13.13. Local To-do is built into Home Assistant, so this page is always
 | New local list for | Optional: creates a new Local To-do list named after the chosen category, as if you had set it up under *Add integration*, and links it right away. Handy when someone should use the list in the Home Assistant app, through a voice assistant or in automations. A list of that name that exists already is linked instead. |
 
 - **Subtasks (v1.13.14):** Local To-do has none. Subtasks of a note become items of their own on the same list, with the text of their note in front, e.g. *Party › Cake*. In Brainstorm the subtask is still called just *Cake*; renaming the note changes the prefix too. Adding *Party › Candles* on the list makes *Candles* a subtask of *Party*. The same goes for lists under *Link To-do Lists*.
-- **Display:** the list card shows *📋 Linked to the local to-do list “…”* above the notes of a linked category (🔗 for other linked lists). The logo strip shows *Local To-do* in colour once a list is linked, and the menu entry names the pairs *list ↔ category*.
+- **Display:** the list card shows *📋 Linked to the local to-do list “…”* above the notes of a linked category (🔗 for other linked lists). The logo strip shows *Local To-do* in colour once a list is linked, and the menu entry names the pairs *list ↔ category*. Since v1.13.15 a linked category also carries a sign everywhere it is named: 📋 for a Local To-do list, 🔗 for another list, on the category tabs of both cards, on the label of every note, in the category dialogs and in the dropdowns. Its tooltip names the list and the entity.
 - **Unlinking:** *— not linked —* unlinks the list. Its items and the notes stay.
 
 ### Brainstorm › 🔗 Connected integrations › 🛒 Bring!

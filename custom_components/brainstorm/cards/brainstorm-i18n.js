@@ -1942,6 +1942,35 @@ export function choreopsBadge(idea) {
   return `<span class="due-badge chore-badge" title="${escapeHtml(t("Bei ChoreOps für {user}: {points} Punkte", { user, points: chore.points ?? 0 }))}">🏅 ${escapeHtml(chore.points ?? 0)}</span>`;
 }
 
+/** The to-do list a category is kept in step with, from the sensor attribute linked_lists. */
+export function linkedListOf(sensor, category) {
+  const lists = (sensor && sensor.attributes && sensor.attributes.linked_lists) || {};
+  const link = category ? lists[category] : null;
+  return link && link.entity ? link : null;
+}
+
+/** Where a linked category comes from, as a sentence: the list and whether it is local. */
+export function linkedListText(link) {
+  if (!link) return "";
+  const name = link.name || link.entity;
+  return link.local
+    ? t("📋 Verbunden mit der lokalen To-do-Liste „{name}“", { name })
+    : t("🔗 Verbunden mit der To-do-Liste „{name}“", { name });
+}
+
+/** The small sign next to a linked category name, the list in the tooltip. */
+export function linkedListMark(sensor, category) {
+  const link = linkedListOf(sensor, category);
+  if (!link) return "";
+  return `<span class="linked-list-mark" title="${escapeHtml(`${linkedListText(link)} (${link.entity})`)}" style="margin-left: 3px; font-size: 0.85em;">${link.local ? "📋" : "🔗"}</span>`;
+}
+
+/** The plain sign for places without HTML, such as the entries of a dropdown. */
+export function linkedListSign(sensor, category) {
+  const link = linkedListOf(sensor, category);
+  return link ? (link.local ? " 📋" : " 🔗") : "";
+}
+
 /** The badge of a note that was sent to a Bring list: how much is still to buy. */
 export function bringBadge(idea) {
   const sent = idea && idea.bring_sent;

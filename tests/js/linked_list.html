@@ -1,0 +1,30 @@
+<!doctype html>
+<!-- Browser test for the sign that shows where a linked category comes from. Run: python3 -m http.server in the repo root,
+     open http://localhost:8000/tests/js/linked_list.html, it shows PASS or the failures. --><meta charset="utf-8"><body><pre id="out">running</pre>
+<script type="module">
+import { linkedListMark, linkedListOf, linkedListSign, linkedListText } from "../../custom_components/brainstorm/cards/brainstorm-i18n.js";
+const fails = [];
+const check = (name, got, want) => { if (JSON.stringify(got) !== JSON.stringify(want)) fails.push(`${name}: want ${JSON.stringify(want)}, got ${JSON.stringify(got)}`); };
+const sensor = { attributes: { linked_lists: {
+  Aufgaben: { entity: "todo.aufgaben", name: "Aufgaben", local: true },
+  Einkauf: { entity: "todo.google", name: "Google <Liste>", local: false },
+} } };
+check("local", linkedListOf(sensor, "Aufgaben").entity, "todo.aufgaben");
+check("none", linkedListOf(sensor, "Inbox"), null);
+check("no sensor", linkedListOf(null, "Aufgaben"), null);
+check("text local", linkedListText(linkedListOf(sensor, "Aufgaben")), "📋 Verbunden mit der lokalen To-do-Liste „Aufgaben“");
+check("text other", linkedListText(linkedListOf(sensor, "Einkauf")), "🔗 Verbunden mit der To-do-Liste „Google <Liste>“");
+check("sign", [linkedListSign(sensor, "Aufgaben"), linkedListSign(sensor, "Einkauf"), linkedListSign(sensor, "Inbox")], [" 📋", " 🔗", ""]);
+check("mark empty", linkedListMark(sensor, "Inbox"), "");
+const box = document.createElement("div");
+box.innerHTML = linkedListMark(sensor, "Einkauf");
+const mark = box.querySelector(".linked-list-mark");
+check("mark sign", mark && mark.textContent, "🔗");
+check("mark title escaped", mark && mark.title, "🔗 Verbunden mit der To-do-Liste „Google <Liste>“ (todo.google)");
+check("mark no html", box.querySelectorAll("liste").length, 0);
+// Both cards load, so their code has no syntax error
+for (const card of ["brainstorm-card.js", "brainstorm-mindmap-card.js"]) {
+  try { await import(`../../custom_components/brainstorm/cards/${card}`); } catch (err) { fails.push(`${card}: ${err}`); }
+}
+document.getElementById("out").textContent = fails.length ? `FAIL\n${fails.join("\n")}` : "PASS";
+</script>
