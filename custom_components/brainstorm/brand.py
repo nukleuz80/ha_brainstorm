@@ -27,7 +27,7 @@ _LOGGER = logging.getLogger(__name__)
 BRAND_URL = f"/api/{DOMAIN}/brand"
 BRANDS_CDN = "https://brands.home-assistant.io"
 # Only the logos of the integrations Brainstorm connects to are served
-BRAND_DOMAINS = frozenset({"bring", "choreops"})
+BRAND_DOMAINS = frozenset({"bring", "choreops", "local_todo"})
 BRAND_SIZE = 96
 DATA_BRAND_CACHE = f"{DOMAIN}_brand_cache"
 FETCH_TIMEOUT = ClientTimeout(total=10)

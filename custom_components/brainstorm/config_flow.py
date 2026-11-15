@@ -10,12 +10,14 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import AbortFlow, FlowResult
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import selector
 from homeassistant.helpers.entity import entity_sources
 from homeassistant.helpers.network import NoURLAvailableError
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    CONF_LOCAL_TODO_NEW,
     RULE_CHOREOPS_POINTS,
     RULE_CHOREOPS_USER,
     DEFAULT_CHOREOPS_STREAK_BONUS,
@@ -135,6 +137,7 @@ from .brand import brand_strip
 from .choreops import choreops_available
 from .echo_locks import LOCK_DND, LOCK_ECHOS, LOCK_END, LOCK_SLOTS, LOCK_START
 from .languages import get_pack
+from .local_todo import CHOICE_NEW, CHOICE_NONE, LocalList, async_create_list, local_lists
 from .reminders import format_due, phone_service_for
 from .sensor_rules import to_number
 from .store import BrainstormStore, get_loaded_store
@@ -311,6 +314,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             "integrations": {
                 "bring": "🛒 Bring!",
                 "choreops": "🏅 ChoreOps",
+                "local_todo": "📋 Lokale To-do",
                 "init": "⬅️ Zurück",
                 "close": "✅ Fertig",
             },
@@ -352,6 +356,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             "integrations": {
                 "bring": "🛒 Bring!",
                 "choreops": "🏅 ChoreOps",
+                "local_todo": "📋 Local To-do",
                 "init": "⬅️ Back",
                 "close": "✅ Done",
             },
@@ -368,8 +373,8 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
     ) -> FlowResult:
         """Show options menu."""
         menu = self._level_menu(self._get_localized_menu("init"))
-        if not set(self._integrations_menu()) & {"bring", "choreops"}:
-            # Only offered where Bring! or ChoreOps is installed
+        if not set(self._integrations_menu()) & {"bring", "choreops", "local_todo"}:
+            # Only offered where a connected integration is installed
             menu = {key: label for key, label in menu.items() if key != "integrations"}
         connected = self._connected_integrations()
         logos = brand_strip(connected)
@@ -392,8 +397,13 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         active = {
             "bring": bool(options.get(CONF_BRING_ENABLED)),
             "choreops": bool(options.get(CONF_CHOREOPS_ENABLED, True)),
+            "local_todo": bool(self._local_links(options)),
         }
-        names = {"bring": "Bring!", "choreops": "ChoreOps"}
+        names = {
+            "bring": "Bring!",
+            "choreops": "ChoreOps",
+            "local_todo": self._text("Lokale To-do", "Local To-do"),
+        }
         on, off = self._text("an", "on"), self._text("aus", "off")
         return [
             (domain, names[domain], active[domain], on if active[domain] else off)
@@ -426,6 +436,14 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         if options.get(CONF_CHOREOPS_ENABLED, True):
             points = int(options.get(CONF_CHOREOPS_POINTS, DEFAULT_CHOREOPS_POINTS))
             choreops = f"{on} · {points} " + self._text("Punkte", "points")
+        links = self._local_links(options)
+        local = off
+        if links:
+            local = f"{on} · " + ", ".join(
+                f"{item.name} ↔ {category}"
+                for item in local_lists(self.hass)
+                if (category := links.get(item.entity_id))
+            )
         return self.async_show_menu(
             step_id="integrations",
             menu_options=self._integrations_menu(),
@@ -434,7 +452,113 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "logos": brand_strip(self._connected_integrations(), 48),
                 "status_bring": bring,
                 "status_choreops": choreops,
+                "status_local_todo": local,
             },
+        )
+
+    def _local_links(self, options: Any) -> dict[str, str]:
+        """Return the category each linked list of Local To-do belongs to."""
+        local = {item.entity_id for item in local_lists(self.hass)}
+        return {
+            entity: category
+            for category, entity in (options.get(CONF_TODO_SYNC) or {}).items()
+            if entity in local
+        }
+
+    @staticmethod
+    def _local_list_fields(lists: list[LocalList]) -> dict[str, str]:
+        """Return a field name for every list, its name unless two share one."""
+        names = [item.name.casefold() for item in lists]
+        fields: dict[str, str] = {}
+        for item in lists:
+            unique = names.count(item.name.casefold()) == 1
+            fields[item.name if unique else f"{item.name} ({item.entity_id})"] = item.entity_id
+        return fields
+
+    async def async_step_local_todo(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Link lists of Local To-do to categories, or create one for a category."""
+        if user_input is not None and user_input.pop(BACK_FIELD, False):
+            return await self.async_step_integrations()
+        store = await self._async_store()
+        categories = list(store.categories)
+        options = dict(self.config_entry.options or self.config_entry.data)
+        lists = local_lists(self.hass)
+        fields = self._local_list_fields(lists)
+        names = {item.entity_id: item.name for item in lists}
+        targets = dict(options.get(CONF_TODO_SYNC) or {})
+        # Categories linked to a list of another integration stay as they are
+        others = {c: e for c, e in targets.items() if e not in names}
+        linked = self._local_links(options)
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            chosen: dict[str, str] = {}
+            for field, entity in fields.items():
+                choice = str(user_input.get(field) or CHOICE_NONE)
+                if choice == CHOICE_NEW:
+                    name = names[entity]
+                    chosen[entity] = next(
+                        (c for c in categories if c.casefold() == name.casefold()), name
+                    )
+                elif choice in categories:
+                    chosen[entity] = choice
+            new_for = str(user_input.get(CONF_LOCAL_TODO_NEW) or "").strip()
+            wanted = [*chosen.values(), *([new_for] if new_for else [])]
+            if len({c.casefold() for c in wanted}) < len(wanted) or any(
+                c in others for c in wanted
+            ):
+                errors["base"] = "local_todo_duplicate"
+            else:
+                for category in wanted:
+                    if category not in store.categories:
+                        await store.async_add_category(category)
+                if new_for:
+                    try:
+                        chosen[await async_create_list(self.hass, new_for)] = new_for
+                    except HomeAssistantError:
+                        errors["base"] = "local_todo_failed"
+            if not errors:
+                options[CONF_TODO_SYNC] = {
+                    **others,
+                    **{category: entity for entity, category in chosen.items()},
+                }
+                return await self._async_saved(options, "integrations")
+
+        free = [c for c in categories if c not in others]
+        choices = [
+            selector.SelectOptionDict(
+                value=CHOICE_NONE, label=self._text("— nicht verbunden —", "— not linked —")
+            ),
+            selector.SelectOptionDict(
+                value=CHOICE_NEW,
+                label=self._text("➕ Als neue Kategorie übernehmen", "➕ Take over as a new category"),
+            ),
+            *(selector.SelectOptionDict(value=c, label=c) for c in free),
+        ]
+        current = user_input or {}
+        schema: dict[Any, Any] = {
+            vol.Required(
+                field,
+                default=current.get(field, linked.get(entity, CHOICE_NONE)),
+            ): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=choices, mode=selector.SelectSelectorMode.DROPDOWN
+                )
+            )
+            for field, entity in fields.items()
+        }
+        unlinked = [c for c in free if c not in linked.values()]
+        if unlinked:
+            schema[vol.Optional(CONF_LOCAL_TODO_NEW)] = selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=unlinked, mode=selector.SelectSelectorMode.DROPDOWN
+                )
+            )
+        return self.async_show_form(
+            step_id="local_todo",
+            data_schema=vol.Schema(_with_back(schema)),
+            errors=errors,
         )
 
     async def async_step_choreops(
@@ -1665,6 +1789,14 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         categories = list(store.categories)
         options = dict(self.config_entry.options or self.config_entry.data)
         errors: dict[str, str] = {}
+        # Lists of Local To-do are linked on their own page and kept here
+        local = {item.entity_id for item in local_lists(self.hass)}
+        kept = {
+            category: entity
+            for category, entity in (options.get(CONF_TODO_SYNC) or {}).items()
+            if entity in local
+        }
+        categories = [c for c in categories if c not in kept]
         if user_input is not None:
             targets = {
                 category: entity
@@ -1674,7 +1806,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             if len(set(targets.values())) < len(targets):
                 errors["base"] = "todo_sync_duplicate"
             else:
-                options[CONF_TODO_SYNC] = targets
+                options[CONF_TODO_SYNC] = {**kept, **targets}
                 return await self._async_saved(options, "init")
         current = user_input if user_input is not None else options.get(CONF_TODO_SYNC) or {}
         # Its own lists would mirror Brainstorm into itself
@@ -1686,6 +1818,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         if options.get(CONF_BRING_ENABLED):
             # Bring lists are synced by their own setting
             own_lists.extend(bring.entity_id for bring in bring_lists(self.hass))
+        own_lists.extend(sorted(local))
         field = selector.EntitySelector(
             selector.EntitySelectorConfig(domain="todo", exclude_entities=own_lists)
         )

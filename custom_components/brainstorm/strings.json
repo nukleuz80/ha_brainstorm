@@ -405,12 +405,14 @@
         "menu_options": {
           "bring": "🛒 Bring!",
           "choreops": "🏅 ChoreOps",
+          "local_todo": "📋 Local To-do",
           "init": "⬅️ Back",
           "close": "✅ Done"
         },
         "menu_option_descriptions": {
           "bring": "{status_bring}",
-          "choreops": "{status_choreops}"
+          "choreops": "{status_choreops}",
+          "local_todo": "{status_local_todo}"
         }
       },
       "choreops": {
@@ -588,6 +590,18 @@
           "delete_now": "Deletes every done entry when saving, no matter how long ago it was done.",
           "go_back": "Returns to the previous page without saving this form."
         }
+      },
+      "local_todo": {
+        "title": "Brainstorm › 🔗 Connected integrations › 📋 Local To-do",
+        "description": "Links lists of the Local To-do integration to categories. Both stay in step: notes go to the list, items added there become notes, and ticking off, renaming and deleting work on both sides. Local To-do has no subtasks, so subtasks become items of their own.\n\nFor every list, choose a category, *Take over as a new category* (a category with the name of the list, its items become notes) or *not linked*. A list that is unlinked keeps its items.",
+        "data": {
+          "local_todo_new": "New local list for",
+          "go_back": "⬅️ Back without saving"
+        },
+        "data_description": {
+          "local_todo_new": "Optional: creates a new Local To-do list named after this category and links it right away, for the Home Assistant app, voice assistants or automations.",
+          "go_back": "Returns to the previous page without saving this form."
+        }
       }
     },
     "error": {
@@ -601,7 +615,9 @@
       "sensor_category_missing": "Choose a category.",
       "sensor_value_missing": "Enter the state the task is created at.",
       "sensor_value_number": "This condition needs a number.",
-      "sensor_reset_invalid": "Enter a number on the normal side of the limit: below it for reaches or exceeds, above it for reaches or falls below."
+      "sensor_reset_invalid": "Enter a number on the normal side of the limit: below it for reaches or exceeds, above it for reaches or falls below.",
+      "local_todo_duplicate": "A category can only be linked to one list.",
+      "local_todo_failed": "Local To-do could not create the list."
     },
     "abort": {
       "store_not_ready": "Brainstorm is reloading. Please open the settings again in a few seconds."
@@ -967,6 +983,9 @@
     },
     "choreops_reward_already": {
       "message": "This note is already a ChoreOps reward."
+    },
+    "local_todo_failed": {
+      "message": "Local To-do could not create the list {name}."
     }
   },
   "services": {

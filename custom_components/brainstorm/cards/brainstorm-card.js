@@ -1,9 +1,9 @@
-import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, bringBadge, bringSentText, unblockedText, canSendToBring, renderBringSend, canHandOver, canHandOverProject, canMakeReward, choreopsBadge, choreopsRewardBadge, renderChoreHandover, renderChoreProject, renderChoreReward, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.13.12";
+import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, bringBadge, bringSentText, unblockedText, canSendToBring, renderBringSend, canHandOver, canHandOverProject, canMakeReward, choreopsBadge, choreopsRewardBadge, renderChoreHandover, renderChoreProject, renderChoreReward, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.13.13";
 
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.13.12 - Hassfest-Prüfung repariert
+ * Version 1.13.13 - Lokale To-do: eigene Seite, neue Listen
  */
 // The bulb lies next to this file, wherever Home Assistant serves it from
 const BULB_URL = new URL("./brainstorm-bulb.svg", import.meta.url).href;
@@ -321,6 +321,25 @@ class BrainstormCard extends HTMLElement {
         composed: true,
       })
     );
+  }
+
+  // Names the to-do list a category is kept in step with
+  _renderLinkedListHint() {
+    const hint = this.shadowRoot && this.shadowRoot.getElementById("linkedListHint");
+    if (!hint) return;
+    const sensor = this._getSensorEntity();
+    const lists = (sensor && sensor.attributes && sensor.attributes.linked_lists) || {};
+    const link = this._selectedCategory !== "all" ? lists[this._selectedCategory] : null;
+    if (!link) {
+      hint.style.display = "none";
+      hint.textContent = "";
+      return;
+    }
+    hint.textContent = link.local
+      ? t("📋 Verbunden mit der lokalen To-do-Liste „{name}“", { name: link.name })
+      : t("🔗 Verbunden mit der To-do-Liste „{name}“", { name: link.name });
+    hint.title = link.entity;
+    hint.style.display = "block";
   }
 
   _escapeHtml(text) {
@@ -4056,6 +4075,12 @@ class BrainstormCard extends HTMLElement {
           background: color-mix(in srgb, #10b981 12%, var(--card-background-color, #ffffff));
           border: 1px solid color-mix(in srgb, #10b981 25%, transparent);
         }
+        .linked-list-hint {
+          font-size: 12px;
+          color: var(--secondary-text-color);
+          padding: 2px 4px 6px;
+          overflow-wrap: anywhere;
+        }
         .selection-bar {
           display: flex;
           flex-wrap: wrap;
@@ -4790,6 +4815,7 @@ class BrainstormCard extends HTMLElement {
           </div>
           <div class="share-filter" id="shareFilter" style="display: none;"></div>
           <div class="selection-bar" id="selectionBar" style="display: none;"></div>
+          <div class="linked-list-hint" id="linkedListHint" style="display: none;"></div>
           <div class="ideas-list" id="ideasList"></div>
         </div>
 
@@ -5260,6 +5286,7 @@ class BrainstormCard extends HTMLElement {
       });
     });
 
+    this._renderLinkedListHint();
     const ideasList = this.shadowRoot.getElementById("ideasList");
     if (ideasList) {
       if (orderedIdeas.length === 0) {
@@ -6351,7 +6378,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.13.12 ",
+  "%c BRAINSTORM-CARD %c v1.13.13 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

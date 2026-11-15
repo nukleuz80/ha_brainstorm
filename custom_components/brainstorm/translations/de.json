@@ -405,12 +405,14 @@
         "menu_options": {
           "bring": "🛒 Bring!",
           "choreops": "🏅 ChoreOps",
+          "local_todo": "📋 Lokale To-do",
           "init": "⬅️ Zurück",
           "close": "✅ Fertig"
         },
         "menu_option_descriptions": {
           "bring": "{status_bring}",
-          "choreops": "{status_choreops}"
+          "choreops": "{status_choreops}",
+          "local_todo": "{status_local_todo}"
         }
       },
       "choreops": {
@@ -588,6 +590,18 @@
           "delete_now": "Löscht beim Speichern jeden erledigten Eintrag, egal wie lange er schon erledigt ist.",
           "go_back": "Kehrt zur vorigen Seite zurück, ohne dieses Formular zu speichern."
         }
+      },
+      "local_todo": {
+        "title": "Brainstorm › 🔗 Verbundene Integrationen › 📋 Lokale To-do",
+        "description": "Verbindet Listen der Integration Local To-do mit Kategorien. Beide bleiben gleich: Notizen landen auf der Liste, was dort dazukommt, wird zur Notiz, und Abhaken, Umbenennen und Löschen wirken auf beiden Seiten. Local To-do kennt keine Unteraufgaben, sie werden zu eigenen Einträgen.\n\nWähle für jede Liste eine Kategorie, *Als neue Kategorie übernehmen* (eine Kategorie mit dem Namen der Liste, ihre Einträge werden Notizen) oder *nicht verbunden*. Eine getrennte Liste behält ihre Einträge.",
+        "data": {
+          "local_todo_new": "Neue lokale Liste für",
+          "go_back": "⬅️ Zurück ohne Speichern"
+        },
+        "data_description": {
+          "local_todo_new": "Optional: legt eine neue Local-To-do-Liste mit dem Namen dieser Kategorie an und verbindet sie sofort, etwa für die Home-Assistant-App, Sprachassistenten oder Automationen.",
+          "go_back": "Kehrt zur vorherigen Seite zurück, ohne dieses Formular zu speichern."
+        }
       }
     },
     "error": {
@@ -601,7 +615,9 @@
       "sensor_category_missing": "Wähle eine Kategorie.",
       "sensor_value_missing": "Gib den Zustand ein, bei dem die Aufgabe entsteht.",
       "sensor_value_number": "Diese Bedingung braucht eine Zahl.",
-      "sensor_reset_invalid": "Gib eine Zahl auf der normalen Seite der Grenze ein: darunter bei erreicht oder übersteigt, darüber bei erreicht oder unterschreitet."
+      "sensor_reset_invalid": "Gib eine Zahl auf der normalen Seite der Grenze ein: darunter bei erreicht oder übersteigt, darüber bei erreicht oder unterschreitet.",
+      "local_todo_duplicate": "Eine Kategorie kann nur mit einer Liste verbunden sein.",
+      "local_todo_failed": "Local To-do konnte die Liste nicht anlegen."
     },
     "abort": {
       "store_not_ready": "Brainstorm wird gerade neu geladen. Bitte öffne die Einstellungen in ein paar Sekunden noch einmal."
@@ -967,6 +983,9 @@
     },
     "choreops_reward_already": {
       "message": "Diese Notiz ist schon eine ChoreOps-Belohnung."
+    },
+    "local_todo_failed": {
+      "message": "Local To-do konnte die Liste {name} nicht anlegen."
     }
   },
   "services": {

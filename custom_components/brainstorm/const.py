@@ -70,6 +70,8 @@ CONF_REVIEW_TIME = "review_time"
 CONF_REVIEW_DAYS = "review_days"
 # Category name -> to-do entity of another integration kept in step with it
 CONF_TODO_SYNC = "todo_sync"
+# Settings page of Local To-do: a category that gets a new list of its own
+CONF_LOCAL_TODO_NEW = "local_todo_new"
 # Bring!: all lists in one category, each list a main note with its items below
 CONF_BRING_ENABLED = "bring_enabled"
 CONF_BRING_CATEGORY = "bring_category"

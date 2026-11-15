@@ -187,6 +187,7 @@ One field per category. Pick a to-do list of another integration, such as Bring!
 - **Privacy:** With privacy on, only notes shared with everyone are synced, as everyone with access to the other list sees them. Items from the list are shared with everyone.
 - **Unlinking:** Clearing a field unlinks the list. Its items stay where they are.
 - Each list can be linked to one category only, and Brainstorm's own lists cannot be chosen.
+- Lists of Local To-do are linked under *🔗 Connected integrations › 📋 Local To-do* since v1.13.13 and are not shown here.
 
 ### Brainstorm › 🔗 Connected integrations
 
@@ -202,6 +203,19 @@ Only shown when [ChoreOps](https://github.com/ccpk1/choreops) is installed. Note
 | Default points | Preselected in the hand-over dialog (default 10) and used by `brainstorm.send_to_choreops` when no points are given. |
 | Points in the briefing | On by default (v1.13.11): the [daily briefing](Reminders), on the Echos as well, ends with the points of every ChoreOps person, such as *Points: Jonathan 80 and Lenja 120.* |
 | Streak bonus | Bonus points (v1.13.11, default 0 = off) when the streak of a habit reaches 7, 30 or 100 days. They go to the ChoreOps person the habit is assigned to, through `choreops.manual_adjust_points` with the reason *7-day streak: …*. Each milestone counts once per streak; after a break, a new streak earns it again. A habit nobody is assigned to earns nothing. |
+
+### Brainstorm › 🔗 Connected integrations › 📋 Local To-do
+
+Since v1.13.13. Local To-do is built into Home Assistant, so this page is always shown. It links lists of Local To-do to categories, with the same two-way sync as *Link To-do Lists*. Local To-do lists are linked only here and are no longer offered there.
+
+| Field | What it does |
+| :--- | :--- |
+| *Name of every list* | One choice per Local To-do list: *— not linked —*, *➕ Take over as a new category* (creates a category named after the list, or takes the one of that name; its items become notes) or a category. Categories already linked to another list (such as Google Tasks) are not offered. |
+| New local list for | Optional: creates a new Local To-do list named after the chosen category, as if you had set it up under *Add integration*, and links it right away. Handy when someone should use the list in the Home Assistant app, through a voice assistant or in automations. A list of that name that exists already is linked instead. |
+
+- **Subtasks:** Local To-do has none. Subtasks of a note become items of their own on the same list.
+- **Display:** the list card shows *📋 Linked to the local to-do list “…”* above the notes of a linked category (🔗 for other linked lists). The logo strip shows *Local To-do* in colour once a list is linked, and the menu entry names the pairs *list ↔ category*.
+- **Unlinking:** *— not linked —* unlinks the list. Its items and the notes stay.
 
 ### Brainstorm › 🔗 Connected integrations › 🛒 Bring!
 

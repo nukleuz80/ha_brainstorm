@@ -9,7 +9,7 @@
 [![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.13.12-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.13.13-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![Wiki](https://img.shields.io/badge/Doku-Wiki-6f42c1.svg)](https://github.com/nukleuz80/ha_brainstorm/wiki)
@@ -261,11 +261,11 @@ Die letzten Versionen; alle stehen in [CHANGELOG_de.md](CHANGELOG_de.md).
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.13.13`** | 15.11.2026 | **📋 Lokale To-do.** Neue Seite *📋 Lokale To-do* unter *🔗 Verbundene Integrationen*: Jede Liste der Integration Local To-do lässt sich als neue Kategorie übernehmen oder mit einer vorhandenen Kategorie verbinden. Für eine Kategorie ohne Liste legt Brainstorm auf Wunsch eine neue lokale Liste an. Einträge werden in beide Richtungen abgeglichen. Die Karte zeigt über der Liste, mit welcher To-do-Liste die Kategorie verbunden ist. Die Seite *To-do-Listen koppeln* zeigt lokale Listen nicht mehr und behält ihre Verbindungen beim Speichern. |
 | **`v1.13.12`** | 15.11.2026 | **🐞 Hassfest-Prüfung repariert.** Die Beschreibungen der Felder `links` und `rotation` beim Dienst `brainstorm.update_idea` enthielten geschweifte Klammern wie `{mode, people}`. Die strengere hassfest-Prüfung von Home Assistant hält sie für ungültige Platzhalter, deshalb schlug die Prüfung auf GitHub fehl. Die Felder sind jetzt in Worten beschrieben; ein neuer Test prüft jeden Platzhalter in den Übersetzungen. |
 | **`v1.13.11`** | 15.11.2026 | **🏅 ChoreOps III.** Das tägliche Briefing, auch auf den Echos, nennt am Ende den Punktestand jeder ChoreOps-Person. Neuer *Serien-Bonus*: Erreicht die Serie einer Gewohnheit 7, 30 oder 100 Tage, bekommt die zuständige Person Bonuspunkte in ChoreOps, einmal pro Serie. Sensor-Aufgaben können mit *ChoreOps-Person* und *ChoreOps-Punkte* sofort an ChoreOps gehen. Neues Assist-Werkzeug `brainstorm_choreops_status` beantwortet *„Wie viele Punkte hat Lenja?“* und nennt die offenen ChoreOps-Aufgaben. |
 | **`v1.13.10`** | 15.11.2026 | **🏅 ChoreOps II.** *🏅 Projekt an ChoreOps übergeben* schickt alle offenen Unteraufgaben einer Notiz auf einmal, jede mit Person und Punkten. *🎁 Als ChoreOps-Belohnung anlegen* macht aus einer Notiz, etwa dem Gewinner einer Abstimmung auf einer Wunsch-Map, eine ChoreOps-Belohnung mit Preis und den Personen, die sie einlösen dürfen; die Notiz zeigt 🎁 mit dem Preis (neuer Dienst `brainstorm.send_reward_to_choreops`). *✨ Vorschlagen* schlägt Punkte nach Aufwand oder einen Preis nach Größe und Stimmen vor, mit der KI-Aufgaben-Entität, wenn eine eingerichtet ist. |
 | **`v1.13.9`** | 15.11.2026 | **🗺️ Map-Tabs II.** *🗺️ Als eigene Map auslagern* im ⋯-Menü zieht einen ganzen Ast in eine eigene Kategorie um, auf Wunsch mit 🗺️-Tab, ↶ Rückgängig holt ihn zurück (neuer Dienst `brainstorm.move_branch`). Jeder Tab zeigt die Zahl seiner offenen Notizen (`show_tab_counts`). Tabs merken sich die Darstellung der Notizen (◐ ▭ ▤). Feste 📌-Tabs für alle kommen aus der Kartenoption `tabs` (YAML). Auf niedrigen Karten nehmen die Knöpfe unten rechts eine zweite Spalte, statt oben über den Rand zu ragen. |
-| **`v1.13.8`** | 15.11.2026 | **🐞 Tabs über der ChoreOps-Ansicht.** Bei vielen ChoreOps-Aufgaben wurde die Tab-Leiste über der Mindmap (🗺️ Map, 🛒 Bring!, 🏅 ChoreOps, ＋) auf halbe Höhe zusammengedrückt, vor allem auf dem Handy. Jetzt behält sie immer ihre volle Höhe. |
 
 ---
 

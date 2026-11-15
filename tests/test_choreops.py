@@ -198,7 +198,7 @@ async def test_settings_page(hass: HomeAssistant, setup_entry: SetupEntry) -> No
     placeholders = result["description_placeholders"]
     assert "/api/brainstorm/brand/choreops/on.png" in placeholders["logos"]
     assert "bring" not in placeholders["logos"]
-    assert placeholders["integrations_status"] == "🟢 ChoreOps"
+    assert placeholders["integrations_status"] == "🟢 ChoreOps · ⚪ Lokale To-do"
     result = await hass.config_entries.options.async_configure(
         result["flow_id"], {"next_step_id": "integrations"}
     )
@@ -231,7 +231,9 @@ async def test_settings_page(hass: HomeAssistant, setup_entry: SetupEntry) -> No
     assert store.get_overview_attributes()["choreops"] is None
     result = await hass.config_entries.options.async_init(entry.entry_id)
     assert "choreops/off.png" in result["description_placeholders"]["logos"]
-    assert result["description_placeholders"]["integrations_status"] == "⚪ ChoreOps"
+    assert result["description_placeholders"]["integrations_status"] == (
+        "⚪ ChoreOps · ⚪ Lokale To-do"
+    )
     hass.config_entries.options.async_abort(result["flow_id"])
     other = await store.async_add_idea("Laub fegen", assignee="Lenja")
     with pytest.raises(ServiceValidationError) as err:

@@ -200,6 +200,7 @@ from .choreops import (
     rule_points,
 )
 from .languages import CATEGORY_KEYS, get_pack
+from .local_todo import local_entities
 from .languages.common import CATEGORY_PROJECTS, SPEECH_SPLIT, LanguagePack
 
 if TYPE_CHECKING:
@@ -564,7 +565,24 @@ class BrainstormStore:
             "map_tabs_rev": self._map_tabs_rev,
             "choreops": self._choreops_attributes(),
             "bring": self._bring_attributes(),
+            "linked_lists": self._linked_lists_attributes(),
         }
+
+    def _linked_lists_attributes(self) -> dict[str, dict[str, Any]]:
+        """Return the to-do list each linked category is kept in step with."""
+        sync = self.todo_sync
+        if sync is None:
+            return {}
+        local = local_entities(self.hass)
+        result: dict[str, dict[str, Any]] = {}
+        for category, entity in sync.targets.items():
+            state = self.hass.states.get(entity)
+            result[category] = {
+                "entity": entity,
+                "name": state.name if state is not None else entity,
+                "local": entity in local,
+            }
+        return result
 
     def get_overview_attributes(self, user_id: str | None = None) -> dict[str, Any]:
         """Return the statistics and ideas a user may see."""
@@ -724,6 +742,7 @@ class BrainstormStore:
             "map_tabs_rev": self._map_tabs_rev,
             "choreops": self._choreops_attributes(),
             "bring": self._bring_attributes(),
+            "linked_lists": self._linked_lists_attributes(),
             "category_counts": counts_by_cat,
             "priority_counts": counts_by_prio,
             "latest_idea": summary(active_ideas[0]) if active_ideas else None,

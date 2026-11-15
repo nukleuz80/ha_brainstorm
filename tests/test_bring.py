@@ -466,10 +466,17 @@ async def test_options_set_up_bring_in_one_page(
 async def test_options_hide_bring_without_the_integration(
     hass: HomeAssistant, setup_entry: SetupEntry
 ) -> None:
-    """Test that the integrations page is only offered with Bring or ChoreOps."""
+    """Test that the integrations page offers Bring only with the integration.
+
+    The page itself stays, a Local To-do list can always be created.
+    """
     entry = await setup_entry()
     result = await hass.config_entries.options.async_init(entry.entry_id)
-    assert "integrations" not in result["menu_options"]
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "integrations"}
+    )
+    assert "bring" not in result["menu_options"]
+    assert "local_todo" in result["menu_options"]
 
 
 async def test_list_notes_are_put_back_in_place(

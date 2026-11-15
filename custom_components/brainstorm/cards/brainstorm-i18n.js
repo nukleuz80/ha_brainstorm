@@ -7,6 +7,8 @@
  */
 const DICTIONARIES = {
   en: {
+    "📋 Verbunden mit der lokalen To-do-Liste „{name}“": "📋 Linked to the local to-do list “{name}”",
+    "🔗 Verbunden mit der To-do-Liste „{name}“": "🔗 Linked to the to-do list “{name}”",
     "✨ Vorschlagen": "✨ Suggest",
     "✨ Punkte vorschlagen": "✨ Suggest points",
     "Punkte nach Aufwand vorschlagen, mit KI wenn eingerichtet": "Suggest points by effort, with AI if set up",

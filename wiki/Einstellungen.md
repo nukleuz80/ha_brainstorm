@@ -187,6 +187,7 @@ Ein Feld pro Kategorie. Wähle eine To-do-Liste einer anderen Integration, etwa 
 - **Privatsphäre:** Ist sie an, werden nur Notizen abgeglichen, die mit allen geteilt sind, denn jeder mit Zugriff auf die andere Liste sieht sie. Einträge von der Liste sind mit allen geteilt.
 - **Entkoppeln:** Ein geleertes Feld entkoppelt die Liste. Ihre Einträge bleiben, wo sie sind.
 - Jede Liste lässt sich nur mit einer Kategorie koppeln, und die eigenen Listen von Brainstorm stehen nicht zur Wahl.
+- Listen von Local To-do werden seit v1.13.13 unter *🔗 Verbundene Integrationen › 📋 Lokale To-do* verbunden und erscheinen hier nicht.
 
 ### Brainstorm › 🔗 Verbundene Integrationen
 
@@ -202,6 +203,19 @@ Erscheint nur, wenn [ChoreOps](https://github.com/ccpk1/choreops) installiert is
 | Standardpunkte | Vorauswahl im Übergabe-Dialog (Standard 10) und Wert für `brainstorm.send_to_choreops`, wenn keine Punkte angegeben sind. |
 | Punktestand im Briefing | Standard an (v1.13.11): Das [tägliche Briefing](Erinnerungen), auch auf den Echos, nennt am Ende die Punkte jeder ChoreOps-Person, etwa *Punktestand: Jonathan 80 und Lenja 120.* |
 | Serien-Bonus | Bonuspunkte (v1.13.11, Standard 0 = aus), wenn die Serie einer Gewohnheit 7, 30 oder 100 Tage erreicht. Sie gehen an die ChoreOps-Person, der die Gewohnheit zugewiesen ist, über `choreops.manual_adjust_points` mit dem Grund *7 Tage Serie: …*. Jeder Meilenstein zählt einmal pro Serie; nach einer Pause verdient eine neue Serie ihn wieder. Eine Gewohnheit ohne Zuständige bekommt nichts. |
+
+### Brainstorm › 🔗 Verbundene Integrationen › 📋 Lokale To-do
+
+Seit v1.13.13. Local To-do ist in Home Assistant eingebaut, deshalb erscheint diese Seite immer. Sie verbindet Listen von Local To-do mit Kategorien, mit demselben Abgleich in beide Richtungen wie unter *To-do-Listen koppeln*. Local-To-do-Listen werden nur hier verbunden und stehen dort nicht mehr zur Wahl.
+
+| Feld | Was es bewirkt |
+| :--- | :--- |
+| *Name jeder Liste* | Eine Auswahl pro Local-To-do-Liste: *— nicht verbunden —*, *➕ Als neue Kategorie übernehmen* (legt eine Kategorie mit dem Namen der Liste an, gibt es sie schon, wird sie genommen; ihre Einträge werden Notizen) oder eine Kategorie. Kategorien, die schon mit einer anderen Liste gekoppelt sind (etwa Google Tasks), stehen nicht zur Wahl. |
+| Neue lokale Liste für | Optional: legt eine neue Local-To-do-Liste mit dem Namen der gewählten Kategorie an, so als hättest du sie unter *Integration hinzufügen* eingerichtet, und verbindet sie sofort. Praktisch, wenn jemand die Liste in der Home-Assistant-App, über einen Sprachassistenten oder in Automationen nutzen soll. Gibt es schon eine Liste mit diesem Namen, wird sie verbunden. |
+
+- **Unteraufgaben:** Local To-do kennt keine. Unteraufgaben einer Notiz werden eigene Einträge derselben Liste.
+- **Anzeige:** Die Listenkarte zeigt über den Notizen einer verbundenen Kategorie *📋 Verbunden mit der lokalen To-do-Liste „…“* (bei anderen gekoppelten Listen 🔗). Die Logo-Leiste zeigt *Lokale To-do* farbig, sobald eine Liste verbunden ist, der Menüeintrag nennt die Paare *Liste ↔ Kategorie*.
+- **Trennen:** *— nicht verbunden —* trennt die Liste. Ihre Einträge und die Notizen bleiben.
 
 ### Brainstorm › 🔗 Verbundene Integrationen › 🛒 Bring!
 
