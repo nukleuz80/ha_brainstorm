@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 from homeassistant.core import HomeAssistant
@@ -121,3 +122,20 @@ def test_every_issue_and_icon_is_translated() -> None:
         assert set(texts["issues"]) == {ISSUE_SKILL_NO_PUBLIC_URL, ISSUE_MISSING_ECHOS}
         assert "{echos}" in texts["issues"][ISSUE_MISSING_ECHOS]["description"]
         assert "{error}" in texts["exceptions"]["store_not_readable"]["message"]
+
+
+def test_placeholders_are_valid_for_hassfest() -> None:
+    """Test that every {placeholder} is an identifier, as hassfest requires."""
+    pattern = re.compile(r"\{([^}]*)\}")
+    identifier = re.compile(r"[a-zA-Z_][a-zA-Z0-9_]*")
+
+    def texts(node: object, path: str) -> list[tuple[str, str]]:
+        if isinstance(node, dict):
+            return [t for key, value in node.items() for t in texts(value, f"{path}.{key}")]
+        return [(path, node)] if isinstance(node, str) else []
+
+    for name in ("strings.json", "translations/en.json", "translations/de.json"):
+        data = json.loads((COMPONENT / name).read_text("utf-8"))
+        for path, text in texts(data, name):
+            for placeholder in pattern.findall(text):
+                assert identifier.fullmatch(placeholder), (path, placeholder)

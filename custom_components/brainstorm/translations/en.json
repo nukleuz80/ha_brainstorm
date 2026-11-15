@@ -1128,7 +1128,7 @@
         },
         "links": {
           "name": "Links",
-          "description": "Lines to notes in other branches, as a list of {to: id, label: text, blocks: true/false}. A link that blocks keeps its target greyed out until this note is done. Replaces the old links, an empty list removes them."
+          "description": "Lines to notes in other branches, as a list of objects with to (the note id), label (a text) and blocks (true or false). A link that blocks keeps its target greyed out until this note is done. Replaces the old links, an empty list removes them."
         },
         "frame": {
           "name": "Frame",
@@ -1164,7 +1164,7 @@
         },
         "rotation": {
           "name": "Rotation",
-          "description": "Who a repeating idea goes to in the next round, as {mode, people}. mode is turn (taking turns), fewest (whoever finished the fewest of their notes in the last 30 days) or random; people lists 2 to 10 person entities. The idea goes to the first person at once if its assignee is not among them. Empty ends the rotation."
+          "description": "Who a repeating idea goes to in the next round, as an object with mode and people. mode is turn (taking turns), fewest (whoever finished the fewest of their notes in the last 30 days) or random; people lists 2 to 10 person entities. The idea goes to the first person at once if its assignee is not among them. Empty ends the rotation."
         }
       }
     },

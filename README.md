@@ -9,7 +9,7 @@
 [![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.13.11-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.13.12-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![Wiki](https://img.shields.io/badge/Docs-Wiki-6f42c1.svg)](https://github.com/nukleuz80/ha_brainstorm/wiki)
@@ -261,11 +261,11 @@ The latest versions; every version is in [CHANGELOG.md](CHANGELOG.md).
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.13.12`** | 2026-11-15 | **🐞 Hassfest check fixed.** The descriptions of the fields `links` and `rotation` of the service `brainstorm.update_idea` used curly braces such as `{mode, people}`. The stricter hassfest check of Home Assistant takes them for invalid placeholders, so the check on GitHub failed. The fields are now described in words; a new test checks every placeholder in the translations. |
 | **`v1.13.11`** | 2026-11-15 | **🏅 ChoreOps III.** The daily briefing, on the Echos as well, ends with the points of every ChoreOps person. New *streak bonus*: when the streak of a habit reaches 7, 30 or 100 days, the person it is assigned to gets bonus points in ChoreOps, once per streak. Sensor tasks can go to ChoreOps right away with *ChoreOps person* and *ChoreOps points*. New Assist tool `brainstorm_choreops_status` answers *"How many points does Lenja have?"* and names the open ChoreOps chores. |
 | **`v1.13.10`** | 2026-11-15 | **🏅 ChoreOps II.** *🏅 Hand the project to ChoreOps* sends all open subtasks of a note at once, each with a person and points. *🎁 Make it a ChoreOps reward* turns a note, for example the winner of a vote on a wish map, into a ChoreOps reward with a price and the people who may redeem it; the note shows 🎁 with the price (new service `brainstorm.send_reward_to_choreops`). *✨ Suggest* proposes points by effort or a price by size and votes, with the AI task entity if one is set up. |
 | **`v1.13.9`** | 2026-11-15 | **🗺️ Map tabs II.** *🗺️ Move into its own map* in the ⋯ menu moves a whole branch into a category of its own, with a 🗺️ tab if you like, and ↶ undo brings it back (new service `brainstorm.move_branch`). Every tab shows its number of open notes (`show_tab_counts`). Tabs keep the look of the notes (◐ ▭ ▤). Fixed 📌 tabs for everybody come from the card option `tabs` (YAML). On low cards the buttons at the bottom right take a second column instead of running over the top. |
 | **`v1.13.8`** | 2026-11-15 | **🐞 Tabs above the ChoreOps view.** With many ChoreOps tasks the tab bar above the mind map (🗺️ Map, 🛒 Bring!, 🏅 ChoreOps, ＋) was squeezed to half its height, mostly on phones. It now always keeps its full height. |
-| **`v1.13.7`** | 2026-11-15 | **🔓 Dependencies tell when they are done.** Once the last note another one waits for (blocking link) is ticked off, the card shows *🔓 "…" can start now*, the logbook gets an entry, and a message goes to the channels a reminder of the waiting note would use (its person, the rule of its list or the default services). New event `brainstorm_idea_unblocked` with `id`, `text`, `category`, `assignee`, `by_id` and `by_text` for own automations. |
 
 ---
 
