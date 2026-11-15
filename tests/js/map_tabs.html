@@ -2,7 +2,7 @@
 <!-- Browser test for map tabs. Run: python3 -m http.server in the repo root,
      open http://localhost:8000/tests/js/map_tabs.html, it shows PASS or the failures. --><meta charset="utf-8"><body><pre id="out">running</pre>
 <script type="module">
-import { activeMapTab, branchTabs, mapTabBar, filterToRule, ruleFilter, emptyFilter } from "../../custom_components/brainstorm/cards/brainstorm-i18n.js";
+import { activeMapTab, branchTabs, configTabs, mapTabBar, tabCount, tabCounts, filterToRule, ruleFilter, emptyFilter } from "../../custom_components/brainstorm/cards/brainstorm-i18n.js";
 const fails = [];
 const check = (name, got, want) => { if (JSON.stringify(got) !== JSON.stringify(want)) fails.push(`${name}: want ${JSON.stringify(want)}, got ${JSON.stringify(got)}`); };
 const tabs = [
@@ -37,6 +37,38 @@ filter.tags.add("#bio");
 filter.overdue = true;
 const back = ruleFilter({ when: filterToRule(filter) });
 check("filter round trip", [back.query, [...back.tags], back.overdue], ["Beet", ["#bio"], true]);
+
+// Fixed tabs from the card configuration
+const fixed = configTabs([
+  { name: "  Garten  fest ", category: "Garten", icon: "🌻", detail: "compact" },
+  { name: "Ohne Liste" },
+  "kaputt",
+  { name: "Alles", category: "all", focus: "n1", detail: "riesig" },
+]);
+check("fixed: broken ones left out", fixed.map((tab) => tab.id), ["__cfg_0", "__cfg_3"]);
+check("fixed: name tidied", fixed[0].name, "Garten fest");
+check("fixed: detail", [fixed[0].detail, fixed[1].detail], ["compact", null]);
+check("fixed: marked", [fixed[0].fixed, fixed[0].virtual], [true, true]);
+check("fixed: no list", configTabs(null), []);
+bar.innerHTML = mapTabBar([...fixed, ...tabs], fixed[0], { counts: { __cfg_0: 3, a: 0, b: 120 } });
+check("fixed: class", bar.querySelectorAll(".map-tab-fixed").length, 2);
+check("counts: none for zero", bar.querySelector('[data-tab="a"] .map-tab-count'), null);
+check("counts: shown", bar.querySelector('[data-tab="__cfg_0"] .map-tab-count').textContent, "3");
+check("counts: capped", bar.querySelector('[data-tab="b"] .map-tab-count').textContent, "99+");
+
+// Counts: open notes of the list, or of the branch
+const notes = [
+  { id: "n1", status: "active", category: "Garten" },
+  { id: "n2", status: "active", category: "Garten", parent_id: "n1" },
+  { id: "n3", status: "completed", category: "Garten", parent_id: "n1" },
+  { id: "n4", status: "active", category: "Garten", parent_id: "n2" },
+  { id: "n5", status: "active", category: "Haus" },
+];
+check("count: list", tabCount(tabs[0], notes), 3);
+check("count: branch", tabCount(tabs[1], notes), 3);
+check("count: all", tabCount({ category: "all" }, notes), 4);
+check("count: branch gone", tabCount({ category: "Garten", focus: "weg" }, notes), 0);
+check("counts by id", tabCounts([tabs[0], fixed[1]], notes), { a: 3, __cfg_3: 3 });
 
 document.getElementById("out").textContent = fails.length ? `FAIL\n${fails.join("\n")}` : "PASS";
 </script>

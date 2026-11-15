@@ -332,6 +332,8 @@ DRAW_MAX_STROKES = 300
 # Saved map views (tabs above the mind map)
 MAP_TABS_MAX = 40
 MAP_TAB_NAME_MAX = 40
+# How much the notes of a tab show: by zoom, titles only or everything
+MAP_TAB_DETAILS = ("auto", "compact", "normal")
 MAP_TAB_LAYOUTS = (
     "radial",
     "tree",
@@ -386,6 +388,7 @@ SERVICE_END_VOTING = "end_voting"
 SERVICE_ADD_COMMENT = "add_comment"
 SERVICE_DELETE_COMMENT = "delete_comment"
 SERVICE_GROUP_IDEAS = "group_ideas"
+SERVICE_MOVE_BRANCH = "move_branch"
 SERVICE_START_ROUND = "start_round"
 SERVICE_END_ROUND = "end_round"
 SERVICE_IMPORT_OUTLINE = "import_outline"

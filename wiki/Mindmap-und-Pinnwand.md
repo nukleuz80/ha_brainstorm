@@ -56,6 +56,19 @@ show_export_btn: true       # 🖼️ Map als SVG oder PNG speichern
 - **🛒 Bring! (v1.13.4):** Ist Bring eingeschaltet, steht in der Tab-Leiste *🛒 Bring!*: Der Tab öffnet die Bring-Kategorie, ein Zweig pro Liste mit ihren Artikeln. *🛒 An Bring! senden* im ⋯-Menü jeder offenen Notiz außerhalb davon setzt die Notiz oder eine Auswahl ihrer offenen Unteraufgaben auf eine Liste; die Notiz zeigt dann *🛒 1/3*, bis alles gekauft ist.
 - **🏅 ChoreOps-Live-Ansicht (v1.13.2):** Ist ChoreOps installiert, steht in der Tab-Leiste *🏅 ChoreOps*. Der Tab zeigt für jede Person einen Ast mit Punktestand und Aufgaben, live aus ChoreOps: ⏰ überfällig, ✋ gemeldet und wartet auf Freigabe, ○ offen. Erledigte Aufgaben sind ausgeblendet; *Erledigte zeigen* blendet sie mit den verdienten Punkten ein. 💡 markiert Aufgaben, die aus Brainstorm übergeben wurden. Die Ansicht ist nur zum Ansehen: Freigeben und Punkte bleiben in ChoreOps. *🗺️ Map* führt zurück. Mit `show_choreops: false` verschwindet der Tab.
 - **📑 Map-Tabs (v1.13.0):** Über der Map stehen gespeicherte Ansichten als Tabs. *📑 Ansicht als Tab speichern* in der Ansichtswahl (oder ＋ in der Tab-Leiste) merkt sich Liste, fokussierten Zweig, Filter, Ansicht und Ausschnitt unter einem Namen mit Symbol. Ohne *Nur für mich* sieht der ganze Haushalt den Tab, mit 🔒 nur du. Ein Tipp öffnet den Tab, *🗺️ Map* führt zurück; ein zweiter Tipp auf den offenen Tab (oder Rechtsklick) benennt ihn um, verschiebt ihn mit ◀ ▶, übernimmt die aktuelle Ansicht oder löscht ihn. **↗ In eigenen Tab auslagern** im ⋯-Menü einer Notiz mit Unteraufgaben legt den Zweig in einen eigenen Tab: in der Haupt-Map bleibt die Notiz als Link mit *↗ N Notizen* stehen, ein Tipp darauf springt in den Tab. *Zurück in die Map* im Tab-Dialog holt den Zweig wieder herein. So bleibt eine große Map übersichtlich.
+- **🗺️ Map-Tabs II (v1.13.9):** **🗺️ Als eigene Map auslagern** im ⋯-Menü einer Notiz mit Unteraufgaben zieht den ganzen Ast in eine eigene Kategorie um (Dienst `brainstorm.move_branch`): Du wählst den Namen, die Notiz wird dort zur Hauptnotiz, und auf Wunsch kommt ein 🗺️-Tab für die neue Map dazu. ↶ Rückgängig stellt alles wieder her. Jeder Tab zeigt die **Zahl der offenen Notizen** darin (Liste oder Ast, abschaltbar mit `show_tab_counts: false`). Ein Tab merkt sich außerdem die **Darstellung der Notizen** (◐ automatisch, ▭ kompakt, ▤ normal), wenn sie von der Karte abweicht; ein eigener Tipp auf ◐ hat Vorrang. **Feste Tabs** kommen aus der Kartenkonfiguration (nur YAML) und sind für alle gleich; sie tragen ein 📌 und lassen sich auf der Map nicht bearbeiten:
+
+  ```yaml
+  tabs:
+    - name: Garten
+      icon: 🌱
+      category: Garten
+      detail: compact     # auto, compact oder normal (optional)
+    - name: Alles
+      category: all
+      layout: tree        # optional, wie in der Ansichtswahl
+      focus: <Notiz-ID>   # optional: nur dieser Ast
+  ```
 - **🗣️ Frei reden (v1.12.4):** 🗣️ in der Steuerleiste öffnet denselben Dialog wie in der Listenkarte: mehrere Aufgaben sagen oder tippen, die KI zerlegt sie in Notizen mit Termin und Person, du prüfst sie und legst sie in der angezeigten Kategorie an.
 - **Wechselnde Zuständigkeit (v1.12.0):** Unter *Wiederholen* legt *Zuständig im Wechsel* fest, an wen die nächste Runde geht: *Reihum*, *Wer am wenigsten erledigt hat* (letzte 30 Tage) oder *Zufällig*. Mindestens zwei Personen ankreuzen, sonst bleibt der Dialog beim Speichern offen und sagt, was fehlt; die Reihenfolge der Reihe ist die der Auswahl. Die Notiz geht sofort an die erste Person und zeigt 👤 mit ihrem Namen. Aktion: `rotation` in `brainstorm.update_idea`.
 - **PDF-Export (v1.8.14):** 🖼️ ➔ *PDF* speichert ein PDF mit dem Bild der Map auf der ersten Seite und danach allen Notizen als Gliederung mit Beschreibung, fertig zum Drucken oder Verschicken. *PDF (nur Gliederung)* lässt das Bild weg. Es entsteht im Browser, nichts verlässt Home Assistant.
@@ -217,6 +230,8 @@ Pro Notiz kannst du die Form auch im Bearbeiten-Dialog wählen oder per Dienst s
 | `show_export_btn` | `true` | 🖼️ Als Bild oder Gliederung speichern, Gliederung einfügen |
 | `show_filter` | `true` | 🔍 Suchen und filtern |
 | `show_tabs` | `true` | 📑 gespeicherte Ansichten als Tabs über der Map |
+| `show_tab_counts` | `true` | Zahl der offenen Notizen an jedem Tab |
+| `tabs` | – | feste Tabs für alle (nur YAML): `name`, `category`, optional `icon`, `focus`, `layout`, `detail` |
 | `show_choreops` | `true` | 🏅 ChoreOps-Tab live (nur wenn ChoreOps installiert ist) |
 | `show_bring` | `true` | 🛒 Bring!-Tab, der die Einkaufslisten öffnet (nur wenn Bring eingeschaltet ist) |
 | `show_images` | `true` | erstes Bild der Anhänge in der Notiz |

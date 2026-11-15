@@ -95,6 +95,7 @@ from .const import (
     SERVICE_ADD_COMMENT,
     SERVICE_DELETE_COMMENT,
     SERVICE_GROUP_IDEAS,
+    SERVICE_MOVE_BRANCH,
     SERVICE_START_ROUND,
     SERVICE_END_ROUND,
     ROUND_MAX_MINUTES,
@@ -369,6 +370,14 @@ SERVICE_GROUP_IDEAS_SCHEMA = vol.Schema(
     {
         vol.Required("title"): vol.All(cv.string, vol.Length(max=200)),
         vol.Required("ids"): vol.All(cv.ensure_list, [cv.string], vol.Length(min=1)),
+    }
+)
+
+SERVICE_MOVE_BRANCH_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_ID): cv.string,
+        vol.Required(ATTR_CATEGORY): vol.All(cv.string, vol.Length(min=1, max=100)),
+        vol.Optional(ATTR_PARENT_ID): vol.Any(None, cv.string),
     }
 )
 
@@ -927,6 +936,27 @@ def _register_services(hass: HomeAssistant) -> None:
         group = await store.async_group_ideas(title, ids, call.context)
         return {"success": True, "id": group[ATTR_ID], "grouped": len(ids)}
 
+    async def handle_move_branch(call: ServiceCall) -> dict[str, Any]:
+        """Move a note with all its subtasks to another category, for its own map."""
+        store = _require_store(hass)
+        idea_id = call.data[ATTR_ID]
+        idea = store.get_idea(idea_id)
+        if idea is None or not store.can_access(idea, call.context.user_id):
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="idea_not_found",
+                translation_placeholders={"id": idea_id},
+            )
+        _check_idea_edit(store, idea_id, call)
+        category = " ".join(call.data[ATTR_CATEGORY].split())
+        if not category:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="move_category_empty"
+            )
+        return await store.async_move_branch(
+            idea_id, category, call.data.get(ATTR_PARENT_ID), call.context
+        )
+
     async def handle_sort_children(call: ServiceCall) -> dict[str, Any]:
         """Sort the subtasks of a note, or the main notes of a category."""
         store = _require_store(hass)
@@ -1407,6 +1437,7 @@ def _register_services(hass: HomeAssistant) -> None:
         (SERVICE_ADD_COMMENT, handle_add_comment, SERVICE_ADD_COMMENT_SCHEMA),
         (SERVICE_DELETE_COMMENT, handle_delete_comment, SERVICE_DELETE_COMMENT_SCHEMA),
         (SERVICE_GROUP_IDEAS, handle_group_ideas, SERVICE_GROUP_IDEAS_SCHEMA),
+        (SERVICE_MOVE_BRANCH, handle_move_branch, SERVICE_MOVE_BRANCH_SCHEMA),
         (SERVICE_START_ROUND, handle_start_round, SERVICE_START_ROUND_SCHEMA),
         (SERVICE_END_ROUND, handle_end_round, SERVICE_END_ROUND_SCHEMA),
     ):

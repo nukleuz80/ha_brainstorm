@@ -9,7 +9,7 @@
 [![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.13.8-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.13.9-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![Wiki](https://img.shields.io/badge/Doku-Wiki-6f42c1.svg)](https://github.com/nukleuz80/ha_brainstorm/wiki)
@@ -198,7 +198,7 @@ Beides braucht Alexa Media und Automationen aus [`examples/`](examples/), siehe 
 | `brainstorm.get_ideas` / `get_announcement` | Ideen als Antwort zurückgeben oder einen fertigen Vorlesetext |
 | `brainstorm.add_category` / `remove_category` / `set_category_style` | Kategorien, Icons und Farben verwalten |
 | `brainstorm.export_markdown` / `export_json` / `import_json` | Ideen sichern und übertragen |
-| `brainstorm.import_outline` / `sort_children` / `reorder_ideas` | Gliederungen einfügen und Notizen sortieren |
+| `brainstorm.import_outline` / `sort_children` / `reorder_ideas` / `move_branch` | Gliederungen einfügen, Notizen sortieren, Ast als eigene Map auslagern |
 | `brainstorm.start_voting` / `vote` / `end_voting` / `react` | Abstimmungen und Reaktionen |
 | `brainstorm.add_comment` / `delete_comment` | Kommentare mit @Erwähnung |
 | `brainstorm.start_round` / `end_round` / `group_ideas` | Verdeckte Runden und Gruppieren nach Themen |
@@ -261,11 +261,11 @@ Die letzten Versionen; alle stehen in [CHANGELOG_de.md](CHANGELOG_de.md).
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.13.9`** | 15.11.2026 | **🗺️ Map-Tabs II.** *🗺️ Als eigene Map auslagern* im ⋯-Menü zieht einen ganzen Ast in eine eigene Kategorie um, auf Wunsch mit 🗺️-Tab, ↶ Rückgängig holt ihn zurück (neuer Dienst `brainstorm.move_branch`). Jeder Tab zeigt die Zahl seiner offenen Notizen (`show_tab_counts`). Tabs merken sich die Darstellung der Notizen (◐ ▭ ▤). Feste 📌-Tabs für alle kommen aus der Kartenoption `tabs` (YAML). Auf niedrigen Karten nehmen die Knöpfe unten rechts eine zweite Spalte, statt oben über den Rand zu ragen. |
 | **`v1.13.8`** | 15.11.2026 | **🐞 Tabs über der ChoreOps-Ansicht.** Bei vielen ChoreOps-Aufgaben wurde die Tab-Leiste über der Mindmap (🗺️ Map, 🛒 Bring!, 🏅 ChoreOps, ＋) auf halbe Höhe zusammengedrückt, vor allem auf dem Handy. Jetzt behält sie immer ihre volle Höhe. |
 | **`v1.13.7`** | 15.11.2026 | **🔓 Abhängigkeiten melden sich.** Sobald die letzte Notiz abgehakt ist, auf die eine andere wartet (blockierende Verbindung), zeigt die Karte *🔓 „…“ kann jetzt losgehen*, das Logbuch einen Eintrag, und eine Nachricht geht an die Kanäle, die eine Erinnerung der wartenden Notiz nutzen würde (ihre Person, die Regel ihrer Liste oder die Standarddienste). Neues Ereignis `brainstorm_idea_unblocked` mit `id`, `text`, `category`, `assignee`, `by_id` und `by_text` für eigene Automationen. |
 | **`v1.13.6`** | 15.11.2026 | **◐ Kompakte Mindmap-Knoten.** Ein neuer Knopf ◐ in der Bedienleiste der Map schaltet zwischen *Automatisch* (Standard: beim Herauszoomen nur Titel, ein Statuspunkt und die Zahl der Unteraufgaben, beim Hineinzoomen alles), *Kompakt* (nur Titel) und *Normal* (alles). Ein Tipp klappt eine einzelne kompakte Notiz auf, ein Tipp daneben wieder zu. Zoomen verschiebt keine Notiz. Kartenoption `node_detail`; jeder Browser merkt sich die Wahl. |
 | **`v1.13.5`** | 15.11.2026 | **🔗 Logos der Integrationen in den Einstellungen.** Das Hauptmenü der Einstellungen zeigt die Logos der verbundenen Integrationen (Bring!, ChoreOps), farbig wenn eingeschaltet und grau wenn aus, und der Eintrag *🔗 Verbundene Integrationen* zeigt ihren Zustand (🟢/⚪). Die Logos sind die offiziellen Markenbilder: das, das eine eigene Integration mitbringt, oder das des Home-Assistant-Brands-Dienstes. |
-| **`v1.13.4`** | 15.11.2026 | **🛒 An Bring! senden.** Neuer Tab *🛒 Bring!* über der Mindmap öffnet die Bring-Kategorie mit einem Zweig pro Liste (Kartenoption `show_bring`). Das ⋯-Menü beider Karten bietet *🛒 An Bring! senden* für jede offene Notiz außerhalb der Bring-Kategorie: Liste wählen (Standardliste aus den Einstellungen) und die Notiz selbst oder eine Auswahl ihrer offenen Unteraufgaben als Artikel senden; was dort schon offen ist, kommt nicht doppelt dazu. Ein Badge *🛒 1/3* an der Notiz zeigt, was noch zu kaufen ist. Neue Aktion `brainstorm.send_to_bring`, der Sensor zeigt die Bring-Listen. |
 
 ---
 

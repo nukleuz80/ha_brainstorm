@@ -7,6 +7,18 @@
  */
 const DICTIONARIES = {
   en: {
+    "Offene Notizen als Zahl an den Tabs zeigen": "Show the number of open notes on the tabs",
+    "{count} offen": "{count} open",
+    "Fest in der Kartenkonfiguration": "Set in the card configuration",
+    "Als eigene Map auslagern": "Move into its own map",
+    "🗺️ Als eigene Map auslagern": "🗺️ Move into its own map",
+    "Name der neuen Map": "Name of the new map",
+    "{count} Notizen ziehen in die Kategorie „{name}“ um, mit allen Unteraufgaben.": "{count} notes move to the category \"{name}\", with all subtasks.",
+    "Diese Kategorie gibt es schon, der Ast kommt dort als Hauptnotiz dazu.": "This category exists already, the branch joins it as a main note.",
+    "Einen Tab für die neue Map anlegen": "Add a tab for the new map",
+    "Auslagern": "Move",
+    "„{name}“ ist jetzt eine eigene Map": "\"{name}\" is a map of its own now",
+    "Das Auslagern hat nicht geklappt.": "Moving did not work.",
     "🔓 „{text}“ kann jetzt losgehen": "🔓 \"{text}\" can start now",
     "🔓 {count} Notizen können jetzt losgehen": "🔓 {count} notes can start now",
     "Notizen: kompakt (nur Titel) – tippen für normal": "Notes: compact (titles only) – tap for normal",
@@ -1384,18 +1396,23 @@ export function activeMapTab(tabs, activeId, category, focus) {
 }
 
 /** The bar of map tabs, empty while there is no tab yet. */
-export function mapTabBar(tabs, active, { chores = false, choreView = false, bring = null } = {}) {
+export function mapTabBar(tabs, active, { chores = false, choreView = false, bring = null, counts = null } = {}) {
   tabs = tabs || [];
   if (!tabs.length && !chores && !bring) return "";
   const activeId = active && !choreView ? active.id : null;
+  const count = (tab) => {
+    const value = counts && counts[tab.id];
+    return value ? `<span class="map-tab-count" title="${escapeHtml(t("{count} offen", { count: value }))}">${value > 99 ? "99+" : value}</span>` : "";
+  };
   const items = tabs.map((tab) => {
-    const icon = tab.icon || (tab.branch ? "↗" : "📑");
+    const icon = tab.icon || (tab.fixed ? "📌" : tab.branch ? "↗" : "📑");
     const lock = tab.private ? `<span class="map-tab-lock" title="${escapeHtml(t("Nur für mich"))}">🔒</span>` : "";
-    return `<button class="map-tab${tab.id === activeId ? " active" : ""}" data-tab="${escapeHtml(tab.id)}" role="tab" aria-selected="${tab.id === activeId}" title="${escapeHtml(t("Noch einmal tippen: Tab bearbeiten"))}"><span class="map-tab-icon">${escapeHtml(icon)}</span><span class="map-tab-name">${escapeHtml(tab.name)}</span>${lock}</button>`;
+    const hint = tab.fixed ? t("Fest in der Kartenkonfiguration") : t("Noch einmal tippen: Tab bearbeiten");
+    return `<button class="map-tab${tab.fixed ? " map-tab-fixed" : ""}${tab.id === activeId ? " active" : ""}" data-tab="${escapeHtml(tab.id)}" role="tab" aria-selected="${tab.id === activeId}" title="${escapeHtml(hint)}"><span class="map-tab-icon">${escapeHtml(icon)}</span><span class="map-tab-name">${escapeHtml(tab.name)}</span>${lock}${count(tab)}</button>`;
   });
   const main = !activeId && !choreView;
   const shop = bring
-    ? `<button class="map-tab map-tab-bring${bring.id === activeId ? " active" : ""}" data-tab="${escapeHtml(bring.id)}" role="tab" aria-selected="${bring.id === activeId}" title="${escapeHtml(t("Die Bring!-Listen als Map"))}"><span class="map-tab-icon">🛒</span><span class="map-tab-name">Bring!</span></button>`
+    ? `<button class="map-tab map-tab-bring${bring.id === activeId ? " active" : ""}" data-tab="${escapeHtml(bring.id)}" role="tab" aria-selected="${bring.id === activeId}" title="${escapeHtml(t("Die Bring!-Listen als Map"))}"><span class="map-tab-icon">🛒</span><span class="map-tab-name">Bring!</span>${count(bring)}</button>`
     : "";
   const chore = chores
     ? `<button class="map-tab map-tab-chores${choreView ? " active" : ""}" data-chore-tab="1" role="tab" aria-selected="${choreView}" title="${escapeHtml(t("Live aus ChoreOps, nur zum Ansehen"))}"><span class="map-tab-icon">🏅</span><span class="map-tab-name">ChoreOps</span></button>`
@@ -1454,6 +1471,17 @@ export const MAP_TAB_CSS = `
   .map-tab-lock {
     font-size: 0.7rem;
     opacity: 0.7;
+  }
+  .map-tab-count {
+    min-width: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    line-height: 16px;
+    text-align: center;
+    color: var(--text-primary-color, #fff);
+    background: var(--primary-color, #03a9f4);
   }
   .map-tab-add {
     min-width: 36px;
@@ -3641,4 +3669,66 @@ export function unblockedText(ideas, doneIds) {
   if (!free.length) return "";
   if (free.length === 1) return t("🔓 „{text}“ kann jetzt losgehen", { text: free[0].text || "" });
   return t("🔓 {count} Notizen können jetzt losgehen", { count: free.length });
+}
+
+// Tabs set in the card configuration: the same for everybody, not editable
+// on the map. Each needs a name and a category ("all" for all lists).
+export const CONFIG_TAB_PREFIX = "__cfg_";
+
+/** Return the tabs of the card option tabs: in a known shape, broken ones left out. */
+export function configTabs(list) {
+  if (!Array.isArray(list)) return [];
+  return list
+    .map((raw, index) => {
+      if (!raw || typeof raw !== "object") return null;
+      const name = String(raw.name || "").replace(/\s+/g, " ").trim().slice(0, 40);
+      const category = String(raw.category || "").trim();
+      if (!name || !category) return null;
+      return {
+        id: `${CONFIG_TAB_PREFIX}${index}`,
+        name,
+        icon: String(raw.icon || "").slice(0, 8),
+        category,
+        focus: raw.focus ? String(raw.focus) : null,
+        layout: raw.layout ? String(raw.layout) : null,
+        detail: NODE_DETAIL_MODES.includes(raw.detail) ? raw.detail : null,
+        filter: {},
+        view: null,
+        fixed: true,
+        virtual: true,
+      };
+    })
+    .filter(Boolean)
+    .slice(0, 20);
+}
+
+/** Return the number of open notes a tab shows: its list, its branch. */
+export function tabCount(tab, ideas) {
+  if (!tab) return 0;
+  const open = (ideas || []).filter((idea) => idea.status === "active" && (tab.category === "all" || idea.category === tab.category));
+  if (!tab.focus) return open.length;
+  const below = new Map();
+  open.forEach((idea) => {
+    if (!idea.parent_id) return;
+    if (!below.has(idea.parent_id)) below.set(idea.parent_id, []);
+    below.get(idea.parent_id).push(idea.id);
+  });
+  const seen = new Set();
+  const todo = open.some((idea) => idea.id === tab.focus) ? [tab.focus] : [];
+  while (todo.length) {
+    const id = todo.shift();
+    if (seen.has(id)) continue;
+    seen.add(id);
+    todo.push(...(below.get(id) || []));
+  }
+  return seen.size;
+}
+
+/** Return the counts of all tabs by their id. */
+export function tabCounts(tabs, ideas) {
+  const counts = {};
+  (tabs || []).forEach((tab) => {
+    if (tab) counts[tab.id] = tabCount(tab, ideas);
+  });
+  return counts;
 }

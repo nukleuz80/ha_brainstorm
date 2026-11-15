@@ -22,6 +22,7 @@ All parameters are [further down](#brainstormadd_idea) and under [**Developer to
 | `brainstorm.send_to_bring` | `id: …`, `list: todo.camper` puts the note or chosen subtasks on a Bring list |
 | `brainstorm.reorder_ideas` | set the order |
 | `brainstorm.import_outline` | add an outline: `text: …`, `category: …` or `parent_id: …`, `format: auto` |
+| `brainstorm.move_branch` | move a branch to its own map: `id: …`, `category: Camping`, optional `parent_id: …` |
 | `brainstorm.sort_children` | sort subtasks: `parent_id: …`, `by: text`, `priority`, `due`, `created` or `votes` |
 | `brainstorm.react` | toggle a reaction: `id: …`, `reaction: heart` |
 | `brainstorm.add_comment` / `delete_comment` | comment: `id: …`, `text: "@Frida can you bring salad?"`; delete with `comment_id` |
@@ -355,6 +356,18 @@ Puts notes of one category below a new note with this title, for example a theme
 | :--- | :--- | :--- |
 | `title` | Yes | Text of the new parent note. |
 | `ids` | Yes | The notes that go below it, all from the same category. |
+
+## `brainstorm.move_branch`
+
+▶️ [Try it in Home Assistant](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.move_branch)
+
+Moves a note with all its subtasks to another category, for example to give a big branch a map of its own. A category that does not exist yet is created. The moved notes lose their pinboard spots and fixed map positions; tabs on the branch follow it. Answers with the number of moved notes (`moved`), the new category and where the branch came from (`from_category`, `from_parent`), which is enough to move it back.
+
+| Field | Required | Meaning |
+| :--- | :--- | :--- |
+| `id` | Yes | ID of the note at the top of the branch. |
+| `category` | Yes | The target category. |
+| `parent_id` | No | Put the branch below this note of the target category; without it, it becomes a main note. |
 
 ## `brainstorm.start_round`
 

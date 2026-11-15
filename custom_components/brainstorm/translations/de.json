@@ -953,6 +953,9 @@
     },
     "choreops_failed": {
       "message": "ChoreOps hat die Aufgabe nicht angelegt."
+    },
+    "move_category_empty": {
+      "message": "Der Name der Kategorie ist leer."
     }
   },
   "services": {
@@ -1561,6 +1564,24 @@
         "user": {
           "name": "Person",
           "description": "Person in ChoreOps; leer nimmt die Person, der die Notiz zugewiesen ist."
+        }
+      }
+    },
+    "move_branch": {
+      "name": "Ast verschieben",
+      "description": "Verschiebt eine Notiz mit allen Unteraufgaben in eine andere Kategorie, zum Beispiel damit ein großer Ast eine eigene Map bekommt. Eine Kategorie, die es noch nicht gibt, wird angelegt. Tabs auf dem Ast ziehen mit. Antwortet mit der Zahl der verschobenen Notizen und wo die Notiz vorher war.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "Die Notiz oben am Ast."
+        },
+        "category": {
+          "name": "Kategorie",
+          "description": "Die Kategorie, in die der Ast wandert."
+        },
+        "parent_id": {
+          "name": "Übergeordnete Notiz",
+          "description": "Optional: eine Notiz in der neuen Kategorie, unter die der Ast kommt; ohne sie wird die Notiz eine Hauptnotiz."
         }
       }
     }

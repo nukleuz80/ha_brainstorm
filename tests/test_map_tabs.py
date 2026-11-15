@@ -124,6 +124,9 @@ def test_clean_map_tab() -> None:
     assert tab["branch"] is False  # a branch tab needs a branch
     assert tab["view"] is None
     assert tab["filter"]["tags"] == ["#x"]
+    assert tab["detail"] is None
+    assert _clean_map_tab({"id": "a", "name": "A", "category": "G", "detail": "compact"})["detail"] == "compact"
+    assert _clean_map_tab({"id": "a", "name": "A", "category": "G", "detail": "tiny"})["detail"] is None
 
 
 async def test_websocket_commands(
@@ -142,10 +145,12 @@ async def test_websocket_commands(
             "focus": idea["id"],
             "branch": True,
             "private": True,
+            "detail": "compact",
         }
     )
     tab = (await client.receive_json())["result"]["tab"]
     assert tab["branch"] is True and tab["private"] is True
+    assert tab["detail"] == "compact"
 
     await client.send_json_auto_id(
         {"type": "brainstorm/map_tabs/save", "tab_id": tab["id"], "name": "Gemüse"}
@@ -172,3 +177,59 @@ async def test_websocket_commands(
     )
     reply = await client.receive_json()
     assert not reply["success"]
+
+
+async def test_move_branch_to_its_own_map(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that a branch moves with all subtasks and its tab, and can go back."""
+    store = await _setup(setup_entry)
+    house = await store.async_add_idea("Haus", category="Keller")
+    garden = await store.async_add_idea("Beete", category="Keller", parent_id=house["id"])
+    bed = await store.async_add_idea("Tomaten", category="Keller", parent_id=garden["id"])
+    other = await store.async_add_idea("Regal", category="Keller", parent_id=house["id"])
+    tab = await store.async_save_map_tab(
+        {"name": "Beete", "category": "Keller", "focus": garden["id"], "branch": True}
+    )
+    response = await hass.services.async_call(
+        "brainstorm",
+        "move_branch",
+        {"id": garden["id"], "category": "  Gemüse  beet "},
+        blocking=True,
+        return_response=True,
+    )
+    assert response == {
+        "moved": 2,
+        "category": "Gemüse beet",
+        "from_category": "Keller",
+        "from_parent": house["id"],
+    }
+    assert "Gemüse beet" in store.categories
+    assert store.get_idea(garden["id"])["category"] == "Gemüse beet"
+    assert store.get_idea(garden["id"])["parent_id"] is None
+    assert store.get_idea(bed["id"])["category"] == "Gemüse beet"
+    assert store.get_idea(bed["id"])["parent_id"] == garden["id"]
+    assert store.get_idea(other["id"])["category"] == "Keller"
+    assert next(t for t in store.map_tabs() if t["id"] == tab["id"])["category"] == "Gemüse beet"
+
+    # Back below the old parent
+    await hass.services.async_call(
+        "brainstorm",
+        "move_branch",
+        {"id": garden["id"], "category": "Keller", "parent_id": house["id"]},
+        blocking=True,
+    )
+    assert store.get_idea(garden["id"])["parent_id"] == house["id"]
+    assert store.get_idea(bed["id"])["category"] == "Keller"
+
+    # A parent in another category or inside the branch is ignored
+    await store.async_move_branch(garden["id"], "Garten", bed["id"])
+    assert store.get_idea(garden["id"])["parent_id"] is None
+    with pytest.raises(ServiceValidationError):
+        await hass.services.async_call(
+            "brainstorm", "move_branch", {"id": garden["id"], "category": "  "}, blocking=True
+        )
+    with pytest.raises(ServiceValidationError):
+        await hass.services.async_call(
+            "brainstorm", "move_branch", {"id": "nope", "category": "Garten"}, blocking=True
+        )

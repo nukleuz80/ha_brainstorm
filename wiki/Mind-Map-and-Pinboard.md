@@ -48,6 +48,19 @@ Click `⛶` at the top right to enlarge the mindmap to the full screen.
 - **🛒 Bring! (v1.13.4):** With Bring switched on, the tab bar shows *🛒 Bring!*: it opens the Bring category, one branch per list with its items. *🛒 Send to Bring!* in the ⋯ menu of any open note outside it puts the note or a choice of its open subtasks on a list; the note then shows *🛒 1/3* until everything is bought.
 - **🏅 ChoreOps live view (v1.13.2):** With ChoreOps installed, the tab bar shows *🏅 ChoreOps*. It shows a branch for every person with their points and chores, live from ChoreOps: ⏰ overdue, ✋ reported and waiting for approval, ○ open. Done chores are hidden; *Show done* shows them with the points earned. 💡 marks chores handed over from Brainstorm. The view is only for looking: approving and points stay in ChoreOps. *🗺️ Map* leads back. Turn the tab off with `show_choreops: false`.
 - **📑 Map tabs (v1.13.0):** Saved views sit as tabs above the map. *📑 Save view as tab* in the view choice (or ＋ in the tab bar) keeps the list, the focused branch, the filter, the layout and the visible area under a name with an icon. Without *Only for me* the whole household sees the tab, with 🔒 only you. A tap opens the tab, *🗺️ Map* leads back; a second tap on the open tab (or a right click) renames it, moves it with ◀ ▶, takes over the current view or deletes it. **↗ Move to its own tab** in the ⋯ menu of a note with subtasks puts the branch into its own tab: the main map keeps the note as a link with *↗ N notes*, a tap on it jumps into the tab. *Back into the map* in the tab dialog brings the branch back. That keeps a big map easy to read.
+- **🗺️ Map tabs II (v1.13.9):** **🗺️ Move into its own map** in the ⋯ menu of a note with subtasks moves the whole branch into a category of its own (service `brainstorm.move_branch`): you pick the name, the note becomes a main note there, and a 🗺️ tab for the new map is added if you like. ↶ Undo puts everything back where it was. Every tab shows the **number of open notes** it holds (list or branch, turn off with `show_tab_counts: false`). A tab also keeps the **look of the notes** (◐ automatic, ▭ compact, ▤ normal) when it differs from the card; tapping ◐ yourself wins. **Fixed tabs** come from the card configuration (YAML only) and are the same for everybody; they carry a 📌 and cannot be edited on the map:
+
+  ```yaml
+  tabs:
+    - name: Garden
+      icon: 🌱
+      category: Garden
+      detail: compact     # auto, compact or normal (optional)
+    - name: Everything
+      category: all
+      layout: tree        # optional, like the view choice
+      focus: <note id>    # optional: only this branch
+  ```
 - **🗣️ Talk freely (v1.12.4):** 🗣️ in the controls opens the same dialog as in the list card: say or type several tasks, the AI splits them into notes with date and person, you check them and create them in the category shown.
 - **Changing assignee (v1.12.0):** Below *Repeat*, *Changing assignee* sets who gets the next round: *Taking turns*, *Whoever did the least* (last 30 days) or *At random*. Tick at least two people, or saving keeps the dialog open and says what is missing; the turn follows their order. The note goes to the first person at once and shows 👤 with their name. Action: `rotation` in `brainstorm.update_idea`.
 - **PDF export (v1.8.14):** 🖼️ ➔ *PDF* saves a PDF with the picture of the map on the first page and all notes as an outline with their descriptions after it, ready to print or send. *PDF (outline only)* leaves out the picture. Made in the browser, nothing leaves Home Assistant.
@@ -216,6 +229,8 @@ A single note can get its own shape in the edit dialog or through a service (`no
 | `show_export_btn` | `true` | 🖼️ save as image or outline, insert an outline |
 | `show_filter` | `true` | 🔍 search and filter |
 | `show_tabs` | `true` | 📑 saved views as tabs above the map |
+| `show_tab_counts` | `true` | number of open notes on every tab |
+| `tabs` | – | fixed tabs for everybody (YAML only): `name`, `category`, optional `icon`, `focus`, `layout`, `detail` |
 | `show_choreops` | `true` | 🏅 live ChoreOps tab (only while ChoreOps is installed) |
 | `show_bring` | `true` | 🛒 Bring! tab that opens the shopping lists (only while Bring is switched on) |
 | `show_images` | `true` | first picture attachment inside the note |

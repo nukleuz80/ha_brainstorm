@@ -22,6 +22,7 @@ Alle Parameter stehen [weiter unten](#brainstormadd_idea) und unter [**Entwickle
 | `brainstorm.send_to_bring` | `id: …`, `list: todo.camper` setzt die Notiz oder gewählte Unteraufgaben auf eine Bring-Liste |
 | `brainstorm.reorder_ideas` | Reihenfolge setzen |
 | `brainstorm.import_outline` | Gliederung anlegen: `text: …`, `category: …` oder `parent_id: …`, `format: auto` |
+| `brainstorm.move_branch` | Ast als eigene Map auslagern: `id: …`, `category: Camping`, optional `parent_id: …` |
 | `brainstorm.sort_children` | Unterpunkte sortieren: `parent_id: …`, `by: text`, `priority`, `due`, `created` oder `votes` |
 | `brainstorm.react` | Reaktion umschalten: `id: …`, `reaction: heart` |
 | `brainstorm.add_comment` / `delete_comment` | Kommentar: `id: …`, `text: "@Frida bringst du Salat?"`; löschen mit `comment_id` |
@@ -355,6 +356,18 @@ Hängt Notizen einer Kategorie unter eine neue Notiz mit diesem Titel, zum Beisp
 | :--- | :--- | :--- |
 | `title` | Ja | Text der neuen Oberpunkt-Notiz. |
 | `ids` | Ja | Die Notizen, die darunter kommen, alle aus derselben Kategorie. |
+
+## `brainstorm.move_branch`
+
+▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.move_branch)
+
+Zieht eine Notiz mit allen Unteraufgaben in eine andere Kategorie um, zum Beispiel damit ein großer Ast eine eigene Map bekommt. Eine Kategorie, die es noch nicht gibt, wird angelegt. Die verschobenen Notizen verlieren ihre Pinnwand-Plätze und festen Map-Positionen; Tabs auf dem Ast ziehen mit. Antwortet mit der Zahl der verschobenen Notizen (`moved`), der neuen Kategorie und der Herkunft des Asts (`from_category`, `from_parent`), damit er sich zurückholen lässt.
+
+| Feld | Pflicht | Bedeutung |
+| :--- | :--- | :--- |
+| `id` | Ja | ID der Notiz oben am Ast. |
+| `category` | Ja | Die Zielkategorie. |
+| `parent_id` | Nein | Den Ast unter diese Notiz der Zielkategorie hängen; ohne wird er zur Hauptnotiz. |
 
 ## `brainstorm.start_round`
 

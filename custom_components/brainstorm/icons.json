@@ -87,6 +87,9 @@
     "delete_comment": {
       "service": "mdi:comment-remove-outline"
     },
+    "move_branch": {
+      "service": "mdi:source-branch-plus"
+    },
     "group_ideas": {
       "service": "mdi:group"
     },

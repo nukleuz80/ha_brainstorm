@@ -41,6 +41,7 @@ from .const import (
     DRAW_KINDS,
     DRAW_MAX_POINTS,
     DRAW_MAX_STROKES,
+    MAP_TAB_DETAILS,
     MAP_TAB_LAYOUTS,
     MAP_TAB_NAME_MAX,
     MAP_TABS_MAX,
@@ -1312,6 +1313,76 @@ class BrainstormStore:
             )
         self._notify_listeners(context=act_context)
         return group
+
+    def branch_ids(self, idea_id: str) -> list[str]:
+        """Return a note and all notes below it, the note first."""
+        children: dict[str, list[str]] = {}
+        for item in self._ideas.values():
+            parent = item.get(ATTR_PARENT_ID)
+            if parent:
+                children.setdefault(str(parent), []).append(str(item[ATTR_ID]))
+        result: list[str] = []
+        todo = [idea_id]
+        while todo:
+            current = todo.pop(0)
+            if current in result:
+                continue
+            result.append(current)
+            todo.extend(children.get(current, []))
+        return result
+
+    async def async_move_branch(
+        self,
+        idea_id: str,
+        category: str,
+        parent_id: str | None = None,
+        context: Context | None = None,
+    ) -> dict[str, Any]:
+        """Move a note with all its subtasks to another category.
+
+        The note becomes a main note there, or goes below parent_id when that
+        note is in the new category. Tabs on the branch follow it. Returns
+        how many notes moved and where the note was, so it can go back.
+        """
+        root = self._ideas[idea_id]
+        ids = self.branch_ids(idea_id)
+        before = {
+            "from_category": root.get(ATTR_CATEGORY),
+            "from_parent": root.get(ATTR_PARENT_ID),
+        }
+        if category not in self._categories:
+            self._categories.append(category)
+        now_iso = dt_util.now().isoformat()
+        for moved_id in ids:
+            idea = self._ideas[moved_id]
+            if idea.get(ATTR_CATEGORY) != category:
+                # Its place on the map of the old list means nothing in the new one
+                idea.pop(ATTR_MAP_POS, None)
+                idea.pop(ATTR_PIN, None)
+            idea[ATTR_CATEGORY] = category
+            idea[ATTR_UPDATED_AT] = now_iso
+        parent = self._ideas.get(parent_id or "")
+        root[ATTR_PARENT_ID] = (
+            parent_id
+            if parent is not None
+            and parent.get(ATTR_CATEGORY) == category
+            and parent_id not in ids
+            else None
+        )
+        for tab in self._map_tabs:
+            if tab.get("focus") in ids and tab["category"] != category:
+                tab["category"] = category
+                self._map_tabs_rev += 1
+        await self.async_save()
+        act_context = context or Context()
+        for moved_id in ids:
+            self.hass.bus.async_fire(
+                EVENT_IDEA_UPDATED,
+                {**self._ideas[moved_id], "entity_id": OVERVIEW_ENTITY_ID},
+                context=act_context,
+            )
+        self._notify_listeners(context=act_context)
+        return {"moved": len(ids), "category": category, **before}
 
     def async_cancel_ai_tasks(self) -> None:
         """Stop AI work and round timers that still run when the integration unloads."""
@@ -4263,6 +4334,7 @@ def _clean_map_tab(raw: Any) -> dict[str, Any] | None:
         "focus": str(focus)[:16] if focus else None,
         "branch": bool(raw.get("branch")) and bool(focus),
         "layout": layout if layout in MAP_TAB_LAYOUTS else None,
+        "detail": raw.get("detail") if raw.get("detail") in MAP_TAB_DETAILS else None,
         "filter": tab_filter,
         "view": clean_view,
         "owner": str(owner) if owner else None,

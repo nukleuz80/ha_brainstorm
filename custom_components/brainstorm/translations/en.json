@@ -953,6 +953,9 @@
     },
     "choreops_failed": {
       "message": "ChoreOps did not create the chore."
+    },
+    "move_category_empty": {
+      "message": "The category name is empty."
     }
   },
   "services": {
@@ -1561,6 +1564,24 @@
         "user": {
           "name": "Person",
           "description": "ChoreOps person; empty takes the person the note is assigned to."
+        }
+      }
+    },
+    "move_branch": {
+      "name": "Move branch",
+      "description": "Moves a note with all its subtasks to another category, for example to give a big branch its own map. A category that does not exist yet is created. Tabs on the branch follow it. Responds with the number of moved notes and where the note was before.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "The note at the top of the branch."
+        },
+        "category": {
+          "name": "Category",
+          "description": "The category the branch moves to."
+        },
+        "parent_id": {
+          "name": "Parent note",
+          "description": "Optional: a note in the new category the branch goes below; without it, the note becomes a main note."
         }
       }
     }

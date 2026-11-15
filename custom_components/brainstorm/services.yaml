@@ -667,6 +667,23 @@ group_ideas:
       selector:
         text:
           multiple: true
+move_branch:
+  fields:
+    id:
+      required: true
+      example: "a1b2c3d4"
+      selector:
+        text:
+    category:
+      required: true
+      example: "Garten"
+      selector:
+        text:
+    parent_id:
+      required: false
+      example: "e5f6a7b8"
+      selector:
+        text:
 start_round:
   fields:
     category:

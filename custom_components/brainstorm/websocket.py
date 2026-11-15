@@ -16,6 +16,7 @@ from .const import (
     DRAW_COLORS,
     DRAW_KINDS,
     DRAW_MAX_POINTS,
+    MAP_TAB_DETAILS,
     MAP_TAB_LAYOUTS,
     MAP_TAB_NAME_MAX,
     PIN_COLORS,
@@ -754,6 +755,7 @@ _TAB_FILTER = vol.Schema(
         vol.Optional("focus"): vol.Any(None, cv.string),
         vol.Optional("branch"): cv.boolean,
         vol.Optional("layout"): vol.Any(None, vol.In(MAP_TAB_LAYOUTS)),
+        vol.Optional("detail"): vol.Any(None, vol.In(MAP_TAB_DETAILS)),
         vol.Optional("filter"): _TAB_FILTER,
         vol.Optional("view"): vol.Any(
             None,
