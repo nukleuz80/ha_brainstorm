@@ -7,6 +7,26 @@
  */
 const DICTIONARIES = {
   en: {
+    "ChoreOps-Tab zeigen (live, nur zum Ansehen)": "Show ChoreOps tab (live, view only)",
+    "erledigt": "done",
+    "gemeldet, wartet auf Freigabe": "reported, waiting for approval",
+    "offen": "open",
+    "ChoreOps zeigt noch keine Personen.": "ChoreOps shows no people yet.",
+    "{count} offen": "{count} open",
+    "{count} gemeldet": "{count} reported",
+    "{count} erledigt": "{count} done",
+    "{points} P": "{points} pts",
+    "Aus Brainstorm übergeben": "Handed over from Brainstorm",
+    "fällig {date}": "due {date}",
+    "Keine Aufgaben": "No chores",
+    "Alles erledigt 🎉": "All done 🎉",
+    "Punktestand": "Points balance",
+    "Noch offen": "Still open",
+    "+ {count} erledigt": "+ {count} done",
+    "Erledigte ausblenden": "Hide done",
+    "Erledigte zeigen": "Show done",
+    "Nur zum Ansehen: Freigeben und Punkte vergeben passiert in ChoreOps.": "View only: approving and giving points happens in ChoreOps.",
+    "Live aus ChoreOps, nur zum Ansehen": "Live from ChoreOps, view only",
     "🏅 Übergeben": "🏅 Hand over",
     "An ChoreOps übergeben": "Hand over to ChoreOps",
     "🏅 An ChoreOps übergeben": "🏅 Hand over to ChoreOps",
@@ -1338,15 +1358,20 @@ export function activeMapTab(tabs, activeId, category, focus) {
 }
 
 /** The bar of map tabs, empty while there is no tab yet. */
-export function mapTabBar(tabs, active) {
-  if (!tabs || !tabs.length) return "";
-  const activeId = active ? active.id : null;
+export function mapTabBar(tabs, active, { chores = false, choreView = false } = {}) {
+  tabs = tabs || [];
+  if (!tabs.length && !chores) return "";
+  const activeId = active && !choreView ? active.id : null;
   const items = tabs.map((tab) => {
     const icon = tab.icon || (tab.branch ? "↗" : "📑");
     const lock = tab.private ? `<span class="map-tab-lock" title="${escapeHtml(t("Nur für mich"))}">🔒</span>` : "";
     return `<button class="map-tab${tab.id === activeId ? " active" : ""}" data-tab="${escapeHtml(tab.id)}" role="tab" aria-selected="${tab.id === activeId}" title="${escapeHtml(t("Noch einmal tippen: Tab bearbeiten"))}"><span class="map-tab-icon">${escapeHtml(icon)}</span><span class="map-tab-name">${escapeHtml(tab.name)}</span>${lock}</button>`;
   });
-  return `<button class="map-tab map-tab-main${activeId ? "" : " active"}" data-tab="" role="tab" aria-selected="${!activeId}"><span class="map-tab-icon">🗺️</span><span class="map-tab-name">${escapeHtml(t("Map"))}</span></button>${items.join("")}<button class="map-tab map-tab-add" data-tab-add="1" data-lvl="normal" title="${escapeHtml(t("Ansicht als Tab speichern"))}" aria-label="${escapeHtml(t("Ansicht als Tab speichern"))}">＋</button>`;
+  const main = !activeId && !choreView;
+  const chore = chores
+    ? `<button class="map-tab map-tab-chores${choreView ? " active" : ""}" data-chore-tab="1" role="tab" aria-selected="${choreView}" title="${escapeHtml(t("Live aus ChoreOps, nur zum Ansehen"))}"><span class="map-tab-icon">🏅</span><span class="map-tab-name">ChoreOps</span></button>`
+    : "";
+  return `<button class="map-tab map-tab-main${main ? " active" : ""}" data-tab="" role="tab" aria-selected="${main}"><span class="map-tab-icon">🗺️</span><span class="map-tab-name">${escapeHtml(t("Map"))}</span></button>${items.join("")}${chore}<button class="map-tab map-tab-add" data-tab-add="1" data-lvl="normal" title="${escapeHtml(t("Ansicht als Tab speichern"))}" aria-label="${escapeHtml(t("Ansicht als Tab speichern"))}">＋</button>`;
 }
 
 export const MAP_TAB_CSS = `
@@ -1769,6 +1794,278 @@ export function choreopsBadge(idea) {
 export function canHandOver(idea, choreops) {
   return Boolean(choreops && Array.isArray(choreops.users) && choreops.users.length && idea && !idea.choreops && idea.status !== "completed");
 }
+
+// What the status sensors of ChoreOps show, sorted by what needs attention first
+const CHORE_DONE_STATES = new Set(["approved", "completed", "approved_in_part", "completed_in_part"]);
+const CHORE_CLAIMED_STATES = new Set(["claimed", "claimed_in_part"]);
+const CHORE_NAME_MAX = 80;
+
+function choreRank(chore) {
+  if (chore.done) return 3;
+  if (chore.overdue) return 0;
+  return chore.claimed ? 1 : 2;
+}
+
+/** The people of ChoreOps with their points and chores, read live from its sensors. */
+export function choreMapData(states, ideas = []) {
+  const people = new Map();
+  const person = (name) => {
+    if (!people.has(name)) people.set(name, { name, points: null, chores: [] });
+    return people.get(name);
+  };
+  const squeeze = (text) => String(text ?? "").split(/\s+/).filter(Boolean).join(" ");
+  for (const [entityId, state] of Object.entries(states || {})) {
+    const attrs = state && state.attributes;
+    if (!attrs || !entityId.startsWith("sensor.") || typeof attrs.user_name !== "string") continue;
+    if (attrs.purpose === "purpose_points") {
+      const points = Number(state.state);
+      person(attrs.user_name).points = Number.isFinite(points) ? points : null;
+    } else if (attrs.purpose === "purpose_chore_status" && attrs.chore_name) {
+      const name = squeeze(attrs.chore_name);
+      const user = attrs.user_name;
+      // A chore Brainstorm handed over keeps the text of the note
+      const idea = (ideas || []).find((item) => item && item.choreops && item.choreops.user === user && squeeze(item.text).slice(0, CHORE_NAME_MAX) === name);
+      const labels = Array.isArray(attrs.labels) ? attrs.labels : [];
+      const points = Number(attrs.default_points);
+      const earned = Number(attrs.chore_points_earned);
+      person(user).chores.push({
+        entity: entityId,
+        name,
+        state: String(state.state),
+        done: CHORE_DONE_STATES.has(state.state),
+        claimed: CHORE_CLAIMED_STATES.has(state.state),
+        overdue: state.state === "overdue",
+        points: Number.isFinite(points) ? points : 0,
+        earned: Number.isFinite(earned) ? earned : 0,
+        due: typeof attrs.due_date === "string" ? attrs.due_date : null,
+        brainstorm: Boolean(idea) || labels.includes("brainstorm"),
+        idea: idea ? idea.id : null,
+      });
+    }
+  }
+  const list = [...people.values()].sort((a, b) => a.name.localeCompare(b.name));
+  for (const item of list) {
+    item.chores.sort((a, b) => choreRank(a) - choreRank(b) || String(a.due || "~").localeCompare(String(b.due || "~")) || a.name.localeCompare(b.name));
+  }
+  return list;
+}
+
+function formatPoints(value) {
+  return Number.isInteger(value) ? String(value) : String(Math.round(value * 10) / 10);
+}
+
+function choreState(chore) {
+  if (chore.done) return ["✅", t("erledigt"), "done"];
+  if (chore.overdue) return ["⏰", t("überfällig"), "overdue"];
+  if (chore.claimed) return ["✋", t("gemeldet, wartet auf Freigabe"), "claimed"];
+  return ["○", t("offen"), "open"];
+}
+
+/** The read-only map of ChoreOps: a branch per person with the chores and points. */
+export function renderChoreMap(people, { showDone = false } = {}) {
+  if (!people || !people.length) {
+    return `<div class="chore-map-empty">🏅 ${escapeHtml(t("ChoreOps zeigt noch keine Personen."))}</div>`;
+  }
+  const all = people.flatMap((item) => item.chores);
+  const count = (test) => all.filter(test).length;
+  const doneCount = count((c) => c.done);
+  const summary = [
+    t("{count} offen", { count: count((c) => !c.done && !c.claimed) }),
+    t("{count} gemeldet", { count: count((c) => c.claimed) }),
+    t("{count} erledigt", { count: doneCount }),
+  ].join(" · ");
+  const branches = people.map((item, index) => {
+    const chores = item.chores.filter((c) => showDone || !c.done);
+    const rows = chores.map((chore) => {
+      const [icon, label, cls] = choreState(chore);
+      const due = chore.due && !chore.done ? new Date(chore.due) : null;
+      const date = due && !Number.isNaN(due.getTime()) ? shortDate(due) : "";
+      const points = chore.done && chore.earned ? `+${formatPoints(chore.earned)}` : formatPoints(chore.points);
+      const meta = [t("{points} P", { points }), date].filter(Boolean).join(" · ");
+      const from = chore.brainstorm ? `<span class="chore-from" title="${escapeHtml(t("Aus Brainstorm übergeben"))}">💡</span>` : "";
+      const title = [chore.name, label, date && t("fällig {date}", { date })].filter(Boolean).join(" – ");
+      return `<li class="chore-item chore-is-${cls}" title="${escapeHtml(title)}"><span class="chore-state" aria-label="${escapeHtml(label)}">${icon}</span><span class="chore-name">${escapeHtml(chore.name)}</span>${from}<span class="chore-meta">${escapeHtml(meta)}</span></li>`;
+    });
+    const hidden = item.chores.length - chores.length;
+    let empty = "";
+    if (!item.chores.length) empty = `<li class="chore-none">${escapeHtml(t("Keine Aufgaben"))}</li>`;
+    else if (!chores.length) empty = `<li class="chore-none">${escapeHtml(t("Alles erledigt 🎉"))}</li>`;
+    const points = item.points === null ? "" : `<span class="chore-points" title="${escapeHtml(t("Punktestand"))}">⭐ ${escapeHtml(formatPoints(item.points))}</span>`;
+    const open = item.chores.filter((c) => !c.done).length;
+    const more = hidden ? `<div class="chore-hidden">${escapeHtml(t("+ {count} erledigt", { count: hidden }))}</div>` : "";
+    return `<section class="chore-person" style="--chore-hue: ${(index * 137 + 200) % 360}"><header class="chore-person-head"><span class="chore-avatar" aria-hidden="true">${escapeHtml(item.name.charAt(0).toUpperCase())}</span><span class="chore-person-name">${escapeHtml(item.name)}</span>${points}<span class="chore-open" title="${escapeHtml(t("Noch offen"))}">${open}</span></header><ul class="chore-list">${rows.join("")}${empty}</ul>${more}</section>`;
+  });
+  const toggle = doneCount
+    ? `<button class="chore-toggle" data-chore-done aria-pressed="${showDone}">${escapeHtml(showDone ? t("Erledigte ausblenden") : t("Erledigte zeigen"))}</button>`
+    : "";
+  return `<div class="chore-root"><span class="chore-root-icon" aria-hidden="true">🏅</span><span class="chore-root-name">ChoreOps</span><span class="chore-root-sum">${escapeHtml(summary)}</span>${toggle}</div><div class="chore-branches">${branches.join("")}</div><p class="chore-note">${escapeHtml(t("Nur zum Ansehen: Freigeben und Punkte vergeben passiert in ChoreOps."))}</p>`;
+}
+
+export const CHORE_MAP_CSS = `
+  .chore-map {
+    display: none;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    padding: 14px 12px 16px;
+    box-sizing: border-box;
+  }
+  .chore-root {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 6px 10px;
+    width: fit-content;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 10px 18px;
+    border-radius: 24px;
+    background: var(--primary-color, #03a9f4);
+    color: var(--text-primary-color, #fff);
+    box-sizing: border-box;
+  }
+  .chore-root-name {
+    font-weight: 700;
+    font-size: 1.05rem;
+  }
+  .chore-root-sum {
+    font-size: 0.82rem;
+    opacity: 0.9;
+  }
+  .chore-toggle {
+    min-height: 32px;
+    padding: 2px 12px;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+  .chore-branches {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin-top: 22px;
+  }
+  .chore-branches::before {
+    content: "";
+    position: absolute;
+    top: -22px;
+    left: 50%;
+    height: 22px;
+    border-left: 2px solid var(--divider-color, rgba(127, 127, 127, 0.4));
+  }
+  .chore-person {
+    --chore-color: hsl(var(--chore-hue), 60%, 50%);
+    border: 1px solid var(--divider-color, rgba(127, 127, 127, 0.25));
+    border-top: 4px solid var(--chore-color);
+    border-radius: 12px;
+    background: var(--secondary-background-color, rgba(127, 127, 127, 0.06));
+    padding: 8px 10px 10px;
+    min-width: 0;
+  }
+  .chore-person-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .chore-avatar {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--chore-color);
+    color: #fff;
+    font-weight: 700;
+  }
+  .chore-person-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .chore-points {
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+  .chore-open {
+    min-width: 22px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: var(--chore-color);
+    color: #fff;
+    font-size: 0.75rem;
+    text-align: center;
+  }
+  .chore-list {
+    list-style: none;
+    margin: 0;
+    padding: 0 0 0 10px;
+    border-left: 2px solid var(--chore-color);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .chore-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 34px;
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: var(--card-background-color, #fff);
+    font-size: 0.88rem;
+  }
+  .chore-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .chore-meta {
+    flex: 0 0 auto;
+    color: var(--secondary-text-color);
+    font-size: 0.75rem;
+  }
+  .chore-is-overdue {
+    box-shadow: inset 3px 0 0 var(--error-color, #db4437);
+  }
+  .chore-is-claimed {
+    box-shadow: inset 3px 0 0 var(--warning-color, #ffa600);
+  }
+  .chore-is-done {
+    opacity: 0.6;
+  }
+  .chore-is-done .chore-name {
+    text-decoration: line-through;
+  }
+  .chore-none,
+  .chore-hidden {
+    color: var(--secondary-text-color);
+    font-size: 0.8rem;
+    padding: 4px 2px;
+  }
+  .chore-note {
+    margin: 14px 0 0;
+    text-align: center;
+    color: var(--secondary-text-color);
+    font-size: 0.78rem;
+  }
+  .chore-map-empty {
+    padding: 40px 12px;
+    text-align: center;
+    color: var(--secondary-text-color);
+  }
+`;
 
 const CHORE_POINTS = [5, 10, 20, 50];
 

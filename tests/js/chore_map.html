@@ -1,0 +1,59 @@
+<!doctype html>
+<!-- Browser test for the live ChoreOps view. Run: python3 -m http.server in the repo root,
+     open http://localhost:8000/tests/js/chore_map.html, it shows PASS or the failures. --><meta charset="utf-8"><body><pre id="out">running</pre>
+<script type="module">
+import { choreMapData, mapTabBar, renderChoreMap } from "../../custom_components/brainstorm/cards/brainstorm-i18n.js";
+const fails = [];
+const check = (name, got, want) => { if (JSON.stringify(got) !== JSON.stringify(want)) fails.push(`${name}: want ${JSON.stringify(want)}, got ${JSON.stringify(got)}`); };
+const chore = (user, name, state, extra = {}) => ({ state, attributes: { purpose: "purpose_chore_status", user_name: user, chore_name: name, default_points: 5, ...extra } });
+const states = {
+  "sensor.lenja_points": { state: "12.5", attributes: { purpose: "purpose_points", user_name: "Lenja" } },
+  "sensor.jan_points": { state: "0.0", attributes: { purpose: "purpose_points", user_name: "Jan" } },
+  "sensor.lenja_a": chore("Lenja", "Zimmer aufräumen", "pending", { due_date: "2026-11-20T10:00:00+00:00" }),
+  "sensor.lenja_b": chore("Lenja", "Müll  runter", "overdue"),
+  "sensor.lenja_c": chore("Lenja", "Frido füttern", "approved", { chore_points_earned: 5 }),
+  "sensor.lenja_d": chore("Lenja", "Spülmaschine ausräumen", "claimed", { default_points: 20 }),
+  "sensor.jonathan_a": chore("Jonathan", "Altglas", "pending", { labels: ["brainstorm"] }),
+  "sensor.system_global": { state: "pending", attributes: { purpose: "purpose_shared_chore", chore_name: "Frido" } },
+  "button.lenja_approve": { state: "unknown", attributes: { purpose: "purpose_chore_status", user_name: "Lenja", chore_name: "x" } },
+};
+const ideas = [{ id: "i1", text: "Spülmaschine   ausräumen", choreops: { user: "Lenja", points: 20, status: "claimed" } }];
+const people = choreMapData(states, ideas);
+check("people", people.map((p) => p.name), ["Jan", "Jonathan", "Lenja"]);
+const lenja = people[2];
+check("points", lenja.points, 12.5);
+check("no points sensor", people[1].points, null);
+check("order", lenja.chores.map((c) => c.name), ["Müll runter", "Spülmaschine ausräumen", "Zimmer aufräumen", "Frido füttern"]);
+check("linked note", lenja.chores[1].idea, "i1");
+check("label counts", people[1].chores[0].brainstorm, true);
+check("done", lenja.chores[3].done, true);
+
+const html = renderChoreMap(people);
+const box = document.createElement("div");
+box.innerHTML = html;
+check("branches", box.querySelectorAll(".chore-person").length, 3);
+check("done hidden", box.textContent.includes("Frido füttern"), false);
+check("hidden count", box.querySelector(".chore-hidden") !== null, true);
+check("no chores", box.querySelector(".chore-person .chore-none").textContent, "Keine Aufgaben");
+check("overdue class", box.querySelector(".chore-is-overdue .chore-name").textContent, "Müll runter");
+check("from brainstorm", box.querySelectorAll(".chore-from").length, 2);
+check("toggle", box.querySelector("[data-chore-done]") !== null, true);
+const all = document.createElement("div");
+all.innerHTML = renderChoreMap(people, { showDone: true });
+check("done shown", all.querySelector(".chore-is-done .chore-meta").textContent.startsWith("+5"), true);
+check("summary", all.querySelector(".chore-root-sum").textContent, "3 offen · 1 gemeldet · 1 erledigt");
+check("empty", renderChoreMap([]).includes("chore-map-empty"), true);
+check("escaped", renderChoreMap(choreMapData({ "sensor.x": chore("<b>", "<i>x</i>", "pending") })).includes("<i>x</i>"), false);
+
+// The tab bar shows the ChoreOps tab even without saved views
+const bar = document.createElement("div");
+bar.innerHTML = mapTabBar([], null, { chores: true });
+check("chore tab", bar.querySelector("[data-chore-tab]") !== null, true);
+check("map active", bar.querySelector(".map-tab-main").classList.contains("active"), true);
+bar.innerHTML = mapTabBar([{ id: "t1", name: "A" }], { id: "t1" }, { chores: true, choreView: true });
+check("chore active", bar.querySelector("[data-chore-tab]").classList.contains("active"), true);
+check("tab not active", bar.querySelector('[data-tab="t1"]').classList.contains("active"), false);
+check("no bar", mapTabBar([], null), "");
+
+document.getElementById("out").textContent = fails.length ? `FAIL\n${fails.join("\n")}` : "PASS";
+</script>

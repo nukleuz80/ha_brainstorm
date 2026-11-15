@@ -1,8 +1,8 @@
-import { LEVEL_CSS, SOCIAL_CSS, canHandOver, choreopsBadge, renderChoreHandover, MAP_TAB_CSS, activeMapTab, branchTabs, mapTabBar, ruleFilter, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.13.1";
+import { LEVEL_CSS, SOCIAL_CSS, CHORE_MAP_CSS, choreMapData, renderChoreMap, canHandOver, choreopsBadge, renderChoreHandover, MAP_TAB_CSS, activeMapTab, branchTabs, mapTabBar, ruleFilter, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.13.2";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.13.1 - ChoreOps-Brücke
+ * Version: 1.13.2 - ChoreOps-Live-Ansicht
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -101,6 +101,7 @@ const BRAINSTORM_MINDMAP_DEFAULTS = {
   show_export_btn: true,
   show_filter: true,
   show_tabs: true,
+  show_choreops: true,
   show_images: true,
   show_minimap: true,
   hide_empty_categories: true,
@@ -347,6 +348,10 @@ class BrainstormMindmapCard extends HTMLElement {
     this._activeTabId = null;
     this._tabReturn = null;
     this._tabBarKey = "";
+    // The live ChoreOps view instead of the map
+    this._choreView = false;
+    this._choreShowDone = false;
+    this._choreKey = "";
     this._filterOpen = false;
     this._filterHits = null; // Set of ids while a filter is on
     this._filterContext = new Set(); // parents of hits, half faded
@@ -530,6 +535,7 @@ class BrainstormMindmapCard extends HTMLElement {
 
     const ideas = sensor.attributes.ideas || [];
     const categories = sensor.attributes.categories || [];
+    if (this._choreView) this._renderChoreMap();
     this._checkSavedCategory(categories);
     const alexaInfo = this._getLastAlexaInfo();
     const currentAlexaKey = alexaInfo ? `${alexaInfo.entityId}_${alexaInfo.name}_${alexaInfo.state}` : "";
@@ -994,6 +1000,20 @@ class BrainstormMindmapCard extends HTMLElement {
         ${LEVEL_CSS}
         ${SOCIAL_CSS}
         ${MAP_TAB_CSS}
+        ${CHORE_MAP_CSS}
+        ha-card.chore-view .chore-map {
+          display: block;
+        }
+        ha-card.chore-view .canvas-area,
+        ha-card.chore-view .filter-bar,
+        ha-card.chore-view .focus-bar,
+        ha-card.chore-view .vote-bar,
+        ha-card.chore-view .add-note-btn,
+        ha-card.chore-view .controls-panel,
+        ha-card.chore-view .minimap,
+        ha-card.chore-view .present-bar {
+          display: none !important;
+        }
         * {
           box-sizing: border-box;
           user-select: none;
@@ -3913,6 +3933,9 @@ class BrainstormMindmapCard extends HTMLElement {
         <nav class="focus-bar" id="focusBar" aria-label="${t("Fokus")}"></nav>
         <div class="vote-bar" id="voteBar" role="status" aria-live="polite"></div>
 
+        <!-- Live view of ChoreOps, only to look at -->
+        <div class="chore-map" id="choreMap" role="tabpanel" aria-live="polite"></div>
+
         <!-- Interactive Canvas Area -->
         <div class="canvas-area${this._isBoard() ? " board-mode" : ""}${this._isPinboard() ? " pin-mode" : ""}" id="canvasArea" tabindex="0">
           <div class="lasso-rect" id="lassoRect"></div>
@@ -4990,6 +5013,8 @@ class BrainstormMindmapCard extends HTMLElement {
   // Map tabs: saved views of a list, a branch, a filter and a layout
 
   _syncMapTabs(attributes) {
+    this._choreops = attributes.choreops || null;
+    if (this._choreView && !this._choreTabShown()) this._setChoreView(false);
     const rev = attributes.map_tabs_rev;
     if (rev !== undefined && rev !== this._mapTabsRev && this._hass && !this._mapTabsLoading) {
       this._mapTabsRev = rev;
@@ -5027,15 +5052,21 @@ class BrainstormMindmapCard extends HTMLElement {
     const bar = this.shadowRoot && this.shadowRoot.getElementById("mapTabs");
     if (!bar) return;
     const show = this._config.show_tabs !== false;
+    const chores = this._choreTabShown();
     const active = this._activeTab();
-    const key = show ? JSON.stringify([this._mapTabs, active && active.id]) : "";
+    const key = show || chores ? JSON.stringify([show ? this._mapTabs : [], active && active.id, chores, this._choreView]) : "";
     if (key === this._tabBarKey) return;
     this._tabBarKey = key;
-    bar.innerHTML = show ? mapTabBar(this._mapTabs, active) : "";
+    bar.innerHTML = show || chores ? mapTabBar(show ? this._mapTabs : [], active, { chores, choreView: this._choreView }) : "";
     bar.querySelectorAll(".map-tab[data-tab]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const id = btn.getAttribute("data-tab");
         const tab = this._mapTabs.find((item) => item.id === id) || null;
+        if (this._choreView) {
+          // Back from ChoreOps to the map as it was, or into another tab
+          this._setChoreView(false);
+          if (!tab || this._activeTab() === tab) return;
+        }
         // Tapping the open tab again edits it, so touch screens need no long press
         if (tab && this._activeTab() === tab) this._showTabDialog(tab);
         else this._applyTab(tab);
@@ -5047,10 +5078,50 @@ class BrainstormMindmapCard extends HTMLElement {
         this._showTabDialog(tab);
       });
     });
+    const choreTab = bar.querySelector("[data-chore-tab]");
+    if (choreTab) choreTab.addEventListener("click", () => this._setChoreView(true));
     const add = bar.querySelector("[data-tab-add]");
     if (add) add.addEventListener("click", () => this._showTabDialog(null));
     const current = bar.querySelector(".map-tab.active");
     if (current && current.scrollIntoView) current.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }
+
+  // The ChoreOps tab: shown while ChoreOps is installed, unless the card turns it off
+  _choreTabShown() {
+    return this._config.show_choreops !== false && Boolean(this._choreops);
+  }
+
+  _setChoreView(on) {
+    on = Boolean(on) && this._choreTabShown();
+    const cardRoot = this.shadowRoot && this.shadowRoot.getElementById("cardRoot");
+    this._choreView = on;
+    this._choreKey = "";
+    if (cardRoot) cardRoot.classList.toggle("chore-view", on);
+    if (on) this._renderChoreMap();
+    this._renderMapTabs();
+    if (!on) {
+      // The map was hidden, so its size may have changed meanwhile
+      this._lastDataSignature = "";
+      this._updateContent();
+    }
+  }
+
+  _renderChoreMap() {
+    const box = this.shadowRoot && this.shadowRoot.getElementById("choreMap");
+    const sensor = this._getSensorEntity();
+    if (!box || !this._hass) return;
+    const people = choreMapData(this._hass.states, (sensor && sensor.attributes.ideas) || []);
+    const key = JSON.stringify([people, this._choreShowDone, this._hass.language]);
+    if (key === this._choreKey) return;
+    this._choreKey = key;
+    box.innerHTML = renderChoreMap(people, { showDone: this._choreShowDone });
+    const toggle = box.querySelector("[data-chore-done]");
+    if (toggle) {
+      toggle.addEventListener("click", () => {
+        this._choreShowDone = !this._choreShowDone;
+        this._renderChoreMap();
+      });
+    }
   }
 
   _currentView() {
@@ -5077,6 +5148,11 @@ class BrainstormMindmapCard extends HTMLElement {
       ? target.category
       : "all";
     const ideas = attributes.ideas || [];
+    if (this._choreView) {
+      this._choreView = false;
+      const cardRoot = this.shadowRoot.getElementById("cardRoot");
+      if (cardRoot) cardRoot.classList.remove("chore-view");
+    }
     this._activeTabId = tab ? tab.id : null;
     if (!tab) this._tabReturn = null;
     this._selectedCategory = category;
@@ -11333,6 +11409,12 @@ class BrainstormMindmapCardEditor extends HTMLElement {
         selector: { boolean: {} },
       },
       {
+        name: "show_choreops",
+        label: t("ChoreOps-Tab zeigen (live, nur zum Ansehen)"),
+        default: true,
+        selector: { boolean: {} },
+      },
+      {
         name: "show_add_btn",
         label: t("Neue Notiz-Schaltfläche (+ Idee) anzeigen"),
         default: true,
@@ -11558,7 +11640,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.13.1 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.13.2 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );
