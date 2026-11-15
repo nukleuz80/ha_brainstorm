@@ -207,6 +207,8 @@ DESCRIPTION_MAX_LENGTH = 4000
 ATTR_ATTACHMENTS = "attachments"
 # When an idea was ticked off, so its attachments can go after a while
 ATTR_COMPLETED_AT = "completed_at"
+# The Home Assistant user who ticked an idea off, for the statistics
+ATTR_COMPLETED_BY = "completed_by"
 # Someone, often a coding AI, is working on an idea right now
 ATTR_IN_PROGRESS = "in_progress"
 # How a note looks on the mind map; none means the look of the map

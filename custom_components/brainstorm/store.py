@@ -25,6 +25,7 @@ from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    ATTR_COMPLETED_BY,
     ATTR_CALENDAR,
     ATTR_CALENDAR_EVENT,
     CONF_CALENDAR_ENTITY,
@@ -266,6 +267,7 @@ EXPORT_SKIPPED_FIELDS = (
     ATTR_ATTACHMENTS,
     ATTR_IN_PROGRESS,
     ATTR_CALENDAR_EVENT,
+    ATTR_COMPLETED_BY,
     ATTR_TODO_LINK,
     ATTR_CHOREOPS,
     ATTR_CHOREOPS_REWARD,
@@ -1967,8 +1969,13 @@ class BrainstormStore:
             idea[ATTR_STATUS] = status
             if newly_completed:
                 idea[ATTR_COMPLETED_AT] = dt_util.now().isoformat()
+                if context is not None and context.user_id:
+                    idea[ATTR_COMPLETED_BY] = context.user_id
+                else:
+                    idea.pop(ATTR_COMPLETED_BY, None)
             elif status == "active":
                 idea.pop(ATTR_COMPLETED_AT, None)
+                idea.pop(ATTR_COMPLETED_BY, None)
         if in_progress and not idea.get(ATTR_IN_PROGRESS):
             mark: dict[str, Any] = {"since": dt_util.now().isoformat()}
             if context is not None and context.user_id:

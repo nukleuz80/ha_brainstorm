@@ -9,7 +9,7 @@
 [![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.13.19-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.13.20-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![Wiki](https://img.shields.io/badge/Docs-Wiki-6f42c1.svg)](https://github.com/nukleuz80/ha_brainstorm/wiki)
@@ -262,11 +262,11 @@ The latest versions; every version is in [CHANGELOG.md](CHANGELOG.md).
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.13.20`** | 2026-11-15 | **📊 Statistics.** New button *📊 Statistics* above the list: done and new notes per week as bars (4–52 weeks), open and overdue, lead time (median and average), who ticked off what and the categories with done/open; within a category optionally only that category. Brainstorm now remembers which Home Assistant user ticks off a note (ChoreOps: the person who did the chore). New WebSocket command `brainstorm/statistics`. |
 | **`v1.13.19`** | 2026-11-15 | **📅 Calendar events for tasks.** Tasks with a due date and time now get an event in a calendar that follows them: changing the text, the time or the category moves it, deleting the task removes it, ticked off it stays. Default calendar plus a calendar per category (*Reminders › Calendar & Alexa*). New 📅 switch in the note dialog and field `calendar` in `update_idea` for tasks without a time (09:00) or to keep one out. The card shows 📅 on notes with an event. Replaces the old one-off calendar entry. |
 | **`v1.13.18`** | 2026-11-15 | **🔋 Battery Notes.** New page *🔋 Battery Notes* under *🔗 Connected integrations*: battery tasks name the battery type, such as *· 2× AA*. Ticking one off by hand calls `battery_notes.set_battery_replaced`. New button *🛒 Batteries to Bring!* in the card and new action `brainstorm.batteries_to_bring` put the batteries of all open battery tasks on the Bring list. Battery Notes shows its logo in the integration list. |
 | **`v1.13.17`** | 2026-11-15 | **🐞 Waste calendar: unavailable calendar.** The waste calendars are now read one by one. An unavailable calendar, such as an old one of Waste Collection Schedule, is skipped instead of failing the query of all calendars. |
 | **`v1.13.16`** | 2026-11-15 | **🗑️ Waste calendar.** New page *🗑️ Waste calendar* under *🔗 Connected integrations*, once Waste Collection Schedule is set up. On the evening before every pickup, a task like *🟡 Put out: Recycling* is added at the chosen time (default 18:00) in the chosen category; it ticks itself off after the pickup day. Words like *Pickup* and remarks in brackets are dropped, the sign follows the waste type, several pickups on one day become several tasks. Optionally the tasks of a pickup day go to ChoreOps people in turn, with points. If Home Assistant was off at the time, the tasks are caught up after the start. Logo in the strip, source *🗑️ Waste calendar* in the card. |
-| **`v1.13.15`** | 2026-11-15 | **📋 Origin of linked categories shown.** A category linked to a to-do list now carries a sign everywhere: 📋 for a list of Local To-do, 🔗 for a list of another integration. It is shown on the category tab of both cards, on the category label of every note, in the category dialogs and in the dropdowns. The tooltip names the list and its entity. New browser test `tests/js/linked_list.html`. |
 
 ---
 

@@ -1,0 +1,50 @@
+<!doctype html>
+<!-- Browser test for the statistics dialog. -->
+<meta charset="utf-8">
+<pre id="out">RUNNING</pre>
+<script type="module">
+import { leadTimeText, renderStatistics, setLanguage } from "../../custom_components/brainstorm/cards/brainstorm-i18n.js";
+const out = document.getElementById("out");
+const fails = [];
+const eq = (a, b, what) => { if (JSON.stringify(a) !== JSON.stringify(b)) fails.push(`${what}: ${JSON.stringify(a)} != ${JSON.stringify(b)}`); };
+const tick = () => new Promise((r) => setTimeout(r, 0));
+try {
+  setLanguage({ language: "de" });
+  eq(leadTimeText(5), "5 Std.", "hours");
+  eq(leadTimeText(84), "3,5 Tage", "days");
+  eq(leadTimeText(null), "–", "none");
+  const sent = [];
+  const stats = {
+    weeks: [{ start: "2026-11-09", week: 46, completed: 2, added: 1 }, { start: "2026-11-16", week: 47, completed: 1, added: 3 }],
+    completed: 3, added: 4, open: 5, overdue: 1,
+    lead_time: { count: 3, median_hours: 24, average_hours: 26 },
+    people: [{ name: "Jan <x>", completed: 2 }], unknown: 1,
+    categories: [{ category: "Haus", completed: 3, open: 5 }],
+  };
+  const hass = { callWS: async (msg) => { sent.push(msg); return stats; } };
+  const body = document.createElement("div");
+  document.body.appendChild(body);
+  let closed = false;
+  renderStatistics(body, { hass, close: () => (closed = true), category: "Haus" });
+  await tick(); await tick();
+  eq(sent[0], { type: "brainstorm/statistics", weeks: 8, category: "Haus" }, "first call");
+  eq([...body.querySelectorAll(".bs-stats-tile b")].map((b) => b.textContent), ["3", "1", "5", "1"].map((x, i) => [3, 4, 5, 1][i] + ""), "tiles");
+  eq(body.querySelectorAll(".bs-stats-week").length, 2, "weeks");
+  eq(body.querySelector(".bs-stats-bar.added:last-of-type") !== null, true, "bars");
+  eq(body.textContent.includes("Jan <x>"), true, "escaped name");
+  eq(body.textContent.includes("Median 1 Tage"), true, "lead");
+  const only = body.querySelector("#bsStatsOnly");
+  only.checked = false; only.dispatchEvent(new Event("change"));
+  await tick(); await tick();
+  eq(sent[1], { type: "brainstorm/statistics", weeks: 8 }, "all categories");
+  eq(body.textContent.includes("Kategorien"), true, "categories shown");
+  const weeks = body.querySelector("#bsStatsWeeks");
+  weeks.value = "26"; weeks.dispatchEvent(new Event("change"));
+  await tick(); await tick();
+  eq(sent[2].weeks, 26, "weeks change");
+  body.querySelector("#bsStatsClose").click();
+  eq(closed, true, "close");
+  await import("../../custom_components/brainstorm/cards/brainstorm-card.js");
+} catch (err) { fails.push(String(err && err.stack || err)); }
+out.textContent = fails.length ? "FAIL\n" + fails.join("\n") : "PASS";
+</script>

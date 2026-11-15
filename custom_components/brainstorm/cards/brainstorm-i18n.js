@@ -7,6 +7,24 @@
  */
 const DICTIONARIES = {
   en: {
+    "{hours} Std.": "{hours} h",
+    "{days} Tage": "{days} days",
+    "Zeitraum": "Period",
+    "{weeks} Wochen": "{weeks} weeks",
+    "Nur {category}": "Only {category}",
+    "neu": "new",
+    "Pro Woche": "Per week",
+    "KW {week}: {done} erledigt, {added} neu": "Week {week}: {done} done, {added} new",
+    "KW {week}": "W{week}",
+    "Durchlaufzeit": "Lead time",
+    "Median {median} · Schnitt {average} · {count} erledigte Notizen": "Median {median} · average {average} · {count} done notes",
+    "Noch keine erledigten Notizen in diesem Zeitraum.": "No done notes in this period yet.",
+    "Abgehakt von": "Ticked off by",
+    "ohne Angabe (Sprache, Automationen, ältere Notizen)": "unknown (voice, automations, older notes)",
+    "Kategorien": "Categories",
+    "erledigt / offen": "done / open",
+    "📊 Statistik": "📊 Statistics",
+    "Erledigt pro Woche, Durchlaufzeit und wer was abgehakt hat": "Done per week, lead time and who ticked off what",
     "Automatisch (nur mit Uhrzeit)": "Automatic (only with a time)",
     "📅 Immer eintragen": "📅 Always add",
     "Nicht eintragen": "Do not add",
@@ -1902,6 +1920,28 @@ export const SOCIAL_CSS = `
   .bs-c-text .bs-mention { color: var(--primary-color, #03a9f4); font-weight: 600; }
   .bs-c-del { margin-left: auto; min-width: 28px; min-height: 28px; border: none; background: none; cursor: pointer; color: var(--secondary-text-color, #727272); font: inherit; border-radius: 14px; }
   .bs-c-del:hover { color: var(--error-color, #db4437); }
+  .bs-stats-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .bs-stats-weeks { max-width: 160px; }
+  .bs-stats-only { display: flex; gap: 6px; align-items: center; font-size: 0.85rem; color: var(--primary-text-color, #212121); min-height: 36px; }
+  .bs-stats-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 6px; margin-bottom: 8px; }
+  .bs-stats-tile { display: flex; flex-direction: column; align-items: center; padding: 8px 4px; border-radius: 10px; background: color-mix(in srgb, var(--secondary-text-color, #727272) 8%, transparent); }
+  .bs-stats-tile b { font-size: 1.3rem; color: var(--primary-text-color, #212121); }
+  .bs-stats-tile span { font-size: 0.75rem; color: var(--secondary-text-color, #727272); }
+  .bs-stats-tile.warn b { color: var(--error-color, #db4437); }
+  .bs-stats-legend { font-weight: 400; font-size: 0.75rem; margin-left: 8px; color: var(--secondary-text-color, #727272); }
+  .bs-stats-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin: 0 3px 0 6px; vertical-align: -1px; }
+  .bs-stats-weekrows { display: flex; flex-direction: column; gap: 3px; margin-bottom: 8px; }
+  .bs-stats-week { display: grid; grid-template-columns: 52px 1fr 28px; gap: 6px; align-items: center; font-size: 0.75rem; color: var(--secondary-text-color, #727272); }
+  .bs-stats-bars { display: flex; flex-direction: column; gap: 2px; }
+  .bs-stats-bar { display: block; height: 6px; min-width: 2px; border-radius: 3px; }
+  .bs-stats-bar.done, .bs-stats-legend i.done { background: var(--success-color, #43a047); }
+  .bs-stats-bar.added, .bs-stats-legend i.added { background: color-mix(in srgb, var(--primary-color, #03a9f4) 55%, transparent); }
+  .bs-stats-num { text-align: right; color: var(--primary-text-color, #212121); }
+  .bs-stats-line { font-size: 0.85rem; color: var(--primary-text-color, #212121); margin-bottom: 8px; }
+  .bs-stats-list { display: flex; flex-direction: column; gap: 2px; margin-bottom: 8px; max-height: 30vh; overflow-y: auto; }
+  .bs-stats-row { display: flex; justify-content: space-between; gap: 8px; font-size: 0.85rem; padding: 3px 6px; border-radius: 6px; color: var(--primary-text-color, #212121); }
+  .bs-stats-row:nth-child(odd) { background: color-mix(in srgb, var(--secondary-text-color, #727272) 6%, transparent); }
+  .bs-stats-row.muted span { color: var(--secondary-text-color, #727272); }
   .bs-trash { display: flex; flex-direction: column; gap: 6px; max-height: min(50vh, 420px); overflow-y: auto; margin: 6px 0 10px; }
   .bs-trash-item {
     display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 10px;
@@ -3021,6 +3061,96 @@ export function renderTrash(body, { hass, close, prefix = "dialog" }) {
       await load();
     } catch (err) {
       draw((err && err.message) || t("Das hat nicht geklappt."));
+    }
+  };
+  body.innerHTML = `<div class="${c("label")}">${t("Lädt …")}</div>`;
+  load();
+}
+
+/** Return a lead time in hours as "5 Std." or "3,5 Tage". */
+export function leadTimeText(hours) {
+  if (hours === null || hours === undefined || Number.isNaN(Number(hours))) return "–";
+  const value = Number(hours);
+  const number = (n) => n.toLocaleString(dateLocale(), { maximumFractionDigits: 1 });
+  if (value < 24) return t("{hours} Std.", { hours: number(value) });
+  return t("{days} Tage", { days: number(value / 24) });
+}
+
+/**
+ * Fill a dialog body with the statistics: done and added per week as bars,
+ * lead time, who ticked off and the categories. Both cards can use it.
+ */
+export function renderStatistics(body, { hass, close, category = null, prefix = "dialog" }) {
+  const c = (names) => names.split(" ").map((n) => `${prefix}-${n}`).join(" ");
+  let weeks = 8;
+  let onlyCategory = Boolean(category);
+  const draw = (stats, error = "") => {
+    if (!body.isConnected) return;
+    if (error || !stats) {
+      body.innerHTML = `<div class="${c("error")}" style="display: flex;">${escapeHtml(error || t("Das hat nicht geklappt."))}</div>
+        <div class="${c("footer")}"><button class="${c("btn btn-primary")}" id="bsStatsClose">${t("Schließen")}</button></div>`;
+      body.querySelector("#bsStatsClose").addEventListener("click", close);
+      return;
+    }
+    const top = Math.max(1, ...stats.weeks.map((w) => Math.max(w.completed, w.added)));
+    const bar = (value, cls) => `<span class="bs-stats-bar ${cls}" style="width: ${Math.round((value / top) * 100)}%"></span>`;
+    const lead = stats.lead_time || {};
+    body.innerHTML = `
+      <div class="bs-stats-tools">
+        <select class="${c("input")} bs-stats-weeks" id="bsStatsWeeks" aria-label="${t("Zeitraum")}">
+          ${[4, 8, 12, 26, 52].map((n) => `<option value="${n}"${n === weeks ? " selected" : ""}>${t("{weeks} Wochen", { weeks: n })}</option>`).join("")}
+        </select>
+        ${category ? `<label class="bs-stats-only"><input type="checkbox" id="bsStatsOnly"${onlyCategory ? " checked" : ""}> ${t("Nur {category}", { category: escapeHtml(category) })}</label>` : ""}
+      </div>
+      <div class="bs-stats-tiles">
+        <div class="bs-stats-tile"><b>${stats.completed}</b><span>${t("erledigt")}</span></div>
+        <div class="bs-stats-tile"><b>${stats.added}</b><span>${t("neu")}</span></div>
+        <div class="bs-stats-tile"><b>${stats.open}</b><span>${t("offen")}</span></div>
+        <div class="bs-stats-tile${stats.overdue ? " warn" : ""}"><b>${stats.overdue}</b><span>${t("überfällig")}</span></div>
+      </div>
+      <div class="${c("label")}">${t("Pro Woche")} <span class="bs-stats-legend"><i class="done"></i>${t("erledigt")} <i class="added"></i>${t("neu")}</span></div>
+      <div class="bs-stats-weekrows">
+        ${stats.weeks.map((w) => `
+          <div class="bs-stats-week" title="${escapeHtml(t("KW {week}: {done} erledigt, {added} neu", { week: w.week, done: w.completed, added: w.added }))}">
+            <span class="bs-stats-kw">${t("KW {week}", { week: w.week })}</span>
+            <span class="bs-stats-bars">${bar(w.completed, "done")}${bar(w.added, "added")}</span>
+            <span class="bs-stats-num">${w.completed}</span>
+          </div>`).join("")}
+      </div>
+      <div class="${c("label")}">${t("Durchlaufzeit")}</div>
+      <div class="bs-stats-line">${lead.count
+        ? t("Median {median} · Schnitt {average} · {count} erledigte Notizen", { median: leadTimeText(lead.median_hours), average: leadTimeText(lead.average_hours), count: lead.count })
+        : t("Noch keine erledigten Notizen in diesem Zeitraum.")}</div>
+      <div class="${c("label")}">${t("Abgehakt von")}</div>
+      <div class="bs-stats-list">
+        ${stats.people.map((p) => `<div class="bs-stats-row"><span>${escapeHtml(p.name)}</span><b>${p.completed}</b></div>`).join("")}
+        ${stats.unknown ? `<div class="bs-stats-row muted"><span>${t("ohne Angabe (Sprache, Automationen, ältere Notizen)")}</span><b>${stats.unknown}</b></div>` : ""}
+        ${!stats.people.length && !stats.unknown ? `<div class="bs-stats-row muted"><span>–</span></div>` : ""}
+      </div>
+      ${onlyCategory ? "" : `<div class="${c("label")}">${t("Kategorien")}</div>
+      <div class="bs-stats-list">
+        ${stats.categories.map((cat) => `<div class="bs-stats-row"><span>${escapeHtml(cat.category)}</span><b title="${escapeHtml(t("erledigt / offen"))}">${cat.completed} / ${cat.open}</b></div>`).join("")}
+      </div>`}
+      <div class="${c("footer")}"><button class="${c("btn btn-primary")}" id="bsStatsClose">${t("Schließen")}</button></div>
+    `;
+    body.querySelector("#bsStatsClose").addEventListener("click", close);
+    body.querySelector("#bsStatsWeeks").addEventListener("change", (event) => {
+      weeks = Number(event.target.value) || 8;
+      load();
+    });
+    const only = body.querySelector("#bsStatsOnly");
+    if (only) only.addEventListener("change", () => {
+      onlyCategory = only.checked;
+      load();
+    });
+  };
+  const load = async () => {
+    try {
+      const message = { type: "brainstorm/statistics", weeks };
+      if (onlyCategory && category) message.category = category;
+      draw(await hass.callWS(message));
+    } catch (err) {
+      draw(null, (err && err.message) || t("Das hat nicht geklappt."));
     }
   };
   body.innerHTML = `<div class="${c("label")}">${t("Lädt …")}</div>`;

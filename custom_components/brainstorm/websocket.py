@@ -10,6 +10,8 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ServiceValidationError
 import homeassistant.helpers.config_validation as cv
 
+from homeassistant.util import dt as dt_util
+
 from .ai import MAP_INPUT_MAX_LENGTH, SPEECH_INPUT_MAX_LENGTH, AIUnavailableError
 from .choreops import POINT_KINDS, SUGGEST_MAX_ITEMS
 from .const import (
@@ -23,6 +25,7 @@ from .const import (
     PIN_COLORS,
 )
 from .presence import get_presence
+from .statistics import DEFAULT_WEEKS, MAX_WEEKS, build_statistics
 from .store import TRASH_DAYS, BrainstormStore, get_loaded_store, habit_summary
 
 # Error codes the cards translate for the person
@@ -52,6 +55,7 @@ def async_register_commands(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, websocket_generate_map)
     websocket_api.async_register_command(hass, websocket_get_comments)
     websocket_api.async_register_command(hass, websocket_get_trash)
+    websocket_api.async_register_command(hass, websocket_get_statistics)
     websocket_api.async_register_command(hass, websocket_get_habit)
     websocket_api.async_register_command(hass, websocket_restore_trash)
     websocket_api.async_register_command(hass, websocket_purge_trash)
@@ -691,6 +695,37 @@ def websocket_get_habit(
         connection.send_error(msg["id"], websocket_api.ERR_NOT_FOUND, "No such habit")
         return
     connection.send_result(msg["id"], summary)
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "brainstorm/statistics",
+        vol.Optional("weeks", default=DEFAULT_WEEKS): vol.All(
+            vol.Coerce(int), vol.Range(min=1, max=MAX_WEEKS)
+        ),
+        vol.Optional("category"): vol.Any(None, cv.string),
+    }
+)
+@websocket_api.async_response
+async def websocket_get_statistics(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Return done per week, lead time and who ticked off, of the visible notes."""
+    if (store := _trash_store(hass, connection, msg["id"])) is None:
+        return
+    names = {user.id: user.name or "" for user in await hass.auth.async_get_users()}
+    connection.send_result(
+        msg["id"],
+        build_statistics(
+            store.visible_ideas(connection.user.id),
+            dt_util.now(),
+            names,
+            msg["weeks"],
+            msg.get("category"),
+        ),
+    )
 
 
 @websocket_api.websocket_command({vol.Required("type"): "brainstorm/trash"})
