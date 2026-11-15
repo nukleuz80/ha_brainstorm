@@ -1,8 +1,8 @@
-import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, BRING_TAB_ID, bringBadge, bringSentText, bringTab, canSendToBring, renderBringSend, CHORE_MAP_CSS, choreMapData, renderChoreMap, canHandOver, choreopsBadge, renderChoreHandover, MAP_TAB_CSS, activeMapTab, branchTabs, mapTabBar, ruleFilter, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.13.5";
+import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, BRING_TAB_ID, bringBadge, bringSentText, compactNodeInfo, nextNodeDetail, nodeDetailButton, nodeDetailCompact, nodeDetailMode, bringTab, canSendToBring, renderBringSend, CHORE_MAP_CSS, choreMapData, renderChoreMap, canHandOver, choreopsBadge, renderChoreHandover, MAP_TAB_CSS, activeMapTab, branchTabs, mapTabBar, ruleFilter, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.13.6";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.13.5 - Logos der Integrationen
+ * Version: 1.13.6 - Kompakte Mindmap-Knoten
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -80,6 +80,7 @@ const UNDO_LIMIT = 30;
 
 // The bulb lies next to this file, wherever Home Assistant serves it from
 const MINIMAP_KEY = "brainstorm_minimap";
+const NODE_DETAIL_KEY = "brainstorm_node_detail";
 const BULB_URL = new URL("./brainstorm-bulb.svg", import.meta.url).href;
 
 const BRAINSTORM_MINDMAP_DEFAULTS = {
@@ -103,6 +104,7 @@ const BRAINSTORM_MINDMAP_DEFAULTS = {
   show_tabs: true,
   show_choreops: true,
   show_bring: true,
+  node_detail: "auto",
   show_images: true,
   show_minimap: true,
   hide_empty_categories: true,
@@ -299,6 +301,14 @@ class BrainstormMindmapCard extends HTMLElement {
       if (savedMinimap === "1" || savedMinimap === "0") this._minimapOpen = savedMinimap === "1";
     } catch {}
     this._minimapRects = [];
+    // Compact or full notes, chosen per browser; null follows the card option
+    this._nodeDetail = null;
+    try {
+      const savedDetail = localStorage.getItem(NODE_DETAIL_KEY);
+      if (savedDetail) this._nodeDetail = nodeDetailMode(savedDetail);
+    } catch {}
+    // The one compact note opened by a tap
+    this._expandedId = null;
     this._scale = 1;
     this._panX = 0;
     this._panY = 0;
@@ -1567,6 +1577,65 @@ class BrainstormMindmapCard extends HTMLElement {
           cursor: grab;
           user-select: none;
           transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        /* Compact notes: title, status dot and number of subtasks; a tap opens one */
+        .cloud-compact {
+          display: none;
+        }
+        #notesContainer.compact-nodes .note-cloud:not(.expanded) {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          min-width: 0 !important;
+          max-width: 180px !important;
+          padding: 6px 10px !important;
+          cursor: pointer;
+        }
+        #notesContainer.compact-nodes .note-cloud:not(.expanded) :is(.cloud-meta, .cloud-marks, .cloud-social, .cloud-image, .cloud-callout, .cloud-result, .cloud-actions) {
+          display: none !important;
+        }
+        #notesContainer.compact-nodes .note-cloud:not(.expanded) .cloud-compact {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          flex: none;
+        }
+        #notesContainer.compact-nodes .note-cloud:not(.expanded) .cloud-text {
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          min-width: 0;
+          margin: 0;
+          font-size: 0.86rem;
+          line-height: 1.25;
+        }
+        #notesContainer.compact-nodes .note-cloud.expanded {
+          z-index: 40 !important;
+          box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
+        }
+        .node-dot {
+          width: 9px;
+          height: 9px;
+          border-radius: 50%;
+          background: var(--cat-color, var(--primary-color, #03a9f4));
+          flex: none;
+        }
+        .node-dot.dot-urgent { background: #e53935; }
+        .node-dot.dot-high { background: #fb8c00; }
+        .node-dot.dot-overdue { background: #d32f2f; box-shadow: 0 0 0 2px color-mix(in srgb, #d32f2f 30%, transparent); }
+        .node-dot.dot-blocked { background: var(--secondary-text-color, #757575); }
+        .node-dot.dot-working { background: #1e88e5; }
+        .node-kids {
+          min-width: 18px;
+          padding: 0 5px;
+          border-radius: 9px;
+          font-size: 0.7rem;
+          font-weight: 600;
+          line-height: 16px;
+          text-align: center;
+          color: var(--primary-text-color, #212121);
+          background: color-mix(in srgb, var(--cat-color, var(--primary-color, #03a9f4)) 20%, transparent);
         }
         /* Shapes, chosen per note */
         .note-cloud.nshape-pill {
@@ -4004,6 +4073,7 @@ class BrainstormMindmapCard extends HTMLElement {
           <button class="control-btn" id="zoomInBtn" title="${t("Vergrößern")}">+</button>
           <button class="control-btn" id="zoomOutBtn" title="${t("Verkleinern")}">−</button>
           <button class="control-btn" id="resetViewBtn" title="${t("Zentrieren / Anordnen")}">⟲</button>
+          <button class="control-btn" id="nodeDetailBtn" data-lvl="normal" title="${this._escapeHtml(nodeDetailButton(this._nodeDetailMode()).title)}">${nodeDetailButton(this._nodeDetailMode()).icon}</button>
           <button class="control-btn" id="minimapBtn" data-lvl="normal" title="${t("Übersicht ein- oder ausblenden (M)")}" aria-pressed="false">🗺️</button>
           <button class="control-btn" id="lassoBtn" data-lvl="normal" title="${t("Auswählen: Rahmen um mehrere Notizen ziehen (oder Umschalt+Ziehen)")}" aria-pressed="false">⬚</button>
           <button class="control-btn" id="drawBtn" data-lvl="normal" title="${t("Zeichnen: Pfeile, Kreise und Skizzen auf der Map (D)")}" aria-pressed="false">🖍️</button>
@@ -4117,6 +4187,10 @@ class BrainstormMindmapCard extends HTMLElement {
     }
 
     // Canvas Pan (Drag background)
+    // A tap beside the notes closes an opened compact note
+    canvasArea.addEventListener("click", (e) => {
+      if (this._expandedId && !e.target.closest(".note-cloud") && !e.target.closest(".dialog-box")) this._setExpanded(null);
+    });
     canvasArea.addEventListener("mousedown", (e) => {
       if (
         e.target.closest(".note-cloud") ||
@@ -4420,6 +4494,8 @@ class BrainstormMindmapCard extends HTMLElement {
     }
     const minimapBtn = this.shadowRoot.getElementById("minimapBtn");
     if (minimapBtn) minimapBtn.addEventListener("click", () => this._toggleMinimap());
+    const nodeDetailBtn = this.shadowRoot.getElementById("nodeDetailBtn");
+    if (nodeDetailBtn) nodeDetailBtn.addEventListener("click", () => this._cycleNodeDetail());
     const minimap = this.shadowRoot.getElementById("minimap");
     if (minimap) {
       minimap.addEventListener("pointerdown", (e) => {
@@ -4518,7 +4594,70 @@ class BrainstormMindmapCard extends HTMLElement {
       gridBg.style.backgroundPosition = `${this._panX}px ${this._panY}px`;
       gridBg.style.backgroundSize = `${size}px ${size}px`;
     }
+    this._applyNodeDetail();
     this._drawMinimapSoon();
+  }
+
+  // ---- Compact notes: only the title, a status dot and the subtasks ----
+
+  _nodeDetailMode() {
+    return nodeDetailMode(this._nodeDetail || this._config.node_detail);
+  }
+
+  // Compact right now: always, never, or while zoomed out
+  _nodesCompact() {
+    return nodeDetailCompact(this._nodeDetailMode(), this._scale);
+  }
+
+  // Set the look of the notes; true when it changed
+  _applyNodeDetail(force) {
+    const container = this.shadowRoot && this.shadowRoot.getElementById("notesContainer");
+    if (!container) return false;
+    const compact = this._nodesCompact();
+    if (!force && container.classList.contains("compact-nodes") === compact) return false;
+    container.classList.toggle("compact-nodes", compact);
+    if (!compact) this._setExpanded(null);
+    if (this._nodePositions.size) this._drawConnections();
+    this._refreshMinimap();
+    return true;
+  }
+
+  _cycleNodeDetail() {
+    this._nodeDetail = nextNodeDetail(this._nodeDetailMode());
+    try {
+      localStorage.setItem(NODE_DETAIL_KEY, this._nodeDetail);
+    } catch {}
+    const btn = this.shadowRoot && this.shadowRoot.getElementById("nodeDetailBtn");
+    const look = nodeDetailButton(this._nodeDetail);
+    if (btn) {
+      btn.textContent = look.icon;
+      btn.title = look.title;
+    }
+    this._showToast(look.title.split(" – ")[0]);
+    // Fixed modes place the notes by their own size, automatic by the full one
+    this._lastLayoutKey = "";
+    this._lastDataSignature = "";
+    this._updateContent();
+  }
+
+  // Open one compact note with all its details, or close it again
+  _setExpanded(id) {
+    if (this._expandedId === id) return;
+    const sr = this.shadowRoot;
+    const old = this._expandedId && sr && sr.getElementById(`cloud_${this._expandedId}`);
+    if (old) old.classList.remove("expanded");
+    this._expandedId = id;
+    const el = id && sr && sr.getElementById(`cloud_${id}`);
+    if (el) el.classList.add("expanded");
+    if (this._nodePositions.size) this._drawConnections();
+  }
+
+  // A tap on a closed compact note opens it instead of doing anything else
+  _expandOnTap(id) {
+    const container = this.shadowRoot && this.shadowRoot.getElementById("notesContainer");
+    if (!container || !container.classList.contains("compact-nodes") || this._expandedId === id) return false;
+    this._setExpanded(id);
+    return true;
   }
 
   // ---- Minimap: the whole map small, with the visible part as a frame ----
@@ -8462,6 +8601,21 @@ class BrainstormMindmapCard extends HTMLElement {
   }
 
   _arrangeNodesRadially() {
+    // Automatic notes are placed by their full size, so zooming moves nothing
+    const container = this.shadowRoot && this.shadowRoot.getElementById("notesContainer");
+    const measureFull = container && this._nodeDetailMode() === "auto" && container.classList.contains("compact-nodes");
+    if (measureFull) container.classList.remove("compact-nodes");
+    try {
+      this._arrangeNodes();
+    } finally {
+      if (measureFull) {
+        container.classList.add("compact-nodes");
+        this._drawConnections();
+      }
+    }
+  }
+
+  _arrangeNodes() {
     if (!this._getSensorEntity()) return;
     const ideas = this._mapIdeas();
 
@@ -9990,7 +10144,8 @@ class BrainstormMindmapCard extends HTMLElement {
         const prio = (idea.priority || "medium").toLowerCase();
         const prioClass = prio === "urgent" ? "cloud-urgent" : prio === "high" ? "cloud-high" : "";
         const prioBadge = this._getPriorityBadge(idea.priority, idea.id);
-        const hasBranch = filteredIdeas.some((i) => i.id !== idea.id && i.parent_id === idea.id && listIds.has(i.id));
+        const childCount = filteredIdeas.filter((i) => i.id !== idea.id && i.parent_id === idea.id && listIds.has(i.id)).length;
+        const hasBranch = childCount > 0;
         const branchTab = hasBranch && !this._isPinboard() ? branchTabs(this._mapTabs).get(idea.id) : null;
         const folded = hasBranch && (this._collapsed.has(idea.id) || Boolean(branchTab));
         const hiddenCount = folded ? this._descendantIds(idea.id, filteredIdeas).length : 0;
@@ -10002,7 +10157,7 @@ class BrainstormMindmapCard extends HTMLElement {
           : "";
 
         html += `
-          <div class="note-cloud ${prioClass}${idea.blocked_by && idea.blocked_by.length ? " is-blocked" : ""}${idea.id === this._linkFrom ? " link-source" : ""} nshape-${shape}${svgShape ? " has-shape" : ""}${idea.id === this._selectedId ? " selected" : ""}${this._multi.has(idea.id) ? " multi-selected" : ""}${idea.id === this._menuId ? " menu-open" : ""}" id="cloud_${this._escapeHtml(idea.id)}" data-id="${this._escapeHtml(idea.id)}" data-shape="${shape}" style="--cat-color: ${color};">
+          <div class="note-cloud ${prioClass}${idea.blocked_by && idea.blocked_by.length ? " is-blocked" : ""}${idea.id === this._linkFrom ? " link-source" : ""} nshape-${shape}${svgShape ? " has-shape" : ""}${idea.id === this._selectedId ? " selected" : ""}${this._multi.has(idea.id) ? " multi-selected" : ""}${idea.id === this._menuId ? " menu-open" : ""}${idea.id === this._expandedId ? " expanded" : ""}" id="cloud_${this._escapeHtml(idea.id)}" data-id="${this._escapeHtml(idea.id)}" data-shape="${shape}" style="--cat-color: ${color};">
             ${svgShape ? '<svg class="node-shape" aria-hidden="true"></svg>' : ""}
             ${branchToggle}
             ${idea.callout ? `<div class="cloud-callout" title="${t("Callout")}">💬 ${formatText(idea.callout)}</div>` : ""}
@@ -10027,6 +10182,7 @@ class BrainstormMindmapCard extends HTMLElement {
               return social ? `<div class="cloud-social">${social}</div>` : "";
             })()}
             ${cover ? `<div class="cloud-image" data-id="${this._escapeHtml(idea.id)}" data-att="${this._escapeHtml(cover.id)}" title="${t("Bild öffnen")}"><img alt="${this._escapeHtml(cover.name || "")}" draggable="false"></div>` : ""}
+            ${compactNodeInfo(idea, childCount)}
             <div class="cloud-text" title="${t("Klicken zum Bearbeiten")}">${numbers.has(idea.id) ? `<span class="cloud-number">${numbers.get(idea.id)}</span> ` : ""}${formatText(idea.text)}</div>
             ${idea.result ? `<div class="cloud-result" title="${t("Ergebnis")}">${formatText(idea.result)}</div>` : ""}
             <div class="cloud-actions">
@@ -10054,6 +10210,8 @@ class BrainstormMindmapCard extends HTMLElement {
       // The old notes go, and with them what the observer watched
       if (this._shapeObserver) this._shapeObserver.disconnect();
       container.innerHTML = html;
+      if (this._expandedId && !shownIdeas.some((i) => i.id === this._expandedId)) this._expandedId = null;
+      container.classList.toggle("compact-nodes", this._nodesCompact());
       this._loadNodeImages(container);
       // Notes that are done, deleted or filtered away leave the selection
       const shownIds = new Set(shownIdeas.map((i) => i.id));
@@ -10098,7 +10256,7 @@ class BrainstormMindmapCard extends HTMLElement {
           const column = board ? boardColumnOf(board, i) : pinPlace ? `${pinPlace.x},${pinPlace.y}` : "";
           return `${i.id}:${i.parent_id || ""}:${pos}:${this._collapsed.has(i.id) ? "folded" : ""}:${column}`;
         })
-        .join("|");
+        .join("|") + (this._nodeDetailMode() === "auto" ? "" : `|detail:${this._nodeDetailMode()}`);
       if (layoutKey !== this._lastLayoutKey) {
         this._lastLayoutKey = layoutKey;
         needsArrangement = true;
@@ -10218,6 +10376,7 @@ class BrainstormMindmapCard extends HTMLElement {
             return;
           }
           this._selectIdea(idea.id);
+          this._expandOnTap(idea.id);
         });
         cloud.addEventListener("dblclick", (e) => {
           if (e.shiftKey || e.ctrlKey || e.metaKey || this._lassoMode) return;
@@ -10232,6 +10391,8 @@ class BrainstormMindmapCard extends HTMLElement {
             if (e.target.closest("a") || e.target.closest(".bs-tag")) return;
             if (Date.now() - this._dragEndedAt < 300) return;
             this._selectIdea(idea.id);
+            // A closed compact note opens first, the next tap edits
+            if (this._expandOnTap(idea.id)) return;
             this._startInlineEdit(idea.id);
           });
         }
@@ -11445,6 +11606,21 @@ class BrainstormMindmapCardEditor extends HTMLElement {
         selector: { boolean: {} },
       },
       {
+        name: "node_detail",
+        label: t("Notizen auf der Map"),
+        default: "auto",
+        selector: {
+          select: {
+            mode: "dropdown",
+            options: [
+              { value: "auto", label: t("Automatisch nach Zoom") },
+              { value: "compact", label: t("Kompakt (nur Titel, Tipp klappt auf)") },
+              { value: "normal", label: t("Normal (alle Angaben)") },
+            ],
+          },
+        },
+      },
+      {
         name: "show_add_btn",
         label: t("Neue Notiz-Schaltfläche (+ Idee) anzeigen"),
         default: true,
@@ -11670,7 +11846,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.13.5 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.13.6 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

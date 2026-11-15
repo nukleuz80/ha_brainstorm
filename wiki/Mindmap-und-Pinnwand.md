@@ -46,6 +46,7 @@ show_export_btn: true       # 🖼️ Map als SVG oder PNG speichern
 - **Gliederung exportieren und einfügen (v1.8.4):** 🖼️ speichert die Map auch als Markdown-Gliederung, OPML oder FreeMind-`.mm` (öffnet sich in Freeplane, XMind, MindManager). *Gliederung einfügen* macht aus einer eingefügten Liste oder einer Datei (`.md`, `.txt`, `.opml`, `.mm`) einen Zweig mit Notizen, im Fokus unter der Fokus-Notiz.
 - **Brainstorm-Modus (v1.8.5):** ⚡ oder **B** öffnet eine Schnelleingabe mit Timer von 3 bis 15 Minuten. Jedes Enter ist sofort eine Notiz und erscheint als bunter Zettel; ↶ nimmt die ganze Runde wieder heraus.
 - **Ansichten (v1.8.6–v1.8.8):** Der Ansichts-Knopf unten rechts zeigt die Notizen ◎ rund um die Mitte, als ⇶ Baum, ⊤ Organigramm, ☰ eingerückte Gliederung, ▥ Kanban nach Status (offen, in Arbeit, wartet, erledigt), 📅 Zeitleiste nach Fälligkeit (überfällig, heute, morgen, diese Woche, später, ohne Datum) oder ⊞ Eisenhower-Matrix (sofort erledigen, einplanen, abgeben, später oder gar nicht). Auf den Boards ändert das Ziehen in eine andere Spalte Status, Fälligkeit oder Priorität, ↶ nimmt es zurück. Die Wahl merkt sich der Browser; `layout` legt den Standard fest.
+- **Kompakte Notizen (v1.13.6):** Der Knopf ◐ unten rechts schaltet, wie viel eine Notiz zeigt: *Automatisch* (Standard) zeigt beim Herauszoomen nur Titel, einen Statuspunkt und die Zahl der Unteraufgaben, beim Hineinzoomen alles; *Kompakt* zeigt immer nur Titel; *Normal* immer alles. Ein Tipp klappt eine einzelne kompakte Notiz mit allen Angaben auf, ein Tipp daneben klappt sie wieder zu. Der Punkt zeigt den wichtigsten Zustand: ⛔ wartet (grau), überfällig (rot mit Ring), 🔧 in Arbeit (blau), 🔥 dringend (rot), 🔴 hoch (orange), sonst die Kategoriefarbe. Im automatischen Modus verschiebt das Zoomen keine Notiz, die Plätze sind die der vollen Notizen. Jeder Browser merkt sich die Wahl; die Kartenoption `node_detail` legt den Start fest.
 - **Übersicht / Minimap (v1.10.6):** 🗺️ unten rechts oder **M** zeigt unten links die ganze Map im Kleinen, in den Kategoriefarben, mit dem sichtbaren Ausschnitt als Rahmen. Tippen oder Ziehen darin springt dorthin. Auf breiten Karten ist sie anfangs offen, am Handy zu; jeder Browser merkt sich die Wahl. Funktioniert in allen Ansichten, auch auf den Boards. `show_minimap: false` blendet sie samt Knopf aus.
 - **Präsentationsmodus (v1.8.10):** **P** (oder ▶ in der Ansichtswahl) zeigt die Map im Vollbild und geht sie Notiz für Notiz durch, Ast für Ast, mit der Beschreibung darunter. → / Leertaste für die nächste Notiz, ← zurück, Esc beendet.
 - **Wiederkehrende Aufgaben (v1.8.15):** *Wiederholen* im Bearbeiten-Dialog beider Karten: jeden Tag, jeden Werktag, jede Woche, alle 2 Wochen, jeden Monat oder jedes Jahr. Abgehakt kommt die Notiz sofort wieder, fällig zum nächsten Termin, mit ihren Angaben und wieder offenen Unteraufgaben; die erledigte Runde bleibt unter *Erledigt*. Spät abgehakt überspringt sie verpasste Termine. Wird die erledigte Runde wieder aktiviert, verschwindet die neue. Wiederkehrende Notizen zeigen 🔁. Aktion: `repeat` in `brainstorm.update_idea`.
@@ -92,6 +93,7 @@ show_export_btn: true       # 🖼️ Map als SVG oder PNG speichern
 | Abstimmen | 🗳️ unten rechts oder **V**: Kategorie, Stimmen pro Person und *verdeckt* wählen, dann − / + an den Notizen; *Beenden* in der Leiste oben zeigt die Rangliste |
 | Reagieren | ⋯ an der Notiz ➔ 👍 ❤️ 😂 ❗; ein Tipp auf eine Reaktion schaltet die eigene um |
 | Kommentieren | ⋯ an der Notiz ➔ 💬 *Kommentare*, oder auf 💬 an der Notiz tippen; `@Name` benachrichtigt die Person |
+| Kompakte Notizen | ◐ unten rechts: Automatisch → Kompakt → Normal; Tipp auf eine kompakte Notiz klappt sie auf |
 | Übersicht (Minimap) | 🗺️ unten rechts oder **M**; in der Übersicht unten links tippen oder ziehen springt dorthin |
 | Zwei Notizen verbinden | 🔗 an der Notiz oder **L**, dann die Ziel-Notiz antippen; zwei ausgewählte Notizen ➔ 🔗 *Verbinden* |
 | Verbindung beschriften oder löschen | auf die gestrichelte Linie tippen |
@@ -218,6 +220,7 @@ Pro Notiz kannst du die Form auch im Bearbeiten-Dialog wählen oder per Dienst s
 | `show_choreops` | `true` | 🏅 ChoreOps-Tab live (nur wenn ChoreOps installiert ist) |
 | `show_bring` | `true` | 🛒 Bring!-Tab, der die Einkaufslisten öffnet (nur wenn Bring eingeschaltet ist) |
 | `show_images` | `true` | erstes Bild der Anhänge in der Notiz |
+| `node_detail` | `auto` | wie viel Notizen zeigen: `auto` (kompakt beim Herauszoomen), `compact` (nur Titel, ein Tipp klappt auf) oder `normal` (alles); der Knopf ◐ ändert es pro Browser |
 | `show_minimap` | `true` | Übersicht (Minimap) und ihr Knopf 🗺️ |
 | `show_fullscreen_btn` | `true` | ⛶ Vollbild |
 | `show_color_toggle` | `true` | 🎨/🌈 |

@@ -7,6 +7,13 @@
  */
 const DICTIONARIES = {
   en: {
+    "Notizen: kompakt (nur Titel) – tippen für normal": "Notes: compact (titles only) – tap for normal",
+    "Notizen: mit allen Angaben – tippen für automatisch": "Notes: with all details – tap for automatic",
+    "Notizen: automatisch nach Zoom – tippen für kompakt": "Notes: automatic by zoom – tap for compact",
+    "Notizen auf der Map": "Notes on the map",
+    "Automatisch nach Zoom": "Automatic by zoom",
+    "Kompakt (nur Titel, Tipp klappt auf)": "Compact (titles only, a tap opens one)",
+    "Normal (alle Angaben)": "Normal (all details)",
     "Bring!-Tab zeigen (öffnet die Einkaufslisten)": "Show Bring! tab (opens the shopping lists)",
     "Auf der Bring!-Liste {name}: alles gekauft": "On the Bring! list {name}: all bought",
     "Auf der Bring!-Liste {name}: {open} von {total} noch offen": "On the Bring! list {name}: {open} of {total} still open",
@@ -3559,4 +3566,60 @@ export function renderAttachments(container, { hass, idea, canEdit, dropTarget, 
   }
 
   draw();
+}
+
+// How much a note shows on the map: everything, only its title, or one of
+// the two depending on the zoom. Compact notes keep the map readable when
+// it is zoomed out or full; a tap opens a single note.
+export const NODE_DETAIL_MODES = ["auto", "compact", "normal"];
+export const NODE_DETAIL_ZOOM = 0.75;
+
+/** Return a known way of showing notes, automatic when unknown. */
+export function nodeDetailMode(value) {
+  return NODE_DETAIL_MODES.includes(value) ? value : "auto";
+}
+
+/** Tell whether notes are shown compact in this mode at this zoom. */
+export function nodeDetailCompact(mode, scale) {
+  const known = nodeDetailMode(mode);
+  if (known === "compact") return true;
+  if (known === "normal") return false;
+  return Number(scale) < NODE_DETAIL_ZOOM;
+}
+
+/** Return the next mode of the button: automatic, compact, normal. */
+export function nextNodeDetail(mode) {
+  const index = NODE_DETAIL_MODES.indexOf(nodeDetailMode(mode));
+  return NODE_DETAIL_MODES[(index + 1) % NODE_DETAIL_MODES.length];
+}
+
+/** Return the icon and the hint of the button for a mode. */
+export function nodeDetailButton(mode) {
+  const known = nodeDetailMode(mode);
+  if (known === "compact") return { icon: "▭", title: t("Notizen: kompakt (nur Titel) – tippen für normal") };
+  if (known === "normal") return { icon: "▤", title: t("Notizen: mit allen Angaben – tippen für automatisch") };
+  return { icon: "◐", title: t("Notizen: automatisch nach Zoom – tippen für kompakt") };
+}
+
+/** Return the one status a compact note shows as a dot. */
+export function nodeStatus(idea, now = Date.now()) {
+  if (!idea) return { key: "normal", label: "" };
+  if (idea.blocked_by && idea.blocked_by.length) return { key: "blocked", label: t("Wartet") };
+  const due = idea.due ? new Date(idea.due).getTime() : NaN;
+  if (!Number.isNaN(due) && due < now) return { key: "overdue", label: t("überfällig") };
+  if (idea.in_progress) return { key: "working", label: t("In Arbeit") };
+  const prio = String(idea.priority || "medium").toLowerCase();
+  if (prio === "urgent") return { key: "urgent", label: t("🔥 Dringend") };
+  if (prio === "high") return { key: "high", label: t("🔴 Hoch") };
+  return { key: "normal", label: "" };
+}
+
+/** Return the status dot and the number of subtasks of a compact note. */
+export function compactNodeInfo(idea, childCount, now = Date.now()) {
+  const status = nodeStatus(idea, now);
+  const dot = `<span class="node-dot dot-${status.key}"${status.label ? ` title="${escapeHtml(status.label)}"` : ""}></span>`;
+  const kids = childCount > 0
+    ? `<span class="node-kids" title="${escapeHtml(t("{count} Unteraufgaben", { count: childCount }))}">${childCount}</span>`
+    : "";
+  return `<span class="cloud-compact">${dot}${kids}</span>`;
 }

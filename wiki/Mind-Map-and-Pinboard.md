@@ -60,6 +60,7 @@ Click `⛶` at the top right to enlarge the mindmap to the full screen.
 - **Outline export and import (v1.8.4):** 🖼️ also saves the map as a Markdown outline, OPML or FreeMind `.mm` (opens in Freeplane, XMind, MindManager). *Insert an outline* turns pasted lists or a file (`.md`, `.txt`, `.opml`, `.mm`) into a branch of notes, below the focused note if there is one.
 - **Brainstorm mode (v1.8.5):** ⚡ or **B** opens a fast input with a 3–15 minute timer. Every Enter is a note at once, shown as a coloured slip; ↶ takes the whole round out again.
 - **Views (v1.8.6–v1.8.8):** the view button at the bottom right shows the notes ◎ around the center, as ⇶ a tree, ⊤ an org chart, ☰ an indented outline, ▥ Kanban by state (open, in progress, waiting, done), 📅 timeline by due date (overdue, today, tomorrow, this week, later, no date) or ⊞ Eisenhower matrix (do now, schedule, delegate, later or never). On the boards, dragging a note to another column changes its state, due date or priority, and ↶ takes it back. The choice stays in the browser; `layout` sets the default.
+- **Compact notes (v1.13.6):** the button ◐ at the bottom right switches how much a note shows: *automatic* (default) shows only the title, a status dot and the number of subtasks while the map is zoomed out, and everything when zoomed in; *compact* always shows only titles; *normal* always shows everything. A tap opens a single compact note with all its details, a tap beside it closes it again. The dot shows the most important state: ⛔ waiting (grey), overdue (red with ring), 🔧 in progress (blue), 🔥 urgent (red), 🔴 high (orange), otherwise the category colour. In automatic mode zooming moves no note, the places are those of the full notes. Each browser remembers the choice; the card option `node_detail` sets the start.
 - **Overview / minimap (v1.10.6):** 🗺️ at the bottom right or **M** shows the whole map small at the bottom left, in the category colors, with the visible part as a frame. Tap or drag in it to jump there. On wide cards it starts open, on phones closed; each browser remembers the choice. Works in every view, the boards too. `show_minimap: false` hides it along with its button.
 - **Presentation mode (v1.8.10):** **P** (or ▶ in the view choice) shows the map full screen and walks through it note by note, branch by branch, with the description below. → / space for the next note, ← back, Esc ends it.
 - **Freehand drawing (v1.11.7):** 🖍️ in the controls or **D** puts a pen over the round map of a category: free strokes, ➚ arrows and ◯ circles in six colours and three widths, 🧽 erases the strokes you tap, 🗑️ deletes all, ↶ takes back every step. The drawing is kept per category, shows on every device and goes into the picture, the PDF and the JSON export. Esc or ✓ ends drawing.
@@ -91,6 +92,7 @@ Click `⛶` at the top right to enlarge the mindmap to the full screen.
 | Vote | 🗳️ at the bottom right or **V**: pick the category, votes per person and *hidden*, then − / + on the notes; *End* in the bar at the top shows the ranking |
 | React | ⋯ on the note ➔ 👍 ❤️ 😂 ❗; tapping a reaction toggles yours |
 | Comment | ⋯ on the note ➔ 💬 *Comments*, or tap 💬 on the note; `@Name` tells that person |
+| Compact notes | ◐ at the bottom right: automatic → compact → normal; tap a compact note to open it |
 | Overview (minimap) | 🗺️ at the bottom right or **M**; tap or drag in the overview at the bottom left to jump there |
 | Link two notes | 🔗 on the note or **L**, then tap the target note; two picked notes ➔ 🔗 *Link* |
 | Label or delete a link | tap the dashed line |
@@ -217,6 +219,7 @@ A single note can get its own shape in the edit dialog or through a service (`no
 | `show_choreops` | `true` | 🏅 live ChoreOps tab (only while ChoreOps is installed) |
 | `show_bring` | `true` | 🛒 Bring! tab that opens the shopping lists (only while Bring is switched on) |
 | `show_images` | `true` | first picture attachment inside the note |
+| `node_detail` | `auto` | how much notes show: `auto` (compact while zoomed out), `compact` (titles only, a tap opens one) or `normal` (everything); the button ◐ changes it per browser |
 | `show_minimap` | `true` | overview (minimap) and its button 🗺️ |
 | `show_fullscreen_btn` | `true` | ⛶ full screen |
 | `show_color_toggle` | `true` | 🎨/🌈 |
