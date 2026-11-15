@@ -190,7 +190,7 @@ One field per category. Pick a to-do list of another integration, such as Bring!
 
 ### Brainstorm › 🔗 Connected integrations
 
-Since v1.13.3 the integrations Brainstorm works together with have their own page. It is only shown when at least one of them is installed, and it lists only the installed ones, each with its status (on/off and the main setting).
+Since v1.13.3 the integrations Brainstorm works together with have their own page. Since v1.13.5 the main menu shows their logos above the entries, in colour while switched on and grey while off, and the entry itself shows 🟢 or ⚪ for each of them. It is only shown when at least one of them is installed, and it lists only the installed ones, each with its status (on/off and the main setting).
 
 ### Brainstorm › 🔗 Connected integrations › 🏅 ChoreOps
 

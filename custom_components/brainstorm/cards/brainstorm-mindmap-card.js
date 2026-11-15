@@ -1,8 +1,8 @@
-import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, BRING_TAB_ID, bringBadge, bringSentText, bringTab, canSendToBring, renderBringSend, CHORE_MAP_CSS, choreMapData, renderChoreMap, canHandOver, choreopsBadge, renderChoreHandover, MAP_TAB_CSS, activeMapTab, branchTabs, mapTabBar, ruleFilter, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.13.4";
+import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, BRING_TAB_ID, bringBadge, bringSentText, bringTab, canSendToBring, renderBringSend, CHORE_MAP_CSS, choreMapData, renderChoreMap, canHandOver, choreopsBadge, renderChoreHandover, MAP_TAB_CSS, activeMapTab, branchTabs, mapTabBar, ruleFilter, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t } from "./brainstorm-i18n.js?v=1.13.5";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.13.4 - An Bring! senden
+ * Version: 1.13.5 - Logos der Integrationen
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -11670,7 +11670,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.13.4 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.13.5 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

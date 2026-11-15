@@ -126,6 +126,7 @@ from .const import (
 )
 
 from .bring import bring_lists
+from .brand import brand_strip
 from .choreops import choreops_available
 from .echo_locks import LOCK_DND, LOCK_ECHOS, LOCK_END, LOCK_SLOTS, LOCK_START
 from .languages import get_pack
@@ -365,11 +366,35 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         if not set(self._integrations_menu()) & {"bring", "choreops"}:
             # Only offered where Bring! or ChoreOps is installed
             menu = {key: label for key, label in menu.items() if key != "integrations"}
+        connected = self._connected_integrations()
+        logos = brand_strip(connected)
         return self.async_show_menu(
             step_id="init",
             menu_options=menu,
-            description_placeholders={"notice": self._take_notice()},
+            description_placeholders={
+                "notice": self._take_notice(),
+                "logos": f"{logos}\n\n" if logos else "",
+                "integrations_status": " · ".join(
+                    f"{'🟢' if active else '⚪'} {name}"
+                    for _domain, name, active, _state in connected
+                ),
+            },
         )
+
+    def _connected_integrations(self) -> list[tuple[str, str, bool, str]]:
+        """Return the installed connected integrations and whether they are on."""
+        options = self.config_entry.options or self.config_entry.data
+        active = {
+            "bring": bool(options.get(CONF_BRING_ENABLED)),
+            "choreops": bool(options.get(CONF_CHOREOPS_ENABLED, True)),
+        }
+        names = {"bring": "Bring!", "choreops": "ChoreOps"}
+        on, off = self._text("an", "on"), self._text("aus", "off")
+        return [
+            (domain, names[domain], active[domain], on if active[domain] else off)
+            for domain in self._integrations_menu()
+            if domain in names
+        ]
 
     def _integrations_menu(self) -> dict[str, str]:
         """Return the connected integrations that are installed."""
@@ -401,6 +426,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             menu_options=self._integrations_menu(),
             description_placeholders={
                 "notice": self._take_notice(),
+                "logos": brand_strip(self._connected_integrations(), 48),
                 "status_bring": bring,
                 "status_choreops": choreops,
             },

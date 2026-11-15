@@ -41,7 +41,7 @@
     "step": {
       "init": {
         "title": "Brainstorm Hub Optionen",
-        "description": "Wähle einen Bereich.\n\n{notice}",
+        "description": "Wähle einen Bereich.\n\n{logos}{notice}",
         "menu_options": {
           "categories": "Kategorien verwalten",
           "category_style": "Kategorie-Design (Farbe & Icon)",
@@ -54,6 +54,9 @@
           "privacy": "Privatsphäre & Benutzer",
           "privacy_voice": "Echos & Apps Personen zuordnen",
           "integrations": "🔗 Verbundene Integrationen"
+        },
+        "menu_option_descriptions": {
+          "integrations": "{integrations_status}"
         }
       },
       "categories": {
@@ -398,7 +401,7 @@
       },
       "integrations": {
         "title": "Brainstorm › 🔗 Verbundene Integrationen",
-        "description": "Integrationen, mit denen Brainstorm zusammenarbeitet. Es erscheinen nur installierte.\n\n{notice}",
+        "description": "Integrationen, mit denen Brainstorm zusammenarbeitet, farbig wenn eingeschaltet. Es erscheinen nur installierte.\n\n{logos}\n\n{notice}",
         "menu_options": {
           "bring": "🛒 Bring!",
           "choreops": "🏅 ChoreOps",

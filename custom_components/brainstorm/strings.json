@@ -41,7 +41,7 @@
     "step": {
       "init": {
         "title": "Brainstorm Hub Options",
-        "description": "Choose a section.\n\n{notice}",
+        "description": "Choose a section.\n\n{logos}{notice}",
         "menu_options": {
           "categories": "Manage Categories",
           "category_style": "Category Design (Color & Icon)",
@@ -54,6 +54,9 @@
           "privacy": "Privacy & Users",
           "privacy_voice": "Assign Echos & Apps to People",
           "integrations": "🔗 Connected integrations"
+        },
+        "menu_option_descriptions": {
+          "integrations": "{integrations_status}"
         }
       },
       "categories": {
@@ -398,7 +401,7 @@
       },
       "integrations": {
         "title": "Brainstorm › 🔗 Connected integrations",
-        "description": "Integrations Brainstorm works together with. Only installed ones are shown.\n\n{notice}",
+        "description": "Integrations Brainstorm works together with, in colour while switched on. Only installed ones are shown.\n\n{logos}\n\n{notice}",
         "menu_options": {
           "bring": "🛒 Bring!",
           "choreops": "🏅 ChoreOps",

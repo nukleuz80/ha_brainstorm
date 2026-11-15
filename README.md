@@ -9,7 +9,7 @@
 [![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.13.4-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.13.5-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![Wiki](https://img.shields.io/badge/Docs-Wiki-6f42c1.svg)](https://github.com/nukleuz80/ha_brainstorm/wiki)
@@ -261,11 +261,11 @@ The latest versions; every version is in [CHANGELOG.md](CHANGELOG.md).
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.13.5`** | 2026-11-15 | **🔗 Integration logos in the settings.** The main menu of the settings shows the logos of the connected integrations (Bring!, ChoreOps), in colour while switched on and grey while off, and the entry *🔗 Connected integrations* shows their state (🟢/⚪). The logos are the official brand images: the one a custom integration brings along, or the one of the Home Assistant brands service. |
 | **`v1.13.4`** | 2026-11-15 | **🛒 Send to Bring!** New tab *🛒 Bring!* above the mind map opens the Bring category with one branch per list (card option `show_bring`). The ⋯ menu of both cards offers *🛒 Send to Bring!* for any open note outside the Bring category: choose the list (default list from the settings) and send the note itself or a choice of its open subtasks as items; what is already open on that list is not added twice. A badge *🛒 1/3* on the note shows how much is still to buy. New action `brainstorm.send_to_bring`, the sensor shows the Bring lists. |
 | **`v1.13.3`** | 2026-11-15 | **🔗 Connected integrations.** New settings page *🔗 Connected integrations* with a sub-page each for 🛒 Bring! (so far directly in the main menu) and 🏅 ChoreOps; it shows only installed integrations with their status. ChoreOps can be switched on and off there and gets *Default points*, preselected in the hand-over dialog and used by `brainstorm.send_to_choreops` without points. |
 | **`v1.13.2`** | 2026-11-15 | **🏅 ChoreOps live in the mind map.** New tab *🏅 ChoreOps* above the mind map once ChoreOps is installed: a branch per person with their points and all chores, live from the ChoreOps sensors. ⏰ overdue, ✋ reported and waiting for approval, ✅ done (*Show done* shows them); 💡 marks chores that came from Brainstorm. View only, approving and points stay with ChoreOps. *🗺️ Map* leads back; new card option `show_choreops`. |
 | **`v1.13.1`** | 2026-11-14 | **🏅 ChoreOps bridge.** With the ChoreOps integration installed, the ⋯ menu of both cards offers *🏅 Hand over to ChoreOps*: pick the person and the points, Brainstorm creates a one-time ChoreOps chore. The note shows 🏅 with the points, ✋ once the child reports “done”, and ticks itself off as soon as a parent approves it in ChoreOps (also when that happened during a restart). New action `brainstorm.send_to_choreops`. |
-| **`v1.13.0`** | 2026-11-14 | **📑 Map tabs.** Saved views as tabs above the mind map: *📑 Save view as tab* (view choice or ＋) keeps the list, branch, filter, layout and visible area, for the whole household or 🔒 only for you. Tap again to rename, move or delete. *↗ Move to its own tab* in the ⋯ menu puts a big branch into its own tab; the main map keeps it as a link *↗ N notes*. Tabs live in Home Assistant and work on every device; new card option `show_tabs`. |
 
 ---
 

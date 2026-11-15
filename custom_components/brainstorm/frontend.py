@@ -10,6 +10,7 @@ from homeassistant.components.http import StaticPathConfig
 from homeassistant.core import HomeAssistant
 from homeassistant.loader import async_get_integration
 
+from .brand import BrandView
 from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
@@ -36,6 +37,7 @@ async def async_register_frontend(hass: HomeAssistant) -> None:
     await hass.http.async_register_static_paths(
         [StaticPathConfig(FRONTEND_URL, str(FRONTEND_DIR), True)]
     )
+    hass.http.register_view(BrandView(hass))
     hass.data[DATA_FRONTEND] = True
     if "frontend" not in hass.config.components:
         _LOGGER.debug("Frontend not loaded, the cards are served but not added")

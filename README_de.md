@@ -9,7 +9,7 @@
 [![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.13.4-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.13.5-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![Wiki](https://img.shields.io/badge/Doku-Wiki-6f42c1.svg)](https://github.com/nukleuz80/ha_brainstorm/wiki)
@@ -261,11 +261,11 @@ Die letzten Versionen; alle stehen in [CHANGELOG_de.md](CHANGELOG_de.md).
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.13.5`** | 15.11.2026 | **🔗 Logos der Integrationen in den Einstellungen.** Das Hauptmenü der Einstellungen zeigt die Logos der verbundenen Integrationen (Bring!, ChoreOps), farbig wenn eingeschaltet und grau wenn aus, und der Eintrag *🔗 Verbundene Integrationen* zeigt ihren Zustand (🟢/⚪). Die Logos sind die offiziellen Markenbilder: das, das eine eigene Integration mitbringt, oder das des Home-Assistant-Brands-Dienstes. |
 | **`v1.13.4`** | 15.11.2026 | **🛒 An Bring! senden.** Neuer Tab *🛒 Bring!* über der Mindmap öffnet die Bring-Kategorie mit einem Zweig pro Liste (Kartenoption `show_bring`). Das ⋯-Menü beider Karten bietet *🛒 An Bring! senden* für jede offene Notiz außerhalb der Bring-Kategorie: Liste wählen (Standardliste aus den Einstellungen) und die Notiz selbst oder eine Auswahl ihrer offenen Unteraufgaben als Artikel senden; was dort schon offen ist, kommt nicht doppelt dazu. Ein Badge *🛒 1/3* an der Notiz zeigt, was noch zu kaufen ist. Neue Aktion `brainstorm.send_to_bring`, der Sensor zeigt die Bring-Listen. |
 | **`v1.13.3`** | 15.11.2026 | **🔗 Verbundene Integrationen.** Neue Einstellungsseite *🔗 Verbundene Integrationen* mit je einer Unterseite für 🛒 Bring! (bisher direkt im Hauptmenü) und 🏅 ChoreOps; sie zeigt nur installierte Integrationen mit ihrem Status. ChoreOps lässt sich dort ein- und ausschalten und bekommt *Standardpunkte*, die der Übergabe-Dialog vorauswählt und `brainstorm.send_to_choreops` ohne Punkte nimmt. |
 | **`v1.13.2`** | 15.11.2026 | **🏅 ChoreOps live in der Mindmap.** Neuer Tab *🏅 ChoreOps* über der Mindmap, sobald ChoreOps installiert ist: ein Ast pro Person mit Punktestand und allen Aufgaben, live aus den ChoreOps-Sensoren. ⏰ überfällig, ✋ gemeldet und wartet auf Freigabe, ✅ erledigt (*Erledigte zeigen* blendet sie ein); 💡 markiert Aufgaben, die aus Brainstorm kommen. Nur zum Ansehen, Freigeben und Punkte bleiben bei ChoreOps. *🗺️ Map* führt zurück; neue Kartenoption `show_choreops`. |
 | **`v1.13.1`** | 14.11.2026 | **🏅 ChoreOps-Brücke.** Mit installierter ChoreOps-Integration gibt es im ⋯-Menü beider Karten *🏅 An ChoreOps übergeben*: Person und Punkte wählen, Brainstorm legt eine einmalige ChoreOps-Aufgabe an. Die Notiz zeigt 🏅 mit den Punkten, ✋ sobald das Kind „erledigt“ meldet, und hakt sich ab, sobald ein Elternteil in ChoreOps freigibt (auch wenn das während eines Neustarts passiert ist). Neuer Dienst `brainstorm.send_to_choreops`. |
-| **`v1.13.0`** | 14.11.2026 | **📑 Map-Tabs.** Gespeicherte Ansichten als Tabs über der Mindmap: *📑 Ansicht als Tab speichern* (Ansichtswahl oder ＋) merkt sich Liste, Zweig, Filter, Ansicht und Ausschnitt, für den ganzen Haushalt oder 🔒 nur für dich. Noch einmal tippen benennt um, verschiebt oder löscht. *↗ In eigenen Tab auslagern* im ⋯-Menü legt einen großen Zweig in einen eigenen Tab; in der Haupt-Map bleibt er als Link *↗ N Notizen*. Tabs liegen in Home Assistant und gelten auf allen Geräten; neue Kartenoption `show_tabs`. |
 
 ---
 
