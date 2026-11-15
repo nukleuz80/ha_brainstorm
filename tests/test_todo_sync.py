@@ -437,3 +437,55 @@ async def test_options_back_saves_nothing(
     )
     assert result["type"] is FlowResultType.MENU
     assert entry.options["todo_sync"] == {"Inbox": SHOPPING}
+
+
+async def test_subtasks_show_their_note_on_the_list(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that a subtask carries the text of its note on a list without subtasks."""
+    store = await _linked(hass, setup_entry)
+    party = await store.async_add_idea("Party", category="Einkauf", source="dashboard")
+    cake = await store.async_add_idea(
+        "Kuchen", category="Einkauf", parent_id=party["id"], source="dashboard"
+    )
+    await _sync(hass, store)
+    assert set(await _items(hass)) == {"Party", "Party › Kuchen"}
+    assert store.get_idea(cake["id"])["text"] == "Kuchen"
+
+    # Renamed on the list, the note's mark stays out of the idea
+    item = (await _items(hass))["Party › Kuchen"]
+    await _todo(hass, "update_item", item=item["uid"], rename="Party › Torte")
+    await _sync(hass, store)
+    assert store.get_idea(cake["id"])["text"] == "Torte"
+    await _sync(hass, store)
+    assert set(await _items(hass)) == {"Party", "Party › Torte"}
+
+    # Renaming the note renames the mark, without touching the subtask
+    await store.async_update_idea(party["id"], text="Geburtstag")
+    await _sync(hass, store)
+    assert set(await _items(hass)) == {"Geburtstag", "Geburtstag › Torte"}
+    assert store.get_idea(cake["id"])["text"] == "Torte"
+
+    # Added on the list in that form, an item becomes a subtask of the note
+    await _todo(hass, "add_item", item="geburtstag › Kerzen")
+    await _sync(hass, store)
+    candles = _idea(store, "Kerzen")
+    assert candles["parent_id"] == party["id"]
+    await _sync(hass, store)
+    assert "Geburtstag › Kerzen" in await _items(hass)
+
+
+async def test_an_unmarked_subtask_item_gets_its_mark(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that an item linked before the marks is renamed, not doubled."""
+    store = await _linked(hass, setup_entry)
+    await _todo(hass, "add_item", item="Kuchen")
+    party = await store.async_add_idea("Party", category="Einkauf", source="dashboard")
+    await store.async_add_idea(
+        "Kuchen", category="Einkauf", parent_id=party["id"], source="dashboard"
+    )
+    await _sync(hass, store)
+    await _sync(hass, store)
+    assert set(await _items(hass)) == {"Party", "Party › Kuchen"}
+    assert len([i for i in store.ideas if i["text"] == "Kuchen"]) == 1

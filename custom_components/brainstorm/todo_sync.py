@@ -10,6 +10,12 @@ Both sides are compared on every change and every few minutes:
 - Deleting an idea removes its item. An item removed from the list completes
   its idea, as shopping lists drop what was bought.
 
+To-do lists know no subtasks. On a list linked to a whole category, a
+subtask shows the text of its note in front, as in "Garten › Hecke
+schneiden", so it can still be told where it belongs. The mark is dropped
+again when the text comes back, and an item added there in that form becomes
+a subtask of the note with that text.
+
 Each linked idea remembers what the list said at the last sync. That tells a
 change on the list from a change in Brainstorm, so neither side has to report
 where a change came from, and a sync that finds nothing new calls nothing.
@@ -79,6 +85,8 @@ LINK_UID = "uid"
 LINK_SUMMARY = "summary"
 LINK_STATUS = "status"
 LINK_DUE = "due"
+# Between the text of the note and that of its subtask on a list
+SUBTASK_MARK = " › "
 
 
 @dataclass(frozen=True)
@@ -114,6 +122,20 @@ def _idea_status(idea: dict[str, Any]) -> str:
 def _same_text(first: str | None, second: str | None) -> bool:
     """Compare two item texts the way a person would."""
     return (first or "").strip().casefold() == (second or "").strip().casefold()
+
+
+def subtask_text(parent: str, text: str) -> str:
+    """Return the text a subtask shows on a list without subtasks."""
+    return f"{' '.join(parent.split())}{SUBTASK_MARK}{text}"
+
+
+def strip_subtask_mark(parent: str | None, summary: str) -> str:
+    """Return the text of a subtask without the mark of its note."""
+    if parent:
+        prefix = f"{' '.join(parent.split())}{SUBTASK_MARK}".casefold()
+        if summary.casefold().startswith(prefix) and summary[len(prefix) :].strip():
+            return summary[len(prefix) :].strip()
+    return summary
 
 
 class TodoSyncManager:
@@ -270,6 +292,36 @@ class TodoSyncManager:
         if deleted is not None:
             deleted.pop(ATTR_TODO_LINK, None)
         self._schedule()
+
+    def _parent_text(self, idea: dict[str, Any], target: SyncTarget) -> str | None:
+        """Return the text of the note that marks a subtask on this list."""
+        if target.parent_id is not None or not idea.get(ATTR_PARENT_ID):
+            return None
+        parent = self.store.get_idea(idea[ATTR_PARENT_ID])
+        if parent is None or not parent.get(ATTR_TEXT, "").strip():
+            return None
+        return str(parent[ATTR_TEXT])
+
+    def _list_text(self, idea: dict[str, Any], target: SyncTarget) -> str:
+        """Return what an idea is called on the list of a target."""
+        parent = self._parent_text(idea, target)
+        text = str(idea[ATTR_TEXT])
+        return subtask_text(parent, text) if parent else text
+
+    def _new_parent(self, summary: str, target: SyncTarget) -> tuple[str | None, str]:
+        """Return the note and the text of an item added on the list as a subtask."""
+        if target.parent_id is not None or SUBTASK_MARK not in summary:
+            return None, summary
+        for idea in self.store.ideas:
+            if (
+                idea.get(ATTR_CATEGORY) == target.category
+                and idea.get(ATTR_STATUS) == "active"
+                and not idea.get(ATTR_BRING_LIST)
+            ):
+                text = strip_subtask_mark(idea.get(ATTR_TEXT), summary)
+                if text != summary:
+                    return idea[ATTR_ID], text
+        return None, summary
 
     def _eligible(self, idea: dict[str, Any], target: SyncTarget) -> bool:
         """Return whether an idea belongs on the list of a target."""
@@ -432,9 +484,8 @@ class TodoSyncManager:
             uid = link.get(LINK_UID)
             if uid is None:
                 # Added before, but the list had not shown the new item yet
-                match = self._find_unclaimed(
-                    items, claimed, link.get(LINK_SUMMARY) or idea[ATTR_TEXT]
-                )
+                shown = link.get(LINK_SUMMARY) or self._list_text(idea, target)
+                match = self._find_unclaimed(items, claimed, shown)
                 if match is None:
                     continue
                 uid = match
@@ -448,17 +499,20 @@ class TodoSyncManager:
             claimed.add(uid)
             if idea.get(ATTR_STATUS) != "active":
                 bought.setdefault(idea[ATTR_TEXT].strip().casefold(), (idea[ATTR_ID], uid))
-            new_link = await self._async_settle(entity_id, idea, link, items[uid])
+            new_link = await self._async_settle(target, idea, link, items[uid])
             links[idea[ATTR_ID]] = new_link
             specs[idea[ATTR_ID]] = items[uid].get("description")
             if new_link[LINK_SUMMARY] != (items[uid].get("summary") or ""):
                 renamed.append(idea[ATTR_ID])
 
         for idea in to_add:
+            shown = self._list_text(idea, target)
             # An item bought before comes back instead of being added twice
-            match = self._find_unclaimed(
-                items, claimed, idea[ATTR_TEXT], NEEDS_ACTION
-            ) or self._find_unclaimed(items, claimed, idea[ATTR_TEXT], COMPLETED)
+            match = (
+                self._find_unclaimed(items, claimed, shown, NEEDS_ACTION)
+                or self._find_unclaimed(items, claimed, shown, COMPLETED)
+                or self._find_unclaimed(items, claimed, idea[ATTR_TEXT], NEEDS_ACTION)
+            )
             previous = bought.pop(idea[ATTR_TEXT].strip().casefold(), None)
             if match is None and previous is not None:
                 # The new idea takes the item over, the old one stays ticked off
@@ -468,21 +522,21 @@ class TodoSyncManager:
                 claimed.add(match)
                 # Coupled for the first time, the spelling on the list wins
                 link = self._link(entity_id, items[match], idea.get(ATTR_DUE))
-                link[LINK_SUMMARY] = idea[ATTR_TEXT]
+                link[LINK_SUMMARY] = shown
                 links[idea[ATTR_ID]] = await self._async_settle(
-                    entity_id, idea, link, items[match]
+                    target, idea, link, items[match]
                 )
                 specs[idea[ATTR_ID]] = items[match].get("description")
                 continue
             await self._async_call(
                 entity_id,
                 "add_item",
-                {"item": idea[ATTR_TEXT], **self._due_data(entity_id, idea.get(ATTR_DUE))},
+                {"item": shown, **self._due_data(entity_id, idea.get(ATTR_DUE))},
             )
             links[idea[ATTR_ID]] = {
                 LINK_ENTITY: entity_id,
                 LINK_UID: None,
-                LINK_SUMMARY: idea[ATTR_TEXT],
+                LINK_SUMMARY: shown,
                 LINK_STATUS: NEEDS_ACTION,
                 LINK_DUE: idea.get(ATTR_DUE),
             }
@@ -516,10 +570,11 @@ class TodoSyncManager:
                 continue
             if not (item.get("summary") or "").strip():
                 continue
+            parent_id, text = self._new_parent(item["summary"], target)
             idea = await self.store.async_add_idea(
-                text=item["summary"],
+                text=text,
                 category=target.category,
-                parent_id=target.parent_id,
+                parent_id=parent_id or target.parent_id,
                 source=SOURCE_TODO_SYNC,
                 verbatim=True,
                 shares={SHARE_ALL: SHARE_EDIT} if self.store.privacy_enabled else None,
@@ -568,18 +623,20 @@ class TodoSyncManager:
 
     async def _async_settle(
         self,
-        entity_id: str,
+        target: SyncTarget,
         idea: dict[str, Any],
         link: dict[str, Any],
         item: dict[str, Any],
     ) -> dict[str, Any]:
         """Bring an idea and its item together, a change on the list winning."""
+        entity_id = target.entity_id
         summary = item.get("summary") or ""
         status = item.get("status") or NEEDS_ACTION
         text_on_list = summary != link.get(LINK_SUMMARY)
         status_on_list = status != link.get(LINK_STATUS)
 
-        new_text = summary if text_on_list and summary.strip() else None
+        text = strip_subtask_mark(self._parent_text(idea, target), summary)
+        new_text = text if text_on_list and text.strip() else None
         new_status = None
         if status_on_list and status != _idea_status(idea):
             new_status = "completed" if status == COMPLETED else "active"
@@ -591,8 +648,9 @@ class TodoSyncManager:
             ) or idea
 
         update: dict[str, Any] = {}
-        if idea[ATTR_TEXT] != summary and not text_on_list:
-            update["rename"] = idea[ATTR_TEXT]
+        shown = self._list_text(idea, target)
+        if shown != summary and not text_on_list:
+            update["rename"] = shown
         if _idea_status(idea) != status and not status_on_list:
             update["status"] = _idea_status(idea)
         due = idea.get(ATTR_DUE)

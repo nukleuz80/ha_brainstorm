@@ -213,7 +213,7 @@ Since v1.13.13. Local To-do is built into Home Assistant, so this page is always
 | *Name of every list* | One choice per Local To-do list: *— not linked —*, *➕ Take over as a new category* (creates a category named after the list, or takes the one of that name; its items become notes) or a category. Categories already linked to another list (such as Google Tasks) are not offered. |
 | New local list for | Optional: creates a new Local To-do list named after the chosen category, as if you had set it up under *Add integration*, and links it right away. Handy when someone should use the list in the Home Assistant app, through a voice assistant or in automations. A list of that name that exists already is linked instead. |
 
-- **Subtasks:** Local To-do has none. Subtasks of a note become items of their own on the same list.
+- **Subtasks (v1.13.14):** Local To-do has none. Subtasks of a note become items of their own on the same list, with the text of their note in front, e.g. *Party › Cake*. In Brainstorm the subtask is still called just *Cake*; renaming the note changes the prefix too. Adding *Party › Candles* on the list makes *Candles* a subtask of *Party*. The same goes for lists under *Link To-do Lists*.
 - **Display:** the list card shows *📋 Linked to the local to-do list “…”* above the notes of a linked category (🔗 for other linked lists). The logo strip shows *Local To-do* in colour once a list is linked, and the menu entry names the pairs *list ↔ category*.
 - **Unlinking:** *— not linked —* unlinks the list. Its items and the notes stay.
 
