@@ -1,0 +1,32 @@
+<!doctype html>
+<!-- Browser test for the 📅 switch and badge of a note. -->
+<meta charset="utf-8">
+<pre id="out">RUNNING</pre>
+<script type="module">
+import { calendarBadge, calendarOptions, readCalendar, setLanguage } from "../../custom_components/brainstorm/cards/brainstorm-i18n.js";
+const out = document.getElementById("out");
+const fails = [];
+const eq = (a, b, what) => { if (JSON.stringify(a) !== JSON.stringify(b)) fails.push(`${what}: ${JSON.stringify(a)} != ${JSON.stringify(b)}`); };
+try {
+  setLanguage({ language: "de" });
+  const box = document.createElement("select");
+  box.innerHTML = calendarOptions(true);
+  eq(box.value, "on", "on selected");
+  box.innerHTML = calendarOptions(undefined);
+  eq(box.value, "", "rule selected");
+  eq([...box.options].map((o) => o.textContent), ["Automatisch (nur mit Uhrzeit)", "📅 Immer eintragen", "Nicht eintragen"], "labels de");
+  eq(readCalendar("", undefined), undefined, "unchanged rule");
+  eq(readCalendar("on", true), undefined, "unchanged on");
+  eq(readCalendar("off", undefined), false, "off");
+  eq(readCalendar("", true), null, "back to rule");
+  eq(calendarBadge({}), "", "no badge");
+  const span = document.createElement("div");
+  span.innerHTML = calendarBadge({ calendar_event: "calendar.<familie>" });
+  eq(span.firstChild.title, "Im Kalender: calendar.<familie>", "badge title");
+  setLanguage({ language: "en" });
+  box.innerHTML = calendarOptions(false);
+  eq(box.options[box.selectedIndex].textContent, "Do not add", "label en");
+  await import("../../custom_components/brainstorm/cards/brainstorm-card.js");
+} catch (err) { fails.push(String(err && err.stack || err)); }
+out.textContent = fails.length ? "FAIL\n" + fails.join("\n") : "PASS";
+</script>

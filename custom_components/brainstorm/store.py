@@ -25,6 +25,9 @@ from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    ATTR_CALENDAR,
+    ATTR_CALENDAR_EVENT,
+    CONF_CALENDAR_ENTITY,
     CONF_UI_LEVEL,
     DEFAULT_UI_LEVEL,
     UI_LEVELS,
@@ -210,6 +213,7 @@ from .languages.common import CATEGORY_PROJECTS, SPEECH_SPLIT, LanguagePack
 
 if TYPE_CHECKING:
     from .alexa_skill import AlexaSkill
+    from .calendar_sync import CalendarSync
     from .choreops import ChoreOpsBridge
     from .reminders import ReminderManager
     from .todo_sync import TodoSyncManager
@@ -261,6 +265,7 @@ EXPORT_SKIPPED_FIELDS = (
     # The files themselves are not part of an export
     ATTR_ATTACHMENTS,
     ATTR_IN_PROGRESS,
+    ATTR_CALENDAR_EVENT,
     ATTR_TODO_LINK,
     ATTR_CHOREOPS,
     ATTR_CHOREOPS_REWARD,
@@ -402,6 +407,7 @@ class BrainstormStore:
         self.reminders: ReminderManager | None = None
         self.todo_sync: TodoSyncManager | None = None
         self.choreops: ChoreOpsBridge | None = None
+        self.calendar_sync: CalendarSync | None = None
 
     @property
     def last_action(self) -> dict[str, Any] | None:
@@ -573,6 +579,7 @@ class BrainstormStore:
             "choreops": self._choreops_attributes(),
             "bring": self._bring_attributes(),
             "battery_notes": self._battery_notes_attributes(),
+            "calendar": self._calendar_attributes(),
             "linked_lists": self._linked_lists_attributes(),
         }
 
@@ -677,6 +684,10 @@ class BrainstormStore:
                 result[ATTR_ATTACHMENTS] = [dict(a) for a in attachments]
             if working := idea.get(ATTR_IN_PROGRESS):
                 result[ATTR_IN_PROGRESS] = dict(working)
+            if isinstance(idea.get(ATTR_CALENDAR), bool):
+                result[ATTR_CALENDAR] = idea[ATTR_CALENDAR]
+            if isinstance(event := idea.get(ATTR_CALENDAR_EVENT), dict):
+                result[ATTR_CALENDAR_EVENT] = event.get("entity")
             if tags := idea.get(ATTR_TAGS):
                 result[ATTR_TAGS] = list(tags)
             if markers := idea.get(ATTR_MARKERS):
@@ -751,6 +762,7 @@ class BrainstormStore:
             "choreops": self._choreops_attributes(),
             "bring": self._bring_attributes(),
             "battery_notes": self._battery_notes_attributes(),
+            "calendar": self._calendar_attributes(),
             "linked_lists": self._linked_lists_attributes(),
             "category_counts": counts_by_cat,
             "priority_counts": counts_by_prio,
@@ -3411,6 +3423,13 @@ class BrainstormStore:
         )
 
     # Bring! lists
+
+    def _calendar_attributes(self) -> dict[str, Any] | None:
+        """Tell the card whether tasks go to a calendar, for the 📅 switch."""
+        sync = self.calendar_sync
+        if sync is None or not sync.enabled:
+            return None
+        return {"entity": self.options.get(CONF_CALENDAR_ENTITY)}
 
     def _battery_notes_attributes(self) -> dict[str, Any] | None:
         """Return what the card needs for its button to put batteries on Bring."""

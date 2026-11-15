@@ -17,6 +17,7 @@ from homeassistant.helpers.network import NoURLAvailableError
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    CONF_CALENDAR_CATEGORIES,
     CONF_BATTERY_NOTES,
     CONF_BATTERY_NOTES_REPLACED,
     CONF_WASTE_CALENDARS,
@@ -156,6 +157,9 @@ from .store import BrainstormStore, get_loaded_store
 BACK_FIELD = "go_back"
 # A one-off action on the Battery Notes page, not stored
 CONF_BATTERY_NOTES_BRING = "battery_notes_bring"
+# One category and its own calendar, set on saving the calendar page
+CALENDAR_CATEGORY_FIELD = "calendar_category"
+CALENDAR_CATEGORY_ENTITY_FIELD = "calendar_category_entity"
 SENSOR_RULE_PICK = "sensor_rule"
 SENSOR_RULE_DELETE = "sensor_delete"
 NEW_SENSOR_RULE = "new"
@@ -2530,13 +2534,30 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         """Switch the calendar and real Alexa reminders on or off."""
         if user_input is not None and user_input.pop(BACK_FIELD, False):
             return await self.async_step_reminders()
+        options = dict(self.config_entry.options or self.config_entry.data)
+        chosen = dict(options.get(CONF_CALENDAR_CATEGORIES) or {})
         if user_input is not None:
+            category = str(user_input.pop(CALENDAR_CATEGORY_FIELD, "") or "")
+            calendar = user_input.pop(CALENDAR_CATEGORY_ENTITY_FIELD, None)
+            if category:
+                # An empty calendar takes the category back to the default one
+                if calendar:
+                    chosen[category] = calendar
+                else:
+                    chosen.pop(category, None)
+            user_input[CONF_CALENDAR_CATEGORIES] = chosen
             return await self._async_save_reminder_options(
                 (CONF_CALENDAR_ENTITY,), user_input
             )
-        options = dict(self.config_entry.options or self.config_entry.data)
+        categories = list((await self._async_store()).categories)
         return self.async_show_form(
             step_id="reminder_extras",
+            description_placeholders={
+                "calendar_categories": ", ".join(
+                    f"{cat} → {entity}" for cat, entity in sorted(chosen.items())
+                )
+                or "–"
+            },
             data_schema=vol.Schema(
                 _with_back(
                 {
@@ -2547,6 +2568,17 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                     vol.Optional(
                         CONF_CALENDAR_ENTITY,
                         description=_suggested(options, CONF_CALENDAR_ENTITY),
+                    ): selector.EntitySelector(
+                        selector.EntitySelectorConfig(domain="calendar")
+                    ),
+                    vol.Optional(CALENDAR_CATEGORY_FIELD): selector.SelectSelector(
+                        selector.SelectSelectorConfig(
+                            options=categories,
+                            mode=selector.SelectSelectorMode.DROPDOWN,
+                        )
+                    ),
+                    vol.Optional(
+                        CALENDAR_CATEGORY_ENTITY_FIELD
                     ): selector.EntitySelector(
                         selector.EntitySelectorConfig(domain="calendar")
                     ),

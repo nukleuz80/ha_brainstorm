@@ -147,9 +147,15 @@ Find these under [**Settings ➔ Devices & Services ➔ Brainstorm Hub ➔ Confi
 
 | Field | What it does |
 | :--- | :--- |
-| Add reminders to a calendar | One way, once per reminder. Later changes are not transferred. |
-| Calendar | The calendar that receives the reminders. |
+| Put tasks with a time in a calendar | Since v1.13.19: every open task with a due date and time gets a calendar event (30 minutes). Changing the text, the time or the category moves the event; deleting the task removes it. Ticked off, it stays. Only towards the calendar. |
+| Calendar | The default calendar for all categories without a calendar of their own. |
+| Category with its own calendar | Pick a category and its calendar below, such as *Work* → `calendar.private`. The chosen pairs are shown at the top of the page. |
+| Calendar of this category | Leaving it empty takes the chosen category back to the default calendar. |
 | Also create real Alexa reminders | In the Alexa console, also switch on Reminders under Build ➔ Permissions. Alexa then rings itself and Home Assistant does not speak as well. |
+
+- **Without a time:** Brainstorm stores a due date without a time as 09:00. Such tasks only go to the calendar when their **📅 Calendar** switch in the note dialog is set to *Always add*. *Do not add* keeps a task out and removes an existing event. As an action: `brainstorm.update_idea` with `calendar: true/false` (or `null` for the rule).
+- **Calendars that cannot change events** (such as Google): moving means deleting and adding again. If a calendar cannot delete (some CalDAV calendars), the old event stays.
+- Tasks with an event show 📅 in the card. No event is added for tasks that are already late.
 
 ### Brainstorm › AI
 

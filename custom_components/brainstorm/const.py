@@ -50,6 +50,7 @@ CONF_PERSONS_ENABLED = "persons_enabled"
 CONF_PERSON_RULES = "person_rules"
 CONF_CALENDAR_ENABLED = "calendar_enabled"
 CONF_CALENDAR_ENTITY = "calendar_entity"
+CONF_CALENDAR_CATEGORIES = "calendar_categories"
 CONF_AI_ENABLED = "ai_enabled"
 CONF_AI_ENTITY = "ai_entity"
 CONF_AI_TEXT_CLEANUP = "ai_text_cleanup"
@@ -370,6 +371,10 @@ ATTR_ECHOS = "echos"
 ATTR_URGENT_SENT = "urgent_sent"
 ATTR_ALEXA_NATIVE = "alexa_native"
 ATTR_CALENDAR_SYNCED = "calendar_synced"
+# The 📅 switch of a task: True, False, or missing for the rule of the settings
+ATTR_CALENDAR = "calendar"
+# The event a task has in a calendar: entity, uid, start and summary
+ATTR_CALENDAR_EVENT = "calendar_event"
 # Item of a linked to-do list, with what that list said at the last sync
 ATTR_TODO_LINK = "todo_link"
 # Ideas taken over from a linked to-do list

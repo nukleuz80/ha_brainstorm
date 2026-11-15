@@ -1177,37 +1177,6 @@ async def test_person_gets_own_channels(
     assert alexa[0].data["target"] == ["media_player.frida"]
 
 
-async def test_calendar_sync_once(hass: HomeAssistant, setup_entry: SetupEntry) -> None:
-    """Test adding a reminder to a calendar, and the switch."""
-    calls = async_mock_service(hass, "calendar", "create_event")
-    entry = await setup_entry(
-        options={"calendar_enabled": True, "calendar_entity": "calendar.familie"}
-    )
-    store = entry.runtime_data
-    await store.async_add_idea("arzt", due=dt_util.now() + timedelta(days=1))
-
-    await store.reminders.async_check(dt_util.now())
-    await store.reminders.async_check(dt_util.now())
-    await hass.async_block_till_done()
-
-    assert len(calls) == 1
-    assert calls[0].data["summary"].lower() == "arzt"
-    assert calls[0].data["entity_id"] == "calendar.familie"
-
-
-async def test_calendar_switch_off(hass: HomeAssistant, setup_entry: SetupEntry) -> None:
-    """Test that nothing goes to the calendar when switched off."""
-    calls = async_mock_service(hass, "calendar", "create_event")
-    entry = await setup_entry(options={"calendar_entity": "calendar.familie"})
-    store = entry.runtime_data
-    await store.async_add_idea("arzt", due=dt_util.now() + timedelta(days=1))
-
-    await store.reminders.async_check(dt_util.now())
-    await hass.async_block_till_done()
-
-    assert not calls
-
-
 async def test_ai_shortens_briefing_and_falls_back(
     hass: HomeAssistant, setup_entry: SetupEntry
 ) -> None:

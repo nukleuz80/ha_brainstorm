@@ -337,18 +337,22 @@
       },
       "reminder_extras": {
         "title": "Brainstorm › Reminders › Calendar & Alexa",
-        "description": "Optional extras, each with its own switch. The AI is now set in the main menu under **AI**.",
+        "description": "Optional extras, each with its own switch. The AI is now set up in the main menu under **AI**.\n\n**Calendar per category:** {calendar_categories}",
         "data": {
-          "calendar_enabled": "Add reminders to a calendar",
+          "calendar_enabled": "Put tasks with a time in a calendar",
           "calendar_entity": "Calendar",
+          "calendar_category": "Category with its own calendar",
+          "calendar_category_entity": "Calendar of this category",
           "native_reminders": "Also create real Alexa reminders",
           "go_back": "⬅️ Back, without saving"
         },
         "data_description": {
-          "calendar_enabled": "One way, once per reminder. Later changes are not transferred.",
+          "calendar_enabled": "Every open task with a due date and time gets an event. Changing the text or the time moves the event; deleting the task removes it. Ticked off, it stays. 09:00 counts as \"no time\"; the 📅 switch of a note changes that for it.",
           "native_reminders": "In the Alexa console, also switch on Reminders under Build ➔ Permissions. Alexa then rings itself and Home Assistant does not speak as well.",
-          "calendar_entity": "The calendar that receives the reminders.",
-          "go_back": "Returns to the previous page without saving this form."
+          "calendar_entity": "The default calendar for all categories without a calendar of their own.",
+          "go_back": "Returns to the previous page without saving this form.",
+          "calendar_category": "Pick a category and its calendar below. Without a calendar it goes back to the default calendar.",
+          "calendar_category_entity": "Leave empty to take the chosen category back to the default calendar."
         }
       },
       "ai": {
@@ -1180,6 +1184,10 @@
         "in_progress": {
           "name": "In progress",
           "description": "Marks that someone, for example a coding AI, is working on the idea now. Both cards show it with a badge. Ticking the idea off removes the mark."
+        },
+        "calendar": {
+          "name": "📅 Calendar",
+          "description": "On puts the task in the calendar even without a time, off keeps it out. Leave it out for the rule of the settings: only tasks with a time."
         },
         "shape": {
           "name": "Shape",

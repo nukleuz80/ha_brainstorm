@@ -7,6 +7,11 @@
  */
 const DICTIONARIES = {
   en: {
+    "Automatisch (nur mit Uhrzeit)": "Automatic (only with a time)",
+    "📅 Immer eintragen": "📅 Always add",
+    "Nicht eintragen": "Do not add",
+    "Im Kalender: {calendar}": "In the calendar: {calendar}",
+    "Kalender:": "Calendar:",
     "🛒 Batterien auf Bring!": "🛒 Batteries to Bring!",
     "Für die offenen Batterie-Aufgaben: {list}": "For the open battery tasks: {list}",
     "🛒 Auf {name}: {items}": "🛒 On {name}: {items}",
@@ -1246,6 +1251,29 @@ export function myDayOptions(current) {
   return [`<option value="">${t("Nicht für heute")}</option>`]
     .concat(MY_DAY_PARTS.map((part) => `<option value="${part}"${part === current ? " selected" : ""}>${MY_DAY_ICONS[part]} ${myDayLabel(part)}</option>`))
     .join("");
+}
+
+/** The choices of the 📅 switch of a note: the rule of the settings, on or off. */
+export function calendarOptions(current) {
+  const value = current === true ? "on" : current === false ? "off" : "";
+  return [
+    ["", t("Automatisch (nur mit Uhrzeit)")],
+    ["on", t("📅 Immer eintragen")],
+    ["off", t("Nicht eintragen")],
+  ].map(([key, label]) => `<option value="${key}"${key === value ? " selected" : ""}>${label}</option>`).join("");
+}
+
+/** Read the 📅 switch back: undefined when it did not change. */
+export function readCalendar(value, current) {
+  const next = value === "on" ? true : value === "off" ? false : null;
+  const before = typeof current === "boolean" ? current : null;
+  return next === before ? undefined : next;
+}
+
+/** A small calendar for notes that have an event in a calendar. */
+export function calendarBadge(idea) {
+  if (!idea || !idea.calendar_event) return "";
+  return `<span class="repeat-badge calendar-badge" title="${escapeHtml(t("Im Kalender: {calendar}", { calendar: idea.calendar_event }))}">📅</span>`;
 }
 
 /** A small sun, sunrise or moon for notes picked for today. */

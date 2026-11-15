@@ -147,9 +147,15 @@ Du findest sie unter [**Einstellungen ➔ Geräte & Dienste ➔ Brainstorm Hub �
 
 | Feld | Was es bewirkt |
 | :--- | :--- |
-| Erinnerungen in einen Kalender eintragen | Nur in eine Richtung und einmal pro Erinnerung. Spätere Änderungen werden nicht übertragen. |
-| Kalender | Der Kalender, der die Erinnerungen erhält. |
+| Aufgaben mit Uhrzeit in einen Kalender eintragen | Seit v1.13.19: Jede offene Aufgabe mit Termin und Uhrzeit bekommt einen Kalendereintrag (30 Minuten). Ändern sich Text, Termin oder Kategorie, zieht der Eintrag mit; wird die Aufgabe gelöscht, verschwindet er. Abgehakt bleibt er stehen. Nur in Richtung Kalender. |
+| Kalender | Der Standardkalender für alle Kategorien ohne eigenen Kalender. |
+| Kategorie mit eigenem Kalender | Wähle eine Kategorie und darunter ihren Kalender, z. B. *Arbeit* → `calendar.privat`. Die gewählten Paare stehen oben auf der Seite. |
+| Kalender dieser Kategorie | Leer lassen setzt die gewählte Kategorie zurück auf den Standardkalender. |
 | Zusätzlich echte Alexa-Erinnerungen anlegen | Schalte in der Alexa-Konsole zusätzlich Reminders unter Build ➔ Permissions ein. Alexa klingelt dann selbst, und Home Assistant spricht nicht zusätzlich. |
+
+- **Ohne Uhrzeit:** Brainstorm speichert einen Termin ohne Uhrzeit als 09:00. Solche Aufgaben kommen nur in den Kalender, wenn ihr Schalter **📅 Kalender** im Notizdialog auf *Immer eintragen* steht. *Nicht eintragen* hält eine Aufgabe heraus und entfernt einen vorhandenen Eintrag. Per Aktion: `brainstorm.update_idea` mit `calendar: true/false` (oder `null` für die Regel).
+- **Kalender, die nicht ändern können** (z. B. Google): Verschieben heißt löschen und neu anlegen. Kann ein Kalender nicht löschen (manche CalDAV-Kalender), bleibt der alte Eintrag stehen.
+- Aufgaben mit einem Eintrag zeigen 📅 in der Karte. Für überfällige Aufgaben wird kein Eintrag mehr angelegt.
 
 ### Brainstorm › KI
 

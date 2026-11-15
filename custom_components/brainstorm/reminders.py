@@ -22,7 +22,6 @@ from .const import (
     MY_DAY_PARTS,
     ATTR_ALEXA_NATIVE,
     ATTR_ASSIGNEE,
-    ATTR_CALENDAR_SYNCED,
     ATTR_CATEGORY,
     ATTR_CREATED_AT,
     ATTR_DEVICE,
@@ -39,8 +38,6 @@ from .const import (
     CONF_AI_ENABLED,
     CONF_AI_ENTITY,
     CONF_ARRIVAL_ENABLED,
-    CONF_CALENDAR_ENABLED,
-    CONF_CALENDAR_ENTITY,
     CONF_DEFAULT_PERSON,
     CONF_DIGEST_ENABLED,
     CONF_DIGEST_PRESENCE,
@@ -103,7 +100,6 @@ _LOGGER = logging.getLogger(__name__)
 CHECK_INTERVAL = timedelta(seconds=30)
 LATE_SCHEDULE_LIMIT = timedelta(hours=2)
 PRESENCE_SCHEDULE_LIMIT = timedelta(hours=6)
-CALENDAR_EVENT_LENGTH = timedelta(minutes=30)
 REVIEW_MAX_ITEMS = 5
 ACTION_PREFIX = "BRAINSTORM_"
 ACTION_DONE = "DONE"
@@ -393,7 +389,6 @@ class ReminderManager:
         for idea in self._ideas.ideas:
             if idea.get("status") != "active" or not idea.get(ATTR_DUE):
                 continue
-            await self._async_sync_calendar(idea, now)
             due = dt_util.parse_datetime(idea[ATTR_DUE])
             if due is None or due > now:
                 continue
@@ -820,35 +815,6 @@ class ReminderManager:
             await self._async_save_state()
             if message := self._list_message(category):
                 await self._async_broadcast_list(category, rule, message)
-
-    async def _async_sync_calendar(self, idea: dict[str, Any], now: datetime) -> None:
-        """Add an idea's reminder to the chosen calendar, once."""
-        entity = self._options.get(CONF_CALENDAR_ENTITY)
-        if (
-            not self._options.get(CONF_CALENDAR_ENABLED)
-            or not entity
-            or idea.get(ATTR_CALENDAR_SYNCED)
-        ):
-            return
-        due = dt_util.parse_datetime(idea[ATTR_DUE])
-        if due is None or due <= now:
-            return
-        try:
-            await self.hass.services.async_call(
-                "calendar",
-                "create_event",
-                {
-                    "summary": str(idea.get(ATTR_TEXT)),
-                    "start_date_time": due.isoformat(),
-                    "end_date_time": (due + CALENDAR_EVENT_LENGTH).isoformat(),
-                },
-                blocking=True,
-                target={"entity_id": entity},
-            )
-        except (HomeAssistantError, ValueError) as err:
-            _LOGGER.warning("Could not add a reminder to %s: %s", entity, err)
-        # Marked even after an error, a broken calendar must not retry every 30 seconds
-        await self._ideas.async_mark_fields(idea[ATTR_ID], {ATTR_CALENDAR_SYNCED: True})
 
     async def _async_summarize(self, message: str) -> str:
         """Let the chosen AI shorten a long text, keeping the original on any problem."""

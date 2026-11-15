@@ -337,18 +337,22 @@
       },
       "reminder_extras": {
         "title": "Brainstorm › Erinnerungen › Kalender & Alexa",
-        "description": "Optionale Extras mit jeweils eigenem Schalter. Die KI stellst du jetzt im Hauptmenü unter **KI** ein.",
+        "description": "Optionale Extras mit jeweils eigenem Schalter. Die KI stellst du jetzt im Hauptmenü unter **KI** ein.\n\n**Kalender pro Kategorie:** {calendar_categories}",
         "data": {
-          "calendar_enabled": "Erinnerungen in einen Kalender eintragen",
+          "calendar_enabled": "Aufgaben mit Uhrzeit in einen Kalender eintragen",
           "calendar_entity": "Kalender",
+          "calendar_category": "Kategorie mit eigenem Kalender",
+          "calendar_category_entity": "Kalender dieser Kategorie",
           "native_reminders": "Zusätzlich echte Alexa-Erinnerungen anlegen",
           "go_back": "⬅️ Zurück, ohne zu speichern"
         },
         "data_description": {
-          "calendar_enabled": "Nur in eine Richtung und einmal pro Erinnerung. Spätere Änderungen werden nicht übertragen.",
+          "calendar_enabled": "Jede offene Aufgabe mit Termin und Uhrzeit bekommt einen Eintrag. Ändern sich Text oder Termin, zieht der Eintrag mit; wird die Aufgabe gelöscht, verschwindet er. Abgehakt bleibt er stehen. 09:00 gilt als „ohne Uhrzeit“; der Schalter 📅 an der Notiz ändert das für sie.",
           "native_reminders": "Schalte in der Alexa-Konsole zusätzlich Reminders unter Build ➔ Permissions ein. Alexa klingelt dann selbst, und Home Assistant spricht nicht zusätzlich.",
-          "calendar_entity": "Der Kalender, der die Erinnerungen erhält.",
-          "go_back": "Kehrt zur vorigen Seite zurück, ohne dieses Formular zu speichern."
+          "calendar_entity": "Der Standardkalender für alle Kategorien ohne eigenen Kalender.",
+          "go_back": "Kehrt zur vorigen Seite zurück, ohne dieses Formular zu speichern.",
+          "calendar_category": "Wähle eine Kategorie und darunter ihren Kalender. Ohne Kalender nimmt sie wieder den Standardkalender.",
+          "calendar_category_entity": "Leer lassen, um die gewählte Kategorie zurück auf den Standardkalender zu setzen."
         }
       },
       "ai": {
@@ -1180,6 +1184,10 @@
         "in_progress": {
           "name": "In Arbeit",
           "description": "Zeigt an, dass gerade jemand, etwa eine Coding-KI, an dem Eintrag arbeitet. Beide Karten zeigen ein Abzeichen. Beim Abhaken verschwindet die Markierung."
+        },
+        "calendar": {
+          "name": "📅 Kalender",
+          "description": "An trägt die Aufgabe auch ohne Uhrzeit in den Kalender ein, aus hält sie heraus. Weglassen für die Regel der Einstellungen: nur Aufgaben mit Uhrzeit."
         },
         "shape": {
           "name": "Form",

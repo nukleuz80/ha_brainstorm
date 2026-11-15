@@ -218,6 +218,10 @@ update_idea:
       required: false
       selector:
         boolean:
+    calendar:
+      required: false
+      selector:
+        boolean:
     shape:
       required: false
       selector:

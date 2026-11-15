@@ -21,6 +21,7 @@ from homeassistant.util import dt as dt_util
 from .alexa_skill import AlexaSkill
 from .attachments import AttachmentCleaner, async_register_views
 from .battery import BatteryWatcher
+from .calendar_sync import CalendarSync
 from .choreops import ChoreOpsBridge
 from .bring import (
     async_batteries_to_bring,
@@ -30,6 +31,7 @@ from .bring import (
     bring_message_target,
 )
 from .const import (
+    ATTR_CALENDAR,
     ATTR_CATEGORY,
     CONF_CHOREOPS_ENABLED,
     CONF_CHOREOPS_POINTS,
@@ -251,6 +253,7 @@ SERVICE_UPDATE_IDEA_SCHEMA = vol.Schema(
             None, vol.All(cv.string, vol.Length(max=DESCRIPTION_MAX_LENGTH))
         ),
         vol.Optional(ATTR_IN_PROGRESS): cv.boolean,
+        vol.Optional(ATTR_CALENDAR): vol.Any(None, cv.boolean),
         vol.Optional(ATTR_SHAPE): vol.Any(None, "", vol.In(NODE_SHAPES)),
         vol.Optional(ATTR_MARKERS): vol.Any(
             None, vol.All(cv.ensure_list, [vol.In(MARKERS)])
@@ -535,6 +538,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) -
     await sensor_rules.async_start()
     entry.async_on_unload(sensor_rules.async_stop)
 
+    calendar_sync = CalendarSync(hass, store, {**entry.data, **entry.options})
+    store.calendar_sync = calendar_sync
+    await calendar_sync.async_start()
+    entry.async_on_unload(calendar_sync.async_stop)
     waste = WasteWatcher(hass, store, {**entry.data, **entry.options})
     await waste.async_start()
     entry.async_on_unload(waste.async_stop)
@@ -827,6 +834,13 @@ def _register_services(hass: HomeAssistant) -> None:
                 fields[ATTR_TRIGGER] = {"zone": zone, "person": person} if zone else None
                 fields[ATTR_REMINDED_AT] = None
             await store.async_mark_fields(idea_id, fields)
+        if updated is not None and ATTR_CALENDAR in call.data:
+            # The 📅 switch: on, off, or None for the rule of the settings
+            await store.async_mark_fields(
+                idea_id, {ATTR_CALENDAR: call.data[ATTR_CALENDAR]}
+            )
+            if store.calendar_sync is not None:
+                await store.calendar_sync.async_sync(idea_id)
         if updated is None:
             raise ServiceValidationError(
             translation_domain=DOMAIN, translation_key="idea_not_found", translation_placeholders={"id": idea_id}
