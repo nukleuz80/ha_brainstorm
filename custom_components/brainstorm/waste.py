@@ -13,7 +13,11 @@ import logging
 import re
 from typing import TYPE_CHECKING, Any
 
-from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
+from homeassistant.const import (
+    EVENT_HOMEASSISTANT_STARTED,
+    STATE_UNAVAILABLE,
+    STATE_UNKNOWN,
+)
 from homeassistant.core import CALLBACK_TYPE, CoreState, Event, HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
@@ -195,39 +199,36 @@ class WasteWatcher:
         return self.calendars or waste_calendars(self.hass)
 
     async def _async_events(self, day: date) -> list[tuple[str, dict[str, Any]]]:
-        """Return the events of a day in the calendars, with the calendar's name."""
-        calendars = [
-            entity
-            for entity in self._calendars()
-            if self.hass.states.get(entity) is not None
-        ]
-        if not calendars:
-            return []
+        """Return the events of a day in the calendars, with the calendar's name.
+
+        Every calendar is read on its own, so one that is unavailable does not
+        cost the pickups of the others.
+        """
         start = dt_util.start_of_local_day(day)
-        try:
-            response = await self.hass.services.async_call(
-                "calendar",
-                "get_events",
-                {
-                    "entity_id": calendars,
-                    "start_date_time": start.isoformat(),
-                    "end_date_time": (start + timedelta(days=1)).isoformat(),
-                },
-                blocking=True,
-                return_response=True,
-            )
-        except HomeAssistantError as err:
-            _LOGGER.warning("Could not read the waste calendars: %s", err)
-            return []
         events: list[tuple[str, dict[str, Any]]] = []
-        for entity, result in (response or {}).items():
+        for entity in self._calendars():
             state = self.hass.states.get(entity)
-            name = state.name if state is not None else entity
-            for event in (
-                (result or {}).get("events", []) if isinstance(result, dict) else []
-            ):
+            if state is None or state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
+                continue
+            try:
+                response = await self.hass.services.async_call(
+                    "calendar",
+                    "get_events",
+                    {
+                        "entity_id": entity,
+                        "start_date_time": start.isoformat(),
+                        "end_date_time": (start + timedelta(days=1)).isoformat(),
+                    },
+                    blocking=True,
+                    return_response=True,
+                )
+            except HomeAssistantError as err:
+                _LOGGER.warning("Could not read the waste calendar %s: %s", entity, err)
+                continue
+            result = (response or {}).get(entity)
+            for event in result.get("events", []) if isinstance(result, dict) else []:
                 if _event_day(event.get("start")) == day:
-                    events.append((str(name), event))
+                    events.append((str(state.name), event))
         return events
 
     def _tasks(self) -> list[dict[str, Any]]:

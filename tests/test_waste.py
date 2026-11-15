@@ -40,7 +40,11 @@ def pickups(hass: HomeAssistant) -> dict[str, str]:
             for iso, summary in days.items()
             if start.date() <= date.fromisoformat(iso) < end.date()
         ]
-        return {entity: {"events": events} for entity in call.data["entity_id"]}
+        entities = call.data["entity_id"]
+        if isinstance(entities, str):
+            entities = [entities]
+        assert "calendar.kaputt" not in entities
+        return {entity: {"events": events} for entity in entities}
 
     hass.services.async_register(
         "calendar", "get_events", get_events, supports_response=SupportsResponse.ONLY
@@ -99,12 +103,19 @@ async def test_tasks_on_the_eve(
     """Every pickup of a day becomes one task, only once, and closes afterwards."""
     pickups[DAY.isoformat()] = "Abfuhr Altpapier, Abfuhr Bioabfall"
     pickups["2026-11-23"] = "Abfuhr Gelbe Tonne"
+    # An unavailable calendar is left out and costs nothing
+    hass.states.async_set("calendar.kaputt", "unavailable")
     entry = await setup_entry(stored={"ideas": [], "categories": ["Inbox", "Haushalt"]})
     store = entry.runtime_data
     watcher = WasteWatcher(
         hass,
         store,
-        {"waste_enabled": True, "waste_category": "Haushalt", "waste_time": "19:30:00"},
+        {
+            "waste_enabled": True,
+            "waste_calendars": ["calendar.kaputt", CALENDAR],
+            "waste_category": "Haushalt",
+            "waste_time": "19:30:00",
+        },
     )
     assert await watcher.async_create_for(DAY) == 2
     assert await watcher.async_create_for(DAY) == 0

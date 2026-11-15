@@ -224,7 +224,7 @@ Since v1.13.16. Shown once [Waste Collection Schedule](https://github.com/mampfe
 | Field | What it does |
 | :--- | :--- |
 | Tasks for pickups | Switches the tasks on (default off). |
-| Waste calendars | The calendars with the pickups. Empty means all calendars of Waste Collection Schedule. Any other calendar works as well. |
+| Waste calendars | The calendars with the pickups. Empty means all calendars of Waste Collection Schedule. Any other calendar works as well. An unavailable calendar is skipped (v1.13.17). |
 | Category | The category the tasks go to. |
 | Time on the evening before | When the task appears (default 18:00); its due time as well. |
 | In turn for (ChoreOps) | Only with ChoreOps: the tasks of a pickup day go together to one of these people, the next pickup day to the next one, as ChoreOps chores with points. |

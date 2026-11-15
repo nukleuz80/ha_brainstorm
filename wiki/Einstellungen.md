@@ -224,7 +224,7 @@ Seit v1.13.16. Erscheint, wenn [Waste Collection Schedule](https://github.com/ma
 | Feld | Was es bewirkt |
 | :--- | :--- |
 | Aufgaben für Abholungen | Schaltet die Aufgaben ein (Standard aus). |
-| Abfallkalender | Die Kalender mit den Abholungen. Leer heißt: alle Kalender von Waste Collection Schedule. Jeder andere Kalender geht auch. |
+| Abfallkalender | Die Kalender mit den Abholungen. Leer heißt: alle Kalender von Waste Collection Schedule. Jeder andere Kalender geht auch. Ein nicht verfügbarer Kalender wird übersprungen (v1.13.17). |
 | Kategorie | Die Kategorie, in die die Aufgaben kommen. |
 | Uhrzeit am Vorabend | Wann die Aufgabe erscheint (Standard 18:00), zugleich ihr Fälligkeitszeitpunkt. |
 | Im Wechsel für (ChoreOps) | Nur mit ChoreOps: Die Aufgaben eines Abholtags gehen zusammen an eine dieser Personen, der nächste Abholtag an die nächste, als ChoreOps-Aufgabe mit Punkten. |
