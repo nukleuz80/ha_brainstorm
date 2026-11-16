@@ -1,9 +1,9 @@
-import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, bringBadge, bringSentText, unblockedText, canSendToBring, renderBringSend, canHandOver, canHandOverProject, canMakeReward, choreopsBadge, choreopsRewardBadge, renderChoreHandover, renderChoreProject, renderChoreReward, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t, linkedListMark, linkedListOf, linkedListSign, linkedListText, batteriesBringText, batteriesNeeded, calendarBadge, calendarOptions, readCalendar, renderStatistics } from "./brainstorm-i18n.js?v=1.13.22";
+import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, bringBadge, bringSentText, unblockedText, canSendToBring, renderBringSend, canHandOver, canHandOverProject, canMakeReward, choreopsBadge, choreopsRewardBadge, renderChoreHandover, renderChoreProject, renderChoreReward, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, timeBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t, linkedListMark, linkedListOf, linkedListSign, linkedListText, batteriesBringText, batteriesNeeded, calendarBadge, calendarOptions, readCalendar, renderStatistics } from "./brainstorm-i18n.js?v=1.13.23";
 
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.13.22 - Integrationen
+ * Version 1.13.23 - Zeiterfassung
  */
 // The bulb lies next to this file, wherever Home Assistant serves it from
 const BULB_URL = new URL("./brainstorm-bulb.svg", import.meta.url).href;
@@ -2438,6 +2438,16 @@ class BrainstormCard extends HTMLElement {
       </button>
     `;
 
+    // Stopwatch for the time spent on it
+    if (item.status !== "completed" || item.timer) {
+      actionsHtml += `
+        <button class="apple-menu-btn" data-act="track-time" data-lvl="normal">
+          <span class="btn-icon">${item.timer ? "⏹️" : "⏱️"}</span>
+          <div class="btn-content"><span>${item.timer ? t("Stoppuhr anhalten") : t("Stoppuhr starten")}</span></div>
+        </button>
+      `;
+    }
+
     // Reminder
     actionsHtml += `
       <button class="apple-menu-btn" data-act="due-evening">
@@ -2618,6 +2628,16 @@ class BrainstormCard extends HTMLElement {
             await this._hass.callService("brainstorm", "update_idea", { id: item.id, my_day: item.my_day ? null : "day" });
           } catch (err) {
             console.error("Failed to change My day", err);
+          }
+          return;
+        }
+
+        if (act === "track-time") {
+          try {
+            await this._hass.callService("brainstorm", "track_time", { id: item.id, action: item.timer ? "stop" : "start" });
+          } catch (err) {
+            console.error("Failed to switch the stopwatch", err);
+            this._notify((err && err.message) || t("Das hat nicht geklappt."));
           }
           return;
         }
@@ -4235,6 +4255,19 @@ class BrainstormCard extends HTMLElement {
         .due-badge.overdue {
           color: var(--error-color);
         }
+        .time-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 3px;
+          padding: 2px 6px;
+          border-radius: 6px;
+          background: color-mix(in srgb, var(--primary-color, #03a9f4) 12%, transparent);
+        }
+        .time-badge.running {
+          font-weight: 600;
+          color: var(--warning-color, #ff9800);
+          background: color-mix(in srgb, var(--warning-color, #ff9800) 14%, transparent);
+        }
         .in-progress-badge {
           display: inline-flex;
           align-items: center;
@@ -5400,6 +5433,7 @@ class BrainstormCard extends HTMLElement {
                   ${item.frame ? `<span class="frame-chip" title="${t("Rahmen")}">▢ ${this._escapeHtml(item.frame)}</span>` : ""}
                   ${attachmentBadge(item)}
                   ${inProgressBadge(item)}
+                  ${timeBadge(item)}
                   ${showSource ? `${this._getSourceBadge(item.source, item.device)}` : ""}
                   ${showSource && showTime ? `<span>•</span>` : ""}
                   ${showTime ? `<span>${this._formatTime(item.created_at)}</span>` : ""}
@@ -6416,7 +6450,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.13.22 ",
+  "%c BRAINSTORM-CARD %c v1.13.23 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

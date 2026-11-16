@@ -620,6 +620,23 @@ react:
       selector:
         boolean:
 
+track_time:
+  fields:
+    id:
+      required: true
+      selector:
+        text:
+    action:
+      required: false
+      default: toggle
+      selector:
+        select:
+          translation_key: timer_action
+          options:
+            - start
+            - stop
+            - toggle
+
 vote:
   fields:
     id:

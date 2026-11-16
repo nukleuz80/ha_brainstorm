@@ -80,6 +80,8 @@ from .const import (
     ATTR_SENSOR_RULE_DONE,
     ATTR_COMPLETED_AT,
     ATTR_IN_PROGRESS,
+    ATTR_TIMER,
+    ATTR_TIME_LOG,
     ATTR_MARKERS,
     ATTR_PROGRESS,
     ATTR_SUBTASKS,
@@ -209,6 +211,7 @@ from .choreops import (
     rule_points,
 )
 from .languages import CATEGORY_KEYS, get_pack
+from . import timetrack
 from .local_todo import local_entities
 from .languages.common import CATEGORY_PROJECTS, SPEECH_SPLIT, LanguagePack
 
@@ -266,6 +269,8 @@ EXPORT_SKIPPED_FIELDS = (
     # The files themselves are not part of an export
     ATTR_ATTACHMENTS,
     ATTR_IN_PROGRESS,
+    ATTR_TIMER,
+    ATTR_TIME_LOG,
     ATTR_CALENDAR_EVENT,
     ATTR_COMPLETED_BY,
     ATTR_TODO_LINK,
@@ -686,6 +691,10 @@ class BrainstormStore:
                 result[ATTR_ATTACHMENTS] = [dict(a) for a in attachments]
             if working := idea.get(ATTR_IN_PROGRESS):
                 result[ATTR_IN_PROGRESS] = dict(working)
+            if isinstance(timer := idea.get(ATTR_TIMER), dict):
+                result[ATTR_TIMER] = dict(timer)
+            if idea.get(ATTR_TIME_LOG) or ATTR_TIMER in result:
+                result["time_spent"] = timetrack.tracked_seconds(idea, dt_util.now())
             if isinstance(idea.get(ATTR_CALENDAR), bool):
                 result[ATTR_CALENDAR] = idea[ATTR_CALENDAR]
             if isinstance(event := idea.get(ATTR_CALENDAR_EVENT), dict):
@@ -1986,6 +1995,7 @@ class BrainstormStore:
         # Work on an idea ends when it is done
         if idea.get(ATTR_STATUS) in ("completed", "archived"):
             idea.pop(ATTR_IN_PROGRESS, None)
+            timetrack.stop_timer(idea, dt_util.now())
         if device is not None:
             idea[ATTR_DEVICE] = device.strip() if device else None
         if order is not None:
@@ -2196,6 +2206,7 @@ class BrainstormStore:
                     child[ATTR_STATUS] = "completed"
                     child[ATTR_COMPLETED_AT] = now_iso
                     child.pop(ATTR_IN_PROGRESS, None)
+                    timetrack.stop_timer(child, dt_util.now())
                     closed.append(child[ATTR_ID])
         if closed:
             idea[ATTR_REPEAT_CLOSED] = closed
@@ -2378,6 +2389,7 @@ class BrainstormStore:
             idea[ATTR_UPDATED_AT] = now_iso
             idea.setdefault(ATTR_COMPLETED_AT, now_iso)
             idea.pop(ATTR_IN_PROGRESS, None)
+            timetrack.stop_timer(idea, dt_util.now())
             idea.pop(ATTR_TODO_LINK, None)
             idea.pop(ATTR_SPEC, None)
             archived += 1
@@ -3061,6 +3073,50 @@ class BrainstormStore:
         await self.async_save()
         self._notify_listeners()
         return reactions
+
+    async def async_track_time(
+        self, idea_id: str, action: str, user_id: str | None
+    ) -> dict[str, Any]:
+        """Start, stop or toggle the timer on a note.
+
+        A person runs one timer at a time, so starting one stops their other.
+        Done notes take no timer. Returns whether it runs and the tracked
+        seconds of the note.
+        """
+        idea = self._ideas.get(idea_id)
+        if idea is None:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="idea_not_found",
+                translation_placeholders={"id": idea_id},
+            )
+        now = dt_util.now()
+        running = timetrack.running_since(idea) is not None
+        start = not running if action == "toggle" else action == "start"
+        changed = False
+        if start and not running:
+            if idea.get(ATTR_STATUS) != "active":
+                raise ServiceValidationError(
+                    translation_domain=DOMAIN, translation_key="timer_not_active"
+                )
+            for other in self._ideas.values():
+                timer = other.get(ATTR_TIMER)
+                if (
+                    other is not idea
+                    and isinstance(timer, dict)
+                    and timer.get("by") == user_id
+                ):
+                    timetrack.stop_timer(other, now)
+            changed = timetrack.start_timer(idea, now, user_id)
+        elif not start and running:
+            changed = timetrack.stop_timer(idea, now)
+        if changed:
+            await self.async_save()
+            self._notify_listeners()
+        return {
+            "running": timetrack.running_since(idea) is not None,
+            "seconds": timetrack.tracked_seconds(idea, now),
+        }
 
     def votes_used(self, category: str, user_id: str | None) -> int:
         """Return how many votes a person gave in the open notes of a category."""

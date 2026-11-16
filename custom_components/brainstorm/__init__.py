@@ -93,6 +93,7 @@ from .const import (
     PROGRESS_STEPS,
     SERVICE_REORDER_IDEAS,
     SERVICE_SORT_CHILDREN,
+    SERVICE_TRACK_TIME,
     SERVICE_REACT,
     SERVICE_VOTE,
     SERVICE_START_VOTING,
@@ -330,6 +331,13 @@ SERVICE_SORT_CHILDREN_SCHEMA = vol.Schema(
         vol.Optional("by"): vol.In(SORT_KEYS),
         vol.Optional("ids"): vol.All(cv.ensure_list, [cv.string]),
         vol.Optional("reverse", default=False): cv.boolean,
+    }
+)
+
+SERVICE_TRACK_TIME_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_ID): cv.string,
+        vol.Optional("action", default="toggle"): vol.In(("start", "stop", "toggle")),
     }
 )
 
@@ -887,6 +895,16 @@ def _register_services(hass: HomeAssistant) -> None:
             _check_idea_edit(store, idea_id, call)
         success = await store.async_reorder_ideas(idea_ids)
         return {"success": success}
+
+    async def handle_track_time(call: ServiceCall) -> dict[str, Any]:
+        """Start or stop the timer of the calling user on a note."""
+        store = _require_store(hass)
+        idea_id = call.data[ATTR_ID]
+        _check_idea_edit(store, idea_id, call)
+        result = await store.async_track_time(
+            idea_id, call.data["action"], call.context.user_id
+        )
+        return {"success": True, **result}
 
     async def handle_react(call: ServiceCall) -> dict[str, Any]:
         """Switch a reaction of the calling user on a note."""
@@ -1515,6 +1533,7 @@ def _register_services(hass: HomeAssistant) -> None:
     )
 
     for service, handler, schema in (
+        (SERVICE_TRACK_TIME, handle_track_time, SERVICE_TRACK_TIME_SCHEMA),
         (SERVICE_REACT, handle_react, SERVICE_REACT_SCHEMA),
         (SERVICE_VOTE, handle_vote, SERVICE_VOTE_SCHEMA),
         (SERVICE_START_VOTING, handle_start_voting, SERVICE_START_VOTING_SCHEMA),

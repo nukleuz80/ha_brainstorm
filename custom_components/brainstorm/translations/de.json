@@ -794,6 +794,13 @@
         "important": "❗ Wichtig"
       }
     },
+    "timer_action": {
+      "options": {
+        "start": "Starten",
+        "stop": "Stoppen",
+        "toggle": "Umschalten"
+      }
+    },
     "sensor_condition": {
       "options": {
         "above": "Erreicht oder übersteigt",
@@ -836,6 +843,9 @@
     },
     "idea_not_found": {
       "message": "Idee \"{id}\" wurde nicht gefunden."
+    },
+    "timer_not_active": {
+      "message": "Nur offene Notizen bekommen eine Stoppuhr."
     },
     "sort_needs_parent": {
       "message": "Gib die Notiz an, deren Unteraufgaben sortiert werden, oder eine Kategorie."
@@ -1510,6 +1520,20 @@
         "active": {
           "name": "An",
           "description": "An oder aus. Weggelassen schaltet die Reaktion um."
+        }
+      }
+    },
+    "track_time": {
+      "name": "Zeit an einer Notiz erfassen",
+      "description": "Startet oder stoppt die Stoppuhr der aufrufenden Person an einer Notiz. Ein Start hält ihre andere laufende Stoppuhr an.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "Die Notiz."
+        },
+        "action": {
+          "name": "Aktion",
+          "description": "start, stop oder toggle. Ohne Angabe wird umgeschaltet."
         }
       }
     },

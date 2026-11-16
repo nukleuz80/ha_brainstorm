@@ -25,6 +25,7 @@ Alle Parameter stehen [weiter unten](#brainstormadd_idea) und unter [**Entwickle
 | `brainstorm.import_outline` | Gliederung anlegen: `text: …`, `category: …` oder `parent_id: …`, `format: auto` |
 | `brainstorm.move_branch` | Ast als eigene Map auslagern: `id: …`, `category: Camping`, optional `parent_id: …` |
 | `brainstorm.sort_children` | Unterpunkte sortieren: `parent_id: …`, `by: text`, `priority`, `due`, `created` oder `votes` |
+| `brainstorm.track_time` | Stoppuhr: `id: …`, `action: start`, `stop` oder `toggle` |
 | `brainstorm.react` | Reaktion umschalten: `id: …`, `reaction: heart` |
 | `brainstorm.add_comment` / `delete_comment` | Kommentar: `id: …`, `text: "@Frida bringst du Salat?"`; löschen mit `comment_id` |
 | `brainstorm.start_voting` / `vote` / `end_voting` | Abstimmung: `category: Urlaub`, `votes: 5`, `hidden: true`; `vote` mit `id`, `delta`; `end_voting` antwortet mit der Rangliste |
@@ -324,6 +325,17 @@ Sortiert die Unteraufgaben einer Notiz oder die Hauptnotizen einer Kategorie inn
 | `by` | Nein | `text` (A–Z), `priority` (dringend zuerst), `due` (früheste zuerst, Notizen ohne Datum am Ende) oder `created` (älteste zuerst), `votes` (meiste Stimmen zuerst). |
 | `ids` | Nein | Statt `by`: die Unteraufgaben in fester Reihenfolge, etwa um ein Sortieren rückgängig zu machen. |
 | `reverse` | Nein | Sortiert andersherum. |
+
+## `brainstorm.track_time`
+
+▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.track_time)
+
+Startet oder stoppt die Stoppuhr der aufrufenden Person an einer Notiz (v1.13.23). Jede Person hat höchstens eine laufende Stoppuhr: Ein Start hält ihre andere an. Abhaken und Archivieren halten sie ebenfalls an. Eine vergessene Stoppuhr zählt höchstens 12 Stunden. Antwortet mit `running` und `seconds` (erfasste Zeit der Notiz).
+
+| Feld | Pflicht | Bedeutung |
+| :--- | :--- | :--- |
+| `id` | Ja | ID der Notiz. |
+| `action` | Nein | `start`, `stop` oder `toggle` (Standard). |
 
 ## `brainstorm.react`
 

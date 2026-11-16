@@ -794,6 +794,13 @@
         "important": "❗ Important"
       }
     },
+    "timer_action": {
+      "options": {
+        "start": "Start",
+        "stop": "Stop",
+        "toggle": "Toggle"
+      }
+    },
     "sensor_condition": {
       "options": {
         "above": "Reaches or exceeds",
@@ -836,6 +843,9 @@
     },
     "idea_not_found": {
       "message": "Idea \"{id}\" was not found."
+    },
+    "timer_not_active": {
+      "message": "Only open notes take a timer."
     },
     "sort_needs_parent": {
       "message": "Give the note whose subtasks are sorted, or a category."
@@ -1510,6 +1520,20 @@
         "active": {
           "name": "On",
           "description": "On or off. Left out, the reaction toggles."
+        }
+      }
+    },
+    "track_time": {
+      "name": "Track time on a note",
+      "description": "Starts or stops the timer of the calling user on a note. Starting one stops their other running timer.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "The note."
+        },
+        "action": {
+          "name": "Action",
+          "description": "start, stop or toggle. Left out, the timer toggles."
         }
       }
     },

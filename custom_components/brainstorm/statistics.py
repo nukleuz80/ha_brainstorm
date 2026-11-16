@@ -18,6 +18,7 @@ from .const import (
     ATTR_DUE,
     ATTR_STATUS,
 )
+from .timetrack import gantt_rows, time_summary
 
 DEFAULT_WEEKS = 8
 MAX_WEEKS = 52
@@ -92,7 +93,10 @@ def build_statistics(
             people[person] += 1
         else:
             unknown += 1
+    window = dt_util.start_of_local_day(first)
     return {
+        "time": time_summary(chosen, now, window),
+        "gantt": gantt_rows(chosen, now, window),
         "weeks": [
             {
                 "start": start.isoformat(),

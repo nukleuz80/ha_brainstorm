@@ -211,6 +211,9 @@ ATTR_COMPLETED_AT = "completed_at"
 ATTR_COMPLETED_BY = "completed_by"
 # Someone, often a coding AI, is working on an idea right now
 ATTR_IN_PROGRESS = "in_progress"
+# A running timer on a note {since, by}, and the finished [start, end, user]
+ATTR_TIMER = "timer"
+ATTR_TIME_LOG = "time_log"
 # How a note looks on the mind map; none means the look of the map
 ATTR_SHAPE = "shape"
 NODE_SHAPES = (
@@ -419,6 +422,7 @@ JSON_EXPORT_VERSION = 1
 
 SERVICE_REORDER_IDEAS = "reorder_ideas"
 SERVICE_SORT_CHILDREN = "sort_children"
+SERVICE_TRACK_TIME = "track_time"
 SERVICE_REACT = "react"
 SERVICE_VOTE = "vote"
 SERVICE_START_VOTING = "start_voting"

@@ -96,6 +96,8 @@ async def websocket_get_ideas(
         idea["owner_name"] = names.get(idea.get("owner"), "")
         if worker := (idea.get("in_progress") or {}).get("by"):
             idea["in_progress"]["name"] = names.get(worker, "")
+        if timer_by := (idea.get("timer") or {}).get("by"):
+            idea["timer"]["name"] = names.get(timer_by, "")
         people = set(idea.get("votes") or {})
         for users in (idea.get("reactions") or {}).values():
             people.update(users)

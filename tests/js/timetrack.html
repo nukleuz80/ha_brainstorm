@@ -1,0 +1,45 @@
+<!doctype html>
+<!-- Browser test for the stopwatch badge, durations and the Gantt chart. -->
+<meta charset="utf-8">
+<pre id="out">RUNNING</pre>
+<script type="module">
+import { durationText, ganttHtml, setLanguage, timeBadge } from "../../custom_components/brainstorm/cards/brainstorm-i18n.js";
+const out = document.getElementById("out");
+const fails = [];
+const eq = (a, b, what) => { if (JSON.stringify(a) !== JSON.stringify(b)) fails.push(`${what}: ${JSON.stringify(a)} != ${JSON.stringify(b)}`); };
+try {
+  setLanguage({ language: "de" });
+  eq(durationText(0), "< 1 min", "zero");
+  eq(durationText(45 * 60), "45 min", "minutes");
+  eq(durationText(3600), "1 h", "hour");
+  eq(durationText(4800), "1 h 20 min", "hour and minutes");
+  eq(timeBadge({}), "", "no time");
+  eq(timeBadge({ time_spent: 4800 }).includes("⏱️ 1 h 20 min"), true, "badge");
+  const running = timeBadge({ time_spent: 60, timer: { since: "2026-11-16T10:00:00", name: "Jan" } });
+  eq(running.includes("running") && running.includes("läuft") && running.includes("Jan"), true, "running badge");
+  const day = 86400000;
+  const iso = (ms) => new Date(ms).toISOString();
+  const now = Date.now();
+  const html = ganttHtml([
+    { id: "a", text: "Bericht <b>", start: iso(now - 2 * day), end: iso(now + 2 * day), done: false, overdue: false, seconds: 3600 },
+    { id: "b", text: "Garten", start: iso(now - 5 * day), end: iso(now - 4 * day), done: true, overdue: false, seconds: 0 },
+  ], 2);
+  const box = document.createElement("div");
+  box.innerHTML = html;
+  eq(box.querySelectorAll(".bs-gantt-row").length, 2, "rows");
+  eq(box.querySelectorAll(".bs-gantt-bar.done").length, 1, "done bar");
+  eq(box.querySelector(".bs-gantt-name").textContent, "Bericht <b>", "escaped");
+  eq(box.querySelectorAll(".bs-gantt-today").length, 2, "today line");
+  const bar = box.querySelector(".bs-gantt-bar");
+  eq(parseFloat(bar.style.left) > 20 && parseFloat(bar.style.width) > 30, true, "bar place");
+  eq(ganttHtml([], 8).includes("Keine Notizen"), true, "empty");
+  setLanguage({ language: "en" });
+  eq(timeBadge({ time_spent: 60, timer: { since: "x" } }).includes("running"), true, "english");
+  eq(ganttHtml([], 8).includes("No notes"), true, "english empty");
+  await import("../../custom_components/brainstorm/cards/brainstorm-card.js");
+  await import("../../custom_components/brainstorm/cards/brainstorm-mindmap-card.js");
+} catch (err) {
+  fails.push(String(err && err.stack || err));
+}
+out.textContent = fails.length ? `FAIL\n${fails.join("\n")}` : "PASS";
+</script>

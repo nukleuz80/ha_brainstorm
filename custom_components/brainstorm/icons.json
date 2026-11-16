@@ -75,6 +75,9 @@
     "react": {
       "service": "mdi:emoticon-happy-outline"
     },
+    "track_time": {
+      "service": "mdi:timer-outline"
+    },
     "vote": {
       "service": "mdi:vote-outline"
     },

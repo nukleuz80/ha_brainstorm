@@ -7,6 +7,17 @@
  */
 const DICTIONARIES = {
   en: {
+    "Stoppuhr starten": "Start stopwatch",
+    "Stoppuhr anhalten": "Stop stopwatch",
+    "Stoppuhr läuft ({name}) · bisher {time}": "Stopwatch running ({name}) · {time} so far",
+    "Stoppuhr läuft · bisher {time}": "Stopwatch running · {time} so far",
+    "Erfasste Zeit: {time}": "Tracked time: {time}",
+    "Erfasste Zeit": "Tracked time",
+    "{time} insgesamt": "{time} in total",
+    "{count} Stoppuhr läuft": "{count} stopwatch running",
+    "Noch keine Zeit erfasst. Starte die Stoppuhr im Menü einer Notiz.": "No time tracked yet. Start the stopwatch in the menu of a note.",
+    "Zeitplan": "Timeline",
+    "Keine Notizen mit Termin oder erfasster Zeit in diesem Zeitraum.": "No notes with a due date or tracked time in this period.",
     "Das ist kein Trello-Board (JSON).": "This is not a Trello board (JSON).",
     "Das Board ist zu groß für einen Import.": "The board is too big for one import.",
     "Auch Trello (JSON) sowie CSV aus Todoist, Miro oder Excel.": "Also Trello (JSON) and CSV from Todoist, Miro or Excel.",
@@ -1945,6 +1956,17 @@ export const SOCIAL_CSS = `
   .bs-stats-row { display: flex; justify-content: space-between; gap: 8px; font-size: 0.85rem; padding: 3px 6px; border-radius: 6px; color: var(--primary-text-color, #212121); }
   .bs-stats-row:nth-child(odd) { background: color-mix(in srgb, var(--secondary-text-color, #727272) 6%, transparent); }
   .bs-stats-row.muted span { color: var(--secondary-text-color, #727272); }
+  .bs-stats-row.running b { color: var(--warning-color, #ff9800); }
+  .bs-gantt { display: flex; flex-direction: column; gap: 3px; margin-bottom: 8px; max-height: 40vh; overflow-y: auto; }
+  .bs-gantt-axis, .bs-gantt-row { display: grid; grid-template-columns: minmax(80px, 35%) 1fr; gap: 6px; align-items: center; }
+  .bs-gantt-axis { font-size: 0.7rem; color: var(--secondary-text-color, #727272); }
+  .bs-gantt-axis span:last-child { display: flex; justify-content: space-between; }
+  .bs-gantt-name { font-size: 0.8rem; color: var(--primary-text-color, #212121); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bs-gantt-track { position: relative; height: 14px; border-radius: 4px; background: color-mix(in srgb, var(--secondary-text-color, #727272) 8%, transparent); }
+  .bs-gantt-bar { position: absolute; top: 2px; bottom: 2px; min-width: 4px; border-radius: 3px; background: color-mix(in srgb, var(--primary-color, #03a9f4) 70%, transparent); }
+  .bs-gantt-bar.done { background: var(--success-color, #43a047); }
+  .bs-gantt-bar.overdue { background: var(--error-color, #db4437); }
+  .bs-gantt-today { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--warning-color, #ff9800); }
   .bs-trash { display: flex; flex-direction: column; gap: 6px; max-height: min(50vh, 420px); overflow-y: auto; margin: 6px 0 10px; }
   .bs-trash-item {
     display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 10px;
@@ -3079,6 +3101,61 @@ export function leadTimeText(hours) {
   return t("{days} Tage", { days: number(value / 24) });
 }
 
+/** Return a duration in seconds as "1 h 20 min", "45 min" or "< 1 min". */
+export function durationText(seconds) {
+  const minutes = Math.floor((Number(seconds) || 0) / 60);
+  if (minutes < 1) return "< 1 min";
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  if (!hours) return `${rest} min`;
+  return rest ? `${hours} h ${rest} min` : `${hours} h`;
+}
+
+/** Return the ⏱️ badge with the tracked time of a note, nothing without any. */
+export function timeBadge(idea) {
+  if (!idea) return "";
+  const running = Boolean(idea.timer && idea.timer.since);
+  const seconds = Number(idea.time_spent) || 0;
+  if (!running && !seconds) return "";
+  const name = running && idea.timer.name ? escapeHtml(idea.timer.name) : "";
+  const title = running
+    ? (name ? t("Stoppuhr läuft ({name}) · bisher {time}", { name, time: durationText(seconds) }) : t("Stoppuhr läuft · bisher {time}", { time: durationText(seconds) }))
+    : t("Erfasste Zeit: {time}", { time: durationText(seconds) });
+  return `<span class="time-badge${running ? " running" : ""}" title="${title}">⏱️ ${durationText(seconds)}${running ? ` · ${t("läuft")}` : ""}</span>`;
+}
+
+/** Return the Gantt chart of the statistics: bars from start to due over a date axis. */
+export function ganttHtml(rows, weeks) {
+  if (!rows || !rows.length) return `<div class="bs-stats-line">${t("Keine Notizen mit Termin oder erfasster Zeit in diesem Zeitraum.")}</div>`;
+  const now = Date.now();
+  const day = 86400000;
+  const parse = (iso) => new Date(iso).getTime();
+  const starts = rows.map((r) => parse(r.start)).filter((n) => !Number.isNaN(n));
+  const ends = rows.map((r) => parse(r.end)).filter((n) => !Number.isNaN(n));
+  const from = Math.max(Math.min(now, ...starts), now - weeks * 7 * day);
+  const to = Math.max(Math.min(Math.max(now, ...ends), now + weeks * 7 * day), from + day);
+  const pos = (ms) => Math.min(100, Math.max(0, ((ms - from) / (to - from)) * 100));
+  const label = (ms) => new Date(ms).toLocaleDateString(dateLocale(), { day: "2-digit", month: "2-digit" });
+  const when = (iso) => new Date(iso).toLocaleDateString(dateLocale(), { day: "2-digit", month: "2-digit", year: "2-digit" });
+  return `<div class="bs-gantt">
+    <div class="bs-gantt-axis"><span></span><span><span>${label(from)}</span><span>${label((from + to) / 2)}</span><span>${label(to)}</span></span></div>
+    ${rows.map((row) => {
+      const left = pos(parse(row.start));
+      const width = Math.max(0.8, pos(parse(row.end)) - left);
+      const cls = row.done ? " done" : row.overdue ? " overdue" : "";
+      const title = [
+        row.text || "",
+        `${when(row.start)} – ${when(row.end)}`,
+        row.seconds ? t("Erfasste Zeit: {time}", { time: durationText(row.seconds) }) : "",
+      ].filter(Boolean).join(" · ");
+      return `<div class="bs-gantt-row" title="${escapeHtml(title)}">
+        <span class="bs-gantt-name">${row.done ? "✓ " : ""}${escapeHtml(row.text || "")}</span>
+        <span class="bs-gantt-track"><span class="bs-gantt-bar${cls}" style="left: ${left.toFixed(2)}%; width: ${width.toFixed(2)}%"></span>${now >= from && now <= to ? `<span class="bs-gantt-today" style="left: ${pos(now).toFixed(2)}%"></span>` : ""}</span>
+      </div>`;
+    }).join("")}
+  </div>`;
+}
+
 /**
  * Fill a dialog body with the statistics: done and added per week as bars,
  * lead time, who ticked off and the categories. Both cards can use it.
@@ -3098,6 +3175,7 @@ export function renderStatistics(body, { hass, close, category = null, prefix = 
     const top = Math.max(1, ...stats.weeks.map((w) => Math.max(w.completed, w.added)));
     const bar = (value, cls) => `<span class="bs-stats-bar ${cls}" style="width: ${Math.round((value / top) * 100)}%"></span>`;
     const lead = stats.lead_time || {};
+    const time = stats.time || { total_seconds: 0, categories: [], notes: [] };
     body.innerHTML = `
       <div class="bs-stats-tools">
         <select class="${c("input")} bs-stats-weeks" id="bsStatsWeeks" aria-label="${t("Zeitraum")}">
@@ -3130,6 +3208,18 @@ export function renderStatistics(body, { hass, close, category = null, prefix = 
         ${stats.unknown ? `<div class="bs-stats-row muted"><span>${t("ohne Angabe (Sprache, Automationen, ältere Notizen)")}</span><b>${stats.unknown}</b></div>` : ""}
         ${!stats.people.length && !stats.unknown ? `<div class="bs-stats-row muted"><span>–</span></div>` : ""}
       </div>
+      <div class="${c("label")}">⏱️ ${t("Erfasste Zeit")}</div>
+      ${time.total_seconds
+        ? `<div class="bs-stats-line">${t("{time} insgesamt", { time: durationText(time.total_seconds) })}${time.running ? ` · ${t("{count} Stoppuhr läuft", { count: time.running })}` : ""}</div>
+      ${onlyCategory ? "" : `<div class="bs-stats-list">
+        ${time.categories.map((cat) => `<div class="bs-stats-row"><span>${escapeHtml(cat.category)}</span><b>${durationText(cat.seconds)}</b></div>`).join("")}
+      </div>`}
+      <div class="bs-stats-list">
+        ${time.notes.map((note) => `<div class="bs-stats-row${note.running ? " running" : ""}"><span>${note.running ? "▶ " : ""}${escapeHtml(note.text || "")}</span><b>${durationText(note.seconds)}</b></div>`).join("")}
+      </div>`
+        : `<div class="bs-stats-line">${t("Noch keine Zeit erfasst. Starte die Stoppuhr im Menü einer Notiz.")}</div>`}
+      <div class="${c("label")}">📊 ${t("Zeitplan")}</div>
+      ${ganttHtml(stats.gantt, weeks)}
       ${onlyCategory ? "" : `<div class="${c("label")}">${t("Kategorien")}</div>
       <div class="bs-stats-list">
         ${stats.categories.map((cat) => `<div class="bs-stats-row"><span>${escapeHtml(cat.category)}</span><b title="${escapeHtml(t("erledigt / offen"))}">${cat.completed} / ${cat.open}</b></div>`).join("")}

@@ -25,6 +25,7 @@ All parameters are [further down](#brainstormadd_idea) and under [**Developer to
 | `brainstorm.import_outline` | add an outline: `text: …`, `category: …` or `parent_id: …`, `format: auto` |
 | `brainstorm.move_branch` | move a branch to its own map: `id: …`, `category: Camping`, optional `parent_id: …` |
 | `brainstorm.sort_children` | sort subtasks: `parent_id: …`, `by: text`, `priority`, `due`, `created` or `votes` |
+| `brainstorm.track_time` | stopwatch: `id: …`, `action: start`, `stop` or `toggle` |
 | `brainstorm.react` | toggle a reaction: `id: …`, `reaction: heart` |
 | `brainstorm.add_comment` / `delete_comment` | comment: `id: …`, `text: "@Frida can you bring salad?"`; delete with `comment_id` |
 | `brainstorm.start_voting` / `vote` / `end_voting` | voting: `category: Holiday`, `votes: 5`, `hidden: true`; `vote` with `id`, `delta`; `end_voting` responds with the ranking |
@@ -324,6 +325,17 @@ Sorts the subtasks of a note, or the main notes of a category, within the places
 | `by` | No | `text` (A–Z), `priority` (urgent first), `due` (earliest first, notes without a date last) or `created` (oldest first), `votes` (most votes first). |
 | `ids` | No | Instead of `by`: the subtasks in a fixed order, for example to undo a sort. |
 | `reverse` | No | Sorts the other way round. |
+
+## `brainstorm.track_time`
+
+▶️ [Try it in Home Assistant](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.track_time)
+
+Starts or stops the stopwatch of the calling user on a note (v1.13.23). Each person runs at most one stopwatch: starting one stops their other. Ticking off and archiving stop it too. A forgotten stopwatch counts 12 hours at most. Responds with `running` and `seconds` (tracked time of the note).
+
+| Field | Required | Meaning |
+| :--- | :--- | :--- |
+| `id` | Yes | ID of the note. |
+| `action` | No | `start`, `stop` or `toggle` (default). |
 
 ## `brainstorm.react`
 
