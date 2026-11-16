@@ -41,7 +41,7 @@
     "step": {
       "init": {
         "title": "Brainstorm Hub Optionen",
-        "description": "Wähle einen Bereich.\n\n{logos}{notice}",
+        "description": "Wähle einen Bereich.\n\n{notice}",
         "menu_options": {
           "categories": "Kategorien verwalten",
           "category_style": "Kategorie-Design (Farbe & Icon)",

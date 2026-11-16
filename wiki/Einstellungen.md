@@ -197,7 +197,7 @@ Ein Feld pro Kategorie. Wähle eine To-do-Liste einer anderen Integration, etwa 
 
 ### Brainstorm › 🔗 Verbundene Integrationen
 
-Seit v1.13.3 haben die Integrationen, mit denen Brainstorm zusammenarbeitet, eine eigene Seite. Seit v1.13.5 zeigt das Hauptmenü ihre Logos über den Einträgen, farbig wenn eingeschaltet und grau wenn aus, und der Eintrag selbst zeigt für jede 🟢 oder ⚪. Sie erscheint nur, wenn mindestens eine davon installiert ist, und zeigt nur die installierten, jeweils mit Status (an/aus und wichtigste Einstellung).
+Seit v1.13.3 haben die Integrationen, mit denen Brainstorm zusammenarbeitet, eine eigene Seite. Im Hauptmenü zeigt der Eintrag für jede 🟢, wenn sie verbunden (eingeschaltet) ist, und ⚪ (grau), wenn nicht; die Logos stehen seit v1.13.22 nur noch auf ihrer eigenen Seite. Sie erscheint nur, wenn mindestens eine davon installiert ist, und zeigt nur die installierten, jeweils mit Status (an/aus und wichtigste Einstellung).
 
 ### Brainstorm › 🔗 Verbundene Integrationen › 🏅 ChoreOps
 

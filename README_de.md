@@ -9,7 +9,7 @@
 [![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.13.21-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.13.22-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![Wiki](https://img.shields.io/badge/Doku-Wiki-6f42c1.svg)](https://github.com/nukleuz80/ha_brainstorm/wiki)
@@ -262,11 +262,11 @@ Die letzten Versionen; alle stehen in [CHANGELOG_de.md](CHANGELOG_de.md).
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.13.22`** | 16.11.2026 | **🔗 Ruhigeres Hauptmenü.** Die Logos der verbundenen Integrationen stehen nicht mehr über dem Hauptmenü der Einstellungen; der Eintrag *🔗 Verbundene Integrationen* zeigt weiter 🟢 für verbundene und ⚪ (grau) für nicht verbundene. Auf der Unterseite bleiben die Logos. |
 | **`v1.13.21`** | 16.11.2026 | **📥 Import aus Trello, Todoist und Miro.** *Gliederung einfügen* in der Mindmap liest jetzt auch ein Trello-Board (JSON-Export: Listen werden Hauptnotizen, Karten Notizen darunter, Checklisten Unteraufgaben; Beschreibung, Fälligkeit und Erledigt kommen mit, Archiviertes bleibt draußen) und CSV-Tabellen: einen Todoist-Export (Abschnitte, Einrückung, Priorität p1–p3, Datum, Kommentare als Beschreibung) und beliebige Tabellen aus Miro, Excel oder Trello mit Spalten wie Titel, Beschreibung, Liste, Fällig, Priorität, Erledigt; ohne solche Spalten wird jede Spalte ein Zweig mit ihren Zellen. Große Trello-Exporte schrumpft die Karte vor dem Senden. Der Dienst `import_outline` kennt die Formate `trello` und `csv`. |
 | **`v1.13.20`** | 15.11.2026 | **📊 Statistik.** Neuer Knopf *📊 Statistik* über der Liste: erledigte und neue Notizen pro Woche als Balken (4–52 Wochen), offen und überfällig, Durchlaufzeit (Median und Schnitt), wer was abgehakt hat und die Kategorien mit erledigt/offen; in einer Kategorie wahlweise nur diese. Brainstorm merkt sich jetzt, welcher Home-Assistant-Benutzer eine Notiz abhakt (ChoreOps: die Person, die die Aufgabe erledigt hat). Neuer WebSocket-Befehl `brainstorm/statistics`. |
 | **`v1.13.19`** | 15.11.2026 | **📅 Kalendereinträge für Aufgaben.** Aufgaben mit Termin und Uhrzeit bekommen jetzt einen Kalendereintrag, der mitzieht: Ändern sich Text, Termin oder Kategorie, wandert er mit; wird die Aufgabe gelöscht, verschwindet er; abgehakt bleibt er stehen. Standardkalender plus Kalender pro Kategorie (*Erinnerungen › Kalender & Alexa*). Neuer Schalter 📅 im Notizdialog und Feld `calendar` in `update_idea` für Aufgaben ohne Uhrzeit (09:00) oder um eine herauszuhalten. Die Karte zeigt 📅 an Notizen mit Eintrag. Ersetzt den bisherigen einmaligen Kalendereintrag. |
 | **`v1.13.18`** | 15.11.2026 | **🔋 Battery Notes.** Neue Seite *🔋 Battery Notes* unter *🔗 Verbundene Integrationen*: Batterie-Aufgaben nennen den Batterietyp, etwa *· 2× AA*. Von Hand abhaken ruft `battery_notes.set_battery_replaced` auf. Neuer Knopf *🛒 Batterien auf Bring!* in der Karte und neue Aktion `brainstorm.batteries_to_bring` setzen die Batterien aller offenen Batterie-Aufgaben auf die Bring-Liste. Battery Notes zeigt sein Logo in der Integrationsliste. |
-| **`v1.13.17`** | 15.11.2026 | **🐞 Abfallkalender: nicht verfügbarer Kalender.** Die Abfallkalender werden jetzt einzeln gelesen. Ein nicht verfügbarer Kalender, etwa ein alter von Waste Collection Schedule, wird übersprungen, statt die Abfrage aller Kalender scheitern zu lassen. |
 
 ---
 

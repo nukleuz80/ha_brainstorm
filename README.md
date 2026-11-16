@@ -9,7 +9,7 @@
 [![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.13.21-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.13.22-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![Wiki](https://img.shields.io/badge/Docs-Wiki-6f42c1.svg)](https://github.com/nukleuz80/ha_brainstorm/wiki)
@@ -262,11 +262,11 @@ The latest versions; every version is in [CHANGELOG.md](CHANGELOG.md).
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.13.22`** | 2026-11-16 | **🔗 Calmer main menu.** The logos of the connected integrations are no longer shown above the main menu of the settings; the entry *🔗 Connected integrations* still shows 🟢 for connected and ⚪ (grey) for not connected ones. The logos stay on its own page. |
 | **`v1.13.21`** | 2026-11-16 | **📥 Import from Trello, Todoist and Miro.** *Insert an outline* in the mind map now also reads a Trello board (JSON export: lists become main notes, cards notes below them, checklists subtasks; description, due date and done come along, archived items stay out) and CSV tables: a Todoist export (sections, indents, priority p1–p3, date, comments as description) and any table from Miro, Excel or Trello with columns such as Title, Description, List, Due, Priority, Done; without such columns each column becomes a branch with its cells. The card shrinks big Trello exports before sending them. The service `import_outline` knows the formats `trello` and `csv`. |
 | **`v1.13.20`** | 2026-11-15 | **📊 Statistics.** New button *📊 Statistics* above the list: done and new notes per week as bars (4–52 weeks), open and overdue, lead time (median and average), who ticked off what and the categories with done/open; within a category optionally only that category. Brainstorm now remembers which Home Assistant user ticks off a note (ChoreOps: the person who did the chore). New WebSocket command `brainstorm/statistics`. |
 | **`v1.13.19`** | 2026-11-15 | **📅 Calendar events for tasks.** Tasks with a due date and time now get an event in a calendar that follows them: changing the text, the time or the category moves it, deleting the task removes it, ticked off it stays. Default calendar plus a calendar per category (*Reminders › Calendar & Alexa*). New 📅 switch in the note dialog and field `calendar` in `update_idea` for tasks without a time (09:00) or to keep one out. The card shows 📅 on notes with an event. Replaces the old one-off calendar entry. |
 | **`v1.13.18`** | 2026-11-15 | **🔋 Battery Notes.** New page *🔋 Battery Notes* under *🔗 Connected integrations*: battery tasks name the battery type, such as *· 2× AA*. Ticking one off by hand calls `battery_notes.set_battery_replaced`. New button *🛒 Batteries to Bring!* in the card and new action `brainstorm.batteries_to_bring` put the batteries of all open battery tasks on the Bring list. Battery Notes shows its logo in the integration list. |
-| **`v1.13.17`** | 2026-11-15 | **🐞 Waste calendar: unavailable calendar.** The waste calendars are now read one by one. An unavailable calendar, such as an old one of Waste Collection Schedule, is skipped instead of failing the query of all calendars. |
 
 ---
 

@@ -41,7 +41,7 @@
     "step": {
       "init": {
         "title": "Brainstorm Hub Options",
-        "description": "Choose a section.\n\n{logos}{notice}",
+        "description": "Choose a section.\n\n{notice}",
         "menu_options": {
           "categories": "Manage Categories",
           "category_style": "Category Design (Color & Icon)",

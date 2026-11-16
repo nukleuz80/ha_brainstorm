@@ -404,13 +404,12 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             # Only offered where a connected integration is installed
             menu = {key: label for key, label in menu.items() if key != "integrations"}
         connected = self._connected_integrations()
-        logos = brand_strip(connected)
         return self.async_show_menu(
             step_id="init",
             menu_options=menu,
             description_placeholders={
                 "notice": self._take_notice(),
-                "logos": f"{logos}\n\n" if logos else "",
+                # Green for switched on, white (grey) for installed but off
                 "integrations_status": " · ".join(
                     f"{'🟢' if active else '⚪'} {name}"
                     for _domain, name, active, _state in connected
