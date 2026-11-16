@@ -764,7 +764,9 @@
         "auto": "Automatisch",
         "markdown": "Markdown oder eingerückter Text",
         "opml": "OPML",
-        "freemind": "FreeMind / Freeplane (.mm)"
+        "freemind": "FreeMind / Freeplane (.mm)",
+        "trello": "Trello-Board (JSON)",
+        "csv": "CSV (Todoist, Miro, Excel)"
       }
     },
     "repeat": {
@@ -1447,7 +1449,7 @@
     },
     "import_outline": {
       "name": "Gliederung importieren",
-      "description": "Legt einen Baum von Notizen aus einer Markdown-Gliederung, eingerücktem Text, OPML oder einer FreeMind-/Freeplane-Map (.mm) an. Höchstens 300 Notizen.",
+      "description": "Legt einen Baum von Notizen aus einer Markdown-Gliederung, eingerücktem Text, OPML, einer FreeMind-/Freeplane-Map (.mm), einem Trello-Board (JSON) oder einer CSV-Tabelle (Todoist, Miro, Excel) an. Höchstens 300 Notizen.",
       "fields": {
         "text": {
           "name": "Gliederung",
@@ -1455,7 +1457,7 @@
         },
         "format": {
           "name": "Format",
-          "description": "Automatisch erkennt XML-Dateien am Wurzelelement, alles andere wird als Markdown gelesen."
+          "description": "Automatisch erkennt XML-Dateien am Wurzelelement, liest JSON als Trello-Board und eine Todoist-CSV als solche; alles andere wird als Markdown gelesen. Für andere Tabellen CSV wählen."
         },
         "category": {
           "name": "Kategorie",

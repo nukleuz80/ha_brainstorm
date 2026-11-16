@@ -302,12 +302,12 @@ Saves the custom order of the ideas.
 
 ▶️ [Try it in Home Assistant](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.import_outline)
 
-Adds a tree of notes from a Markdown outline, indented text, OPML or a FreeMind/Freeplane map (`.mm`), at most 300 notes. Returns `added` and the new `ids`.
+Adds a tree of notes from a Markdown outline, indented text, OPML, a FreeMind/Freeplane map (`.mm`), a Trello board (JSON) or a CSV table (Todoist, Miro, Excel), at most 300 notes. Returns `added` and the new `ids`.
 
 | Field | Required | Meaning |
 | :--- | :--- | :--- |
-| `text` | Yes | The outline: headings, `-`/`*`/`1.` lists or indented lines; `- [x]` adds an item as done, a `>` line below an item is its description. Or the content of an OPML or `.mm` file. |
-| `format` | No | `auto` (default), `markdown`, `opml` or `freemind`. |
+| `text` | Yes | The outline: headings, `-`/`*`/`1.` lists or indented lines; `- [x]` adds an item as done, a `>` line below an item is its description. Or the content of an OPML, `.mm`, Trello JSON or CSV file. |
+| `format` | No | `auto` (default), `markdown`, `opml`, `freemind`, `trello` or `csv`. `auto` recognises XML, JSON (Trello) and a Todoist export; other tables need `csv`. |
 | `category` | No | Where the notes go; without it, the default category. |
 | `parent_id` | No | Puts the outline below this note, in its category. |
 

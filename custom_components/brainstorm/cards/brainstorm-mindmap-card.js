@@ -1,8 +1,8 @@
-import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, BRING_TAB_ID, bringBadge, bringSentText, unblockedText, compactNodeInfo, nextNodeDetail, nodeDetailButton, nodeDetailCompact, nodeDetailMode, bringTab, canSendToBring, renderBringSend, CHORE_MAP_CSS, choreMapData, renderChoreMap, canHandOver, canHandOverProject, canMakeReward, choreopsBadge, choreopsRewardBadge, renderChoreHandover, renderChoreProject, renderChoreReward, MAP_TAB_CSS, activeMapTab, branchTabs, configTabs, mapTabBar, tabCounts, ruleFilter, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t, linkedListMark } from "./brainstorm-i18n.js?v=1.13.20";
+import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, BRING_TAB_ID, bringBadge, bringSentText, unblockedText, compactNodeInfo, nextNodeDetail, nodeDetailButton, nodeDetailCompact, nodeDetailMode, bringTab, canSendToBring, renderBringSend, CHORE_MAP_CSS, choreMapData, renderChoreMap, canHandOver, canHandOverProject, canMakeReward, choreopsBadge, choreopsRewardBadge, renderChoreHandover, renderChoreProject, renderChoreReward, MAP_TAB_CSS, activeMapTab, branchTabs, configTabs, mapTabBar, tabCounts, ruleFilter, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, importFileText, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t, linkedListMark } from "./brainstorm-i18n.js?v=1.13.21";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.13.20 - Statistik
+ * Version: 1.13.21 - Import
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -6888,9 +6888,10 @@ class BrainstormMindmapCard extends HTMLElement {
         </div>
         <textarea class="dialog-input dialog-textarea" id="outlineText" rows="5" placeholder="${t("Eine Zeile pro Notiz, Unterpunkte eingerückt oder als Markdown-Liste. Oder eine Datei wählen.")}"></textarea>
         <div class="export-row">
-          <label class="dialog-btn dialog-btn-cancel outline-file">📂 ${t("Datei wählen")}<input type="file" id="outlineFile" accept=".md,.markdown,.txt,.opml,.mm,.xml,text/plain,text/markdown,text/xml"></label>
+          <label class="dialog-btn dialog-btn-cancel outline-file">📂 ${t("Datei wählen")}<input type="file" id="outlineFile" accept=".md,.markdown,.txt,.opml,.mm,.xml,.json,.csv,.tsv,text/plain,text/markdown,text/xml,text/csv,application/json"></label>
           <span class="dialog-hint outline-target">${target}</span>
         </div>
+        <div class="dialog-hint">${t("Auch Trello (JSON) sowie CSV aus Todoist, Miro oder Excel.")}</div>
         <div class="dialog-error" id="outlineError"></div>
         <div class="dialog-footer">
           <button class="dialog-btn dialog-btn-cancel" id="outlineCancel">${t("Schließen")}</button>
@@ -6908,6 +6909,8 @@ class BrainstormMindmapCard extends HTMLElement {
       });
       const text = body.querySelector("#outlineText");
       const importBtn = body.querySelector("#outlineImport");
+      // The format of a chosen Trello or CSV file, null lets Home Assistant tell
+      let format = null;
       const error = body.querySelector("#outlineError");
       text.addEventListener("input", () => {
         importBtn.disabled = !text.value.trim();
@@ -6917,6 +6920,7 @@ class BrainstormMindmapCard extends HTMLElement {
           const tpl = contentTemplates().find((item) => item.key === chip.dataset.template);
           if (!tpl) return;
           text.value = tpl.outline;
+          format = null;
           importBtn.disabled = false;
           error.textContent = "";
           text.focus();
@@ -6925,13 +6929,20 @@ class BrainstormMindmapCard extends HTMLElement {
       body.querySelector("#outlineFile").addEventListener("change", (e) => {
         const file = e.target.files && e.target.files[0];
         if (!file) return;
-        if (file.size > 200000) {
+        const isJson = /\.json$/i.test(file.name);
+        if (file.size > (isJson ? 20000000 : 200000)) {
           error.textContent = t("Die Datei ist zu groß (höchstens 200 KB).");
           return;
         }
         const reader = new FileReader();
         reader.onload = () => {
-          text.value = String(reader.result || "");
+          const prepared = importFileText(file.name, reader.result);
+          if (prepared.error) {
+            error.textContent = prepared.error;
+            return;
+          }
+          text.value = prepared.text;
+          format = prepared.format;
           importBtn.disabled = !text.value.trim();
           error.textContent = "";
         };
@@ -6945,7 +6956,7 @@ class BrainstormMindmapCard extends HTMLElement {
         error.textContent = "";
         const ok = await this._importOutline(text.value, (message) => {
           error.textContent = message;
-        });
+        }, format);
         if (ok) this._closeDialog();
         else importBtn.disabled = false;
       });
@@ -6971,8 +6982,9 @@ class BrainstormMindmapCard extends HTMLElement {
     this._downloadBlob(new Blob([build(ideas, title)], { type: `${type};charset=utf-8` }), this._exportFileName(kind));
   }
 
-  async _importOutline(text, onError) {
+  async _importOutline(text, onError, format = null) {
     const data = { text };
+    if (format) data.format = format;
     if (this._focusId) data.parent_id = this._focusId;
     else if (this._selectedCategory !== "all") data.category = this._selectedCategory;
     try {
@@ -12051,7 +12063,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.13.20 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.13.21 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

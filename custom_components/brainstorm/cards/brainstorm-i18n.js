@@ -7,6 +7,9 @@
  */
 const DICTIONARIES = {
   en: {
+    "Das ist kein Trello-Board (JSON).": "This is not a Trello board (JSON).",
+    "Das Board ist zu groß für einen Import.": "The board is too big for one import.",
+    "Auch Trello (JSON) sowie CSV aus Todoist, Miro oder Excel.": "Also Trello (JSON) and CSV from Todoist, Miro or Excel.",
     "{hours} Std.": "{hours} h",
     "{days} Tage": "{days} days",
     "Zeitraum": "Period",
@@ -3376,6 +3379,44 @@ const xmlText = (text) =>
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/\r?\n/g, "&#10;");
+
+/**
+ * Prepare a chosen file for import_outline. A Trello export carries every
+ * action of the board and easily weighs megabytes, so only the lists, cards
+ * and checklists go to Home Assistant. CSV files get their own format.
+ */
+export const IMPORT_TEXT_MAX = 200000;
+export function importFileText(name, raw) {
+  const lower = String(name || "").toLowerCase();
+  const text = String(raw || "");
+  if (lower.endsWith(".csv") || lower.endsWith(".tsv")) {
+    return text.length > IMPORT_TEXT_MAX ? { error: t("Die Datei ist zu groß (höchstens 200 KB).") } : { text, format: "csv" };
+  }
+  if (!lower.endsWith(".json")) {
+    return text.length > IMPORT_TEXT_MAX ? { error: t("Die Datei ist zu groß (höchstens 200 KB).") } : { text, format: null };
+  }
+  let board;
+  try {
+    board = JSON.parse(text);
+  } catch (err) {
+    return { error: t("Das ist kein Trello-Board (JSON).") };
+  }
+  if (!board || typeof board !== "object" || !Array.isArray(board.cards)) {
+    return { error: t("Das ist kein Trello-Board (JSON).") };
+  }
+  const pick = (item, keys) => Object.fromEntries(keys.filter((key) => item[key] !== undefined && item[key] !== null).map((key) => [key, item[key]]));
+  const open = (item) => item && typeof item === "object" && !item.closed;
+  const slim = {
+    name: board.name,
+    lists: (board.lists || []).filter(open).map((item) => pick(item, ["id", "name", "pos"])),
+    cards: board.cards.filter(open).map((card) => pick(card, ["id", "name", "desc", "idList", "due", "dueComplete", "pos"])),
+    checklists: (board.checklists || [])
+      .filter((item) => item && typeof item === "object")
+      .map((item) => ({ ...pick(item, ["id", "idCard", "pos"]), checkItems: (item.checkItems || []).map((check) => pick(check, ["name", "state", "pos"])) })),
+  };
+  const result = JSON.stringify(slim);
+  return result.length > IMPORT_TEXT_MAX ? { error: t("Das Board ist zu groß für einen Import.") } : { text: result, format: "trello" };
+}
 
 /** The notes as a Markdown outline: the title as heading, the notes as a nested list. */
 export function outlineMarkdown(ideas, title) {

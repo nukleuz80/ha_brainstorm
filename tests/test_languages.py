@@ -23,7 +23,8 @@ GERMAN_TEXT = re.compile(
     r"Heute|Morgen|nicht|wurde)\b"
 )
 # Words people may write in any language, like a !dringend tag
-ALLOWED_GERMAN = {"später"}
+# Column names an imported table may have, read but never shown
+ALLOWED_GERMAN = {"später", "fällig", "fälligkeit", "priorität"}
 # The settings hold their menu labels next to each other in both languages
 SHOWS_BOTH_LANGUAGES = {"config_flow.py"}
 

@@ -539,6 +539,8 @@ import_outline:
             - markdown
             - opml
             - freemind
+            - trello
+            - csv
     category:
       required: false
       example: "Projekte"

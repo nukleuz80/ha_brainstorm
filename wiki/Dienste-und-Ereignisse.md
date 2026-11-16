@@ -302,12 +302,12 @@ Aktualisiert die benutzerdefinierte Sortierreihenfolge der Notizen anhand einer 
 
 ▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.import_outline)
 
-Legt einen Baum von Notizen aus einer Markdown-Gliederung, eingerücktem Text, OPML oder einer FreeMind-/Freeplane-Map (`.mm`) an, höchstens 300 Notizen. Gibt `added` und die neuen `ids` zurück.
+Legt einen Baum von Notizen aus einer Markdown-Gliederung, eingerücktem Text, OPML, einer FreeMind-/Freeplane-Map (`.mm`), einem Trello-Board (JSON) oder einer CSV-Tabelle (Todoist, Miro, Excel) an, höchstens 300 Notizen. Gibt `added` und die neuen `ids` zurück.
 
 | Feld | Pflicht | Bedeutung |
 | :--- | :--- | :--- |
-| `text` | Ja | Die Gliederung: Überschriften, Listen mit `-`/`*`/`1.` oder eingerückte Zeilen; `- [x]` legt einen Punkt als erledigt an, eine `>`-Zeile unter einem Punkt ist seine Beschreibung. Oder der Inhalt einer OPML- oder `.mm`-Datei. |
-| `format` | Nein | `auto` (Standard), `markdown`, `opml` oder `freemind`. |
+| `text` | Ja | Die Gliederung: Überschriften, Listen mit `-`/`*`/`1.` oder eingerückte Zeilen; `- [x]` legt einen Punkt als erledigt an, eine `>`-Zeile unter einem Punkt ist seine Beschreibung. Oder der Inhalt einer OPML-, `.mm`-, Trello-JSON- oder CSV-Datei. |
+| `format` | Nein | `auto` (Standard), `markdown`, `opml`, `freemind`, `trello` oder `csv`. `auto` erkennt XML, JSON (Trello) und einen Todoist-Export; andere Tabellen brauchen `csv`. |
 | `category` | Nein | Wohin die Notizen kommen; ohne Angabe die Standardkategorie. |
 | `parent_id` | Nein | Hängt die Gliederung unter diese Notiz, in deren Kategorie. |
 

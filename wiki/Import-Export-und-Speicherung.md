@@ -14,6 +14,18 @@
 - 💾 **JSON-Export und -Import (v1.6.31):**
   - `brainstorm.export_json` gibt deine Ideen samt Kategorien, Icons und Farben als JSON zurück, auf Wunsch als Datei. `brainstorm.import_json` holt sie zurück, auf demselben oder einem anderen Home Assistant, und überspringt Vorhandenes.
 
+## 📥 Aus Trello, Todoist und Miro übernehmen (v1.13.21)
+
+In der Mindmap unter 🖼️ ➔ *Gliederung einfügen* ➔ *📂 Datei wählen*. Die Notizen landen in der gewählten Kategorie, im Fokus unter der Fokus-Notiz; ↶ nimmt alles wieder heraus. Höchstens 300 Notizen auf einmal.
+
+| Quelle | So exportieren | Was daraus wird |
+| :--- | :--- | :--- |
+| **Trello** | Board-Menü ➔ *Drucken, Exportieren und Teilen* ➔ *Als JSON exportieren* | Listen werden Hauptnotizen, Karten Notizen darunter, Checklisten-Punkte Unteraufgaben. Beschreibung, Fälligkeit und Erledigt (Haken am Fälligkeitsdatum bzw. am Checklisten-Punkt) kommen mit; Archiviertes bleibt draußen. Große Exporte schrumpft die Karte vorher auf das Nötige. |
+| **Todoist** | Projekt ➔ ⋯ ➔ *Als Vorlage exportieren* ➔ *Als Datei exportieren* (CSV) | Abschnitte werden Hauptnotizen, Aufgaben samt Einrückung Notizen darunter. Priorität p1 ➔ dringend, p2 ➔ hoch, p3 ➔ mittel; ein festes Datum wird zur Fälligkeit (ohne Uhrzeit 09:00), wiederkehrende Angaben wie „jeden Tag“ fallen weg; Kommentare hängen an der Beschreibung. |
+| **Miro, Excel und andere Tabellen** | als CSV speichern | Mit Spalten wie *Titel/Name/Text*, *Beschreibung*, *Liste/Spalte/Abschnitt*, *Fällig/Datum*, *Priorität*, *Erledigt* und *Ebene* wird jede Zeile eine Notiz, gruppiert nach Liste. Ohne solche Spalten (z. B. ein Miro-Board als CSV) wird jede Spalte ein Zweig mit ihren Zellen. Komma, Semikolon und Tabulator gehen. |
+
+Für Automationen: `brainstorm.import_outline` mit `format: trello` oder `format: csv`, siehe [Dienste und Ereignisse](Dienste-und-Ereignisse).
+
 ## 🗄️ Wo die Daten liegen
 
 | Was | Wo |
@@ -30,5 +42,5 @@ Alles liegt lokal in deinem Home Assistant und ist Teil jedes normalen Backups. 
 
 - **Als JSON:** [`brainstorm.export_json`](Dienste-und-Ereignisse#brainstormexport_json) gibt alles samt Kategorien, Icons, Farben, Pinnwand-Plätzen und Zeichnungen zurück, auf Wunsch als Datei. [`brainstorm.import_json`](Dienste-und-Ereignisse#brainstormimport_json) holt es zurück, auf demselben oder einem anderen Home Assistant, und überspringt Vorhandenes. Kommentare, Reaktionen und Stimmen bleiben draußen.
 - **Als Markdown:** [`brainstorm.export_markdown`](Dienste-und-Ereignisse#brainstormexport_markdown) oder der automatische Export unter *Konfigurieren ➔ Allgemeine Einstellungen & Export*.
-- **Aus der Mindmap:** 🖼️ speichert SVG, PNG, PDF, eine Markdown-Gliederung, OPML oder FreeMind (`.mm`); *Gliederung einfügen* liest `.md`, `.txt`, `.opml` und `.mm` wieder ein. Siehe [Mindmap & Pinnwand](Mindmap-und-Pinnwand).
+- **Aus der Mindmap:** 🖼️ speichert SVG, PNG, PDF, eine Markdown-Gliederung, OPML oder FreeMind (`.mm`); *Gliederung einfügen* liest `.md`, `.txt`, `.opml` und `.mm` wieder ein, seit v1.13.21 auch Trello-Boards (`.json`) und CSV aus Todoist, Miro oder Excel (siehe unten). Siehe [Mindmap & Pinnwand](Mindmap-und-Pinnwand).
 - **Gelöscht?** Gelöschte Notizen liegen 30 Tage im **🗑️ Papierkorb** (v1.11.12), auch über einen Neustart: in der Listenkarte über *🗑️ Papierkorb* über der Liste, in der Mindmap über 🗑️ unten rechts. Dort holst du einzelne zurück (↩️, samt ihren Unterpunkten), löschst sie endgültig (✕) oder leerst den Papierkorb. Danach sind sie mit ihren Anhängen weg. Mit Privatsphäre sieht jede Person nur, was sie selbst gelöscht hat oder bearbeiten darf. Erledigte, die *🧹 Erledigte Einträge löschen* entfernt, kommen nicht in den Papierkorb. Für Automationen gibt es [`brainstorm.restore_idea`](Dienste-und-Ereignisse#brainstormrestore_idea).

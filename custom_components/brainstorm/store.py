@@ -13,7 +13,7 @@ import re
 import shutil
 import uuid
 from pathlib import Path
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from difflib import SequenceMatcher
 from typing import Any, Callable, TYPE_CHECKING
 
@@ -2885,7 +2885,7 @@ class BrainstormStore:
                 ATTR_ID: uuid.uuid4().hex[:8],
                 ATTR_TEXT: node.text,
                 ATTR_CATEGORY: resolved_cat,
-                ATTR_PRIORITY: DEFAULT_PRIORITY,
+                ATTR_PRIORITY: getattr(node, "priority", None) or DEFAULT_PRIORITY,
                 ATTR_PARENT_ID: above[ATTR_ID] if above else None,
                 ATTR_ORDER: start + index,
                 ATTR_SOURCE: "import",
@@ -2894,7 +2894,7 @@ class BrainstormStore:
                 ATTR_STATUS: "completed" if node.done else "active",
                 ATTR_CREATED_AT: now_iso,
                 ATTR_UPDATED_AT: now_iso,
-                ATTR_DUE: None,
+                ATTR_DUE: _outline_due(getattr(node, "due", None)),
                 ATTR_ASSIGNEE: None,
                 ATTR_TRIGGER: None,
                 ATTR_OWNER: self.owner_for_new_idea(author, resolved_cat, above),
@@ -4555,6 +4555,22 @@ def _clean_pin(value: Any) -> dict[str, Any] | None:
     if value.get("color") in PIN_COLORS:
         position["color"] = value["color"]
     return position
+
+
+def _outline_due(value: str | None) -> str | None:
+    """Turn the date of an imported outline into a due date, 09:00 without time."""
+    if not value:
+        return None
+    # A bare date would otherwise read as midnight
+    if len(value.strip()) > 10 and (moment := dt_util.parse_datetime(value)):
+        if moment.tzinfo is None:
+            moment = moment.replace(tzinfo=dt_util.get_default_time_zone())
+        return dt_util.as_local(moment).isoformat()
+    if (day := dt_util.parse_date(value[:10])) is not None:
+        return datetime.combine(
+            day, time(9, 0), tzinfo=dt_util.get_default_time_zone()
+        ).isoformat()
+    return None
 
 
 def _clean_import_id(value: Any) -> str | None:

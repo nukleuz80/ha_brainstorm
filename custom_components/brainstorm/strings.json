@@ -764,7 +764,9 @@
         "auto": "Automatic",
         "markdown": "Markdown or indented text",
         "opml": "OPML",
-        "freemind": "FreeMind / Freeplane (.mm)"
+        "freemind": "FreeMind / Freeplane (.mm)",
+        "trello": "Trello board (JSON)",
+        "csv": "CSV (Todoist, Miro, Excel)"
       }
     },
     "repeat": {
@@ -1447,7 +1449,7 @@
     },
     "import_outline": {
       "name": "Import outline",
-      "description": "Adds a tree of notes from a Markdown outline, indented text, OPML or a FreeMind/Freeplane map (.mm). At most 300 notes.",
+      "description": "Adds a tree of notes from a Markdown outline, indented text, OPML, a FreeMind/Freeplane map (.mm), a Trello board (JSON) or a CSV table (Todoist, Miro, Excel). At most 300 notes.",
       "fields": {
         "text": {
           "name": "Outline",
@@ -1455,7 +1457,7 @@
         },
         "format": {
           "name": "Format",
-          "description": "Auto tells XML files apart by their root element, everything else is read as Markdown."
+          "description": "Auto tells XML files apart by their root element, reads JSON as a Trello board and a Todoist CSV as such; everything else is read as Markdown. Choose CSV for other tables."
         },
         "category": {
           "name": "Category",

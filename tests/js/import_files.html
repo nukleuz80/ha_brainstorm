@@ -1,0 +1,44 @@
+<!doctype html>
+<!-- Browser test for preparing Trello and CSV files for the import. -->
+<meta charset="utf-8">
+<pre id="out">RUNNING</pre>
+<script type="module">
+import { importFileText, setLanguage } from "../../custom_components/brainstorm/cards/brainstorm-i18n.js";
+const out = document.getElementById("out");
+const fails = [];
+const eq = (a, b, what) => { if (JSON.stringify(a) !== JSON.stringify(b)) fails.push(`${what}: ${JSON.stringify(a)} != ${JSON.stringify(b)}`); };
+try {
+  setLanguage({ language: "de" });
+  const board = {
+    name: "Umzug",
+    actions: Array.from({ length: 5000 }, (_, i) => ({ id: `a${i}`, type: "updateCard", data: { text: "x".repeat(100) } })),
+    members: [{ id: "m1", fullName: "Jan" }],
+    lists: [{ id: "l1", name: "Zu tun", pos: 1, idBoard: "b" }, { id: "l2", name: "Alt", closed: true }],
+    cards: [
+      { id: "c1", name: "Kartons", desc: "", idList: "l1", pos: 1, due: null, badges: { votes: 0 }, labels: [] },
+      { id: "c2", name: "Weg", idList: "l1", closed: true },
+    ],
+    checklists: [{ id: "k1", idCard: "c1", name: "Liste", checkItems: [{ id: "i1", name: "Küche", state: "complete", pos: 1, idMember: "m1" }] }],
+  };
+  const raw = JSON.stringify(board);
+  const result = importFileText("Umzug.JSON", raw);
+  eq(result.format, "trello", "format");
+  const slim = JSON.parse(result.text);
+  eq(slim, {
+    name: "Umzug",
+    lists: [{ id: "l1", name: "Zu tun", pos: 1 }],
+    cards: [{ id: "c1", name: "Kartons", desc: "", idList: "l1", pos: 1 }],
+    checklists: [{ id: "k1", idCard: "c1", checkItems: [{ name: "Küche", state: "complete", pos: 1 }] }],
+  }, "slim board");
+  eq(raw.length > 200000 && result.text.length < 400, true, "much smaller");
+  eq(importFileText("x.json", "{kaputt").error, "Das ist kein Trello-Board (JSON).", "broken json");
+  eq(importFileText("x.json", '{"name":"a"}').error, "Das ist kein Trello-Board (JSON).", "no cards");
+  eq(importFileText("aufgaben.csv", "a;b"), { text: "a;b", format: "csv" }, "csv");
+  eq(importFileText("liste.md", "- a"), { text: "- a", format: null }, "markdown");
+  eq(Boolean(importFileText("gross.txt", "x".repeat(200001)).error), true, "too big");
+  setLanguage({ language: "en" });
+  eq(importFileText("x.json", "[]").error, "This is not a Trello board (JSON).", "english");
+  await import("../../custom_components/brainstorm/cards/brainstorm-mindmap-card.js");
+} catch (err) { fails.push(String(err && err.stack || err)); }
+out.textContent = fails.length ? "FAIL\n" + fails.join("\n") : "PASS";
+</script>
