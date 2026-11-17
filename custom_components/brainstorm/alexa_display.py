@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+import copy
 from datetime import timedelta
 from html import escape
 import json
@@ -10,6 +11,7 @@ from typing import Any
 
 from homeassistant.util import dt as dt_util
 
+from .alexa_mindmap import build_graphic
 from .languages.common import LanguagePack
 from .const import (
     ATTR_CATEGORY,
@@ -32,6 +34,15 @@ LOGO_URL = (
 
 # Only "payload" gets all data sources instead of the one with its name
 DATA_NAME = "brainstorm"
+# The screen holds whether the mind maps or the lists are shown
+SCREEN_ID = "brainstorm-screen"
+MAP_VIEW = "mapView"
+MAP_PREFIX = "brainstorm-map-"
+# The mind maps share what is left of Alexa's 120 KB once the lists are in
+MAX_MAP_BYTES = 45_000
+_MAP_LABEL = f"${{{MAP_VIEW} ? page.list_label : page.map_label}}"
+_LIST_DISPLAY = f"${{{MAP_VIEW} && page.map != '' ? 'none' : 'normal'}}"
+_MAP_DISPLAY = f"${{{MAP_VIEW} ? 'normal' : 'none'}}"
 
 # Alexa refuses answers above 120 KB, which these limits stay well below
 MAX_DISPLAY_ITEMS = 150
@@ -116,9 +127,45 @@ _HEADER: dict[str, Any] = {
                     ],
                 },
                 {
+                    "type": "TouchWrapper",
+                    "when": "${page.map != ''}",
+                    "description": "${page.map_label}",
+                    "onPress": [
+                        {
+                            "type": "SetValue",
+                            "componentId": SCREEN_ID,
+                            "property": MAP_VIEW,
+                            "value": f"${{!{MAP_VIEW}}}",
+                        }
+                    ],
+                    "items": [
+                        {
+                            "type": "Frame",
+                            "backgroundColor": "${page.tint}",
+                            "borderRadius": "@chipRadius",
+                            "borderWidth": "2dp",
+                            "borderColor": "${page.color}",
+                            "items": [
+                                {
+                                    "type": "Text",
+                                    "paddingLeft": "@headerPadding",
+                                    "paddingRight": "@headerPadding",
+                                    "paddingTop": "6dp",
+                                    "paddingBottom": "6dp",
+                                    "text": _MAP_LABEL,
+                                    "fontSize": "@chipSize",
+                                    "color": TEXT_COLOR,
+                                    "maxLines": 1,
+                                }
+                            ],
+                        }
+                    ],
+                },
+                {
                     "type": "Container",
                     "direction": "row",
                     "alignItems": "center",
+                    "paddingLeft": "@headerPadding",
                     "data": "${page.dots}",
                     "items": [
                         {
@@ -364,9 +411,11 @@ DOCUMENT: dict[str, Any] = {
         "items": [
             {
                 "type": "Frame",
+                "id": SCREEN_ID,
                 "width": "100vw",
                 "height": "100vh",
                 "backgroundColor": BACKGROUND_COLOR,
+                "bind": [{"name": MAP_VIEW, "value": f"${{{DATA_NAME}.map}}"}],
                 "items": [
                     {
                         "type": "Pager",
@@ -390,12 +439,25 @@ DOCUMENT: dict[str, Any] = {
                                     {
                                         "type": "Sequence",
                                         "when": "${!page.empty}",
+                                        "display": _LIST_DISPLAY,
                                         "width": "100%",
                                         "height": "100%",
                                         "shrink": 1,
                                         "paddingTop": "1vh",
                                         "data": "${page.items}",
                                         "items": [_GROUP],
+                                    },
+                                    {
+                                        "type": "VectorGraphic",
+                                        "when": "${page.map != ''}",
+                                        "display": _MAP_DISPLAY,
+                                        "source": "${page.map}",
+                                        "width": "100%",
+                                        "height": "100%",
+                                        "shrink": 1,
+                                        "paddingTop": "1vh",
+                                        "scale": "best-fit",
+                                        "align": "center",
                                     },
                                     {
                                         "type": "Text",
@@ -561,9 +623,16 @@ def build_directive(
     colors: dict[str, str],
     category: str | None,
     pack: LanguagePack,
+    mindmap: bool = False,
 ) -> dict[str, Any]:
-    """Return the directive that shows one swipeable page per category with ideas."""
+    """Return the directive that shows one swipeable page per category with ideas.
+
+    Each page can switch between its list and its mind map, mindmap chooses
+    which one comes first.
+    """
     done_label = pack.msg("display_mark_done")
+    map_label = pack.msg("display_show_map")
+    list_label = pack.msg("display_show_list")
     grouped: dict[str, list[dict[str, Any]]] = {name: [] for name in categories}
     for idea in ideas:
         grouped.setdefault(str(idea.get(ATTR_CATEGORY)), []).append(idea)
@@ -594,11 +663,14 @@ def build_directive(
         pages.append(
             {
                 "category": name,
+                "members": members,
                 "title": _safe_text(name),
                 "subtitle": _subtitle(members, pack),
                 "color": color,
                 "tint": f"{color}{TINT_ALPHA}",
                 "done_label": done_label,
+                "map_label": map_label,
+                "list_label": list_label,
                 "empty": False,
                 "hint": (
                     pack.msg("display_more", count=hidden)
@@ -618,6 +690,8 @@ def build_directive(
                 "color": DEFAULT_COLOR,
                 "tint": f"{DEFAULT_COLOR}{TINT_ALPHA}",
                 "done_label": done_label,
+                "map_label": map_label,
+                "list_label": list_label,
                 "empty": True,
                 "hint": pack.msg("display_no_open"),
                 "items": [],
@@ -644,9 +718,43 @@ def build_directive(
             len(pages) - 1,
         )
 
+    graphics = _graphics(pages, start)
+    document = DOCUMENT
+    if graphics:
+        document = copy.deepcopy(DOCUMENT)
+        document["graphics"] = graphics
     return {
         "type": DIRECTIVE_TYPE,
         "token": DOCUMENT_TOKEN,
-        "document": DOCUMENT,
-        "datasources": {DATA_NAME: {"start": start, "pages": pages}},
+        "document": document,
+        "datasources": {
+            DATA_NAME: {
+                "start": start,
+                "map": bool(mindmap and graphics),
+                "pages": pages,
+            }
+        },
     }
+
+
+def _graphics(pages: list[dict[str, Any]], start: int) -> dict[str, Any]:
+    """Draw the mind map of each page, the shown page first, while room is left."""
+    graphics: dict[str, Any] = {}
+    room = MAX_MAP_BYTES
+    order = sorted(range(len(pages)), key=lambda index: index != start)
+    for index in order:
+        page = pages[index]
+        members = page.pop("members", None)
+        page["map"] = ""
+        if not members:
+            continue
+        graphic = build_graphic(
+            page["category"], members, page["color"], PRIORITY_COLORS
+        )
+        size = len(json.dumps(graphic, separators=(",", ":")).encode())
+        if size > room:
+            continue
+        room -= size
+        page["map"] = f"{MAP_PREFIX}{index}"
+        graphics[page["map"]] = graphic
+    return graphics

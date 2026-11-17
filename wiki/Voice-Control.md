@@ -135,10 +135,15 @@ With the skill Alexa answers only once. The setup is [above](#️-optional-your-
 | Postpone | "… **later**" moves the last reminder by one hour |
 | Read out | "… **read**" (overview), "… **read** daily life", "… **read everything**" |
 | Show (Echo Show) | "… **show my lists**", "… **show** daily life" |
+| Show the mind map (Echo Show) | "… **show the mind map** house and garden", "… **show the mind map**" (since v1.17.0) |
 | Free sentence | "… we are out of shower gel" → Alexa says "Okay, noted", the note follows a few seconds later from the Alexa history |
 
 > [!TIP]
 > Free sentences without a command word only work on an Echo, not in the Alexa app, because the app reports no history. They need the Alexa Media integration.
+
+#### Mind map on the Echo Show
+
+Since v1.17.0 every page on the Echo Show has a **Mind map** button on top. It switches between list and mind map right on the device, without asking Alexa again. The category sits in the middle, the main tasks branch out to both sides and subtasks further out; urgent and high priority get a coloured border. Up to three levels and seven branches per node are drawn, the rest is shown as "+ n". The Echo draws the map itself (Alexa Vector Graphics), so it needs no picture address and no new skill code. "Show the mind map …" opens it right away. Like the list, it stays until the Echo returns to its home screen after a while without a touch.
 
 ### Home Assistant Assist
 

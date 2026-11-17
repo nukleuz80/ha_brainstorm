@@ -1701,6 +1701,11 @@ MESSAGES: dict[str, str] = {
     "display_prio_urgent": "Dringend",
     "display_prio_high": "Hoch",
     "display_prio_low": "Niedrig",
+    "display_show_map": "Mindmap",
+    "display_show_list": "Liste",
+    "skill_here_is_map": "Hier ist die Mindmap {category}.",
+    "skill_here_are_maps": "Hier sind deine Mindmaps.",
+    "skill_map_words": "mindmap|mind map|mind-map|gedankenkarte",
 }
 
 

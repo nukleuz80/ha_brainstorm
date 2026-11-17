@@ -257,6 +257,14 @@ SKILL_CODE_TEMPLATE = _SKILL_CODE.replace(
 )
 
 
+def wants_mindmap(text: str, pack: LanguagePack) -> bool:
+    """Tell whether "show" asked for the mind map, as in "show the mind map garden"."""
+    spoken = text.casefold()
+    return any(
+        word and word in spoken for word in pack.msg("skill_map_words").split("|")
+    )
+
+
 def clean_voice_text(text: str, pack: LanguagePack) -> str:
     """Remove command words and list names, like the native voice capture."""
     cleaned = text.strip()
@@ -680,8 +688,9 @@ class AlexaSkill:
         user_id: str | None,
         pack: LanguagePack,
         category: str | None = None,
+        mindmap: bool = False,
     ) -> list[dict[str, Any]] | None:
-        """Return the lists for an Echo with a screen."""
+        """Return the lists, or the mind maps, for an Echo with a screen."""
         if not wanted:
             return None
         return [
@@ -691,6 +700,7 @@ class AlexaSkill:
                 self._ideas.category_colors,
                 category,
                 pack,
+                mindmap,
             )
         ]
 
@@ -896,17 +906,21 @@ class AlexaSkill:
         wants_display: bool,
         user_id: str | None,
         pack: LanguagePack,
+        mindmap: bool = False,
     ) -> web.Response:
         """Show the lists, and read them aloud if there is no screen or nothing to show."""
         if not wants_display or not self._ideas.get_ideas_by_category(
             category, user_id=user_id
         ):
             return self._read(category, wants_display, user_id, pack)
+        if category:
+            key = "skill_here_is_map" if mindmap else "skill_here_is"
+            speech = pack.msg(key, category=pack.spoken_category(category))
+        else:
+            speech = pack.msg("skill_here_are_maps" if mindmap else "skill_here_are")
         return self._speech(
-            pack.msg("skill_here_is", category=pack.spoken_category(category))
-            if category
-            else pack.msg("skill_here_are"),
-            directives=self._display(True, user_id, pack, category),
+            speech,
+            directives=self._display(True, user_id, pack, category, mindmap),
         )
 
     async def _async_snooze(
@@ -988,7 +1002,11 @@ class AlexaSkill:
             )
         if action == ACTION_SHOW:
             return self._show(
-                self._category_from_speech(text), wants_display, voice_user, pack
+                self._category_from_speech(text),
+                wants_display,
+                voice_user,
+                pack,
+                wants_mindmap(text, pack),
             )
         if action == ACTION_DISPLAY_DONE:
             return await self._async_display_done(text, voice_user, pack)

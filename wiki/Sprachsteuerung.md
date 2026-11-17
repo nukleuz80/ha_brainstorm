@@ -157,11 +157,16 @@ Mit dem Skill antwortet Alexa nur einmal. Die Einrichtung steht [oben](#variante
 | Abhaken | „… **erledigt** Müll rausbringen“, „… **hake** Milch **ab**“, „… **fertig** Rasen mähen“; nur „… **erledigt**“ hakt die letzte Erinnerung ab |
 | Verschieben | „… **später**“ schiebt die letzte Erinnerung um eine Stunde |
 | Liste zeigen (Echo Show) | „… **zeige meine Listen**“, „… **zeige** Einkaufen“ |
+| Mindmap zeigen (Echo Show) | „… **zeig mir die Mindmap** Haus und Garten“, „… **zeige die Mindmap**“ (seit v1.17.0) |
 | Vorlesen | „… **Ansage**“, „… **lies** Haus und Garten“, „… **Kategorie** Projekte“, „… **alles vorlesen**“ |
 | Freier Satz | „… Duschgel ist alle“ → Alexa sagt „Okay, notiert“, der Eintrag kommt wenige Sekunden später aus dem Alexa-Verlauf |
 
 > [!TIP]
 > Freie Sätze ohne Befehlswort klappen nur am Echo, nicht in der Alexa-App, weil die App keinen Verlauf meldet.
+
+#### Mindmap auf dem Echo Show
+
+Seit v1.17.0 hat jede Seite auf dem Echo Show oben einen Knopf **Mindmap**. Er schaltet zwischen Liste und Mindmap um, direkt am Gerät und ohne neue Frage an Alexa. Die Kategorie steht in der Mitte, die Hauptaufgaben verzweigen nach beiden Seiten, Unterpunkte weiter außen; dringende und hohe Priorität haben einen farbigen Rahmen. Gezeichnet werden bis zu drei Ebenen und sieben Zweige pro Knoten, der Rest steht als „+ n“ daneben. Das Echo zeichnet die Mindmap selbst (Alexa Vector Graphics), es braucht also keine Bildadresse und keinen neuen Skill-Code. Mit „zeig mir die Mindmap …“ öffnet sie sich gleich. Wie bei der Liste bleibt die Anzeige stehen, bis das Echo nach einer Weile ohne Berührung zum Startbildschirm zurückkehrt.
 
 ### Home Assistant Assist
 

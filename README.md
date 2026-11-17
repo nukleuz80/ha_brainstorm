@@ -9,7 +9,7 @@
 [![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.16.0-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.17.0-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![Wiki](https://img.shields.io/badge/Docs-Wiki-6f42c1.svg)](https://github.com/nukleuz80/ha_brainstorm/wiki)
@@ -265,11 +265,11 @@ The latest versions; every version is in [CHANGELOG.md](CHANGELOG.md).
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.17.0`** | 2026-11-17 | **🗺️ Mind map on the Echo Show.** Every page on the Echo Show has a *Mind map* button on top that switches between list and mind map right on the device. The category sits in the middle, main tasks branch out to both sides, subtasks further out, urgent and high priority with a coloured border; up to three levels and seven branches per node, the rest as "+ n". The Echo draws the map itself as a vector graphic, with no picture address and no new skill code. *"Alexa, ask Brainstorm to show the mind map house"* opens it right away. |
 | **`v1.16.0`** | 2026-11-17 | **📧 Notes by mail.** New page *🔗 Connected integrations › 📧 Mail*, shown once the IMAP integration is set up: a new mail from an allowed address becomes a note of its person, the subject (without *Re:*/*Fwd:* and an optional keyword) as text and the body (without quotes and signature) as description. A setting decides what a mail is recognised by: the keyword at the start or anywhere in the subject, anywhere in the mail, or every mail of the allowed addresses. The mail can be marked as read and a reply sent through a notify action such as SMTP. WhatsApp, Telegram and mail share one messenger base. |
 | **`v1.15.0`** | 2026-11-17 | **✈️ Notes by Telegram.** New page *🔗 Connected integrations › ✈️ Telegram*, shown once the Telegram bot integration is set up: every line of a message from an allowed Telegram user (or group) becomes a note of their person, and the bot confirms it as a reply in the same chat. `/note`, `/notiz`, `/idea` and `/idee` add a note without the keyword. Both messenger pages now show who last wrote without being allowed, to copy the id from. The cards show the Telegram logo as source. |
 | **`v1.14.1`** | 2026-11-17 | **💬 Original WhatsApp logo.** Notes from WhatsApp show the original WhatsApp logo as source in the card instead of 💬. |
 | **`v1.14.0`** | 2026-11-17 | **💬 Notes by WhatsApp.** New page *🔗 Connected integrations › 💬 WhatsApp*: a message from an allowed number to a WhatsApp bridge becomes a note of the person the number belongs to, every line a note of its own, optionally only after a keyword. A reply confirms what was noted where. Works out of the box with ha-whatsapp (`whatsapp_message_received`, `whatsapp.send_message`); for other bridges the event, the fields of text and sender and the reply action can be set. Unknown numbers and own messages are ignored. The cards show *💬 WhatsApp* as source. |
-| **`v1.13.24`** | 2026-11-17 | **🐞 No more duplicate battery tasks.** When several battery sensors of one device reported at the same moment (for example a device with Battery Notes sensors), each could add its own task, so *Change battery* showed up two to four times. Brainstorm now checks one battery at a time. Duplicates left by older versions are ticked off at the next start, keeping the oldest task; Battery Notes is not told about a new battery for them. |
 
 ---
 
