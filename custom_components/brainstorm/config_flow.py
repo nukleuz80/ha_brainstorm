@@ -17,6 +17,17 @@ from homeassistant.helpers.network import NoURLAvailableError
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    CONF_WHATSAPP_CATEGORY,
+    CONF_WHATSAPP_ENABLED,
+    CONF_WHATSAPP_EVENT,
+    CONF_WHATSAPP_PREFIX,
+    CONF_WHATSAPP_REPLY,
+    CONF_WHATSAPP_REPLY_SERVICE,
+    CONF_WHATSAPP_SENDER_FIELD,
+    CONF_WHATSAPP_SENDERS,
+    CONF_WHATSAPP_TEXT_FIELD,
+    DEFAULT_WHATSAPP_EVENT,
+    DEFAULT_WHATSAPP_REPLY_SERVICE,
     CONF_CALENDAR_CATEGORIES,
     CONF_BATTERY_NOTES,
     CONF_BATTERY_NOTES_REPLACED,
@@ -149,6 +160,7 @@ from .echo_locks import LOCK_DND, LOCK_ECHOS, LOCK_END, LOCK_SLOTS, LOCK_START
 from .languages import get_pack
 from .local_todo import CHOICE_NEW, CHOICE_NONE, LocalList, async_create_list, local_lists
 from .waste import waste_available, waste_calendars
+from .whatsapp import format_senders, parse_senders, resolve_person
 from .battery_notes import battery_notes_available
 from .reminders import format_due, phone_service_for
 from .sensor_rules import to_number
@@ -334,6 +346,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "local_todo": "📋 Lokale To-do",
                 "waste_collection_schedule": "🗑️ Abfallkalender",
                 "battery_notes": "🔋 Battery Notes",
+                "whatsapp": "💬 WhatsApp",
                 "init": "⬅️ Zurück",
                 "close": "✅ Fertig",
             },
@@ -378,6 +391,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "local_todo": "📋 Local To-do",
                 "waste_collection_schedule": "🗑️ Waste calendar",
                 "battery_notes": "🔋 Battery Notes",
+                "whatsapp": "💬 WhatsApp",
                 "init": "⬅️ Back",
                 "close": "✅ Done",
             },
@@ -400,6 +414,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             "local_todo",
             "waste_collection_schedule",
             "battery_notes",
+            "whatsapp",
         }:
             # Only offered where a connected integration is installed
             menu = {key: label for key, label in menu.items() if key != "integrations"}
@@ -427,6 +442,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             "waste_collection_schedule": bool(options.get(CONF_WASTE_ENABLED)),
             "battery_notes": bool(options.get(CONF_BATTERY_ENABLED))
             and bool(options.get(CONF_BATTERY_NOTES, True)),
+            "whatsapp": bool(options.get(CONF_WHATSAPP_ENABLED)),
         }
         names = {
             "bring": "Bring!",
@@ -434,12 +450,14 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             "local_todo": self._text("Lokale To-do", "Local To-do"),
             "waste_collection_schedule": self._text("Abfallkalender", "Waste calendar"),
             "battery_notes": "Battery Notes",
+            "whatsapp": "WhatsApp",
         }
         on, off = self._text("an", "on"), self._text("aus", "off")
         return [
             (domain, names[domain], active[domain], on if active[domain] else off)
             for domain in self._integrations_menu()
-            if domain in names
+            # WhatsApp is offered to everyone, so it is only named while on
+            if domain in names and (domain != "whatsapp" or active[domain])
         ]
 
     def _integrations_menu(self) -> dict[str, str]:
@@ -486,6 +504,10 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             notes = on
         elif options.get(CONF_BATTERY_NOTES, True):
             notes = self._text("aus · 🔋 Batterien ist aus", "off · 🔋 Batteries is off")
+        whatsapp = off
+        if options.get(CONF_WHATSAPP_ENABLED):
+            count = len(options.get(CONF_WHATSAPP_SENDERS) or {})
+            whatsapp = f"{on} · {count} " + self._text("Nummern", "numbers")
         return self.async_show_menu(
             step_id="integrations",
             menu_options=self._integrations_menu(),
@@ -497,6 +519,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "status_local_todo": local,
                 "status_waste": waste,
                 "status_battery_notes": notes,
+                "status_whatsapp": whatsapp,
             },
         )
 
@@ -737,6 +760,108 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             step_id="battery_notes",
             data_schema=vol.Schema(_with_back(schema)),
             errors=errors,
+        )
+
+    async def async_step_whatsapp(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Add the WhatsApp messages of known numbers as notes."""
+        if user_input is not None and user_input.pop(BACK_FIELD, False):
+            return await self.async_step_integrations()
+        store = await self._async_store()
+        options = dict(self.config_entry.options or self.config_entry.data)
+        errors: dict[str, str] = {}
+        placeholders = {"lines": ""}
+        if user_input is not None:
+            senders, bad = parse_senders(str(user_input.get(CONF_WHATSAPP_SENDERS) or ""))
+            unknown = [
+                person
+                for person in senders.values()
+                if resolve_person(self.hass, person) is None
+            ]
+            if bad or unknown:
+                errors[CONF_WHATSAPP_SENDERS] = "whatsapp_senders_invalid"
+                placeholders["lines"] = self._text(
+                    "⚠️ Nicht erkannt: ", "⚠️ Not recognised: "
+                ) + ", ".join([*bad, *unknown])
+            elif user_input.get(CONF_WHATSAPP_ENABLED) and not senders:
+                errors[CONF_WHATSAPP_SENDERS] = "whatsapp_senders_missing"
+            else:
+                options[CONF_WHATSAPP_ENABLED] = bool(
+                    user_input.get(CONF_WHATSAPP_ENABLED)
+                )
+                options[CONF_WHATSAPP_SENDERS] = {
+                    number: resolve_person(self.hass, person) or person
+                    for number, person in senders.items()
+                }
+                for key in (
+                    CONF_WHATSAPP_CATEGORY,
+                    CONF_WHATSAPP_PREFIX,
+                    CONF_WHATSAPP_EVENT,
+                    CONF_WHATSAPP_TEXT_FIELD,
+                    CONF_WHATSAPP_SENDER_FIELD,
+                    CONF_WHATSAPP_REPLY_SERVICE,
+                ):
+                    options[key] = str(user_input.get(key) or "").strip()
+                options[CONF_WHATSAPP_REPLY] = bool(user_input.get(CONF_WHATSAPP_REPLY))
+                return await self._async_saved(options, "integrations")
+        values = {**options, **(user_input or {})}
+        senders_text = values.get(CONF_WHATSAPP_SENDERS) or ""
+        if isinstance(senders_text, dict):
+            senders_text = format_senders(senders_text)
+        categories = list(store.categories)
+        schema: dict[Any, Any] = {
+            vol.Required(
+                CONF_WHATSAPP_ENABLED, default=bool(values.get(CONF_WHATSAPP_ENABLED))
+            ): selector.BooleanSelector(),
+            vol.Optional(
+                CONF_WHATSAPP_SENDERS, description={"suggested_value": senders_text}
+            ): selector.TextSelector(selector.TextSelectorConfig(multiline=True)),
+            vol.Optional(
+                CONF_WHATSAPP_CATEGORY,
+                description=_suggested(values, CONF_WHATSAPP_CATEGORY),
+            ): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=categories,
+                    custom_value=True,
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                )
+            ),
+            vol.Optional(
+                CONF_WHATSAPP_PREFIX,
+                description=_suggested(values, CONF_WHATSAPP_PREFIX),
+            ): selector.TextSelector(),
+            vol.Required(
+                CONF_WHATSAPP_REPLY, default=bool(values.get(CONF_WHATSAPP_REPLY, True))
+            ): selector.BooleanSelector(),
+            vol.Optional(
+                CONF_WHATSAPP_EVENT,
+                description={
+                    "suggested_value": values.get(CONF_WHATSAPP_EVENT)
+                    or DEFAULT_WHATSAPP_EVENT
+                },
+            ): selector.TextSelector(),
+            vol.Optional(
+                CONF_WHATSAPP_TEXT_FIELD,
+                description=_suggested(values, CONF_WHATSAPP_TEXT_FIELD),
+            ): selector.TextSelector(),
+            vol.Optional(
+                CONF_WHATSAPP_SENDER_FIELD,
+                description=_suggested(values, CONF_WHATSAPP_SENDER_FIELD),
+            ): selector.TextSelector(),
+            vol.Optional(
+                CONF_WHATSAPP_REPLY_SERVICE,
+                description={
+                    "suggested_value": values.get(CONF_WHATSAPP_REPLY_SERVICE)
+                    or DEFAULT_WHATSAPP_REPLY_SERVICE
+                },
+            ): selector.TextSelector(),
+        }
+        return self.async_show_form(
+            step_id="whatsapp",
+            data_schema=vol.Schema(_with_back(schema)),
+            errors=errors,
+            description_placeholders=placeholders,
         )
 
     async def async_step_choreops(

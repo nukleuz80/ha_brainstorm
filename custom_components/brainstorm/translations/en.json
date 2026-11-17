@@ -412,6 +412,7 @@
           "local_todo": "📋 Local To-do",
           "waste_collection_schedule": "🗑️ Waste calendar",
           "battery_notes": "🔋 Battery Notes",
+          "whatsapp": "💬 WhatsApp",
           "init": "⬅️ Back",
           "close": "✅ Done"
         },
@@ -420,7 +421,8 @@
           "choreops": "{status_choreops}",
           "local_todo": "{status_local_todo}",
           "waste_collection_schedule": "{status_waste}",
-          "battery_notes": "{status_battery_notes}"
+          "battery_notes": "{status_battery_notes}",
+          "whatsapp": "{status_whatsapp}"
         }
       },
       "choreops": {
@@ -648,6 +650,34 @@
           "battery_notes_bring": "Once, on saving: puts the batteries of all open battery tasks on the default Bring list, such as *Batteries AA* with *4×*. Types already open on the list are left out.",
           "go_back": "Returns to the previous page without saving this form."
         }
+      },
+      "whatsapp": {
+        "title": "Brainstorm › 🔗 Connected integrations › 💬 WhatsApp",
+        "description": "Turns WhatsApp messages into notes. A WhatsApp bridge, such as the integration ha-whatsapp, fires an event for every message it receives; Brainstorm adds every line of a message from a known number as a note of the person the number belongs to and confirms it with a reply. Other bridges work as well: set their event and, if needed, their fields.\n\n{lines}",
+        "data": {
+          "whatsapp_enabled": "Notes by WhatsApp",
+          "whatsapp_senders": "Allowed numbers",
+          "whatsapp_category": "Category",
+          "whatsapp_prefix": "Keyword",
+          "whatsapp_reply": "Confirm with a reply",
+          "whatsapp_event": "Event of the bridge",
+          "whatsapp_text_field": "Field of the text",
+          "whatsapp_sender_field": "Field of the sender",
+          "whatsapp_reply_service": "Action for the reply",
+          "go_back": "⬅️ Back without saving"
+        },
+        "data_description": {
+          "whatsapp_enabled": "Adds the messages of the allowed numbers as notes.",
+          "whatsapp_senders": "One number per line with its person, such as `+49 171 1234567 = person.jan`. The person may also be written by name. Messages from other numbers are ignored.",
+          "whatsapp_category": "Empty sorts every note like a typed one, a category named at the start of the text included.",
+          "whatsapp_prefix": "Optional: only messages starting with this word become notes, such as *Note*. The word itself is left out.",
+          "whatsapp_reply": "Sends back what was noted and where, through the action below.",
+          "whatsapp_event": "`whatsapp_message_received` for ha-whatsapp. Developer tools › Events shows what another bridge fires.",
+          "whatsapp_text_field": "Optional: the field of the event with the text, a dot leads into a nested field, such as `message.text`. Empty tries the usual fields like `content`, `body` and `text`.",
+          "whatsapp_sender_field": "Optional: the field with the number of the sender. Empty tries the usual fields like `from` and `sender`.",
+          "whatsapp_reply_service": "Called with `target` and `message`, `whatsapp.send_message` for ha-whatsapp.",
+          "go_back": "Returns to the previous page without saving this form."
+        }
       }
     },
     "error": {
@@ -666,7 +696,9 @@
       "local_todo_failed": "Local To-do could not create the list.",
       "bring_off": "Bring! is switched off in the Brainstorm settings.",
       "bring_list_unknown": "The default Bring list is not synced with Brainstorm.",
-      "battery_bring_nothing": "No open battery task with a battery type from Battery Notes."
+      "battery_bring_nothing": "No open battery task with a battery type from Battery Notes.",
+      "whatsapp_senders_invalid": "Write one number per line with an existing person, such as +49 171 1234567 = person.jan.",
+      "whatsapp_senders_missing": "Enter at least one allowed number."
     },
     "abort": {
       "store_not_ready": "Brainstorm is reloading. Please open the settings again in a few seconds."

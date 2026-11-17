@@ -254,6 +254,26 @@ Since v1.13.18. Shown when [Battery Notes](https://github.com/andrew-codechimp/H
 - **Bring! button in the card:** in the category of the battery tasks the card shows *🛒 Batteries to Bring!*. It puts e.g. *Batteries AA* with *4×* on the default list; types already open there are left out. The action `brainstorm.batteries_to_bring` does the same (optionally with `list`).
 - Only devices whose battery type Battery Notes knows are counted.
 
+### Brainstorm › 🔗 Connected integrations › 💬 WhatsApp
+
+Since v1.14.0. Always shown, as WhatsApp bridges work in many ways. A WhatsApp bridge, such as the integration [ha-whatsapp](https://github.com/FaserF/ha-whatsapp), fires an event for every message it receives. Brainstorm adds every line of a message from an allowed number as a note of the person the number belongs to, and confirms it with a reply.
+
+| Field | What it does |
+| :--- | :--- |
+| Notes by WhatsApp | Switches it on (default off). |
+| Allowed numbers | One number per line with its person, such as `+49 171 1234567 = person.jan`; the person may also be written by name (*Jan*). `+49…`, `0049…`, `0171…` and bridge ids like `491711234567@c.us` all mean the same number. Messages from other numbers are ignored. |
+| Category | Empty sorts the notes like typed ones, a category named at the start of the text included. |
+| Keyword | Optional: only messages starting with this word become notes, such as *Note: milk*. The word is left out. |
+| Confirm with a reply | Sends back *✅ Noted in Shopping: Milk* (default on). |
+| Event of the bridge | Default `whatsapp_message_received` (ha-whatsapp). *Developer tools › Events* shows what another bridge fires. |
+| Field of the text | Optional, a dot leads into a nested field (`message.text`). Empty tries the usual fields `content`, `body`, `text` and `message`. |
+| Field of the sender | Optional, like the text. Empty tries the usual fields `from`, `sender`, `phone` and `chat_id`. |
+| Action for the reply | Called with `target` and `message`; default `whatsapp.send_message`. A missing action only leaves out the reply. |
+
+- **Several lines** become several notes (at most 20), list signs like `-` or `•` are dropped.
+- **Own messages** (fields like `fromMe`) are ignored, so a reply never becomes a note.
+- The note belongs to the Home Assistant user of the person, so privacy works as for notes typed in by them. As source the card shows *💬 WhatsApp* with the name of the person.
+
 ### Brainstorm › 🔗 Connected integrations › 🛒 Bring!
 
 Only shown when the [Bring!](https://www.home-assistant.io/integrations/bring/) integration is set up. All your Bring lists land in one category: each list becomes a main note, and its items become its subtasks.

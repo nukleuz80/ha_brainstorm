@@ -254,6 +254,26 @@ Seit v1.13.18. Erscheint, wenn [Battery Notes](https://github.com/andrew-codechi
 - **Bring!-Knopf in der Karte:** In der Kategorie der Batterie-Aufgaben zeigt die Karte *🛒 Batterien auf Bring!*. Der Knopf setzt z. B. *Batterien AA* mit *4×* auf die Standardliste; Typen, die dort schon offen sind, bleiben weg. Dasselbe macht die Aktion `brainstorm.batteries_to_bring` (optional mit `list`).
 - Nur Geräte, für die Battery Notes einen Batterietyp kennt, zählen mit.
 
+### Brainstorm › 🔗 Verbundene Integrationen › 💬 WhatsApp
+
+Seit v1.14.0. Immer sichtbar, da WhatsApp-Bridges ganz unterschiedlich laufen. Eine WhatsApp-Bridge, etwa die Integration [ha-whatsapp](https://github.com/FaserF/ha-whatsapp), löst für jede empfangene Nachricht ein Ereignis aus. Brainstorm legt jede Zeile einer Nachricht von einer erlaubten Nummer als Notiz der Person an, der die Nummer gehört, und bestätigt das mit einer Antwort.
+
+| Feld | Was es bewirkt |
+| :--- | :--- |
+| Notizen per WhatsApp | Schaltet es ein (Standard aus). |
+| Erlaubte Nummern | Eine Nummer pro Zeile mit ihrer Person, etwa `+49 171 1234567 = person.jan`; die Person darf auch mit Namen dastehen (*Jan*). `+49…`, `0049…`, `0171…` und Bridge-IDs wie `491711234567@c.us` sind dieselbe Nummer. Nachrichten anderer Nummern werden ignoriert. |
+| Kategorie | Leer ordnet die Notizen wie getippte ein, auch nach einer Kategorie am Anfang des Textes. |
+| Stichwort | Optional: Nur Nachrichten, die mit diesem Wort beginnen, werden zu Notizen, etwa *Notiz: Milch*. Das Wort fällt weg. |
+| Mit einer Antwort bestätigen | Schickt *✅ Notiert in Einkauf: Milch* zurück (Standard an). |
+| Ereignis der Bridge | Standard `whatsapp_message_received` (ha-whatsapp). Was eine andere Bridge auslöst, zeigt *Entwicklerwerkzeuge › Ereignisse*. |
+| Feld des Textes | Optional, ein Punkt führt in ein verschachteltes Feld (`message.text`). Leer probiert die üblichen Felder `content`, `body`, `text` und `message`. |
+| Feld des Absenders | Optional, wie beim Text. Leer probiert die üblichen Felder `from`, `sender`, `phone` und `chat_id`. |
+| Aktion für die Antwort | Wird mit `target` und `message` aufgerufen; Standard `whatsapp.send_message`. Fehlt die Aktion, entfällt nur die Antwort. |
+
+- **Mehrere Zeilen** werden mehrere Notizen (höchstens 20), Aufzählungszeichen wie `-` oder `•` fallen weg.
+- **Eigene Nachrichten** (Felder wie `fromMe`) werden ignoriert, eine Antwort wird also nie zur Notiz.
+- Die Notiz gehört dem Home-Assistant-Benutzer der Person, die Privatsphäre wirkt also wie bei selbst getippten Notizen. Als Quelle zeigt die Karte *💬 WhatsApp* mit dem Namen der Person.
+
 ### Brainstorm › 🔗 Verbundene Integrationen › 🛒 Bring!
 
 Erscheint nur, wenn die Integration [Bring!](https://www.home-assistant.io/integrations/bring/) eingerichtet ist. Alle Bring-Listen landen in einer Kategorie: Jede Liste wird eine Hauptnotiz, ihre Artikel werden zu Unteraufgaben.

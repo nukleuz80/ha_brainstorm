@@ -9,7 +9,7 @@
 [![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.13.24-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.14.0-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![Wiki](https://img.shields.io/badge/Docs-Wiki-6f42c1.svg)](https://github.com/nukleuz80/ha_brainstorm/wiki)
@@ -95,6 +95,7 @@
 - Two-way sync with **Bring!**, **Google Tasks**, **Todoist** or any other to-do list.
 - **Tasks from sensors:** a filter after 300 operating hours, a plant that is too dry, a finished washing machine or a low battery becomes a task that ticks itself off. → [Settings](https://github.com/nukleuz80/ha_brainstorm/wiki/Settings#brainstorm---sensor-tasks)
 - **🗑️ Waste calendar:** on the evening before every pickup from Waste Collection Schedule, *🟡 Put out: Recycling* appears and ticks itself off afterwards, optionally taking turns between the kids with ChoreOps points. → [Settings](https://github.com/nukleuz80/ha_brainstorm/wiki/Settings#brainstorm---connected-integrations---waste-calendar)
+- **💬 Notes by WhatsApp:** a message to a WhatsApp bridge such as ha-whatsapp becomes a note of the person the number belongs to, every line a note of its own, confirmed by a reply. → [Settings](https://github.com/nukleuz80/ha_brainstorm/wiki/Settings#brainstorm---connected-integrations---whatsapp)
 - Automatic **Markdown export** for Obsidian, Logseq or Nextcloud; JSON export and import; automatic cleanup of done entries; deleted notes stay in the 🗑️ trash for 30 days. → [Import, Export & Storage](https://github.com/nukleuz80/ha_brainstorm/wiki/Import-Export-and-Storage)
 
 ---
@@ -262,11 +263,11 @@ The latest versions; every version is in [CHANGELOG.md](CHANGELOG.md).
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.14.0`** | 2026-11-17 | **💬 Notes by WhatsApp.** New page *🔗 Connected integrations › 💬 WhatsApp*: a message from an allowed number to a WhatsApp bridge becomes a note of the person the number belongs to, every line a note of its own, optionally only after a keyword. A reply confirms what was noted where. Works out of the box with ha-whatsapp (`whatsapp_message_received`, `whatsapp.send_message`); for other bridges the event, the fields of text and sender and the reply action can be set. Unknown numbers and own messages are ignored. The cards show *💬 WhatsApp* as source. |
 | **`v1.13.24`** | 2026-11-17 | **🐞 No more duplicate battery tasks.** When several battery sensors of one device reported at the same moment (for example a device with Battery Notes sensors), each could add its own task, so *Change battery* showed up two to four times. Brainstorm now checks one battery at a time. Duplicates left by older versions are ticked off at the next start, keeping the oldest task; Battery Notes is not told about a new battery for them. |
 | **`v1.13.23`** | 2026-11-16 | **⏱️ Time tracking and timeline.** New stopwatch in the menu of a note (*⏱️ Start stopwatch* / *⏹️ Stop stopwatch*): each person runs one at a time, ticking off or archiving stops it, a forgotten one counts 12 hours at most. Notes show their tracked time as ⏱️ badge in both cards. The 📊 Statistics add the tracked time per category and the top notes, plus a Gantt chart *📊 Timeline* with one bar per note from the first work to the due date. New service `brainstorm.track_time`. |
 | **`v1.13.22`** | 2026-11-16 | **🔗 Calmer main menu.** The logos of the connected integrations are no longer shown above the main menu of the settings; the entry *🔗 Connected integrations* still shows 🟢 for connected and ⚪ (grey) for not connected ones. The logos stay on its own page. |
 | **`v1.13.21`** | 2026-11-16 | **📥 Import from Trello, Todoist and Miro.** *Insert an outline* in the mind map now also reads a Trello board (JSON export: lists become main notes, cards notes below them, checklists subtasks; description, due date and done come along, archived items stay out) and CSV tables: a Todoist export (sections, indents, priority p1–p3, date, comments as description) and any table from Miro, Excel or Trello with columns such as Title, Description, List, Due, Priority, Done; without such columns each column becomes a branch with its cells. The card shrinks big Trello exports before sending them. The service `import_outline` knows the formats `trello` and `csv`. |
-| **`v1.13.20`** | 2026-11-15 | **📊 Statistics.** New button *📊 Statistics* above the list: done and new notes per week as bars (4–52 weeks), open and overdue, lead time (median and average), who ticked off what and the categories with done/open; within a category optionally only that category. Brainstorm now remembers which Home Assistant user ticks off a note (ChoreOps: the person who did the chore). New WebSocket command `brainstorm/statistics`. |
 
 ---
 

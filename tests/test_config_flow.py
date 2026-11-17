@@ -382,6 +382,8 @@ async def test_all_errors_and_aborts_have_a_text() -> None:
         "sensor_reset_invalid",
         "local_todo_duplicate",
         "local_todo_failed",
+        "whatsapp_senders_invalid",
+        "whatsapp_senders_missing",
     }
     assert aborts == {"reconfigure_successful", "store_not_ready"}
     for name in ("strings.json", "translations/en.json", "translations/de.json"):

@@ -412,6 +412,7 @@
           "local_todo": "📋 Lokale To-do",
           "waste_collection_schedule": "🗑️ Abfallkalender",
           "battery_notes": "🔋 Battery Notes",
+          "whatsapp": "💬 WhatsApp",
           "init": "⬅️ Zurück",
           "close": "✅ Fertig"
         },
@@ -420,7 +421,8 @@
           "choreops": "{status_choreops}",
           "local_todo": "{status_local_todo}",
           "waste_collection_schedule": "{status_waste}",
-          "battery_notes": "{status_battery_notes}"
+          "battery_notes": "{status_battery_notes}",
+          "whatsapp": "{status_whatsapp}"
         }
       },
       "choreops": {
@@ -648,6 +650,34 @@
           "battery_notes_bring": "Einmalig beim Speichern: setzt die Batterien aller offenen Batterie-Aufgaben auf die Standard-Bring-Liste, etwa *Batterien AA* mit *4×*. Typen, die dort schon offen sind, bleiben weg.",
           "go_back": "Kehrt ohne Speichern zur vorherigen Seite zurück."
         }
+      },
+      "whatsapp": {
+        "title": "Brainstorm › 🔗 Verbundene Integrationen › 💬 WhatsApp",
+        "description": "Macht aus WhatsApp-Nachrichten Notizen. Eine WhatsApp-Bridge, etwa die Integration ha-whatsapp, löst für jede empfangene Nachricht ein Ereignis aus; Brainstorm legt jede Zeile einer Nachricht von einer bekannten Nummer als Notiz der Person an, der die Nummer gehört, und bestätigt das mit einer Antwort. Andere Bridges gehen auch: Trage ihr Ereignis und bei Bedarf ihre Felder ein.\n\n{lines}",
+        "data": {
+          "whatsapp_enabled": "Notizen per WhatsApp",
+          "whatsapp_senders": "Erlaubte Nummern",
+          "whatsapp_category": "Kategorie",
+          "whatsapp_prefix": "Stichwort",
+          "whatsapp_reply": "Mit einer Antwort bestätigen",
+          "whatsapp_event": "Ereignis der Bridge",
+          "whatsapp_text_field": "Feld des Textes",
+          "whatsapp_sender_field": "Feld des Absenders",
+          "whatsapp_reply_service": "Aktion für die Antwort",
+          "go_back": "⬅️ Zurück ohne Speichern"
+        },
+        "data_description": {
+          "whatsapp_enabled": "Legt die Nachrichten der erlaubten Nummern als Notizen an.",
+          "whatsapp_senders": "Eine Nummer pro Zeile mit ihrer Person, etwa `+49 171 1234567 = person.jan`. Die Person darf auch mit Namen dastehen. Nachrichten anderer Nummern werden ignoriert.",
+          "whatsapp_category": "Leer ordnet jede Notiz wie eine getippte ein, auch nach einer Kategorie am Anfang des Textes.",
+          "whatsapp_prefix": "Optional: Nur Nachrichten, die mit diesem Wort beginnen, werden zu Notizen, etwa *Notiz*. Das Wort selbst fällt weg.",
+          "whatsapp_reply": "Schickt zurück, was wo notiert wurde, über die Aktion unten.",
+          "whatsapp_event": "`whatsapp_message_received` für ha-whatsapp. Was eine andere Bridge auslöst, zeigt Entwicklerwerkzeuge › Ereignisse.",
+          "whatsapp_text_field": "Optional: das Feld des Ereignisses mit dem Text, ein Punkt führt in ein verschachteltes Feld, etwa `message.text`. Leer probiert die üblichen Felder wie `content`, `body` und `text`.",
+          "whatsapp_sender_field": "Optional: das Feld mit der Nummer des Absenders. Leer probiert die üblichen Felder wie `from` und `sender`.",
+          "whatsapp_reply_service": "Wird mit `target` und `message` aufgerufen, `whatsapp.send_message` für ha-whatsapp.",
+          "go_back": "Kehrt ohne Speichern zur vorherigen Seite zurück."
+        }
       }
     },
     "error": {
@@ -666,7 +696,9 @@
       "local_todo_failed": "Local To-do konnte die Liste nicht anlegen.",
       "bring_off": "Bring! ist in den Brainstorm-Einstellungen ausgeschaltet.",
       "bring_list_unknown": "Die Standard-Bring-Liste wird nicht mit Brainstorm abgeglichen.",
-      "battery_bring_nothing": "Keine offene Batterie-Aufgabe mit Batterietyp aus Battery Notes."
+      "battery_bring_nothing": "Keine offene Batterie-Aufgabe mit Batterietyp aus Battery Notes.",
+      "whatsapp_senders_invalid": "Schreibe eine Nummer pro Zeile mit einer vorhandenen Person, etwa +49 171 1234567 = person.jan.",
+      "whatsapp_senders_missing": "Trage mindestens eine erlaubte Nummer ein."
     },
     "abort": {
       "store_not_ready": "Brainstorm wird gerade neu geladen. Bitte öffne die Einstellungen in ein paar Sekunden noch einmal."
