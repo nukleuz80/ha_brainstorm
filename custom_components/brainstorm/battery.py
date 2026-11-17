@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import TYPE_CHECKING, Any
 
@@ -117,6 +118,9 @@ class BatteryWatcher:
             options.get(CONF_BATTERY_NOTES_REPLACED, True)
         )
         self._unsubs: list[CALLBACK_TYPE] = []
+        # One check per battery at a time: sensors of one device often report
+        # together, and each would otherwise add a task before the first is saved
+        self._locks: dict[str, asyncio.Lock] = {}
         self._unsub_started: CALLBACK_TYPE | None = None
 
     async def async_start(self) -> None:
@@ -211,6 +215,7 @@ class BatteryWatcher:
     async def async_check_all(self) -> None:
         """Check every battery, for example after a restart."""
         groups = self._groups()
+        await self._async_close_duplicates()
         for key, states in groups.items():
             await self._async_check(key, states)
         # A task for a battery left out or removed has no one to close it
@@ -226,7 +231,32 @@ class BatteryWatcher:
             if idea.get(ATTR_BATTERY) and not idea.get(ATTR_BATTERY_DONE)
         ]
 
+    async def _async_close_duplicates(self) -> None:
+        """Close extra open tasks for the same battery, keeping the oldest.
+
+        Before v1.13.24, sensors reporting together could add one task each.
+        """
+        seen: set[str] = set()
+        for idea in sorted(
+            self._open_tasks(), key=lambda item: str(item.get("created_at") or "")
+        ):
+            key = idea[ATTR_BATTERY]
+            if key not in seen:
+                seen.add(key)
+                continue
+            # Closed first, so ticking it off is not reported to Battery Notes
+            await self.store.async_set_fields({idea[ATTR_ID]: {ATTR_BATTERY_DONE: True}})
+            if idea.get(ATTR_STATUS) == "active":
+                await self.store.async_update_idea(idea[ATTR_ID], status="completed")
+            _LOGGER.info("Duplicate battery task %s for %s closed", idea[ATTR_ID], key)
+
     async def _async_check(self, key: str, states: list[State]) -> None:
+        """Create or close the task for one battery, one check at a time."""
+        lock = self._locks.setdefault(key, asyncio.Lock())
+        async with lock:
+            await self._async_check_locked(key, states)
+
+    async def _async_check_locked(self, key: str, states: list[State]) -> None:
         """Create or close the task for one battery.
 
         A device is low while any of its sensors says so, and only counts as

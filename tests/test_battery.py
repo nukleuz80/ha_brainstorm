@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any
+
+import pytest
 
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
@@ -277,3 +280,63 @@ async def test_phones_when_wanted(hass: HomeAssistant, setup_entry: SetupEntry) 
     _set_level(hass, "10", "sensor.handy_batterie")
     store = await _setup(setup_entry, battery_phones=True)
     assert len(_tasks(store, f"device:{phone}")) == 1
+
+
+async def test_sensors_reporting_together_make_one_task(
+    hass: HomeAssistant, setup_entry: SetupEntry, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test that sensors of one device reporting at once add a single task."""
+    original = BrainstormStore.async_add_idea
+
+    async def slow_add(self: BrainstormStore, *args: Any, **kwargs: Any) -> Any:
+        # Saving yields to the event loop, which let every sensor add a task
+        await asyncio.sleep(0)
+        return await original(self, *args, **kwargs)
+
+    monkeypatch.setattr(BrainstormStore, "async_add_idea", slow_add)
+    device = _device(hass, "Bewässerung")
+    sensors = [f"sensor.bewaesserung_batterie_{index}" for index in range(4)]
+    for entity_id in sensors:
+        _register(hass, entity_id, "battery_notes", device)
+    store = await _setup(setup_entry)
+    for entity_id in sensors:
+        _set_level(hass, "5", entity_id)
+    await hass.async_block_till_done()
+    assert len(_tasks(store, f"device:{device}")) == 1
+
+
+async def test_duplicate_tasks_are_closed_at_start(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that duplicates from older versions are closed, keeping the oldest."""
+    _set_level(hass, "5")
+    ideas = [
+        {
+            "id": f"dup{index}",
+            "text": "Batterie wechseln: Bewegungsmelder Flur (5 %)",
+            "category": "Smarthome",
+            "priority": "medium",
+            "source": "battery",
+            "tags": [],
+            "status": "active",
+            "parent_id": None,
+            "order": index,
+            "created_at": f"2026-11-15T22:40:17.41{index}+01:00",
+            "updated_at": f"2026-11-15T22:40:17.41{index}+01:00",
+            "battery": SENSOR,
+        }
+        for index in range(3)
+    ]
+    entry = await setup_entry(
+        stored={"ideas": ideas, "categories": ["Inbox", "Smarthome"]},
+        options=OPTIONS,
+    )
+    store: BrainstormStore = entry.runtime_data
+    await hass.async_block_till_done()
+    tasks = {idea["id"]: idea for idea in _tasks(store)}
+    assert len(tasks) == 3
+    assert tasks["dup0"]["status"] == "active"
+    assert not tasks["dup0"].get("battery_done")
+    for key in ("dup1", "dup2"):
+        assert tasks[key]["status"] == "completed"
+        assert tasks[key]["battery_done"] is True
