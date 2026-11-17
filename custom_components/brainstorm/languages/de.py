@@ -1506,7 +1506,7 @@ MESSAGES: dict[str, str] = {
     "and": "und",
     "reminder_spoken": "Erinnerung: {text}.",
     "battery_task": "Batterie wechseln: {name}",
-    "whatsapp_saved": "✅ Notiert in {category}: {text}",
+    "message_saved": "✅ Notiert in {category}: {text}",
     "battery_task_level": "Batterie wechseln: {name} ({level} %)",
     "battery_task_type": "Batterie wechseln: {name} · {battery}",
     "battery_task_level_type": "Batterie wechseln: {name} ({level} %) · {battery}",

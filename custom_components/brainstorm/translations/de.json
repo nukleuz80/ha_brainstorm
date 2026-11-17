@@ -413,6 +413,7 @@
           "waste_collection_schedule": "🗑️ Abfallkalender",
           "battery_notes": "🔋 Battery Notes",
           "whatsapp": "💬 WhatsApp",
+          "telegram_bot": "✈️ Telegram",
           "init": "⬅️ Zurück",
           "close": "✅ Fertig"
         },
@@ -422,7 +423,8 @@
           "local_todo": "{status_local_todo}",
           "waste_collection_schedule": "{status_waste}",
           "battery_notes": "{status_battery_notes}",
-          "whatsapp": "{status_whatsapp}"
+          "whatsapp": "{status_whatsapp}",
+          "telegram_bot": "{status_telegram}"
         }
       },
       "choreops": {
@@ -653,7 +655,7 @@
       },
       "whatsapp": {
         "title": "Brainstorm › 🔗 Verbundene Integrationen › 💬 WhatsApp",
-        "description": "Macht aus WhatsApp-Nachrichten Notizen. Eine WhatsApp-Bridge, etwa die Integration ha-whatsapp, löst für jede empfangene Nachricht ein Ereignis aus; Brainstorm legt jede Zeile einer Nachricht von einer bekannten Nummer als Notiz der Person an, der die Nummer gehört, und bestätigt das mit einer Antwort. Andere Bridges gehen auch: Trage ihr Ereignis und bei Bedarf ihre Felder ein.\n\n{lines}",
+        "description": "Macht aus WhatsApp-Nachrichten Notizen. Eine WhatsApp-Bridge, etwa die Integration ha-whatsapp, löst für jede empfangene Nachricht ein Ereignis aus; Brainstorm legt jede Zeile einer Nachricht von einer bekannten Nummer als Notiz der Person an, der die Nummer gehört, und bestätigt das mit einer Antwort. Andere Bridges gehen auch: Trage ihr Ereignis und bei Bedarf ihre Felder ein.\n\n{hint}",
         "data": {
           "whatsapp_enabled": "Notizen per WhatsApp",
           "whatsapp_senders": "Erlaubte Nummern",
@@ -678,6 +680,26 @@
           "whatsapp_reply_service": "Wird mit `target` und `message` aufgerufen, `whatsapp.send_message` für ha-whatsapp.",
           "go_back": "Kehrt ohne Speichern zur vorherigen Seite zurück."
         }
+      },
+      "telegram_bot": {
+        "title": "Brainstorm › 🔗 Verbundene Integrationen › ✈️ Telegram",
+        "description": "Macht aus Nachrichten an deinen Telegram-Bot Notizen. Jede Zeile einer Nachricht von einem erlaubten Telegram-Benutzer wird eine Notiz der Person, der der Benutzer gehört, und der Bot bestätigt sie im selben Chat. Die Befehle `/notiz` und `/note` legen eine Notiz auch ohne Stichwort an, etwa `/notiz Milch kaufen`.\n\nDie ID eines Telegram-Benutzers erscheint unten, sobald er dem Bot geschrieben hat, ohne erlaubt zu sein.\n\n{hint}",
+        "data": {
+          "telegram_enabled": "Notizen per Telegram",
+          "telegram_senders": "Erlaubte Telegram-Benutzer",
+          "telegram_category": "Kategorie",
+          "telegram_prefix": "Stichwort",
+          "telegram_reply": "Mit einer Antwort bestätigen",
+          "go_back": "⬅️ Zurück ohne Speichern"
+        },
+        "data_description": {
+          "telegram_enabled": "Legt die Nachrichten der erlaubten Benutzer als Notizen an.",
+          "telegram_senders": "Eine Telegram-Benutzer-ID pro Zeile mit ihrer Person, etwa `123456789 = person.jan`. Die ID einer Gruppe, mit Minus davor, erlaubt alle darin. Nachrichten anderer werden ignoriert.",
+          "telegram_category": "Leer ordnet jede Notiz wie eine getippte ein, auch nach einer Kategorie am Anfang des Textes.",
+          "telegram_prefix": "Optional: Nur Nachrichten, die mit diesem Wort beginnen, werden zu Notizen, etwa *Notiz*. Das Wort selbst fällt weg. Befehle wie `/notiz` gehen immer.",
+          "telegram_reply": "Der Bot antwortet, was wo notiert wurde, als Antwort auf die Nachricht.",
+          "go_back": "Kehrt ohne Speichern zur vorherigen Seite zurück."
+        }
       }
     },
     "error": {
@@ -698,7 +720,9 @@
       "bring_list_unknown": "Die Standard-Bring-Liste wird nicht mit Brainstorm abgeglichen.",
       "battery_bring_nothing": "Keine offene Batterie-Aufgabe mit Batterietyp aus Battery Notes.",
       "whatsapp_senders_invalid": "Schreibe eine Nummer pro Zeile mit einer vorhandenen Person, etwa +49 171 1234567 = person.jan.",
-      "whatsapp_senders_missing": "Trage mindestens eine erlaubte Nummer ein."
+      "whatsapp_senders_missing": "Trage mindestens eine erlaubte Nummer ein.",
+      "telegram_senders_invalid": "Schreibe eine Telegram-ID pro Zeile mit einer vorhandenen Person, etwa 123456789 = person.jan.",
+      "telegram_senders_missing": "Trage mindestens einen erlaubten Telegram-Benutzer ein."
     },
     "abort": {
       "store_not_ready": "Brainstorm wird gerade neu geladen. Bitte öffne die Einstellungen in ein paar Sekunden noch einmal."

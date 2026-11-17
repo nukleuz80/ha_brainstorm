@@ -428,6 +428,15 @@ CONF_WHATSAPP_REPLY_SERVICE = "whatsapp_reply_service"
 DEFAULT_WHATSAPP_EVENT = "whatsapp_message_received"
 DEFAULT_WHATSAPP_REPLY_SERVICE = "whatsapp.send_message"
 SOURCE_WHATSAPP = "whatsapp"
+# Telegram: messages to the bot of the Telegram bot integration become notes
+TELEGRAM_DOMAIN = "telegram_bot"
+CONF_TELEGRAM_ENABLED = "telegram_enabled"
+# {Telegram user or chat id: person}, only these may add notes
+CONF_TELEGRAM_SENDERS = "telegram_senders"
+CONF_TELEGRAM_CATEGORY = "telegram_category"
+CONF_TELEGRAM_PREFIX = "telegram_prefix"
+CONF_TELEGRAM_REPLY = "telegram_reply"
+SOURCE_TELEGRAM = "telegram"
 # The amount or note of an item on a linked list, such as "1,5 l"
 ATTR_SPEC = "spec"
 # Format of the JSON export, raised when its layout changes incompatibly

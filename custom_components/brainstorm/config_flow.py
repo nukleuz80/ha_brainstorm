@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Callable
 from typing import Any
 import uuid
 
@@ -17,6 +18,13 @@ from homeassistant.helpers.network import NoURLAvailableError
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    CONF_TELEGRAM_CATEGORY,
+    CONF_TELEGRAM_ENABLED,
+    CONF_TELEGRAM_PREFIX,
+    CONF_TELEGRAM_REPLY,
+    CONF_TELEGRAM_SENDERS,
+    SOURCE_TELEGRAM,
+    SOURCE_WHATSAPP,
     CONF_WHATSAPP_CATEGORY,
     CONF_WHATSAPP_ENABLED,
     CONF_WHATSAPP_EVENT,
@@ -160,7 +168,16 @@ from .echo_locks import LOCK_DND, LOCK_ECHOS, LOCK_END, LOCK_SLOTS, LOCK_START
 from .languages import get_pack
 from .local_todo import CHOICE_NEW, CHOICE_NONE, LocalList, async_create_list, local_lists
 from .waste import waste_available, waste_calendars
-from .whatsapp import format_senders, parse_senders, resolve_person
+from .messages import last_unknown_sender, resolve_person
+from .telegram import (
+    format_senders as telegram_format_senders,
+    parse_senders as telegram_parse_senders,
+    telegram_available,
+)
+from .whatsapp import (
+    format_senders as whatsapp_format_senders,
+    parse_senders as whatsapp_parse_senders,
+)
 from .battery_notes import battery_notes_available
 from .reminders import format_due, phone_service_for
 from .sensor_rules import to_number
@@ -347,6 +364,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "waste_collection_schedule": "🗑️ Abfallkalender",
                 "battery_notes": "🔋 Battery Notes",
                 "whatsapp": "💬 WhatsApp",
+                "telegram_bot": "✈️ Telegram",
                 "init": "⬅️ Zurück",
                 "close": "✅ Fertig",
             },
@@ -392,6 +410,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "waste_collection_schedule": "🗑️ Waste calendar",
                 "battery_notes": "🔋 Battery Notes",
                 "whatsapp": "💬 WhatsApp",
+                "telegram_bot": "✈️ Telegram",
                 "init": "⬅️ Back",
                 "close": "✅ Done",
             },
@@ -415,6 +434,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             "waste_collection_schedule",
             "battery_notes",
             "whatsapp",
+            "telegram_bot",
         }:
             # Only offered where a connected integration is installed
             menu = {key: label for key, label in menu.items() if key != "integrations"}
@@ -443,6 +463,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             "battery_notes": bool(options.get(CONF_BATTERY_ENABLED))
             and bool(options.get(CONF_BATTERY_NOTES, True)),
             "whatsapp": bool(options.get(CONF_WHATSAPP_ENABLED)),
+            "telegram_bot": bool(options.get(CONF_TELEGRAM_ENABLED)),
         }
         names = {
             "bring": "Bring!",
@@ -451,6 +472,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             "waste_collection_schedule": self._text("Abfallkalender", "Waste calendar"),
             "battery_notes": "Battery Notes",
             "whatsapp": "WhatsApp",
+            "telegram_bot": "Telegram",
         }
         on, off = self._text("an", "on"), self._text("aus", "off")
         return [
@@ -467,6 +489,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             "choreops": choreops_available(self.hass),
             "waste_collection_schedule": waste_available(self.hass),
             "battery_notes": battery_notes_available(self.hass),
+            "telegram_bot": telegram_available(self.hass),
         }
         return {
             key: label
@@ -508,6 +531,10 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         if options.get(CONF_WHATSAPP_ENABLED):
             count = len(options.get(CONF_WHATSAPP_SENDERS) or {})
             whatsapp = f"{on} · {count} " + self._text("Nummern", "numbers")
+        telegram = off
+        if options.get(CONF_TELEGRAM_ENABLED):
+            count = len(options.get(CONF_TELEGRAM_SENDERS) or {})
+            telegram = f"{on} · {count} " + self._text("Absender", "senders")
         return self.async_show_menu(
             step_id="integrations",
             menu_options=self._integrations_menu(),
@@ -520,6 +547,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "status_waste": waste,
                 "status_battery_notes": notes,
                 "status_whatsapp": whatsapp,
+                "status_telegram": telegram,
             },
         )
 
@@ -762,6 +790,79 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             errors=errors,
         )
 
+    def _messenger_senders(
+        self,
+        user_input: dict[str, Any],
+        field: str,
+        enabled: str,
+        parse: Callable[[str], tuple[dict[str, str], list[str]]],
+        hint: dict[str, str],
+    ) -> tuple[dict[str, str] | None, str]:
+        """Read the allowed senders of a messenger page.
+
+        Return the senders with their person entity, or None with "invalid" or
+        "missing" as the reason the form is shown again.
+        """
+        senders, bad = parse(str(user_input.get(field) or ""))
+        unknown = [
+            person
+            for person in senders.values()
+            if resolve_person(self.hass, person) is None
+        ]
+        if bad or unknown:
+            hint["hint"] = self._text("⚠️ Nicht erkannt: ", "⚠️ Not recognised: ") + (
+                ", ".join([*bad, *unknown])
+            )
+            return None, "invalid"
+        if user_input.get(enabled) and not senders:
+            return None, "missing"
+        return {
+            sender: resolve_person(self.hass, person) or person
+            for sender, person in senders.items()
+        }, ""
+
+    def _messenger_schema(
+        self,
+        values: dict[str, Any],
+        categories: list[str],
+        keys: tuple[str, str, str, str, str],
+        senders_text: str,
+    ) -> dict[Any, Any]:
+        """Return the fields every messenger page shares."""
+        enabled, senders, category, prefix, reply = keys
+        return {
+            vol.Required(
+                enabled, default=bool(values.get(enabled))
+            ): selector.BooleanSelector(),
+            vol.Optional(
+                senders, description={"suggested_value": senders_text}
+            ): selector.TextSelector(selector.TextSelectorConfig(multiline=True)),
+            vol.Optional(
+                category, description=_suggested(values, category)
+            ): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=categories,
+                    custom_value=True,
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                )
+            ),
+            vol.Optional(
+                prefix, description=_suggested(values, prefix)
+            ): selector.TextSelector(),
+            vol.Required(
+                reply, default=bool(values.get(reply, True))
+            ): selector.BooleanSelector(),
+        }
+
+    def _unknown_hint(self, source: str) -> str:
+        """Name who last wrote without being allowed, to copy the id from."""
+        if not (sender := last_unknown_sender(self.hass, source)):
+            return ""
+        return self._text(
+            f"ℹ️ Zuletzt geschrieben, aber nicht erlaubt: `{sender}`",
+            f"ℹ️ Last wrote without being allowed: `{sender}`",
+        )
+
     async def async_step_whatsapp(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
@@ -771,29 +872,24 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         store = await self._async_store()
         options = dict(self.config_entry.options or self.config_entry.data)
         errors: dict[str, str] = {}
-        placeholders = {"lines": ""}
+        placeholders = {"hint": self._unknown_hint(SOURCE_WHATSAPP)}
         if user_input is not None:
-            senders, bad = parse_senders(str(user_input.get(CONF_WHATSAPP_SENDERS) or ""))
-            unknown = [
-                person
-                for person in senders.values()
-                if resolve_person(self.hass, person) is None
-            ]
-            if bad or unknown:
+            senders, reason = self._messenger_senders(
+                user_input,
+                CONF_WHATSAPP_SENDERS,
+                CONF_WHATSAPP_ENABLED,
+                whatsapp_parse_senders,
+                placeholders,
+            )
+            if reason == "invalid":
                 errors[CONF_WHATSAPP_SENDERS] = "whatsapp_senders_invalid"
-                placeholders["lines"] = self._text(
-                    "⚠️ Nicht erkannt: ", "⚠️ Not recognised: "
-                ) + ", ".join([*bad, *unknown])
-            elif user_input.get(CONF_WHATSAPP_ENABLED) and not senders:
+            elif reason == "missing":
                 errors[CONF_WHATSAPP_SENDERS] = "whatsapp_senders_missing"
             else:
                 options[CONF_WHATSAPP_ENABLED] = bool(
                     user_input.get(CONF_WHATSAPP_ENABLED)
                 )
-                options[CONF_WHATSAPP_SENDERS] = {
-                    number: resolve_person(self.hass, person) or person
-                    for number, person in senders.items()
-                }
+                options[CONF_WHATSAPP_SENDERS] = senders
                 for key in (
                     CONF_WHATSAPP_CATEGORY,
                     CONF_WHATSAPP_PREFIX,
@@ -808,57 +904,101 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         values = {**options, **(user_input or {})}
         senders_text = values.get(CONF_WHATSAPP_SENDERS) or ""
         if isinstance(senders_text, dict):
-            senders_text = format_senders(senders_text)
-        categories = list(store.categories)
-        schema: dict[Any, Any] = {
-            vol.Required(
-                CONF_WHATSAPP_ENABLED, default=bool(values.get(CONF_WHATSAPP_ENABLED))
-            ): selector.BooleanSelector(),
-            vol.Optional(
-                CONF_WHATSAPP_SENDERS, description={"suggested_value": senders_text}
-            ): selector.TextSelector(selector.TextSelectorConfig(multiline=True)),
-            vol.Optional(
+            senders_text = whatsapp_format_senders(senders_text)
+        schema = self._messenger_schema(
+            values,
+            list(store.categories),
+            (
+                CONF_WHATSAPP_ENABLED,
+                CONF_WHATSAPP_SENDERS,
                 CONF_WHATSAPP_CATEGORY,
-                description=_suggested(values, CONF_WHATSAPP_CATEGORY),
-            ): selector.SelectSelector(
-                selector.SelectSelectorConfig(
-                    options=categories,
-                    custom_value=True,
-                    mode=selector.SelectSelectorMode.DROPDOWN,
-                )
-            ),
-            vol.Optional(
                 CONF_WHATSAPP_PREFIX,
-                description=_suggested(values, CONF_WHATSAPP_PREFIX),
-            ): selector.TextSelector(),
-            vol.Required(
-                CONF_WHATSAPP_REPLY, default=bool(values.get(CONF_WHATSAPP_REPLY, True))
-            ): selector.BooleanSelector(),
-            vol.Optional(
-                CONF_WHATSAPP_EVENT,
-                description={
-                    "suggested_value": values.get(CONF_WHATSAPP_EVENT)
-                    or DEFAULT_WHATSAPP_EVENT
-                },
-            ): selector.TextSelector(),
-            vol.Optional(
-                CONF_WHATSAPP_TEXT_FIELD,
-                description=_suggested(values, CONF_WHATSAPP_TEXT_FIELD),
-            ): selector.TextSelector(),
-            vol.Optional(
-                CONF_WHATSAPP_SENDER_FIELD,
-                description=_suggested(values, CONF_WHATSAPP_SENDER_FIELD),
-            ): selector.TextSelector(),
-            vol.Optional(
-                CONF_WHATSAPP_REPLY_SERVICE,
-                description={
-                    "suggested_value": values.get(CONF_WHATSAPP_REPLY_SERVICE)
-                    or DEFAULT_WHATSAPP_REPLY_SERVICE
-                },
-            ): selector.TextSelector(),
-        }
+                CONF_WHATSAPP_REPLY,
+            ),
+            senders_text,
+        )
+        schema.update(
+            {
+                vol.Optional(
+                    CONF_WHATSAPP_EVENT,
+                    description={
+                        "suggested_value": values.get(CONF_WHATSAPP_EVENT)
+                        or DEFAULT_WHATSAPP_EVENT
+                    },
+                ): selector.TextSelector(),
+                vol.Optional(
+                    CONF_WHATSAPP_TEXT_FIELD,
+                    description=_suggested(values, CONF_WHATSAPP_TEXT_FIELD),
+                ): selector.TextSelector(),
+                vol.Optional(
+                    CONF_WHATSAPP_SENDER_FIELD,
+                    description=_suggested(values, CONF_WHATSAPP_SENDER_FIELD),
+                ): selector.TextSelector(),
+                vol.Optional(
+                    CONF_WHATSAPP_REPLY_SERVICE,
+                    description={
+                        "suggested_value": values.get(CONF_WHATSAPP_REPLY_SERVICE)
+                        or DEFAULT_WHATSAPP_REPLY_SERVICE
+                    },
+                ): selector.TextSelector(),
+            }
+        )
         return self.async_show_form(
             step_id="whatsapp",
+            data_schema=vol.Schema(_with_back(schema)),
+            errors=errors,
+            description_placeholders=placeholders,
+        )
+
+    async def async_step_telegram_bot(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Add the Telegram messages of known users as notes."""
+        if user_input is not None and user_input.pop(BACK_FIELD, False):
+            return await self.async_step_integrations()
+        store = await self._async_store()
+        options = dict(self.config_entry.options or self.config_entry.data)
+        errors: dict[str, str] = {}
+        placeholders = {"hint": self._unknown_hint(SOURCE_TELEGRAM)}
+        if user_input is not None:
+            senders, reason = self._messenger_senders(
+                user_input,
+                CONF_TELEGRAM_SENDERS,
+                CONF_TELEGRAM_ENABLED,
+                telegram_parse_senders,
+                placeholders,
+            )
+            if reason == "invalid":
+                errors[CONF_TELEGRAM_SENDERS] = "telegram_senders_invalid"
+            elif reason == "missing":
+                errors[CONF_TELEGRAM_SENDERS] = "telegram_senders_missing"
+            else:
+                options[CONF_TELEGRAM_ENABLED] = bool(
+                    user_input.get(CONF_TELEGRAM_ENABLED)
+                )
+                options[CONF_TELEGRAM_SENDERS] = senders
+                for key in (CONF_TELEGRAM_CATEGORY, CONF_TELEGRAM_PREFIX):
+                    options[key] = str(user_input.get(key) or "").strip()
+                options[CONF_TELEGRAM_REPLY] = bool(user_input.get(CONF_TELEGRAM_REPLY))
+                return await self._async_saved(options, "integrations")
+        values = {**options, **(user_input or {})}
+        senders_text = values.get(CONF_TELEGRAM_SENDERS) or ""
+        if isinstance(senders_text, dict):
+            senders_text = telegram_format_senders(senders_text)
+        schema = self._messenger_schema(
+            values,
+            list(store.categories),
+            (
+                CONF_TELEGRAM_ENABLED,
+                CONF_TELEGRAM_SENDERS,
+                CONF_TELEGRAM_CATEGORY,
+                CONF_TELEGRAM_PREFIX,
+                CONF_TELEGRAM_REPLY,
+            ),
+            senders_text,
+        )
+        return self.async_show_form(
+            step_id="telegram_bot",
             data_schema=vol.Schema(_with_back(schema)),
             errors=errors,
             description_placeholders=placeholders,

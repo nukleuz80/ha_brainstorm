@@ -274,6 +274,22 @@ Since v1.14.0. Always shown, as WhatsApp bridges work in many ways. A WhatsApp b
 - **Own messages** (fields like `fromMe`) are ignored, so a reply never becomes a note.
 - The note belongs to the Home Assistant user of the person, so privacy works as for notes typed in by them. As source the card shows the original WhatsApp logo with *WhatsApp* and the name of the person (v1.14.1).
 
+### Brainstorm › 🔗 Connected integrations › ✈️ Telegram
+
+Since v1.15.0. Shown once the [Telegram bot](https://www.home-assistant.io/integrations/telegram_bot/) integration is set up. Every line of a message from an allowed Telegram user to your bot becomes a note of the person the user belongs to, and the bot confirms it as a reply in the same chat.
+
+| Field | What it does |
+| :--- | :--- |
+| Notes by Telegram | Switches it on (default off). |
+| Allowed Telegram users | One Telegram user id per line with its person, such as `123456789 = person.jan`; the person may also be written by name. The id of a group (with a minus, such as `-1001234567890`) allows everyone in it. Messages from others are ignored. |
+| Category | Empty sorts the notes like typed ones, a category named at the start of the text included. |
+| Keyword | Optional: only messages starting with this word become notes, such as *Note: milk*. Commands always work. |
+| Confirm with a reply | The bot answers *✅ Noted in Shopping: Milk* (default on), through the same bot when several are set up. |
+
+- **Commands:** `/note`, `/notiz`, `/idea` and `/idee` add a note without the keyword, such as `/notiz Milch kaufen`; `/note@my_bot` works in groups. Other commands are left alone, so your own automations keep them.
+- **Finding the id:** write to the bot once. Brainstorm leaves the message out and the page then shows *ℹ️ Last wrote without being allowed: `123456789 (Jan)`*, ready to copy. The same works on the WhatsApp page.
+- The bot itself only takes messages from the chats allowed in the Telegram bot integration. As source the card shows the Telegram logo with *Telegram* and the name of the person.
+
 ### Brainstorm › 🔗 Connected integrations › 🛒 Bring!
 
 Only shown when the [Bring!](https://www.home-assistant.io/integrations/bring/) integration is set up. All your Bring lists land in one category: each list becomes a main note, and its items become its subtasks.

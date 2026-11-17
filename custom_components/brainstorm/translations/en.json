@@ -413,6 +413,7 @@
           "waste_collection_schedule": "🗑️ Waste calendar",
           "battery_notes": "🔋 Battery Notes",
           "whatsapp": "💬 WhatsApp",
+          "telegram_bot": "✈️ Telegram",
           "init": "⬅️ Back",
           "close": "✅ Done"
         },
@@ -422,7 +423,8 @@
           "local_todo": "{status_local_todo}",
           "waste_collection_schedule": "{status_waste}",
           "battery_notes": "{status_battery_notes}",
-          "whatsapp": "{status_whatsapp}"
+          "whatsapp": "{status_whatsapp}",
+          "telegram_bot": "{status_telegram}"
         }
       },
       "choreops": {
@@ -653,7 +655,7 @@
       },
       "whatsapp": {
         "title": "Brainstorm › 🔗 Connected integrations › 💬 WhatsApp",
-        "description": "Turns WhatsApp messages into notes. A WhatsApp bridge, such as the integration ha-whatsapp, fires an event for every message it receives; Brainstorm adds every line of a message from a known number as a note of the person the number belongs to and confirms it with a reply. Other bridges work as well: set their event and, if needed, their fields.\n\n{lines}",
+        "description": "Turns WhatsApp messages into notes. A WhatsApp bridge, such as the integration ha-whatsapp, fires an event for every message it receives; Brainstorm adds every line of a message from a known number as a note of the person the number belongs to and confirms it with a reply. Other bridges work as well: set their event and, if needed, their fields.\n\n{hint}",
         "data": {
           "whatsapp_enabled": "Notes by WhatsApp",
           "whatsapp_senders": "Allowed numbers",
@@ -678,6 +680,26 @@
           "whatsapp_reply_service": "Called with `target` and `message`, `whatsapp.send_message` for ha-whatsapp.",
           "go_back": "Returns to the previous page without saving this form."
         }
+      },
+      "telegram_bot": {
+        "title": "Brainstorm › 🔗 Connected integrations › ✈️ Telegram",
+        "description": "Turns messages to your Telegram bot into notes. Every line of a message from an allowed Telegram user becomes a note of the person the user belongs to, and the bot confirms it in the same chat. The commands `/note` and `/notiz` add a note without the keyword, such as `/note buy milk`.\n\nThe id of a Telegram user appears below once they wrote to the bot without being allowed.\n\n{hint}",
+        "data": {
+          "telegram_enabled": "Notes by Telegram",
+          "telegram_senders": "Allowed Telegram users",
+          "telegram_category": "Category",
+          "telegram_prefix": "Keyword",
+          "telegram_reply": "Confirm with a reply",
+          "go_back": "⬅️ Back without saving"
+        },
+        "data_description": {
+          "telegram_enabled": "Adds the messages of the allowed users as notes.",
+          "telegram_senders": "One Telegram user id per line with its person, such as `123456789 = person.jan`. The id of a group, starting with a minus, allows everyone in it. Messages from others are ignored.",
+          "telegram_category": "Empty sorts every note like a typed one, a category named at the start of the text included.",
+          "telegram_prefix": "Optional: only messages starting with this word become notes, such as *Note*. The word itself is left out. Commands like `/note` always work.",
+          "telegram_reply": "The bot answers what was noted and where, as a reply to the message.",
+          "go_back": "Returns to the previous page without saving this form."
+        }
       }
     },
     "error": {
@@ -698,7 +720,9 @@
       "bring_list_unknown": "The default Bring list is not synced with Brainstorm.",
       "battery_bring_nothing": "No open battery task with a battery type from Battery Notes.",
       "whatsapp_senders_invalid": "Write one number per line with an existing person, such as +49 171 1234567 = person.jan.",
-      "whatsapp_senders_missing": "Enter at least one allowed number."
+      "whatsapp_senders_missing": "Enter at least one allowed number.",
+      "telegram_senders_invalid": "Write one Telegram id per line with an existing person, such as 123456789 = person.jan.",
+      "telegram_senders_missing": "Enter at least one allowed Telegram user."
     },
     "abort": {
       "store_not_ready": "Brainstorm is reloading. Please open the settings again in a few seconds."

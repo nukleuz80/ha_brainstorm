@@ -61,7 +61,8 @@ def test_numbers_are_compared_without_their_form() -> None:
 def test_senders_are_read_from_lines() -> None:
     """One number per line, "=" or ":" before the person, bad lines reported."""
     senders, bad = parse_senders(
-        "+49 171 1234567 = person.jan\n\n0049 160 7654321: Anna Beispiel\nkaputt\n12 = x"
+        "+49 171 1234567 = person.jan\n\n"
+        "0049 160 7654321: Anna Beispiel\nkaputt\n12 = x"
     )
     assert senders == {JAN: "person.jan", "491607654321": "Anna Beispiel"}
     assert bad == ["kaputt", "12 = x"]
@@ -214,7 +215,7 @@ async def test_settings_page(
         {"whatsapp_enabled": True, "whatsapp_senders": "+49 171 1234567 = Niemand"},
     )
     assert result["errors"] == {"whatsapp_senders": "whatsapp_senders_invalid"}
-    assert "Niemand" in result["description_placeholders"]["lines"]
+    assert "Niemand" in result["description_placeholders"]["hint"]
     result = await hass.config_entries.options.async_configure(
         flow_id, {"whatsapp_enabled": True, "whatsapp_reply": True}
     )

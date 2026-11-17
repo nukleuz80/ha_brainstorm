@@ -9,7 +9,7 @@
 [![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.14.1-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.15.0-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![Wiki](https://img.shields.io/badge/Docs-Wiki-6f42c1.svg)](https://github.com/nukleuz80/ha_brainstorm/wiki)
@@ -96,6 +96,7 @@
 - **Tasks from sensors:** a filter after 300 operating hours, a plant that is too dry, a finished washing machine or a low battery becomes a task that ticks itself off. → [Settings](https://github.com/nukleuz80/ha_brainstorm/wiki/Settings#brainstorm---sensor-tasks)
 - **🗑️ Waste calendar:** on the evening before every pickup from Waste Collection Schedule, *🟡 Put out: Recycling* appears and ticks itself off afterwards, optionally taking turns between the kids with ChoreOps points. → [Settings](https://github.com/nukleuz80/ha_brainstorm/wiki/Settings#brainstorm---connected-integrations---waste-calendar)
 - **💬 Notes by WhatsApp:** a message to a WhatsApp bridge such as ha-whatsapp becomes a note of the person the number belongs to, every line a note of its own, confirmed by a reply. → [Settings](https://github.com/nukleuz80/ha_brainstorm/wiki/Settings#brainstorm---connected-integrations---whatsapp)
+- **✈️ Notes by Telegram:** a message or `/note …` to your Home Assistant Telegram bot becomes a note of the person who wrote it, confirmed by the bot. → [Settings](https://github.com/nukleuz80/ha_brainstorm/wiki/Settings#brainstorm---connected-integrations---telegram)
 - Automatic **Markdown export** for Obsidian, Logseq or Nextcloud; JSON export and import; automatic cleanup of done entries; deleted notes stay in the 🗑️ trash for 30 days. → [Import, Export & Storage](https://github.com/nukleuz80/ha_brainstorm/wiki/Import-Export-and-Storage)
 
 ---
@@ -263,11 +264,11 @@ The latest versions; every version is in [CHANGELOG.md](CHANGELOG.md).
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.15.0`** | 2026-11-17 | **✈️ Notes by Telegram.** New page *🔗 Connected integrations › ✈️ Telegram*, shown once the Telegram bot integration is set up: every line of a message from an allowed Telegram user (or group) becomes a note of their person, and the bot confirms it as a reply in the same chat. `/note`, `/notiz`, `/idea` and `/idee` add a note without the keyword. Both messenger pages now show who last wrote without being allowed, to copy the id from. The cards show the Telegram logo as source. |
 | **`v1.14.1`** | 2026-11-17 | **💬 Original WhatsApp logo.** Notes from WhatsApp show the original WhatsApp logo as source in the card instead of 💬. |
 | **`v1.14.0`** | 2026-11-17 | **💬 Notes by WhatsApp.** New page *🔗 Connected integrations › 💬 WhatsApp*: a message from an allowed number to a WhatsApp bridge becomes a note of the person the number belongs to, every line a note of its own, optionally only after a keyword. A reply confirms what was noted where. Works out of the box with ha-whatsapp (`whatsapp_message_received`, `whatsapp.send_message`); for other bridges the event, the fields of text and sender and the reply action can be set. Unknown numbers and own messages are ignored. The cards show *💬 WhatsApp* as source. |
 | **`v1.13.24`** | 2026-11-17 | **🐞 No more duplicate battery tasks.** When several battery sensors of one device reported at the same moment (for example a device with Battery Notes sensors), each could add its own task, so *Change battery* showed up two to four times. Brainstorm now checks one battery at a time. Duplicates left by older versions are ticked off at the next start, keeping the oldest task; Battery Notes is not told about a new battery for them. |
 | **`v1.13.23`** | 2026-11-16 | **⏱️ Time tracking and timeline.** New stopwatch in the menu of a note (*⏱️ Start stopwatch* / *⏹️ Stop stopwatch*): each person runs one at a time, ticking off or archiving stops it, a forgotten one counts 12 hours at most. Notes show their tracked time as ⏱️ badge in both cards. The 📊 Statistics add the tracked time per category and the top notes, plus a Gantt chart *📊 Timeline* with one bar per note from the first work to the due date. New service `brainstorm.track_time`. |
-| **`v1.13.22`** | 2026-11-16 | **🔗 Calmer main menu.** The logos of the connected integrations are no longer shown above the main menu of the settings; the entry *🔗 Connected integrations* still shows 🟢 for connected and ⚪ (grey) for not connected ones. The logos stay on its own page. |
 
 ---
 

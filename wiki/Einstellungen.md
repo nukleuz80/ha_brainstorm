@@ -274,6 +274,22 @@ Seit v1.14.0. Immer sichtbar, da WhatsApp-Bridges ganz unterschiedlich laufen. E
 - **Eigene Nachrichten** (Felder wie `fromMe`) werden ignoriert, eine Antwort wird also nie zur Notiz.
 - Die Notiz gehört dem Home-Assistant-Benutzer der Person, die Privatsphäre wirkt also wie bei selbst getippten Notizen. Als Quelle zeigt die Karte das Original-WhatsApp-Logo mit *WhatsApp* und dem Namen der Person (v1.14.1).
 
+### Brainstorm › 🔗 Verbundene Integrationen › ✈️ Telegram
+
+Seit v1.15.0. Erscheint, sobald die Integration [Telegram bot](https://www.home-assistant.io/integrations/telegram_bot/) eingerichtet ist. Jede Zeile einer Nachricht von einem erlaubten Telegram-Benutzer an deinen Bot wird eine Notiz der Person, der der Benutzer gehört, und der Bot bestätigt sie als Antwort im selben Chat.
+
+| Feld | Was es bewirkt |
+| :--- | :--- |
+| Notizen per Telegram | Schaltet es ein (Standard aus). |
+| Erlaubte Telegram-Benutzer | Eine Telegram-Benutzer-ID pro Zeile mit ihrer Person, etwa `123456789 = person.jan`; die Person darf auch mit Namen dastehen. Die ID einer Gruppe (mit Minus, etwa `-1001234567890`) erlaubt alle darin. Nachrichten anderer werden ignoriert. |
+| Kategorie | Leer ordnet die Notizen wie getippte ein, auch nach einer Kategorie am Anfang des Textes. |
+| Stichwort | Optional: Nur Nachrichten, die mit diesem Wort beginnen, werden zu Notizen, etwa *Notiz: Milch*. Befehle gehen immer. |
+| Mit einer Antwort bestätigen | Der Bot antwortet *✅ Notiert in Einkauf: Milch* (Standard an), bei mehreren Bots über denselben. |
+
+- **Befehle:** `/notiz`, `/note`, `/idee` und `/idea` legen eine Notiz auch ohne Stichwort an, etwa `/notiz Milch kaufen`; in Gruppen geht `/notiz@mein_bot`. Andere Befehle bleiben unberührt, deine eigenen Automationen behalten sie.
+- **ID finden:** Schreib dem Bot einmal. Brainstorm lässt die Nachricht weg, und die Seite zeigt danach *ℹ️ Zuletzt geschrieben, aber nicht erlaubt: `123456789 (Jan)`* zum Kopieren. Dasselbe gilt auf der WhatsApp-Seite.
+- Der Bot selbst nimmt nur Nachrichten aus den Chats an, die in der Telegram-Bot-Integration erlaubt sind. Als Quelle zeigt die Karte das Telegram-Logo mit *Telegram* und dem Namen der Person.
+
 ### Brainstorm › 🔗 Verbundene Integrationen › 🛒 Bring!
 
 Erscheint nur, wenn die Integration [Bring!](https://www.home-assistant.io/integrations/bring/) eingerichtet ist. Alle Bring-Listen landen in einer Kategorie: Jede Liste wird eine Hauptnotiz, ihre Artikel werden zu Unteraufgaben.
