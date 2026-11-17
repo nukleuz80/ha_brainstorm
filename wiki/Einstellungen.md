@@ -272,7 +272,7 @@ Seit v1.14.0. Immer sichtbar, da WhatsApp-Bridges ganz unterschiedlich laufen. E
 
 - **Mehrere Zeilen** werden mehrere Notizen (höchstens 20), Aufzählungszeichen wie `-` oder `•` fallen weg.
 - **Eigene Nachrichten** (Felder wie `fromMe`) werden ignoriert, eine Antwort wird also nie zur Notiz.
-- Die Notiz gehört dem Home-Assistant-Benutzer der Person, die Privatsphäre wirkt also wie bei selbst getippten Notizen. Als Quelle zeigt die Karte *💬 WhatsApp* mit dem Namen der Person.
+- Die Notiz gehört dem Home-Assistant-Benutzer der Person, die Privatsphäre wirkt also wie bei selbst getippten Notizen. Als Quelle zeigt die Karte das Original-WhatsApp-Logo mit *WhatsApp* und dem Namen der Person (v1.14.1).
 
 ### Brainstorm › 🔗 Verbundene Integrationen › 🛒 Bring!
 

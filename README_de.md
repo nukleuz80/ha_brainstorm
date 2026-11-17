@@ -9,7 +9,7 @@
 [![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.14.0-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.14.1-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![Wiki](https://img.shields.io/badge/Doku-Wiki-6f42c1.svg)](https://github.com/nukleuz80/ha_brainstorm/wiki)
@@ -263,11 +263,11 @@ Die letzten Versionen; alle stehen in [CHANGELOG_de.md](CHANGELOG_de.md).
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.14.1`** | 17.11.2026 | **💬 Original-WhatsApp-Logo.** Notizen aus WhatsApp zeigen als Quelle in der Karte das Original-WhatsApp-Logo statt 💬. |
 | **`v1.14.0`** | 17.11.2026 | **💬 Notizen per WhatsApp.** Neue Seite *🔗 Verbundene Integrationen › 💬 WhatsApp*: Eine Nachricht von einer erlaubten Nummer an eine WhatsApp-Bridge wird zur Notiz der Person, der die Nummer gehört, jede Zeile eine eigene, auf Wunsch nur nach einem Stichwort. Eine Antwort bestätigt, was wo notiert wurde. Läuft direkt mit ha-whatsapp (`whatsapp_message_received`, `whatsapp.send_message`); für andere Bridges lassen sich Ereignis, Felder für Text und Absender und die Antwort-Aktion einstellen. Unbekannte Nummern und eigene Nachrichten werden ignoriert. Die Karten zeigen *💬 WhatsApp* als Quelle. |
 | **`v1.13.24`** | 17.11.2026 | **🐞 Keine doppelten Batterie-Aufgaben mehr.** Meldeten mehrere Batterie-Sensoren eines Geräts im selben Moment (etwa ein Gerät mit Battery-Notes-Sensoren), konnte jeder eine eigene Aufgabe anlegen, sodass *Batterie wechseln* zwei- bis viermal erschien. Brainstorm prüft jetzt eine Batterie nach der anderen. Doppelte Aufgaben aus älteren Versionen hakt der nächste Start ab, die älteste bleibt; Battery Notes erfährt dabei nichts von einer neuen Batterie. |
 | **`v1.13.23`** | 16.11.2026 | **⏱️ Zeiterfassung und Zeitplan.** Neue Stoppuhr im Menü einer Notiz (*⏱️ Stoppuhr starten* / *⏹️ Stoppuhr anhalten*): jede Person hat eine laufende, Abhaken oder Archivieren hält sie an, eine vergessene zählt höchstens 12 Stunden. Notizen zeigen ihre erfasste Zeit als ⏱️-Abzeichen in beiden Karten. Die 📊 Statistik zeigt die Zeit pro Kategorie und die Notizen mit der meisten Zeit, dazu ein Gantt-Diagramm *📊 Zeitplan* mit einem Balken pro Notiz vom ersten Arbeiten bis zum Termin. Neuer Dienst `brainstorm.track_time`. |
 | **`v1.13.22`** | 16.11.2026 | **🔗 Ruhigeres Hauptmenü.** Die Logos der verbundenen Integrationen stehen nicht mehr über dem Hauptmenü der Einstellungen; der Eintrag *🔗 Verbundene Integrationen* zeigt weiter 🟢 für verbundene und ⚪ (grau) für nicht verbundene. Auf der Unterseite bleiben die Logos. |
-| **`v1.13.21`** | 16.11.2026 | **📥 Import aus Trello, Todoist und Miro.** *Gliederung einfügen* in der Mindmap liest jetzt auch ein Trello-Board (JSON-Export: Listen werden Hauptnotizen, Karten Notizen darunter, Checklisten Unteraufgaben; Beschreibung, Fälligkeit und Erledigt kommen mit, Archiviertes bleibt draußen) und CSV-Tabellen: einen Todoist-Export (Abschnitte, Einrückung, Priorität p1–p3, Datum, Kommentare als Beschreibung) und beliebige Tabellen aus Miro, Excel oder Trello mit Spalten wie Titel, Beschreibung, Liste, Fällig, Priorität, Erledigt; ohne solche Spalten wird jede Spalte ein Zweig mit ihren Zellen. Große Trello-Exporte schrumpft die Karte vor dem Senden. Der Dienst `import_outline` kennt die Formate `trello` und `csv`. |
 
 ---
 

@@ -272,7 +272,7 @@ Since v1.14.0. Always shown, as WhatsApp bridges work in many ways. A WhatsApp b
 
 - **Several lines** become several notes (at most 20), list signs like `-` or `•` are dropped.
 - **Own messages** (fields like `fromMe`) are ignored, so a reply never becomes a note.
-- The note belongs to the Home Assistant user of the person, so privacy works as for notes typed in by them. As source the card shows *💬 WhatsApp* with the name of the person.
+- The note belongs to the Home Assistant user of the person, so privacy works as for notes typed in by them. As source the card shows the original WhatsApp logo with *WhatsApp* and the name of the person (v1.14.1).
 
 ### Brainstorm › 🔗 Connected integrations › 🛒 Bring!
 
