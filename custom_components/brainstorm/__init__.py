@@ -122,6 +122,7 @@ from .reminders import ReminderManager, build_reminder_request, find_mentions
 from .repairs import async_check_issues, async_delete_issues
 from .sensor_rules import SensorRuleWatcher
 from .waste import WasteWatcher
+from .mail import MailWatcher
 from .telegram import TelegramWatcher
 from .whatsapp import WhatsAppWatcher
 from .store import BrainstormConfigEntry, BrainstormStore, get_loaded_store
@@ -563,6 +564,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) -
     telegram = TelegramWatcher(hass, store, {**entry.data, **entry.options})
     await telegram.async_start()
     entry.async_on_unload(telegram.async_stop)
+
+    mail = MailWatcher(hass, store, {**entry.data, **entry.options})
+    await mail.async_start()
+    entry.async_on_unload(mail.async_stop)
 
     attachment_cleaner = AttachmentCleaner(hass, store)
     attachment_cleaner.async_start()

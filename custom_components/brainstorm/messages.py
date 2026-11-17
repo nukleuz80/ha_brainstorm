@@ -217,15 +217,14 @@ class MessageWatcher:
                 self.hass.data.setdefault(DATA_UNKNOWN_SENDERS, {})[self.source] = label
                 _LOGGER.info("%s message from %s left out", self.name, label)
             return []
-        text, command = self.text_of(data)
-        texts = self.note_texts(text, command)
-        if not texts:
+        notes = await self.async_notes(data)
+        if not notes:
             return []
         person_entity = resolve_person(self.hass, person)
         state = self.hass.states.get(person_entity) if person_entity else None
         context = Context(user_id=state.attributes.get("user_id") if state else None)
         added: list[dict[str, Any]] = []
-        for line in texts:
+        for line, description in notes:
             try:
                 added.append(
                     await self.store.async_add_idea(
@@ -235,10 +234,13 @@ class MessageWatcher:
                         device=str(state.name) if state is not None else person,
                         context=context,
                         spoken=False,
+                        description=description,
                     )
                 )
             except HomeAssistantError as err:
                 _LOGGER.warning("%s note %r not added: %s", self.name, line, err)
+        if added:
+            await self.async_after_notes(data)
         if added and self.reply:
             pack = get_pack(self.hass.config.language)
             message = "\n".join(
@@ -251,6 +253,16 @@ class MessageWatcher:
             )
             await self.async_send_reply(data, message)
         return [str(idea.get("text") or "") for idea in added]
+
+    async def async_notes(
+        self, data: Mapping[str, Any]
+    ) -> list[tuple[str, str | None]]:
+        """Return the notes of a message with their descriptions."""
+        text, command = self.text_of(data)
+        return [(line, None) for line in self.note_texts(text, command)]
+
+    async def async_after_notes(self, data: Mapping[str, Any]) -> None:
+        """Act on a message once its notes were added, such as marking it read."""
 
     async def async_call_reply(self, action: str, service_data: dict[str, Any]) -> None:
         """Call the action of a reply, a missing or failing one only logged."""

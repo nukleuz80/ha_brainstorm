@@ -290,6 +290,24 @@ Seit v1.15.0. Erscheint, sobald die Integration [Telegram bot](https://www.home-
 - **ID finden:** Schreib dem Bot einmal. Brainstorm lässt die Nachricht weg, und die Seite zeigt danach *ℹ️ Zuletzt geschrieben, aber nicht erlaubt: `123456789 (Jan)`* zum Kopieren. Dasselbe gilt auf der WhatsApp-Seite.
 - Der Bot selbst nimmt nur Nachrichten aus den Chats an, die in der Telegram-Bot-Integration erlaubt sind. Als Quelle zeigt die Karte das Telegram-Logo mit *Telegram* und dem Namen der Person.
 
+### Brainstorm › 🔗 Verbundene Integrationen › 📧 Mail
+
+Seit v1.16.0. Erscheint, sobald die Integration [IMAP](https://www.home-assistant.io/integrations/imap/) eingerichtet ist. Eine neue Mail von einer erlaubten Adresse wird eine Notiz der Person, der die Adresse gehört: Der Betreff ist ihr Text, der Inhalt ihre Beschreibung.
+
+| Feld | Was es bewirkt |
+| :--- | :--- |
+| Notizen per Mail | Schaltet es ein (Standard aus). |
+| Erlaubte Adressen | Eine Adresse pro Zeile mit ihrer Person, etwa `jan@example.com = person.jan`; `Jan <jan@example.com>` geht auch. Mails anderer Adressen bleiben unberührt. |
+| Kategorie | Leer ordnet die Notizen wie getippte ein, auch nach einer Kategorie am Anfang des Betreffs. |
+| Mails erkennen an | Welche Mails eine Notiz in Liste und Mindmap werden (v1.16.0): *Stichwort am Anfang des Betreffs* (Standard, etwa *Notiz: Reifen*), *Stichwort irgendwo im Betreff* (etwa *Reifen (Notiz)*), *Stichwort irgendwo in der Mail* (Betreff oder Text) oder *Jede Mail der erlaubten Adressen*. |
+| Stichwort | Das Wort, an dem eine Mail erkannt wird, etwa *Notiz*; empfohlen, damit normale Mails desselben Absenders Mails bleiben. Es fällt aus der Notiz weg. Leer zählt jede Mail. |
+| Mail als gelesen markieren | Markiert eine Mail, die zur Notiz wurde, als gelesen (Standard an), über `imap.seen`. |
+| Aktion für die Antwort | Optional: eine Benachrichtigungs-Aktion, etwa die von [SMTP](https://www.home-assistant.io/integrations/smtp/). Sie bekommt `message`, `title` *Brainstorm* und den Absender als `target`. Leer schickt keine Antwort. |
+
+- **Betreff:** *AW:*, *Re:*, *WG:* und *Fwd:* davor fallen weg. Eine Mail ohne Betreff nimmt die erste Zeile ihres Inhalts als Notiz.
+- **Inhalt:** Zitierte Zeilen (`>`), alles nach der Signatur (`-- `), nach *Am … schrieb …:* oder *-----Ursprüngliche Nachricht-----* fällt weg; höchstens 2000 Zeichen. Schickt die IMAP-Integration den Text nicht im Ereignis mit, liest Brainstorm ihn mit `imap.fetch`.
+- Die IMAP-Integration meldet nur Mails, die zu ihrer Suche (etwa *UnSeen UnDeleted*) in ihrem Ordner passen. Eine erneut gemeldete Mail wird nicht doppelt notiert. Als Quelle zeigt die Karte *📧 Mail* mit dem Namen der Person.
+
 ### Brainstorm › 🔗 Verbundene Integrationen › 🛒 Bring!
 
 Erscheint nur, wenn die Integration [Bring!](https://www.home-assistant.io/integrations/bring/) eingerichtet ist. Alle Bring-Listen landen in einer Kategorie: Jede Liste wird eine Hauptnotiz, ihre Artikel werden zu Unteraufgaben.

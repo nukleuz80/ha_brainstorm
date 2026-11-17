@@ -437,6 +437,30 @@ CONF_TELEGRAM_CATEGORY = "telegram_category"
 CONF_TELEGRAM_PREFIX = "telegram_prefix"
 CONF_TELEGRAM_REPLY = "telegram_reply"
 SOURCE_TELEGRAM = "telegram"
+# Mail: mails the IMAP integration reports become notes
+IMAP_DOMAIN = "imap"
+CONF_MAIL_ENABLED = "mail_enabled"
+# {address in lower case: person}, only these may add notes
+CONF_MAIL_SENDERS = "mail_senders"
+CONF_MAIL_CATEGORY = "mail_category"
+CONF_MAIL_PREFIX = "mail_prefix"
+CONF_MAIL_MARK_SEEN = "mail_mark_seen"
+# A notify action for the reply, such as the one of SMTP; empty sends none
+CONF_MAIL_REPLY_SERVICE = "mail_reply_service"
+SOURCE_MAIL = "mail"
+# What makes a mail a note: its keyword at the start or anywhere in the
+# subject, anywhere in the mail, or every mail of the allowed addresses
+CONF_MAIL_MATCH = "mail_match"
+MAIL_MATCH_SUBJECT_START = "subject_start"
+MAIL_MATCH_SUBJECT = "subject"
+MAIL_MATCH_ANYWHERE = "anywhere"
+MAIL_MATCH_ALL = "all"
+MAIL_MATCHES = (
+    MAIL_MATCH_SUBJECT_START,
+    MAIL_MATCH_SUBJECT,
+    MAIL_MATCH_ANYWHERE,
+    MAIL_MATCH_ALL,
+)
 # The amount or note of an item on a linked list, such as "1,5 l"
 ATTR_SPEC = "spec"
 # Format of the JSON export, raised when its layout changes incompatibly

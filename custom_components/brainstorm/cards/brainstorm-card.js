@@ -1,9 +1,9 @@
-import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, bringBadge, bringSentText, unblockedText, canSendToBring, renderBringSend, canHandOver, canHandOverProject, canMakeReward, choreopsBadge, choreopsRewardBadge, renderChoreHandover, renderChoreProject, renderChoreReward, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, timeBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t, linkedListMark, linkedListOf, linkedListSign, linkedListText, batteriesBringText, batteriesNeeded, calendarBadge, calendarOptions, readCalendar, renderStatistics } from "./brainstorm-i18n.js?v=1.15.0";
+import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, bringBadge, bringSentText, unblockedText, canSendToBring, renderBringSend, canHandOver, canHandOverProject, canMakeReward, choreopsBadge, choreopsRewardBadge, renderChoreHandover, renderChoreProject, renderChoreReward, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, timeBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t, linkedListMark, linkedListOf, linkedListSign, linkedListText, batteriesBringText, batteriesNeeded, calendarBadge, calendarOptions, readCalendar, renderStatistics } from "./brainstorm-i18n.js?v=1.16.0";
 
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.15.0 - Notizen per Telegram
+ * Version 1.16.0 - Notizen per Mail
  */
 // The bulb lies next to this file, wherever Home Assistant serves it from
 const BULB_URL = new URL("./brainstorm-bulb.svg", import.meta.url).href;
@@ -507,6 +507,9 @@ class BrainstormCard extends HTMLElement {
     } else if (s === "waste") {
       icon = "🗑️";
       name = t("Abfallkalender");
+    } else if (s === "mail") {
+      icon = "📧";
+      name = "Mail";
     } else if (s === "telegram") {
       // The original logo, like the one of WhatsApp
       icon = '<img class="source-logo" src="/api/brainstorm/brand/telegram_bot/on.png" alt="" width="14" height="14" style="vertical-align: -2px;">';
@@ -6458,7 +6461,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.15.0 ",
+  "%c BRAINSTORM-CARD %c v1.16.0 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

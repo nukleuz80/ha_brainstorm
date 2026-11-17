@@ -414,6 +414,7 @@
           "battery_notes": "🔋 Battery Notes",
           "whatsapp": "💬 WhatsApp",
           "telegram_bot": "✈️ Telegram",
+          "imap": "📧 Mail",
           "init": "⬅️ Zurück",
           "close": "✅ Fertig"
         },
@@ -424,7 +425,8 @@
           "waste_collection_schedule": "{status_waste}",
           "battery_notes": "{status_battery_notes}",
           "whatsapp": "{status_whatsapp}",
-          "telegram_bot": "{status_telegram}"
+          "telegram_bot": "{status_telegram}",
+          "imap": "{status_mail}"
         }
       },
       "choreops": {
@@ -700,6 +702,30 @@
           "telegram_reply": "Der Bot antwortet, was wo notiert wurde, als Antwort auf die Nachricht.",
           "go_back": "Kehrt ohne Speichern zur vorherigen Seite zurück."
         }
+      },
+      "imap": {
+        "title": "Brainstorm › 🔗 Verbundene Integrationen › 📧 Mail",
+        "description": "Macht aus E-Mails Notizen. Die IMAP-Integration meldet jede neue Mail des überwachten Ordners; eine Mail von einer erlaubten Adresse wird eine Notiz der Person, der die Adresse gehört. Der Betreff ist der Text der Notiz, der Inhalt ihre Beschreibung, ohne zitierte Mails und Signatur. Eine Mail ohne Betreff nimmt die erste Zeile ihres Inhalts.\n\n{hint}",
+        "data": {
+          "mail_enabled": "Notizen per Mail",
+          "mail_senders": "Erlaubte Adressen",
+          "mail_category": "Kategorie",
+          "mail_match": "Mails erkennen an",
+          "mail_prefix": "Stichwort",
+          "mail_mark_seen": "Mail als gelesen markieren",
+          "mail_reply_service": "Aktion für die Antwort",
+          "go_back": "⬅️ Zurück ohne Speichern"
+        },
+        "data_description": {
+          "mail_enabled": "Legt die Mails der erlaubten Adressen als Notizen an.",
+          "mail_senders": "Eine Adresse pro Zeile mit ihrer Person, etwa `jan@example.com = person.jan`. Mails anderer Adressen bleiben unberührt.",
+          "mail_category": "Leer ordnet jede Notiz wie eine getippte ein, auch nach einer Kategorie am Anfang des Betreffs.",
+          "mail_match": "Welche Mails eine Notiz in Liste und Mindmap werden. Mit einem Stichwort unten bleiben normale Mails desselben Absenders Mails.",
+          "mail_prefix": "Das Wort, an dem eine Mail erkannt wird, etwa *Notiz*. Es fällt aus der Notiz weg, *AW:* und *WG:* ebenso. Bei *Jede Mail* ohne Bedeutung.",
+          "mail_mark_seen": "Markiert eine Mail, die zur Notiz wurde, im Postfach als gelesen.",
+          "mail_reply_service": "Optional: eine Benachrichtigungs-Aktion, die zurückschickt, was notiert wurde, etwa die von SMTP. Sie bekommt `message`, `title` und den Absender als `target`. Leer schickt keine Antwort.",
+          "go_back": "Kehrt ohne Speichern zur vorherigen Seite zurück."
+        }
       }
     },
     "error": {
@@ -722,7 +748,9 @@
       "whatsapp_senders_invalid": "Schreibe eine Nummer pro Zeile mit einer vorhandenen Person, etwa +49 171 1234567 = person.jan.",
       "whatsapp_senders_missing": "Trage mindestens eine erlaubte Nummer ein.",
       "telegram_senders_invalid": "Schreibe eine Telegram-ID pro Zeile mit einer vorhandenen Person, etwa 123456789 = person.jan.",
-      "telegram_senders_missing": "Trage mindestens einen erlaubten Telegram-Benutzer ein."
+      "telegram_senders_missing": "Trage mindestens einen erlaubten Telegram-Benutzer ein.",
+      "mail_senders_invalid": "Schreibe eine Adresse pro Zeile mit einer vorhandenen Person, etwa jan@example.com = person.jan.",
+      "mail_senders_missing": "Trage mindestens eine erlaubte Adresse ein."
     },
     "abort": {
       "store_not_ready": "Brainstorm wird gerade neu geladen. Bitte öffne die Einstellungen in ein paar Sekunden noch einmal."
@@ -869,6 +897,14 @@
         "morning": "Morgens",
         "day": "Tagsüber",
         "evening": "Abends"
+      }
+    },
+    "mail_match": {
+      "options": {
+        "subject_start": "Stichwort am Anfang des Betreffs",
+        "subject": "Stichwort irgendwo im Betreff",
+        "anywhere": "Stichwort irgendwo in der Mail (Betreff oder Text)",
+        "all": "Jede Mail der erlaubten Adressen"
       }
     }
   },

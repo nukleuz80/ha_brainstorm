@@ -290,6 +290,24 @@ Since v1.15.0. Shown once the [Telegram bot](https://www.home-assistant.io/integ
 - **Finding the id:** write to the bot once. Brainstorm leaves the message out and the page then shows *ℹ️ Last wrote without being allowed: `123456789 (Jan)`*, ready to copy. The same works on the WhatsApp page.
 - The bot itself only takes messages from the chats allowed in the Telegram bot integration. As source the card shows the Telegram logo with *Telegram* and the name of the person.
 
+### Brainstorm › 🔗 Connected integrations › 📧 Mail
+
+Since v1.16.0. Shown once the [IMAP](https://www.home-assistant.io/integrations/imap/) integration is set up. A new mail from an allowed address becomes one note of the person the address belongs to: the subject is its text, the body its description.
+
+| Field | What it does |
+| :--- | :--- |
+| Notes by mail | Switches it on (default off). |
+| Allowed addresses | One address per line with its person, such as `jan@example.com = person.jan`; `Jan <jan@example.com>` works as well. Mails from other addresses are left alone. |
+| Category | Empty sorts the notes like typed ones, a category named at the start of the subject included. |
+| Recognise mails by | Which mails become a note in the list and the mind map (v1.16.0): *Keyword at the start of the subject* (default, such as *Note: tyres*), *Keyword anywhere in the subject* (such as *Tyres (note)*), *Keyword anywhere in the mail* (subject or text) or *Every mail of the allowed addresses*. |
+| Keyword | The word a mail is recognised by, such as *Note*; recommended, so ordinary mails of the same sender stay mails. It is left out of the note. Empty counts every mail. |
+| Mark the mail as read | Marks a mail that became a note as read (default on), through `imap.seen`. |
+| Action for the reply | Optional: a notify action such as the one of [SMTP](https://www.home-assistant.io/integrations/smtp/). It gets `message`, `title` *Brainstorm* and the sender as `target`. Empty sends no reply. |
+
+- **Subject:** *Re:*, *AW:*, *Fwd:* and *WG:* in front are dropped. A mail without a subject takes the first line of its body as the note.
+- **Body:** quoted lines (`>`), everything after the signature (`-- `), after *On … wrote:* or *-----Original Message-----* is left out; at most 2000 characters. If the IMAP integration does not send the text with its event, Brainstorm reads it with `imap.fetch`.
+- The IMAP integration only reports mails matching its search (such as *UnSeen UnDeleted*) in its folder. A mail reported again is not noted twice. As source the card shows *📧 Mail* with the name of the person.
+
 ### Brainstorm › 🔗 Connected integrations › 🛒 Bring!
 
 Only shown when the [Bring!](https://www.home-assistant.io/integrations/bring/) integration is set up. All your Bring lists land in one category: each list becomes a main note, and its items become its subtasks.

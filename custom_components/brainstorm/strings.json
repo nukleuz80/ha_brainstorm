@@ -414,6 +414,7 @@
           "battery_notes": "🔋 Battery Notes",
           "whatsapp": "💬 WhatsApp",
           "telegram_bot": "✈️ Telegram",
+          "imap": "📧 Mail",
           "init": "⬅️ Back",
           "close": "✅ Done"
         },
@@ -424,7 +425,8 @@
           "waste_collection_schedule": "{status_waste}",
           "battery_notes": "{status_battery_notes}",
           "whatsapp": "{status_whatsapp}",
-          "telegram_bot": "{status_telegram}"
+          "telegram_bot": "{status_telegram}",
+          "imap": "{status_mail}"
         }
       },
       "choreops": {
@@ -700,6 +702,30 @@
           "telegram_reply": "The bot answers what was noted and where, as a reply to the message.",
           "go_back": "Returns to the previous page without saving this form."
         }
+      },
+      "imap": {
+        "title": "Brainstorm › 🔗 Connected integrations › 📧 Mail",
+        "description": "Turns e-mails into notes. The IMAP integration reports every new mail of the watched folder; a mail from an allowed address becomes a note of the person the address belongs to. Its subject is the text of the note, its body the description, without quoted mails and the signature. A mail without a subject takes the first line of its body.\n\n{hint}",
+        "data": {
+          "mail_enabled": "Notes by mail",
+          "mail_senders": "Allowed addresses",
+          "mail_category": "Category",
+          "mail_match": "Recognise mails by",
+          "mail_prefix": "Keyword",
+          "mail_mark_seen": "Mark the mail as read",
+          "mail_reply_service": "Action for the reply",
+          "go_back": "⬅️ Back without saving"
+        },
+        "data_description": {
+          "mail_enabled": "Adds the mails of the allowed addresses as notes.",
+          "mail_senders": "One address per line with its person, such as `jan@example.com = person.jan`. Mails from other addresses are left alone.",
+          "mail_category": "Empty sorts every note like a typed one, a category named at the start of the subject included.",
+          "mail_match": "Which mails become a note in the list and the mind map. With a keyword chosen below, ordinary mails of the same sender stay mails.",
+          "mail_prefix": "The word a mail is recognised by, such as *Note*. It is left out of the note, and so are *Re:* and *Fwd:*. Not used with *Every mail*.",
+          "mail_mark_seen": "Marks a mail that became a note as read in the mailbox.",
+          "mail_reply_service": "Optional: a notify action that sends back what was noted, such as the one of SMTP. It gets `message`, `title` and the sender as `target`. Empty sends no reply.",
+          "go_back": "Returns to the previous page without saving this form."
+        }
       }
     },
     "error": {
@@ -722,7 +748,9 @@
       "whatsapp_senders_invalid": "Write one number per line with an existing person, such as +49 171 1234567 = person.jan.",
       "whatsapp_senders_missing": "Enter at least one allowed number.",
       "telegram_senders_invalid": "Write one Telegram id per line with an existing person, such as 123456789 = person.jan.",
-      "telegram_senders_missing": "Enter at least one allowed Telegram user."
+      "telegram_senders_missing": "Enter at least one allowed Telegram user.",
+      "mail_senders_invalid": "Write one address per line with an existing person, such as jan@example.com = person.jan.",
+      "mail_senders_missing": "Enter at least one allowed address."
     },
     "abort": {
       "store_not_ready": "Brainstorm is reloading. Please open the settings again in a few seconds."
@@ -869,6 +897,14 @@
         "morning": "Morning",
         "day": "During the day",
         "evening": "Evening"
+      }
+    },
+    "mail_match": {
+      "options": {
+        "subject_start": "Keyword at the start of the subject",
+        "subject": "Keyword anywhere in the subject",
+        "anywhere": "Keyword anywhere in the mail (subject or text)",
+        "all": "Every mail of the allowed addresses"
       }
     }
   },

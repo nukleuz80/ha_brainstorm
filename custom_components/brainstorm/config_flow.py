@@ -18,6 +18,16 @@ from homeassistant.helpers.network import NoURLAvailableError
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    CONF_MAIL_CATEGORY,
+    CONF_MAIL_ENABLED,
+    CONF_MAIL_MARK_SEEN,
+    CONF_MAIL_MATCH,
+    MAIL_MATCH_SUBJECT_START,
+    MAIL_MATCHES,
+    CONF_MAIL_PREFIX,
+    CONF_MAIL_REPLY_SERVICE,
+    CONF_MAIL_SENDERS,
+    SOURCE_MAIL,
     CONF_TELEGRAM_CATEGORY,
     CONF_TELEGRAM_ENABLED,
     CONF_TELEGRAM_PREFIX,
@@ -169,6 +179,11 @@ from .languages import get_pack
 from .local_todo import CHOICE_NEW, CHOICE_NONE, LocalList, async_create_list, local_lists
 from .waste import waste_available, waste_calendars
 from .messages import last_unknown_sender, resolve_person
+from .mail import (
+    format_senders as mail_format_senders,
+    imap_available,
+    parse_senders as mail_parse_senders,
+)
 from .telegram import (
     format_senders as telegram_format_senders,
     parse_senders as telegram_parse_senders,
@@ -365,6 +380,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "battery_notes": "🔋 Battery Notes",
                 "whatsapp": "💬 WhatsApp",
                 "telegram_bot": "✈️ Telegram",
+                "imap": "📧 Mail",
                 "init": "⬅️ Zurück",
                 "close": "✅ Fertig",
             },
@@ -411,6 +427,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "battery_notes": "🔋 Battery Notes",
                 "whatsapp": "💬 WhatsApp",
                 "telegram_bot": "✈️ Telegram",
+                "imap": "📧 Mail",
                 "init": "⬅️ Back",
                 "close": "✅ Done",
             },
@@ -435,6 +452,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             "battery_notes",
             "whatsapp",
             "telegram_bot",
+            "imap",
         }:
             # Only offered where a connected integration is installed
             menu = {key: label for key, label in menu.items() if key != "integrations"}
@@ -464,6 +482,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             and bool(options.get(CONF_BATTERY_NOTES, True)),
             "whatsapp": bool(options.get(CONF_WHATSAPP_ENABLED)),
             "telegram_bot": bool(options.get(CONF_TELEGRAM_ENABLED)),
+            "imap": bool(options.get(CONF_MAIL_ENABLED)),
         }
         names = {
             "bring": "Bring!",
@@ -473,6 +492,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             "battery_notes": "Battery Notes",
             "whatsapp": "WhatsApp",
             "telegram_bot": "Telegram",
+            "imap": "Mail",
         }
         on, off = self._text("an", "on"), self._text("aus", "off")
         return [
@@ -490,6 +510,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             "waste_collection_schedule": waste_available(self.hass),
             "battery_notes": battery_notes_available(self.hass),
             "telegram_bot": telegram_available(self.hass),
+            "imap": imap_available(self.hass),
         }
         return {
             key: label
@@ -535,6 +556,10 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         if options.get(CONF_TELEGRAM_ENABLED):
             count = len(options.get(CONF_TELEGRAM_SENDERS) or {})
             telegram = f"{on} · {count} " + self._text("Absender", "senders")
+        mail = off
+        if options.get(CONF_MAIL_ENABLED):
+            count = len(options.get(CONF_MAIL_SENDERS) or {})
+            mail = f"{on} · {count} " + self._text("Adressen", "addresses")
         return self.async_show_menu(
             step_id="integrations",
             menu_options=self._integrations_menu(),
@@ -548,6 +573,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "status_battery_notes": notes,
                 "status_whatsapp": whatsapp,
                 "status_telegram": telegram,
+                "status_mail": mail,
             },
         )
 
@@ -999,6 +1025,94 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         )
         return self.async_show_form(
             step_id="telegram_bot",
+            data_schema=vol.Schema(_with_back(schema)),
+            errors=errors,
+            description_placeholders=placeholders,
+        )
+
+    async def async_step_imap(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Add the mails of known addresses as notes."""
+        if user_input is not None and user_input.pop(BACK_FIELD, False):
+            return await self.async_step_integrations()
+        store = await self._async_store()
+        options = dict(self.config_entry.options or self.config_entry.data)
+        errors: dict[str, str] = {}
+        placeholders = {"hint": self._unknown_hint(SOURCE_MAIL)}
+        if user_input is not None:
+            senders, reason = self._messenger_senders(
+                user_input,
+                CONF_MAIL_SENDERS,
+                CONF_MAIL_ENABLED,
+                mail_parse_senders,
+                placeholders,
+            )
+            if reason == "invalid":
+                errors[CONF_MAIL_SENDERS] = "mail_senders_invalid"
+            elif reason == "missing":
+                errors[CONF_MAIL_SENDERS] = "mail_senders_missing"
+            else:
+                options[CONF_MAIL_ENABLED] = bool(user_input.get(CONF_MAIL_ENABLED))
+                options[CONF_MAIL_SENDERS] = senders
+                for key in (CONF_MAIL_CATEGORY, CONF_MAIL_PREFIX, CONF_MAIL_REPLY_SERVICE):
+                    options[key] = str(user_input.get(key) or "").strip()
+                options[CONF_MAIL_MARK_SEEN] = bool(user_input.get(CONF_MAIL_MARK_SEEN))
+                options[CONF_MAIL_MATCH] = str(
+                    user_input.get(CONF_MAIL_MATCH) or MAIL_MATCH_SUBJECT_START
+                )
+                return await self._async_saved(options, "integrations")
+        values = {**options, **(user_input or {})}
+        senders_text = values.get(CONF_MAIL_SENDERS) or ""
+        if isinstance(senders_text, dict):
+            senders_text = mail_format_senders(senders_text)
+        schema = self._messenger_schema(
+            values,
+            list(store.categories),
+            (
+                CONF_MAIL_ENABLED,
+                CONF_MAIL_SENDERS,
+                CONF_MAIL_CATEGORY,
+                CONF_MAIL_PREFIX,
+                CONF_MAIL_MARK_SEEN,
+            ),
+            senders_text,
+        )
+        # Right before the keyword, which it decides about
+        fields = list(schema.items())
+        match_field = (
+            vol.Required(
+                CONF_MAIL_MATCH,
+                default=str(values.get(CONF_MAIL_MATCH) or MAIL_MATCH_SUBJECT_START),
+            ),
+            selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=list(MAIL_MATCHES),
+                    translation_key=CONF_MAIL_MATCH,
+                    mode=selector.SelectSelectorMode.LIST,
+                )
+            ),
+        )
+        fields.insert(3, match_field)
+        schema = dict(fields)
+        notify = sorted(
+            f"notify.{service}"
+            for service in self.hass.services.async_services_for_domain("notify")
+        )
+        schema[
+            vol.Optional(
+                CONF_MAIL_REPLY_SERVICE,
+                description=_suggested(values, CONF_MAIL_REPLY_SERVICE),
+            )
+        ] = selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=notify,
+                custom_value=True,
+                mode=selector.SelectSelectorMode.DROPDOWN,
+            )
+        )
+        return self.async_show_form(
+            step_id="imap",
             data_schema=vol.Schema(_with_back(schema)),
             errors=errors,
             description_placeholders=placeholders,

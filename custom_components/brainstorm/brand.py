@@ -34,6 +34,7 @@ BRAND_DOMAINS = frozenset(
         "choreops",
         "local_todo",
         "waste_collection_schedule",
+        "imap",
         "telegram_bot",
         "whatsapp",
     }
