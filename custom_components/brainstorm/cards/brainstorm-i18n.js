@@ -736,6 +736,7 @@ const DICTIONARIES = {
     "Zuständig": "Assignee",
     "{count} anlegen": "Create {count}",
     "🗣️ Frei reden": "🗣️ Talk freely",
+    "Frei reden": "Talk freely",
     "Frei reden: mehrere Aufgaben auf einmal sagen oder tippen, die KI zerlegt sie": "Talk freely: say or type several tasks at once, the AI splits them",
     "Aus „Mein Tag“ nehmen": "Take out of My day",
     "Für heute vornehmen": "Pick for today",

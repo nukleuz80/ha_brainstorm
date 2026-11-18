@@ -9,7 +9,7 @@
 [![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.20.0-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.20.1-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![Wiki](https://img.shields.io/badge/Docs-Wiki-6f42c1.svg)](https://github.com/nukleuz80/ha_brainstorm/wiki)
@@ -265,11 +265,11 @@ The latest versions; every version is in [CHANGELOG.md](CHANGELOG.md).
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.20.1`** | 2026-11-18 | **🐞 *Talk freely* button visible again.** The button right of the trash in the mind map and *Talk freely* in the list card showed the 🗣️ emoji, on an iPhone a dark grey head that could hardly be seen on a dark background. Both now show an icon in the text colour of the theme. |
 | **`v1.20.0`** | 2026-11-18 | **📱 Fold the categories on a phone.** On narrow screens the category bar of the list card ends with a *▴ Fold* button: afterwards only the chosen category stays, next to *▾ Categories (n)* to unfold them. The list moves up instead of starting below three rows of categories. Each device remembers whether the bar is folded; nothing changes on a desktop. |
 | **`v1.19.0`** | 2026-11-18 | **🧪 Sentence tester.** New entry *🧪 Sentence tester* in the main menu of the settings: type a sentence the way you would say it to Alexa, Assist or Siri and see right away what Brainstorm makes of it: title, category and why (keywords, topic, hashtag or nothing found), due time, priority, tags, person and place. Nothing is saved. *Automatic* reads “remind me …” as a reminder, everything else as a spoken note; *Typed* checks the quick input. The same is available as the action `brainstorm.test_sentence` with a response, for automations or the developer tools. |
 | **`v1.18.2`** | 2026-11-18 | **📧 Forwarded mails without the clutter.** When you forward a mail to Brainstorm, the description keeps only what you wrote above it. Before, the *Forwarded message* line, the *Sent:* line of web.de and GMX and, for Outlook forwards with a bold *From:*, even the whole forwarded mail (up to 2000 characters) slipped in. Mails that only come as HTML become plain text instead of HTML code. |
 | **`v1.18.1`** | 2026-11-18 | **🔋 No more battery tasks from stray readings.** Some sensors send a single wrong level now and then, such as a door contact reporting 40 % every hour and 17 % once in a while. Each of these added a task that closed again an hour later, several times a day. Now a battery task is only created once the device has reported a low battery for 3 hours in a row. A good level before that creates nothing. After a battery change the task still ticks itself off at once. |
-| **`v1.18.0`** | 2026-11-18 | **🌐 Mind map from a web page or PDF.** The AI dialog *✨ Create map from a topic* (key **G**) now also takes a web address: Home Assistant loads the page, leaves out menus, headers and footers and hands the text to the AI. New are *📄 Choose PDF* for a PDF from your device and 📎 buttons for the PDF attachments of the opened branch (up to 40 pages and 8 MB, scanned PDFs without text do not work). For safety, addresses in your own network are not read, not even through redirects. PDFs are read by the new dependency `pypdf`. |
 
 ---
 
