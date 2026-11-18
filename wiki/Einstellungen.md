@@ -374,6 +374,7 @@ Macht aus schwachen Batterien Aufgaben (v1.7.5). Jeder Batterie-Sensor zählt: e
 | Handys und Tablets einbeziehen | Geräte der Companion-App werden täglich geladen und bleiben deshalb außen vor, außer du schaltest es ein. |
 
 - **Eine Aufgabe pro Gerät**, auch wenn Integrationen wie Battery Notes weitere Sensoren für dieselbe Batterie anlegen. Sie ist nach dem Gerät benannt, z. B. *Batterie wechseln: Bewegungsmelder Flur (18 %)*.
+- **Erst nach 3 Stunden:** Eine Aufgabe entsteht erst, wenn das Gerät 3 Stunden am Stück schwach meldet (seit v1.18.1). Ein einzelner falscher Stand zwischen guten Werten, wie ihn manche Sensoren ab und zu senden, legt so keine Aufgabe an.
 - **Hakt sich selbst ab:** Meldet kein Sensor des Geräts mehr eine schwache Batterie und liegt der Stand 10 Punkte über der Schwelle, wird die Aufgabe abgehakt. Der Abstand verhindert, dass eine Batterie an der Schwelle ständig Aufgaben anlegt und schließt.
 - **Von Hand abgehakt**, bevor die Batterie gewechselt ist, kommt die Aufgabe nicht wieder. Erst die nächste schwache Batterie legt eine neue an.
 - **Nach einem Neustart** werden alle Batterien einmal geprüft.

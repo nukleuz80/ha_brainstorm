@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import datetime, timedelta
 import logging
 from typing import TYPE_CHECKING, Any
 
@@ -24,6 +25,8 @@ from homeassistant.core import (
     callback,
 )
 from homeassistant.helpers import device_registry as dr, entity_registry as er
+from homeassistant.helpers.event import async_call_later
+from homeassistant.util import dt as dt_util
 
 from .const import (
     ATTR_BATTERY,
@@ -54,6 +57,9 @@ _LOGGER = logging.getLogger(__name__)
 BATTERY_DOMAINS = ("sensor", "binary_sensor")
 # A level must rise this far above the threshold to count as a new battery
 RECOVER_MARGIN = 10
+# A battery must stay low this long before it gets a task: some sensors send a
+# single wrong level now and then, and the next report an hour later is fine
+CONFIRM_DELAY = timedelta(hours=3)
 _NAME_SUFFIXES = (" battery level", " battery", " batterie", " akku", " batteriestand")
 
 
@@ -121,6 +127,9 @@ class BatteryWatcher:
         # One check per battery at a time: sensors of one device often report
         # together, and each would otherwise add a task before the first is saved
         self._locks: dict[str, asyncio.Lock] = {}
+        # Since when a battery without a task has been low, and its re-check
+        self._low_since: dict[str, datetime] = {}
+        self._timers: dict[str, CALLBACK_TYPE] = {}
         self._unsub_started: CALLBACK_TYPE | None = None
 
     async def async_start(self) -> None:
@@ -151,6 +160,9 @@ class BatteryWatcher:
         """Stop watching."""
         while self._unsubs:
             self._unsubs.pop()()
+        while self._timers:
+            self._timers.popitem()[1]()
+        self._low_since.clear()
         if self._unsub_started is not None:
             self._unsub_started()
             self._unsub_started = None
@@ -264,6 +276,11 @@ class BatteryWatcher:
         """
         statuses = [battery_status(state, self.threshold) for state in states]
         low_states = [state for state, low in zip(states, statuses) if low]
+        if not low_states and any(
+            state.state not in (STATE_UNAVAILABLE, STATE_UNKNOWN) for state in states
+        ):
+            # A good level again before the low one was confirmed: just a blip
+            self._forget_low(key)
         if low_states:
             low = True
         elif False in statuses:
@@ -274,6 +291,8 @@ class BatteryWatcher:
             (idea for idea in self._open_tasks() if idea[ATTR_BATTERY] == key), None
         )
         if low and task is None:
+            if not self._low_confirmed(key, low_states):
+                return
             # A level says more than a weak flag
             state = min(
                 low_states,
@@ -288,6 +307,41 @@ class BatteryWatcher:
             )
             if task.get(ATTR_STATUS) == "active":
                 await self.store.async_update_idea(task[ATTR_ID], status="completed")
+
+    def _low_confirmed(self, key: str, low_states: list[State]) -> bool:
+        """Return whether a battery has been low long enough for a task.
+
+        Until then, a re-check is planned for when it would be.
+        """
+        since = self._low_since.setdefault(
+            key, min(state.last_changed for state in low_states)
+        )
+        waited = dt_util.utcnow() - since
+        if waited >= CONFIRM_DELAY:
+            self._forget_low(key)
+            return True
+        if key not in self._timers:
+            self._timers[key] = async_call_later(
+                self.hass, CONFIRM_DELAY - waited, self._recheck_factory(key)
+            )
+        return False
+
+    def _recheck_factory(self, key: str) -> Any:
+        """Return the re-check of one battery once its wait is over."""
+
+        async def _recheck(_now: datetime) -> None:
+            self._timers.pop(key, None)
+            groups = self._groups()
+            if key in groups:
+                await self._async_check(key, groups[key])
+
+        return _recheck
+
+    def _forget_low(self, key: str) -> None:
+        """Drop the wait for a battery that is no longer low."""
+        self._low_since.pop(key, None)
+        if (cancel := self._timers.pop(key, None)) is not None:
+            cancel()
 
     async def _async_create(self, key: str, state: State) -> None:
         """Add the task for a low battery."""

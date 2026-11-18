@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
 from typing import Any
 
 import pytest
@@ -24,6 +25,14 @@ OPTIONS = {
     "battery_threshold": 20,
     "battery_category": "Smarthome",
 }
+
+
+@pytest.fixture(autouse=True)
+def _no_confirm_delay(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Create battery tasks at once, unless a test checks the wait."""
+    monkeypatch.setattr(
+        "custom_components.brainstorm.battery.CONFIRM_DELAY", timedelta(0)
+    )
 
 
 def _device(hass: HomeAssistant, name: str, kind: str | None, quantity: Any = 2) -> str:

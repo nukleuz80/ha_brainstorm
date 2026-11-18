@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
 import asyncio
 from typing import Any
 
@@ -10,7 +11,11 @@ import pytest
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import device_registry as dr, entity_registry as er
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from homeassistant.util import dt as dt_util
+from pytest_homeassistant_custom_component.common import (
+    MockConfigEntry,
+    async_fire_time_changed,
+)
 
 from custom_components.brainstorm.store import BrainstormStore
 
@@ -23,6 +28,14 @@ OPTIONS = {
     "battery_threshold": 20,
     "battery_category": "Smarthome",
 }
+
+
+@pytest.fixture(autouse=True)
+def _no_confirm_delay(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Create battery tasks at once, unless a test checks the wait."""
+    monkeypatch.setattr(
+        "custom_components.brainstorm.battery.CONFIRM_DELAY", timedelta(0)
+    )
 
 
 def _set_level(hass: HomeAssistant, level: str, entity_id: str = SENSOR) -> None:
@@ -340,3 +353,80 @@ async def test_duplicate_tasks_are_closed_at_start(
     for key in ("dup1", "dup2"):
         assert tasks[key]["status"] == "completed"
         assert tasks[key]["battery_done"] is True
+
+
+async def test_single_wrong_level_makes_no_task(
+    hass: HomeAssistant, setup_entry: SetupEntry, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test that a single low report between good ones is ignored.
+
+    A door contact reported 40 % every hour and now and then 17 %, which
+    added a task and closed it again an hour later, several times a day.
+    """
+    monkeypatch.setattr(
+        "custom_components.brainstorm.battery.CONFIRM_DELAY", timedelta(hours=3)
+    )
+    _set_level(hass, "40")
+    store = await _setup(setup_entry)
+    start = dt_util.utcnow()
+    for hours in range(0, 12, 2):
+        _set_level(hass, "17")
+        async_fire_time_changed(hass, start + timedelta(hours=hours, minutes=1))
+        await hass.async_block_till_done()
+        _set_level(hass, "40")
+        async_fire_time_changed(hass, start + timedelta(hours=hours + 1))
+        await hass.async_block_till_done()
+    async_fire_time_changed(hass, start + timedelta(hours=20))
+    await hass.async_block_till_done()
+    assert _tasks(store) == []
+
+
+async def test_battery_low_for_hours_gets_a_task(
+    hass: HomeAssistant, setup_entry: SetupEntry, freezer: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test that a battery staying low gets its task once the wait is over."""
+    monkeypatch.setattr(
+        "custom_components.brainstorm.battery.CONFIRM_DELAY", timedelta(hours=3)
+    )
+    store = await _setup(setup_entry)
+    _set_level(hass, "18")
+    await hass.async_block_till_done()
+    freezer.tick(timedelta(hours=1))
+    _set_level(hass, "unavailable")
+    _set_level(hass, "16")
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    assert _tasks(store) == []
+
+    freezer.tick(timedelta(hours=2, minutes=1))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    tasks = _tasks(store)
+    assert len(tasks) == 1
+    assert tasks[0]["text"] == "Batterie wechseln: Bewegungsmelder Flur (16 %)"
+
+    # A new battery still ticks the task off at once
+    _set_level(hass, "100")
+    await hass.async_block_till_done()
+    assert _tasks(store)[0]["status"] == "completed"
+
+
+async def test_low_at_start_waits_too(
+    hass: HomeAssistant, setup_entry: SetupEntry, freezer: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test that a battery low at start waits, and the wait ends on unload."""
+    monkeypatch.setattr(
+        "custom_components.brainstorm.battery.CONFIRM_DELAY", timedelta(hours=3)
+    )
+    _set_level(hass, "5")
+    entry = await setup_entry(
+        stored={"ideas": [], "categories": ["Inbox", "Smarthome"]}, options=OPTIONS
+    )
+    store: BrainstormStore = entry.runtime_data
+    assert _tasks(store) == []
+    await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
+    freezer.tick(timedelta(hours=4))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    assert _tasks(store) == []
