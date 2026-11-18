@@ -305,7 +305,7 @@ Seit v1.16.0. Erscheint, sobald die Integration [IMAP](https://www.home-assistan
 | Aktion für die Antwort | Optional: eine Benachrichtigungs-Aktion, etwa die von [SMTP](https://www.home-assistant.io/integrations/smtp/). Sie bekommt `message`, `title` *Brainstorm* und den Absender als `target`. Leer schickt keine Antwort. |
 
 - **Betreff:** *AW:*, *Re:*, *WG:* und *Fwd:* davor fallen weg. Eine Mail ohne Betreff nimmt die erste Zeile ihres Inhalts als Notiz.
-- **Inhalt:** Zitierte Zeilen (`>`), alles nach der Signatur (`-- `), nach *Am … schrieb …:* oder *-----Ursprüngliche Nachricht-----* fällt weg; höchstens 2000 Zeichen. Schickt die IMAP-Integration den Text nicht im Ereignis mit, liest Brainstorm ihn mit `imap.fetch`.
+- **Inhalt:** Zitierte Zeilen (`>`), alles nach der Signatur (`-- `), nach *Am … schrieb …:* oder *-----Ursprüngliche Nachricht-----* fällt weg; höchstens 2000 Zeichen. **Weitergeleitete Mails** behalten nur, was du darüber geschrieben hast: Ab *Weitergeleitete Nachricht*, *Anfang der weitergeleiteten Nachricht*, *Von:*/*Gesendet:* (auch fett wie bei Outlook) wird abgeschnitten (seit v1.18.2). Reine HTML-Mails werden zu normalem Text. Schickt die IMAP-Integration den Text nicht im Ereignis mit, liest Brainstorm ihn mit `imap.fetch`.
 - Die IMAP-Integration meldet nur Mails, die zu ihrer Suche (etwa *UnSeen UnDeleted*) in ihrem Ordner passen. Eine erneut gemeldete Mail wird nicht doppelt notiert. Als Quelle zeigt die Karte *📧 Mail* mit dem Namen der Person.
 
 ### Brainstorm › 🔗 Verbundene Integrationen › 🛒 Bring!

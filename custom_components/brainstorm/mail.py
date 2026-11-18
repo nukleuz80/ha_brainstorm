@@ -9,6 +9,7 @@ through a notify action such as the one of SMTP.
 
 from __future__ import annotations
 
+import html
 import logging
 import re
 from collections.abc import Mapping
@@ -49,11 +50,25 @@ _SUBJECT_TAGS = re.compile(r"^\s*((re|aw|fw|fwd|wg|sv|antw)\s*:\s*)+", re.IGNORE
 _END_LINES = (
     re.compile(r"^--\s*$"),
     re.compile(r"^_{5,}\s*$"),
-    re.compile(r"^-{3,}\s*(original|urspr\w{1,2}ngliche)", re.IGNORECASE),
+    re.compile(
+        r"^-{2,}\s*(original|urspr\w{1,2}ngliche|forwarded|weitergeleitete)",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"^(anfang der weitergeleiteten nachricht|begin forwarded message)",
+        re.IGNORECASE,
+    ),
     re.compile(r"^(am|on)\s.+(schrieb|wrote).*:\s*$", re.IGNORECASE),
-    re.compile(r"^(von|from):\s", re.IGNORECASE),
+    # The header of a forwarded mail, also in bold as Outlook writes it
+    re.compile(r"^\*?(von|from|gesendet|sent)\*?:", re.IGNORECASE),
     re.compile(r"^(gesendet von|sent from)\s", re.IGNORECASE),
 )
+# A mail that only came as HTML
+_HTML_HINT = re.compile(r"<(html|body|div|p|br|table|span)\b", re.IGNORECASE)
+_HTML_DROP = re.compile(r"<(style|script|head)\b.*?</\1\s*>", re.IGNORECASE | re.DOTALL)
+_HTML_BREAK = re.compile(r"<(br|/p|/div|/tr|/li|/h\d)\b[^>]*>", re.IGNORECASE)
+_HTML_QUOTE = re.compile(r"<blockquote\b.*?</blockquote\s*>", re.IGNORECASE | re.DOTALL)
+_HTML_TAG = re.compile(r"<[^>]+>")
 
 
 def imap_available(hass: HomeAssistant) -> bool:
@@ -102,10 +117,25 @@ def clean_subject(subject: str) -> str:
     return _SUBJECT_TAGS.sub("", subject or "").strip()
 
 
+def html_to_text(text: str) -> str:
+    """Return the plain text of an HTML mail, without quoted mails."""
+    text = _HTML_DROP.sub("", text)
+    text = _HTML_QUOTE.sub("", text)
+    text = _HTML_BREAK.sub("\n", text)
+    text = html.unescape(_HTML_TAG.sub("", text)).replace("\xa0", " ")
+    return "\n".join(line.strip() for line in text.split("\n"))
+
+
 def clean_body(text: str) -> str:
-    """Return the own text of a mail, without signature and quoted mails."""
+    """Return the own text of a mail, without signature and quoted mails.
+
+    A forwarded mail keeps only what was written above it.
+    """
+    text = (text or "").replace("\r\n", "\n")
+    if _HTML_HINT.search(text):
+        text = html_to_text(text)
     lines: list[str] = []
-    for line in (text or "").replace("\r\n", "\n").split("\n"):
+    for line in text.split("\n"):
         stripped = line.strip()
         if any(pattern.match(stripped) for pattern in _END_LINES):
             break

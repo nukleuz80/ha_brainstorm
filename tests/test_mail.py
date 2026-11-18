@@ -234,3 +234,23 @@ async def test_what_a_mail_is_recognised_by(
         {**OPTIONS, "mail_prefix": "Notiz", "mail_match": match},
     )
     assert await watcher.async_handle_message(_mail(subject, text=text)) == expected
+
+
+def test_forwarded_and_html_mails_keep_only_the_own_text() -> None:
+    """Test that forwarding a mail does not copy the whole mail into the note."""
+    long = "Ihre Rechnung\n" + "Zeile\n" * 500
+    gmail = "Bis Freitag.\n\n---------- Weitergeleitete Nachricht ---------\nVon: Shop <a@b.de>\n\n"
+    assert clean_body(gmail + long) == "Bis Freitag."
+    assert clean_body("---------- Forwarded message ---------\nFrom: a@b.de\n" + long) == ""
+    outlook = "Bitte prüfen\r\n\r\n*From:* Max <m@x.de>\r\n*Sent:* Monday\r\n\r\n"
+    assert clean_body(outlook + long) == "Bitte prüfen"
+    apple = "Siehe unten\n\nAnfang der weitergeleiteten Nachricht:\n\n> Von: X\n"
+    assert clean_body(apple + long) == "Siehe unten"
+    web_de = "Hallo\n\nGesendet: Montag, 17. November 2026 um 10:00 Uhr\nVon: X\n"
+    assert clean_body(web_de + long) == "Hallo"
+    html_mail = (
+        "<html><head><style>p {color: red}</style></head><body>"
+        "<p>Reifen&nbsp;wechseln</p><div>Gru&szlig;<br>Jan</div>"
+        "<blockquote>alte Mail</blockquote></body></html>"
+    )
+    assert clean_body(html_mail) == "Reifen wechseln\nGruß\nJan"

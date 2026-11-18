@@ -305,7 +305,7 @@ Since v1.16.0. Shown once the [IMAP](https://www.home-assistant.io/integrations/
 | Action for the reply | Optional: a notify action such as the one of [SMTP](https://www.home-assistant.io/integrations/smtp/). It gets `message`, `title` *Brainstorm* and the sender as `target`. Empty sends no reply. |
 
 - **Subject:** *Re:*, *AW:*, *Fwd:* and *WG:* in front are dropped. A mail without a subject takes the first line of its body as the note.
-- **Body:** quoted lines (`>`), everything after the signature (`-- `), after *On … wrote:* or *-----Original Message-----* is left out; at most 2000 characters. If the IMAP integration does not send the text with its event, Brainstorm reads it with `imap.fetch`.
+- **Body:** quoted lines (`>`), everything after the signature (`-- `), after *On … wrote:* or *-----Original Message-----* is left out; at most 2000 characters. **Forwarded mails** keep only what you wrote above them: everything from *Forwarded message*, *Begin forwarded message*, *From:*/*Sent:* (also in bold as Outlook writes it) is cut off (since v1.18.2). Mails that only come as HTML become plain text. If the IMAP integration does not send the text with its event, Brainstorm reads it with `imap.fetch`.
 - The IMAP integration only reports mails matching its search (such as *UnSeen UnDeleted*) in its folder. A mail reported again is not noted twice. As source the card shows *📧 Mail* with the name of the person.
 
 ### Brainstorm › 🔗 Connected integrations › 🛒 Bring!
