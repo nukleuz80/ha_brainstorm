@@ -175,7 +175,7 @@ show_export_btn: true       # 🖼️ Map als SVG oder PNG speichern
 | **Z** | KI: lose Ideen zuordnen |
 | **K** | KI: lose Notizen nach Themen gruppieren |
 | **D** | Zeichnen: Stift, Pfeil, Kreis und Radierer über der Map |
-| **G** | KI: Map aus Thema oder Text erzeugen |
+| **G** | KI: Map aus Thema, Text, Webadresse oder PDF erzeugen |
 | **R** | Regeln: Notizen färben, die zu einem gespeicherten Filter passen |
 | **M** | Übersicht (Minimap) ein/aus |
 | **V** | Abstimmung starten oder beenden |

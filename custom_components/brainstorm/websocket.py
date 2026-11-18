@@ -24,6 +24,7 @@ from .const import (
     MAP_TAB_NAME_MAX,
     PIN_COLORS,
 )
+from .map_sources import SourceError
 from .presence import get_presence
 from .statistics import DEFAULT_WEEKS, MAX_WEEKS, build_statistics
 from .store import TRASH_DAYS, BrainstormStore, get_loaded_store, habit_summary
@@ -593,9 +594,11 @@ async def websocket_suggest_points(
 @websocket_api.websocket_command(
     {
         vol.Required("type"): "brainstorm/generate_map",
-        vol.Required("text"): vol.All(
-            cv.string, vol.Length(min=1, max=MAP_INPUT_MAX_LENGTH * 2)
+        vol.Optional("text", default=""): vol.All(
+            cv.string, vol.Length(max=MAP_INPUT_MAX_LENGTH * 2)
         ),
+        vol.Inclusive("idea_id", "attachment"): cv.string,
+        vol.Inclusive("attachment_id", "attachment"): cv.string,
         vol.Optional("language"): vol.All(cv.string, vol.Length(max=10)),
     }
 )
@@ -605,7 +608,10 @@ async def websocket_generate_map(
     connection: websocket_api.ActiveConnection,
     msg: dict[str, Any],
 ) -> None:
-    """Let the AI turn a topic or a text into a mind map; nothing is stored."""
+    """Let the AI turn a topic, a text, a web page or a PDF into a mind map.
+
+    Nothing is stored, the person picks what to keep.
+    """
     store = get_loaded_store(hass)
     if store is None:
         connection.send_error(
@@ -617,8 +623,22 @@ async def websocket_generate_map(
             msg["id"], ERR_AI_NOT_CONFIGURED, "No AI task entity is set up"
         )
         return
+    if not msg["text"].strip() and "attachment_id" not in msg:
+        connection.send_error(
+            msg["id"], websocket_api.ERR_INVALID_FORMAT, "Nothing to make a map from"
+        )
+        return
     try:
-        nodes = await store.async_generate_map(msg["text"], msg.get("language"))
+        nodes = await store.async_generate_map_from_source(
+            text=msg["text"],
+            idea_id=msg.get("idea_id"),
+            attachment_id=msg.get("attachment_id"),
+            user_id=connection.user.id,
+            language=msg.get("language"),
+        )
+    except SourceError as err:
+        connection.send_error(msg["id"], err.code, str(err))
+        return
     except AIUnavailableError:
         connection.send_error(
             msg["id"], ERR_AI_UNAVAILABLE, "The AI did not answer, try again later"

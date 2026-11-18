@@ -1,8 +1,8 @@
-import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, BRING_TAB_ID, bringBadge, bringSentText, unblockedText, compactNodeInfo, nextNodeDetail, nodeDetailButton, nodeDetailCompact, nodeDetailMode, bringTab, canSendToBring, renderBringSend, CHORE_MAP_CSS, choreMapData, renderChoreMap, canHandOver, canHandOverProject, canMakeReward, choreopsBadge, choreopsRewardBadge, renderChoreHandover, renderChoreProject, renderChoreReward, MAP_TAB_CSS, activeMapTab, branchTabs, configTabs, mapTabBar, tabCounts, ruleFilter, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, timeBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, importFileText, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t, linkedListMark } from "./brainstorm-i18n.js?v=1.17.0";
+import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, BRING_TAB_ID, bringBadge, bringSentText, unblockedText, compactNodeInfo, nextNodeDetail, nodeDetailButton, nodeDetailCompact, nodeDetailMode, bringTab, canSendToBring, renderBringSend, CHORE_MAP_CSS, choreMapData, renderChoreMap, canHandOver, canHandOverProject, canMakeReward, choreopsBadge, choreopsRewardBadge, renderChoreHandover, renderChoreProject, renderChoreReward, MAP_TAB_CSS, activeMapTab, branchTabs, configTabs, mapTabBar, tabCounts, ruleFilter, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, timeBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, importFileText, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t, linkedListMark } from "./brainstorm-i18n.js?v=1.18.0";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.17.0 - Mindmap auf dem Echo Show
+ * Version: 1.18.0 - Mindmap aus Webseite oder PDF
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -6690,7 +6690,7 @@ class BrainstormMindmapCard extends HTMLElement {
     this._openDialog(t("💬 Kommentare"), (body) => renderComments(body, { hass: this._hass, idea, close: () => this._closeDialog() }));
   }
 
-  // Let the AI turn a topic or a pasted text into notes, picked in a preview
+  // Let the AI turn a topic, a pasted text, a web page or a PDF into notes, picked in a preview
   _showGenerateMapDialog(prefill = "") {
     if (!this._hass) return;
     const focus = this._focusIdea();
@@ -6700,12 +6700,24 @@ class BrainstormMindmapCard extends HTMLElement {
         ? t("Landet in der Standardkategorie.")
         : t("Landet als Hauptnotizen in „{category}“.", { category: this._escapeHtml(this._selectedCategory) });
     let input = String(prefill || "");
+    // The source of the last request, so "new suggestions" asks for the same
+    let source = null;
+    const pdfs = ((focus && focus.attachments) || []).filter(
+      (a) => a.type === "application/pdf" || /\.pdf$/i.test(String(a.name || ""))
+    );
+    const isUrl = (text) => /^https?:\/\/\S+$/i.test(text.trim());
     this._openDialog(t("✨ Map aus Thema erzeugen"), (body) => {
       const showInput = (error = "") => {
         if (!this._isModalOpen) return;
         body.innerHTML = `
-          <div class="dialog-hint">${t("Ein Thema wie „Sommerfest planen“ oder einen längeren Text einfügen. Die KI macht daraus eine Map mit bis zu drei Ebenen, du wählst vor dem Übernehmen aus.")}</div>
-          <textarea class="dialog-input dialog-textarea" id="mapTopic" rows="5" maxlength="6000" placeholder="${t("Thema oder Text")}"></textarea>
+          <div class="dialog-hint">${t("Ein Thema wie „Sommerfest planen“, einen längeren Text, eine Webadresse oder ein PDF. Die KI macht daraus eine Map mit bis zu drei Ebenen, du wählst vor dem Übernehmen aus.")}</div>
+          <textarea class="dialog-input dialog-textarea" id="mapTopic" rows="5" maxlength="6000" placeholder="${t("Thema, Text oder Webadresse")}"></textarea>
+          <div class="dialog-hint" id="mapUrlHint" style="display: none;">🌐 ${t("Home Assistant lädt die Seite und gibt ihren Text an die KI.")}</div>
+          <div class="export-row map-sources">
+            <button class="dialog-btn dialog-btn-cancel" id="mapPdf">📄 ${t("PDF wählen")}</button>
+            ${pdfs.map((a) => `<button class="dialog-btn dialog-btn-cancel" data-attachment="${this._escapeHtml(a.id)}">📎 ${this._escapeHtml(a.name || "PDF")}</button>`).join("")}
+            <input type="file" id="mapPdfFile" accept="application/pdf,.pdf" hidden />
+          </div>
           <div class="dialog-hint outline-target">${target}</div>
           <div class="dialog-error" id="mapError" style="display: ${error ? "flex" : "none"};">${error}</div>
           <div class="dialog-footer">
@@ -6715,20 +6727,43 @@ class BrainstormMindmapCard extends HTMLElement {
         `;
         const area = body.querySelector("#mapTopic");
         const go = body.querySelector("#mapGenerate");
+        const urlHint = body.querySelector("#mapUrlHint");
+        const typed = () => {
+          go.disabled = !input.trim();
+          urlHint.style.display = isUrl(input) ? "flex" : "none";
+        };
         area.value = input;
-        go.disabled = !input.trim();
+        typed();
         area.addEventListener("input", () => {
           input = area.value;
-          go.disabled = !input.trim();
+          typed();
         });
+        const fromText = () => {
+          source = { text: input.trim() };
+          load();
+        };
         area.addEventListener("keydown", (e) => {
           if (e.key === "Enter" && (e.ctrlKey || e.metaKey) && input.trim()) {
             e.preventDefault();
-            load();
+            fromText();
           }
         });
         body.querySelector("#mapCancel").addEventListener("click", () => this._closeDialog());
-        go.addEventListener("click", load);
+        go.addEventListener("click", fromText);
+        const file = body.querySelector("#mapPdfFile");
+        body.querySelector("#mapPdf").addEventListener("click", () => file.click());
+        file.addEventListener("change", () => {
+          const chosen = file.files && file.files[0];
+          if (!chosen) return;
+          source = { file: chosen };
+          load();
+        });
+        body.querySelectorAll("[data-attachment]").forEach((btn) =>
+          btn.addEventListener("click", () => {
+            source = { attachment: btn.dataset.attachment };
+            load();
+          })
+        );
         setTimeout(() => area.focus(), 50);
       };
       const showPreview = (nodes) => {
@@ -6793,27 +6828,48 @@ class BrainstormMindmapCard extends HTMLElement {
           else saveBtn.disabled = false;
         });
       };
+      const errorText = (code) =>
+        ({
+          ai_not_configured: t("Wähle zuerst eine KI-Aufgaben-Entität unter Brainstorm Hub ➔ Konfigurieren ➔ KI."),
+          ai_unavailable: t("Die KI ist gerade nicht erreichbar. Versuch es gleich nochmal."),
+          source_blocked: t("Adressen im eigenen Netz liest Brainstorm nicht."),
+          source_unreachable: t("Die Seite oder Datei ließ sich nicht laden."),
+          source_unsupported: t("Das kann Brainstorm nicht lesen. Es gehen Webseiten, Text und PDF."),
+          source_too_large: t("Die Datei ist zu groß, höchstens 8 MB."),
+          source_empty: t("Darin steht kein lesbarer Text, etwa bei einem eingescannten PDF."),
+        })[code] || t("Die KI hat keine Map geliefert.");
+      const request = async () => {
+        const language = this._hass.language ? { language: this._hass.language } : {};
+        if (source.file) {
+          const form = new FormData();
+          form.append("file", source.file, source.file.name);
+          if (language.language) form.append("language", language.language);
+          const response = await this._hass.fetchWithAuth("/api/brainstorm/map_source", { method: "POST", body: form });
+          let result = {};
+          try {
+            result = await response.json();
+          } catch (_err) {
+            result = {};
+          }
+          if (!response.ok) throw { code: result.code || "ai_failed" };
+          return result;
+        }
+        if (source.attachment) {
+          return this._hass.callWS({ type: "brainstorm/generate_map", idea_id: focus.id, attachment_id: source.attachment, ...language });
+        }
+        return this._hass.callWS({ type: "brainstorm/generate_map", text: source.text, ...language });
+      };
       const load = async () => {
-        if (!input.trim()) return;
-        body.innerHTML = `<div class="dialog-label suggest-status">${t("Die KI denkt nach …")}</div>`;
+        if (!source || (source.text !== undefined && !source.text)) return;
+        const reading = source.file || source.attachment || isUrl(source.text || "");
+        body.innerHTML = `<div class="dialog-label suggest-status">${reading ? t("Lese die Quelle, dann denkt die KI nach …") : t("Die KI denkt nach …")}</div>`;
         try {
-          const result = await this._hass.callWS({
-            type: "brainstorm/generate_map",
-            text: input.trim(),
-            ...(this._hass.language ? { language: this._hass.language } : {}),
-          });
+          const result = await request();
           const nodes = (result && result.nodes) || [];
           if (!nodes.length) showInput(t("Die KI hat keine Map geliefert."));
           else showPreview(nodes);
         } catch (err) {
-          const code = err && err.code;
-          showInput(
-            code === "ai_not_configured"
-              ? t("Wähle zuerst eine KI-Aufgaben-Entität unter Brainstorm Hub ➔ Konfigurieren ➔ KI.")
-              : code === "ai_unavailable"
-                ? t("Die KI ist gerade nicht erreichbar. Versuch es gleich nochmal.")
-                : t("Die KI hat keine Map geliefert.")
-          );
+          showInput(errorText(err && err.code));
         }
       };
       showInput();
@@ -12066,7 +12122,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.17.0 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.18.0 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

@@ -181,6 +181,15 @@ from .const import (
     TYPED_SOURCES,
     VOICE_MODE_NATIVE,
 )
+from .map_sources import (
+    ERR_SOURCE_UNREACHABLE,
+    ERR_SOURCE_UNSUPPORTED,
+    MAX_SOURCE_TEXT,
+    SourceError,
+    async_text_from_pdf,
+    async_text_from_url,
+    is_url,
+)
 from .ai import (
     CLUSTER_MAX_IDEAS,
     CLUSTER_MIN_IDEAS,
@@ -1194,7 +1203,10 @@ class BrainstormStore:
         return clean_summary(answer, DESCRIPTION_MAX_LENGTH)
 
     async def async_generate_map(
-        self, text: str, language: str | None = None
+        self,
+        text: str,
+        language: str | None = None,
+        limit: int = MAP_INPUT_MAX_LENGTH,
     ) -> list[dict[str, Any]] | None:
         """Ask the AI for a mind map from a topic or a pasted text.
 
@@ -1203,7 +1215,7 @@ class BrainstormStore:
         not answer, even when asked twice.
         """
         entity = self.options.get(CONF_AI_ENTITY)
-        text = (text or "").strip()[:MAP_INPUT_MAX_LENGTH]
+        text = (text or "").strip()[:limit]
         if not entity or not text:
             return None
         instructions = self._pack(language).msg(
@@ -1211,6 +1223,53 @@ class BrainstormStore:
         )
         answer = await async_request_text_with_retry(self.hass, entity, instructions)
         return parse_map_outline(answer) or None
+
+    async def async_generate_map_from_source(
+        self,
+        *,
+        text: str = "",
+        idea_id: str | None = None,
+        attachment_id: str | None = None,
+        data: bytes | None = None,
+        user_id: str | None = None,
+        language: str | None = None,
+    ) -> list[dict[str, Any]] | None:
+        """Ask the AI for a mind map from a topic, a web page or a PDF.
+
+        A text that is one web address is loaded, an attachment of an idea or
+        an uploaded PDF is read. Raises SourceError when that gives no text.
+        """
+        if data is not None:
+            source = await async_text_from_pdf(self.hass, data)
+        elif idea_id and attachment_id:
+            source = await self._async_attachment_text(idea_id, attachment_id, user_id)
+        elif is_url(text):
+            source = await async_text_from_url(self.hass, text)
+        else:
+            return await self.async_generate_map(text, language)
+        return await self.async_generate_map(source, language, MAX_SOURCE_TEXT)
+
+    async def _async_attachment_text(
+        self, idea_id: str, attachment_id: str, user_id: str | None
+    ) -> str:
+        """Return the text of a PDF attached to an idea the person may see."""
+        idea = self._ideas.get(idea_id)
+        path = self.attachment_file(idea_id, attachment_id) if idea else None
+        if idea is None or path is None or not self.can_access(idea, user_id):
+            raise SourceError(ERR_SOURCE_UNREACHABLE, "No such attachment")
+        if path.suffix.lower() != ".pdf":
+            raise SourceError(ERR_SOURCE_UNSUPPORTED, "Only PDF attachments")
+
+        def read() -> bytes | None:
+            try:
+                return path.read_bytes()
+            except OSError:
+                return None
+
+        data = await self.hass.async_add_executor_job(read)
+        if data is None:
+            raise SourceError(ERR_SOURCE_UNREACHABLE, "Attachment file missing")
+        return await async_text_from_pdf(self.hass, data)
 
     async def async_suggest_parents(
         self, category: str, user_id: str | None, language: str | None = None

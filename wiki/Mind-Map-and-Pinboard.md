@@ -174,7 +174,7 @@ Click `⛶` at the top right to enlarge the mindmap to the full screen.
 | **Z** | AI: sort in loose ideas |
 | **K** | AI: group loose notes into themes |
 | **D** | Draw: pen, arrow, circle and eraser over the map |
-| **G** | AI: create a map from a topic or text |
+| **G** | AI: create a map from a topic, text, web address or PDF |
 | **R** | rules: color notes that fit a saved filter |
 | **M** | overview (minimap) on/off |
 | **V** | start or end a vote |

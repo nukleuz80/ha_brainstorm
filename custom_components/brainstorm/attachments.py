@@ -15,7 +15,9 @@ from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers.event import async_call_later, async_track_time_interval
 from homeassistant.helpers.http import KEY_HASS
 
+from .ai import AIUnavailableError
 from .const import ATTACHMENT_MAX_SIZE, ATTR_ATTACHMENTS, ATTR_ID, DOMAIN
+from .map_sources import MAX_DOWNLOAD, SourceError
 from .store import BrainstormStore, attachment_name, get_loaded_store
 
 _LOGGER = logging.getLogger(__name__)
@@ -33,6 +35,7 @@ def async_register_views(hass: HomeAssistant) -> None:
     """Register the attachment endpoints once per run."""
     hass.http.register_view(AttachmentUploadView())
     hass.http.register_view(AttachmentView())
+    hass.http.register_view(MapSourceView())
 
 
 def _store_or_error(hass: HomeAssistant) -> BrainstormStore:
@@ -106,6 +109,63 @@ class AttachmentUploadView(HomeAssistantView):
         return web.json_response(
             {"added": added, "attachments": idea.get(ATTR_ATTACHMENTS) or []}
         )
+
+
+class MapSourceView(HomeAssistantView):
+    """Let the AI make a mind map from an uploaded PDF; nothing is stored."""
+
+    url = "/api/brainstorm/map_source"
+    name = "api:brainstorm:map_source"
+    requires_auth = True
+
+    async def post(self, request: web.Request) -> web.Response:
+        """Read the PDF of the upload and answer with the nodes of the map."""
+        hass: HomeAssistant = request.app[KEY_HASS]
+        store = _store_or_error(hass)
+        if not store.ai_subtasks_available:
+            return _map_error("ai_not_configured", "No AI task entity is set up")
+        try:
+            reader = await request.multipart()
+        except (AssertionError, ValueError) as err:
+            raise web.HTTPBadRequest(text="Expected a multipart upload") from err
+        data: bytes | None = None
+        language: str | None = None
+        while (part := await reader.next()) is not None:
+            if not isinstance(part, BodyPartReader):
+                continue
+            if part.name == "language":
+                language = (await part.text())[:10] or None
+            elif part.filename and data is None:
+                chunks: list[bytes] = []
+                size = 0
+                while chunk := await part.read_chunk(256 * 1024):
+                    size += len(chunk)
+                    if size > MAX_DOWNLOAD:
+                        return _map_error("source_too_large", "The PDF is too large")
+                    chunks.append(chunk)
+                data = b"".join(chunks)
+        if data is None:
+            raise web.HTTPBadRequest(text="No file in the upload")
+        try:
+            nodes = await store.async_generate_map_from_source(
+                data=data, user_id=_user_id(request), language=language
+            )
+        except SourceError as err:
+            return _map_error(err.code, str(err))
+        except AIUnavailableError:
+            return _map_error(
+                "ai_unavailable", "The AI did not answer, try again later"
+            )
+        if nodes is None:
+            return _map_error("ai_failed", "The AI gave no mind map")
+        return web.json_response({"nodes": nodes})
+
+
+def _map_error(code: str, message: str) -> web.Response:
+    """Answer like the websocket command, with a code the card translates."""
+    return web.json_response(
+        {"code": code, "message": message}, status=HTTPStatus.BAD_REQUEST
+    )
 
 
 async def _read_limited(part: BodyPartReader) -> bytes:
