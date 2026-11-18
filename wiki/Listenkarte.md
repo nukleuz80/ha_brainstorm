@@ -77,7 +77,7 @@ Mit **Intelligente Formatierung** (Allgemeine Einstellungen) werden gesprochene 
 | Unteraufgaben vorschlagen | ✨ lässt die KI Unteraufgaben vorschlagen (KI unter Konfigurieren) |
 | Sortieren | halten und ziehen |
 | Suchen | Feld 🔍 über der Liste: Wörter suchen in Titel, Beschreibung, Ergebnis und Person, `#tag` nach einem Tag; ✕ oder **Esc** leert es |
-| Filtern | Kategorie-Pills oben |
+| Filtern | Kategorie-Pills oben; auf dem Handy klappt **▴ Einklappen** sie bis auf die gewählte zu, **▾ Kategorien** wieder auf (merkt sich das Gerät, seit v1.20.0) |
 | Farbmodus | 🌈 bunt / 🎨 Theme-Farben im Kopf |
 | Zur Mindmap | 🧠 im Kopf öffnet sie als Ebene, **Esc** schließt |
 

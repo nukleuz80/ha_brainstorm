@@ -1,9 +1,9 @@
-import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, bringBadge, bringSentText, unblockedText, canSendToBring, renderBringSend, canHandOver, canHandOverProject, canMakeReward, choreopsBadge, choreopsRewardBadge, renderChoreHandover, renderChoreProject, renderChoreReward, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, timeBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t, linkedListMark, linkedListOf, linkedListSign, linkedListText, batteriesBringText, batteriesNeeded, calendarBadge, calendarOptions, readCalendar, renderStatistics } from "./brainstorm-i18n.js?v=1.19.0";
+import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, bringBadge, bringSentText, unblockedText, canSendToBring, renderBringSend, canHandOver, canHandOverProject, canMakeReward, choreopsBadge, choreopsRewardBadge, renderChoreHandover, renderChoreProject, renderChoreReward, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, timeBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t, linkedListMark, linkedListOf, linkedListSign, linkedListText, batteriesBringText, batteriesNeeded, calendarBadge, calendarOptions, readCalendar, renderStatistics } from "./brainstorm-i18n.js?v=1.20.0";
 
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.19.0 - Satz-Tester
+ * Version 1.20.0 - Kategorien auf dem Handy zuklappen
  */
 // The bulb lies next to this file, wherever Home Assistant serves it from
 const BULB_URL = new URL("./brainstorm-bulb.svg", import.meta.url).href;
@@ -170,6 +170,39 @@ class BrainstormCard extends HTMLElement {
     // The list is only redrawn on changes, so ask for it explicitly
     this._lastUpdated = null;
     this._updateContent();
+  }
+
+  _pillsFoldedKey() {
+    const title = (this._config && this._config.title) || "default";
+    return `brainstorm_pills_folded_${title}`;
+  }
+
+  _pillsFolded() {
+    try {
+      return localStorage.getItem(this._pillsFoldedKey()) === "1";
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Folding only takes effect on narrow screens, see .pill-fold in the styles
+  _setPillsFolded(folded) {
+    try {
+      localStorage.setItem(this._pillsFoldedKey(), folded ? "1" : "0");
+    } catch (e) {
+      // Without browser storage the folding only lasts until the next reload
+    }
+    const container = this.shadowRoot.getElementById("pillsContainer");
+    if (!container) return;
+    container.classList.toggle("folded", folded);
+    const button = container.querySelector(".pill-fold");
+    if (button) button.innerHTML = this._pillFoldLabel(folded, Number(button.dataset.count) || 0);
+  }
+
+  _pillFoldLabel(folded, count) {
+    return folded
+      ? `<span>▾ ${t("Kategorien ({count})", { count })}</span>`
+      : `<span>▴ ${t("Einklappen")}</span>`;
   }
 
   _saveSelectedCategory() {
@@ -3835,6 +3868,19 @@ class BrainstormCard extends HTMLElement {
           padding-bottom: 6px;
           margin-bottom: 12px;
         }
+        /* On a phone the categories can be folded down to the chosen one */
+        .pill-fold {
+          display: none !important;
+          border-style: dashed !important;
+        }
+        @media (max-width: 600px) {
+          .pill-fold {
+            display: flex !important;
+          }
+          .pills.folded .pill:not(.active):not(.pill-fold) {
+            display: none !important;
+          }
+        }
         .completed-pill {
           opacity: 0.8;
           border-style: dashed !important;
@@ -5257,7 +5303,15 @@ class BrainstormCard extends HTMLElement {
         <div class="pill add-cat-pill" id="addCatBtn" title="${t("Neue Kategorie erstellen")}">
           <span>${t("+ Kategorie")}</span>
         </div>
+        <div class="pill pill-fold" data-count="${visibleCategories.length}" role="button" title="${t("Kategorien ein- oder ausklappen")}">
+          ${this._pillFoldLabel(this._pillsFolded(), visibleCategories.length)}
+        </div>
       `;
+      pillsContainer.classList.toggle("folded", this._pillsFolded());
+      const foldButton = pillsContainer.querySelector(".pill-fold");
+      if (foldButton) {
+        foldButton.addEventListener("click", () => this._setPillsFolded(!this._pillsFolded()));
+      }
 
       // Re-attach pill click listeners
       pillsContainer.querySelectorAll(".pill[data-cat]").forEach((pill) => {
@@ -6461,7 +6515,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.19.0 ",
+  "%c BRAINSTORM-CARD %c v1.20.0 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

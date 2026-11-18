@@ -84,7 +84,7 @@ With **Smart Text Optimization** (General Settings) spoken notes are tidied up a
 | Suggest subtasks | ✨ lets the AI suggest subtasks (AI under Configure) |
 | Sort | hold and drag |
 | Search | 🔍 field above the list: words search title, description, result and person, `#tag` a tag; ✕ or **Esc** clears it |
-| Filter | category pills at the top |
+| Filter | category pills at the top; on a phone **▴ Fold** folds them down to the chosen one, **▾ Categories** unfolds them (remembered per device, since v1.20.0) |
 | Color mode | 🌈 colorful / 🎨 theme colors in the header |
 | Mind map | 🧠 in the header opens it as a layer, **Esc** closes it |
 
