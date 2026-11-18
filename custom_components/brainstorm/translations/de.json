@@ -53,7 +53,8 @@
           "close": "✅ Fertig",
           "privacy": "Privatsphäre & Benutzer",
           "privacy_voice": "Echos & Apps Personen zuordnen",
-          "integrations": "🔗 Verbundene Integrationen"
+          "integrations": "🔗 Verbundene Integrationen",
+          "sentence_test": "🧪 Satz-Tester"
         },
         "menu_option_descriptions": {
           "integrations": "{integrations_status}"
@@ -726,6 +727,20 @@
           "mail_reply_service": "Optional: eine Benachrichtigungs-Aktion, die zurückschickt, was notiert wurde, etwa die von SMTP. Sie bekommt `message`, `title` und den Absender als `target`. Leer schickt keine Antwort.",
           "go_back": "Kehrt ohne Speichern zur vorherigen Seite zurück."
         }
+      },
+      "sentence_test": {
+        "title": "Brainstorm › 🧪 Satz-Tester",
+        "description": "Tippe einen Satz so, wie du ihn Alexa, Assist oder Siri sagen würdest. Brainstorm zeigt, was daraus würde: Titel, Kategorie und warum, Termin, Priorität, Person. Gespeichert wird nichts.\n\n{result}",
+        "data": {
+          "sentence": "Satz",
+          "mode": "Lesen als",
+          "go_back": "⬅️ Zurück"
+        },
+        "data_description": {
+          "sentence": "Zum Beispiel: erinnere mich morgen um 8 an die Mülltonnen",
+          "mode": "Automatisch liest einen Satz, der mit „erinnere“ beginnt, als Erinnerung, alles andere als gesprochene Notiz.",
+          "go_back": "Zurück zum Hauptmenü."
+        }
       }
     },
     "error": {
@@ -905,6 +920,14 @@
         "subject": "Stichwort irgendwo im Betreff",
         "anywhere": "Stichwort irgendwo in der Mail (Betreff oder Text)",
         "all": "Jede Mail der erlaubten Adressen"
+      }
+    },
+    "sentence_test_mode": {
+      "options": {
+        "auto": "Automatisch",
+        "voice": "Gesprochene Notiz (Alexa, Assist, Siri)",
+        "reminder": "Erinnerung („erinnere mich …“)",
+        "typed": "Getippt (Schnelleingabe)"
       }
     }
   },
@@ -1818,6 +1841,24 @@
         "name": {
           "name": "Name",
           "description": "Name der Belohnung; leer nimmt den Text der Notiz."
+        }
+      }
+    },
+    "test_sentence": {
+      "name": "Satz testen",
+      "description": "Zeigt, was Brainstorm aus einem Satz machen würde (Titel, Kategorie und warum, Termin, Priorität, Person), ohne etwas zu speichern.",
+      "fields": {
+        "text": {
+          "name": "Satz",
+          "description": "Der Satz, wie er gesprochen oder getippt würde."
+        },
+        "mode": {
+          "name": "Lesen als",
+          "description": "`auto`, `voice`, `reminder` oder `typed`."
+        },
+        "language": {
+          "name": "Sprache",
+          "description": "Sprache des Satzes, sonst die von Home Assistant."
         }
       }
     }

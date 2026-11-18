@@ -16,6 +16,7 @@ Alle Parameter stehen [weiter unten](#brainstormadd_idea) und unter [**Entwickle
 | `brainstorm.restore_idea` | gelöschte Notiz zurückholen |
 | `brainstorm.get_ideas` | Liste als Antwort, z. B. `category: Einkaufen` |
 | `brainstorm.get_announcement` | fertiger Vorlesetext (`speech`) |
+| `brainstorm.test_sentence` | `text: "erinnere mich morgen um 8 an den Müll"` zeigt, was daraus würde, ohne zu speichern |
 | `brainstorm.add_category` / `remove_category` | Kategorie anlegen oder entfernen |
 | `brainstorm.set_category_style` | Icon und Farbe |
 | `brainstorm.export_markdown` / `export_json` / `import_json` | Sichern und Übertragen |
@@ -189,6 +190,18 @@ Erzeugt einen flüssigen, gesprochenen Ansagetext für Alexa oder Assist über a
 | :--- | :--- | :--- |
 | `category` | Nein | Optional nach einer bestimmten Kategorie filtern (z.B. Smarthome). Ohne Angabe werden alle aktiven Kategorien vorgelesen. |
 | `device` | Nein | Das Gerät, das gefragt hat. Bei eingeschalteter Privatsphäre bestimmt es, wessen Einträge genannt werden. |
+
+## `brainstorm.test_sentence`
+
+▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.test_sentence)
+
+Zeigt, was Brainstorm aus einem Satz machen würde, ohne etwas zu speichern. Die Antwort enthält `text`, `category`, `category_reason` (warum diese Kategorie), `priority`, `due`, `tags`, `assignee` und `zone`. Dasselbe gibt es zum Klicken unter **Einstellungen › 🧪 Satz-Tester**.
+
+| Feld | Pflicht | Bedeutung |
+| :--- | :--- | :--- |
+| `text` | Ja | Der Satz, höchstens 500 Zeichen. |
+| `mode` | Nein | `auto` (Standard), `voice` (gesprochene Notiz), `reminder` („erinnere mich …“) oder `typed` (Schnelleingabe). |
+| `language` | Nein | Sprache, sonst die von Home Assistant. |
 
 ## `brainstorm.add_category`
 

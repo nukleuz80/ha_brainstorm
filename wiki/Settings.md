@@ -167,6 +167,19 @@ Brainstorm uses an AI task entity of Home Assistant, such as Google Gemini, Open
 | Improve spoken entries with AI | Each spoken entry is stored first and improved a few seconds later. The result is dropped if it adds words or changes a negation. The text is sent to the provider of the chosen AI. |
 | Shorten the briefing and review with AI | The morning briefing and weekly review of the reminders are shortened. Your ideas are sent to the provider of the chosen AI. |
 
+### Brainstorm › 🧪 Sentence tester
+
+_Since v1.19.0._
+
+Type a sentence the way you would say it to Alexa, Assist or Siri. Brainstorm shows below what it would make of it: title, category and why, due time, priority, tags, person and place. Nothing is saved, so try as much as you like.
+
+| Field | What it does |
+| :--- | :--- |
+| Sentence | The sentence to check, for example “remind me tomorrow at 8 about the bins”. |
+| Read it as | **Automatic** reads a sentence starting with “remind” as a reminder, everything else as a spoken note. Pick **Typed** to check the quick input of the card. |
+
+If the reason reads “nothing found, default category”, add a keyword of your own under **Categories**. The AI polishing of spoken entries only runs after saving and is not part of this test.
+
 ### Brainstorm › Delete done entries
 
 The page shows how many done (ticked off or archived) entries there are. Deleted entries cannot be brought back, export them first if you want to keep them.

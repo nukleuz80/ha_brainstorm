@@ -165,6 +165,9 @@ from .const import (
     RULE_SCHEDULE_WEEKDAYS,
     RULE_ZONE,
     RULE_ZONE_ENABLED,
+    SENTENCE_TEST_AUTO,
+    SENTENCE_TEST_MAX_LENGTH,
+    SENTENCE_TEST_MODES,
     SHARE_ALL,
     SHARE_EDIT,
     VOICE_MODE_NATIVE,
@@ -339,6 +342,9 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         self._sensor_rule_id: str = ""
         self._notice: str = ""
         self._test_results: str = ""
+        self._sentence: str = ""
+        self._sentence_mode: str = SENTENCE_TEST_AUTO
+        self._sentence_result: str = ""
 
     def _get_localized_menu(self, step_id: str) -> dict[str, str]:
         """Return explicit localized menu options mapping to bypass frontend cache staleness."""
@@ -349,6 +355,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "category_style": "Kategorie-Design (Farbe & Icon)",
                 "general": "Allgemeine Einstellungen & Export",
                 "alexa_skill": "Alexa-Spracheingabe & Skill",
+                "sentence_test": "🧪 Satz-Tester",
                 "reminders": "Erinnerungen & Benachrichtigungen",
                 "ai": "KI",
                 "cleanup": "🧹 Erledigte Einträge löschen",
@@ -396,6 +403,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "category_style": "Category Design (Color & Icon)",
                 "general": "General Settings & Export",
                 "alexa_skill": "Alexa Voice Input & Skill",
+                "sentence_test": "🧪 Sentence tester",
                 "reminders": "Reminders & Notifications",
                 "ai": "AI",
                 "cleanup": "🧹 Delete done entries",
@@ -2283,6 +2291,128 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         return self.async_show_form(
             step_id="ai", data_schema=vol.Schema(_with_back(schema))
         )
+
+    async def async_step_sentence_test(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Show what Brainstorm would make of a sentence, without saving anything."""
+        if user_input is not None and user_input.pop(BACK_FIELD, False):
+            self._sentence_result = ""
+            return await self.async_step_init()
+        if user_input is not None:
+            self._sentence = str(user_input.get("sentence") or "").strip()[
+                :SENTENCE_TEST_MAX_LENGTH
+            ]
+            self._sentence_mode = user_input.get("mode") or SENTENCE_TEST_AUTO
+            if self._sentence:
+                store = await self._async_store()
+                preview = store.preview_idea(
+                    self._sentence,
+                    self._sentence_mode,
+                    getattr(self.hass.config, "language", None),
+                )
+                self._sentence_result = self._format_preview(preview)
+            else:
+                self._sentence_result = ""
+        return self.async_show_form(
+            step_id="sentence_test",
+            data_schema=vol.Schema(
+                _with_back({
+                    vol.Optional(
+                        "sentence", description={"suggested_value": self._sentence}
+                    ): selector.TextSelector(),
+                    vol.Required(
+                        "mode", default=self._sentence_mode
+                    ): selector.SelectSelector(
+                        selector.SelectSelectorConfig(
+                            options=list(SENTENCE_TEST_MODES),
+                            translation_key="sentence_test_mode",
+                            mode=selector.SelectSelectorMode.DROPDOWN,
+                        )
+                    ),
+                })
+            ),
+            description_placeholders={"result": self._sentence_result},
+        )
+
+    def _format_preview(self, preview: dict[str, Any]) -> str:
+        """Turn the result of the sentence tester into lines a person can read."""
+        text = self._text
+        modes = {
+            "voice": text("gesprochene Notiz", "spoken note"),
+            "reminder": text("Erinnerung", "reminder"),
+            "typed": text("getippt", "typed"),
+        }
+        priorities = {
+            "low": text("niedrig", "low"),
+            "medium": text("normal", "normal"),
+            "high": text("hoch", "high"),
+            "urgent": text("dringend", "urgent"),
+        }
+        reason, detail = preview.get("category_reason") or ("fallback", None)
+        reasons = {
+            "explicit": text("ausdrücklich gewählt", "chosen explicitly"),
+            "prefix": text(
+                f"Satz beginnt mit „{detail}“", f"sentence starts with “{detail}”"
+            ),
+            "topic": text(f"Thema „{detail}“", f"topic “{detail}”"),
+            "phrase": text(f"Redewendung „{detail}“", f"phrase “{detail}”"),
+            "hashtag": text(f"Hashtag #{detail}", f"hashtag #{detail}"),
+            "words": text(
+                f"Stichwörter: {', '.join(detail or [])}",
+                f"keywords: {', '.join(detail or [])}",
+            ),
+            "fallback": text(
+                "nichts erkannt, Standardkategorie", "nothing found, default category"
+            ),
+        }
+        due = "–"
+        if preview.get("due"):
+            when = dt_util.parse_datetime(preview["due"])
+            if when is not None:
+                due = format_due(
+                    when, dt_util.now(), getattr(self.hass.config, "language", "en")
+                )
+
+        priority = preview.get("priority") or "–"
+        priority = priorities.get(priority, priority)
+
+        def name_of(entity_id: str | None) -> str:
+            if not entity_id:
+                return "–"
+            state = self.hass.states.get(entity_id)
+            return state.name if state is not None else entity_id
+
+        lines = [
+            text("**Ergebnis**", "**Result**")
+            + f" ({modes.get(preview.get('mode', ''), preview.get('mode', ''))})",
+            f"- {text('Titel', 'Title')}: {preview.get('text') or '–'}",
+            (
+                f"- {text('Kategorie', 'Category')}: "
+                f"{preview.get('category') or '–'} ({reasons.get(reason, reason)})"
+            ),
+            f"- {text('Termin', 'Due')}: {due}",
+            f"- {text('Priorität', 'Priority')}: {priority}",
+        ]
+        if preview.get("tags"):
+            lines.append(
+                f"- Tags: {', '.join('#' + tag for tag in preview['tags'])}"
+            )
+        if preview.get("assignee"):
+            lines.append(
+                f"- {text('Person', 'Person')}: {name_of(preview['assignee'])}"
+            )
+        if preview.get("zone"):
+            lines.append(f"- {text('Ort', 'Place')}: {name_of(preview['zone'])}")
+        if preview.get("ai_cleanup"):
+            lines.append(
+                text(
+                    "_Die KI glättet die Formulierung danach noch._",
+                    "_The AI polishes the wording afterwards._",
+                )
+            )
+        lines.append(text("_Nichts wurde gespeichert._", "_Nothing was saved._"))
+        return "\n".join(lines)
 
     async def async_step_cleanup(
         self, user_input: dict[str, Any] | None = None

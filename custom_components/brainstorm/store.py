@@ -152,6 +152,12 @@ from .const import (
     CONF_VOICE_MODE,
     CONF_HIDE_EMPTY_CATEGORIES,
     CONF_AI_ENTITY,
+    SENTENCE_TEST_AUTO,
+    SENTENCE_TEST_MAX_LENGTH,
+    SENTENCE_TEST_MODES,
+    SENTENCE_TEST_REMINDER,
+    SENTENCE_TEST_TYPED,
+    SENTENCE_TEST_VOICE,
     CONF_AI_TEXT_CLEANUP,
     CONF_DELETE_DONE_DAYS,
     CONF_GLOSSARY,
@@ -232,6 +238,10 @@ if TYPE_CHECKING:
     from .todo_sync import TodoSyncManager
 
 _LOGGER = logging.getLogger(__name__)
+# "Erinnere mich ...", "remind me ..." at the start of a sentence
+REMINDER_START = re.compile(
+    r"^\s*(?:bitte\s+)?(?:erinnere?|remind)\b(?:\s+(?:mich|me))?\s*", re.IGNORECASE
+)
 
 COLOR_PATTERN = re.compile(r"^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$")
 ICON_PATTERN = re.compile(r"^[a-zA-Z0-9_-]+:[a-zA-Z0-9_-]+$")
@@ -1161,6 +1171,66 @@ class BrainstormStore:
             )
         return {"tasks": tasks[:15], "ai": False}
 
+    def preview_idea(
+        self, text: str, mode: str = "auto", language: str | None = None
+    ) -> dict[str, Any]:
+        """Show what Brainstorm would make of a sentence, without storing it.
+
+        mode "voice" reads it like a note spoken to Alexa, Assist or Siri,
+        "reminder" like "remind me ...", "typed" like the quick input, and
+        "auto" picks reminder for a sentence starting with "remind".
+        """
+        # Imported here, both import this module
+        from .alexa_skill import clean_voice_text
+        from .reminders import build_reminder_request
+
+        pack = self._pack(language)
+        original = " ".join((text or "").split())[:SENTENCE_TEST_MAX_LENGTH]
+        if mode not in SENTENCE_TEST_MODES:
+            mode = SENTENCE_TEST_AUTO
+        if mode == SENTENCE_TEST_AUTO:
+            mode = (
+                SENTENCE_TEST_REMINDER
+                if REMINDER_START.match(original)
+                else SENTENCE_TEST_VOICE
+            )
+        spoken = mode != SENTENCE_TEST_TYPED
+        now = dt_util.now()
+        work = clean_voice_text(original, pack) if spoken else original
+        due: datetime | None = None
+        trigger: dict[str, str | None] | None = None
+        assignee: str | None = None
+        if mode == SENTENCE_TEST_REMINDER:
+            request = build_reminder_request(
+                self.hass, self.options, REMINDER_START.sub("", work), now, pack.code
+            )
+            due, trigger, assignee = request.due, request.trigger, request.assignee
+            work = request.text or work
+        elif spoken and self._smart_formatting and self._voice_due:
+            due, remaining = pack.extract_due(work, now)
+            if due is not None:
+                work = remaining
+        reasons: dict[str, Any] = {}
+        title, category, tags, priority = self.parse_text_and_category(
+            work, None, None, spoken=spoken, language=pack.code, reasons=reasons
+        )
+        return {
+            "original": original,
+            "mode": mode,
+            ATTR_TEXT: title,
+            ATTR_CATEGORY: category,
+            "category_reason": reasons.get("category"),
+            ATTR_PRIORITY: priority,
+            ATTR_DUE: due.isoformat() if due else None,
+            ATTR_TAGS: tags,
+            ATTR_ASSIGNEE: assignee,
+            "zone": (trigger or {}).get("zone"),
+            # The AI only polishes the wording later, it is not part of this test
+            "ai_cleanup": bool(
+                spoken and self._smart_formatting and self.options.get(CONF_AI_ENTITY)
+            ),
+        }
+
     async def async_summarize_branch(
         self, idea: dict[str, Any], user_id: str | None, language: str | None = None
     ) -> str | None:
@@ -1528,8 +1598,14 @@ class BrainstormStore:
         explicit_priority: str | None = None,
         spoken: bool = True,
         language: str | None = None,
+        reasons: dict[str, Any] | None = None,
     ) -> tuple[str, str, list[str], str]:
-        """Parse raw text to extract category, clean text, hashtags and priority."""
+        """Parse raw text to extract category, clean text, hashtags and priority.
+
+        reasons, when given, learns how the category was found, for the
+        sentence tester: a kind like "prefix" or "words" and what matched.
+        """
+        why: dict[str, Any] = reasons if reasons is not None else {}
         pack = self._pack(language)
         clean_text, resolved_prio = self.parse_priority(
             text, explicit_priority, language
@@ -1585,6 +1661,7 @@ class BrainstormStore:
                         break
             if not category:
                 category = exp
+            why["category"] = ("explicit", exp)
 
         # Extract hashtags, a spoken "hashtag garten" becomes "#garten"
         clean_text = SPOKEN_TAG_PATTERN.sub(lambda m: f"#{m.group(1).lower()}", clean_text)
@@ -1615,6 +1692,8 @@ class BrainstormStore:
                             category = cat_name
                             clean_text = rem_text
                             break
+                if category:
+                    why["category"] = ("prefix", cand)
 
         # 2. Compound Project / Topic Prefix:
         # e.g. 'Projekt Brainstorm erweitern' -> Category: 'Brainstorm', Text: 'Brainstorm erweitern'
@@ -1637,6 +1716,8 @@ class BrainstormStore:
                 if not category and projects:
                     category = projects
                     clean_text = f"{target_cand} {rem_content}"
+                if category:
+                    why["category"] = ("topic", target_cand)
 
         # 3. Prepositional / Leading Indicator phrases:
         # e.g. 'für den Garten ...', 'im Garten ...', 'fürs Smarthome ...', 'für Brainstorm ...'
@@ -1663,6 +1744,7 @@ class BrainstormStore:
                             or len(remainder.split()) > 1
                         ):
                             clean_text = remainder
+                        why["category"] = ("phrase", alias)
                         break
                 if category:
                     break
@@ -1680,6 +1762,7 @@ class BrainstormStore:
                             category = cat_name
                             break
                 if category:
+                    why["category"] = ("hashtag", tag)
                     break
 
         # 5. Contextual Keyword & Semantic Scoring
@@ -1687,34 +1770,46 @@ class BrainstormStore:
             lower_text = clean_text.lower()
             words = set(re.findall(r"[a-zA-Z0-9äöüÄÖÜß]+", lower_text))
             scores: dict[str, int] = {c: 0 for c in self._categories if c.lower() != "inbox"}
+            hits: dict[str, list[str]] = {}
 
             for cat_name, kws in active_keywords.items():
                 cat_aliases = active_aliases.get(cat_name, [cat_name.lower()])
                 # High priority if an alias is directly mentioned in the sentence
+                found = hits.setdefault(cat_name, [])
                 for alias in cat_aliases:
                     if alias in words:
                         scores[cat_name] += 12
+                        found.append(alias)
                     elif " " in alias and alias in lower_text:
                         scores[cat_name] += 10
+                        found.append(alias)
 
                 for kw in kws:
                     if " " in kw:
                         if kw in lower_text:
                             scores[cat_name] += 4
+                            found.append(kw)
                     else:
                         if kw in words:
                             scores[cat_name] += 3
+                            found.append(kw)
                         elif any(w.startswith(kw) or w.endswith(kw) for w in words if len(w) > 4 and len(kw) > 3):
                             scores[cat_name] += 1
+                            found.append(f"{kw}…")
 
             if scores:
                 best_cat = max(scores, key=scores.get)
                 if scores[best_cat] > 0:
                     category = best_cat
+                    why["category"] = (
+                        "words",
+                        list(dict.fromkeys(hits.get(best_cat, []))),
+                    )
 
         # Fallback to the configured default category
         if not category or category not in self._categories:
             category = self._fallback_category
+            why["category"] = ("fallback", None)
 
         # 6. Check priority once more if still medium (in case priority keyword appeared after stripped category prefix)
         if resolved_prio == PRIORITY_MEDIUM and not explicit_priority:

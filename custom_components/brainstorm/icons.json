@@ -110,6 +110,9 @@
     },
     "send_reward_to_choreops": {
       "service": "mdi:gift"
+    },
+    "test_sentence": {
+      "service": "mdi:test-tube"
     }
   }
 }

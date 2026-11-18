@@ -31,6 +31,9 @@ from .bring import (
     bring_message_target,
 )
 from .const import (
+    SENTENCE_TEST_AUTO,
+    SENTENCE_TEST_MODES,
+    SERVICE_TEST_SENTENCE,
     ATTR_CALENDAR,
     ATTR_CATEGORY,
     CONF_CHOREOPS_ENABLED,
@@ -432,6 +435,14 @@ SERVICE_DELETE_DONE_SCHEMA = vol.Schema(
         vol.Optional("older_than_days", default=0): vol.All(
             vol.Coerce(int), vol.Range(min=0, max=3650)
         ),
+    }
+)
+
+SERVICE_TEST_SENTENCE_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_TEXT): vol.All(cv.string, vol.Length(min=1)),
+        vol.Optional("mode", default=SENTENCE_TEST_AUTO): vol.In(SENTENCE_TEST_MODES),
+        vol.Optional(ATTR_LANGUAGE): cv.string,
     }
 )
 
@@ -1229,6 +1240,13 @@ def _register_services(hass: HomeAssistant) -> None:
             )
         return {"success": True, "idea": idea}
 
+    async def handle_test_sentence(call: ServiceCall) -> dict[str, Any]:
+        """Show what Brainstorm would make of a sentence, storing nothing."""
+        store = _require_store(hass)
+        return store.preview_idea(
+            call.data[ATTR_TEXT], call.data["mode"], call.data.get(ATTR_LANGUAGE)
+        )
+
     async def handle_get_ideas(call: ServiceCall) -> dict[str, Any]:
         """Handle fetching ideas."""
         store = _require_store(hass)
@@ -1480,6 +1498,14 @@ def _register_services(hass: HomeAssistant) -> None:
         SERVICE_GET_IDEAS,
         handle_get_ideas,
         schema=SERVICE_GET_IDEAS_SCHEMA,
+        supports_response=SupportsResponse.ONLY,
+    )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_TEST_SENTENCE,
+        handle_test_sentence,
+        schema=SERVICE_TEST_SENTENCE_SCHEMA,
         supports_response=SupportsResponse.ONLY,
     )
 

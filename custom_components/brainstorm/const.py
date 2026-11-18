@@ -501,3 +501,18 @@ PLATFORMS = ["todo", "sensor"]
 OVERVIEW_ENTITY_ID = "sensor.brainstorm_ideen_ubersicht"
 
 
+
+
+# Sentence tester: what Brainstorm makes of a sentence, nothing stored
+SENTENCE_TEST_AUTO = "auto"
+SENTENCE_TEST_VOICE = "voice"
+SENTENCE_TEST_REMINDER = "reminder"
+SENTENCE_TEST_TYPED = "typed"
+SENTENCE_TEST_MODES = (
+    SENTENCE_TEST_AUTO,
+    SENTENCE_TEST_VOICE,
+    SENTENCE_TEST_REMINDER,
+    SENTENCE_TEST_TYPED,
+)
+SENTENCE_TEST_MAX_LENGTH = 500
+SERVICE_TEST_SENTENCE = "test_sentence"

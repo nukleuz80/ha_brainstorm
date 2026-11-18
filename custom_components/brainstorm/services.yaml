@@ -379,6 +379,28 @@ get_ideas:
             - completed
             - all
 
+test_sentence:
+  fields:
+    text:
+      required: true
+      example: "erinnere mich morgen um 8 an die Mülltonnen"
+      selector:
+        text:
+    mode:
+      default: "auto"
+      selector:
+        select:
+          translation_key: sentence_test_mode
+          options:
+            - auto
+            - voice
+            - reminder
+            - typed
+    language:
+      required: false
+      selector:
+        language:
+
 get_announcement:
   fields:
     category:

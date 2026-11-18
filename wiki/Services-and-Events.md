@@ -16,6 +16,7 @@ All parameters are [further down](#brainstormadd_idea) and under [**Developer to
 | `brainstorm.restore_idea` | bring a deleted note back |
 | `brainstorm.get_ideas` | list as a response, e.g. `category: Shopping` |
 | `brainstorm.get_announcement` | ready-to-read text (`speech`) |
+| `brainstorm.test_sentence` | `text: "remind me tomorrow at 8 about the bins"` shows what it would become, without saving |
 | `brainstorm.add_category` / `remove_category` | add or remove a category |
 | `brainstorm.set_category_style` | icon and color |
 | `brainstorm.export_markdown` / `export_json` / `import_json` | back up and transfer |
@@ -189,6 +190,18 @@ Returns a spoken text about all categories or one of them as a response, for Ale
 | :--- | :--- | :--- |
 | `category` | No | Only this category, such as `Smarthome`. Empty means all. |
 | `device` | No | The device that asked. With privacy on, it decides whose entries are named. |
+
+## `brainstorm.test_sentence`
+
+▶️ [Try it in Home Assistant](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.test_sentence)
+
+Shows what Brainstorm would make of a sentence, without saving anything. The response holds `text`, `category`, `category_reason` (why this category), `priority`, `due`, `tags`, `assignee` and `zone`. The same is available to click under **Settings › 🧪 Sentence tester**.
+
+| Field | Required | Meaning |
+| :--- | :--- | :--- |
+| `text` | Yes | The sentence, at most 500 characters. |
+| `mode` | No | `auto` (default), `voice` (spoken note), `reminder` (“remind me …”) or `typed` (quick input). |
+| `language` | No | Language, otherwise the one of Home Assistant. |
 
 ## `brainstorm.add_category`
 

@@ -167,6 +167,19 @@ Brainstorm nutzt eine KI-Aufgaben-Entität von Home Assistant, etwa Google Gemin
 | Gesprochene Einträge per KI verbessern | Jeder gesprochene Eintrag wird zuerst gespeichert und wenige Sekunden später verbessert. Das Ergebnis wird verworfen, wenn es Wörter hinzufügt oder eine Verneinung ändert. Der Text geht an den Anbieter der gewählten KI. |
 | Briefing und Rückblick per KI kürzen | Morgen-Briefing und Wochenrückblick der Erinnerungen werden gekürzt. Deine Einträge gehen dafür an den Anbieter der gewählten KI. |
 
+### Brainstorm › 🧪 Satz-Tester
+
+_Seit v1.19.0._
+
+Tippe einen Satz so, wie du ihn Alexa, Assist oder Siri sagen würdest. Brainstorm zeigt darunter, was daraus würde: Titel, Kategorie und warum, Termin, Priorität, Tags, Person und Ort. Gespeichert wird nichts, du kannst also beliebig ausprobieren.
+
+| Feld | Was es bewirkt |
+| :--- | :--- |
+| Satz | Der Satz, den du prüfen willst, zum Beispiel „erinnere mich morgen um 8 an die Mülltonnen“. |
+| Lesen als | **Automatisch** liest einen Satz, der mit „erinnere“ beginnt, als Erinnerung, alles andere als gesprochene Notiz. Wähle **Getippt**, um die Schnelleingabe der Karte zu prüfen. |
+
+Steht als Grund „nichts erkannt, Standardkategorie“, lohnt sich ein eigenes Stichwort unter **Kategorien**. Die KI-Verbesserung gesprochener Einträge läuft erst nach dem Speichern und ist hier nicht enthalten.
+
 ### Brainstorm › Erledigte Einträge löschen
 
 Die Seite zeigt, wie viele erledigte (abgehakte oder archivierte) Einträge es gibt. Gelöschte Einträge lassen sich nicht zurückholen, exportiere sie vorher, wenn du sie behalten willst.
