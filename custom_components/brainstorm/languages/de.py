@@ -177,6 +177,8 @@ CONVERSATIONAL_PREFIXES: list[str] = [
     # A leftover 'bitte' when the voice command already took 'notiere'
     r"^bitte\b[,.]?\s+",
     r"^(?:dass\s+ich\s+(?:noch\s+)?|dass\s+wir\s+(?:noch\s+)?|dass\s+)",
+    # 'dass' misheard as 'das' in front of an article: 'das das auto …'
+    r"^das\s+(?=(?:das|der|die|den|dem)\s)",
     r"^(?:noch\s+)",
 ]
 
@@ -287,6 +289,20 @@ _RE_FINAL_PASSIVE = re.compile(
     re.IGNORECASE,
 )
 _RE_FINAL_MODAL = re.compile(rf"^(.*?\b)?({_WORD})\s+{_MODAL_FINAL}$", re.IGNORECASE)
+# A clause left over from 'notiere, dass wir …': the subject goes, the verb
+# that stood last stays as the task ('wir die garage streichen wollen')
+_RE_SUBORDINATE_MODAL = re.compile(
+    rf"^(?:ich|wir|man)\s+(.*?{_WORD})\s+(?:{_MODAL_FINAL}|will|wollen|wollte|"
+    r"wollten|möchte|möchten)$",
+    re.IGNORECASE,
+)
+_RE_DEFINITE = re.compile(r"^(?:der|die|das|den|dem|des)\b", re.IGNORECASE)
+# '… dass wir ein regelwerk brauchen' keeps what is needed, as 'wir brauchen
+# milch' does
+_RE_SUBORDINATE_NEED = re.compile(
+    r"^(?:(?:ich|wir|man)\s+)?(.+?)\s+(?:brauche|brauchen|benötige|benötigen)$",
+    re.IGNORECASE,
+)
 _RE_LEADING_MODAL = re.compile(rf"^{_MODAL_FINAL}\b", re.IGNORECASE)
 _RE_ACTIVE_MODAL = re.compile(rf"^(.+?)\s+({_MODAL_NEED})\s+(.+)$", re.IGNORECASE)
 _RE_CLAUSE_WORD = re.compile(
@@ -425,6 +441,23 @@ def _rewrite_as_task(text: str, after_reminder_opener: bool) -> str:
         return text
     s = text.rstrip(" .!")
 
+    if (
+        (match := _RE_SUBORDINATE_NEED.match(s))
+        and not _RE_CLAUSE_WORD.search(match.group(1))
+        # 'die kinder neue schuhe brauchen' names who needs them, keep it
+        and (s.split()[0].lower() in {"ich", "wir", "man"} or not _RE_DEFINITE.match(s))
+    ):
+        return match.group(1)
+    if (match := _RE_SUBORDINATE_MODAL.match(s)) and not _RE_CLAUSE_WORD.search(
+        re.sub(r"\s+werden$", "", match.group(1), flags=re.IGNORECASE)
+    ):
+        s = match.group(1)
+        if inner := _RE_FINAL_PASSIVE.match(s):
+            before, participle = inner.group(1, 2)
+            infinitive = participle_to_infinitive(participle)
+            return f"{before or ''}{infinitive}" if infinitive else text
+        return s
+
     if match := _RE_SUBJECT_MODAL_START.match(s):
         s = s[match.end() :]
     elif match := _RE_INVERTED_MODAL.match(s):
@@ -491,6 +524,10 @@ def _drop_articles(text: str) -> str:
     return " ".join(filtered_words).strip()
 
 
+_INDEFINITE_ARTICLES = {"ein", "eine", "einen", "einem", "einer", "eines"}
+_NOT_NOUNS_AFTER_ARTICLE = {"paar", "bisschen", "wenig", "mal", "bis", "und", "oder"}
+
+
 def _format_words(text: str) -> str:
     """Correct spelling and apply German capitalization, word by word."""
     words = text.split()
@@ -520,6 +557,15 @@ def _format_words(text: str) -> str:
                 words[idx + 1].lower().strip(".,!?:;") if idx + 1 < len(words) else None,
             )
         ):
+            word_cap = capitalize_first(clean_w)
+        elif (
+            words[idx - 1].lower() in _INDEFINITE_ARTICLES
+            and lower_w not in _NOT_NOUNS_AFTER_ARTICLE
+            and not lower_w.endswith(("e", "en", "er", "es", "em"))
+            and len(lower_w) > 2
+        ):
+            # 'ein regelwerk': an indefinite article without an adjective
+            # stands in front of a noun
             word_cap = capitalize_first(clean_w)
         elif (
             idx > 1

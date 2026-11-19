@@ -341,3 +341,35 @@ def test_appointment_with_time_only(spoken: str, due: datetime, text: str) -> No
 def test_time_without_appointment_stays_text(spoken: str) -> None:
     """Test that a time in an ordinary note does not become a reminder."""
     assert extract_spoken_due(spoken, _APPOINTMENT_NOW) == (None, spoken)
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        # What is left of 'notiere, dass …' stands in clause order
+        ("wir ein regelwerk für zuhause brauchen", "Ein Regelwerk für Zuhause"),
+        ("dass wir ein regelwerk für zuhause brauchen", "Ein Regelwerk für Zuhause"),
+        ("notiere, dass ich neue schuhe brauche", "Neue Schuhe"),
+        ("ich den keller aufräumen muss", "Keller aufräumen"),
+        ("wir die garage streichen sollten", "Garage streichen"),
+        ("wir am samstag oma besuchen wollen", "Am Samstag Oma besuchen"),
+        ("ich morgen den arzt anrufen muss", "Morgen Arzt anrufen"),
+        (
+            "wir die kinder vom flughafen abgeholt werden müssen",
+            "Kinder vom Flughafen abholen",
+        ),
+        # 'dass' misheard as 'das'
+        (
+            "das das regelwerk für die kinder einen skill bekommen muss",
+            "Regelwerk für die Kinder einen Skill bekommen",
+        ),
+        ("das das auto in die werkstatt muss", "Auto in die Werkstatt"),
+        # Who needs it stays, and so does a sentence with its own meaning
+        ("die kinder neue schuhe brauchen", "Die Kinder neue Schuhe brauchen"),
+        ("die kinder brauchen neue schuhe", "Die Kinder brauchen neue Schuhe"),
+        ("das ist ein test", "Das ist ein Test"),
+    ],
+)
+def test_clauses_become_tasks(raw: str, expected: str) -> None:
+    """A subordinate clause turns into a short task."""
+    assert clean_and_format_idea_text(raw) == expected

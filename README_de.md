@@ -9,7 +9,7 @@
 [![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.20.3-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.20.4-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20Selbsteinsch%C3%A4tzung-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![Wiki](https://img.shields.io/badge/Doku-Wiki-6f42c1.svg)](https://github.com/nukleuz80/ha_brainstorm/wiki)
@@ -265,11 +265,11 @@ Die letzten Versionen; alle stehen in [CHANGELOG_de.md](CHANGELOG_de.md).
 
 | Version | Datum | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.20.4`** | 19.11.2026 | **🗣️ Diktierte Nebensätze werden zu Aufgaben.** Was nach „notiere, dass …“ übrig blieb, stand bisher in Nebensatz-Stellung im Titel, etwa „Wir ein Regelwerk für Zuhause brauchen“ oder „Ich den Keller aufräumen“. Jetzt fällt das Pronomen weg und das Verb am Ende wird zur Aufgabe: „Keller aufräumen“, „Am Samstag Oma besuchen“, „Ein Regelwerk für Zuhause“. Ein als „das das …“ verhörtes „dass das …“ wird erkannt, und ein Hauptwort nach „ein“ wird großgeschrieben. Sätze, die sagen, wer etwas braucht („Die Kinder neue Schuhe brauchen“), bleiben unverändert. |
 | **`v1.20.3`** | 19.11.2026 | **🖥️ Mindmap auf dem Echo Show nutzt den Platz besser.** Lange Titel werden nicht mehr mit „…“ abgeschnitten, sondern auf zwei Zeilen umbrochen. Hat eine Mindmap nur wenige Zeilen, rücken die Zweige weiter auseinander, so dass die Karte die Höhe des Bildschirms nutzt statt eines schmalen Streifens in der Mitte. Außerdem klebt der Knopf *Liste* bzw. *Mindmap* oben nicht mehr am Kategorienamen. |
 | **`v1.20.2`** | 19.11.2026 | **🔋 Batterie-Aufgabe hakt sich nicht mehr fälschlich ab.** Manche Geräte (etwa Zigbee-Wassermelder) haben neben dem Prozentsensor einen Schwach-Melder, der bei leerer Batterie „nicht schwach“ sagt. Nach jedem kurzen Funkaussetzer meldete er sich vor dem Stand zurück, Brainstorm hielt das für eine neue Batterie, hakte die Aufgabe ab und legte sie drei Stunden später neu an. Hat ein Gerät einen Prozentsensor, hakt jetzt nur ein guter Stand die Aufgabe ab. |
 | **`v1.20.1`** | 18.11.2026 | **🐞 Knopf *Frei reden* wieder zu erkennen.** Der Knopf rechts neben dem Papierkorb der Mindmap und *Frei reden* in der Listenkarte zeigten das Emoji 🗣️, auf dem iPhone ein dunkelgrauer Kopf, der auf dunklem Hintergrund kaum zu sehen war. Jetzt zeigen beide ein Symbol in der Textfarbe des Themes. |
 | **`v1.20.0`** | 18.11.2026 | **📱 Kategorien auf dem Handy zuklappen.** Auf schmalen Bildschirmen hat die Kategorie-Leiste der Listenkarte am Ende den Knopf *▴ Einklappen*: Danach bleibt nur die gewählte Kategorie stehen, daneben *▾ Kategorien (n)* zum Aufklappen. So rückt die Liste nach oben, statt erst nach drei Zeilen Kategorien zu beginnen. Jedes Gerät merkt sich, ob die Leiste zu ist; am Desktop ändert sich nichts. |
-| **`v1.19.0`** | 18.11.2026 | **🧪 Satz-Tester.** Neuer Eintrag *🧪 Satz-Tester* im Hauptmenü der Einstellungen: Du tippst einen Satz so, wie du ihn Alexa, Assist oder Siri sagen würdest, und siehst sofort, was Brainstorm daraus macht: Titel, Kategorie und warum (Stichwörter, Thema, Hashtag oder nichts erkannt), Termin, Priorität, Tags, Person und Ort. Gespeichert wird nichts. *Automatisch* liest „erinnere mich …“ als Erinnerung, sonst als gesprochene Notiz; *Getippt* prüft die Schnelleingabe. Dasselbe als Aktion `brainstorm.test_sentence` mit Antwort, etwa für Automationen oder die Entwicklerwerkzeuge. |
 
 ---
 
