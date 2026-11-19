@@ -120,7 +120,7 @@ from .const import (
 from .outline import OUTLINE_FORMATS, OutlineError, parse_outline
 from .echo_locks import EchoLockManager
 from .frontend import async_register_frontend
-from .llm import async_register_llm_api
+from .llm_api import async_register_llm_api
 from .reminders import ReminderManager, build_reminder_request, find_mentions
 from .repairs import async_check_issues, async_delete_issues
 from .sensor_rules import SensorRuleWatcher

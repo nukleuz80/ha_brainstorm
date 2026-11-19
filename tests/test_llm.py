@@ -11,7 +11,7 @@ from homeassistant.helpers import llm
 from voluptuous_openapi import convert
 
 from custom_components.brainstorm.const import EVENT_IDEA_DELETED
-from custom_components.brainstorm.llm import (
+from custom_components.brainstorm.llm_api import (
     BRAINSTORM_LLM_API_ID,
     async_register_llm_api,
 )
@@ -178,7 +178,7 @@ async def test_tools_report_that_the_entry_is_not_loaded(
 async def test_failed_registration_does_not_block_setup(hass: HomeAssistant) -> None:
     """Test that a failing LLM registration is not fatal."""
     with patch(
-        "custom_components.brainstorm.llm.llm.async_register_api",
+        "custom_components.brainstorm.llm_api.llm.async_register_api",
         side_effect=HomeAssistantError("schon da"),
     ):
         unregister = async_register_llm_api(hass)

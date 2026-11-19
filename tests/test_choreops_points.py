@@ -10,7 +10,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import entity_registry as er, llm
 from homeassistant.util import dt as dt_util
 
-from custom_components.brainstorm.llm import BRAINSTORM_LLM_API_ID
+from custom_components.brainstorm.llm_api import BRAINSTORM_LLM_API_ID
 from custom_components.brainstorm.store import BrainstormStore
 
 from .conftest import SetupEntry

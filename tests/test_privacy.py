@@ -18,7 +18,7 @@ from pytest_homeassistant_custom_component.typing import (
 )
 
 from custom_components.brainstorm.const import OVERVIEW_ENTITY_ID
-from custom_components.brainstorm.llm import BrainstormLlmAPI
+from custom_components.brainstorm.llm_api import BrainstormLlmAPI
 
 from .conftest import SetupEntry
 
