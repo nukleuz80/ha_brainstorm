@@ -907,6 +907,21 @@ INTERACTION_MODEL: dict = {
                     ],
                 },
                 {
+                    "name": "ShowMapIntent",
+                    "slots": [{"name": "category", "type": "AMAZON.SearchQuery"}],
+                    "samples": [
+                        "mind map",
+                        "show mind map",
+                        "show the mind map",
+                        "show me the mind map",
+                        "open the mind map",
+                        "mind map {category}",
+                        "show the mind map {category}",
+                        "show me the mind map {category}",
+                        "show the mind map of {category}",
+                    ],
+                },
+                {
                     "name": "ReadAllIdeasIntent",
                     "samples": [
                         "all entries",
@@ -1139,6 +1154,8 @@ MESSAGES: dict[str, str] = {
     "skill_here_is_map": "Here is the mind map {category}.",
     "skill_here_are_maps": "Here are your mind maps.",
     "skill_map_words": "mind map|mindmap|mind-map",
+    "skill_show_words": "show|display|open",
+    "skill_list_words": "list|lists|entries|notes|tasks",
 }
 
 

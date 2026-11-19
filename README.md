@@ -9,7 +9,7 @@
 [![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.20.5-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.20.6-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![Wiki](https://img.shields.io/badge/Docs-Wiki-6f42c1.svg)](https://github.com/nukleuz80/ha_brainstorm/wiki)
@@ -265,11 +265,11 @@ The latest versions; every version is in [CHANGELOG.md](CHANGELOG.md).
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.20.6`** | 2026-11-19 | **🗺️ “Show me the mind map” is no longer stored as an idea.** Without a category Alexa found no matching command, the sentence went to the fallback and was stored as a note. The voice model now has its own mind map command (“show me the mind map”, “show the mind map garden”), and a show command Alexa still cannot place is not stored as an idea. **Copy the voice model and skill code once more, then Build and Deploy, for the new command.** |
 | **`v1.20.5`** | 2026-11-19 | **🐞 No more error in the log on Assist requests.** Since Home Assistant 2026.11, HA loads every `llm.py` of an integration as a platform of its new LLM integration. Brainstorm's Assist tools lived in a file with that name, so each Assist request logged “Error getting tools from LLM platform brainstorm”. The file is now called `llm_api.py`; the Brainstorm tools in Assist work as before. |
 | **`v1.20.4`** | 2026-11-19 | **🗣️ Dictated subordinate clauses become tasks (German).** What was left after “notiere, dass …” stayed in clause order in the title, such as “Wir ein Regelwerk für Zuhause brauchen”. Now the pronoun goes and the final verb becomes the task: “Keller aufräumen”, “Am Samstag Oma besuchen”, “Ein Regelwerk für Zuhause”. A “dass das …” misheard as “das das …” is recognised, and a noun after “ein” is capitalised. Sentences that say who needs something stay as they are. |
 | **`v1.20.3`** | 2026-11-19 | **🖥️ Mind map on the Echo Show makes better use of the screen.** Long titles are no longer cut off with “…” but wrap onto two lines. A map with only a few rows spreads its branches further apart, so it fills the height of the screen instead of a narrow band in the middle. The *List* / *Mind map* button on top no longer sticks to the category name. |
 | **`v1.20.2`** | 2026-11-19 | **🔋 Battery task no longer ticks itself off by mistake.** Some devices (such as Zigbee water leak sensors) have a weak flag next to the level that says “not weak” on an empty battery. After every short radio gap it came back before the level, Brainstorm took that for a new battery, ticked the task off and added it again three hours later. If a device has a level sensor, only a good level ticks the task off now. |
-| **`v1.20.1`** | 2026-11-18 | **🐞 *Talk freely* button visible again.** The button right of the trash in the mind map and *Talk freely* in the list card showed the 🗣️ emoji, on an iPhone a dark grey head that could hardly be seen on a dark background. Both now show an icon in the text colour of the theme. |
 
 ---
 

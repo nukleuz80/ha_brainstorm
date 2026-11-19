@@ -1513,6 +1513,29 @@ INTERACTION_MODEL: dict = {
                     ],
                 },
                 {
+                    "name": "ShowMapIntent",
+                    "slots": [{"name": "category", "type": "AMAZON.SearchQuery"}],
+                    "samples": [
+                        "mindmap",
+                        "mindmap anzeigen",
+                        "zeige mindmap",
+                        "zeig mindmap",
+                        "zeige mir mindmap",
+                        "zeig mir mindmap",
+                        "zeige die mindmap",
+                        "zeig die mindmap",
+                        "zeige mir die mindmap",
+                        "zeig mir die mindmap",
+                        "mindmap {category}",
+                        "zeige mindmap {category}",
+                        "zeig mir mindmap {category}",
+                        "zeige mir mindmap {category}",
+                        "zeige die mindmap {category}",
+                        "zeige mir die mindmap {category}",
+                        "zeig mir die mindmap {category}",
+                    ],
+                },
+                {
                     "name": "ReadAllIdeasIntent",
                     "samples": [
                         "alle einträge",
@@ -1752,6 +1775,8 @@ MESSAGES: dict[str, str] = {
     "skill_here_is_map": "Hier ist die Mindmap {category}.",
     "skill_here_are_maps": "Hier sind deine Mindmaps.",
     "skill_map_words": "mindmap|mind map|mind-map|gedankenkarte",
+    "skill_show_words": "zeige|zeig|zeigt|anzeigen|öffne",
+    "skill_list_words": "liste|listen|einträge|notizen|aufgaben",
 }
 
 

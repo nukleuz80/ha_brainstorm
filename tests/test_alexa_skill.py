@@ -22,6 +22,7 @@ from pytest_homeassistant_custom_component.typing import ClientSessionGenerator
 from custom_components.brainstorm import alexa_display
 from custom_components.brainstorm import alexa_skill
 from custom_components.brainstorm.languages.de import PACK as GERMAN
+from custom_components.brainstorm.languages.en import PACK as ENGLISH
 from custom_components.brainstorm.alexa_skill import clean_voice_text
 from custom_components.brainstorm.const import OVERVIEW_ENTITY_ID
 from custom_components.brainstorm.reminders import ReminderRequest
@@ -1254,3 +1255,58 @@ async def test_unplaced_sentence_is_dropped_on_unload(
     await hass.async_block_till_done()
     assert not skill._fallback_tasks  # noqa: SLF001
     assert not skill._fallbacks  # noqa: SLF001
+
+
+def test_skill_code_sends_the_mind_map_intent_as_show() -> None:
+    """Test that "zeige mir mindmap" opens the map, also without a category."""
+    for slots, text in (({}, "mindmap"), ({"category": {"value": "garten"}}, "mindmap garten")):
+        _result, requests = _run_skill_code(
+            json.dumps({"speech": "Hier."}).encode(),
+            {"type": "IntentRequest", "intent": {"name": "ShowMapIntent", "slots": slots}},
+        )
+        payload = json.loads(requests[0].data)
+        assert payload["action"] == "show"
+        assert payload["text"] == text
+        assert alexa_skill.wants_mindmap(payload["text"], GERMAN)
+
+
+def test_skill_models_know_the_mind_map() -> None:
+    """Test that both voice models have the mind map without a category."""
+    for pack, sample in ((GERMAN, "zeige mir mindmap"), (ENGLISH, "show me the mind map")):
+        model = pack.skill_model["interactionModel"]["languageModel"]
+        samples = {intent["name"]: intent["samples"] for intent in model["intents"]}
+        assert sample in samples["ShowMapIntent"]
+        every = [s for intent in samples.values() for s in intent]
+        assert len(every) == len(set(every))
+
+
+@pytest.mark.parametrize(
+    ("sentence", "expected"),
+    [
+        ("Zeige mir mindmap", True),
+        ("zeig mir die mindmap haus und garten", True),
+        ("zeige meine listen", True),
+        ("zeige", True),
+        ("zeige oma die fotos vom urlaub", False),
+        ("mindmap für das projekt erstellen", False),
+        ("duschgel kaufen", False),
+    ],
+)
+def test_show_commands_are_recognised(sentence: str, expected: bool) -> None:
+    """Test which sentences are a show command rather than an idea."""
+    assert alexa_skill.is_show_command(sentence, GERMAN) is expected
+
+
+async def test_unplaced_show_command_is_not_stored(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_client_no_auth: ClientSessionGenerator,
+) -> None:
+    """Test that "zeige mir mindmap" from the history is no idea."""
+    entry = await _setup_skill(hass, setup_entry)
+    _add_echo(hass)
+
+    await _post(hass_client_no_auth, entry, _fallback_payload())
+    _alexa_event(hass, "sage brainstorm zeige mir mindmap", response=LATER)
+    await hass.async_block_till_done()
+    assert not entry.runtime_data.ideas

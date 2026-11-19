@@ -237,6 +237,9 @@ def lambda_handler(event, context):
         return _call_home_assistant(event, "read", slots.get("category", {}).get("value") or "")
     if intent.get("name") == "ShowIdeasIntent":
         return _call_home_assistant(event, "show", slots.get("category", {}).get("value") or "")
+    if intent.get("name") == "ShowMapIntent":
+        category = slots.get("category", {}).get("value") or ""
+        return _call_home_assistant(event, "show", ("mindmap " + category).strip())
     if intent.get("name") == "ReadAllIdeasIntent":
         return _call_home_assistant(event, "read_all")
     if intent.get("name") == "AMAZON.FallbackIntent":
@@ -263,6 +266,16 @@ def wants_mindmap(text: str, pack: LanguagePack) -> bool:
     return any(
         word and word in spoken for word in pack.msg("skill_map_words").split("|")
     )
+
+
+def is_show_command(sentence: str, pack: LanguagePack) -> bool:
+    """Tell whether a sentence asked to show a list or map, not to note it."""
+    words = sentence.casefold().strip(" .!?").split()
+    if not words or words[0] not in pack.msg("skill_show_words").split("|"):
+        return False
+    rest = " ".join(words[1:])
+    lists = pack.msg("skill_list_words").split("|")
+    return not rest or wants_mindmap(rest, pack) or any(w in lists for w in words[1:])
 
 
 def clean_voice_text(text: str, pack: LanguagePack) -> str:
@@ -609,9 +622,12 @@ class AlexaSkill:
                 notification_id=FALLBACK_NOTIFICATION_ID,
             )
             return
-        await self._async_capture(
-            sentence_after_invocation(summary), self._echo_from_name(name), None, pack
-        )
+        sentence = sentence_after_invocation(summary)
+        if is_show_command(sentence, pack):
+            # Alexa did not place "show me the mind map", which is no idea
+            _LOGGER.info("Not storing the show command %r as an idea", sentence)
+            return
+        await self._async_capture(sentence, self._echo_from_name(name), None, pack)
 
     async def _async_resolve_echo(
         self, device_id: str | None, text: str
