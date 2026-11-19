@@ -388,6 +388,7 @@ Macht aus schwachen Batterien Aufgaben (v1.7.5). Jeder Batterie-Sensor zählt: e
 
 - **Eine Aufgabe pro Gerät**, auch wenn Integrationen wie Battery Notes weitere Sensoren für dieselbe Batterie anlegen. Sie ist nach dem Gerät benannt, z. B. *Batterie wechseln: Bewegungsmelder Flur (18 %)*.
 - **Erst nach 3 Stunden:** Eine Aufgabe entsteht erst, wenn das Gerät 3 Stunden am Stück schwach meldet (seit v1.18.1). Ein einzelner falscher Stand zwischen guten Werten, wie ihn manche Sensoren ab und zu senden, legt so keine Aufgabe an.
+- **Neue Batterie nur über den Stand:** Hat ein Gerät einen Prozentsensor, hakt erst ein guter Stand die Aufgabe ab, kein Schwach-Melder allein (seit v1.20.2). Manche Melder sagen bei leerer Batterie „nicht schwach“ und melden sich nach einem Funkaussetzer vor dem Stand zurück.
 - **Hakt sich selbst ab:** Meldet kein Sensor des Geräts mehr eine schwache Batterie und liegt der Stand 10 Punkte über der Schwelle, wird die Aufgabe abgehakt. Der Abstand verhindert, dass eine Batterie an der Schwelle ständig Aufgaben anlegt und schließt.
 - **Von Hand abgehakt**, bevor die Batterie gewechselt ist, kommt die Aufgabe nicht wieder. Erst die nächste schwache Batterie legt eine neue an.
 - **Nach einem Neustart** werden alle Batterien einmal geprüft.

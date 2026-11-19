@@ -388,6 +388,7 @@ Turns low batteries into tasks (v1.7.5). Every battery sensor counts: a level in
 
 - **One task per device**, even if integrations like Battery Notes add more sensors for the same battery. It is named after its device, e.g. *Replace the battery: Motion sensor hall (18 %)*.
 - **Only after 3 hours:** A task is only created once the device has reported a low battery for 3 hours in a row (since v1.18.1). A single wrong level between good ones, which some sensors send now and then, creates no task.
+- **New battery only from the level:** If a device has a level sensor, only a good level ticks the task off, never a weak flag alone (since v1.20.2). Some flags say “not weak” on an empty battery and come back before the level after a radio gap.
 - **Ticks itself off:** Once no sensor of the device reports a weak battery and the level is 10 points above the threshold, the task is ticked off. The gap keeps a battery around the threshold from creating and closing tasks.
 - **Ticked off by hand** before the battery is replaced, the task does not come back. The next weak battery makes a new one.
 - **After a restart**, all batteries are checked once.

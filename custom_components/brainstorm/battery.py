@@ -273,17 +273,26 @@ class BatteryWatcher:
 
         A device is low while any of its sensors says so, and only counts as
         having a new battery when none does and at least one says it is good.
+        A device with a level only trusts a level for that: some weak flags
+        report "off" on an empty battery, and after a radio gap they come back
+        before the level does.
         """
         statuses = [battery_status(state, self.threshold) for state in states]
         low_states = [state for state, low in zip(states, statuses) if low]
+        levels = [
+            (state, low)
+            for state, low in zip(states, statuses)
+            if state.domain == "sensor"
+        ] or list(zip(states, statuses))
         if not low_states and any(
-            state.state not in (STATE_UNAVAILABLE, STATE_UNKNOWN) for state in states
+            state.state not in (STATE_UNAVAILABLE, STATE_UNKNOWN)
+            for state, _low in levels
         ):
             # A good level again before the low one was confirmed: just a blip
             self._forget_low(key)
         if low_states:
             low = True
-        elif False in statuses:
+        elif any(low is False for _state, low in levels):
             low = False
         else:
             return

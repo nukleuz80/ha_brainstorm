@@ -430,3 +430,41 @@ async def test_low_at_start_waits_too(
     async_fire_time_changed(hass)
     await hass.async_block_till_done()
     assert _tasks(store) == []
+
+
+async def test_weak_flag_alone_does_not_tick_off_a_level_device(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that a weak flag saying "off" is no new battery while the level is gone.
+
+    A water leak sensor at 0 % went offline now and then; its weak flag came
+    back first and said "off" before the level was known again.
+    """
+    device = _device(hass, "Wassermelder")
+    _register(hass, "sensor.wasser_batterie", "mqtt", device)
+    _register(hass, "binary_sensor.wasser_batterie_low", "mqtt", device)
+    store = await _setup(setup_entry)
+    key = f"device:{device}"
+    _set_level(hass, "0", "sensor.wasser_batterie")
+    hass.states.async_set(
+        "binary_sensor.wasser_batterie_low", "off", {"device_class": "battery"}
+    )
+    await hass.async_block_till_done()
+    assert _tasks(store, key)[0]["status"] == "active"
+
+    # Radio gap: everything unknown, then the flag returns first
+    _set_level(hass, "unknown", "sensor.wasser_batterie")
+    hass.states.async_set(
+        "binary_sensor.wasser_batterie_low", "unknown", {"device_class": "battery"}
+    )
+    await hass.async_block_till_done()
+    hass.states.async_set(
+        "binary_sensor.wasser_batterie_low", "off", {"device_class": "battery"}
+    )
+    await hass.async_block_till_done()
+    assert _tasks(store, key)[0]["status"] == "active"
+
+    # Only a good level means a new battery
+    _set_level(hass, "100", "sensor.wasser_batterie")
+    await hass.async_block_till_done()
+    assert _tasks(store, key)[0]["status"] == "completed"
