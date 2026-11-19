@@ -187,3 +187,58 @@ async def test_echo_shows_the_spoken_map(
     assert (
         answer["directives"][0]["datasources"][alexa_display.DATA_NAME]["map"] is False
     )
+
+
+def test_long_titles_wrap_instead_of_being_cut() -> None:
+    """A title too long for one line goes on to a second one."""
+    graphic = alexa_mindmap.build_graphic(
+        "Haus & Garten",
+        [
+            {
+                "id": "a",
+                "text": "Spielhaus wasserdicht machen und streichen",
+                "category": "Haus & Garten",
+            }
+        ],
+        "#888888",
+        {},
+    )
+    assert _texts(graphic) == [
+        "Haus & Garten",
+        "Spielhaus wasserdicht",
+        "machen und streichen",
+    ]
+
+
+def test_a_flat_map_spreads_over_the_screen_height() -> None:
+    """Few rows get more room between them, the map fills the screen."""
+    ideas = [
+        {"id": str(number), "text": f"Aufgabe {number}", "category": "Haus"}
+        for number in range(6)
+    ]
+    graphic = alexa_mindmap.build_graphic("Haus", ideas, "#888888", {})
+    rows = sorted({item["y"] for item in graphic["items"] if item["type"] == "text"})
+    # Rows of 46 units 14 apart would span only 120 from top to bottom
+    assert rows[-1] - rows[0] > 180
+
+
+def test_the_header_keeps_room_before_the_switch() -> None:
+    """The list switch does not stick to the category name."""
+    found: list[dict[str, Any]] = []
+
+    def walk(node: Any) -> None:
+        if isinstance(node, dict):
+            if any(
+                isinstance(item, dict) and item.get("text") == "${page.title}"
+                for item in node.get("items", [])
+            ):
+                found.append(node)
+            for value in node.values():
+                walk(value)
+        elif isinstance(node, list):
+            for value in node:
+                walk(value)
+
+    walk(alexa_display.DOCUMENT)
+    assert found
+    assert all(box.get("paddingRight") == "@headerPadding" for box in found)

@@ -24,10 +24,17 @@ FONT_SIZES = (34, 24, 20, 17)
 PADDING_X = (26, 18, 14, 12)
 PADDING_Y = (16, 11, 9, 8)
 MAX_LABELS = (24, 26, 24, 22)
+# A long label wraps onto a second line instead of being cut
+MAX_LINES = 2
+LINE_HEIGHT = 1.2
 STROKES = (5, 4, 3, 2)
 # Width of an average letter compared to the font size
 LETTER_WIDTH = 0.56
 ROW_GAP = 14
+# Gaps between rows tried in turn, so a flat map spreads over the screen
+ROW_GAPS = (14, 22, 30, 40, 52, 66, 82)
+# Width to height of the room an Echo Show has below the header
+TARGET_RATIO = 2.0
 COLUMN_GAP = 54
 MARGIN = 24
 # A small map is not blown up to fill the whole screen
@@ -43,7 +50,7 @@ NODE_COLOR = "#ffffff14"
 class _Node:
     """One box of the map."""
 
-    label: str
+    lines: list[str]
     depth: int
     accent: str | None = None
     more: bool = False
@@ -55,23 +62,42 @@ class _Node:
     span: float = 0
 
 
-def _plain(text: Any, limit: int) -> str:
-    """Return a label the graphic shows as it is, shortened for the box.
+def _plain(text: Any, limit: int) -> list[str]:
+    """Return the lines of a label, wrapped at words and shortened for the box.
 
     Strings in an APL document are evaluated, so "${" must not get through.
     """
     cleaned = " ".join(str(text or "").split())
-    if len(cleaned) > limit:
-        cleaned = f"{cleaned[: limit - 1].rstrip()}…"
-    return cleaned.replace("${", "$ {").replace("#{", "# {")
+    cleaned = cleaned.replace("${", "$ {").replace("#{", "# {")
+    lines: list[str] = []
+    rest = cleaned
+    while rest and len(lines) < MAX_LINES:
+        if len(rest) <= limit:
+            lines.append(rest)
+            rest = ""
+            break
+        cut = rest.rfind(" ", 0, limit + 1)
+        if cut <= 0:
+            cut = limit
+        lines.append(rest[:cut].rstrip())
+        rest = rest[cut:].lstrip()
+    if rest:
+        last = lines[-1]
+        lines[-1] = (
+            f"{last[: limit - 1].rstrip()}…" if len(last) >= limit else f"{last}…"
+        )
+    return lines or [""]
 
 
 def _measure(node: _Node) -> None:
     """Give a node the size of its text."""
     level = min(node.depth, len(FONT_SIZES) - 1)
     size = FONT_SIZES[level]
-    node.width = len(node.label) * size * LETTER_WIDTH + 2 * PADDING_X[level]
-    node.height = size + 2 * PADDING_Y[level]
+    longest = max(len(line) for line in node.lines)
+    node.width = longest * size * LETTER_WIDTH + 2 * PADDING_X[level]
+    node.height = (
+        size + (len(node.lines) - 1) * size * LINE_HEIGHT + 2 * PADDING_Y[level]
+    )
 
 
 def _build_tree(
@@ -119,36 +145,38 @@ def _build_tree(
         budget -= allowed
         drawn += allowed
         if hidden := len(members) - allowed:
-            parent.children.append(_Node(f"+ {hidden}", depth, more=True))
+            parent.children.append(_Node([f"+ {hidden}"], depth, more=True))
             budget = max(0, budget - 1)
     return root, len(ideas) - drawn
 
 
-def _span(node: _Node) -> float:
+def _span(node: _Node, gap: float = ROW_GAP) -> float:
     """Return the height a node needs with everything below it."""
     _measure(node)
-    below = sum(_span(child) for child in node.children)
-    below += ROW_GAP * max(0, len(node.children) - 1)
+    below = sum(_span(child, gap) for child in node.children)
+    below += gap * max(0, len(node.children) - 1)
     node.span = max(node.height, below)
     return node.span
 
 
-def _place(node: _Node, edge: float, center: float, side: int) -> None:
+def _place(
+    node: _Node, edge: float, center: float, side: int, gap: float = ROW_GAP
+) -> None:
     """Put a node next to its parent and its children next to it."""
     node.x = edge + side * node.width / 2
     node.y = center
     block = sum(child.span for child in node.children)
-    block += ROW_GAP * max(0, len(node.children) - 1)
+    block += gap * max(0, len(node.children) - 1)
     top = center - block / 2
     outer = edge + side * (node.width + COLUMN_GAP)
     for child in node.children:
-        _place(child, outer, top + child.span / 2, side)
-        top += child.span + ROW_GAP
+        _place(child, outer, top + child.span / 2, side, gap)
+        top += child.span + gap
 
 
-def _layout(root: _Node) -> list[tuple[_Node, int]]:
+def _layout(root: _Node, gap: float = ROW_GAP) -> list[tuple[_Node, int]]:
     """Place the map, main tasks shared between both sides."""
-    _span(root)
+    _span(root, gap)
     sides: dict[int, list[_Node]] = {1: [], -1: []}
     heights = {1: 0.0, -1: 0.0}
     # The largest branches first, each to the lower side, then in their order
@@ -158,18 +186,18 @@ def _layout(root: _Node) -> list[tuple[_Node, int]]:
     ):
         side = 1 if heights[1] <= heights[-1] else -1
         chosen[index] = side
-        heights[side] += root.children[index].span + ROW_GAP
+        heights[side] += root.children[index].span + gap
     for index, child in enumerate(root.children):
         sides[chosen[index]].append(child)
     placed: list[tuple[_Node, int]] = []
     for side, members in sides.items():
         block = sum(child.span for child in members)
-        block += ROW_GAP * max(0, len(members) - 1)
+        block += gap * max(0, len(members) - 1)
         top = -block / 2
         edge = side * (root.width / 2 + COLUMN_GAP)
         for child in members:
-            _place(child, edge, top + child.span / 2, side)
-            top += child.span + ROW_GAP
+            _place(child, edge, top + child.span / 2, side, gap)
+            top += child.span + gap
             placed.append((child, side))
     return placed
 
@@ -212,12 +240,31 @@ def build_graphic(
 ) -> dict[str, Any]:
     """Return the mind map of one category as an AVG graphic."""
     root, _ = _build_tree(category, ideas, priority_colors)
-    placed = _layout(root)
     nodes = _walk(root)
-    left = min(node.x - node.width / 2 for node in nodes) - MARGIN
-    right = max(node.x + node.width / 2 for node in nodes) + MARGIN
-    top = min(node.y - node.height / 2 for node in nodes) - MARGIN
-    bottom = max(node.y + node.height / 2 for node in nodes) + MARGIN
+
+    def bounds() -> tuple[float, float, float, float]:
+        return (
+            min(node.x - node.width / 2 for node in nodes) - MARGIN,
+            max(node.x + node.width / 2 for node in nodes) + MARGIN,
+            min(node.y - node.height / 2 for node in nodes) - MARGIN,
+            max(node.y + node.height / 2 for node in nodes) + MARGIN,
+        )
+
+    # A flat, wide map gets more room between its rows, so that the Echo can
+    # draw it larger instead of leaving the top and bottom of the screen empty
+    placed = _layout(root, ROW_GAPS[0])
+    for gap in ROW_GAPS[1:]:
+        left, right, top, bottom = bounds()
+        if bottom - top >= (right - left) / TARGET_RATIO:
+            break
+        wider = _layout(root, gap)
+        left, right, top, bottom = bounds()
+        if bottom - top > (right - left) / TARGET_RATIO:
+            # One step too far, back to the last gap that still fitted
+            placed = _layout(root, ROW_GAPS[ROW_GAPS.index(gap) - 1])
+            break
+        placed = wider
+    left, right, top, bottom = bounds()
     width = max(right - left, MIN_WIDTH)
     height = max(bottom - top, MIN_HEIGHT)
     # Centered, also when the minimum size made the graphic larger
@@ -266,18 +313,21 @@ def build_graphic(
         if stroke:
             box.update(stroke=stroke, strokeWidth=3 if node.accent else 2)
         boxes.append(box)
-        boxes.append(
-            {
-                "type": "text",
-                "text": node.label,
-                "x": _number(node.x + dx),
-                "y": _number(node.y + dy + FONT_SIZES[level] * 0.35),
-                "fontSize": FONT_SIZES[level],
-                "fontWeight": "bold" if node.depth <= 1 else "normal",
-                "fill": MUTED_COLOR if node.more else TEXT_COLOR,
-                "textAnchor": "middle",
-            }
-        )
+        size = FONT_SIZES[level]
+        first = node.y + dy - (len(node.lines) - 1) * size * LINE_HEIGHT / 2
+        for number, line in enumerate(node.lines):
+            boxes.append(
+                {
+                    "type": "text",
+                    "text": line,
+                    "x": _number(node.x + dx),
+                    "y": _number(first + number * size * LINE_HEIGHT + size * 0.35),
+                    "fontSize": size,
+                    "fontWeight": "bold" if node.depth <= 1 else "normal",
+                    "fill": MUTED_COLOR if node.more else TEXT_COLOR,
+                    "textAnchor": "middle",
+                }
+            )
 
     def branch(parent: _Node, child: _Node, side: int) -> None:
         connect(parent, child, side)

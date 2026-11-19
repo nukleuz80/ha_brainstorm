@@ -107,6 +107,7 @@ _HEADER: dict[str, Any] = {
                     "grow": 1,
                     "shrink": 1,
                     "paddingLeft": "@headerPadding",
+                    "paddingRight": "@headerPadding",
                     "items": [
                         {
                             "type": "Text",
