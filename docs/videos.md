@@ -6,6 +6,8 @@ Alle Videos sind deutsch gesprochen (alle gibt es auch [auf Englisch](videos_en.
 
 ## Brainstorm in einer Minute (Teaser)
 
+[![Brainstorm in einer Minute](video/poster-teaser.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-teaser.mp4)
+
 **[▶️ Teaser ansehen](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-teaser.mp4)**: Liste, Mindmap und KI-Vorschläge in 52 Sekunden.
 
 ## Die wichtigsten Funktionen (5 Minuten)
