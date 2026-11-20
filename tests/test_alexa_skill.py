@@ -1310,3 +1310,64 @@ async def test_unplaced_show_command_is_not_stored(
     _alexa_event(hass, "sage brainstorm zeige mir mindmap", response=LATER)
     await hass.async_block_till_done()
     assert not entry.runtime_data.ideas
+
+
+NAMES = {"kücheschrank", "kitchenlight"}
+
+
+@pytest.mark.parametrize(
+    ("sentence", "pack", "expected"),
+    [
+        ("Küche Schrank an", GERMAN, True),
+        ("küche schrank aus.", GERMAN, True),
+        ("schalte das licht im bad ein", GERMAN, True),
+        ("wohnzimmer regal an", GERMAN, False),
+        ("flurlicht geht nicht an", GERMAN, False),
+        ("termin mit anna ausmachen", GERMAN, False),
+        ("rufe morgen oma an", GERMAN, False),
+        ("an", GERMAN, False),
+        ("kitchen light on", ENGLISH, True),
+        ("turn the hallway lamp off", ENGLISH, True),
+        ("porch light won't turn on", ENGLISH, False),
+    ],
+)
+def test_device_commands_are_recognised(sentence: str, pack: Any, expected: bool) -> None:
+    """Test which sentences switch a device rather than being an idea."""
+    assert alexa_skill.is_device_command(sentence, pack, NAMES) is expected
+
+
+async def test_unplaced_device_command_is_not_stored(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_client_no_auth: ClientSessionGenerator,
+) -> None:
+    """Test that "Küche Schrank an" said into the open skill is no idea."""
+    entry = await _setup_skill(hass, setup_entry)
+    _add_echo(hass)
+    hass.states.async_set("light.kuche_l1", "off", {"friendly_name": "Küche Schrank"})
+
+    await _post(hass_client_no_auth, entry, _fallback_payload())
+    _alexa_event(hass, "küche schrank an", response=LATER)
+    await hass.async_block_till_done()
+    assert not entry.runtime_data.ideas
+
+
+async def test_captured_device_command_is_not_stored(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_client_no_auth: ClientSessionGenerator,
+) -> None:
+    """Test that a device command is refused, but stored with "notiere"."""
+    entry = await _setup_skill(hass, setup_entry)
+    _add_echo(hass)
+    hass.states.async_set("light.kuche_l1", "off", {"friendly_name": "Küche Schrank"})
+
+    with patch.object(alexa_skill, "DEVICE_WAIT_SECONDS", 0):
+        response = await _post(hass_client_no_auth, entry, _capture_payload("küche schrank an"))
+        answer = await response.json()
+        assert "Gerätebefehl" in str(answer)
+        assert not entry.runtime_data.ideas
+
+        await _post(hass_client_no_auth, entry, _capture_payload("notiere küche schrank an"))
+    await hass.async_block_till_done()
+    assert len(entry.runtime_data.ideas) == 1

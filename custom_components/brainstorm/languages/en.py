@@ -1154,6 +1154,10 @@ MESSAGES: dict[str, str] = {
     "skill_here_is_map": "Here is the mind map {category}.",
     "skill_here_are_maps": "Here are your mind maps.",
     "skill_map_words": "mind map|mindmap|mind-map",
+    "skill_device_ends": "on|off",
+    "skill_device_starts": "turn|switch",
+    "skill_device_keep": "not|no|won't|doesn't|didn't|fix|check|replace|buy",
+    "skill_device_command": "That sounds like a device command, so I did not note it. Please say it without Brainstorm.",
     "skill_show_words": "show|display|open",
     "skill_list_words": "list|lists|entries|notes|tasks",
 }

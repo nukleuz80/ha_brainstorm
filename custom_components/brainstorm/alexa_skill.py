@@ -278,6 +278,32 @@ def is_show_command(sentence: str, pack: LanguagePack) -> bool:
     return not rest or wants_mindmap(rest, pack) or any(w in lists for w in words[1:])
 
 
+DEVICE_DOMAINS = (
+    "light", "switch", "fan", "cover", "media_player", "climate", "lock",
+    "input_boolean", "scene", "script", "vacuum",
+)
+
+
+def is_device_command(
+    sentence: str, pack: LanguagePack, device_names: set[str]
+) -> bool:
+    """Tell whether a short sentence switches a device, like "Küche Schrank an".
+
+    Said while the skill still listens, Alexa hands it to the skill instead of
+    the device. It counts as a command when it starts with "schalte" or names a
+    device of Home Assistant exactly; "rufe Oma an" or "Flurlicht geht nicht an"
+    stay ideas.
+    """
+    words = sentence.casefold().strip(" .!?").split()
+    if not 2 <= len(words) <= 6 or words[-1] not in pack.msg("skill_device_ends").split("|"):
+        return False
+    if any(word in pack.msg("skill_device_keep").split("|") for word in words):
+        return False
+    if words[0] in pack.msg("skill_device_starts").split("|"):
+        return True
+    return _normalize(" ".join(words[:-1])) in device_names
+
+
 def clean_voice_text(text: str, pack: LanguagePack) -> str:
     """Remove command words and list names, like the native voice capture."""
     cleaned = text.strip()
@@ -602,6 +628,14 @@ class AlexaSkill:
         task.add_done_callback(self._fallback_tasks.discard)
         return self._speech(answer)
 
+    def _device_names(self) -> set[str]:
+        """Return the names of the devices Alexa can switch, letters only."""
+        return {
+            _normalize(state.name)
+            for state in self.hass.states.async_all(DEVICE_DOMAINS)
+            if state.name
+        }
+
     async def _async_store_fallback(
         self, request: _FallbackRequest, pack: LanguagePack
     ) -> None:
@@ -626,6 +660,10 @@ class AlexaSkill:
         if is_show_command(sentence, pack):
             # Alexa did not place "show me the mind map", which is no idea
             _LOGGER.info("Not storing the show command %r as an idea", sentence)
+            return
+        if is_device_command(sentence, pack, self._device_names()):
+            # A device command said while the skill still listened
+            _LOGGER.info("Not storing the device command %r as an idea", sentence)
             return
         await self._async_capture(sentence, self._echo_from_name(name), None, pack)
 
@@ -742,6 +780,15 @@ class AlexaSkill:
         cleaned = clean_voice_text(text, pack)[:MAX_TEXT_LENGTH]
         if len(cleaned) < MIN_IDEA_LENGTH:
             return self._speech(pack.msg("skill_no_text"))
+        if (
+            request is None
+            and not no_time_found
+            and cleaned == text.strip()
+            and is_device_command(cleaned, pack, self._device_names())
+        ):
+            # Without "notiere" in front, "Küche Schrank an" was meant for Alexa
+            _LOGGER.info("Not storing the device command %r as an idea", cleaned)
+            return self._speech(pack.msg("skill_device_command"))
         try:
             idea = await self._ideas.async_add_idea(
                 text=cleaned,
