@@ -2,35 +2,40 @@
 
 ⬅️ [Zurück zur README](../README_de.md) · 📚 [Wiki](https://github.com/nukleuz80/ha_brainstorm/wiki) · 🇬🇧 [English videos](videos_en.md)
 
-Alle Videos sind deutsch gesprochen (alle sechs gibt es auch [auf Englisch](videos_en.md)), mit dem Text als Untertitel im Bild. Die MP4-Dateien hängen an den GitHub-Releases und enthalten Kapitelmarken, die die meisten Player (VLC, QuickTime, Plex) anzeigen. Die Karten sind echte Screenshots mit Beispieldaten, Amazon- und Home-Assistant-Dialoge sind schematisch nachgezeichnet.
+Alle Videos sind deutsch gesprochen (alle gibt es auch [auf Englisch](videos_en.md)) und seit v1.20.7 in Full HD mit echten Klicks in den Karten. Der Text läuft als Untertitel im Bild und liegt zusätzlich als abschaltbare Untertitelspur in der Datei. Die MP4-Dateien hängen an den GitHub-Releases und enthalten Kapitelmarken, die die meisten Player (VLC, QuickTime, Plex) anzeigen. Die Karten sind echt und laufen mit Beispieldaten. Amazon- und Home-Assistant-Dialoge sind schematisch nachgezeichnet.
 
-## Die wichtigsten Funktionen (gut 4 Minuten)
+## Brainstorm in einer Minute (Teaser)
 
-[![Die wichtigsten Funktionen](video/poster-features.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.11.3/brainstorm-features.mp4)
+**[▶️ Teaser ansehen](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-teaser.mp4)**: Liste, Mindmap und KI-Vorschläge in 52 Sekunden.
 
-**[▶️ Video ansehen](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.11.3/brainstorm-features.mp4)**
+## Die wichtigsten Funktionen (5 Minuten)
+
+[![Die wichtigsten Funktionen](video/poster-features.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-features.mp4)
+
+**[▶️ Video ansehen](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-features.mp4)**
 
 | Zeit | Kapitel |
 | :--- | :--- |
 | 0:00 | Was ist Brainstorm? |
-| 0:17 | Erfassen per Stimme: Alexa, Assist, Siri, Mikrofon, KI |
-| 0:31 | Versteht ganze Sätze: Text, Termin, Priorität, Kategorie |
+| 0:18 | Erfassen per Stimme: Alexa, Assist, Siri, Mikrofon, KI |
+| 0:32 | Versteht ganze Sätze: Text, Termin, Priorität, Kategorie |
 | 0:50 | Die Listenkarte und die Bedienstufen Einsteiger, Normal, Profi |
 | 1:21 | Unteraufgaben & Details |
-| 1:34 | Die Mindmap: Marker, Ansichten, Suche, Regeln, Präsentation, Export |
+| 1:35 | Die Mindmap: Marker, Ansichten, Suche, Regeln, Präsentation, Export |
 | 2:19 | Gemeinsam & mit KI: Abstimmen, Reaktionen, Minimap, Kommentare, Map aus Thema |
 | 2:58 | Erinnerungen und wiederkehrende Aufgaben |
 | 3:13 | Alexa-Skill & Echo Show |
-| 3:27 | Erledigt & Ergebnis |
-| 3:40 | Verbunden mit allem: To-do, Bring!, Markdown, JSON |
+| 3:28 | Erledigt & Ergebnis |
+| 3:41 | Verbunden mit allem: To-do, Bring!, Markdown, JSON |
 | 3:53 | Privatsphäre & Freigaben |
-| 4:06 | Loslegen |
+| 4:06 | Neu dazugekommen: Echo Show, Mindmap aus Webseite oder PDF, Kalender, Messenger & Mail, Batterien, Satz-Tester |
+| 4:40 | Loslegen |
 
 ## Installation (3 Minuten)
 
-[![Installation](video/poster-installation.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.22/brainstorm-installation.mp4)
+[![Installation](video/poster-installation.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-installation.mp4)
 
-**[▶️ Video ansehen](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.22/brainstorm-installation.mp4)** · 📄 [Schriftlich im Wiki](https://github.com/nukleuz80/ha_brainstorm/wiki/Installation-und-Einrichtung)
+**[▶️ Video ansehen](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-installation.mp4)** · 📄 [Schriftlich im Wiki](https://github.com/nukleuz80/ha_brainstorm/wiki/Installation-und-Einrichtung)
 
 | Zeit | Kapitel |
 | :--- | :--- |
@@ -38,13 +43,13 @@ Alle Videos sind deutsch gesprochen (alle sechs gibt es auch [auf Englisch](vide
 | 0:13 | Voraussetzungen |
 | 0:29 | HACS: Repository hinzufügen |
 | 0:52 | Herunterladen |
-| 1:01 | Neustart |
-| 1:13 | Integration hinzufügen |
+| 1:02 | Neustart |
+| 1:14 | Integration hinzufügen |
 | 1:24 | Ersteinrichtung |
 | 1:37 | Karte ins Dashboard |
-| 1:56 | Mindmap-Karte |
-| 2:07 | Die erste Idee |
-| 2:19 | Konfigurieren |
+| 1:57 | Mindmap-Karte |
+| 2:08 | Die erste Idee |
+| 2:20 | Konfigurieren |
 | 2:32 | Updates |
 | 2:42 | Wie geht's weiter? |
 
@@ -56,9 +61,9 @@ Ein Kapitel pro Einstellung in der Alexa-Entwicklerkonsole, mit Kapitelliste auf
 
 ## Erinnerungen & Benachrichtigungen
 
-[![Erinnerungen & Benachrichtigungen](video/poster-erinnerungen.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.22/brainstorm-erinnerungen.mp4)
+[![Erinnerungen & Benachrichtigungen](video/poster-erinnerungen.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-erinnerungen.mp4)
 
-**[▶️ Video ansehen](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.22/brainstorm-erinnerungen.mp4)** (3½ Minuten) · 📄 [Schriftlich im Wiki](https://github.com/nukleuz80/ha_brainstorm/wiki/Erinnerungen)
+**[▶️ Video ansehen](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-erinnerungen.mp4)** (3½ Minuten) · 📄 [Schriftlich im Wiki](https://github.com/nukleuz80/ha_brainstorm/wiki/Erinnerungen)
 
 | Zeit | Kapitel |
 | :--- | :--- |
@@ -66,44 +71,44 @@ Ein Kapitel pro Einstellung in der Alexa-Entwicklerkonsole, mit Kapitelliste auf
 | 0:19 | Termin per Sprache: was Brainstorm versteht |
 | 0:44 | Termin auf der Karte |
 | 0:56 | Einschalten: Alexa-Ansage, Benachrichtigungen, Wartezeit |
-| 1:23 | Aufs Handy: Erledigt, 1 Stunde später, Morgen |
-| 1:37 | Ruhezeit, Briefing, Rückblick und Sperrzeiten pro Echo |
+| 1:24 | Aufs Handy: Erledigt, 1 Stunde später, Morgen |
+| 1:38 | Ruhezeit, Briefing, Rückblick und Sperrzeiten pro Echo |
 | 2:05 | Regeln pro Liste |
 | 2:17 | Orte & Heimkommen |
-| 2:30 | Für andere Personen |
-| 2:43 | Antworten per Sprache: erledigt, später |
+| 2:31 | Für andere Personen |
+| 2:44 | Antworten per Sprache: erledigt, später |
 | 2:53 | Kalender & echte Alexa-Erinnerungen |
-| 3:08 | Eigene Automationen |
-| 3:19 | Zusammenfassung |
+| 3:09 | Eigene Automationen |
+| 3:20 | Zusammenfassung |
 
 ## iPhone-Kurzbefehl
 
-[![iPhone-Kurzbefehl](video/poster-iphone.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.22/brainstorm-iphone.mp4)
+[![iPhone-Kurzbefehl](video/poster-iphone.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-iphone.mp4)
 
-**[▶️ Video ansehen](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.22/brainstorm-iphone.mp4)** (2 Minuten) · 📄 [Schriftlich im Wiki](https://github.com/nukleuz80/ha_brainstorm/wiki/Sprachsteuerung#iphone-kurzbefehl-mit-siri-action-taste-oder-rückseite)
+**[▶️ Video ansehen](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-iphone.mp4)** (2 Minuten) · 📄 [Schriftlich im Wiki](https://github.com/nukleuz80/ha_brainstorm/wiki/Sprachsteuerung#iphone-kurzbefehl-mit-siri-action-taste-oder-rückseite)
 
 | Zeit | Kapitel |
 | :--- | :--- |
 | 0:00 | Einleitung und Voraussetzungen |
-| 0:23 | Kurzbefehl anlegen, Text diktieren |
+| 0:24 | Kurzbefehl anlegen, Text diktieren |
 | 0:38 | Home Assistant aufrufen: Idee hinzufügen, Datenfeld, Anführungszeichen |
-| 1:12 | Auslöser: Action-Taste, Rückseite, Siri |
+| 1:13 | Auslöser: Action-Taste, Rückseite, Siri |
 | 1:26 | Ausprobieren |
 | 1:48 | Zusammenfassung |
 
 ## Privatsphäre, Freigaben & KI-Backlog
 
-[![Privatsphäre, Freigaben & KI-Backlog](video/poster-privatsphaere.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.22/brainstorm-privatsphaere.mp4)
+[![Privatsphäre, Freigaben & KI-Backlog](video/poster-privatsphaere.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-privatsphaere.mp4)
 
-**[▶️ Video ansehen](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.7.22/brainstorm-privatsphaere.mp4)** (2 Minuten) · 📄 [Schriftlich im Wiki](https://github.com/nukleuz80/ha_brainstorm/wiki/Zusammenarbeit)
+**[▶️ Video ansehen](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-privatsphaere.mp4)** (2 Minuten) · 📄 [Schriftlich im Wiki](https://github.com/nukleuz80/ha_brainstorm/wiki/Zusammenarbeit)
 
 | Zeit | Kapitel |
 | :--- | :--- |
 | 0:00 | Einleitung |
-| 0:16 | Einschalten und Hauptbenutzer |
-| 0:33 | Freigeben, in fremde Listen schreiben |
-| 0:58 | Echos Personen zuordnen |
-| 1:12 | Was Privatsphäre nicht kann |
+| 0:17 | Einschalten und Hauptbenutzer |
+| 0:34 | Freigeben, in fremde Listen schreiben |
+| 0:59 | Echos Personen zuordnen |
+| 1:13 | Was Privatsphäre nicht kann |
 | 1:25 | Backlog für Coding-KIs wie Claude Code |
 | 2:02 | Zusammenfassung |
 

@@ -275,6 +275,37 @@ CHAPTERS: list[dict] = [
         ],
     },
     {
+        "title": "Neu dazugekommen",
+        "scenes": [
+            {
+                "v": ("grid", "Seit dem Herbst neu", [
+                    ("📺", "Echo Show", "Liste und Mindmap direkt am Display"),
+                    ("🌐", "Mindmap aus Quelle", "Aus einer Webseite oder einem PDF"),
+                    ("📅", "Kalender-Abgleich", "Termine erscheinen im Kalender"),
+                    ("💬", "Messenger & Mail", "WhatsApp, Telegram und Mail werden zu Notizen"),
+                    ("🔋", "Batterien", "Leere Batterie wird zur Aufgabe"),
+                    ("🧪", "Satz-Tester", "Zeigt, was Brainstorm aus einem Satz macht"),
+                ], "Alles in den Einstellungen ein- und ausschaltbar."),
+                "say": "Außerdem ist in den letzten Versionen viel dazugekommen. Liste und Mindmap auf dem "
+                       "Echo Show, eine Mindmap aus einer Webseite oder einem PDF, der Abgleich mit dem "
+                       "Kalender und Notizen per WhatsApp, Telegram oder Mail. Leere Batterien "
+                       "werden zur Aufgabe, und der Satz-Tester zeigt dir, was Brainstorm aus "
+                       "einem Satz macht.",
+            },
+            {
+                "v": ("bullets", "Aufgaben im Haushalt", [
+                    ("🔁", "Wiederkehrende Aufgaben mit <b>wechselnder Zuständigkeit</b>"),
+                    ("🧹", "Anbindung an <b>ChoreOps</b>, Bring! und lokale To-do-Listen"),
+                    ("📑", "<b>Map-Tabs</b>: mehrere Mindmaps nebeneinander"),
+                    ("📱", "Kategorien auf dem Handy <b>zuklappen</b>"),
+                ], "Mehr im Wiki: github.com/nukleuz80/ha_brainstorm/wiki"),
+                "say": "Wiederkehrende Aufgaben wechseln auf Wunsch reihum die Zuständigkeit, "
+                       "und Brainstorm arbeitet mit ChoreOps, Bring und lokalen To-do-Listen "
+                       "zusammen. Dazu kommen Map-Tabs und zuklappbare Kategorien auf dem Handy.",
+            },
+        ],
+    },
+    {
         "title": "Loslegen",
         "scenes": [
             {

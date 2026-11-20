@@ -22,6 +22,8 @@ CHAPTERS, SPOKEN = _mod.CHAPTERS, _mod.SPOKEN
 VIDEO_TITLE = getattr(_mod, "TITLE", "Brainstorm: Eigenen Alexa-Skill einrichten")
 OUT_NAME = getattr(_mod, "OUT_NAME", "brainstorm-alexa-skill")
 LANG = getattr(_mod, "LANG", "de")
+# A teaser shows no chapter badges and no progress bar
+TEASER = getattr(_mod, "TEASER", False)
 EN = LANG == "en"
 
 ROOT = Path(__file__).parent
@@ -38,8 +40,11 @@ UI = {
     "you": "You" if EN else "Du",
     "q": ("\u201c", "\u201d") if EN else ("\u201e", "\u201c"),
 }
+# Pages are laid out at 1280 x 720 CSS pixels and recorded at 1.5x (Full HD)
 W, H = 1280, 720
 PAD_BEFORE, PAD_AFTER = 0.5, 1.1
+SLIDE_PORT, CARD_PORT = 8800, 8799
+REPO_CARDS = Path("/mnt/ha_config/ha_brainstorm_repo/custom_components/brainstorm/cards")
 
 CSS = """
 *{box-sizing:border-box;margin:0;padding:0}
@@ -138,6 +143,30 @@ body{width:1280px;height:720px;overflow:hidden;font-family:'Noto Sans','DejaVu S
 .ph2 .it small{display:block;color:#9fb3c8;font-size:12px}
 .ph2 .act{display:flex;gap:6px;margin-top:8px}.ph2 .act span{flex:1;background:#2b4057;border-radius:8px;padding:6px 4px;text-align:center;font-size:12px}
 .ph2side{position:absolute;left:420px;top:10px;right:0}
+/* motion: entrance animations, recorded frame by frame by hdrec.py */
+@keyframes fu{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+@keyframes fi{from{opacity:0}to{opacity:1}}
+@keyframes zi{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
+@keyframes pop{0%{opacity:0;transform:scale(.6)}70%{transform:scale(1.06)}100%{opacity:1;transform:none}}
+.ctitle{animation:fu .6s ease-out both}.badge{animation:pop .6s ease-out both}
+.stage h2,.sph{animation:fu .6s .1s ease-out both}
+.bl li,.tile,.bub,.mi,.sw,.it,.field,.chip{animation:fu .55s ease-out both}
+.bl li:nth-child(1),.tile:nth-child(1),.bub:nth-child(1),.mi:nth-child(1),.sw:nth-child(1),.chip:nth-child(1){animation-delay:.25s}
+.bl li:nth-child(2),.tile:nth-child(2),.bub:nth-child(2),.mi:nth-child(2),.sw:nth-child(2),.chip:nth-child(2){animation-delay:.45s}
+.bl li:nth-child(3),.tile:nth-child(3),.bub:nth-child(3),.mi:nth-child(3),.sw:nth-child(3),.chip:nth-child(3){animation-delay:.65s}
+.bl li:nth-child(4),.tile:nth-child(4),.bub:nth-child(4),.mi:nth-child(4),.sw:nth-child(4),.chip:nth-child(4){animation-delay:.85s}
+.bl li:nth-child(5),.tile:nth-child(5),.bub:nth-child(5),.mi:nth-child(5),.sw:nth-child(5){animation-delay:1.05s}
+.bl li:nth-child(6),.tile:nth-child(6),.bub:nth-child(6),.mi:nth-child(6),.sw:nth-child(6){animation-delay:1.25s}
+.bl li:nth-child(n+7),.tile:nth-child(n+7),.mi:nth-child(n+7),.sw:nth-child(n+7){animation-delay:1.4s}
+.shot img,.live,.win,.ha,.phone,.ph2,.pre,.tfin{animation:zi .8s ease-out both}
+.tfarrow{animation:fu .5s .6s ease-out both}.tfout{animation:zi .7s .9s ease-out both}
+.note{animation:fu .6s 1.3s ease-out both}.cap{animation:fi .5s .15s both}
+.tt img{animation:pop .9s ease-out both}.tt h1{animation:fu .7s .3s ease-out both}.tt p{animation:fu .7s .55s ease-out both}
+.teaser .badge,.teaser .prog{display:none}
+/* live card */
+.live{position:absolute;left:0;top:0;border-radius:14px;overflow:hidden;box-shadow:0 14px 40px rgba(0,0,0,.55);
+ border:1px solid #2b4057;background:#111}
+.live iframe{border:0;transform-origin:0 0;display:block}
 """
 
 TABS = ["Build", "Code", "Test", "Distribution", "Certification", "Analytics"]
@@ -258,6 +287,19 @@ def stage(v: tuple) -> str:
         who = {"du": UI["you"], "alexa": "Alexa", "ha": "Home Assistant"}
         bubs = "".join(f'<div class="bub {w if w != "ha" else "hab"}"><span class="who">{who[w]}</span>{esc(t)}</div>' for w, t in v[1])
         return f'<div class="sph">{esc(v[2])}</div><div class="sp">{bubs}</div>'
+    if kind == "live":
+        # Real card that is clicked through: ("live", query, width, height, zoom, bullets, note)
+        query, width, height, zoom, bullets, note = v[1:7]
+        lang = "&lang=en" if EN else ""
+        frame = (f'<div class="live" style="width:{width}px;height:{height}px"><iframe id="live" '
+                 f'src="http://localhost:{CARD_PORT}/index.html?{esc(query)}{lang}" '
+                 f'style="width:{width / zoom:.0f}px;height:{height / zoom:.0f}px;transform:scale({zoom})">'
+                 '</iframe></div>')
+        side = ""
+        if bullets:
+            items = "".join(f'<li><span class="ic">{i}</span><span>{t}</span></li>' for i, t in bullets)
+            side = f'<div class="shotside bl" style="width:{1184 - width - 40}px"><ul>{items}</ul></div>'
+        return frame + side + (f'<div class="note">{esc(note)}</div>' if note else "")
     if kind == "shot":
         # Real card screenshot with bullets: ("shot", file, img_height, bullets, note)
         items = "".join(f'<li><span class="ic">{i}</span><span>{t}</span></li>' for i, t in v[3])
@@ -327,7 +369,8 @@ def page(chapter_no: int, total: int, title: str, v: tuple, caption: str) -> str
         f'<div class="{"done" if i < chapter_no else "cur" if i == chapter_no else ""}"></div>'
         for i in range(total))
     badge = "Intro" if chapter_no == 0 else f"{UI['chapter']} {chapter_no}"
-    return (f'<!doctype html><html lang="{LANG}"><head><meta charset="utf-8"><style>{CSS}</style></head><body>'
+    return (f'<!doctype html><html lang="{LANG}"><head><meta charset="utf-8"><style>{CSS}</style></head>'
+            f'<body class="{"teaser" if TEASER else ""}">'
             f'<div class="top"><span class="badge">{badge}</span><span class="ctitle">{esc(title)}</span>'
             '<span class="logo"><img src="icon.png">Brainstorm Hub</span></div>'
             f'<div class="stage">{stage(v)}</div><div class="cap">{esc(caption)}</div>'
@@ -346,47 +389,100 @@ def run(cmd: list[str], **kw) -> None:
     subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, **kw)
 
 
+def _serve(directory: Path, port: int) -> subprocess.Popen:
+    return subprocess.Popen([sys.executable, "-m", "http.server", str(port)], cwd=directory,
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def _live_dir() -> Path:
+    """Cards with demo data and the current card code, for live scenes."""
+    live = ROOT / "live"
+    live.mkdir(exist_ok=True)
+    for name in ("demo.js", "index.html", "scenes.js"):
+        (live / name).write_bytes((ROOT / "cards" / name).read_bytes())
+    source = REPO_CARDS if REPO_CARDS.exists() else ROOT / "cards"
+    for card in list(source.glob("*.js")) + list(source.glob("*.svg")):
+        (live / card.name).write_bytes(card.read_bytes())
+    return live
+
+
+def _duration(path: Path) -> float:
+    info = subprocess.run([FFMPEG, "-i", str(path)], capture_output=True, text=True).stderr
+    h, m, sec = info.split("Duration: ")[1].split(",")[0].split(":")
+    return int(h) * 3600 + int(m) * 60 + float(sec)
+
+
+def _hd_intro(intro: Path) -> Path:
+    """The intro scaled to the format of the HD scenes (made once)."""
+    hd = intro.with_name(intro.stem + "_hd.mp4")
+    if not hd.exists() or hd.stat().st_mtime < intro.stat().st_mtime:
+        run([FFMPEG, "-y", "-i", str(intro), "-vf", "scale=1920:1080:flags=lanczos,fps=30,format=yuv420p",
+             "-c:v", "libx264", "-preset", "medium", "-crf", "18", "-profile:v", "high",
+             "-c:a", "aac", "-b:a", "128k", "-ar", "48000", "-ac", "2", str(hd)])
+    return hd
+
+
+def _srt_time(seconds: float) -> str:
+    ms = int(round(seconds * 1000))
+    return f"{ms // 3600000:02d}:{ms // 60000 % 60:02d}:{ms // 1000 % 60:02d},{ms % 1000:03d}"
+
+
 def main() -> None:
+    from hdrec import Job, record
+
     only_frames = "--frames" in sys.argv
     OUT.mkdir(exist_ok=True)
     (OUT / "icon.png").write_bytes((ROOT / "icon.png").read_bytes())
     for shot in (ROOT / "cards" / ("en" if EN else "")).glob("crop_*.png"):
         (OUT / shot.name).write_bytes(shot.read_bytes())
-    segments, chapters, t = [], [], 0.0
+    segments, chapters, subtitles, jobs, t = [], [], [], [], 0.0
     intro = ROOT / ("intro_en.mp4" if EN else "intro.mp4")  # made by intro.py, reusable for other videos
     if intro.exists() and "--no-intro" not in sys.argv:
-        segments.append(intro)
-        t = float(subprocess.run([FFMPEG, "-i", str(intro)], capture_output=True, text=True)
-                  .stderr.split("Duration: ")[1].split(",")[0].split(":")[-1])
+        hd = _hd_intro(intro)
+        segments.append(hd)
+        t = _duration(hd)
     total = len(CHAPTERS)
     for c_no, ch in enumerate(CHAPTERS):
         start = 0.0 if c_no == 0 else t
         for s_no, sc in enumerate(ch["scenes"]):
             name = f"c{c_no:02d}_{s_no}"
             (OUT / f"{name}.html").write_text(page(c_no, total, ch["title"], sc["v"], sc["say"]))
-            run(["/snap/bin/chromium", "--headless", "--no-sandbox", "--hide-scrollbars",
-                 f"--window-size={W},{H}", f"--screenshot={OUT / name}.png", f"file://{OUT / name}.html"])
             if only_frames:
                 continue
             # Keyed by the spoken text, so only changed scenes are voiced again
             key = hashlib.sha1(spoken(sc.get("speak", sc["say"])).encode()).hexdigest()[:10]
             wav = OUT / f"{name}_{key}.wav"
-            if not wav.exists():
+            if not wav.exists() or wav.stat().st_size < 1000:
                 run([PIPER, "-m", VOICE, "-f", str(wav), "--sentence-silence", "0.35"],
                     input=spoken(sc.get("speak", sc["say"])).encode())
             with wave.open(str(wav)) as w:
-                dur = w.getnframes() / w.getframerate() + PAD_BEFORE + PAD_AFTER
+                voice = w.getnframes() / w.getframerate()
+            dur = max(voice + PAD_BEFORE + PAD_AFTER, sc.get("min", 0))
             seg = OUT / f"{name}.mp4"
-            run([FFMPEG, "-y", "-loop", "1", "-framerate", "25", "-i", str(OUT / f"{name}.png"),
-                 "-i", str(wav), "-filter_complex",
-                 f"[1:a]adelay={int(PAD_BEFORE * 1000)}:all=1,apad,aresample=44100[a]",
-                 "-map", "0:v", "-map", "[a]", "-t", f"{dur:.3f}",
-                 "-c:v", "libx264", "-tune", "stillimage", "-pix_fmt", "yuv420p", "-r", "25",
-                 "-c:a", "aac", "-b:a", "96k", "-ac", "1", str(seg)])
+            url = f"http://localhost:{SLIDE_PORT}/{OUT.name}/{name}.html"
+            actions = sc.get("actions") if sc["v"][0] == "live" else None
+            if actions is not None:
+                actions = list(actions)
+            jobs.append(Job(url, wav, dur, seg, PAD_BEFORE, actions))
+            subtitles.append((t + PAD_BEFORE, t + PAD_BEFORE + voice, sc["say"]))
             segments.append(seg)
             t += dur
         chapters.append((ch["title"], start, t))
     if only_frames:
+        return
+    servers = [_serve(ROOT, SLIDE_PORT), _serve(_live_dir(), CARD_PORT)]
+    try:
+        import time as _time
+        _time.sleep(1.0)
+        only = [a.split("=", 1)[1] for a in sys.argv if a.startswith("--only=")]
+        todo = [j for j in jobs if not only or any(j.out.stem.startswith(o) for o in only[0].split(","))]
+        if "--keep" in sys.argv:
+            todo = [j for j in todo if not j.out.exists()]
+        record(FFMPEG, todo)
+    finally:
+        for server in servers:
+            server.terminate()
+    if any(a.startswith("--only=") for a in sys.argv):
         return
     (OUT / "list.txt").write_text("".join(f"file '{s}'\n" for s in segments))
     meta = [";FFMETADATA1", f"title={VIDEO_TITLE}", "artist=Brainstorm Hub"]
@@ -394,9 +490,14 @@ def main() -> None:
         label = UI["intro"] if i == 0 else f"{i}. {title}"
         meta += ["[CHAPTER]", "TIMEBASE=1/1000", f"START={int(a * 1000)}", f"END={int(b * 1000)}", f"title={label}"]
     (OUT / "meta.txt").write_text("\n".join(meta) + "\n")
+    srt = ROOT / f"{OUT_NAME}.srt"
+    srt.write_text("\n".join(
+        f"{n}\n{_srt_time(a)} --> {_srt_time(b)}\n{text}\n" for n, (a, b, text) in enumerate(subtitles, 1)))
     final = ROOT / f"{OUT_NAME}.mp4"
     run([FFMPEG, "-y", "-f", "concat", "-safe", "0", "-i", str(OUT / "list.txt"), "-i", str(OUT / "meta.txt"),
-         "-map_metadata", "1", "-map_chapters", "1", "-c", "copy", "-movflags", "+faststart", str(final)])
+         "-i", str(srt), "-map", "0:v", "-map", "0:a", "-map", "2:s", "-map_metadata", "1", "-map_chapters", "1",
+         "-c", "copy", "-c:s", "mov_text", "-metadata:s:s:0", f"language={'eng' if EN else 'deu'}",
+         "-movflags", "+faststart", str(final)])
     (ROOT / f"chapters_{OUT_NAME}.json").write_text(json.dumps(chapters, ensure_ascii=False, indent=1))
     print(final, f"{t:.1f}s", final.stat().st_size // 1024, "KB")
 

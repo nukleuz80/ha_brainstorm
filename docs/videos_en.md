@@ -2,13 +2,17 @@
 
 ⬅️ [Back to the README](../README.md) · 📚 [Wiki](https://github.com/nukleuz80/ha_brainstorm/wiki) · 🇩🇪 [Deutsche Videos](videos.md)
 
-All videos are narrated in English, with the text as subtitles on screen. The MP4 files are attached to the GitHub releases and contain chapter marks that most players (VLC, QuickTime, Plex) show. The cards are real screenshots with sample data, Amazon and Home Assistant dialogs are drawn schematically.
+All videos are narrated in English and, since v1.20.7, in Full HD with real clicks in the cards. The text runs as subtitles on screen and also as a subtitle track you can switch off. The MP4 files are attached to the GitHub releases and contain chapter marks that most players (VLC, QuickTime, Plex) show. The cards are real and run with sample data. Amazon and Home Assistant dialogs are drawn schematically.
 
-## The key features (4 minutes)
+## Brainstorm in one minute (teaser)
 
-[![The key features](video/poster-features-en.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.11.9/brainstorm-features-en.mp4)
+**[▶️ Watch the teaser](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-teaser-en.mp4)**: list, mind map and AI suggestions in 51 seconds.
 
-**[▶️ Watch the video](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.11.9/brainstorm-features-en.mp4)**
+## The key features (5 minutes)
+
+[![The key features](video/poster-features-en.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-features-en.mp4)
+
+**[▶️ Watch the video](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-features-en.mp4)**
 
 Everything Brainstorm Hub does, from voice capture to the mind map, voting and AI.
 
@@ -26,13 +30,14 @@ Everything Brainstorm Hub does, from voice capture to the mind map, voting and A
 | 3:26 | Done & result |
 | 3:37 | Connected to everything |
 | 3:50 | Privacy & sharing |
-| 4:02 | Get started |
+| 4:02 | What's new: Echo Show, mind map from a web page or PDF, calendar, messengers & mail, batteries, sentence tester |
+| 4:32 | Get started |
 
 ## Installation (2 minutes)
 
-[![Installation](video/poster-installation-en.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.11.9/brainstorm-installation-en.mp4)
+[![Installation](video/poster-installation-en.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-installation-en.mp4)
 
-**[▶️ Watch the video](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.11.9/brainstorm-installation-en.mp4)** · 📄 [Written guide in the wiki](https://github.com/nukleuz80/ha_brainstorm/wiki/Installation-and-Setup)
+**[▶️ Watch the video](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-installation-en.mp4)** · 📄 [Written guide in the wiki](https://github.com/nukleuz80/ha_brainstorm/wiki/Installation-and-Setup)
 
 From HACS to your first idea on the dashboard.
 
@@ -53,9 +58,9 @@ From HACS to your first idea on the dashboard.
 
 ## Your own Alexa skill (6 minutes)
 
-[![Your own Alexa skill](video/poster-alexa-skill-en.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.11.9/brainstorm-alexa-skill-en.mp4)
+[![Your own Alexa skill](video/poster-alexa-skill-en.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-alexa-skill-en.mp4)
 
-**[▶️ Watch the video](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.11.9/brainstorm-alexa-skill-en.mp4)** · 📄 [Written guide in the wiki](https://github.com/nukleuz80/ha_brainstorm/wiki/Voice-Control#️-optional-your-own-alexa-skill-one-sentence-one-answer)
+**[▶️ Watch the video](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-alexa-skill-en.mp4)** · 📄 [Written guide in the wiki](https://github.com/nukleuz80/ha_brainstorm/wiki/Voice-Control#️-optional-your-own-alexa-skill-one-sentence-one-answer)
 
 One chapter per setting in the Alexa developer console. The console is drawn schematically: Amazon changes its layout now and then, but the labels stay the same.
 
@@ -83,9 +88,9 @@ One chapter per setting in the Alexa developer console. The console is drawn sch
 
 ## Reminders & notifications (3 minutes)
 
-[![Reminders & notifications](video/poster-reminders-en.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.11.9/brainstorm-reminders-en.mp4)
+[![Reminders & notifications](video/poster-reminders-en.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-reminders-en.mp4)
 
-**[▶️ Watch the video](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.11.9/brainstorm-reminders-en.mp4)** · 📄 [Written guide in the wiki](https://github.com/nukleuz80/ha_brainstorm/wiki/Reminders)
+**[▶️ Watch the video](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-reminders-en.mp4)** · 📄 [Written guide in the wiki](https://github.com/nukleuz80/ha_brainstorm/wiki/Reminders)
 
 Due dates by voice or on the card, Alexa announcements, phone notifications, places, quiet hours and rules per list.
 
@@ -107,9 +112,9 @@ Due dates by voice or on the card, Alexa announcements, phone notifications, pla
 
 ## iPhone shortcut (2 minutes)
 
-[![iPhone shortcut](video/poster-iphone-en.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.11.9/brainstorm-iphone-en.mp4)
+[![iPhone shortcut](video/poster-iphone-en.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-iphone-en.mp4)
 
-**[▶️ Watch the video](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.11.9/brainstorm-iphone-en.mp4)** · 📄 [Written guide in the wiki](https://github.com/nukleuz80/ha_brainstorm/wiki/Voice-Control#-iphone-shortcut-with-siri-action-button-or-back-tap)
+**[▶️ Watch the video](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-iphone-en.mp4)** · 📄 [Written guide in the wiki](https://github.com/nukleuz80/ha_brainstorm/wiki/Voice-Control#-iphone-shortcut-with-siri-action-button-or-back-tap)
 
 Capture ideas with Siri, the Action button or Back Tap.
 
@@ -124,9 +129,9 @@ Capture ideas with Siri, the Action button or Back Tap.
 
 ## Privacy, sharing & AI backlog (2 minutes)
 
-[![Privacy, sharing & AI backlog](video/poster-privacy-en.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.11.9/brainstorm-privacy-en.mp4)
+[![Privacy, sharing & AI backlog](video/poster-privacy-en.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-privacy-en.mp4)
 
-**[▶️ Watch the video](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.11.9/brainstorm-privacy-en.mp4)** · 📄 [Written guide in the wiki](https://github.com/nukleuz80/ha_brainstorm/wiki/Collaboration)
+**[▶️ Watch the video](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-privacy-en.mp4)** · 📄 [Written guide in the wiki](https://github.com/nukleuz80/ha_brainstorm/wiki/Collaboration)
 
 Own entries per person, sharing, Echos per person, and a task list for coding AIs.
 

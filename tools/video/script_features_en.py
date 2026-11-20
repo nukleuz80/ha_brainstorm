@@ -281,6 +281,36 @@ CHAPTERS: list[dict] = [
         ],
     },
     {
+        "title": "What's new",
+        "scenes": [
+            {
+                "v": ("grid", "New since autumn", [
+                    ("📺", "Echo Show", "List and mind map right on the display"),
+                    ("🌐", "Map from a source", "From a web page or a PDF"),
+                    ("📅", "Calendar sync", "Due dates show up in your calendar"),
+                    ("💬", "Messengers & mail", "WhatsApp, Telegram and mail become notes"),
+                    ("🔋", "Batteries", "An empty battery becomes a task"),
+                    ("🧪", "Sentence tester", "Shows what Brainstorm makes of a sentence"),
+                ], "Everything can be switched on and off in the settings."),
+                "say": "And there is a lot that is new. List and mind map on the Echo Show, mind maps "
+                       "from a web page or a PDF, calendar sync, and notes by WhatsApp, Telegram or "
+                       "mail. Empty batteries become tasks, and the sentence tester shows you what "
+                       "Brainstorm makes of a sentence.",
+            },
+            {
+                "v": ("bullets", "Household chores", [
+                    ("🔁", "Recurring tasks with <b>rotating assignees</b>"),
+                    ("🧹", "Works with <b>ChoreOps</b>, Bring! and local to-do lists"),
+                    ("📑", "<b>Map tabs</b>: several mind maps side by side"),
+                    ("📱", "<b>Fold</b> categories on your phone"),
+                ], "More in the wiki: github.com/nukleuz80/ha_brainstorm/wiki"),
+                "say": "Also, recurring tasks can rotate between people, and Brainstorm works with "
+                       "ChoreOps, Bring and local to-do lists. On top of that there are map tabs and "
+                       "foldable categories on your phone.",
+            },
+        ],
+    },
+    {
         "title": "Get started",
         "scenes": [
             {
