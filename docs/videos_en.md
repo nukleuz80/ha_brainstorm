@@ -47,16 +47,17 @@ From HACS to your first idea on the dashboard.
 | :--- | :--- |
 | 0:00 | Introduction |
 | 0:14 | Requirements |
-| 0:29 | Download in HACS |
-| 0:48 | Restart |
-| 0:58 | Add the integration |
-| 1:07 | First setup |
-| 1:20 | Add the card |
-| 1:38 | Mind map card |
-| 1:45 | Your first idea |
-| 1:56 | Configure |
-| 2:07 | Updates |
-| 2:15 | What's next? |
+| 0:31 | Open the Marketplace |
+| 0:43 | Download in HACS |
+| 0:51 | Restart |
+| 1:02 | Add the integration |
+| 1:11 | First setup |
+| 1:24 | Add the card |
+| 1:43 | Mind map card |
+| 1:50 | Your first idea |
+| 2:00 | Configure |
+| 2:11 | Updates |
+| 2:20 | What's next? |
 
 ## Your own Alexa skill (6 minutes)
 

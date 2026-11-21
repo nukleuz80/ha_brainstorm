@@ -42,18 +42,18 @@ Alle Videos sind deutsch gesprochen (alle gibt es auch [auf Englisch](videos_en.
 | Zeit | Kapitel |
 | :--- | :--- |
 | 0:00 | Einleitung |
-| 0:13 | Voraussetzungen |
-| 0:29 | HACS: Repository hinzufügen |
-| 0:52 | Herunterladen |
-| 1:02 | Neustart |
-| 1:14 | Integration hinzufügen |
-| 1:24 | Ersteinrichtung |
-| 1:37 | Karte ins Dashboard |
-| 1:57 | Mindmap-Karte |
-| 2:08 | Die erste Idee |
-| 2:20 | Konfigurieren |
-| 2:32 | Updates |
-| 2:43 | Wie geht's weiter? |
+| 0:14 | Voraussetzungen |
+| 0:32 | HACS: Repository hinzufügen |
+| 0:43 | Herunterladen |
+| 0:53 | Neustart |
+| 1:05 | Integration hinzufügen |
+| 1:15 | Ersteinrichtung |
+| 1:29 | Karte ins Dashboard |
+| 1:49 | Mindmap-Karte |
+| 2:00 | Die erste Idee |
+| 2:11 | Konfigurieren |
+| 2:24 | Updates |
+| 2:34 | Wie geht's weiter? |
 
 ## Eigener Alexa-Skill (6 Minuten)
 
