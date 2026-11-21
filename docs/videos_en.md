@@ -8,7 +8,7 @@ All videos are narrated in English and, since v1.20.7, in Full HD with real clic
 
 [![Brainstorm in one minute](video/poster-teaser-en.jpg)](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-teaser-en.mp4)
 
-**[▶️ Watch the teaser](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-teaser-en.mp4)**: list, mind map and AI suggestions in 51 seconds.
+**[▶️ Watch the teaser](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-teaser-en.mp4)**: list, mind map and AI suggestions in 53 seconds.
 
 ## The key features (5 minutes)
 

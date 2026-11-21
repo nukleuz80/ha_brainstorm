@@ -21,17 +21,17 @@ Alle Videos sind deutsch gesprochen (alle gibt es auch [auf Englisch](videos_en.
 | 0:00 | Was ist Brainstorm? |
 | 0:18 | Erfassen per Stimme: Alexa, Assist, Siri, Mikrofon, KI |
 | 0:32 | Versteht ganze Sätze: Text, Termin, Priorität, Kategorie |
-| 0:50 | Die Listenkarte und die Bedienstufen Einsteiger, Normal, Profi |
+| 0:51 | Die Listenkarte und die Bedienstufen Einsteiger, Normal, Profi |
 | 1:21 | Unteraufgaben & Details |
 | 1:35 | Die Mindmap: Marker, Ansichten, Suche, Regeln, Präsentation, Export |
-| 2:19 | Gemeinsam & mit KI: Abstimmen, Reaktionen, Minimap, Kommentare, Map aus Thema |
-| 2:58 | Erinnerungen und wiederkehrende Aufgaben |
-| 3:13 | Alexa-Skill & Echo Show |
+| 2:20 | Gemeinsam & mit KI: Abstimmen, Reaktionen, Minimap, Kommentare, Map aus Thema |
+| 2:59 | Erinnerungen und wiederkehrende Aufgaben |
+| 3:14 | Alexa-Skill & Echo Show |
 | 3:28 | Erledigt & Ergebnis |
 | 3:41 | Verbunden mit allem: To-do, Bring!, Markdown, JSON |
-| 3:53 | Privatsphäre & Freigaben |
-| 4:06 | Neu dazugekommen: Echo Show, Mindmap aus Webseite oder PDF, Kalender, Messenger & Mail, Batterien, Satz-Tester |
-| 4:40 | Loslegen |
+| 3:54 | Privatsphäre & Freigaben |
+| 4:07 | Neu dazugekommen: Echo Show, Mindmap aus Webseite oder PDF, Kalender, Messenger & Mail, Batterien, Satz-Tester |
+| 4:41 | Loslegen |
 
 ## Installation (3 Minuten)
 
@@ -53,7 +53,7 @@ Alle Videos sind deutsch gesprochen (alle gibt es auch [auf Englisch](videos_en.
 | 2:08 | Die erste Idee |
 | 2:20 | Konfigurieren |
 | 2:32 | Updates |
-| 2:42 | Wie geht's weiter? |
+| 2:43 | Wie geht's weiter? |
 
 ## Eigener Alexa-Skill (6 Minuten)
 
@@ -71,14 +71,14 @@ Ein Kapitel pro Einstellung in der Alexa-Entwicklerkonsole, mit Kapitelliste auf
 | :--- | :--- |
 | 0:00 | Einleitung |
 | 0:19 | Termin per Sprache: was Brainstorm versteht |
-| 0:44 | Termin auf der Karte |
+| 0:43 | Termin auf der Karte |
 | 0:56 | Einschalten: Alexa-Ansage, Benachrichtigungen, Wartezeit |
-| 1:24 | Aufs Handy: Erledigt, 1 Stunde später, Morgen |
-| 1:38 | Ruhezeit, Briefing, Rückblick und Sperrzeiten pro Echo |
-| 2:05 | Regeln pro Liste |
-| 2:17 | Orte & Heimkommen |
-| 2:31 | Für andere Personen |
-| 2:44 | Antworten per Sprache: erledigt, später |
+| 1:23 | Aufs Handy: Erledigt, 1 Stunde später, Morgen |
+| 1:37 | Ruhezeit, Briefing, Rückblick und Sperrzeiten pro Echo |
+| 2:04 | Regeln pro Liste |
+| 2:16 | Orte & Heimkommen |
+| 2:30 | Für andere Personen |
+| 2:43 | Antworten per Sprache: erledigt, später |
 | 2:53 | Kalender & echte Alexa-Erinnerungen |
 | 3:09 | Eigene Automationen |
 | 3:20 | Zusammenfassung |
