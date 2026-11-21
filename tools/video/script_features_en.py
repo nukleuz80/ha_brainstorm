@@ -8,7 +8,7 @@ OUT_NAME = "brainstorm-features-en"
 COVERS = ["List-Card", "Mind-Map-and-Pinboard", "Collaboration", "AI-Features", "Reminders", "Voice-Control"]
 # Spoken replacements for terms the English voice gets wrong
 SPOKEN: list[tuple[str, str]] = [
-    ("PDFs", "P D Fs"), ("PDF", "P D F"), ("OPML", "O P M L"), ("HACS", "hacks"),
+    ("PDFs", "P D Fs"), ("PDF", "P D F"), ("OPML", "O P M L"), ("HACS", "hacks"), ("Marketplace", "market place"),
     ("Todoist", "Todo-ist"), ("asap", "A, S, A, P"), ("Kanban", "Kahn-bahn"),
     ("Markdown", "Mark down"), ("at sign and", "symbol at, and"),
 ]
@@ -23,7 +23,7 @@ CHAPTERS: list[dict] = [
                     ("🗣️", "Capture by <b>voice</b>, card or phone"),
                     ("🧠", "Brainstorm <b>sorts it for you</b>: category, priority, due date"),
                     ("🔒", "Runs locally, your data stays with you"),
-                ], "An integration for Home Assistant, available in HACS."),
+                ], "An integration for Home Assistant, available in the Marketplace."),
                 "say": "This is Brainstorm Hub. Brainstorm collects your ideas, tasks and "
                        "shopping in one place in Home Assistant. Just say or type whatever "
                        "comes to mind, and Brainstorm sorts it for you.",
@@ -315,11 +315,11 @@ CHAPTERS: list[dict] = [
         "scenes": [
             {
                 "v": ("bullets", "Ready in three steps", [
-                    ("1", "Search <b>HACS</b> for <b>Brainstorm Hub</b> and install it"),
+                    ("1", "Search the <b>Marketplace</b> for <b>Brainstorm Hub</b> and install it"),
                     ("2", "Restart Home Assistant, add the <b>Brainstorm Hub</b> integration"),
                     ("3", "Add the <b>Brainstorm Card</b> to your dashboard, done"),
                 ], "Guide and videos: github.com/nukleuz80/ha_brainstorm"),
-                "say": "Brainstorm installs in a few minutes through HACS. Then add the "
+                "say": "Brainstorm installs in a few minutes through the Marketplace. Then add the "
                        "integration and drop the card onto your dashboard. You'll find the "
                        "guide on GitHub. Have fun with your ideas!",
             },

@@ -61,7 +61,7 @@ CHAPTERS: list[dict] = [
         "say": "On the Echo Show, in your calendar and on your phone. And everything runs locally, at home.",
     }]},
     {"title": "Brainstorm Hub", "scenes": [{
-        "v": ("title", "Brainstorm Hub", "Free in HACS · github.com/nukleuz80/ha_brainstorm"),
-        "say": "So, that's Brainstorm Hub. Free in HACS. So go ahead and try it today!",
+        "v": ("title", "Brainstorm Hub", "Free in the Marketplace · github.com/nukleuz80/ha_brainstorm"),
+        "say": "So, that's Brainstorm Hub. Free in the Marketplace. So go ahead and try it today!",
     }]},
 ]

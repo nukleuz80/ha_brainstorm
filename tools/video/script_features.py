@@ -18,7 +18,7 @@ CHAPTERS: list[dict] = [
                     ("🗣️", "Erfassen per <b>Stimme</b>, Karte oder Handy"),
                     ("🧠", "Brainstorm <b>sortiert selbst</b>: Kategorie, Priorität, Termin"),
                     ("🔒", "Läuft lokal, deine Daten bleiben bei dir"),
-                ], "Eine Integration für Home Assistant, installierbar über HACS."),
+                ], "Eine Integration für Home Assistant, installierbar über den Marketplace."),
                 "say": "Das ist Brainstorm Hub. Brainstorm sammelt deine Ideen, Aufgaben und "
                        "Einkäufe an einem Ort in Home Assistant. Du sagst oder tippst einfach, "
                        "was dir einfällt, und Brainstorm sortiert es selbst ein.",
@@ -310,11 +310,11 @@ CHAPTERS: list[dict] = [
         "scenes": [
             {
                 "v": ("bullets", "In drei Schritten startklar", [
-                    ("1", "In <b>HACS</b> nach <b>Brainstorm Hub</b> suchen und installieren"),
+                    ("1", "Im <b>Marketplace</b> nach <b>Brainstorm Hub</b> suchen und installieren"),
                     ("2", "Home Assistant neu starten, Integration <b>Brainstorm Hub</b> hinzufügen"),
                     ("3", "Karte <b>Brainstorm Card</b> ins Dashboard ziehen – fertig"),
                 ], "Anleitung und Videos: github.com/nukleuz80/ha_brainstorm"),
-                "say": "Installiert ist Brainstorm in wenigen Minuten über HACS. Danach fügst du "
+                "say": "Installiert ist Brainstorm in wenigen Minuten über den Marketplace. Danach fügst du "
                        "die Integration hinzu und ziehst die Karte ins Dashboard. Die Anleitung "
                        "findest du auf GitHub. Viel Spaß mit deinen Ideen!",
             },

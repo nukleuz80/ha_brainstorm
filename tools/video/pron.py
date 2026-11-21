@@ -45,6 +45,7 @@ _TERMS: dict[str, str] = {
     "Node J S": "nˈoʊt dʒˈeɪ ˈɛs",
     "Interfaces": "ˈɪntɐfeːsɪs",
     "Dashboard": "dˈɛʃbɔːɐt",
+    "Marketplace": "mˈaːkɪtpleɪs",
     "Markdown": "mˈaːkdaʊn",
     "FreeMind": "frˈiːmaɪnt",
     "Callouts": "kˈɔːlaʊts",

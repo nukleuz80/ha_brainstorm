@@ -6,7 +6,7 @@ TITLE = "Installing Brainstorm Hub"
 OUT_NAME = "brainstorm-installation-en"
 # Wiki pages this video covers, check them on every release
 COVERS = ["Installation-and-Setup", "Quick-Start", "Settings"]
-SPOKEN: list[tuple[str, str]] = [("HACS", "hacks"), ("YAML", "yammel"), ("Markdown", "Mark down")]
+SPOKEN: list[tuple[str, str]] = [("HACS", "hacks"), ("Marketplace", "market place"), ("YAML", "yammel"), ("Markdown", "Mark down")]
 
 CHAPTERS: list[dict] = [
     {
@@ -14,9 +14,9 @@ CHAPTERS: list[dict] = [
         "scenes": [
             {
                 "v": ("title", "Installing Brainstorm Hub",
-                      "From HACS to your first idea in five minutes"),
+                      "From the Marketplace to your first idea in five minutes"),
                 "say": "In this video, you'll install Brainstorm Hub. In just a few minutes, "
-                       "you'll go from HACS to your first idea on the dashboard.",
+                       "you'll go from installing to your first idea on the dashboard.",
             },
         ],
     },
@@ -26,11 +26,12 @@ CHAPTERS: list[dict] = [
             {
                 "v": ("bullets", "What you need", [
                     ("🏠", "<b>Home Assistant 2026.10</b> or newer"),
-                    ("📦", "<b>HACS</b>, the community store for Home Assistant"),
+                    ("📦", "The <b>Marketplace</b> in Settings, built in since 2026.11"),
                     ("🗣️", "Optional: <b>Alexa Media Player</b> for voice input with Alexa"),
                     ("🔒", "No account, no password: Brainstorm doesn't connect to any outside service"),
-                ], "No HACS yet? The guide is on hacs.xyz."),
-                "say": "You need Home Assistant 2026 point 10 or newer, and HACS. For Alexa, "
+                ], "On 2026.10 you install through HACS, the steps are almost the same."),
+                "say": "You need Home Assistant 2026 point 10 or newer. You install it from the "
+                       "Marketplace in Settings. For Alexa, "
                        "you can add the Alexa Media Player integration. You don't need an "
                        "account or a password, Brainstorm doesn't connect to any outside "
                        "service.",
@@ -38,25 +39,33 @@ CHAPTERS: list[dict] = [
         ],
     },
     {
-        "title": "Download in HACS",
+        "title": "Open the Marketplace",
+        "scenes": [
+            {
+                "v": ("menu", "Settings", [
+                    ("Devices & services", False),
+                    ("Automations & scenes", False),
+                    ("Apps", False),
+                    ("Marketplace", True),
+                    ("Dashboards", False),
+                ], "Settings ➔ Marketplace ➔ Browse",
+                   "Brainstorm Hub is in the default list, so you don't need to add a repository."),
+                "say": "Next, open Settings and click Marketplace. Switch to Browse at the "
+                       "bottom and search for Brainstorm Hub. It's in the default list, so you "
+                       "don't need to add a repository.",
+            },
+        ],
+    },
+    {
+        "title": "Install",
         "scenes": [
             {
                 "v": ("ha", "Brainstorm Hub", [
-                    ("Search", "Brainstorm Hub", True, "Brainstorm Hub is in the HACS default list"),
-                    ("Version", "v1.11.9 (latest)", True, "HACS always offers the latest release"),
-                ], "HACS ➔ search for Brainstorm Hub ➔ Download", "Download"),
-                "say": "Open HACS and search for Brainstorm Hub. It's in the default list, so "
-                       "you don't need to add a repository. Open the entry and click Download "
-                       "at the bottom right. HACS always offers the latest release.",
-            },
-            {
-                "v": ("bullets", "Even faster: the My button", [
-                    ("🔗", "Click <b>“Open in HACS”</b> in the README"),
-                    ("🏠", "Confirm your Home Assistant address"),
-                    ("✅", "HACS opens Brainstorm Hub right away"),
-                ], "The button is at the top of the README on GitHub."),
-                "say": "Even faster: the Open in HACS button in the README opens Brainstorm "
-                       "right in your Home Assistant.",
+                    ("Status", "Not installed", False, "The latest version is ready to install"),
+                    ("Type", "Integration", False, "Made by the community, source code on GitHub"),
+                ], "Marketplace ➔ Browse ➔ Brainstorm Hub", "Install"),
+                "say": "Now open the entry and click Install. You always get the latest "
+                       "version. If you need an older one, pick it from the three dot menu.",
             },
         ],
     },
@@ -68,7 +77,7 @@ CHAPTERS: list[dict] = [
                     ("🔁", "Settings ➔ System ➔ <b>Restart</b> at the top right"),
                     ("🧩", "Only then does Home Assistant know the integration"),
                     ("🎴", "The <b>cards come along</b>: no copying, no resource entry"),
-                ], "HACS also shows a restart notice after the download."),
+                ], "After that, Brainstorm Hub shows up under Devices & services."),
                 "say": "Now restart Home Assistant, under Settings, System, Restart. The cards "
                        "come with the integration. You don't have to copy anything or add a "
                        "resource.",
@@ -180,12 +189,12 @@ CHAPTERS: list[dict] = [
         "scenes": [
             {
                 "v": ("bullets", "Stay up to date", [
-                    ("🔔", "HACS reports new versions under <b>Settings</b>"),
+                    ("🔔", "New versions show up as an update under <b>Settings</b>"),
                     ("⬇️", "Click <b>Update</b>, then restart"),
                     ("📜", "What's new is in the <b>changelog</b>"),
-                    ("🧰", "Without HACS: download the release, copy <code>custom_components/brainstorm</code> to <code>/config/custom_components/</code>"),
+                    ("🧰", "Without the Marketplace: download the release, copy <code>custom_components/brainstorm</code> to <code>/config/custom_components/</code>"),
                 ], "Your ideas are kept with every update."),
-                "say": "HACS reports new versions under Settings. Click Update, restart, done. "
+                "say": "New versions show up as an update under Settings. Click Update, restart, done. "
                        "Your ideas are always kept.",
             },
         ],

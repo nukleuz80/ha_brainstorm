@@ -14,9 +14,9 @@ CHAPTERS: list[dict] = [
         "scenes": [
             {
                 "v": ("title", "Brainstorm Hub installieren",
-                      "In fünf Minuten von HACS bis zur ersten Idee"),
+                      "In fünf Minuten vom Marketplace bis zur ersten Idee"),
                 "say": "In diesem Video installierst du Brainstorm Hub. In wenigen Minuten geht "
-                       "es von HACS bis zur ersten Idee im Dashboard.",
+                       "es von der Installation bis zur ersten Idee im Dashboard.",
             },
         ],
     },
@@ -26,11 +26,12 @@ CHAPTERS: list[dict] = [
             {
                 "v": ("bullets", "Das brauchst du", [
                     ("🏠", "<b>Home Assistant 2026.10</b> oder neuer"),
-                    ("📦", "<b>HACS</b>, den Community Store für Home Assistant"),
+                    ("📦", "Den <b>Marketplace</b> unter Einstellungen, eingebaut ab 2026.11"),
                     ("🗣️", "Optional: <b>Alexa Media Player</b> für die Spracheingabe mit Alexa"),
                     ("🔒", "Kein Konto, kein Passwort: Brainstorm verbindet sich mit keinem fremden Dienst"),
-                ], "HACS fehlt noch? Die Anleitung steht auf hacs.xyz."),
-                "say": "Du brauchst Home Assistant ab Version 2026 Punkt 10 und HACS. Für Alexa "
+                ], "Unter 2026.10 installierst du über HACS, die Schritte sind fast gleich."),
+                "say": "Du brauchst Home Assistant ab Version 2026 Punkt 10. Installiert wird in "
+                       "den Einstellungen über den Marketplace. Für Alexa "
                        "kommt optional die Integration Alexa Media Player dazu. Ein Konto oder "
                        "Passwort brauchst du nicht, Brainstorm verbindet sich mit keinem "
                        "fremden Dienst.",
@@ -38,44 +39,34 @@ CHAPTERS: list[dict] = [
         ],
     },
     {
-        "title": "HACS: Repository hinzufügen",
+        "title": "Marketplace öffnen",
         "scenes": [
             {
-                "v": ("ha", "Benutzerdefinierte Repositories", [
-                    ("Repository", "https://github.com/nukleuz80/ha_brainstorm", True, ""),
-                    ("Typ", "Integration", True, ""),
-                ], "HACS ➔ Drei-Punkte-Menü oben rechts ➔ Benutzerdefinierte Repositories",
-                   "Hinzufügen"),
-                "say": "Öffne HACS und klicke oben rechts auf die drei Punkte, dann auf "
-                       "Benutzerdefinierte Repositories. Trage die Adresse "
-                       "github.com/nukleuz80/ha_brainstorm ein, wähle als Typ Integration und "
-                       "klicke auf Hinzufügen.",
-                "speak": "Öffne HACS und klicke oben rechts auf die drei Punkte, dann auf "
-                         "Benutzerdefinierte Repositories. Trage die Adresse github punkt com "
-                         "Schrägstrich nukleuz80 Schrägstrich ha underscore brainstorm ein, wähle "
-                         "als Typ Integration und klicke auf Hinzufügen.",
-            },
-            {
-                "v": ("bullets", "Noch schneller: der My-Button", [
-                    ("🔗", "In der README auf <b>„Open in HACS“</b> klicken"),
-                    ("🏠", "Deine Home Assistant-Adresse bestätigen"),
-                    ("✅", "HACS öffnet Brainstorm Hub direkt"),
-                ], "Die Adresse steht oben in der README auf GitHub."),
-                "say": "Noch schneller geht es mit dem Knopf Open in HACS in der README. Er "
-                       "öffnet Brainstorm direkt in deinem Home Assistant.",
+                "v": ("menu", "Einstellungen", [
+                    ("Geräte & Dienste", False),
+                    ("Automationen & Szenen", False),
+                    ("Apps", False),
+                    ("Marketplace", True),
+                    ("Dashboards", False),
+                ], "Einstellungen ➔ Marketplace ➔ Durchstöbern",
+                   "Brainstorm Hub steht in der Standardliste, ein eigenes Repository brauchst du nicht."),
+                "say": "Öffne die Einstellungen und tippe auf Marketplace. Wechsle unten zu "
+                       "Durchstöbern und suche nach Brainstorm Hub. Es steht in der Standardliste, "
+                       "du musst also kein Repository hinzufügen.",
             },
         ],
     },
     {
-        "title": "Herunterladen",
+        "title": "Installieren",
         "scenes": [
             {
                 "v": ("ha", "Brainstorm Hub", [
-                    ("Version", "v1.7.22 (neueste)", True, "HACS bietet immer das neueste Release an"),
-                    ("Kategorie", "Integration", False, ""),
-                ], "HACS ➔ Brainstorm Hub suchen ➔ Herunterladen", "Herunterladen"),
-                "say": "Suche in HACS nach Brainstorm Hub, öffne den Eintrag und klicke unten "
-                       "rechts auf Herunterladen. HACS bietet dir immer das neueste Release an.",
+                    ("Status", "Nicht installiert", False, "Die neueste Version steht zur Installation bereit"),
+                    ("Typ", "Integration", False, "Von der Community erstellt, Quellcode auf GitHub"),
+                ], "Marketplace ➔ Durchstöbern ➔ Brainstorm Hub", "Installieren"),
+                "say": "Öffne den Eintrag und tippe auf Installieren. Du bekommst immer die "
+                       "neueste Version. Eine ältere wählst du bei Bedarf über das "
+                       "Drei-Punkte-Menü.",
             },
         ],
     },
@@ -87,7 +78,7 @@ CHAPTERS: list[dict] = [
                     ("🔁", "Einstellungen ➔ System ➔ oben rechts <b>Neu starten</b>"),
                     ("🧩", "Erst danach kennt Home Assistant die Integration"),
                     ("🎴", "Die <b>Karten kommen mit</b>: kein Kopieren, kein Ressourcen-Eintrag"),
-                ], "HACS zeigt nach dem Download auch selbst einen Hinweis zum Neustart."),
+                ], "Danach findest du Brainstorm Hub unter Geräte & Dienste."),
                 "say": "Starte Home Assistant jetzt neu, unter Einstellungen, System, Neu starten. "
                        "Die Karten kommen mit der Integration. Du musst nichts kopieren und "
                        "keine Ressource eintragen.",
@@ -200,12 +191,12 @@ CHAPTERS: list[dict] = [
         "scenes": [
             {
                 "v": ("bullets", "Immer aktuell bleiben", [
-                    ("🔔", "HACS meldet neue Versionen unter <b>Einstellungen</b>"),
+                    ("🔔", "Neue Versionen erscheinen als Update unter <b>Einstellungen</b>"),
                     ("⬇️", "<b>Aktualisieren</b> klicken, danach neu starten"),
                     ("📜", "Was neu ist, steht im <b>Changelog</b> der README"),
-                    ("🧰", "Ohne HACS: Release laden, <code>custom_components/brainstorm</code> nach <code>/config/custom_components/</code> kopieren"),
+                    ("🧰", "Ohne Marketplace: Release laden, <code>custom_components/brainstorm</code> nach <code>/config/custom_components/</code> kopieren"),
                 ], "Deine Ideen bleiben bei jedem Update erhalten."),
-                "say": "Neue Versionen meldet HACS unter Einstellungen. Ein Klick auf "
+                "say": "Neue Versionen erscheinen als Update unter Einstellungen. Ein Klick auf "
                        "Aktualisieren und ein Neustart, fertig. Deine Ideen bleiben dabei "
                        "erhalten.",
             },
