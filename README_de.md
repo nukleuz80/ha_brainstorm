@@ -6,8 +6,8 @@
 
 **[🇩🇪 Deutsch](README_de.md)** &nbsp;|&nbsp; **[🇬🇧 English](README.md)** &nbsp;|&nbsp; **[📚 Wiki](https://github.com/nukleuz80/ha_brainstorm/wiki)**
 
-[![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
-[![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
+[![Im Marketplace öffnen](https://img.shields.io/badge/Marketplace-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
+[![Marketplace Default](https://img.shields.io/badge/Marketplace%20(HACS)-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Integration%20hinzuf%C3%BCgen-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
 [![Version](https://img.shields.io/badge/version-1.21.0-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
@@ -20,10 +20,10 @@
 
 </div>
 
-**Brainstorm Hub** ist eine kostenlose, lokale [Home-Assistant](https://www.home-assistant.io/)-Integration für **Ideen, Notizen, Aufgaben und Einkaufslisten**, direkt aus dem **HACS-Standardkatalog**. Erfasse einen Gedanken in Sekunden per Sprache über **Amazon Alexa** (Echo und Echo Show), **Home Assistant Assist**, **Siri** oder einen **KI-Assistenten**, oder tippe ihn ins Dashboard. Brainstorm räumt den Satz auf, erkennt Kategorie, Priorität und Termin von selbst und zeigt alles in einer **Listenkarte** und einer **interaktiven Mindmap-Karte** mit Baum, Kanban, Zeitleiste, Eisenhower-Matrix und Pinnwand. Teile Listen mit der Familie, lass dich per Echo oder Handy erinnern, gleiche mit **Bring!**, **Todoist** oder **Google Tasks** ab und exportiere als **Markdown für Obsidian oder Logseq**. Alles läuft lokal in Home Assistant, ohne Konto und ohne Cloud.
+**Brainstorm Hub** ist eine kostenlose, lokale [Home-Assistant](https://www.home-assistant.io/)-Integration für **Ideen, Notizen, Aufgaben und Einkaufslisten**, direkt aus dem **Home Assistant Marketplace** (früher HACS). Erfasse einen Gedanken in Sekunden per Sprache über **Amazon Alexa** (Echo und Echo Show), **Home Assistant Assist**, **Siri** oder einen **KI-Assistenten**, oder tippe ihn ins Dashboard. Brainstorm räumt den Satz auf, erkennt Kategorie, Priorität und Termin von selbst und zeigt alles in einer **Listenkarte** und einer **interaktiven Mindmap-Karte** mit Baum, Kanban, Zeitleiste, Eisenhower-Matrix und Pinnwand. Teile Listen mit der Familie, lass dich per Echo oder Handy erinnern, gleiche mit **Bring!**, **Todoist** oder **Google Tasks** ab und exportiere als **Markdown für Obsidian oder Logseq**. Alles läuft lokal in Home Assistant, ohne Konto und ohne Cloud.
 
 > [!NOTE]
-> **🎉 Seit 9. November 2026 in HACS:** Brainstorm Hub steht in der [Standardliste von HACS](https://github.com/hacs/default/pull/13619). Such in HACS einfach nach **Brainstorm Hub**.
+> **🎉 Seit 9. November 2026 im Standardkatalog:** Brainstorm Hub steht in der [Standardliste von HACS](https://github.com/hacs/default/pull/13619), die Home Assistant ab 2026.11 als eingebauten **Marketplace** anbietet. Such dort einfach nach **Brainstorm Hub**.
 
 > [!TIP]
 > **📚 [Das Wiki](https://github.com/nukleuz80/ha_brainstorm/wiki)** enthält die vollständige Doku auf Deutsch und Englisch: [Schnellstart](https://github.com/nukleuz80/ha_brainstorm/wiki/Schnellstart), alle Einstellungen, alle Dienste, Sprachbefehle, Beispiele und Fehlerbehebung. **🎬 [Videos](docs/videos.md)** zeigen die wichtigsten Funktionen in 3 Minuten.
@@ -104,13 +104,13 @@
 
 ## 📦 Installation
 
-**Voraussetzungen:** Home Assistant 2026.10 oder neuer. Optional: [HACS](https://hacs.xyz), die Integration [Alexa Media Player](https://github.com/alandtse/alexa_media_player) für die Spracheingabe mit Alexa sowie ein Amazon-Entwicklerkonto und eine öffentliche HTTPS-Adresse für einen eigenen Alexa-Skill. Brainstorm Hub verbindet sich von selbst mit keinem externen Dienst, die Einrichtung braucht also weder Konto noch Passwort.
+**Voraussetzungen:** Home Assistant 2026.10 oder neuer. Optional: die Integration [Alexa Media Player](https://github.com/alandtse/alexa_media_player) für die Spracheingabe mit Alexa sowie ein Amazon-Entwicklerkonto und eine öffentliche HTTPS-Adresse für einen eigenen Alexa-Skill. Brainstorm Hub verbindet sich von selbst mit keinem externen Dienst, die Einrichtung braucht also weder Konto noch Passwort.
 
-### Methode 1: Über HACS (empfohlen)
+### Methode 1: Über den Marketplace (empfohlen)
 
-[![Brainstorm Hub in HACS öffnen](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
+[![Brainstorm Hub im Marketplace öffnen](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 
-1. Öffne **HACS** in deinem Home Assistant.
+1. Öffne den **Marketplace** in deinem Home Assistant (unter 2026.10: **HACS**).
 2. Suche nach **Brainstorm Hub** und klicke auf **Herunterladen**.
 3. Starte Home Assistant neu.
 

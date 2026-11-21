@@ -5,7 +5,7 @@
 **Ideen, Notizen, Aufgaben und Mindmaps für Home Assistant, per Sprache mit Alexa, Assist und Siri**<br>
 **Ideas, notes, tasks and mind maps for Home Assistant, by voice with Alexa, Assist and Siri**
 
-[![Open in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
+[![Open in the Marketplace](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 
 </div>
 

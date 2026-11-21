@@ -24,7 +24,7 @@ DATA_FRONTEND = f"{DOMAIN}_frontend_registered"
 async def async_register_frontend(hass: HomeAssistant) -> None:
     """Serve the cards and load them on every dashboard, once per run.
 
-    HACS installs only the integration, so the cards come with it: the
+    The Marketplace installs only the integration, so the cards come with it: the
     folder is served as static files and the frontend loads both cards as
     modules, in storage and YAML mode alike. The version in the address
     makes browsers fetch new cards after an update.

@@ -2,33 +2,33 @@
 
 <a href="https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-installation-en.mp4"><img src="https://raw.githubusercontent.com/nukleuz80/ha_brainstorm/main/docs/video/poster-installation-en.jpg" width="480" alt="Video"></a>
 
-> 🎬 **Prefer to watch?** The [installation video](https://github.com/nukleuz80/ha_brainstorm/blob/main/docs/videos_en.md#installation-2-minutes) goes from HACS to your first idea in two minutes.
+> 🎬 **Prefer to watch?** The [installation video](https://github.com/nukleuz80/ha_brainstorm/blob/main/docs/videos_en.md#installation-2-minutes) goes from installing to your first idea in two minutes.
 
 ## 🔗 Quick Links
 
 These buttons open the right page in your own Home Assistant:
 
-[![Open Brainstorm Hub in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration) [![Set up Brainstorm Hub](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm) [![Open Brainstorm Hub (configure, diagnostics, delete)](https://my.home-assistant.io/badges/integration.svg)](https://my.home-assistant.io/redirect/integration/?domain=brainstorm) [![Try the Brainstorm actions](https://my.home-assistant.io/badges/tools_actions.svg)](https://my.home-assistant.io/redirect/tools_actions/) [![Voice assistants (Assist, LLM API)](https://my.home-assistant.io/badges/voice_assistants.svg)](https://my.home-assistant.io/redirect/voice_assistants/) [![Repairs](https://my.home-assistant.io/badges/repairs.svg)](https://my.home-assistant.io/redirect/repairs/) [![Logs of Brainstorm Hub](https://my.home-assistant.io/badges/logs.svg)](https://my.home-assistant.io/redirect/logs/?integration=brainstorm)
+[![Open Brainstorm Hub in the Marketplace](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration) [![Set up Brainstorm Hub](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm) [![Open Brainstorm Hub (configure, diagnostics, delete)](https://my.home-assistant.io/badges/integration.svg)](https://my.home-assistant.io/redirect/integration/?domain=brainstorm) [![Try the Brainstorm actions](https://my.home-assistant.io/badges/tools_actions.svg)](https://my.home-assistant.io/redirect/tools_actions/) [![Voice assistants (Assist, LLM API)](https://my.home-assistant.io/badges/voice_assistants.svg)](https://my.home-assistant.io/redirect/voice_assistants/) [![Repairs](https://my.home-assistant.io/badges/repairs.svg)](https://my.home-assistant.io/redirect/repairs/) [![Logs of Brainstorm Hub](https://my.home-assistant.io/badges/logs.svg)](https://my.home-assistant.io/redirect/logs/?integration=brainstorm)
 
 The links go through [My Home Assistant](https://my.home-assistant.io/). On the first click it asks for the address of your Home Assistant and remembers it. Throughout this wiki, menu paths such as **Settings ➔ Devices & Services** are links of this kind too, and every action under [Services](Services-and-Events) has a link that opens it in the developer tools.
 
 ## Prerequisites
 
 1. Home Assistant 2026.10 or newer.
-2. [HACS](https://hacs.xyz), if you want to install through it.
+2. On Home Assistant 2026.10: [HACS](https://hacs.xyz), if you want to install through it. From 2026.11 on it is built in as the **Marketplace**.
 3. Optional, for voice input with Alexa: the [Alexa Media Player](https://github.com/alandtse/alexa_media_player) integration.
 4. Optional, for your own Alexa skill: an Amazon developer account and a public HTTPS address for your Home Assistant.
 
 Brainstorm Hub connects to no external service by itself, so setup needs no account or password.
 
-## Option 1: HACS (Recommended - 1-Click)
+## Option 1: Marketplace (Recommended - 1-Click)
 
-Brainstorm Hub is part of the HACS default list since 9 November 2026. Click the button below to open it in your HACS:
+Brainstorm Hub is part of the HACS default list since 9 November 2026. Since Home Assistant 2026.11 that list is built in as the **Marketplace**. Click the button below to open Brainstorm Hub there:
 
-[![Open in HACS](https://img.shields.io/badge/HACS-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
+[![Open in the Marketplace](https://img.shields.io/badge/Marketplace-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 
 Or step by step:
-1. Open **HACS** in your Home Assistant sidebar.
+1. Open the **Marketplace** in Home Assistant (on 2026.10: **HACS** in the sidebar).
 2. Search for **Brainstorm Hub** and click **Download**.
 3. Restart Home Assistant.
 
@@ -56,7 +56,7 @@ The cards live in the folder of the integration (`cards/`), and Home Assistant l
 ## Removing the Integration
 
 1. Go to [**Settings ➔ Devices & Services ➔ Brainstorm Hub**](https://my.home-assistant.io/redirect/integration/?domain=brainstorm), open the three dots and choose **Delete**.
-2. Installed through HACS: open Brainstorm Hub in HACS and choose **Remove**. Installed manually: delete `/config/custom_components/brainstorm`.
+2. Installed through the Marketplace (or HACS): open Brainstorm Hub there and choose **Remove**. Installed manually: delete `/config/custom_components/brainstorm`.
 3. Remove any Brainstorm cards from your dashboards.
 4. Restart Home Assistant.
 
