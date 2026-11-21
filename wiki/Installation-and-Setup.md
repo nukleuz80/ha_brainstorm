@@ -28,7 +28,7 @@ Brainstorm Hub is part of the HACS default list since 9 November 2026. Since Hom
 [![Open in the Marketplace](https://img.shields.io/badge/Marketplace-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 
 Or step by step:
-1. Open the **Marketplace** in Home Assistant (on 2026.10: **HACS** in the sidebar).
+1. Open **Settings ➔ Marketplace** in Home Assistant (on 2026.10: **HACS** in the sidebar) and switch to **Browse**.
 2. Search for **Brainstorm Hub** and click **Download**.
 3. Restart Home Assistant.
 
