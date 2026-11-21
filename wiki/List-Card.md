@@ -69,6 +69,7 @@ With **Smart Text Optimization** (General Settings) spoken notes are tidied up a
 | Action | How |
 |---|---|
 | New note | type in the quick input, e.g. `Garden: cut the tree`, and press **Enter** |
+| Take over a recipe | paste a recipe link (Chefkoch, BBC Good Food, …) alone into the quick input and press **Enter**: the recipe becomes a note with servings, time and steps, every ingredient a subtask, tag `recipe` (in German Home Assistant `rezept`). ⋯ ➔ *🛒 Send to Bring!* puts the ingredients on the shopping list. Without recipe data on the page, the link stays a normal note. |
 | Preset category and priority | the 🏷️ and priority selectors below the input (*Auto* detects them from the text) |
 | Edit | tap the text or the pencil; in the dialog **Ctrl+Enter** saves |
 | Context menu | long press a note or tap ⋯ on the right of the row |

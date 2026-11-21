@@ -1165,6 +1165,12 @@
     },
     "battery_bring_nothing": {
       "message": "No open battery task with a battery type from Battery Notes."
+    },
+    "recipe_not_found": {
+      "message": "No recipe data was found on {url}."
+    },
+    "recipe_unreachable": {
+      "message": "The recipe page could not be loaded: {error}"
     }
   },
   "services": {
@@ -1859,6 +1865,20 @@
         "language": {
           "name": "Language",
           "description": "Language of the sentence, defaults to that of Home Assistant."
+        }
+      }
+    },
+    "import_recipe": {
+      "name": "Import recipe",
+      "description": "Reads a recipe from a web page (Chefkoch, Lecker, EatSmarter and any site with schema.org recipe data) and adds it as a note: servings, time and steps in the description, one subtask per ingredient, tagged \"recipe\". No AI and no account needed.",
+      "fields": {
+        "url": {
+          "name": "Address",
+          "description": "The web address of the recipe."
+        },
+        "category": {
+          "name": "Category",
+          "description": "Where the recipe goes. Without one it goes to the first category."
         }
       }
     }

@@ -263,7 +263,7 @@ async def _async_read(response: Any) -> bytes:
     return bytes(data)
 
 
-def _decode(data: bytes, content_type: str) -> str:
+def decode_page(data: bytes, content_type: str) -> str:
     """Return the text of a page in the charset it names."""
     charset = "utf-8"
     if match := re.search(r"charset=([\w.-]+)", content_type, re.IGNORECASE):
@@ -276,12 +276,14 @@ def _decode(data: bytes, content_type: str) -> str:
         return data.decode("utf-8", errors="replace")
 
 
-async def async_text_from_url(hass: HomeAssistant, address: str) -> str:
-    """Load a web page or PDF and return its text for the AI."""
+async def async_fetch(
+    hass: HomeAssistant, address: str, accept: str = "text/html,application/pdf,*/*"
+) -> tuple[str, bytes, str]:
+    """Load a public web address, return its media type, body and Content-Type."""
     url = URL(address.strip())
     session = async_get_clientsession(hass)
     timeout = aiohttp.ClientTimeout(total=FETCH_TIMEOUT)
-    headers = {"User-Agent": USER_AGENT, "Accept": "text/html,application/pdf,*/*"}
+    headers = {"User-Agent": USER_AGENT, "Accept": accept}
     for _ in range(MAX_REDIRECTS + 1):
         # Every hop is checked, a public page must not lead into the own network
         await _async_check_host(hass, url)
@@ -304,17 +306,26 @@ async def async_text_from_url(hass: HomeAssistant, address: str) -> str:
                 data = await _async_read(response)
         except (aiohttp.ClientError, TimeoutError, asyncio.TimeoutError) as err:
             raise SourceError(ERR_SOURCE_UNREACHABLE, f"Not loaded: {err}") from err
-        if kind == PDF_TYPE or data.startswith(b"%PDF"):
-            return await async_text_from_pdf(hass, data)
-        if kind in HTML_TYPES or (not kind and b"<html" in data[:2048].lower()):
-            text = text_from_html(_decode(data, content_type))
-        elif kind in TEXT_TYPES:
-            text = limit_text(_decode(data, content_type))
-        else:
-            raise SourceError(
-                ERR_SOURCE_UNSUPPORTED, f"Cannot read {kind or 'this file'}"
-            )
-        if not text.strip():
-            raise SourceError(ERR_SOURCE_EMPTY, "The page has no text")
-        return text
+        return kind, data, content_type
     raise SourceError(ERR_SOURCE_UNREACHABLE, "Too many redirects")
+
+
+def is_html(kind: str, data: bytes) -> bool:
+    """Tell whether a loaded body is a web page."""
+    return kind in HTML_TYPES or (not kind and b"<html" in data[:2048].lower())
+
+
+async def async_text_from_url(hass: HomeAssistant, address: str) -> str:
+    """Load a web page or PDF and return its text for the AI."""
+    kind, data, content_type = await async_fetch(hass, address)
+    if kind == PDF_TYPE or data.startswith(b"%PDF"):
+        return await async_text_from_pdf(hass, data)
+    if is_html(kind, data):
+        text = text_from_html(decode_page(data, content_type))
+    elif kind in TEXT_TYPES:
+        text = limit_text(decode_page(data, content_type))
+    else:
+        raise SourceError(ERR_SOURCE_UNSUPPORTED, f"Cannot read {kind or 'this file'}")
+    if not text.strip():
+        raise SourceError(ERR_SOURCE_EMPTY, "The page has no text")
+    return text

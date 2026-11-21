@@ -1165,6 +1165,12 @@
     },
     "battery_bring_nothing": {
       "message": "Keine offene Batterie-Aufgabe mit Batterietyp aus Battery Notes."
+    },
+    "recipe_not_found": {
+      "message": "Auf {url} wurden keine Rezeptdaten gefunden."
+    },
+    "recipe_unreachable": {
+      "message": "Die Rezeptseite konnte nicht geladen werden: {error}"
     }
   },
   "services": {
@@ -1859,6 +1865,20 @@
         "language": {
           "name": "Sprache",
           "description": "Sprache des Satzes, sonst die von Home Assistant."
+        }
+      }
+    },
+    "import_recipe": {
+      "name": "Rezept importieren",
+      "description": "Liest ein Rezept von einer Webseite (Chefkoch, Lecker, EatSmarter und jede Seite mit schema.org-Rezeptdaten) und legt es als Notiz an: Portionen, Zeit und Zubereitung in der Beschreibung, je Zutat eine Unteraufgabe, mit dem Tag „rezept“. Ohne KI und ohne Konto.",
+      "fields": {
+        "url": {
+          "name": "Adresse",
+          "description": "Die Webadresse des Rezepts."
+        },
+        "category": {
+          "name": "Kategorie",
+          "description": "Wohin das Rezept kommt. Ohne Angabe in die erste Kategorie."
         }
       }
     }

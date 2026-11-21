@@ -113,6 +113,9 @@
     },
     "test_sentence": {
       "service": "mdi:test-tube"
+    },
+    "import_recipe": {
+      "service": "mdi:chef-hat"
     }
   }
 }

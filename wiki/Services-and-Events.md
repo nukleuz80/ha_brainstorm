@@ -24,6 +24,7 @@ All parameters are [further down](#brainstormadd_idea) and under [**Developer to
 | `brainstorm.send_to_bring` | `id: …`, `list: todo.camper` puts the note or chosen subtasks on a Bring list |
 | `brainstorm.reorder_ideas` | set the order |
 | `brainstorm.import_outline` | add an outline: `text: …`, `category: …` or `parent_id: …`, `format: auto` |
+| `brainstorm.import_recipe` | add a recipe from a web page: `url: …`, `category: …` |
 | `brainstorm.move_branch` | move a branch to its own map: `id: …`, `category: Camping`, optional `parent_id: …` |
 | `brainstorm.sort_children` | sort subtasks: `parent_id: …`, `by: text`, `priority`, `due`, `created` or `votes` |
 | `brainstorm.track_time` | stopwatch: `id: …`, `action: start`, `stop` or `toggle` |
@@ -324,6 +325,17 @@ Adds a tree of notes from a Markdown outline, indented text, OPML, a FreeMind/Fr
 | `format` | No | `auto` (default), `markdown`, `opml`, `freemind`, `trello` or `csv`. `auto` recognises XML, JSON (Trello) and a Todoist export; other tables need `csv`. |
 | `category` | No | Where the notes go; without it, the default category. |
 | `parent_id` | No | Puts the outline below this note, in its category. |
+
+## `brainstorm.import_recipe`
+
+▶️ [Try it in Home Assistant](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.import_recipe)
+
+Reads the schema.org recipe data of a web page (Chefkoch, Lecker, EatSmarter, BBC Good Food and most recipe sites) and adds the recipe as a note: servings, time, the numbered steps and the source link in the description, every ingredient a subtask, tagged `recipe` (`rezept` when Home Assistant speaks German). Home Assistant loads the page itself, addresses inside your own network are refused. Returns `id`, `title` and the number of `ingredients`. A page without recipe data gives an error.
+
+| Field | Required | Meaning |
+| :--- | :--- | :--- |
+| `url` | Yes | The web address of the recipe. |
+| `category` | No | Where the recipe goes; without it, the default category. |
 
 ## `brainstorm.sort_children`
 

@@ -111,13 +111,16 @@ from .const import (
     ROUND_MAX_MINUTES,
     COMMENT_MAX_LENGTH,
     SERVICE_IMPORT_OUTLINE,
+    SERVICE_IMPORT_RECIPE,
     SERVICE_DELETE_DONE,
     SERVICE_SET_CATEGORY_STYLE,
     SHARE_EDIT,
     SHARE_VIEW,
     VOICE_MODE_NATIVE,
 )
+from .map_sources import SourceError
 from .outline import OUTLINE_FORMATS, OutlineError, parse_outline
+from .recipe import ERR_NO_RECIPE, async_recipe_from_url, recipe_nodes
 from .echo_locks import EchoLockManager
 from .frontend import async_register_frontend
 from .llm_api import async_register_llm_api
@@ -421,6 +424,13 @@ SERVICE_IMPORT_OUTLINE_SCHEMA = vol.Schema(
         vol.Optional("format", default="auto"): vol.In(OUTLINE_FORMATS),
         vol.Optional(ATTR_CATEGORY): cv.string,
         vol.Optional(ATTR_PARENT_ID): cv.string,
+    }
+)
+
+SERVICE_IMPORT_RECIPE_SCHEMA = vol.Schema(
+    {
+        vol.Required("url"): vol.All(cv.string, vol.Match(r"(?i)^\s*https?://\S+\s*$")),
+        vol.Optional(ATTR_CATEGORY): cv.string,
     }
 )
 
@@ -1131,6 +1141,40 @@ def _register_services(hass: HomeAssistant) -> None:
             "ids": [idea[ATTR_ID] for idea in added],
         }
 
+    async def handle_import_recipe(call: ServiceCall) -> dict[str, Any]:
+        """Add a recipe from a web page: the steps as text, the ingredients as subtasks."""
+        store = _require_store(hass)
+        url = call.data["url"].strip()
+        try:
+            recipe = await async_recipe_from_url(hass, url)
+        except SourceError as err:
+            if err.code == ERR_NO_RECIPE:
+                raise ServiceValidationError(
+                    translation_domain=DOMAIN,
+                    translation_key="recipe_not_found",
+                    translation_placeholders={"url": url},
+                ) from err
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="recipe_unreachable",
+                translation_placeholders={"error": str(err)},
+            ) from err
+        language = hass.config.language
+        tag = "rezept" if (language or "").lower().startswith("de") else "recipe"
+        added = await store.async_import_outline(
+            recipe_nodes(recipe, language),
+            call.data.get(ATTR_CATEGORY),
+            None,
+            call.context,
+            tags=[tag],
+        )
+        return {
+            "success": True,
+            "id": added[0][ATTR_ID],
+            "title": recipe.title,
+            "ingredients": len(recipe.ingredients),
+        }
+
     async def handle_delete_idea(call: ServiceCall) -> dict[str, Any]:
         """Handle deleting an idea."""
         store = _require_store(hass)
@@ -1599,6 +1643,14 @@ def _register_services(hass: HomeAssistant) -> None:
         SERVICE_IMPORT_OUTLINE,
         handle_import_outline,
         schema=SERVICE_IMPORT_OUTLINE_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_IMPORT_RECIPE,
+        handle_import_recipe,
+        schema=SERVICE_IMPORT_RECIPE_SCHEMA,
         supports_response=SupportsResponse.OPTIONAL,
     )
 

@@ -1,4 +1,4 @@
-import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, bringBadge, bringSentText, unblockedText, canSendToBring, renderBringSend, canHandOver, canHandOverProject, canMakeReward, choreopsBadge, choreopsRewardBadge, renderChoreHandover, renderChoreProject, renderChoreReward, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, timeBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t, linkedListMark, linkedListOf, linkedListSign, linkedListText, batteriesBringText, batteriesNeeded, calendarBadge, calendarOptions, readCalendar, renderStatistics } from "./brainstorm-i18n.js?v=1.22.0";
+import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, bringBadge, bringSentText, unblockedText, canSendToBring, renderBringSend, canHandOver, canHandOverProject, canMakeReward, choreopsBadge, choreopsRewardBadge, renderChoreHandover, renderChoreProject, renderChoreReward, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, timeBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t, linkedListMark, linkedListOf, linkedListSign, linkedListText, batteriesBringText, batteriesNeeded, calendarBadge, calendarOptions, readCalendar, renderStatistics } from "./brainstorm-i18n.js?v=1.23.0";
 
 // Same check as isSample() in brainstorm-onboarding.js, without loading it
 const hasSampleTag = (idea) => Array.isArray(idea && idea.tags)
@@ -7,7 +7,7 @@ const hasSampleTag = (idea) => Array.isArray(idea && idea.tags)
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.22.0 - Geführter erster Start
+ * Version 1.23.0 - Rezept-Import
  */
 // The bulb lies next to this file, wherever Home Assistant serves it from
 const BULB_URL = new URL("./brainstorm-bulb.svg", import.meta.url).href;
@@ -1337,6 +1337,8 @@ class BrainstormCard extends HTMLElement {
     inputEl.disabled = true;
 
     try {
+      // A recipe link becomes the recipe with its ingredients, any other link a note
+      if (/^https?:\/\/\S+$/i.test(text) && (await this._importRecipe(text, category))) return;
       const payload = {
         text: text,
         source: "dashboard",
@@ -1351,6 +1353,26 @@ class BrainstormCard extends HTMLElement {
     } finally {
       inputEl.disabled = false;
       inputEl.focus();
+    }
+  }
+
+  async _importRecipe(url, category) {
+    try {
+      const result = await this._hass.callWS({
+        type: "call_service",
+        domain: "brainstorm",
+        service: "import_recipe",
+        service_data: category ? { url, category } : { url },
+        return_response: true,
+      });
+      const recipe = (result && result.response) || {};
+      if (!recipe.id) return false;
+      this._notify(t("🍳 Rezept „{title}“ mit {count} Zutaten angelegt.", { title: recipe.title, count: recipe.ingredients }));
+      return true;
+    } catch (err) {
+      // No recipe data or the page did not load: the link is kept as a note
+      console.info("Brainstorm: link is not a recipe, kept as a note", err && err.message);
+      return false;
     }
   }
 
@@ -6589,7 +6611,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.22.0 ",
+  "%c BRAINSTORM-CARD %c v1.23.0 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

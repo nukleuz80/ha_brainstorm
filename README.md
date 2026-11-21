@@ -9,7 +9,7 @@
 [![Open in the Marketplace](https://img.shields.io/badge/Marketplace-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Marketplace Default](https://img.shields.io/badge/Marketplace%20(HACS)-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.22.0-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.23.0-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![Wiki](https://img.shields.io/badge/Docs-Wiki-6f42c1.svg)](https://github.com/nukleuz80/ha_brainstorm/wiki)
@@ -93,6 +93,7 @@
 ### 🔁 Lists, sync & data
 - Every category is a native Home Assistant **to-do list** (`todo.*`).
 - Two-way sync with **Bring!**, **Google Tasks**, **Todoist** or any other to-do list.
+- **🍳 Recipe import:** paste a recipe link from Chefkoch, Lecker, EatSmarter, BBC Good Food or any site with recipe data into the quick input. The recipe becomes a note with the steps, and every ingredient a subtask you can send to Bring!. No AI, no account. → [List card](https://github.com/nukleuz80/ha_brainstorm/wiki/List-Card#list-card)
 - **Tasks from sensors:** a filter after 300 operating hours, a plant that is too dry, a finished washing machine or a low battery becomes a task that ticks itself off. → [Settings](https://github.com/nukleuz80/ha_brainstorm/wiki/Settings#brainstorm---sensor-tasks)
 - **🗑️ Waste calendar:** on the evening before every pickup from Waste Collection Schedule, *🟡 Put out: Recycling* appears and ticks itself off afterwards, optionally taking turns between the kids with ChoreOps points. → [Settings](https://github.com/nukleuz80/ha_brainstorm/wiki/Settings#brainstorm---connected-integrations---waste-calendar)
 - **💬 Notes by WhatsApp:** a message to a WhatsApp bridge such as ha-whatsapp becomes a note of the person the number belongs to, every line a note of its own, confirmed by a reply. → [Settings](https://github.com/nukleuz80/ha_brainstorm/wiki/Settings#brainstorm---connected-integrations---whatsapp)
@@ -202,7 +203,7 @@ Your own skill is the most reliable way ([setup](https://github.com/nukleuz80/ha
 | `brainstorm.get_ideas` / `get_announcement` | Return ideas as a response, or a ready text to read out |
 | `brainstorm.add_category` / `remove_category` / `set_category_style` | Manage categories, icons and colors |
 | `brainstorm.export_markdown` / `export_json` / `import_json` | Back up and move your ideas |
-| `brainstorm.import_outline` / `sort_children` / `reorder_ideas` / `move_branch` | Insert outlines, sort notes, move a branch into its own map |
+| `brainstorm.import_outline` / `import_recipe` / `sort_children` / `reorder_ideas` / `move_branch` | Insert outlines and recipes, sort notes, move a branch into its own map |
 | `brainstorm.start_voting` / `vote` / `end_voting` / `react` | Votes and reactions |
 | `brainstorm.add_comment` / `delete_comment` | Comments with @mentions |
 | `brainstorm.start_round` / `end_round` / `group_ideas` | Hidden rounds and grouping into themes |
@@ -265,11 +266,11 @@ The latest versions; every version is in [CHANGELOG.md](CHANGELOG.md).
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.23.0`** | 2026-11-22 | **🍳 Recipe import.** Paste a recipe link from Chefkoch, Lecker, EatSmarter, BBC Good Food or any other site with schema.org recipe data alone into the quick input of the list card: the recipe becomes a note tagged "recipe" with servings, time, the numbered steps and the source link, and every ingredient a subtask you can send to Bring!. Home Assistant loads the page itself with the same checks as for AI mind maps, no AI and no account needed. A link without recipe data stays a normal note. For automations and shortcuts there is the new action `brainstorm.import_recipe`. |
 | **`v1.22.0`** | 2026-11-21 | **👋 Guided first start, lighter mind map card.** An empty list now greets you with two buttons: *Add examples* creates five sample notes with priorities, due dates and subtasks, spread over your categories, and *Quick tour* points at the input field, the categories, a note, the mind map button and voice control, one step at a time. While examples are in the list, a bar offers the tour again and *Remove examples*, which deletes only the notes tagged "example". The welcome code is a file of its own and loads only for an empty list. The mind map card loads export (outline, SVG, PNG, PDF), the AI map dialog and the presentation mode only when you first use them, so the card file is about 800 lines smaller. |
 | **`v1.21.2`** | 2026-11-21 | **🧹 Settings menu without the odd icons.** In the main menu of the settings, five entries had an emoji and the others none. Now only *🔗 Connected integrations* keeps its icon, next to its status dots. The reminders menu lost its icons too, and the page titles match the menu. Includes v1.21.1. |
 | **`v1.21.1`** | 2026-11-21 | **🧭 Mind map buttons no longer hang over the edge.** On a low map the buttons on the right take a second column. In some browsers the box did not grow wider, and the first column hung over the right edge of the card, half cut off. The card now gives the box the width of all its columns. |
 | **`v1.21.0`** | 2026-11-21 | **📦 Alexa skill keeps sentences while Home Assistant is down.** During a restart or a Nabu Casa outage the skill used to say "Nothing was saved", and the idea was lost. An Alexa-hosted skill now keeps new ideas and reminders in its own S3 storage, says so, and hands them over with the next sentence to Brainstorm. Each sentence carries its request id, so Home Assistant stores it only once, even when it arrives twice after a timeout. A kept sentence is placed without waiting for the Alexa history. Also fixed: the cards loaded their texts with the cache buster of v1.20.6. **Copy the skill code once more and Deploy.** |
-| **`v1.20.7`** | 2026-11-20 | **🔌 "Kitchen light on" is no longer stored as a note.** A device command spoken while the Brainstorm skill was still listening (for example on the Echo Show after an answer) went to the skill instead of the device and ended up as a note in the Inbox. Brainstorm now recognises short switch commands that end in "on" or "off" and either name exactly one device in Home Assistant or start with "turn"/"switch". It does not store them and asks you to say the command without Brainstorm. Sentences like "porch light won't turn on" stay notes, and with "note …" in front everything is stored. |
 
 ---
 

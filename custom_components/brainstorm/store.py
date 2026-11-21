@@ -3020,6 +3020,7 @@ class BrainstormStore:
         category: str | None,
         parent_id: str | None = None,
         context: Context | None = None,
+        tags: list[str] | None = None,
     ) -> list[dict[str, Any]]:
         """Add a tree of notes from an outline in one go, in its order.
 
@@ -3056,7 +3057,7 @@ class BrainstormStore:
                 ATTR_ORDER: start + index,
                 ATTR_SOURCE: "import",
                 ATTR_DEVICE: None,
-                ATTR_TAGS: [],
+                ATTR_TAGS: list(tags or []) if node.depth == 0 else [],
                 ATTR_STATUS: "completed" if node.done else "active",
                 ATTR_CREATED_AT: now_iso,
                 ATTR_UPDATED_AT: now_iso,

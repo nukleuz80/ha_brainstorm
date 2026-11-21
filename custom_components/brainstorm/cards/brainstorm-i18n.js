@@ -949,6 +949,7 @@ const DICTIONARIES = {
     "{count} Beispiele in der Liste.": "{count} examples in the list.",
     "Überspringen": "Skip",
     "Dieser Teil der Karte konnte nicht geladen werden. Bitte lade die Seite neu.": "This part of the card did not load. Please reload the page.",
+    "🍳 Rezept „{title}“ mit {count} Zutaten angelegt.": "🍳 Recipe “{title}” added with {count} ingredients.",
   },
 };
 

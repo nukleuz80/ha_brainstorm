@@ -573,6 +573,20 @@ import_outline:
       selector:
         text:
 
+import_recipe:
+  fields:
+    url:
+      required: true
+      example: "https://www.chefkoch.de/rezepte/123/Spaghetti.html"
+      selector:
+        text:
+          type: url
+    category:
+      required: false
+      example: "Einkauf"
+      selector:
+        text:
+
 sort_children:
   fields:
     parent_id:

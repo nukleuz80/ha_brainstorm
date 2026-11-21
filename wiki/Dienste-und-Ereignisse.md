@@ -24,6 +24,7 @@ Alle Parameter stehen [weiter unten](#brainstormadd_idea) und unter [**Entwickle
 | `brainstorm.send_to_bring` | `id: …`, `list: todo.camper` setzt die Notiz oder gewählte Unteraufgaben auf eine Bring-Liste |
 | `brainstorm.reorder_ideas` | Reihenfolge setzen |
 | `brainstorm.import_outline` | Gliederung anlegen: `text: …`, `category: …` oder `parent_id: …`, `format: auto` |
+| `brainstorm.import_recipe` | Rezept von einer Webseite anlegen: `url: …`, `category: …` |
 | `brainstorm.move_branch` | Ast als eigene Map auslagern: `id: …`, `category: Camping`, optional `parent_id: …` |
 | `brainstorm.sort_children` | Unterpunkte sortieren: `parent_id: …`, `by: text`, `priority`, `due`, `created` oder `votes` |
 | `brainstorm.track_time` | Stoppuhr: `id: …`, `action: start`, `stop` oder `toggle` |
@@ -324,6 +325,17 @@ Legt einen Baum von Notizen aus einer Markdown-Gliederung, eingerücktem Text, O
 | `format` | Nein | `auto` (Standard), `markdown`, `opml`, `freemind`, `trello` oder `csv`. `auto` erkennt XML, JSON (Trello) und einen Todoist-Export; andere Tabellen brauchen `csv`. |
 | `category` | Nein | Wohin die Notizen kommen; ohne Angabe die Standardkategorie. |
 | `parent_id` | Nein | Hängt die Gliederung unter diese Notiz, in deren Kategorie. |
+
+## `brainstorm.import_recipe`
+
+▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.import_recipe)
+
+Liest die schema.org-Rezeptdaten einer Webseite (Chefkoch, Lecker, EatSmarter, BBC Good Food und die meisten Rezeptseiten) und legt das Rezept als Notiz an: Portionen, Zeit, die nummerierte Zubereitung und der Quell-Link in der Beschreibung, jede Zutat eine Unteraufgabe, mit dem Tag `rezept` (`recipe`, wenn Home Assistant Englisch spricht). Home Assistant lädt die Seite selbst, Adressen im eigenen Netz werden abgelehnt. Gibt `id`, `title` und die Zahl der Zutaten (`ingredients`) zurück. Eine Seite ohne Rezeptdaten ergibt einen Fehler.
+
+| Feld | Pflicht | Bedeutung |
+| :--- | :--- | :--- |
+| `url` | Ja | Die Webadresse des Rezepts. |
+| `category` | Nein | Wohin das Rezept kommt; ohne Angabe die Standardkategorie. |
 
 ## `brainstorm.sort_children`
 

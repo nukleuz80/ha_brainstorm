@@ -62,6 +62,7 @@ Mit **Intelligente Formatierung** (Allgemeine Einstellungen) werden gesprochene 
 | Aktion | So geht es |
 |---|---|
 | Neue Notiz | in *Blitz-Idee* tippen, z. B. `Garten: Baum schneiden`, und **Enter** |
+| Rezept übernehmen | Rezept-Link (Chefkoch, Lecker, EatSmarter …) allein in *Blitz-Idee* einfügen und **Enter**: Das Rezept wird eine Notiz mit Portionen, Zeit und Zubereitung, jede Zutat eine Unteraufgabe, Tag `rezept`. Über ⋯ ➔ *🛒 An Bring! senden* gehen die Zutaten auf die Einkaufsliste. Hat die Seite keine Rezeptdaten, bleibt der Link eine normale Notiz. |
 | Kategorie und Priorität vorgeben | Auswahlfelder 🏷️ und Priorität unter dem Eingabefeld (*Auto* erkennt sie aus dem Text) |
 | Bearbeiten | auf den Text oder den Stift tippen; im Dialog speichert **Strg+Enter** |
 | Kontextmenü | lange auf eine Notiz drücken oder ⋯ rechts in der Zeile antippen |
