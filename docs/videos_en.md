@@ -41,14 +41,14 @@ Everything Brainstorm Hub does, from voice capture to the mind map, voting and A
 
 **[▶️ Watch the video](https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-installation-en.mp4)** · 📄 [Written guide in the wiki](https://github.com/nukleuz80/ha_brainstorm/wiki/Installation-and-Setup)
 
-From HACS to your first idea on the dashboard.
+From the Marketplace to your first idea on the dashboard.
 
 | Time | Chapter |
 | :--- | :--- |
 | 0:00 | Introduction |
 | 0:14 | Requirements |
 | 0:31 | Open the Marketplace |
-| 0:43 | Download in HACS |
+| 0:43 | Install |
 | 0:51 | Restart |
 | 1:02 | Add the integration |
 | 1:11 | First setup |

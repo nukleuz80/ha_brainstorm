@@ -43,8 +43,8 @@ Alle Videos sind deutsch gesprochen (alle gibt es auch [auf Englisch](videos_en.
 | :--- | :--- |
 | 0:00 | Einleitung |
 | 0:14 | Voraussetzungen |
-| 0:32 | HACS: Repository hinzufügen |
-| 0:43 | Herunterladen |
+| 0:32 | Marketplace öffnen |
+| 0:43 | Installieren |
 | 0:53 | Neustart |
 | 1:05 | Integration hinzufügen |
 | 1:15 | Ersteinrichtung |
