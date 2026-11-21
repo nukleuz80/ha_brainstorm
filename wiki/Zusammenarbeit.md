@@ -1,5 +1,9 @@
 🏠 [Start](Home) · 🇬🇧 [English version](Collaboration)
 
+<a href="https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-privatsphaere.mp4"><img src="https://raw.githubusercontent.com/nukleuz80/ha_brainstorm/main/docs/video/poster-privatsphaere.jpg" width="480" alt="Video"></a>
+
+> 🎬 **Lieber zuschauen?** Das [Video zur Privatsphäre](https://github.com/nukleuz80/ha_brainstorm/blob/main/docs/videos.md#privatsphäre-freigaben--ki-backlog) zeigt Hauptbenutzer, Freigaben und das KI-Backlog in zwei Minuten.
+
 ## 👥 Privatsphäre & Freigaben
 
 Standardmäßig sehen alle Benutzer deines Home Assistant alle Einträge. Unter **Brainstorm Hub ➔ Konfigurieren ➔ Privatsphäre & Benutzer** kannst du das ändern. Wähle dabei einen **Hauptbenutzer**, dem alle vorhandenen Einträge gehören.

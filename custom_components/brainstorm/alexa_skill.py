@@ -53,6 +53,8 @@ _LOGGER = logging.getLogger(__name__)
 
 MAX_TEXT_LENGTH = 500
 MAX_SPEECH_LENGTH = 7900
+# Request ids remembered, so a sentence the skill sends again is stored once
+HANDLED_REQUESTS_MAX = 200
 MIN_IDEA_LENGTH = 3
 
 # The skill code gives up after 6 seconds, so an unknown Echo must not take longer
@@ -92,6 +94,7 @@ SNOOZE_TIME = timedelta(hours=1)
 # What the skill has to be able to say without Home Assistant
 SKILL_CODE_TEXTS = (
     "skill_unreachable",
+    "skill_buffered",
     "skill_inactive",
     "skill_no_text",
     "skill_help",
@@ -100,11 +103,19 @@ SKILL_CODE_TEXTS = (
 # Kept small on purpose, so that improvements reach users through the integration
 _SKILL_CODE = '''"""Brainstorm Hub Alexa skill. Keep this code private, it contains your secret address."""
 import json
+import os
+import time
 import urllib.error
 import urllib.request
 
 WEBHOOK_URL = "__WEBHOOK_URL__"
 TIMEOUT_SECONDS = 6
+# While Home Assistant is down, these are kept in the bucket of an Alexa-hosted skill
+BUFFERED_ACTIONS = ("capture", "remind")
+QUEUE_PREFIX = "brainstorm-queue/"
+FLUSH_SECONDS = 2.5
+QUEUE_CHECK_SECONDS = 300
+_next_queue_check = 0.0
 REMINDER_API_TIMEOUT_SECONDS = 2
 TEXTS = __TEXTS__
 
@@ -130,6 +141,82 @@ def _has_screen(event):
     return "Alexa.Presentation.APL" in device.get("supportedInterfaces", {})
 
 
+def _post(payload, timeout):
+    request = urllib.request.Request(
+        WEBHOOK_URL,
+        data=json.dumps(payload).encode(),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    with urllib.request.urlopen(request, timeout=timeout) as reply:
+        body = reply.read().decode()
+        return json.loads(body) if body else {}
+
+
+def _bucket():
+    """Return the S3 client and bucket that Alexa hosting provides, if any."""
+    name = os.environ.get("S3_PERSISTENCE_BUCKET")
+    if not name:
+        return None, None
+    try:
+        import boto3
+    except ImportError:
+        return None, None
+    return boto3.client("s3"), name
+
+
+def _buffer(payload):
+    """Keep a sentence for later, as Home Assistant cannot be reached."""
+    global _next_queue_check
+    s3, bucket = _bucket()
+    if s3 is None:
+        return False
+    try:
+        s3.put_object(
+            Bucket=bucket,
+            Key=QUEUE_PREFIX + str(time.time_ns()) + ".json",
+            Body=json.dumps(payload).encode(),
+        )
+    except Exception as err:  # noqa: BLE001 - S3 errors come from botocore
+        print("Could not keep the sentence:", repr(err))
+        return False
+    _next_queue_check = 0.0
+    return True
+
+
+def _flush():
+    """Hand kept sentences to Home Assistant, now that it answers again."""
+    global _next_queue_check
+    if time.monotonic() < _next_queue_check:
+        return
+    s3, bucket = _bucket()
+    if s3 is None:
+        return
+    deadline = time.monotonic() + FLUSH_SECONDS
+    try:
+        listing = s3.list_objects_v2(Bucket=bucket, Prefix=QUEUE_PREFIX, MaxKeys=20)
+        keys = sorted(item["Key"] for item in listing.get("Contents") or [])
+        if not keys:
+            _next_queue_check = time.monotonic() + QUEUE_CHECK_SECONDS
+        for key in keys:
+            remaining = deadline - time.monotonic()
+            if remaining < 0.3:
+                return
+            payload = json.loads(s3.get_object(Bucket=bucket, Key=key)["Body"].read())
+            payload["buffered"] = True
+            try:
+                _post(payload, min(2.0, remaining))
+            except urllib.error.HTTPError as err:
+                if err.code >= 500:
+                    return
+                print("Home Assistant refused a kept sentence:", err.code)
+            s3.delete_object(Bucket=bucket, Key=key)
+    except (urllib.error.URLError, TimeoutError, ValueError):
+        return
+    except Exception as err:  # noqa: BLE001 - S3 errors come from botocore
+        print("Could not hand over kept sentences:", repr(err))
+
+
 def _call_home_assistant(event, action, text=""):
     system = event["context"]["System"]
     payload = {
@@ -139,19 +226,20 @@ def _call_home_assistant(event, action, text=""):
         "text": text,
         "display": _has_screen(event),
         "locale": event["request"].get("locale"),
+        "request_id": event["request"].get("requestId"),
     }
-    request = urllib.request.Request(
-        WEBHOOK_URL,
-        data=json.dumps(payload).encode(),
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
     try:
-        with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as reply:
-            body = reply.read().decode()
-            data = json.loads(body) if body else {}
-    except (urllib.error.URLError, TimeoutError, ValueError):
+        data = _post(payload, TIMEOUT_SECONDS)
+    except ValueError:
         return _response(_text(event, "skill_unreachable"))
+    except (urllib.error.URLError, TimeoutError) as err:
+        # Nabu Casa answers 502 or 503 while Home Assistant is down
+        if isinstance(err, urllib.error.HTTPError) and err.code < 500:
+            return _response(_text(event, "skill_unreachable"))
+        if action in BUFFERED_ACTIONS and text and _buffer(payload):
+            return _response(_text(event, "skill_buffered"))
+        return _response(_text(event, "skill_unreachable"))
+    _flush()
     if data.get("silent"):
         return {"version": "1.0", "response": {"shouldEndSession": True}}
     if not data.get("speech"):
@@ -381,6 +469,7 @@ class AlexaSkill:
         self._webhook_id = ""
         self._application_id: str | None = None
         self._devices: dict[str, dict[str, Any]] = {}
+        self._handled_requests: deque[str] = deque(maxlen=HANDLED_REQUESTS_MAX)
         self.last_unknown_device: dict[str, str | None] | None = None
         self._active = False
         self._unsub_events: Any = None
@@ -1041,8 +1130,32 @@ class AlexaSkill:
             await self._ideas.async_mark_fields(text, {ATTR_ALEXA_NATIVE: True})
             return web.json_response({"ok": True})
 
-        if action in (ACTION_DISPLAY_DONE, ACTION_FALLBACK):
-            # Neither has a sentence to match against the Alexa history
+        request_id = payload.get("request_id")
+        if not isinstance(request_id, str) or action not in (ACTION_CAPTURE, ACTION_REMIND):
+            request_id = None
+        elif request_id in self._handled_requests:
+            # Sent again by the skill after a timeout, it is already stored
+            return web.json_response({"silent": True})
+        response = await self._async_handle_action(
+            action, text, device_id, wants_display, pack, buffered=payload.get("buffered") is True
+        )
+        if request_id is not None and response.status == 200:
+            self._handled_requests.append(request_id)
+        return response
+
+    async def _async_handle_action(
+        self,
+        action: str,
+        text: str,
+        device_id: str | None,
+        wants_display: bool,
+        pack: LanguagePack,
+        buffered: bool = False,
+    ) -> web.Response:
+        """Answer one validated request of the linked skill."""
+        if buffered or action in (ACTION_DISPLAY_DONE, ACTION_FALLBACK):
+            # None of these has a sentence to match against the Alexa history,
+            # a sentence kept by the skill is long gone from it
             echo, pending = self._known_echo(device_id), None
         else:
             echo, pending = await self._async_resolve_echo(device_id, text)

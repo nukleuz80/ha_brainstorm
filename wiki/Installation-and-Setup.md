@@ -1,5 +1,7 @@
 🏠 [Home](Home) · 🇩🇪 [Deutsche Version](Installation-und-Einrichtung)
 
+<a href="https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-installation-en.mp4"><img src="https://raw.githubusercontent.com/nukleuz80/ha_brainstorm/main/docs/video/poster-installation-en.jpg" width="480" alt="Video"></a>
+
 > 🎬 **Prefer to watch?** The [installation video](https://github.com/nukleuz80/ha_brainstorm/blob/main/docs/videos_en.md#installation-2-minutes) goes from HACS to your first idea in two minutes.
 
 ## 🔗 Quick Links

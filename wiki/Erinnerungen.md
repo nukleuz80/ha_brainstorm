@@ -1,5 +1,9 @@
 🏠 [Start](Home) · 🇬🇧 [English version](Reminders)
 
+<a href="https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-erinnerungen.mp4"><img src="https://raw.githubusercontent.com/nukleuz80/ha_brainstorm/main/docs/video/poster-erinnerungen.jpg" width="480" alt="Video"></a>
+
+> 🎬 **Lieber zuschauen?** Das [Erinnerungsvideo](https://github.com/nukleuz80/ha_brainstorm/blob/main/docs/videos.md#erinnerungen--benachrichtigungen) zeigt Termine, Ansagen, Orte und Ruhezeiten in gut drei Minuten.
+
 Brainstorm erinnert dich von selbst an fällige Einträge, und zwar über die Dienste, die du in Home Assistant ohnehin eingerichtet hast. Alles ist optional und läuft lokal.
 
 **Termin festlegen**

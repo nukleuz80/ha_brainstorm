@@ -1722,6 +1722,7 @@ MESSAGES: dict[str, str] = {
     "llm_deleted": "Idee '{text}' wurde gelöscht.",
     "llm_delete_failed": "Löschen fehlgeschlagen.",
     "skill_unreachable": "Home Assistant ist nicht erreichbar. Es wurde nichts gespeichert.",
+    "skill_buffered": "Home Assistant ist gerade nicht erreichbar. Ich habe es mir gemerkt und trage es nach, sobald du Brainstorm das nächste Mal benutzt.",
     "skill_inactive": "Der Skill-Modus ist in Brainstorm nicht aktiv. Es wurde nichts gespeichert.",
     "skill_no_text": "Ich habe keinen Text verstanden.",
     "skill_help": (

@@ -1,5 +1,7 @@
 🏠 [Home](Home) · 🇩🇪 [Deutsche Version](Zusammenarbeit)
 
+<a href="https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-privacy-en.mp4"><img src="https://raw.githubusercontent.com/nukleuz80/ha_brainstorm/main/docs/video/poster-privacy-en.jpg" width="480" alt="Video"></a>
+
 > 🎬 **Prefer to watch?** The [privacy video](https://github.com/nukleuz80/ha_brainstorm/blob/main/docs/videos_en.md#privacy-sharing--ai-backlog-2-minutes) shows owners, sharing and the AI backlog in two minutes.
 
 ## 👥 Privacy & Sharing

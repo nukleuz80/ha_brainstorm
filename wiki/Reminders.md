@@ -1,5 +1,7 @@
 🏠 [Home](Home) · 🇩🇪 [Deutsche Version](Erinnerungen)
 
+<a href="https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-reminders-en.mp4"><img src="https://raw.githubusercontent.com/nukleuz80/ha_brainstorm/main/docs/video/poster-reminders-en.jpg" width="480" alt="Video"></a>
+
 > 🎬 **Prefer to watch?** The [reminders video](https://github.com/nukleuz80/ha_brainstorm/blob/main/docs/videos_en.md#reminders--notifications-3-minutes) shows due dates, announcements, places and quiet hours in three minutes.
 
 Brainstorm reminds you of due ideas on its own, over the services you have already set up in Home Assistant. Everything is optional and runs locally.

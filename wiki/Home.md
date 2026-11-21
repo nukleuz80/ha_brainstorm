@@ -9,6 +9,14 @@
 
 </div>
 
+<div align="center">
+
+<a href="https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-teaser.mp4"><img src="https://raw.githubusercontent.com/nukleuz80/ha_brainstorm/main/docs/video/poster-teaser.jpg" width="49%" alt="Teaser DE"></a> <a href="https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-teaser-en.mp4"><img src="https://raw.githubusercontent.com/nukleuz80/ha_brainstorm/main/docs/video/poster-teaser-en.jpg" width="49%" alt="Teaser EN"></a>
+
+🎬 **Brainstorm in einer Minute** (links, deutsch) · **Brainstorm in one minute** (right, English)
+
+</div>
+
 | 🇩🇪 Deutsch | 🇬🇧 English |
 | :--- | :--- |
 | **Einstieg** | **Getting started** |

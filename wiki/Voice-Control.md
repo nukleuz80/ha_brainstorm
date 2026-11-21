@@ -60,6 +60,8 @@ Without a skill, Alexa often reports an error first when you say *"Alexa, note .
 
 The skill belongs to you and only talks to your own Home Assistant. **Requirements:** a free [Amazon developer account](https://developer.amazon.com/alexa/console/ask) on the same account as your Echos and a Home Assistant reachable over public HTTPS (for example through Home Assistant Cloud). Home Assistant offers the voice model in its own language. German and English exist, and other languages get the English one. The skill answers in the language of the request.
 
+<a href="https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-alexa-skill-en.mp4"><img src="https://raw.githubusercontent.com/nukleuz80/ha_brainstorm/main/docs/video/poster-alexa-skill-en.jpg" width="480" alt="Video"></a>
+
 > 🎬 **Prefer to watch?** The [setup video](https://github.com/nukleuz80/ha_brainstorm/blob/main/docs/videos_en.md#your-own-alexa-skill-6-minutes) shows every setting in its own chapter (6 minutes, English narration). A [German version](https://github.com/nukleuz80/ha_brainstorm/blob/main/docs/video-alexa-skill.md) is available too.
 
 1. In Home Assistant, go to **Brainstorm Hub ➔ Configure ➔ Alexa Voice Input & Skill**, choose **Skill** or **Both** and continue. Keep this window open, it shows the two fields to copy.
@@ -68,6 +70,8 @@ The skill belongs to you and only talks to your own Home Assistant. **Requiremen
 4. In the **Code** tab, replace `lambda_function.py` with the **Skill code** field and click **Deploy**.
 5. In the **Test** tab, set the stage to **Development**.
 6. Click **Submit** in Home Assistant and say *"Alexa, ask Brainstorm to note test idea."* The first request links your skill, other skills are rejected afterwards. **Configure** shows the link and the last request.
+
+**Offline buffer (since v1.21.0):** If Home Assistant cannot be reached, for example during a restart or a Nabu Casa outage, the skill keeps new ideas and reminders. Alexa then says *"Home Assistant cannot be reached right now. I kept it …"*. With the next sentence to Brainstorm, the skill hands the kept entries over. Home Assistant recognises each sentence by its id and stores it only once, even if it arrives twice after a timeout. This works with an **Alexa-hosted** skill, which uses its own S3 storage for it. A self-hosted skill still says that nothing was saved. Questions such as *"what's due"* are not kept. Relative times such as *"tomorrow"* count from the moment of delivery. This needs the skill code to be copied once more.
 
 **Notes:** Keep the skill code private, it contains your secret address. If it leaks, create a new one there and copy the skill code again. The Echo selection and device display apply to the skill too. For this, Home Assistant learns each Echo from the Alexa history on its first sentence (this needs the Alexa Media integration), which can take up to 3.5 seconds longer. If the history entry arrives later, the idea is still saved and the Echo is added afterwards. In the menu you need a command word such as *"note ..."*. Alexa does not pass **free sentences without a command word** to a skill. Since v1.6.20, Home Assistant takes such sentences from the Echo's Alexa history (through Alexa Media) and saves them anyway. Alexa answers right away with *"Okay, noted"*. Alexa writes the sentence to its history only together with this answer, so the idea appears a few seconds later. Home Assistant finds the right history entry by exactly this answer. If none arrives within a minute, Home Assistant shows a notification instead of losing the sentence silently. The Alexa app reports no history, so it keeps asking for a command word. This needs the skill code to be copied once more. For **Skill** mode to turn off the existing capture, your automation has to check the `voice_mode` attribute:
 
@@ -81,6 +85,8 @@ The skill belongs to you and only talks to your own Home Assistant. **Requiremen
 ## 📱 iPhone: Shortcut with Siri, Action Button or Back Tap
 
 The fastest way from an iPhone: trigger, speak, done, without opening an app. It needs the Home Assistant companion app.
+
+<a href="https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-iphone-en.mp4"><img src="https://raw.githubusercontent.com/nukleuz80/ha_brainstorm/main/docs/video/poster-iphone-en.jpg" width="480" alt="Video"></a>
 
 > 🎬 **Prefer to watch?** The [iPhone video](https://github.com/nukleuz80/ha_brainstorm/blob/main/docs/videos_en.md#iphone-shortcut-2-minutes) builds the shortcut step by step.
 

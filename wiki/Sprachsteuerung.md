@@ -60,6 +60,8 @@ Ohne Skill antwortet Alexa auf *„Alexa, notiere …“* oft zuerst mit einer F
 
 Der Skill gehört dir allein und spricht nur mit deinem eigenen Home Assistant. **Voraussetzungen:** ein kostenloses [Amazon-Entwicklerkonto](https://developer.amazon.com/alexa/console/ask) mit demselben Konto wie deine Echos und ein aus dem Internet per HTTPS erreichbares Home Assistant (z. B. über Home Assistant Cloud). Home Assistant zeigt das Sprachmodell in seiner eigenen Sprache an. Es gibt Deutsch und Englisch, andere Sprachen bekommen das englische. Der Skill antwortet in der Sprache der Anfrage.
 
+<a href="https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-alexa-skill.mp4"><img src="https://raw.githubusercontent.com/nukleuz80/ha_brainstorm/main/docs/video/poster-alexa-skill.jpg" width="480" alt="Video"></a>
+
 > 🎬 **Lieber zuschauen?** Das [Video zur Einrichtung](https://github.com/nukleuz80/ha_brainstorm/blob/main/docs/video-alexa-skill.md) zeigt jede Einstellung in einem eigenen Kapitel (6 Minuten).
 
 1. Gehe in Home Assistant auf **Brainstorm Hub ➔ Konfigurieren ➔ Alexa-Spracheingabe & Skill**, wähle **Skill** oder **Beide** und klicke auf **Weiter**. Lass dieses Fenster offen, es zeigt die beiden Felder zum Kopieren.
@@ -68,6 +70,8 @@ Der Skill gehört dir allein und spricht nur mit deinem eigenen Home Assistant. 
 4. Ersetze im Tab **Code** den Inhalt von `lambda_function.py` durch das Feld **Skill-Code** und klicke auf **Deploy**.
 5. Stelle im Tab **Test** oben **Development** ein.
 6. Klicke in Home Assistant auf **Absenden** und sprich am Echo: *„Alexa, sage Brainstorm notiere Testidee.“* Die erste Anfrage koppelt deinen Skill, andere Skills werden danach abgewiesen. Unter **Konfigurieren** siehst du die Kopplung und die letzte Anfrage.
+
+**Offline-Puffer (seit v1.21.0):** Ist Home Assistant gerade nicht erreichbar, etwa während eines Neustarts oder bei einem Aussetzer von Nabu Casa, merkt sich der Skill neue Ideen und Erinnerungen. Alexa sagt dann *„Home Assistant ist gerade nicht erreichbar. Ich habe es mir gemerkt …“*. Beim nächsten Satz an Brainstorm liefert der Skill die gemerkten Einträge nach. Home Assistant erkennt dabei jeden Satz an seiner Kennung und speichert ihn nur einmal, auch wenn er nach einer Zeitüberschreitung doppelt ankommt. Das klappt mit einem **Alexa-hosted** Skill, der dafür seinen eigenen S3-Speicher nutzt. Ein selbst gehosteter Skill sagt wie bisher, dass nichts gespeichert wurde. Fragen wie *„was steht an“* werden nicht gemerkt. Relative Zeiten wie *„morgen“* gelten ab dem Nachliefern. Dafür musst du den Skill-Code einmal neu kopieren.
 
 **Hinweise:** Halte den Skill-Code geheim, er enthält deine geheime Adresse. Wurde sie bekannt, erzeugst du dort eine neue und kopierst den Skill-Code erneut. Die Echo-Auswahl und die Geräteanzeige gelten auch im Skill. Dafür lernt Home Assistant jeden Echo beim ersten Satz aus dem Alexa-Verlauf (das braucht die Integration Alexa Media); dieser erste Satz kann bis zu 3,5 Sekunden länger dauern. Kommt der Eintrag im Verlauf später, wird die Idee trotzdem gespeichert und der Echo nachgetragen. Im Menü brauchst du ein Befehlswort wie *„notiere …“* oder einen Satzanfang wie *„wir brauchen …“*, *„wir müssen …“*, *„ich muss …“*. **Freie Sätze ohne Befehlswort** (*„Alexa, sage Brainstorm Duschgel ist alle“*) gibt Alexa dem Skill nicht weiter. Seit v1.6.20 holt Home Assistant solche Sätze aus dem Alexa-Verlauf des Echos (über Alexa Media) und speichert sie trotzdem. Alexa antwortet sofort mit *„Okay, notiert“*. Den Satz schreibt Alexa erst mit dieser Antwort in den Verlauf, deshalb erscheint der Eintrag wenige Sekunden später. Home Assistant erkennt den passenden Verlaufseintrag an genau dieser Antwort. Kommt innerhalb einer Minute keiner, meldet Home Assistant das als Benachrichtigung, statt den Satz still zu verlieren. Für die Alexa-App, die keinen Verlauf meldet, bleibt der Hinweis auf ein Befehlswort. Dafür musst du den Skill-Code einmal neu kopieren. Im Modus **Skill** solltest du die Alexa-Routinen für *„öffne Brainstorm“* aus Variante A löschen, sonst startet statt des Skills der alte Dialog. Der Modus **Skill** schaltet die bisherige Erfassung ab, wenn deine Automation das Attribut `voice_mode` von `sensor.brainstorm_ideen_ubersicht` prüft:
 
@@ -100,6 +104,10 @@ Die Vorlagen liegen unter [`examples/custom_sentences/de/brainstorm.yaml`](https
 
 ## iPhone: Kurzbefehl mit Siri, Action-Taste oder Rückseite
 Der schnellste Weg vom iPhone: auslösen, sprechen, fertig, ganz ohne eine App zu öffnen. Voraussetzung ist die Home Assistant Companion-App.
+
+<a href="https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-iphone.mp4"><img src="https://raw.githubusercontent.com/nukleuz80/ha_brainstorm/main/docs/video/poster-iphone.jpg" width="480" alt="Video"></a>
+
+> 🎬 **Lieber zuschauen?** Das [iPhone-Video](https://github.com/nukleuz80/ha_brainstorm/blob/main/docs/videos.md#iphone-kurzbefehl) baut den Kurzbefehl Schritt für Schritt.
 
 1. Lege in der App **Kurzbefehle** einen neuen Kurzbefehl namens **Brainstorm** an. Der Name ist auch dein Siri-Satz.
 2. Füge **Text diktieren** hinzu, Sprache **Deutsch**, Hören stoppen **Nach einer Pause**.

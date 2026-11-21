@@ -355,7 +355,7 @@ def test_skill_code_speaks_answer_from_home_assistant() -> None:
 
     assert result["response"]["outputSpeech"]["text"] == "Gespeichert."
     assert json.loads(requests[0].data) == _capture_payload(
-        display=False, locale="de-DE"
+        display=False, locale="de-DE", request_id=None
     )
 
 

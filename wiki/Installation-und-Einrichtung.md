@@ -1,5 +1,9 @@
 🏠 [Start](Home) · 🇬🇧 [English version](Installation-and-Setup)
 
+<a href="https://github.com/nukleuz80/ha_brainstorm/releases/download/v1.20.7/brainstorm-installation.mp4"><img src="https://raw.githubusercontent.com/nukleuz80/ha_brainstorm/main/docs/video/poster-installation.jpg" width="480" alt="Video"></a>
+
+> 🎬 **Lieber zuschauen?** Das [Installationsvideo](https://github.com/nukleuz80/ha_brainstorm/blob/main/docs/videos.md#installation-3-minuten) führt in drei Minuten von HACS bis zur ersten Idee.
+
 ## 🔗 Schnelllinks
 
 Diese Buttons öffnen die passende Seite in deinem eigenen Home Assistant:
