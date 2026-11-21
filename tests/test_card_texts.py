@@ -21,7 +21,15 @@ def _dictionary() -> dict[str, str]:
 def _used_texts() -> set[str]:
     """Return every text the cards ask for."""
     used: set[str] = set()
-    for card in ("brainstorm-card.js", "brainstorm-mindmap-card.js", "brainstorm-i18n.js"):
+    for card in (
+        "brainstorm-card.js",
+        "brainstorm-mindmap-card.js",
+        "brainstorm-i18n.js",
+        "brainstorm-onboarding.js",
+        "brainstorm-mindmap-export.js",
+        "brainstorm-mindmap-generate.js",
+        "brainstorm-mindmap-present.js",
+    ):
         source = (WWW / card).read_text("utf-8")
         for double, single in USED.findall(source):
             used.add(double.replace('\\"', '"') if double else single)
@@ -51,7 +59,13 @@ def test_translations_keep_their_values() -> None:
 def test_cards_load_the_texts_of_their_own_version() -> None:
     """An old cached file with new cards would break them."""
     version = json.loads(MANIFEST.read_text("utf-8"))["version"]
-    for card in ("brainstorm-card.js", "brainstorm-mindmap-card.js"):
+    for card in (
+        "brainstorm-card.js",
+        "brainstorm-mindmap-card.js",
+        "brainstorm-mindmap-export.js",
+        "brainstorm-mindmap-generate.js",
+        "brainstorm-mindmap-present.js",
+    ):
         assert f'"./brainstorm-i18n.js?v={version}"' in (WWW / card).read_text("utf-8")
 
 

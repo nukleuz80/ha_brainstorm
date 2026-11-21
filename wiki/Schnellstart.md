@@ -34,6 +34,8 @@ Die Karten kommen mit der Integration, eine Ressource musst du nicht anlegen.
 
 ## 4. Erste Idee
 
+Ist die Liste noch leer, begrüßt dich die Karte: **Beispiele anlegen** legt fünf Beispielnotizen an, **Kurze Tour** zeigt Schritt für Schritt, wo was ist. Die Beispiele entfernst du später mit einem Tipp auf **Beispiele entfernen**.
+
 Tippe in die Schnelleingabe der Listenkarte:
 
 > `Dringend Garten: Rasenmäher reparieren`

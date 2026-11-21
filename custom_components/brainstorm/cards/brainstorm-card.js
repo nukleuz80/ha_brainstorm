@@ -1,9 +1,13 @@
-import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, bringBadge, bringSentText, unblockedText, canSendToBring, renderBringSend, canHandOver, canHandOverProject, canMakeReward, choreopsBadge, choreopsRewardBadge, renderChoreHandover, renderChoreProject, renderChoreReward, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, timeBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t, linkedListMark, linkedListOf, linkedListSign, linkedListText, batteriesBringText, batteriesNeeded, calendarBadge, calendarOptions, readCalendar, renderStatistics } from "./brainstorm-i18n.js?v=1.21.2";
+import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, bringBadge, bringSentText, unblockedText, canSendToBring, renderBringSend, canHandOver, canHandOverProject, canMakeReward, choreopsBadge, choreopsRewardBadge, renderChoreHandover, renderChoreProject, renderChoreReward, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, timeBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t, linkedListMark, linkedListOf, linkedListSign, linkedListText, batteriesBringText, batteriesNeeded, calendarBadge, calendarOptions, readCalendar, renderStatistics } from "./brainstorm-i18n.js?v=1.22.0";
+
+// Same check as isSample() in brainstorm-onboarding.js, without loading it
+const hasSampleTag = (idea) => Array.isArray(idea && idea.tags)
+  && idea.tags.some((tag) => ["beispiel", "example"].includes(String(tag).toLowerCase()));
 
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.21.2 - Einstellungsmenü ohne vereinzelte Icons
+ * Version 1.22.0 - Geführter erster Start
  */
 // The bulb lies next to this file, wherever Home Assistant serves it from
 const BULB_URL = new URL("./brainstorm-bulb.svg", import.meta.url).href;
@@ -2359,6 +2363,71 @@ class BrainstormCard extends HTMLElement {
   _showChoreHandover(idea) {
     if (!this._hass || !idea || !this._choreops) return;
     this._openDialog(t("🏅 An ChoreOps übergeben"), (body) => renderChoreHandover(body, { hass: this._hass, idea, users: this._choreops.users, points: this._choreops.points, close: () => this._closeDialog(), prefix: "action-dialog" }));
+  }
+
+  // Guided first start: welcome on an empty list, a bar while the examples are there
+  _onboardingModule() {
+    if (!this._onboardingLoad) {
+      const url = new URL(`./brainstorm-onboarding.js${new URL(import.meta.url).search}`, import.meta.url);
+      this._onboardingLoad = import(url.href).catch((err) => {
+        this._onboardingLoad = null;
+        throw err;
+      });
+    }
+    return this._onboardingLoad;
+  }
+
+  async _showOnboarding(ideasList, kind, attributes) {
+    if (kind === "welcome") {
+      ideasList.innerHTML = `<div class="empty-state">${t("✨ Noch keine aktiven Ideen. Tippe oben eine Idee ein oder sprich mit Alexa!")}</div>`;
+    }
+    let mod;
+    try {
+      mod = await this._onboardingModule();
+    } catch (err) {
+      console.warn("Brainstorm: guided start not loaded", err);
+      return;
+    }
+    if (!this.shadowRoot.getElementById("onboardingCss")) {
+      const style = document.createElement("style");
+      style.id = "onboardingCss";
+      style.textContent = mod.ONBOARDING_CSS;
+      this.shadowRoot.appendChild(style);
+    }
+    if (!ideasList.isConnected) return;
+    if (kind === "welcome") {
+      if (!ideasList.querySelector(".empty-state")) return;
+      ideasList.innerHTML = mod.welcomeHtml(t);
+    } else {
+      if (ideasList.querySelector(".bs-sample-bar")) return;
+      const count = (attributes.ideas || []).filter(mod.isSample).length;
+      ideasList.insertAdjacentHTML("afterbegin", mod.sampleBarHtml(t, count));
+    }
+    ideasList.querySelectorAll("[data-onboarding]").forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const action = btn.getAttribute("data-onboarding");
+        if (action === "tour") {
+          mod.startTour(this.shadowRoot, this.shadowRoot.querySelector("ha-card"), t);
+          return;
+        }
+        btn.disabled = true;
+        try {
+          if (action === "samples") {
+            await mod.addSamples(this._hass, t, attributes.categories || []);
+            this._notify(t("Beispiele angelegt. Mit „Kurze Tour“ zeigt dir die Karte, wie es geht."));
+          } else {
+            const ideas = [...(attributes.ideas || []), ...(attributes.completed_ideas || [])];
+            const removed = await mod.removeSamples(this._hass, ideas);
+            this._notify(t("{count} Beispiele entfernt.", { count: removed }));
+          }
+        } catch (err) {
+          this._notify((err && err.message) || t("Das hat nicht geklappt."));
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    });
   }
 
   _notify(message) {
@@ -5425,7 +5494,11 @@ class BrainstormCard extends HTMLElement {
     this._renderLinkedListHint();
     const ideasList = this.shadowRoot.getElementById("ideasList");
     if (ideasList) {
-      if (orderedIdeas.length === 0) {
+      const welcome = orderedIdeas.length === 0 && !searching && !isCompletedView
+        && this._selectedCategory === "all" && activeIdeas.length === 0 && completedIdeas.length === 0;
+      if (welcome) {
+        this._showOnboarding(ideasList, "welcome", attributes);
+      } else if (orderedIdeas.length === 0) {
         ideasList.innerHTML = `
           <div class="empty-state">
             ${
@@ -5525,6 +5598,7 @@ class BrainstormCard extends HTMLElement {
           `;
           })
           .join("");
+        if (!isCompletedView && activeIdeas.some(hasSampleTag)) this._showOnboarding(ideasList, "samples", attributes);
 
         // Reactions switch your own, − and + change your points
         ideasList.querySelectorAll("[data-react]").forEach((btn) => {
@@ -6515,7 +6589,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.21.2 ",
+  "%c BRAINSTORM-CARD %c v1.22.0 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

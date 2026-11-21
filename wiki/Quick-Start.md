@@ -34,6 +34,8 @@ The cards ship with the integration, so you need no resource entry.
 
 ## 4. Your first idea
 
+While the list is still empty, the card greets you: **Add examples** creates five sample notes, **Quick tour** shows step by step where everything is. Remove the examples later with one tap on **Remove examples**.
+
 Type into the quick input of the list card:
 
 > `Urgent garden: repair the lawn mower`
