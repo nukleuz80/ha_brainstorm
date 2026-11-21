@@ -4,7 +4,7 @@ Five steps from installing to your first idea on the mind map. The linked pages 
 
 ## 1. Install
 
-Open Brainstorm Hub in the Marketplace (on 2026.10: HACS), click **Download** and restart Home Assistant:
+Open Brainstorm Hub in the Marketplace (on 2026.10: HACS), click **Install** (in HACS: **Download**) and restart Home Assistant:
 
 [![Open Brainstorm Hub in the Marketplace](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 

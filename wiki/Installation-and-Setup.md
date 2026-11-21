@@ -29,7 +29,7 @@ Brainstorm Hub is part of the HACS default list since 9 November 2026. Since Hom
 
 Or step by step:
 1. Open **Settings ➔ Marketplace** in Home Assistant (on 2026.10: **HACS** in the sidebar) and switch to **Browse**.
-2. Search for **Brainstorm Hub** and click **Download**.
+2. Search for **Brainstorm Hub** and click **Install** (in HACS: **Download**).
 3. Restart Home Assistant.
 
 The cards come with the integration: after the restart Home Assistant loads them by itself. Then add the integration as shown in the next option.

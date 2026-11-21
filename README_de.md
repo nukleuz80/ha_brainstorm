@@ -111,7 +111,7 @@
 [![Brainstorm Hub im Marketplace öffnen](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 
 1. Öffne **Einstellungen ➔ Marketplace** in deinem Home Assistant (unter 2026.10: **HACS** in der Seitenleiste) und such unter **Durchstöbern**.
-2. Suche nach **Brainstorm Hub** und klicke auf **Herunterladen**.
+2. Suche nach **Brainstorm Hub** und klicke auf **Installieren** (in HACS: **Herunterladen**).
 3. Starte Home Assistant neu.
 
 ### Methode 2: Manuelle Installation

@@ -4,7 +4,7 @@ In fünf Schritten von der Installation zur ersten Idee auf der Mindmap. Alle De
 
 ## 1. Installieren
 
-Öffne Brainstorm Hub im Marketplace (unter 2026.10: HACS), klicke auf **Herunterladen** und starte Home Assistant neu:
+Öffne Brainstorm Hub im Marketplace (unter 2026.10: HACS), klicke auf **Installieren** (in HACS: **Herunterladen**) und starte Home Assistant neu:
 
 [![Brainstorm Hub im Marketplace öffnen](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 
