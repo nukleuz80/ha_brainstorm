@@ -167,7 +167,7 @@ Brainstorm nutzt eine KI-Aufgaben-Entität von Home Assistant, etwa Google Gemin
 | Gesprochene Einträge per KI verbessern | Jeder gesprochene Eintrag wird zuerst gespeichert und wenige Sekunden später verbessert. Das Ergebnis wird verworfen, wenn es Wörter hinzufügt oder eine Verneinung ändert. Der Text geht an den Anbieter der gewählten KI. |
 | Briefing und Rückblick per KI kürzen | Morgen-Briefing und Wochenrückblick der Erinnerungen werden gekürzt. Deine Einträge gehen dafür an den Anbieter der gewählten KI. |
 
-### Brainstorm › 🧪 Satz-Tester
+### Brainstorm › Satz-Tester
 
 _Seit v1.19.0._
 
@@ -256,7 +256,7 @@ Seit v1.13.16. Erscheint, wenn [Waste Collection Schedule](https://github.com/ma
 
 ### Brainstorm › 🔗 Verbundene Integrationen › 🔋 Battery Notes
 
-Seit v1.13.18. Erscheint, wenn [Battery Notes](https://github.com/andrew-codechimp/HA-Battery-Notes) installiert ist, und wirkt nur zusammen mit *🔋 Batterien*.
+Seit v1.13.18. Erscheint, wenn [Battery Notes](https://github.com/andrew-codechimp/HA-Battery-Notes) installiert ist, und wirkt nur zusammen mit *Batterien*.
 
 | Feld | Was es bewirkt |
 | :--- | :--- |
@@ -372,9 +372,9 @@ Hält einzelne Echos zu festen Zeiten für Brainstorm still, etwa nachts im Kind
 
 - **Andere Echos sprechen weiter:** Eine Erinnerung geht weiter an die Echos der Erinnerung, die nicht gesperrt sind.
 - **Handy als Ersatz:** Ist kein Echo mehr übrig, geht die Erinnerung sofort aufs Handy statt erst nach der Wartezeit.
-- **Test:** *🧪 Kanäle jetzt testen* spricht auch in einer Sperrzeit, weil du ihn selbst startest.
+- **Test:** *Kanäle jetzt testen* spricht auch in einer Sperrzeit, weil du ihn selbst startest.
 
-### Brainstorm › 🔋 Batterien
+### Brainstorm › Batterien
 
 Macht aus schwachen Batterien Aufgaben (v1.7.5). Jeder Batterie-Sensor zählt: ein Stand in Prozent oder ein Sensor, der nur „Batterie schwach“ meldet.
 
@@ -393,7 +393,7 @@ Macht aus schwachen Batterien Aufgaben (v1.7.5). Jeder Batterie-Sensor zählt: e
 - **Von Hand abgehakt**, bevor die Batterie gewechselt ist, kommt die Aufgabe nicht wieder. Erst die nächste schwache Batterie legt eine neue an.
 - **Nach einem Neustart** werden alle Batterien einmal geprüft.
 
-### Brainstorm › 📟 Sensor-Aufgaben
+### Brainstorm › Sensor-Aufgaben
 
 Macht aus einem Sensorwert eine Aufgabe (v1.11.10), etwa *Wasserfilter wechseln* nach 300 Betriebsstunden, *Monstera gießen*, wenn die Bodenfeuchte unter 20 % fällt, oder *Waschmaschine ausräumen*, sobald sie fertig ist. Die erste Seite listet deine Regeln:
 
@@ -474,6 +474,6 @@ Ausblenden löscht nichts: Gesetzte Marker, Fortschritt oder Rahmen bleiben auf 
 | **Privatsphäre & Benutzer** | Jeder sieht nur eigene Notizen, Listen gezielt teilen |
 | **Echos & Apps Personen zuordnen** | Echo Schlafzimmer gehört zu Anna |
 | **🛒 Bring!** | Bring-Listen als Hauptnotizen, Einträge als Unteraufgaben, in beide Richtungen (nur mit Bring-Integration) |
-| **🔋 Batterien** | unter 20 % die Aufgabe *Batterie wechseln: Bewegungsmelder Flur (18 %)*, hakt sich nach dem Wechsel selbst ab |
-| **📟 Sensor-Aufgaben** | ab 300 Betriebsstunden die Aufgabe *Wasserfilter wechseln*, hakt sich nach dem Zurücksetzen des Zählers selbst ab |
-| **🧹 Erledigte Einträge löschen** | Erledigte nach 30 Tagen automatisch entfernen |
+| **Batterien** | unter 20 % die Aufgabe *Batterie wechseln: Bewegungsmelder Flur (18 %)*, hakt sich nach dem Wechsel selbst ab |
+| **Sensor-Aufgaben** | ab 300 Betriebsstunden die Aufgabe *Wasserfilter wechseln*, hakt sich nach dem Zurücksetzen des Zählers selbst ab |
+| **Erledigte Einträge löschen** | Erledigte nach 30 Tagen automatisch entfernen |

@@ -49,12 +49,12 @@
           "alexa_skill": "Alexa Voice Input & Skill",
           "reminders": "Reminders & Notifications",
           "ai": "AI",
-          "cleanup": "🧹 Delete done entries",
-          "close": "✅ Done",
+          "cleanup": "Delete done entries",
+          "close": "Done",
           "privacy": "Privacy & Users",
           "privacy_voice": "Assign Echos & Apps to People",
           "integrations": "🔗 Connected integrations",
-          "sentence_test": "🧪 Sentence tester"
+          "sentence_test": "Sentence tester"
         },
         "menu_option_descriptions": {
           "integrations": "{integrations_status}"
@@ -191,9 +191,9 @@
           "reminder_persons": "People",
           "reminder_extras": "Calendar & Alexa Reminders",
           "reminder_locks": "Lock times per Echo",
-          "reminder_test": "🧪 Test channels now",
-          "init": "⬅️ Back",
-          "close": "✅ Done"
+          "reminder_test": "Test channels now",
+          "init": "Back",
+          "close": "Done"
         }
       },
       "reminder_general": {
@@ -495,7 +495,7 @@
         }
       },
       "battery": {
-        "title": "Brainstorm › 🔋 Batteries",
+        "title": "Brainstorm › Batteries",
         "description": "Creates one task per device as soon as its battery runs low: below the threshold, or when a sensor reports a weak battery. Once the battery is replaced, the task ticks itself off.",
         "data": {
           "battery_enabled": "Create battery tasks",
@@ -515,7 +515,7 @@
         }
       },
       "sensor_rules": {
-        "title": "Brainstorm › 📟 Sensor tasks",
+        "title": "Brainstorm › Sensor tasks",
         "description": "Creates a task as soon as a sensor reaches a value, such as a filter after 300 operating hours, a plant that is too dry or a washing machine that has finished. Once the sensor is back to normal, the task ticks itself off.\n\n{rules}\n\n{notice}",
         "data": {
           "sensor_rule": "Rule",
@@ -527,7 +527,7 @@
         }
       },
       "sensor_rule_edit": {
-        "title": "Brainstorm › 📟 Sensor tasks › Rule",
+        "title": "Brainstorm › Sensor tasks › Rule",
         "description": "The task is created once when the condition is met. Ticked off by hand, it only comes back after the sensor has been back to normal.",
         "data": {
           "sensor_entity": "Entity",
@@ -642,7 +642,7 @@
       },
       "battery_notes": {
         "title": "Brainstorm › 🔗 Connected integrations › 🔋 Battery Notes",
-        "description": "Uses what Battery Notes knows about the batteries of your devices for the tasks of *🔋 Batteries*: a task names the battery type, such as *Replace the battery: Hallway sensor (8 %) · 2× AA*, and ticking it off tells Battery Notes the battery was replaced. Only works while *🔋 Batteries* is switched on.",
+        "description": "Uses what Battery Notes knows about the batteries of your devices for the tasks of *Batteries*: a task names the battery type, such as *Replace the battery: Hallway sensor (8 %) · 2× AA*, and ticking it off tells Battery Notes the battery was replaced. Only works while *Batteries* is switched on.",
         "data": {
           "battery_notes_enabled": "Show the battery type",
           "battery_notes_replaced": "Report the battery as replaced",
@@ -729,7 +729,7 @@
         }
       },
       "sentence_test": {
-        "title": "Brainstorm › 🧪 Sentence tester",
+        "title": "Brainstorm › Sentence tester",
         "description": "Type a sentence the way you would say it to Alexa, Assist or Siri. Brainstorm shows what it would make of it: title, category and why, date, priority, person. Nothing is saved.\n\n{result}",
         "data": {
           "sentence": "Sentence",

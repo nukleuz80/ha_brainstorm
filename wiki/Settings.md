@@ -167,7 +167,7 @@ Brainstorm uses an AI task entity of Home Assistant, such as Google Gemini, Open
 | Improve spoken entries with AI | Each spoken entry is stored first and improved a few seconds later. The result is dropped if it adds words or changes a negation. The text is sent to the provider of the chosen AI. |
 | Shorten the briefing and review with AI | The morning briefing and weekly review of the reminders are shortened. Your ideas are sent to the provider of the chosen AI. |
 
-### Brainstorm › 🧪 Sentence tester
+### Brainstorm › Sentence tester
 
 _Since v1.19.0._
 
@@ -256,7 +256,7 @@ Since v1.13.16. Shown once [Waste Collection Schedule](https://github.com/mampfe
 
 ### Brainstorm › 🔗 Connected integrations › 🔋 Battery Notes
 
-Since v1.13.18. Shown when [Battery Notes](https://github.com/andrew-codechimp/HA-Battery-Notes) is installed, and only works together with *🔋 Batteries*.
+Since v1.13.18. Shown when [Battery Notes](https://github.com/andrew-codechimp/HA-Battery-Notes) is installed, and only works together with *Batteries*.
 
 | Field | What it does |
 | :--- | :--- |
@@ -372,9 +372,9 @@ Keeps single Echos silent for Brainstorm at set times, such as nights in the chi
 
 - **Other Echos keep speaking:** A reminder still goes to the Echos of the reminder that are not locked.
 - **Phone as fallback:** If no Echo is left, the reminder goes to the phone right away instead of after the waiting time.
-- **Test:** *🧪 Test channels now* speaks in a lock time too, as you start it yourself.
+- **Test:** *Test channels now* speaks in a lock time too, as you start it yourself.
 
-### Brainstorm › 🔋 Batteries
+### Brainstorm › Batteries
 
 Turns low batteries into tasks (v1.7.5). Every battery sensor counts: a level in percent, or a sensor that only reports a weak battery.
 
@@ -393,7 +393,7 @@ Turns low batteries into tasks (v1.7.5). Every battery sensor counts: a level in
 - **Ticked off by hand** before the battery is replaced, the task does not come back. The next weak battery makes a new one.
 - **After a restart**, all batteries are checked once.
 
-### Brainstorm › 📟 Sensor tasks
+### Brainstorm › Sensor tasks
 
 Turns a sensor value into a task (v1.11.10), such as *Change the water filter* after 300 operating hours, *Water the monstera* when soil moisture falls below 20 %, or *Empty the washing machine* once it has finished. The first page lists your rules:
 
@@ -469,11 +469,11 @@ Hiding deletes nothing: markers, progress or frames that are set stay visible on
 | **Reminders ➔ People** | Alex's reminders go to Alex's phone and the office Echo |
 | **Reminders ➔ Calendar & Alexa Reminders** | put due dates into `calendar.family`, also set a real Alexa reminder |
 | **Reminders ➔ Lock times per Echo** | kids' room Echo silent 19–7, optionally with Do Not Disturb |
-| **Reminders ➔ 🧪 Test channels now** | test announcement and test push |
+| **Reminders ➔ Test channels now** | test announcement and test push |
 | **AI** | let an AI service clean up spoken text |
 | **Privacy & Users** | everyone sees only their own notes, share lists on purpose |
 | **Assign Echos & Apps to People** | the bedroom Echo belongs to Anna |
 | **🛒 Bring!** | Bring lists as main notes, items as subtasks, both ways (only with the Bring integration) |
-| **🔋 Batteries** | below 20 % the task *Change battery: hallway motion sensor (18 %)*, completes itself after the change |
-| **📟 Sensor tasks** | from 300 operating hours the task *Change the water filter*, completes itself once the counter is reset |
-| **🧹 Delete done entries** | remove done notes after 30 days automatically |
+| **Batteries** | below 20 % the task *Change battery: hallway motion sensor (18 %)*, completes itself after the change |
+| **Sensor tasks** | from 300 operating hours the task *Change the water filter*, completes itself once the counter is reset |
+| **Delete done entries** | remove done notes after 30 days automatically |

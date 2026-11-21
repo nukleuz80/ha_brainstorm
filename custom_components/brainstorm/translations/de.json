@@ -49,12 +49,12 @@
           "alexa_skill": "Alexa-Spracheingabe & Skill",
           "reminders": "Erinnerungen & Benachrichtigungen",
           "ai": "KI",
-          "cleanup": "🧹 Erledigte Einträge löschen",
-          "close": "✅ Fertig",
+          "cleanup": "Erledigte Einträge löschen",
+          "close": "Fertig",
           "privacy": "Privatsphäre & Benutzer",
           "privacy_voice": "Echos & Apps Personen zuordnen",
           "integrations": "🔗 Verbundene Integrationen",
-          "sentence_test": "🧪 Satz-Tester"
+          "sentence_test": "Satz-Tester"
         },
         "menu_option_descriptions": {
           "integrations": "{integrations_status}"
@@ -191,9 +191,9 @@
           "reminder_persons": "Personen",
           "reminder_extras": "Kalender & Alexa-Erinnerungen",
           "reminder_locks": "Sperrzeiten pro Echo",
-          "reminder_test": "🧪 Kanäle jetzt testen",
-          "init": "⬅️ Zurück",
-          "close": "✅ Fertig"
+          "reminder_test": "Kanäle jetzt testen",
+          "init": "Zurück",
+          "close": "Fertig"
         }
       },
       "reminder_general": {
@@ -495,7 +495,7 @@
         }
       },
       "battery": {
-        "title": "Brainstorm › 🔋 Batterien",
+        "title": "Brainstorm › Batterien",
         "description": "Legt pro Gerät eine Aufgabe an, sobald seine Batterie schwach wird: unter der Schwelle, oder wenn ein Sensor eine schwache Batterie meldet. Ist die Batterie gewechselt, hakt sich die Aufgabe selbst ab.",
         "data": {
           "battery_enabled": "Batterie-Aufgaben anlegen",
@@ -515,7 +515,7 @@
         }
       },
       "sensor_rules": {
-        "title": "Brainstorm › 📟 Sensor-Aufgaben",
+        "title": "Brainstorm › Sensor-Aufgaben",
         "description": "Legt eine Aufgabe an, sobald ein Sensor einen Wert erreicht, etwa ein Filter nach 300 Betriebsstunden, eine zu trockene Pflanze oder eine fertige Waschmaschine. Ist der Sensor wieder im Normalbereich, hakt sich die Aufgabe selbst ab.\n\n{rules}\n\n{notice}",
         "data": {
           "sensor_rule": "Regel",
@@ -527,7 +527,7 @@
         }
       },
       "sensor_rule_edit": {
-        "title": "Brainstorm › 📟 Sensor-Aufgaben › Regel",
+        "title": "Brainstorm › Sensor-Aufgaben › Regel",
         "description": "Die Aufgabe entsteht einmal, sobald die Bedingung erfüllt ist. Von Hand abgehakt kommt sie erst wieder, wenn der Sensor zwischendurch im Normalbereich war.",
         "data": {
           "sensor_entity": "Entität",
@@ -642,7 +642,7 @@
       },
       "battery_notes": {
         "title": "Brainstorm › 🔗 Verbundene Integrationen › 🔋 Battery Notes",
-        "description": "Nutzt, was Battery Notes über die Batterien deiner Geräte weiß, für die Aufgaben von *🔋 Batterien*: Eine Aufgabe nennt den Batterietyp, etwa *Batterie wechseln: Flur-Sensor (8 %) · 2× AA*, und das Abhaken meldet Battery Notes den Batteriewechsel. Wirkt nur, solange *🔋 Batterien* eingeschaltet ist.",
+        "description": "Nutzt, was Battery Notes über die Batterien deiner Geräte weiß, für die Aufgaben von *Batterien*: Eine Aufgabe nennt den Batterietyp, etwa *Batterie wechseln: Flur-Sensor (8 %) · 2× AA*, und das Abhaken meldet Battery Notes den Batteriewechsel. Wirkt nur, solange *Batterien* eingeschaltet ist.",
         "data": {
           "battery_notes_enabled": "Batterietyp anzeigen",
           "battery_notes_replaced": "Batteriewechsel melden",
@@ -729,7 +729,7 @@
         }
       },
       "sentence_test": {
-        "title": "Brainstorm › 🧪 Satz-Tester",
+        "title": "Brainstorm › Satz-Tester",
         "description": "Tippe einen Satz so, wie du ihn Alexa, Assist oder Siri sagen würdest. Brainstorm zeigt, was daraus würde: Titel, Kategorie und warum, Termin, Priorität, Person. Gespeichert wird nichts.\n\n{result}",
         "data": {
           "sentence": "Satz",

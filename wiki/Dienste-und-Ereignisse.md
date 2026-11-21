@@ -195,7 +195,7 @@ Erzeugt einen flüssigen, gesprochenen Ansagetext für Alexa oder Assist über a
 
 ▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.test_sentence)
 
-Zeigt, was Brainstorm aus einem Satz machen würde, ohne etwas zu speichern. Die Antwort enthält `text`, `category`, `category_reason` (warum diese Kategorie), `priority`, `due`, `tags`, `assignee` und `zone`. Dasselbe gibt es zum Klicken unter **Einstellungen › 🧪 Satz-Tester**.
+Zeigt, was Brainstorm aus einem Satz machen würde, ohne etwas zu speichern. Die Antwort enthält `text`, `category`, `category_reason` (warum diese Kategorie), `priority`, `due`, `tags`, `assignee` und `zone`. Dasselbe gibt es zum Klicken unter **Einstellungen › Satz-Tester**.
 
 | Feld | Pflicht | Bedeutung |
 | :--- | :--- | :--- |

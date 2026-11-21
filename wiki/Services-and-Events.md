@@ -195,7 +195,7 @@ Returns a spoken text about all categories or one of them as a response, for Ale
 
 ▶️ [Try it in Home Assistant](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.test_sentence)
 
-Shows what Brainstorm would make of a sentence, without saving anything. The response holds `text`, `category`, `category_reason` (why this category), `priority`, `due`, `tags`, `assignee` and `zone`. The same is available to click under **Settings › 🧪 Sentence tester**.
+Shows what Brainstorm would make of a sentence, without saving anything. The response holds `text`, `category`, `category_reason` (why this category), `priority`, `due`, `tags`, `assignee` and `zone`. The same is available to click under **Settings › Sentence tester**.
 
 | Field | Required | Meaning |
 | :--- | :--- | :--- |

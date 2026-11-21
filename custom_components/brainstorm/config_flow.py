@@ -355,17 +355,17 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "category_style": "Kategorie-Design (Farbe & Icon)",
                 "general": "Allgemeine Einstellungen & Export",
                 "alexa_skill": "Alexa-Spracheingabe & Skill",
-                "sentence_test": "🧪 Satz-Tester",
+                "sentence_test": "Satz-Tester",
                 "reminders": "Erinnerungen & Benachrichtigungen",
                 "ai": "KI",
-                "cleanup": "🧹 Erledigte Einträge löschen",
+                "cleanup": "Erledigte Einträge löschen",
                 "todo_sync": "To-do-Listen koppeln",
                 "integrations": "🔗 Verbundene Integrationen",
-                "battery": "🔋 Batterien",
-                "sensor_rules": "📟 Sensor-Aufgaben",
+                "battery": "Batterien",
+                "sensor_rules": "Sensor-Aufgaben",
                 "privacy": "Privatsphäre & Benutzer",
                 "privacy_voice": "Echos & Apps Personen zuordnen",
-                "close": "✅ Fertig",
+                "close": "Fertig",
             },
             "reminders": {
                 "reminder_general": "Ein/Aus & Kanäle",
@@ -375,9 +375,9 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "reminder_persons": "Personen",
                 "reminder_extras": "Kalender & Alexa-Erinnerungen",
                 "reminder_locks": "Sperrzeiten pro Echo",
-                "reminder_test": "🧪 Kanäle jetzt testen",
-                "init": "⬅️ Zurück",
-                "close": "✅ Fertig",
+                "reminder_test": "Kanäle jetzt testen",
+                "init": "Zurück",
+                "close": "Fertig",
             },
             "integrations": {
                 "bring": "🛒 Bring!",
@@ -403,17 +403,17 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "category_style": "Category Design (Color & Icon)",
                 "general": "General Settings & Export",
                 "alexa_skill": "Alexa Voice Input & Skill",
-                "sentence_test": "🧪 Sentence tester",
+                "sentence_test": "Sentence tester",
                 "reminders": "Reminders & Notifications",
                 "ai": "AI",
-                "cleanup": "🧹 Delete done entries",
+                "cleanup": "Delete done entries",
                 "todo_sync": "Link To-do Lists",
                 "integrations": "🔗 Connected integrations",
-                "battery": "🔋 Batteries",
-                "sensor_rules": "📟 Sensor tasks",
+                "battery": "Batteries",
+                "sensor_rules": "Sensor tasks",
                 "privacy": "Privacy & Users",
                 "privacy_voice": "Assign Echos & Apps to People",
-                "close": "✅ Done",
+                "close": "Done",
             },
             "reminders": {
                 "reminder_general": "On/Off & Channels",
@@ -423,9 +423,9 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "reminder_persons": "People",
                 "reminder_extras": "Calendar & Alexa Reminders",
                 "reminder_locks": "Lock times per Echo",
-                "reminder_test": "🧪 Test channels now",
-                "init": "⬅️ Back",
-                "close": "✅ Done",
+                "reminder_test": "Test channels now",
+                "init": "Back",
+                "close": "Done",
             },
             "integrations": {
                 "bring": "🛒 Bring!",
@@ -555,7 +555,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
         if options.get(CONF_BATTERY_ENABLED) and options.get(CONF_BATTERY_NOTES, True):
             notes = on
         elif options.get(CONF_BATTERY_NOTES, True):
-            notes = self._text("aus · 🔋 Batterien ist aus", "off · 🔋 Batteries is off")
+            notes = self._text("aus · Batterien ist aus", "off · Batteries is off")
         whatsapp = off
         if options.get(CONF_WHATSAPP_ENABLED):
             count = len(options.get(CONF_WHATSAPP_SENDERS) or {})
