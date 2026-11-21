@@ -4,8 +4,8 @@ Piper reads text in ``[[ ]]`` as raw phonemes. The German voice otherwise reads
 English words by German rules, e.g. "iPhone" as "ih-fohne" or "JSON" as
 "jotzohn". The phonemes stay in the German inventory (no ɹ, æ, θ) so the voice
 renders them cleanly, and each entry was checked by transcribing the result
-with Whisper (``saytest.py``). "Brainstorm" uses the German loanword sound
-"Brähnstorm", which German listeners recognise best.
+with Whisper (``saytest.py``). "Brainstorm" is spoken the English way
+(bɹˈeɪnstɔɹm, Jan's choice on 21.11.2026), the one exception to the inventory.
 
 build.py moves punctuation after a block into it, Piper would drop it otherwise.
 
@@ -16,21 +16,21 @@ from __future__ import annotations
 # Longer phrases first, build.py replaces them in this order
 _TERMS: dict[str, str] = {
     "Home Assistant Companion-App": "hˈoʊm asˈɪstənt kɔmpˈɛnjən ˈɛp",
-    "brainstorm reminder due": "brˈɛːnstɔɾm rɪmˈaɪndɐ djˈuː",
+    "brainstorm reminder due": "bɹˈeɪnstɔɹm rɪmˈaɪndɐ djˈuː",
     "Companion-App": "kɔmpˈɛnjən ˈɛp",
     "Home Assistant": "hˈoʊm asˈɪstənt",
     "Claude Code": "klˈɔːd kˈoʊd",
     "Skill Invocation Name": "skˈɪl ɪnvoʊkˈeːʃən nˈeːm",
     "Presentation Language": "prɛzəntˈeːʃən lˈɛŋɡwɪtʃ",
-    "custom brainstorm card": "kˈastəm brˈɛːnstɔɾm kˈaːɐt",
-    "ha underscore brainstorm": "hˈaː ˈaː ˈandɐskɔːɐ brˈɛːnstɔɾm",
+    "custom brainstorm card": "kˈastəm bɹˈeɪnstɔɹm kˈaːɐt",
+    "ha underscore brainstorm": "hˈaː ˈaː ˈandɐskɔːɐ bɹˈeɪnstɔɹm",
     "Media Player": "mˈiːdiːa plˈeːɐ",
     "github punkt com": "ɡˈɪt hˈab pˈʊŋkt kˈɔm",
     "Start from Scratch": "stˈaːɐt frɔm skrˈɛtʃ",
     "Interaction Model": "ɪntɐrˈɛkʃən mˈɔdəl",
     "lambda function": "lˈambda fˈaŋkʃən",
-    "Brainstorm Card": "brˈɛːnstɔɾm kˈaːɐt",
-    "Brainstorm Hub": "brˈɛːnstɔɾm hˈab",
+    "Brainstorm Card": "bɹˈeɪnstɔɹm kˈaːɐt",
+    "Brainstorm Hub": "bɹˈeɪnstɔɹm hˈab",
     "Google Tasks": "ɡˈuːɡəl tˈɛsks",
     "Open in HACS": "ˈoʊpən ɪn hˈaks",
     "Create Skill": "kriːˈeɪt skˈɪl",
@@ -73,8 +73,8 @@ _TERMS: dict[str, str] = {
     "Map-Tabs": "mˈɛp tˈɛps",
     "Permissions": "pœːmˈɪʃəns",
     "Reminders": "rɪmˈaɪndɐs",
-    "Brainstorm": "brˈɛːnstɔɾm",
-    "brainstorm": "brˈɛːnstɔɾm",
+    "Brainstorm": "bɹˈeɪnstɔɹm",
+    "brainstorm": "bɹˈeɪnstɔɹm",
     "Pushover": "pˈʊʃoʊvɐ",
     "examples": "ɪkzˈɛmpəls",
     "Backlog": "bˈɛklɔk",

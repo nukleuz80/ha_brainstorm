@@ -1,7 +1,7 @@
 """Storyboard: Brainstorm Hub teaser, about 45 seconds (English)."""
 from __future__ import annotations
 
-from pron import SPOKEN  # noqa: F401  (used by build.py)
+from script_features_en import SPOKEN  # noqa: F401  (used by build.py)
 
 TITLE = "Brainstorm Hub in 45 seconds"
 OUT_NAME = "brainstorm-teaser-en"
