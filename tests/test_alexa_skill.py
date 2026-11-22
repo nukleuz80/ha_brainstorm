@@ -1419,3 +1419,20 @@ async def test_captured_device_command_is_not_stored(
         await _post(hass_client_no_auth, entry, _capture_payload("notiere küche schrank an"))
     await hass.async_block_till_done()
     assert len(entry.runtime_data.ideas) == 1
+
+
+async def test_skill_says_when_a_note_is_already_there(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_client_no_auth: ClientSessionGenerator,
+) -> None:
+    """A note captured twice is not stored again, Alexa says where it is."""
+    entry = await _setup_skill(hass, setup_entry)
+    payload = {"application_id": SKILL_ID, "text": "wir brauchen neue blumenerde"}
+    await _post(hass_client_no_auth, entry, payload)
+
+    response = await _post(hass_client_no_auth, entry, payload)
+    speech = (await response.json())["speech"]
+    assert "steht schon unter" in speech
+    ideas = [i for i in entry.runtime_data.ideas if i["source"] == "alexa_skill"]
+    assert len(ideas) == 1

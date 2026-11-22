@@ -1,4 +1,4 @@
-import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, bringBadge, bringSentText, unblockedText, canSendToBring, renderBringSend, canHandOver, canHandOverProject, canMakeReward, choreopsBadge, choreopsRewardBadge, renderChoreHandover, renderChoreProject, renderChoreReward, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, timeBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t, linkedListMark, linkedListOf, linkedListSign, linkedListText, batteriesBringText, batteriesNeeded, calendarBadge, calendarOptions, readCalendar, renderStatistics } from "./brainstorm-i18n.js?v=1.26.0";
+import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, bringBadge, bringSentText, unblockedText, canSendToBring, renderBringSend, canHandOver, canHandOverProject, canMakeReward, choreopsBadge, choreopsRewardBadge, renderChoreHandover, renderChoreProject, renderChoreReward, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, timeBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t, linkedListMark, linkedListOf, linkedListSign, linkedListText, batteriesBringText, batteriesNeeded, calendarBadge, calendarOptions, readCalendar, renderStatistics } from "./brainstorm-i18n.js?v=1.27.0";
 
 // Same check as isSample() in brainstorm-onboarding.js, without loading it
 const hasSampleTag = (idea) => Array.isArray(idea && idea.tags)
@@ -7,7 +7,7 @@ const hasSampleTag = (idea) => Array.isArray(idea && idea.tags)
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.26.0 - Lernende Kategorien
+ * Version 1.27.0 - Doppelte Einträge erkennen
  */
 // The bulb lies next to this file, wherever Home Assistant serves it from
 const BULB_URL = new URL("./brainstorm-bulb.svg", import.meta.url).href;
@@ -1347,7 +1347,17 @@ class BrainstormCard extends HTMLElement {
       if (category) {
         payload.category = category;
       }
-      await this._hass.callService("brainstorm", "add_idea", payload);
+      const result = await this._hass.callWS({
+        type: "call_service",
+        domain: "brainstorm",
+        service: "add_idea",
+        service_data: payload,
+        return_response: true,
+      });
+      const idea = result && result.response && result.response.idea;
+      if (idea && idea.duplicate) {
+        this._notify(t("„{text}“ steht schon in {category} und wurde nach oben geholt.", { text: idea.text, category: idea.category }));
+      }
     } catch (e) {
       console.error("Failed to add brainstorm idea", e);
     } finally {
@@ -6611,7 +6621,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.26.0 ",
+  "%c BRAINSTORM-CARD %c v1.27.0 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

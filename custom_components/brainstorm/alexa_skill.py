@@ -937,6 +937,14 @@ class AlexaSkill:
             return self._reminder_answer(request, idea, pack)
         if no_time_found:
             return self._speech(pack.msg("skill_saved_no_time"))
+        if idea.get("duplicate"):
+            return self._speech(
+                pack.msg(
+                    "skill_already_there",
+                    text=idea.get(ATTR_TEXT, ""),
+                    category=pack.spoken_category(idea.get(ATTR_CATEGORY) or ""),
+                )
+            )
         # A date found in the sentence leads to a reminder, so it has to be said
         due = dt_util.parse_datetime(idea.get(ATTR_DUE) or "")
         when = (

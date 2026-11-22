@@ -167,6 +167,7 @@ from .const import (
     CONF_SMART_FORMATTING,
     CONF_SPLIT_ITEMS,
     CONF_LEARN_CATEGORIES,
+    CONF_MERGE_DUPLICATES,
     CONF_VOICE_DUE,
     DEFAULT_HIDE_EMPTY_CATEGORIES,
     DEFAULT_MARKDOWN_PATH,
@@ -418,6 +419,7 @@ class BrainstormStore:
         )
         self._split_items = self.options.get(CONF_SPLIT_ITEMS, True)
         self._learn_categories = self.options.get(CONF_LEARN_CATEGORIES, True)
+        self._merge_duplicates = self.options.get(CONF_MERGE_DUPLICATES, True)
         self._hide_empty_categories = self.options.get(
             CONF_HIDE_EMPTY_CATEGORIES, DEFAULT_HIDE_EMPTY_CATEGORIES
         )
@@ -2154,6 +2156,28 @@ class BrainstormStore:
             items = self.items_of(clean_text, resolved_cat, pack.code, list_named)
             clean_text = items[0]
 
+        # "Milch" already on the list is not added again, it moves to the top
+        if (
+            self._merge_duplicates
+            and not verbatim
+            and not parent_id
+            and due is None
+            and trigger is None
+            and not description
+        ):
+            user_id = owner or (context.user_id if context else None)
+            twins = [self.find_twin(item, resolved_cat, user_id) for item in items]
+            fresh = [item for item, twin in zip(items, twins) if twin is None]
+            if not fresh:
+                return await self._async_bring_up_twin(
+                    next(t for t in twins if t is not None), context
+                )
+            for twin in twins:
+                if twin is not None:
+                    await self._async_bring_up_twin(twin, context)
+            items = fresh
+            clean_text = items[0]
+
         all_tags = list(set((tags or []) + parsed_tags))
         now_iso = dt_util.now().isoformat()
         idea_id = uuid.uuid4().hex[:8]
@@ -2261,6 +2285,49 @@ class BrainstormStore:
                 verbatim=True,
             )
         return idea
+
+    def find_twin(
+        self, text: str, category: str, user_id: str | None
+    ) -> dict[str, Any] | None:
+        """Return an open note of the category with the same text, if any.
+
+        Case, punctuation, spaces and tags do not count, so "Milch" and
+        "milch." are the same. A subtask, or a note the user cannot change,
+        is never a twin.
+        """
+        wanted = _twin_key(text)
+        if not wanted:
+            return None
+        return next(
+            (
+                idea
+                for idea in self._ideas.values()
+                if idea.get(ATTR_STATUS) == "active"
+                and idea.get(ATTR_CATEGORY) == category
+                and not idea.get(ATTR_PARENT_ID)
+                and _twin_key(idea.get(ATTR_TEXT) or "") == wanted
+                and self.can_edit(idea, user_id)
+            ),
+            None,
+        )
+
+    async def _async_bring_up_twin(
+        self, twin: dict[str, Any], context: Context | None
+    ) -> dict[str, Any]:
+        """Move a note that was captured again to the top instead of doubling it."""
+        ordered = [
+            i.get(ATTR_ORDER) for i in self._ideas.values() if i.get(ATTR_ORDER) is not None
+        ]
+        twin[ATTR_ORDER] = min(ordered, default=0) - 1
+        twin[ATTR_UPDATED_AT] = dt_util.now().isoformat()
+        await self.async_save()
+        self._notify_listeners(context=context or Context())
+        _LOGGER.info(
+            "Brainstorm idea [%s] captured again in '%s', not added twice",
+            twin[ATTR_ID],
+            twin.get(ATTR_CATEGORY),
+        )
+        return {**twin, "duplicate": True}
 
     def _creates_parent_cycle(self, idea_id: str, parent_id: str) -> bool:
         """Return whether making parent_id the parent of idea_id creates a cycle."""
@@ -5197,6 +5264,12 @@ def _clean_rotation(value: Any) -> dict[str, Any] | None:
     if len(people) < 2:
         return None
     return {"mode": value["mode"], "people": people[:ROTATION_MAX_PEOPLE]}
+
+
+def _twin_key(text: str) -> str:
+    """Return the text of a note the way two notes are compared for twins."""
+    without_tags = re.sub(r"#\w+", " ", text.casefold())
+    return " ".join(re.findall(r"\w+", without_tags))
 
 
 def _clean_short_text(value: Any, limit: int) -> str | None:

@@ -1742,6 +1742,7 @@ MESSAGES: dict[str, str] = {
     "skill_save_failed": "Das konnte ich nicht speichern.",
     "skill_saved_no_time": "Gespeichert, aber ohne Erinnerung. Ich habe keinen Zeitpunkt verstanden.",
     "skill_saved": "Gespeichert{when}.",
+    "skill_already_there": "{text} steht schon unter {category}, ich habe es nach oben geholt.",
     "skill_saved_in": "Gespeichert unter {category}{when}.",
     "skill_due": ", Termin {when}",
     "skill_you": "dich",

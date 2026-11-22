@@ -955,6 +955,7 @@ const DICTIONARIES = {
     "Überspringen": "Skip",
     "Dieser Teil der Karte konnte nicht geladen werden. Bitte lade die Seite neu.": "This part of the card did not load. Please reload the page.",
     "🍳 Rezept „{title}“ mit {count} Zutaten angelegt.": "🍳 Recipe “{title}” added with {count} ingredients.",
+    "„{text}“ steht schon in {category} und wurde nach oben geholt.": "“{text}” is already in {category} and was moved to the top.",
   },
 };
 

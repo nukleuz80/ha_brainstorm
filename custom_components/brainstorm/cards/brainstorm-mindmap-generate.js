@@ -6,7 +6,7 @@
  * methods are copied onto the card, so `this` is the card.
  */
 
-import { t } from "./brainstorm-i18n.js?v=1.26.0";
+import { t } from "./brainstorm-i18n.js?v=1.27.0";
 
 export default class MindmapPart {
   // Let the AI turn a topic, a pasted text, a web page or a PDF into notes, picked in a preview

@@ -146,6 +146,7 @@ from .const import (
     CONF_TODO_SYNC,
     CONF_SPLIT_ITEMS,
     CONF_LEARN_CATEGORIES,
+    CONF_MERGE_DUPLICATES,
     CONF_VOICE_DUE,
     CONF_GLOSSARY,
     CONF_VOICE_MODE,
@@ -1446,6 +1447,10 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 vol.Optional(
                     CONF_LEARN_CATEGORIES,
                     default=options.get(CONF_LEARN_CATEGORIES, True),
+                ): selector.BooleanSelector(),
+                vol.Optional(
+                    CONF_MERGE_DUPLICATES,
+                    default=options.get(CONF_MERGE_DUPLICATES, True),
                 ): selector.BooleanSelector(),
                 vol.Optional(
                     CONF_GLOSSARY, description=_suggested(options, CONF_GLOSSARY)
