@@ -93,6 +93,8 @@ class LanguagePack:
     item_separators: tuple[str, ...] = field(default=())
     # Pairs that are one item although they contain such a word
     item_pairs: tuple[str, ...] = field(default=())
+    # Frequent words that say nothing about a category, never learned from a move
+    common_words: frozenset[str] = field(default=frozenset())
 
     def msg(self, key: str, **values: object) -> str:
         """Return a text of this language with its values filled in."""

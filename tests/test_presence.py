@@ -9,7 +9,7 @@ from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.typing import WebSocketGenerator
 
 from custom_components.brainstorm.const import STORAGE_KEY
-from custom_components.brainstorm.presence import get_presence
+from custom_components.brainstorm.presence import PRESENCE_MAX, Presence, get_presence
 
 from .conftest import SetupEntry
 
@@ -88,3 +88,45 @@ async def test_presence_follows_open_maps(
     await entry.runtime_data.async_save()
     stored = str(hass_storage[STORAGE_KEY])
     assert "fridamap" not in stored and "olafmap1" not in stored
+
+
+def test_presence_registry_in_memory() -> None:
+    """Joining, updating and leaving, without a Home Assistant around."""
+    presence = Presence()
+    heard: list[list[dict[str, Any]]] = []
+    assert presence.join((1, "a"), "u1", "Olaf", "Alltag", heard.append)
+    assert presence.knows((1, "a"))
+    assert not presence.knows((2, "b"))
+
+    # The same again tells nobody, unknown maps cannot update
+    heard.clear()
+    assert presence.update((1, "a"), "Alltag", None)
+    assert heard == []
+    assert not presence.update((2, "b"), "Alltag", None)
+
+    assert presence.update((1, "a"), "Alltag", "idea1")
+    assert heard[-1][0]["editing"] == "idea1"
+
+    # Entries handed out are copies
+    presence.entries[0]["name"] = "Frida"
+    assert presence.entries[0]["name"] == "Olaf"
+
+    presence.leave((1, "a"))
+    assert presence.entries == []
+    # Leaving twice is harmless and tells nobody
+    presence.leave((1, "a"))
+
+
+def test_presence_has_a_limit() -> None:
+    """More open maps than PRESENCE_MAX are refused, known ones may rejoin."""
+    presence = Presence()
+    for number in range(PRESENCE_MAX):
+        assert presence.join((number, "m"), "u", "N", None, lambda _p: None)
+    assert not presence.join((PRESENCE_MAX, "m"), "u", "N", None, lambda _p: None)
+    assert presence.join((0, "m"), "u", "N", "Alltag", lambda _p: None)
+    assert len(presence.entries) == PRESENCE_MAX
+
+
+async def test_one_registry_per_home_assistant(hass: HomeAssistant) -> None:
+    """get_presence hands out the same registry every time."""
+    assert get_presence(hass) is get_presence(hass)

@@ -145,3 +145,90 @@ async def test_track_time_service(
     # Stop on a note without a timer changes nothing
     result = await _track(hass, first, hass_admin_user, "stop")
     assert not result["running"]
+
+
+def test_broken_log_entries_are_skipped() -> None:
+    """Short, unreadable or backwards entries of the log count nothing."""
+    idea: dict[str, Any] = {
+        "id": "a",
+        "status": "active",
+        "time_log": [
+            "nonsense",
+            [NOW.isoformat()],
+            ["gestern", NOW.isoformat()],
+            [NOW.isoformat(), (NOW - HOUR).isoformat()],
+            [(NOW - HOUR).isoformat(), NOW.isoformat(), "u1"],
+        ],
+    }
+    assert timetrack.tracked_seconds(idea, NOW) == 3600
+    # Only the part after "since" counts
+    assert timetrack.tracked_seconds(idea, NOW, since=NOW - HOUR / 2) == 1800
+
+
+def test_a_forgotten_timer_counts_at_most_twelve_hours() -> None:
+    """A timer left running stops counting after TIMER_MAX, also when stopped."""
+    idea: dict[str, Any] = {"id": "a", "status": "active"}
+    timetrack.start_timer(idea, NOW - 20 * HOUR, None)
+    assert timetrack.tracked_seconds(idea, NOW) == 12 * 3600
+    assert timetrack.stop_timer(idea, NOW)
+    assert timetrack.tracked_seconds(idea, NOW) == 12 * 3600
+    assert not timetrack.stop_timer(idea, NOW)
+    assert timetrack.running_since({"timer": "broken"}) is None
+
+
+def test_the_log_keeps_the_newest_entries() -> None:
+    """The log never grows beyond TIME_LOG_MAX entries."""
+    idea: dict[str, Any] = {
+        "id": "a",
+        "time_log": [[None, None]] * timetrack.TIME_LOG_MAX,
+    }
+    timetrack.start_timer(idea, NOW - HOUR, "u1")
+    timetrack.stop_timer(idea, NOW)
+    assert len(idea["time_log"]) == timetrack.TIME_LOG_MAX
+    assert idea["time_log"][-1][2] == "u1"
+
+
+def test_summary_lists_the_top_notes() -> None:
+    """The summary keeps the busiest notes, sorted, and counts running timers."""
+    ideas = [
+        {
+            "id": f"n{number}",
+            "text": f"Notiz {number}",
+            "category": "Arbeit" if number % 2 else "Alltag",
+            "time_log": [[(NOW - (number + 1) * HOUR).isoformat(), NOW.isoformat()]],
+        }
+        for number in range(timetrack.TOP_NOTES + 2)
+    ]
+    ideas.append({"id": "idle", "text": "Nichts", "category": "Alltag"})
+    timetrack.start_timer(ideas[0], NOW - HOUR, None)
+    summary = timetrack.time_summary(ideas, NOW, None)
+    assert len(summary["notes"]) == timetrack.TOP_NOTES
+    assert summary["notes"][0]["id"] == f"n{timetrack.TOP_NOTES + 1}"
+    assert summary["running"] == 1
+    assert {c["category"] for c in summary["categories"]} == {"Arbeit", "Alltag"}
+    assert summary["total_seconds"] == sum(c["seconds"] for c in summary["categories"])
+
+
+def test_gantt_skips_what_does_not_fit() -> None:
+    """Archived notes, notes without time and bars that ended earlier stay out."""
+    week_ago = NOW - timedelta(days=7)
+    ideas = [
+        {"id": "archived", "status": "archived", "due": NOW.isoformat()},
+        {"id": "nothing", "status": "active"},
+        {
+            "id": "old",
+            "status": "completed",
+            "created_at": (week_ago - timedelta(days=3)).isoformat(),
+            "completed_at": (week_ago - timedelta(days=1)).isoformat(),
+            "due": (week_ago - timedelta(days=2)).isoformat(),
+        },
+        {
+            "id": "backwards",
+            "status": "active",
+            "created_at": NOW.isoformat(),
+            "due": (NOW - timedelta(days=1)).isoformat(),
+        },
+    ]
+    rows = timetrack.gantt_rows(ideas, NOW, week_ago)
+    assert [row["id"] for row in rows] == ["backwards"]
+    assert rows[0]["start"] < rows[0]["end"]

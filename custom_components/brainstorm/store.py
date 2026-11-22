@@ -155,6 +155,7 @@ from .const import (
     SENTENCE_TEST_AUTO,
     SENTENCE_TEST_MAX_LENGTH,
     INTERCEPTED_MAX,
+    LEARNED_WORDS_MAX,
     SENTENCE_TEST_MODES,
     SENTENCE_TEST_REMINDER,
     SENTENCE_TEST_TYPED,
@@ -165,6 +166,7 @@ from .const import (
     CONF_REMINDERS_ENABLED,
     CONF_SMART_FORMATTING,
     CONF_SPLIT_ITEMS,
+    CONF_LEARN_CATEGORIES,
     CONF_VOICE_DUE,
     DEFAULT_HIDE_EMPTY_CATEGORIES,
     DEFAULT_MARKDOWN_PATH,
@@ -395,6 +397,8 @@ class BrainstormStore:
         self._deleted: dict[str, dict[str, Any]] = {}
         # Device commands the Alexa skill did not store, newest last
         self._intercepted: list[dict[str, Any]] = []
+        # Words of notes moved by hand and the category they belong to, oldest first
+        self._learned: dict[str, str] = {}
         self._categories: list[str] = list(self._pack().default_categories)
         self._category_icons: dict[str, str] = {}
         self._category_colors: dict[str, str] = {}
@@ -413,6 +417,7 @@ class BrainstormStore:
             CONF_REMINDERS_ENABLED, True
         )
         self._split_items = self.options.get(CONF_SPLIT_ITEMS, True)
+        self._learn_categories = self.options.get(CONF_LEARN_CATEGORIES, True)
         self._hide_empty_categories = self.options.get(
             CONF_HIDE_EMPTY_CATEGORIES, DEFAULT_HIDE_EMPTY_CATEGORIES
         )
@@ -943,6 +948,13 @@ class BrainstormStore:
                 for entry in data.get("intercepted") or []
                 if isinstance(entry, dict) and entry.get(ATTR_TEXT)
             ][-INTERCEPTED_MAX:]
+            # Turning learning off forgets what was learned
+            if self._learn_categories:
+                self._learned = {
+                    word: cat
+                    for word, cat in (data.get("learned_words") or {}).items()
+                    if isinstance(word, str) and isinstance(cat, str)
+                }
             self._purge_expired_trash()
             for category in list(self._rounds):
                 self._schedule_round_end(category)
@@ -969,6 +981,7 @@ class BrainstormStore:
             "ideas": list(self._ideas.values()),
             "trash": list(self._deleted.values()),
             "intercepted": self._intercepted,
+            "learned_words": self._learned,
         }
         await self._store.async_save(data)
         if self._auto_export:
@@ -1738,6 +1751,34 @@ class BrainstormStore:
                             words.append(word)
         return active_aliases, active_keywords
 
+    @property
+    def learned_words(self) -> dict[str, str]:
+        """Return the learned words and the category each one leads to."""
+        return dict(self._learned)
+
+    def _learn_category(self, text: str, category: str) -> None:
+        """Remember the words of a note that was moved to category by hand.
+
+        A move to the Inbox or the default category means the note did not
+        belong anywhere, so its words are forgotten instead.
+        """
+        pack = self._pack()
+        skip = pack.category_stop_words | pack.common_words
+        words = [
+            word
+            for word in dict.fromkeys(
+                re.findall(r"[^\W\d_]\w{3,}", text.lower())
+            )
+            if word not in skip
+        ]
+        forget = category.lower() == "inbox" or category == self._fallback_category
+        for word in words:
+            self._learned.pop(word, None)
+            if not forget:
+                self._learned[word] = category
+        while len(self._learned) > LEARNED_WORDS_MAX:
+            del self._learned[next(iter(self._learned))]
+
     def category_for_alias(self, alias: str, language: str | None = None) -> str | None:
         """Return the category a list name like 'Einkaufsliste' stands for."""
         aliases, keywords = self._category_lookup(self._pack(language))
@@ -1955,13 +1996,23 @@ class BrainstormStore:
                             scores[cat_name] += 1
                             found.append(f"{kw}…")
 
+            # A word learned from a note moved by hand counts more than a keyword
+            learned: dict[str, list[str]] = {}
+            if self._learn_categories:
+                for word in sorted(words):
+                    cat = self._learned.get(word)
+                    if cat in scores:
+                        scores[cat] += 6
+                        learned.setdefault(cat, []).append(word)
+
             if scores:
                 best_cat = max(scores, key=scores.get)
                 if scores[best_cat] > 0:
                     category = best_cat
                     why["category"] = (
-                        "words",
-                        list(dict.fromkeys(hits.get(best_cat, []))),
+                        ("learned", learned[best_cat])
+                        if best_cat in learned
+                        else ("words", list(dict.fromkeys(hits.get(best_cat, []))))
                     )
 
         # Fallback to the configured default category
@@ -2241,6 +2292,7 @@ class BrainstormStore:
         description: str | None = None,
         update_description: bool = False,
         in_progress: bool | None = None,
+        learn: bool = False,
         shape: str | None = None,
         update_shape: bool = False,
         markers: list[str] | None = None,
@@ -2269,6 +2321,8 @@ class BrainstormStore:
 
         The result note says what came of an idea, usually when it is ticked
         off. It stays when the idea is reopened, and an empty one removes it.
+        learn tells that a person moved the idea, so its words lead to the new
+        category from now on.
         """
         if idea_id not in self._ideas:
             _LOGGER.warning("Brainstorm idea %s not found for update", idea_id)
@@ -2319,6 +2373,8 @@ class BrainstormStore:
             if idea.get(ATTR_CATEGORY) != cat_clean:
                 idea.pop(ATTR_MAP_POS, None)
                 idea.pop(ATTR_PIN, None)
+                if learn and self._learn_categories and not idea.get(ATTR_PARENT_ID):
+                    self._learn_category(text or idea.get(ATTR_TEXT) or "", cat_clean)
             idea[ATTR_CATEGORY] = cat_clean
         if priority is not None:
             _, normalized_prio = self.parse_priority("", priority)
@@ -4235,6 +4291,7 @@ class BrainstormStore:
         self._category_icons.pop(clean_name, None)
         self._category_colors.pop(clean_name, None)
         self._drawings.pop(clean_name, None)
+        self._learned = {w: c for w, c in self._learned.items() if c != clean_name}
         # Tabs follow their notes to the Inbox
         for tab in self._map_tabs:
             if tab["category"] == clean_name:

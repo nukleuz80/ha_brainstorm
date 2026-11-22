@@ -145,6 +145,7 @@ from .const import (
     CONF_SMART_FORMATTING,
     CONF_TODO_SYNC,
     CONF_SPLIT_ITEMS,
+    CONF_LEARN_CATEGORIES,
     CONF_VOICE_DUE,
     CONF_GLOSSARY,
     CONF_VOICE_MODE,
@@ -1443,6 +1444,10 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                     default=options.get(CONF_SPLIT_ITEMS, True),
                 ): selector.BooleanSelector(),
                 vol.Optional(
+                    CONF_LEARN_CATEGORIES,
+                    default=options.get(CONF_LEARN_CATEGORIES, True),
+                ): selector.BooleanSelector(),
+                vol.Optional(
                     CONF_GLOSSARY, description=_suggested(options, CONF_GLOSSARY)
                 ): selector.TextSelector(selector.TextSelectorConfig(multiline=True)),
                 vol.Optional(
@@ -2367,6 +2372,10 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             "words": text(
                 f"Stichwörter: {', '.join(detail or [])}",
                 f"keywords: {', '.join(detail or [])}",
+            ),
+            "learned": text(
+                f"gelernte Wörter: {', '.join(detail or [])}",
+                f"learned words: {', '.join(detail or [])}",
             ),
             "fallback": text(
                 "nichts erkannt, Standardkategorie", "nothing found, default category"

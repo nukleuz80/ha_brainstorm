@@ -14,6 +14,7 @@ CONF_MARKDOWN_PATH = "markdown_path"
 CONF_SMART_FORMATTING = "smart_formatting"
 CONF_VOICE_DUE = "voice_due"
 CONF_SPLIT_ITEMS = "split_items"
+CONF_LEARN_CATEGORIES = "learn_categories"
 CONF_GLOSSARY = "glossary"
 CONF_HIDE_EMPTY_CATEGORIES = "hide_empty_categories"
 CONF_ALLOWED_ECHOS = "allowed_echos"
@@ -521,3 +522,5 @@ SERVICE_TEST_SENTENCE = "test_sentence"
 
 # Device commands the Alexa skill caught instead of storing, kept for the statistics
 INTERCEPTED_MAX = 50
+# Words learned from notes moved to another category, the oldest go first
+LEARNED_WORDS_MAX = 500

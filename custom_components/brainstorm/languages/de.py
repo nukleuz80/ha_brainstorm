@@ -1933,6 +1933,14 @@ PACK = LanguagePack(
     voice_prefixes=VOICE_PREFIXES,
     voice_suffixes=VOICE_SUFFIXES,
     shopping_list="einkaufsliste",
+    common_words=frozenset({
+        "aber", "alle", "alles", "also", "auch", "bitte", "dann", "dass", "denn",
+        "diese", "dieser", "dieses", "doch", "eine", "einem", "einen", "einer",
+        "eines", "etwas", "für", "heute", "hier", "immer", "jetzt", "kann",
+        "machen", "mehr", "morgen", "muss", "müssen", "nach", "nicht", "noch",
+        "oder", "schon", "sein", "sich", "sind", "soll", "sollte", "über", "unter",
+        "vielleicht", "wenn", "werden", "wieder", "wird",
+    }),
     item_separators=("und", "sowie"),
     item_pairs=(
         "salz und pfeffer",

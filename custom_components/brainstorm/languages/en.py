@@ -1304,6 +1304,13 @@ PACK = LanguagePack(
     voice_prefixes=VOICE_PREFIXES,
     voice_suffixes=VOICE_SUFFIXES,
     shopping_list="shopping list",
+    common_words=frozenset({
+        "about", "again", "also", "always", "could", "does", "from", "have",
+        "into", "just", "maybe", "more", "must", "need", "needs", "please",
+        "should", "some", "something", "that", "their", "them", "then", "there",
+        "these", "they", "this", "today", "tomorrow", "very", "what", "when",
+        "will", "with", "would", "your",
+    }),
     item_separators=("and",),
     item_pairs=(
         "salt and pepper",

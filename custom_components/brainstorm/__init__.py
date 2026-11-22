@@ -833,6 +833,7 @@ def _register_services(hass: HomeAssistant) -> None:
             description=call.data.get(ATTR_DESCRIPTION),
             update_description=ATTR_DESCRIPTION in call.data,
             in_progress=call.data.get(ATTR_IN_PROGRESS),
+            learn=call.context.user_id is not None,
             shape=call.data.get(ATTR_SHAPE),
             update_shape=ATTR_SHAPE in call.data,
             markers=call.data.get(ATTR_MARKERS),
