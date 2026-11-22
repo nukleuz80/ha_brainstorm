@@ -25,6 +25,7 @@ All parameters are [further down](#brainstormadd_idea) and under [**Developer to
 | `brainstorm.reorder_ideas` | set the order |
 | `brainstorm.import_outline` | add an outline: `text: …`, `category: …` or `parent_id: …`, `format: auto` |
 | `brainstorm.import_recipe` | add a recipe from a web page: `url: …`, `category: …` |
+| `brainstorm.import_mealplan` | add the Mealie meal plan: `days: 7`, `category: …` |
 | `brainstorm.move_branch` | move a branch to its own map: `id: …`, `category: Camping`, optional `parent_id: …` |
 | `brainstorm.sort_children` | sort subtasks: `parent_id: …`, `by: text`, `priority`, `due`, `created` or `votes` |
 | `brainstorm.track_time` | stopwatch: `id: …`, `action: start`, `stop` or `toggle` |
@@ -336,6 +337,18 @@ Reads the schema.org recipe data of a web page (Chefkoch, Lecker, EatSmarter, BB
 | :--- | :--- | :--- |
 | `url` | Yes | The web address of the recipe. |
 | `category` | No | Where the recipe goes; without it, the default category. |
+
+## `brainstorm.import_mealplan`
+
+▶️ [Try it in Home Assistant](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.import_mealplan)
+
+Since v1.28.0. Reads the meal plan from today through the [Mealie integration](https://www.home-assistant.io/integrations/mealie/) and adds it as a note *Meal plan 11/23 – 11/29*, tagged `mealplan` (`essensplan` when Home Assistant speaks German). Every meal becomes a subtask like *11/24 · Lasagne*, with servings and recipe steps in its description and every ingredient a subtask below. Returns `id`, `title` and the number of meals (`meals`). Without a loaded Mealie or without meals in that time there is an error.
+
+| Field | Required | Meaning |
+| :--- | :--- | :--- |
+| `days` | No | How many days from today, 1 to 14; without it the value from the settings (7 by default). |
+| `category` | No | Where the meal plan goes; without it the category from the settings or the default category. |
+| `config_entry_id` | No | Which Mealie entry to read, when there are several. |
 
 ## `brainstorm.sort_children`
 

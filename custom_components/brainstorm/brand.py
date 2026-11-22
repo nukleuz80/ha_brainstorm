@@ -33,6 +33,7 @@ BRAND_DOMAINS = frozenset(
         "bring",
         "choreops",
         "local_todo",
+        "mealie",
         "waste_collection_schedule",
         "imap",
         "telegram_bot",

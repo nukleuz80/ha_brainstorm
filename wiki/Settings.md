@@ -270,6 +270,20 @@ Since v1.13.18. Shown when [Battery Notes](https://github.com/andrew-codechimp/H
 - **Bring! button in the card:** in the category of the battery tasks the card shows *🛒 Batteries to Bring!*. It puts e.g. *Batteries AA* with *4×* on the default list; types already open there are left out. The action `brainstorm.batteries_to_bring` does the same (optionally with `list`).
 - Only devices whose battery type Battery Notes knows are counted.
 
+### Brainstorm › 🔗 Connected integrations › 🍲 Mealie
+
+Since v1.28.0. Shown when the [Mealie integration](https://www.home-assistant.io/integrations/mealie/) is set up. Brainstorm takes over the meal plan as a note *Meal plan 11/23 – 11/29*: every meal becomes a subtask like *11/24 · Lasagne* with servings and recipe steps in its description, and its ingredients subtasks below. Mealie itself is not changed.
+
+| Field | What it does |
+| :--- | :--- |
+| Days | How many days from today the meal plan covers, 1 to 14 (7 by default). |
+| Category | Where the meal plan goes; without one the default category. The Bring category is not offered, as its notes cannot be sent to Bring!. |
+| Take over the meal plan now | Once on saving: reads the meal plan and adds it. |
+
+- **Ingredients to Bring!:** Like with any recipe, 🛒 on a meal sends its ingredients to a Bring list.
+- **Every week by itself:** The action `brainstorm.import_mealplan` (optional `days`, `category`, `config_entry_id`) can go into an automation, for example on Sundays at 6 pm.
+- Meals without a recipe (only a title or note in Mealie) appear without ingredients.
+
 ### Brainstorm › 🔗 Connected integrations › 💬 WhatsApp
 
 Since v1.14.0. Always shown, as WhatsApp bridges work in many ways. A WhatsApp bridge, such as the integration [ha-whatsapp](https://github.com/FaserF/ha-whatsapp), fires an event for every message it receives. Brainstorm adds every line of a message from an allowed number as a note of the person the number belongs to, and confirms it with a reply.

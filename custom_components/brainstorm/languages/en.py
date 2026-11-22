@@ -1122,6 +1122,8 @@ MESSAGES: dict[str, str] = {
     "skill_saved_no_time": "Saved, but without a reminder. I did not understand a time.",
     "skill_saved": "Saved{when}.",
     "skill_already_there": "{text} is already under {category}, I moved it to the top.",
+    "mealplan_title": "Meal plan {start} – {end}",
+    "mealplan_date": "{month:02d}/{day:02d}",
     "skill_saved_in": "Saved under {category}{when}.",
     "skill_due": ", due {when}",
     "skill_you": "you",

@@ -112,6 +112,9 @@ from .const import (
     COMMENT_MAX_LENGTH,
     SERVICE_IMPORT_OUTLINE,
     SERVICE_IMPORT_RECIPE,
+    SERVICE_IMPORT_MEALPLAN,
+    CONF_MEALIE_CATEGORY,
+    CONF_MEALIE_DAYS,
     SERVICE_DELETE_DONE,
     SERVICE_SET_CATEGORY_STYLE,
     SHARE_EDIT,
@@ -121,6 +124,7 @@ from .const import (
 from .map_sources import SourceError
 from .outline import OUTLINE_FORMATS, OutlineError, parse_outline
 from .recipe import ERR_NO_RECIPE, async_recipe_from_url, recipe_nodes
+from .mealie import DEFAULT_MEALIE_DAYS, MEALIE_DAYS_MAX, async_import_mealplan
 from .echo_locks import EchoLockManager
 from .frontend import async_register_frontend
 from .llm_api import async_register_llm_api
@@ -431,6 +435,16 @@ SERVICE_IMPORT_RECIPE_SCHEMA = vol.Schema(
     {
         vol.Required("url"): vol.All(cv.string, vol.Match(r"(?i)^\s*https?://\S+\s*$")),
         vol.Optional(ATTR_CATEGORY): cv.string,
+    }
+)
+
+SERVICE_IMPORT_MEALPLAN_SCHEMA = vol.Schema(
+    {
+        vol.Optional("days"): vol.All(
+            vol.Coerce(int), vol.Range(min=1, max=MEALIE_DAYS_MAX)
+        ),
+        vol.Optional(ATTR_CATEGORY): cv.string,
+        vol.Optional("config_entry_id"): cv.string,
     }
 )
 
@@ -1176,6 +1190,19 @@ def _register_services(hass: HomeAssistant) -> None:
             "ingredients": len(recipe.ingredients),
         }
 
+    async def handle_import_mealplan(call: ServiceCall) -> dict[str, Any]:
+        """Add the meal plan of Mealie: a day per subtask, its ingredients below."""
+        store = _require_store(hass)
+        options = store.options
+        days = call.data.get("days") or int(
+            options.get(CONF_MEALIE_DAYS, DEFAULT_MEALIE_DAYS)
+        )
+        category = call.data.get(ATTR_CATEGORY) or options.get(CONF_MEALIE_CATEGORY)
+        added = await async_import_mealplan(
+            hass, store, days, category, call.data.get("config_entry_id"), call.context
+        )
+        return {"success": True, **added}
+
     async def handle_delete_idea(call: ServiceCall) -> dict[str, Any]:
         """Handle deleting an idea."""
         store = _require_store(hass)
@@ -1652,6 +1679,14 @@ def _register_services(hass: HomeAssistant) -> None:
         SERVICE_IMPORT_RECIPE,
         handle_import_recipe,
         schema=SERVICE_IMPORT_RECIPE_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_IMPORT_MEALPLAN,
+        handle_import_mealplan,
+        schema=SERVICE_IMPORT_MEALPLAN_SCHEMA,
         supports_response=SupportsResponse.OPTIONAL,
     )
 

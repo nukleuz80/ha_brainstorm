@@ -419,6 +419,7 @@
           "local_todo": "📋 Lokale To-do",
           "waste_collection_schedule": "🗑️ Abfallkalender",
           "battery_notes": "🔋 Battery Notes",
+          "mealie": "🍲 Mealie",
           "whatsapp": "💬 WhatsApp",
           "telegram_bot": "✈️ Telegram",
           "imap": "📧 Mail",
@@ -431,6 +432,7 @@
           "local_todo": "{status_local_todo}",
           "waste_collection_schedule": "{status_waste}",
           "battery_notes": "{status_battery_notes}",
+          "mealie": "{status_mealie}",
           "whatsapp": "{status_whatsapp}",
           "telegram_bot": "{status_telegram}",
           "imap": "{status_mail}"
@@ -662,6 +664,22 @@
           "go_back": "Kehrt ohne Speichern zur vorherigen Seite zurück."
         }
       },
+      "mealie": {
+        "title": "Brainstorm › 🔗 Verbundene Integrationen › 🍲 Mealie",
+        "description": "Übernimmt den Essensplan aus Mealie: eine Notiz für den Plan, jedes Gericht als Unteraufgabe mit den Schritten seines Rezepts in der Beschreibung und seinen Zutaten als Unteraufgaben darunter. Von dort schickst du die Zutaten mit 🛒 auf eine Bring-Liste wie bei jedem Rezept. Mealie selbst wird nicht verändert.",
+        "data": {
+          "mealie_days": "Tage",
+          "mealie_category": "Kategorie",
+          "mealie_import": "Essensplan jetzt übernehmen",
+          "go_back": "⬅️ Zurück ohne Speichern"
+        },
+        "data_description": {
+          "mealie_days": "Wie viele Tage ab heute der Essensplan umfasst.",
+          "mealie_category": "Wohin der Essensplan kommt. Ohne Angabe in die Standard-Kategorie. Die Bring-Kategorie fehlt in der Liste, weil ihre Notizen nicht an Bring! geschickt werden können.",
+          "mealie_import": "Einmalig beim Speichern: liest den Essensplan und legt ihn als Notizen an. Gibt es auch als Aktion `brainstorm.import_mealplan`, etwa für eine wöchentliche Automation.",
+          "go_back": "Kehrt ohne Speichern zur vorherigen Seite zurück."
+        }
+      },
       "whatsapp": {
         "title": "Brainstorm › 🔗 Verbundene Integrationen › 💬 WhatsApp",
         "description": "Macht aus WhatsApp-Nachrichten Notizen. Eine WhatsApp-Bridge, etwa die Integration ha-whatsapp, löst für jede empfangene Nachricht ein Ereignis aus; Brainstorm legt jede Zeile einer Nachricht von einer bekannten Nummer als Notiz der Person an, der die Nummer gehört, und bestätigt das mit einer Antwort. Andere Bridges gehen auch: Trage ihr Ereignis und bei Bedarf ihre Felder ein.\n\n{hint}",
@@ -771,7 +789,9 @@
       "telegram_senders_invalid": "Schreibe eine Telegram-ID pro Zeile mit einer vorhandenen Person, etwa 123456789 = person.jan.",
       "telegram_senders_missing": "Trage mindestens einen erlaubten Telegram-Benutzer ein.",
       "mail_senders_invalid": "Schreibe eine Adresse pro Zeile mit einer vorhandenen Person, etwa jan@example.com = person.jan.",
-      "mail_senders_missing": "Trage mindestens eine erlaubte Adresse ein."
+      "mail_senders_missing": "Trage mindestens eine erlaubte Adresse ein.",
+      "mealie_missing": "Mealie ist nicht eingerichtet oder nicht geladen, es gibt keinen Essensplan zu lesen.",
+      "mealie_empty": "Der Essensplan in Mealie hat für diese Tage keine Gerichte."
     },
     "abort": {
       "store_not_ready": "Brainstorm wird gerade neu geladen. Bitte öffne die Einstellungen in ein paar Sekunden noch einmal."
@@ -1177,6 +1197,12 @@
     },
     "recipe_unreachable": {
       "message": "Die Rezeptseite konnte nicht geladen werden: {error}"
+    },
+    "mealie_missing": {
+      "message": "Mealie ist nicht eingerichtet oder nicht geladen, es gibt keinen Essensplan zu lesen."
+    },
+    "mealie_empty": {
+      "message": "Der Essensplan in Mealie hat für diese Tage keine Gerichte."
     }
   },
   "services": {
@@ -1885,6 +1911,24 @@
         "category": {
           "name": "Kategorie",
           "description": "Wohin das Rezept kommt. Ohne Angabe in die erste Kategorie."
+        }
+      }
+    },
+    "import_mealplan": {
+      "name": "Mealie-Essensplan übernehmen",
+      "description": "Liest den Essensplan der Mealie-Integration für die kommenden Tage und legt ihn als Notiz an: pro Gericht eine Unteraufgabe mit den Rezeptschritten in der Beschreibung, die Zutaten als Unteraufgaben darunter, bereit für Bring!.",
+      "fields": {
+        "days": {
+          "name": "Tage",
+          "description": "Wie viele Tage ab heute, 1 bis 14. Ohne Angabe gilt die Zahl aus den Einstellungen (standardmäßig 7)."
+        },
+        "category": {
+          "name": "Kategorie",
+          "description": "Wohin der Essensplan kommt. Ohne Angabe die Kategorie aus den Einstellungen oder die Standard-Kategorie."
+        },
+        "config_entry_id": {
+          "name": "Mealie-Eintrag",
+          "description": "Welcher Mealie-Eintrag gelesen wird, falls es mehrere gibt. Ohne Angabe der erste."
         }
       }
     }

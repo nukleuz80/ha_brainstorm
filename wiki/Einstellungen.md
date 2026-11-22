@@ -270,6 +270,20 @@ Seit v1.13.18. Erscheint, wenn [Battery Notes](https://github.com/andrew-codechi
 - **Bring!-Knopf in der Karte:** In der Kategorie der Batterie-Aufgaben zeigt die Karte *🛒 Batterien auf Bring!*. Der Knopf setzt z. B. *Batterien AA* mit *4×* auf die Standardliste; Typen, die dort schon offen sind, bleiben weg. Dasselbe macht die Aktion `brainstorm.batteries_to_bring` (optional mit `list`).
 - Nur Geräte, für die Battery Notes einen Batterietyp kennt, zählen mit.
 
+### Brainstorm › 🔗 Verbundene Integrationen › 🍲 Mealie
+
+Seit v1.28.0. Erscheint, wenn die [Mealie-Integration](https://www.home-assistant.io/integrations/mealie/) eingerichtet ist. Brainstorm übernimmt den Essensplan als Notiz *Essensplan 23.11. – 29.11.*: jedes Gericht wird eine Unteraufgabe wie *24.11. · Lasagne* mit Portionen und Rezeptschritten in der Beschreibung, seine Zutaten Unteraufgaben darunter. Mealie selbst bleibt unverändert.
+
+| Feld | Was es bewirkt |
+| :--- | :--- |
+| Tage | Wie viele Tage ab heute der Essensplan umfasst, 1 bis 14 (Standard 7). |
+| Kategorie | Wohin der Essensplan kommt; ohne Angabe die Standard-Kategorie. Die Bring-Kategorie wird nicht angeboten, weil ihre Notizen nicht an Bring! geschickt werden können. |
+| Essensplan jetzt übernehmen | Einmalig beim Speichern: liest den Essensplan und legt ihn an. |
+
+- **Zutaten auf Bring!:** Wie bei jedem Rezept schickt 🛒 an einem Gericht seine Zutaten auf eine Bring-Liste.
+- **Automatisch jede Woche:** Die Aktion `brainstorm.import_mealplan` (optional `days`, `category`, `config_entry_id`) lässt sich in eine Automation einbauen, etwa sonntags um 18 Uhr.
+- Gerichte ohne Rezept (nur Titel oder Notiz in Mealie) erscheinen ohne Zutaten.
+
 ### Brainstorm › 🔗 Verbundene Integrationen › 💬 WhatsApp
 
 Seit v1.14.0. Immer sichtbar, da WhatsApp-Bridges ganz unterschiedlich laufen. Eine WhatsApp-Bridge, etwa die Integration [ha-whatsapp](https://github.com/FaserF/ha-whatsapp), löst für jede empfangene Nachricht ein Ereignis aus. Brainstorm legt jede Zeile einer Nachricht von einer erlaubten Nummer als Notiz der Person an, der die Nummer gehört, und bestätigt das mit einer Antwort.

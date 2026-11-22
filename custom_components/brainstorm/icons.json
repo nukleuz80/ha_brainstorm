@@ -116,6 +116,9 @@
     },
     "import_recipe": {
       "service": "mdi:chef-hat"
+    },
+    "import_mealplan": {
+      "service": "mdi:silverware-fork-knife"
     }
   }
 }

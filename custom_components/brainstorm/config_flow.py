@@ -147,6 +147,8 @@ from .const import (
     CONF_SPLIT_ITEMS,
     CONF_LEARN_CATEGORIES,
     CONF_MERGE_DUPLICATES,
+    CONF_MEALIE_CATEGORY,
+    CONF_MEALIE_DAYS,
     CONF_VOICE_DUE,
     CONF_GLOSSARY,
     CONF_VOICE_MODE,
@@ -200,6 +202,12 @@ from .whatsapp import (
     parse_senders as whatsapp_parse_senders,
 )
 from .battery_notes import battery_notes_available
+from .mealie import (
+    DEFAULT_MEALIE_DAYS,
+    MEALIE_DAYS_MAX,
+    async_import_mealplan,
+    mealie_available,
+)
 from .reminders import format_due, phone_service_for
 from .sensor_rules import to_number
 from .store import BrainstormStore, get_loaded_store
@@ -388,6 +396,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "local_todo": "📋 Lokale To-do",
                 "waste_collection_schedule": "🗑️ Abfallkalender",
                 "battery_notes": "🔋 Battery Notes",
+                "mealie": "🍲 Mealie",
                 "whatsapp": "💬 WhatsApp",
                 "telegram_bot": "✈️ Telegram",
                 "imap": "📧 Mail",
@@ -436,6 +445,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "local_todo": "📋 Local To-do",
                 "waste_collection_schedule": "🗑️ Waste calendar",
                 "battery_notes": "🔋 Battery Notes",
+                "mealie": "🍲 Mealie",
                 "whatsapp": "💬 WhatsApp",
                 "telegram_bot": "✈️ Telegram",
                 "imap": "📧 Mail",
@@ -461,6 +471,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             "local_todo",
             "waste_collection_schedule",
             "battery_notes",
+            "mealie",
             "whatsapp",
             "telegram_bot",
             "imap",
@@ -494,6 +505,8 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             "whatsapp": bool(options.get(CONF_WHATSAPP_ENABLED)),
             "telegram_bot": bool(options.get(CONF_TELEGRAM_ENABLED)),
             "imap": bool(options.get(CONF_MAIL_ENABLED)),
+            # Nothing to switch on, the meal plan is taken over on request
+            "mealie": True,
         }
         names = {
             "bring": "Bring!",
@@ -501,6 +514,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             "local_todo": self._text("Lokale To-do", "Local To-do"),
             "waste_collection_schedule": self._text("Abfallkalender", "Waste calendar"),
             "battery_notes": "Battery Notes",
+            "mealie": "Mealie",
             "whatsapp": "WhatsApp",
             "telegram_bot": "Telegram",
             "imap": "Mail",
@@ -520,6 +534,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             "choreops": choreops_available(self.hass),
             "waste_collection_schedule": waste_available(self.hass),
             "battery_notes": battery_notes_available(self.hass),
+            "mealie": mealie_available(self.hass),
             "telegram_bot": telegram_available(self.hass),
             "imap": imap_available(self.hass),
         }
@@ -582,6 +597,10 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                 "status_local_todo": local,
                 "status_waste": waste,
                 "status_battery_notes": notes,
+                "status_mealie": self._text(
+                    f"{int(options.get(CONF_MEALIE_DAYS, DEFAULT_MEALIE_DAYS))} Tage",
+                    f"{int(options.get(CONF_MEALIE_DAYS, DEFAULT_MEALIE_DAYS))} days",
+                ),
                 "status_whatsapp": whatsapp,
                 "status_telegram": telegram,
                 "status_mail": mail,
@@ -823,6 +842,76 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             )
         return self.async_show_form(
             step_id="battery_notes",
+            data_schema=vol.Schema(_with_back(schema)),
+            errors=errors,
+        )
+
+    async def async_step_mealie(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Take over the meal plan of Mealie, with the ingredients of each recipe."""
+        if user_input is not None and user_input.pop(BACK_FIELD, False):
+            return await self.async_step_integrations()
+        store = await self._async_store()
+        options = dict(self.config_entry.options or self.config_entry.data)
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            options[CONF_MEALIE_DAYS] = int(
+                user_input.get(CONF_MEALIE_DAYS, DEFAULT_MEALIE_DAYS)
+            )
+            category = user_input.get(CONF_MEALIE_CATEGORY) or ""
+            if category:
+                options[CONF_MEALIE_CATEGORY] = category
+            else:
+                options.pop(CONF_MEALIE_CATEGORY, None)
+            done = ""
+            if user_input.get("mealie_import"):
+                try:
+                    added = await async_import_mealplan(
+                        self.hass, store, options[CONF_MEALIE_DAYS], category or None
+                    )
+                except ServiceValidationError as err:
+                    errors["base"] = err.translation_key or "mealie_missing"
+                else:
+                    done = self._text(
+                        f"🍲 {added['title']}: {added['meals']} Gerichte übernommen.",
+                        f"🍲 {added['title']}: {added['meals']} meals taken over.",
+                    )
+            if not errors:
+                self.hass.config_entries.async_update_entry(
+                    self.config_entry, options=options
+                )
+                self._notice = done or self._text(
+                    "✅ Gespeichert und aktiv.", "✅ Saved and active."
+                )
+                return await self.async_step_integrations()
+        categories = [c for c in store.categories if c]
+        bring = store.todo_sync.bring if store.todo_sync is not None else None
+        if bring is not None:
+            # Ingredients in the Bring category could not go to Bring any more
+            categories = [c for c in categories if c != bring.category]
+        schema: dict[Any, Any] = {
+            vol.Required(
+                CONF_MEALIE_DAYS,
+                default=int(options.get(CONF_MEALIE_DAYS, DEFAULT_MEALIE_DAYS)),
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=1, max=MEALIE_DAYS_MAX, step=1,
+                    mode=selector.NumberSelectorMode.SLIDER,
+                )
+            ),
+            vol.Optional(
+                CONF_MEALIE_CATEGORY,
+                description=_suggested(options, CONF_MEALIE_CATEGORY),
+            ): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=categories, mode=selector.SelectSelectorMode.DROPDOWN
+                )
+            ),
+            vol.Optional("mealie_import", default=False): selector.BooleanSelector(),
+        }
+        return self.async_show_form(
+            step_id="mealie",
             data_schema=vol.Schema(_with_back(schema)),
             errors=errors,
         )

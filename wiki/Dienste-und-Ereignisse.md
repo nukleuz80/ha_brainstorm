@@ -25,6 +25,7 @@ Alle Parameter stehen [weiter unten](#brainstormadd_idea) und unter [**Entwickle
 | `brainstorm.reorder_ideas` | Reihenfolge setzen |
 | `brainstorm.import_outline` | Gliederung anlegen: `text: …`, `category: …` oder `parent_id: …`, `format: auto` |
 | `brainstorm.import_recipe` | Rezept von einer Webseite anlegen: `url: …`, `category: …` |
+| `brainstorm.import_mealplan` | Mealie-Essensplan anlegen: `days: 7`, `category: …` |
 | `brainstorm.move_branch` | Ast als eigene Map auslagern: `id: …`, `category: Camping`, optional `parent_id: …` |
 | `brainstorm.sort_children` | Unterpunkte sortieren: `parent_id: …`, `by: text`, `priority`, `due`, `created` oder `votes` |
 | `brainstorm.track_time` | Stoppuhr: `id: …`, `action: start`, `stop` oder `toggle` |
@@ -336,6 +337,18 @@ Liest die schema.org-Rezeptdaten einer Webseite (Chefkoch, Lecker, EatSmarter, B
 | :--- | :--- | :--- |
 | `url` | Ja | Die Webadresse des Rezepts. |
 | `category` | Nein | Wohin das Rezept kommt; ohne Angabe die Standardkategorie. |
+
+## `brainstorm.import_mealplan`
+
+▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.import_mealplan)
+
+Seit v1.28.0. Liest über die [Mealie-Integration](https://www.home-assistant.io/integrations/mealie/) den Essensplan ab heute und legt ihn als Notiz *Essensplan 23.11. – 29.11.* an, mit dem Tag `essensplan` (`mealplan`, wenn Home Assistant Englisch spricht). Jedes Gericht wird eine Unteraufgabe wie *24.11. · Lasagne*, Portionen und Rezeptschritte stehen in ihrer Beschreibung, jede Zutat ist eine Unteraufgabe darunter. Gibt `id`, `title` und die Zahl der Gerichte (`meals`) zurück. Ohne geladenes Mealie oder ohne Gerichte in diesem Zeitraum gibt es einen Fehler.
+
+| Feld | Pflicht | Bedeutung |
+| :--- | :--- | :--- |
+| `days` | Nein | Wie viele Tage ab heute, 1 bis 14; ohne Angabe der Wert aus den Einstellungen (Standard 7). |
+| `category` | Nein | Wohin der Essensplan kommt; ohne Angabe die Kategorie aus den Einstellungen oder die Standardkategorie. |
+| `config_entry_id` | Nein | Welcher Mealie-Eintrag gelesen wird, falls es mehrere gibt. |
 
 ## `brainstorm.sort_children`
 

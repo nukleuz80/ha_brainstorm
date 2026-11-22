@@ -419,6 +419,7 @@
           "local_todo": "📋 Local To-do",
           "waste_collection_schedule": "🗑️ Waste calendar",
           "battery_notes": "🔋 Battery Notes",
+          "mealie": "🍲 Mealie",
           "whatsapp": "💬 WhatsApp",
           "telegram_bot": "✈️ Telegram",
           "imap": "📧 Mail",
@@ -431,6 +432,7 @@
           "local_todo": "{status_local_todo}",
           "waste_collection_schedule": "{status_waste}",
           "battery_notes": "{status_battery_notes}",
+          "mealie": "{status_mealie}",
           "whatsapp": "{status_whatsapp}",
           "telegram_bot": "{status_telegram}",
           "imap": "{status_mail}"
@@ -662,6 +664,22 @@
           "go_back": "Returns to the previous page without saving this form."
         }
       },
+      "mealie": {
+        "title": "Brainstorm › 🔗 Connected integrations › 🍲 Mealie",
+        "description": "Takes over the meal plan of Mealie: one note for the plan, every meal a subtask with the steps of its recipe in the description, and its ingredients as subtasks below. From there the ingredients go to a Bring list with 🛒 like those of any recipe. Mealie itself is not changed.",
+        "data": {
+          "mealie_days": "Days",
+          "mealie_category": "Category",
+          "mealie_import": "Take over the meal plan now",
+          "go_back": "⬅️ Back without saving"
+        },
+        "data_description": {
+          "mealie_days": "How many days from today the meal plan covers.",
+          "mealie_category": "Where the meal plan goes. Without one it goes to the default category. The Bring category is not offered, its notes cannot be sent to Bring.",
+          "mealie_import": "Once on saving: reads the meal plan and adds it as notes. Also available as the action `brainstorm.import_mealplan`, for example in a weekly automation.",
+          "go_back": "Returns to the previous page without saving."
+        }
+      },
       "whatsapp": {
         "title": "Brainstorm › 🔗 Connected integrations › 💬 WhatsApp",
         "description": "Turns WhatsApp messages into notes. A WhatsApp bridge, such as the integration ha-whatsapp, fires an event for every message it receives; Brainstorm adds every line of a message from a known number as a note of the person the number belongs to and confirms it with a reply. Other bridges work as well: set their event and, if needed, their fields.\n\n{hint}",
@@ -771,7 +789,9 @@
       "telegram_senders_invalid": "Write one Telegram id per line with an existing person, such as 123456789 = person.jan.",
       "telegram_senders_missing": "Enter at least one allowed Telegram user.",
       "mail_senders_invalid": "Write one address per line with an existing person, such as jan@example.com = person.jan.",
-      "mail_senders_missing": "Enter at least one allowed address."
+      "mail_senders_missing": "Enter at least one allowed address.",
+      "mealie_missing": "Mealie is not set up or not loaded, so there is no meal plan to read.",
+      "mealie_empty": "The meal plan of Mealie has no meals for these days."
     },
     "abort": {
       "store_not_ready": "Brainstorm is reloading. Please open the settings again in a few seconds."
@@ -1177,6 +1197,12 @@
     },
     "recipe_unreachable": {
       "message": "The recipe page could not be loaded: {error}"
+    },
+    "mealie_missing": {
+      "message": "Mealie is not set up or not loaded, so there is no meal plan to read."
+    },
+    "mealie_empty": {
+      "message": "The meal plan of Mealie has no meals for these days."
     }
   },
   "services": {
@@ -1885,6 +1911,24 @@
         "category": {
           "name": "Category",
           "description": "Where the recipe goes. Without one it goes to the first category."
+        }
+      }
+    },
+    "import_mealplan": {
+      "name": "Import Mealie meal plan",
+      "description": "Reads the meal plan of the Mealie integration for the coming days and adds it as a note: one subtask per meal with the recipe steps in its description, and the ingredients as subtasks below, ready to be sent to Bring!.",
+      "fields": {
+        "days": {
+          "name": "Days",
+          "description": "How many days from today, 1 to 14. Without it the number from the settings is used (7 by default)."
+        },
+        "category": {
+          "name": "Category",
+          "description": "Where the meal plan goes. Without one the category from the settings, or the default category."
+        },
+        "config_entry_id": {
+          "name": "Mealie entry",
+          "description": "Which Mealie entry to read, when there are several. Without one the first."
         }
       }
     }

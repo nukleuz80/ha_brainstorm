@@ -587,6 +587,27 @@ import_recipe:
       selector:
         text:
 
+import_mealplan:
+  fields:
+    days:
+      required: false
+      example: 7
+      selector:
+        number:
+          min: 1
+          max: 14
+          mode: box
+    category:
+      required: false
+      example: "Alltag"
+      selector:
+        text:
+    config_entry_id:
+      required: false
+      selector:
+        config_entry:
+          integration: mealie
+
 sort_children:
   fields:
     parent_id:
