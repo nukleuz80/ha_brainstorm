@@ -96,6 +96,13 @@ async def test_options_step_shows_the_result(
     shown = result["description_placeholders"]["result"]
     assert "Tomaten düngen" in shown
     assert "Haus & Garten" in shown
+    assert "Einträge" not in shown
+
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {"sentence": "setze Butter und Eier auf die Einkaufsliste", "mode": "voice"},
+    )
+    assert "- Einträge: Butter · Eier" in result["description_placeholders"]["result"]
 
     result = await hass.config_entries.options.async_configure(
         result["flow_id"], {"go_back": True, "mode": "auto"}

@@ -89,6 +89,10 @@ class LanguagePack:
     # The name of the shopping list in a spoken sentence: when the voice capture
     # cuts "on my shopping list" off, the note still goes to the shopping list
     shopping_list: str | None = field(default=None)
+    # Words between several items of a shopping list, "Butter und Eier"
+    item_separators: tuple[str, ...] = field(default=())
+    # Pairs that are one item although they contain such a word
+    item_pairs: tuple[str, ...] = field(default=())
 
     def msg(self, key: str, **values: object) -> str:
         """Return a text of this language with its values filled in."""

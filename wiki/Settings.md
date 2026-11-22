@@ -53,6 +53,7 @@ Find these under [**Settings ➔ Devices & Services ➔ Brainstorm Hub ➔ Confi
 | Default category for new ideas | Used when an idea cannot be assigned to a category. |
 | Smart Text Optimization (grammar, capitalization, infinitive formatting) | Corrects capitalization and grammar of new ideas and removes filler words. |
 | Take dates from spoken text as a due date | A spoken "tomorrow" or "on 25.11." moves out of the text and becomes a due date. A due date leads to a reminder at that time, without a time of day at 09:00. |
+| Split several items into separate entries | On a shopping list a spoken "butter, eggs and milk" becomes three entries, so each can be ticked off and sent to Bring! on its own. A shopping list is the Bring! category, a category of your own that the name of the shopping list leads to (such as *Einkauf*), or any note whose sentence names the shopping list. Pairs like "salt and pepper" stay one item, a decimal comma like "1,5 kg" does not split, and typed notes, notes with a due date and subtasks are never split. On by default. |
 | Own terms for spoken text | One term per line, for example Lenia, or a correction, for example fehler = Richtig. Names of people and categories are known automatically. |
 | Auto-export ideas to Markdown files | Writes one Markdown file per category to the folder below whenever ideas change. |
 | File path for Markdown files | Folder for the Markdown files, for example /config/brainstorm. |

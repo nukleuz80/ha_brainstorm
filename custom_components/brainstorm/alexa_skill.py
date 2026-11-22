@@ -901,6 +901,7 @@ class AlexaSkill:
                 trigger=request.trigger if request else None,
                 owner=self._ideas.voice_user_for(echo.name if echo else None),
                 language=pack.code,
+                list_named=shopping,
             )
         except HomeAssistantError as err:
             _LOGGER.warning("Could not store idea from Alexa skill: %s", err)

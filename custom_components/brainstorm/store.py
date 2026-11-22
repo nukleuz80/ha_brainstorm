@@ -163,6 +163,7 @@ from .const import (
     CONF_GLOSSARY,
     CONF_REMINDERS_ENABLED,
     CONF_SMART_FORMATTING,
+    CONF_SPLIT_ITEMS,
     CONF_VOICE_DUE,
     DEFAULT_HIDE_EMPTY_CATEGORIES,
     DEFAULT_MARKDOWN_PATH,
@@ -226,6 +227,7 @@ from .choreops import (
     rule_points,
 )
 from .languages import CATEGORY_KEYS, get_pack
+from .items import split_items
 from . import timetrack
 from .local_todo import local_entities
 from .languages.common import CATEGORY_PROJECTS, SPEECH_SPLIT, LanguagePack
@@ -407,6 +409,7 @@ class BrainstormStore:
         self._voice_due = self.options.get(CONF_VOICE_DUE, True) and self.options.get(
             CONF_REMINDERS_ENABLED, True
         )
+        self._split_items = self.options.get(CONF_SPLIT_ITEMS, True)
         self._hide_empty_categories = self.options.get(
             CONF_HIDE_EMPTY_CATEGORIES, DEFAULT_HIDE_EMPTY_CATEGORIES
         )
@@ -1221,10 +1224,16 @@ class BrainstormStore:
         )
         if shopping:
             reasons["category"] = ("list", pack.shopping_list)
+        items = (
+            self.items_of(title, category, pack.code, bool(shopping))
+            if spoken and due is None and trigger is None
+            else [title]
+        )
         return {
             "original": original,
             "mode": mode,
             ATTR_TEXT: title,
+            "items": items,
             ATTR_CATEGORY: category,
             "category_reason": reasons.get("category"),
             ATTR_PRIORITY: priority,
@@ -1659,6 +1668,39 @@ class BrainstormStore:
                 return found
         return None
 
+    def is_list_category(self, category: str | None, language: str | None = None) -> bool:
+        """Tell whether a category is a shopping list, with one entry per item.
+
+        That is the Bring! category, and a category of its own that the name of
+        the shopping list leads to, like "Einkauf". A standard category like
+        "Alltag" holds sentences, not items.
+        """
+        if not category:
+            return False
+        bring = self.todo_sync.bring if self.todo_sync is not None else None
+        if bring is not None and category == bring.category:
+            return True
+        pack = self._pack(language)
+        return (
+            bool(pack.shopping_list)
+            and category not in CATEGORY_KEYS
+            and category == self.category_for_alias(pack.shopping_list, pack.code)
+        )
+
+    def items_of(
+        self,
+        text: str,
+        category: str | None,
+        language: str | None = None,
+        list_named: bool = False,
+    ) -> list[str]:
+        """Return the items a spoken note splits into, or the note alone."""
+        if not self._split_items or not (
+            list_named or self.is_list_category(category, language)
+        ):
+            return [text]
+        return split_items(text, self._pack(language))
+
     def parse_text_and_category(
         self,
         text: str,
@@ -1910,11 +1952,15 @@ class BrainstormStore:
         spoken: bool | None = None,
         verbatim: bool = False,
         description: str | None = None,
+        list_named: bool = False,
     ) -> dict[str, Any]:
         """Add a new brainstorm idea.
 
         A verbatim idea keeps its text and category exactly as given, as an
         item taken over from another list must not be renamed there.
+        A spoken note for a shopping list, "Butter und Eier", becomes one
+        entry per item; list_named tells that the sentence named the list.
+        The first item is returned.
         """
         pack = self._pack(language)
         raw_check = (text or "").strip().lower()
@@ -1965,6 +2011,18 @@ class BrainstormStore:
                     text, category, priority, spoken=spoken, language=language
                 )
             )
+
+        items = [clean_text]
+        if (
+            spoken
+            and not verbatim
+            and not parent_id
+            and due is None
+            and trigger is None
+            and not description
+        ):
+            items = self.items_of(clean_text, resolved_cat, pack.code, list_named)
+            clean_text = items[0]
 
         all_tags = list(set((tags or []) + parsed_tags))
         now_iso = dt_util.now().isoformat()
@@ -2033,7 +2091,13 @@ class BrainstormStore:
         self._ideas[idea_id] = idea
         await self.async_save()
 
-        if spoken and self._smart_formatting and source != SOURCE_ASSIST_LLM:
+        # The AI would turn the first item back into the whole sentence
+        if (
+            spoken
+            and self._smart_formatting
+            and source != SOURCE_ASSIST_LLM
+            and len(items) == 1
+        ):
             self._schedule_ai_cleanup(idea_id, text.strip(), clean_text, pack)
 
         # Fire event for automations and logbook with entity_id and context
@@ -2051,6 +2115,21 @@ class BrainstormStore:
             resolved_parent,
             device,
         )
+        for item in items[1:]:
+            await self.async_add_idea(
+                item,
+                category=resolved_cat,
+                priority=resolved_prio,
+                source=source,
+                tags=all_tags,
+                device=device,
+                context=context,
+                assignee=assignee,
+                owner=owner,
+                shares=shares,
+                language=language,
+                verbatim=True,
+            )
         return idea
 
     def _creates_parent_cycle(self, idea_id: str, parent_id: str) -> bool:

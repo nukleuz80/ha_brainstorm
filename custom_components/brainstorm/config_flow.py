@@ -144,6 +144,7 @@ from .const import (
     CONF_MARKDOWN_PATH,
     CONF_SMART_FORMATTING,
     CONF_TODO_SYNC,
+    CONF_SPLIT_ITEMS,
     CONF_VOICE_DUE,
     CONF_GLOSSARY,
     CONF_VOICE_MODE,
@@ -1438,6 +1439,10 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                     default=options.get(CONF_VOICE_DUE, True),
                 ): selector.BooleanSelector(),
                 vol.Optional(
+                    CONF_SPLIT_ITEMS,
+                    default=options.get(CONF_SPLIT_ITEMS, True),
+                ): selector.BooleanSelector(),
+                vol.Optional(
                     CONF_GLOSSARY, description=_suggested(options, CONF_GLOSSARY)
                 ): selector.TextSelector(selector.TextSelectorConfig(multiline=True)),
                 vol.Optional(
@@ -2395,6 +2400,12 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             f"- {text('Termin', 'Due')}: {due}",
             f"- {text('Priorität', 'Priority')}: {priority}",
         ]
+        items = preview.get("items") or []
+        if len(items) > 1:
+            lines.insert(
+                2,
+                f"- {text('Einträge', 'Entries')}: " + " · ".join(items),
+            )
         if preview.get("tags"):
             lines.append(
                 f"- Tags: {', '.join('#' + tag for tag in preview['tags'])}"
