@@ -26,7 +26,12 @@ from .const import (
 )
 from .map_sources import SourceError
 from .presence import get_presence
-from .statistics import DEFAULT_WEEKS, MAX_WEEKS, build_statistics
+from .statistics import (
+    DEFAULT_WEEKS,
+    MAX_WEEKS,
+    build_statistics,
+    statistics_window,
+)
 from .store import TRASH_DAYS, BrainstormStore, get_loaded_store, habit_summary
 
 # Error codes the cards translate for the person
@@ -57,6 +62,7 @@ def async_register_commands(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, websocket_get_comments)
     websocket_api.async_register_command(hass, websocket_get_trash)
     websocket_api.async_register_command(hass, websocket_get_statistics)
+    websocket_api.async_register_command(hass, websocket_resolve_intercepted)
     websocket_api.async_register_command(hass, websocket_get_habit)
     websocket_api.async_register_command(hass, websocket_restore_trash)
     websocket_api.async_register_command(hass, websocket_purge_trash)
@@ -738,16 +744,51 @@ async def websocket_get_statistics(
     if (store := _trash_store(hass, connection, msg["id"])) is None:
         return
     names = {user.id: user.name or "" for user in await hass.auth.async_get_users()}
-    connection.send_result(
-        msg["id"],
-        build_statistics(
-            store.visible_ideas(connection.user.id),
-            dt_util.now(),
-            names,
-            msg["weeks"],
-            msg.get("category"),
-        ),
+    now = dt_util.now()
+    result = build_statistics(
+        store.visible_ideas(connection.user.id),
+        now,
+        names,
+        msg["weeks"],
+        msg.get("category"),
     )
+    # Sentences from the Echos belong to nobody, so only admins see them
+    if connection.user.is_admin and not msg.get("category"):
+        result["intercepted"] = store.intercepted_commands(
+            statistics_window(now, msg["weeks"])
+        )
+    connection.send_result(msg["id"], result)
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "brainstorm/intercepted",
+        vol.Required("entry_id"): cv.string,
+        vol.Required("keep"): cv.boolean,
+    }
+)
+@websocket_api.require_admin
+@websocket_api.async_response
+async def websocket_resolve_intercepted(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Store an intercepted device command as a note after all, or forget it."""
+    if (store := _trash_store(hass, connection, msg["id"])) is None:
+        return
+    if msg["keep"]:
+        idea = await store.async_keep_intercepted(
+            msg["entry_id"], connection.context(msg)
+        )
+    else:
+        idea = await store.async_dismiss_intercepted(msg["entry_id"])
+    if idea is None:
+        connection.send_error(
+            msg["id"], websocket_api.ERR_NOT_FOUND, "No such intercepted command"
+        )
+        return
+    connection.send_result(msg["id"], {"idea_id": idea.get("id") if msg["keep"] else None})
 
 
 @websocket_api.websocket_command({vol.Required("type"): "brainstorm/trash"})

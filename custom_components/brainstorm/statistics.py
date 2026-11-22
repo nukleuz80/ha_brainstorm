@@ -33,6 +33,13 @@ def _week_start(day: date) -> date:
     return day - timedelta(days=day.weekday())
 
 
+def statistics_window(now: datetime, weeks: int = DEFAULT_WEEKS) -> datetime:
+    """Return the start of the first week the statistics cover."""
+    weeks = max(1, min(MAX_WEEKS, int(weeks)))
+    first = _week_start(dt_util.as_local(now).date()) - timedelta(weeks=weeks - 1)
+    return dt_util.start_of_local_day(first)
+
+
 def done_by(idea: dict[str, Any], names: dict[str, str]) -> str | None:
     """Return who ticked an idea off, by the HA user or the ChoreOps person."""
     if (user := idea.get(ATTR_COMPLETED_BY)) and names.get(str(user)):

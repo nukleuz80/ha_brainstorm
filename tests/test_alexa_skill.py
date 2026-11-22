@@ -1395,6 +1395,8 @@ async def test_unplaced_device_command_is_not_stored(
     _alexa_event(hass, "küche schrank an", response=LATER)
     await hass.async_block_till_done()
     assert not entry.runtime_data.ideas
+    caught = entry.runtime_data.intercepted_commands()
+    assert [item["text"] for item in caught] == ["küche schrank an"]
 
 
 async def test_captured_device_command_is_not_stored(
@@ -1412,6 +1414,7 @@ async def test_captured_device_command_is_not_stored(
         answer = await response.json()
         assert "Gerätebefehl" in str(answer)
         assert not entry.runtime_data.ideas
+        assert len(entry.runtime_data.intercepted_commands()) == 1
 
         await _post(hass_client_no_auth, entry, _capture_payload("notiere küche schrank an"))
     await hass.async_block_till_done()

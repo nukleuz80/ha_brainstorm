@@ -127,3 +127,19 @@ async def test_spoken_shopping_list_picks_the_shopping_category(
     # Typed, the list name stays in the text and is found as a word
     preview = store.preview_idea("Milch für die Einkaufsliste", "typed", "de")
     assert preview["category"] == "Einkauf"
+
+
+async def test_device_command_is_flagged(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that the tester warns about a sentence the skill would not store."""
+    await setup_entry()
+    hass.states.async_set("light.kuche_l1", "off", {"friendly_name": "Küche Schrank"})
+    store = get_loaded_store(hass)
+    assert store is not None
+    assert store.preview_idea("Küche Schrank an", "voice", "de")["device_command"]
+    assert not store.preview_idea("notiere Küche Schrank an", "voice", "de")[
+        "device_command"
+    ]
+    assert not store.preview_idea("Küche Schrank an", "typed", "de")["device_command"]
+    assert not store.preview_idea("Rufe morgen Oma an", "voice", "de")["device_command"]

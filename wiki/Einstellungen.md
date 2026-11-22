@@ -179,7 +179,7 @@ Tippe einen Satz so, wie du ihn Alexa, Assist oder Siri sagen würdest. Brainsto
 | Satz | Der Satz, den du prüfen willst, zum Beispiel „erinnere mich morgen um 8 an die Mülltonnen“. |
 | Lesen als | **Automatisch** liest einen Satz, der mit „erinnere“ beginnt, als Erinnerung, alles andere als gesprochene Notiz. Wähle **Getippt**, um die Schnelleingabe der Karte zu prüfen. |
 
-Steht als Grund „nichts erkannt, Standardkategorie“, lohnt sich ein eigenes Stichwort unter **Kategorien**. Die KI-Verbesserung gesprochener Einträge läuft erst nach dem Speichern und ist hier nicht enthalten.
+Steht als Grund „nichts erkannt, Standardkategorie“, lohnt sich ein eigenes Stichwort unter **Kategorien**. Die KI-Verbesserung gesprochener Einträge läuft erst nach dem Speichern und ist hier nicht enthalten. Seit v1.25.0 warnt **⚠️ Gerätebefehl**, wenn der Alexa-Skill eine gesprochene Notiz wie „Küche Schrank an“ als Schaltbefehl abfangen würde; mit „notiere“ davor wird sie gespeichert.
 
 ### Brainstorm › Erledigte Einträge löschen
 

@@ -14,6 +14,11 @@ const DICTIONARIES = {
     "Erfasste Zeit: {time}": "Tracked time: {time}",
     "Erfasste Zeit": "Tracked time",
     "{time} insgesamt": "{time} in total",
+    "Abgefangene Gerätebefehle": "Intercepted device commands",
+    "Diese Sätze hat der Alexa-Skill nicht gespeichert, weil sie wie ein Schaltbefehl klangen.": "The Alexa skill did not store these sentences because they sounded like a switch command.",
+    "Keine Sätze abgefangen.": "No sentences intercepted.",
+    "Als Notiz speichern": "Save as note",
+    "Entfernen": "Remove",
     "{count} Stoppuhr läuft": "{count} stopwatch running",
     "Noch keine Zeit erfasst. Starte die Stoppuhr im Menü einer Notiz.": "No time tracked yet. Start the stopwatch in the menu of a note.",
     "Zeitplan": "Timeline",
@@ -1997,6 +2002,11 @@ export const SOCIAL_CSS = `
   .bs-stats-row:nth-child(odd) { background: color-mix(in srgb, var(--secondary-text-color, #727272) 6%, transparent); }
   .bs-stats-row.muted span { color: var(--secondary-text-color, #727272); }
   .bs-stats-row.running b { color: var(--warning-color, #ff9800); }
+  .bs-stats-row.caught { align-items: center; flex-wrap: wrap; }
+  .bs-stats-row.caught span { flex: 1 1 160px; min-width: 0; overflow-wrap: anywhere; }
+  .bs-stats-row.caught small { color: var(--secondary-text-color, #727272); }
+  .bs-stats-row.caught .bs-caught-actions { display: flex; gap: 4px; flex: 0 0 auto; }
+  .bs-stats-row.caught button { min-height: 36px; min-width: 36px; border: 1px solid var(--divider-color, #e0e0e0); border-radius: 8px; background: var(--card-background-color, #fff); color: var(--primary-text-color, #212121); cursor: pointer; font-size: 0.8rem; padding: 0 8px; }
   .bs-gantt { display: flex; flex-direction: column; gap: 3px; margin-bottom: 8px; max-height: 40vh; overflow-y: auto; }
   .bs-gantt-axis, .bs-gantt-row { display: grid; grid-template-columns: minmax(80px, 35%) 1fr; gap: 6px; align-items: center; }
   .bs-gantt-axis { font-size: 0.7rem; color: var(--secondary-text-color, #727272); }
@@ -3202,6 +3212,11 @@ export function ganttHtml(rows, weeks) {
  */
 export function renderStatistics(body, { hass, close, category = null, prefix = "dialog" }) {
   const c = (names) => names.split(" ").map((n) => `${prefix}-${n}`).join(" ");
+  const caughtWhen = (item) => {
+    const date = new Date(item.at);
+    const when = Number.isNaN(date.getTime()) ? "" : date.toLocaleString(dateLocale(), { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+    return [when, item.echo].filter(Boolean).join(" · ");
+  };
   let weeks = 8;
   let onlyCategory = Boolean(category);
   const draw = (stats, error = "") => {
@@ -3229,6 +3244,12 @@ export function renderStatistics(body, { hass, close, category = null, prefix = 
         <div class="bs-stats-tile"><b>${stats.open}</b><span>${t("offen")}</span></div>
         <div class="bs-stats-tile${stats.overdue ? " warn" : ""}"><b>${stats.overdue}</b><span>${t("überfällig")}</span></div>
       </div>
+      ${Array.isArray(stats.intercepted) ? `<div class="${c("label")}">🔌 ${t("Abgefangene Gerätebefehle")}</div>
+      <div class="bs-stats-line">${stats.intercepted.length ? t("Diese Sätze hat der Alexa-Skill nicht gespeichert, weil sie wie ein Schaltbefehl klangen.") : t("Keine Sätze abgefangen.")}</div>
+      ${stats.intercepted.length ? `<div class="bs-stats-list">
+        ${stats.intercepted.map((item) => `<div class="bs-stats-row caught"><span>„${escapeHtml(item.text || "")}“ <small>${escapeHtml(caughtWhen(item))}</small></span>
+          <span class="bs-caught-actions"><button type="button" data-caught-keep="${escapeHtml(item.id)}" title="${escapeHtml(t("Als Notiz speichern"))}" aria-label="${escapeHtml(t("Als Notiz speichern"))}">📝</button><button type="button" data-caught-drop="${escapeHtml(item.id)}" title="${escapeHtml(t("Entfernen"))}" aria-label="${escapeHtml(t("Entfernen"))}">✕</button></span></div>`).join("")}
+      </div>` : ""}` : ""}
       <div class="${c("label")}">${t("Pro Woche")} <span class="bs-stats-legend"><i class="done"></i>${t("erledigt")} <i class="added"></i>${t("neu")}</span></div>
       <div class="bs-stats-weekrows">
         ${stats.weeks.map((w) => `
@@ -3266,6 +3287,18 @@ export function renderStatistics(body, { hass, close, category = null, prefix = 
       </div>`}
       <div class="${c("footer")}"><button class="${c("btn btn-primary")}" id="bsStatsClose">${t("Schließen")}</button></div>
     `;
+    body.querySelectorAll("[data-caught-keep], [data-caught-drop]").forEach((btn) =>
+      btn.addEventListener("click", async () => {
+        btn.disabled = true;
+        const keep = Boolean(btn.dataset.caughtKeep);
+        try {
+          await hass.callWS({ type: "brainstorm/intercepted", entry_id: keep ? btn.dataset.caughtKeep : btn.dataset.caughtDrop, keep });
+          await load();
+        } catch (err) {
+          draw(null, (err && err.message) || t("Das hat nicht geklappt."));
+        }
+      })
+    );
     body.querySelector("#bsStatsClose").addEventListener("click", close);
     body.querySelector("#bsStatsWeeks").addEventListener("change", (event) => {
       weeks = Number(event.target.value) || 8;

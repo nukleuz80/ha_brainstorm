@@ -111,3 +111,64 @@ async def test_who_ticked_off_and_websocket(
     await store.async_update_idea(idea["id"], status="active")
     assert "completed_by" not in store.get_idea(idea["id"])
     assert "completed_by" not in store.export_json()["ideas"][0]
+
+
+async def test_intercepted_commands_in_statistics(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_ws_client: WebSocketGenerator,
+) -> None:
+    """Caught device commands are listed, kept as a note or forgotten."""
+    entry = await setup_entry(stored={"ideas": [], "categories": ["Inbox", "Haus"]})
+    store = entry.runtime_data
+    await store.async_record_intercepted("Küche Schrank an", "Echo Küche")
+    await store.async_record_intercepted("Flur aus", None)
+
+    client = await hass_ws_client(hass)
+    await client.send_json_auto_id({"type": "brainstorm/statistics", "weeks": 2})
+    caught = (await client.receive_json())["result"]["intercepted"]
+    assert [item["text"] for item in caught] == ["Flur aus", "Küche Schrank an"]
+    assert caught[1]["echo"] == "Echo Küche"
+
+    await client.send_json_auto_id(
+        {"type": "brainstorm/intercepted", "entry_id": caught[1]["id"], "keep": True}
+    )
+    assert (await client.receive_json())["success"]
+    assert [idea["text"] for idea in store.ideas] == ["Küche Schrank an"]
+    assert store.ideas[0]["device"] == "Echo Küche"
+
+    await client.send_json_auto_id(
+        {"type": "brainstorm/intercepted", "entry_id": caught[0]["id"], "keep": False}
+    )
+    assert (await client.receive_json())["success"]
+    assert store.intercepted_commands() == []
+    assert len(store.ideas) == 1
+
+    await client.send_json_auto_id(
+        {"type": "brainstorm/intercepted", "entry_id": "missing", "keep": False}
+    )
+    assert not (await client.receive_json())["success"]
+
+    # Persisted with the rest and capped
+    for index in range(60):
+        await store.async_record_intercepted(f"Licht {index} an")
+    assert len(store.intercepted_commands()) == 50
+    assert store.export_json() is not None
+
+
+async def test_intercepted_commands_only_for_admins(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_ws_client: WebSocketGenerator,
+    hass_read_only_access_token: str,
+) -> None:
+    """Sentences from the Echos belong to nobody, so other users do not see them."""
+    entry = await setup_entry(stored={"ideas": [], "categories": ["Inbox"]})
+    await entry.runtime_data.async_record_intercepted("Flur aus")
+    client = await hass_ws_client(hass, hass_read_only_access_token)
+    await client.send_json_auto_id({"type": "brainstorm/statistics"})
+    assert "intercepted" not in (await client.receive_json())["result"]
+    await client.send_json_auto_id(
+        {"type": "brainstorm/intercepted", "entry_id": "x", "keep": False}
+    )
+    assert not (await client.receive_json())["success"]

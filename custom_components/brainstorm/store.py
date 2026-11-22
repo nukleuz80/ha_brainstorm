@@ -154,6 +154,7 @@ from .const import (
     CONF_AI_ENTITY,
     SENTENCE_TEST_AUTO,
     SENTENCE_TEST_MAX_LENGTH,
+    INTERCEPTED_MAX,
     SENTENCE_TEST_MODES,
     SENTENCE_TEST_REMINDER,
     SENTENCE_TEST_TYPED,
@@ -392,6 +393,8 @@ class BrainstormStore:
         self._ideas: dict[str, dict[str, Any]] = {}
         # Ideas deleted since the start, so a dashboard can undo the deletion
         self._deleted: dict[str, dict[str, Any]] = {}
+        # Device commands the Alexa skill did not store, newest last
+        self._intercepted: list[dict[str, Any]] = []
         self._categories: list[str] = list(self._pack().default_categories)
         self._category_icons: dict[str, str] = {}
         self._category_colors: dict[str, str] = {}
@@ -935,6 +938,11 @@ class BrainstormStore:
                 for entry in data.get("trash", [])
                 if isinstance(entry, dict) and isinstance(entry.get("idea"), dict)
             }
+            self._intercepted = [
+                entry
+                for entry in data.get("intercepted") or []
+                if isinstance(entry, dict) and entry.get(ATTR_TEXT)
+            ][-INTERCEPTED_MAX:]
             self._purge_expired_trash()
             for category in list(self._rounds):
                 self._schedule_round_end(category)
@@ -960,6 +968,7 @@ class BrainstormStore:
             "map_tabs": self._map_tabs,
             "ideas": list(self._ideas.values()),
             "trash": list(self._deleted.values()),
+            "intercepted": self._intercepted,
         }
         await self._store.async_save(data)
         if self._auto_export:
@@ -1184,7 +1193,12 @@ class BrainstormStore:
         "auto" picks reminder for a sentence starting with "remind".
         """
         # Imported here, both import this module
-        from .alexa_skill import clean_voice_text, names_shopping_list
+        from .alexa_skill import (
+            clean_voice_text,
+            device_names,
+            is_device_command,
+            names_shopping_list,
+        )
         from .reminders import build_reminder_request
 
         pack = self._pack(language)
@@ -1200,6 +1214,12 @@ class BrainstormStore:
         spoken = mode != SENTENCE_TEST_TYPED
         now = dt_util.now()
         work = clean_voice_text(original, pack) if spoken else original
+        # The Alexa skill keeps "Küche Schrank an" from becoming a note
+        device_command = (
+            mode == SENTENCE_TEST_VOICE
+            and work == original
+            and is_device_command(work, pack, device_names(self.hass))
+        )
         shopping = (
             self.category_for_alias(pack.shopping_list, pack.code)
             if spoken and names_shopping_list(original, work, pack)
@@ -1241,11 +1261,70 @@ class BrainstormStore:
             ATTR_TAGS: tags,
             ATTR_ASSIGNEE: assignee,
             "zone": (trigger or {}).get("zone"),
+            "device_command": device_command,
             # The AI only polishes the wording later, it is not part of this test
             "ai_cleanup": bool(
                 spoken and self._smart_formatting and self.options.get(CONF_AI_ENTITY)
             ),
         }
+
+    async def async_record_intercepted(
+        self, text: str, echo: str | None = None
+    ) -> None:
+        """Remember a device command the Alexa skill did not store as a note.
+
+        The statistics list them, so a sentence caught by mistake is noticed
+        and can still become a note.
+        """
+        self._intercepted.append(
+            {
+                ATTR_ID: uuid.uuid4().hex[:8],
+                ATTR_TEXT: text[:SENTENCE_TEST_MAX_LENGTH],
+                "echo": echo,
+                "at": dt_util.now().isoformat(),
+            }
+        )
+        del self._intercepted[:-INTERCEPTED_MAX]
+        await self.async_save()
+
+    def intercepted_commands(self, since: datetime | None = None) -> list[dict[str, Any]]:
+        """Return the intercepted device commands, newest first."""
+        items = []
+        for entry in reversed(self._intercepted):
+            when = dt_util.parse_datetime(str(entry.get("at") or ""))
+            if since is not None and (when is None or when < since):
+                continue
+            items.append(dict(entry))
+        return items
+
+    async def async_dismiss_intercepted(self, entry_id: str) -> dict[str, Any] | None:
+        """Forget an intercepted device command and return it, if it was there."""
+        for index, entry in enumerate(self._intercepted):
+            if entry.get(ATTR_ID) == entry_id:
+                del self._intercepted[index]
+                await self.async_save()
+                return entry
+        return None
+
+    async def async_keep_intercepted(
+        self, entry_id: str, context: Context | None = None
+    ) -> dict[str, Any] | None:
+        """Store an intercepted device command as the note it was meant to be."""
+        entry = next(
+            (item for item in self._intercepted if item.get(ATTR_ID) == entry_id), None
+        )
+        if entry is None:
+            return None
+        echo = entry.get("echo")
+        idea = await self.async_add_idea(
+            text=str(entry[ATTR_TEXT]),
+            source="alexa_skill",
+            device=echo,
+            owner=self.voice_user_for(echo),
+            context=context,
+        )
+        await self.async_dismiss_intercepted(entry_id)
+        return idea
 
     async def async_summarize_branch(
         self, idea: dict[str, Any], user_id: str | None, language: str | None = None

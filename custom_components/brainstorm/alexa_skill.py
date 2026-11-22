@@ -392,6 +392,15 @@ def is_device_command(
     return _normalize(" ".join(words[:-1])) in device_names
 
 
+def device_names(hass: HomeAssistant) -> set[str]:
+    """Return the names of the devices Alexa can switch, letters only."""
+    return {
+        _normalize(state.name)
+        for state in hass.states.async_all(DEVICE_DOMAINS)
+        if state.name
+    }
+
+
 def clean_voice_text(text: str, pack: LanguagePack) -> str:
     """Remove command words and list names, like the native voice capture."""
     cleaned = text.strip()
@@ -725,11 +734,7 @@ class AlexaSkill:
 
     def _device_names(self) -> set[str]:
         """Return the names of the devices Alexa can switch, letters only."""
-        return {
-            _normalize(state.name)
-            for state in self.hass.states.async_all(DEVICE_DOMAINS)
-            if state.name
-        }
+        return device_names(self.hass)
 
     async def _async_store_fallback(
         self, request: _FallbackRequest, pack: LanguagePack
@@ -759,6 +764,10 @@ class AlexaSkill:
         if is_device_command(sentence, pack, self._device_names()):
             # A device command said while the skill still listened
             _LOGGER.info("Not storing the device command %r as an idea", sentence)
+            echo = self._echo_from_name(name)
+            await self._ideas.async_record_intercepted(
+                sentence, echo.name if echo else None
+            )
             return
         await self._async_capture(sentence, self._echo_from_name(name), None, pack)
 
@@ -885,6 +894,9 @@ class AlexaSkill:
         ):
             # Without "notiere" in front, "Küche Schrank an" was meant for Alexa
             _LOGGER.info("Not storing the device command %r as an idea", cleaned)
+            await self._ideas.async_record_intercepted(
+                cleaned, echo.name if echo else None
+            )
             return self._speech(pack.msg("skill_device_command"))
         try:
             idea = await self._ideas.async_add_idea(

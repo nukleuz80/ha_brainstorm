@@ -6,7 +6,7 @@
  * methods are copied onto the card, so `this` is the card.
  */
 
-import { contentTemplates, importFileText, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, t } from "./brainstorm-i18n.js?v=1.24.0";
+import { contentTemplates, importFileText, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, t } from "./brainstorm-i18n.js?v=1.25.0";
 
 // Helpers of the card itself, handed over by the card when it loads this part
 let shapeParts;

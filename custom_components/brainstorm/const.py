@@ -518,3 +518,6 @@ SENTENCE_TEST_MODES = (
 )
 SENTENCE_TEST_MAX_LENGTH = 500
 SERVICE_TEST_SENTENCE = "test_sentence"
+
+# Device commands the Alexa skill caught instead of storing, kept for the statistics
+INTERCEPTED_MAX = 50

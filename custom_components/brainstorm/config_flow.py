@@ -2423,6 +2423,18 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
                     "_The AI polishes the wording afterwards._",
                 )
             )
+        if preview.get("device_command"):
+            lines.insert(
+                1,
+                text(
+                    "⚠️ **Gerätebefehl:** Der Alexa-Skill speichert diesen Satz "
+                    "nicht, sondern bittet, ihn ohne Brainstorm zu sagen. Mit "
+                    "„notiere“ davor wird er gespeichert.",
+                    "⚠️ **Device command:** the Alexa skill does not store this "
+                    "sentence but asks to say it without Brainstorm. With “note” "
+                    "in front it is stored.",
+                ),
+            )
         lines.append(text("_Nichts wurde gespeichert._", "_Nothing was saved._"))
         return "\n".join(lines)
 

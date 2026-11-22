@@ -179,7 +179,7 @@ Type a sentence the way you would say it to Alexa, Assist or Siri. Brainstorm sh
 | Sentence | The sentence to check, for example “remind me tomorrow at 8 about the bins”. |
 | Read it as | **Automatic** reads a sentence starting with “remind” as a reminder, everything else as a spoken note. Pick **Typed** to check the quick input of the card. |
 
-If the reason reads “nothing found, default category”, add a keyword of your own under **Categories**. The AI polishing of spoken entries only runs after saving and is not part of this test.
+If the reason reads “nothing found, default category”, add a keyword of your own under **Categories**. The AI polishing of spoken entries only runs after saving and is not part of this test. Since v1.25.0 **⚠️ Device command** warns when the Alexa skill would intercept a spoken note like “kitchen cupboard on” as a switch command; with “note” in front it is stored.
 
 ### Brainstorm › Delete done entries
 
