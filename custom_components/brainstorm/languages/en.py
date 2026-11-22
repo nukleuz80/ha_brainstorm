@@ -1303,6 +1303,7 @@ PACK = LanguagePack(
     skill_model=INTERACTION_MODEL,
     voice_prefixes=VOICE_PREFIXES,
     voice_suffixes=VOICE_SUFFIXES,
+    shopping_list="shopping list",
     garden_words=("garden", "house"),
     garden_match="garden",
     ai_cleanup_prompt=ai_cleanup_prompt,

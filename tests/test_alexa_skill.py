@@ -74,6 +74,27 @@ async def test_skill_stores_idea_and_answers(
     assert entry.runtime_data.alexa_skill.last_request["text"] == ideas[0]["text"]
 
 
+async def test_skill_puts_the_shopping_list_into_its_category(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    hass_client_no_auth: ClientSessionGenerator,
+) -> None:
+    """Test that "Toast auf die Einkaufsliste" lands in the shopping category."""
+    entry = await _setup_skill(hass, setup_entry)
+    store = entry.runtime_data
+    await store.async_set_categories([*store.categories, "Einkauf"])
+
+    response = await _post(
+        hass_client_no_auth,
+        entry,
+        {"application_id": SKILL_ID, "text": "Toast auf die Einkaufsliste"},
+    )
+
+    assert response.status == 200
+    idea = next(i for i in store.ideas if i["source"] == "alexa_skill")
+    assert (idea["text"], idea["category"]) == ("Toast", "Einkauf")
+
+
 async def test_other_skill_is_rejected(
     hass: HomeAssistant,
     setup_entry: SetupEntry,

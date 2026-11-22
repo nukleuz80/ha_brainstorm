@@ -86,6 +86,9 @@ class LanguagePack:
     # and the words before the type in a calendar entry, such as "Pickup"
     waste_icons: tuple[tuple[str, str], ...] = field(default=())
     waste_prefixes: tuple[str, ...] = field(default=())
+    # The name of the shopping list in a spoken sentence: when the voice capture
+    # cuts "on my shopping list" off, the note still goes to the shopping list
+    shopping_list: str | None = field(default=None)
 
     def msg(self, key: str, **values: object) -> str:
         """Return a text of this language with its values filled in."""

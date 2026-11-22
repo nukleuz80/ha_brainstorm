@@ -7,7 +7,7 @@
 | The skill says it cannot reach Home Assistant | Check [**Settings > Repairs**](https://my.home-assistant.io/redirect/repairs/). Home Assistant needs a public HTTPS address, for example Home Assistant Cloud. Then copy the skill code again. |
 | Alexa keeps giving the hint to start with *note* | Copy the current voice model into the Alexa developer console, then **Save** and **Build**. |
 | *"Alexa, open Brainstorm"* starts the old dialog | Delete the Alexa routines for *open Brainstorm* in the Alexa app. |
-| An idea lands in the wrong category | Name the category at the start: *"note for shopping milk"*. A category of your own wins over standard words with its name. |
+| An idea lands in the wrong category | Name the category at the start: *"note for shopping milk"*. A category of your own wins over standard words with its name, also over longer forms of it: with a category *Groceries*, *grocery list* words go there instead of *Daily life*. A spoken *"… on my shopping list"* goes to the shopping category. |
 | A card still shows an old version | Set the resource to the current `?v=` number and reload the page without cache. |
 | An Echo is not recognised or ignored | Check the Echo choice under [**Configure**](https://my.home-assistant.io/redirect/integration/?domain=brainstorm). [**Settings > Repairs**](https://my.home-assistant.io/redirect/repairs/) lists chosen Echos that no longer exist. |
 | Something else is wrong | Download the diagnostics (see *Entities*) and open an [issue](https://github.com/nukleuz80/ha_brainstorm/issues). |

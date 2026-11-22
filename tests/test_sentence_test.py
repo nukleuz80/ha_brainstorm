@@ -102,3 +102,21 @@ async def test_options_step_shows_the_result(
     )
     assert result["step_id"] == "init"
     assert dict(entry.options) == options
+
+
+async def test_spoken_shopping_list_picks_the_shopping_category(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that "auf die Einkaufsliste" still names the list once it is cut off."""
+    await setup_entry()
+    store = get_loaded_store(hass)
+    assert store is not None
+    preview = store.preview_idea("Toast auf die Einkaufsliste", "voice", "de")
+    assert (preview["text"], preview["category"]) == ("Toast", "Alltag")
+    assert preview["category_reason"] == ("list", "einkaufsliste")
+    await store.async_set_categories([*store.categories, "Einkauf"])
+    preview = store.preview_idea("setze Butter auf die Einkaufsliste", "voice", "de")
+    assert (preview["text"], preview["category"]) == ("Butter", "Einkauf")
+    # Typed, the list name stays in the text and is found as a word
+    preview = store.preview_idea("Milch für die Einkaufsliste", "typed", "de")
+    assert preview["category"] == "Einkauf"

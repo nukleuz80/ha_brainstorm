@@ -404,6 +404,12 @@ def clean_voice_text(text: str, pack: LanguagePack) -> str:
     return cleaned.strip()
 
 
+def names_shopping_list(text: str, cleaned: str, pack: LanguagePack) -> bool:
+    """Tell whether the voice capture cut the name of the shopping list off."""
+    name = pack.shopping_list
+    return bool(name) and name in text.lower() and name not in cleaned.lower()
+
+
 def _normalize(text: str) -> str:
     """Reduce a sentence to its letters and digits for comparing."""
     return re.sub(r"[\W_]+", "", text.lower())
@@ -864,9 +870,11 @@ class AlexaSkill:
         pack: LanguagePack,
         request: ReminderRequest | None = None,
         no_time_found: bool = False,
+        shopping: bool = False,
     ) -> web.Response:
         """Store an idea and report where it went."""
         cleaned = clean_voice_text(text, pack)[:MAX_TEXT_LENGTH]
+        shopping = shopping or names_shopping_list(text, cleaned, pack)
         if len(cleaned) < MIN_IDEA_LENGTH:
             return self._speech(pack.msg("skill_no_text"))
         if (
@@ -881,6 +889,11 @@ class AlexaSkill:
         try:
             idea = await self._ideas.async_add_idea(
                 text=cleaned,
+                category=(
+                    self._ideas.category_for_alias(pack.shopping_list, pack.code)
+                    if shopping
+                    else None
+                ),
                 source="alexa_skill",
                 device=echo.name if echo else None,
                 due=request.due if request else None,
@@ -996,7 +1009,12 @@ class AlexaSkill:
         if request.due is not None and request.due <= now:
             return self._speech(pack.msg("skill_in_past"))
         return await self._async_capture(
-            request.text, echo, pending, pack, request=request
+            request.text,
+            echo,
+            pending,
+            pack,
+            request=request,
+            shopping=names_shopping_list(text, clean_voice_text(text, pack), pack),
         )
 
     async def _async_done(

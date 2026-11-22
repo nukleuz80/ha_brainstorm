@@ -2358,6 +2358,7 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             "topic": text(f"Thema „{detail}“", f"topic “{detail}”"),
             "phrase": text(f"Redewendung „{detail}“", f"phrase “{detail}”"),
             "hashtag": text(f"Hashtag #{detail}", f"hashtag #{detail}"),
+            "list": text(f"Liste „{detail}“ genannt", f"list “{detail}” named"),
             "words": text(
                 f"Stichwörter: {', '.join(detail or [])}",
                 f"keywords: {', '.join(detail or [])}",

@@ -7,7 +7,7 @@
 | Der Skill sagt, er erreicht Home Assistant nicht | Sieh unter [**Einstellungen > Reparaturen**](https://my.home-assistant.io/redirect/repairs/) nach. Home Assistant braucht eine öffentliche HTTPS-Adresse, z. B. über Home Assistant Cloud. Danach den Skill-Code neu kopieren. |
 | Alexa sagt immer wieder, ich soll mit *notiere* anfangen | Das aktuelle Sprachmodell in die Alexa-Entwicklerkonsole kopieren, dann **Save** und **Build**. |
 | *„Alexa, öffne Brainstorm“* startet den alten Dialog | Die Alexa-Routinen für *öffne Brainstorm* in der Alexa-App löschen. |
-| Eine Idee landet in der falschen Kategorie | Die Kategorie vorne nennen: *„notiere für den Einkauf Milch“*. Eine eigene Kategorie hat Vorrang vor Standard-Begriffen mit ihrem Namen. |
+| Eine Idee landet in der falschen Kategorie | Die Kategorie vorne nennen: *„notiere für den Einkauf Milch“*. Eine eigene Kategorie hat Vorrang vor Standard-Begriffen mit ihrem Namen, auch vor längeren Formen davon: Mit einer Kategorie *Einkauf* landen *Einkaufsliste* und *einkaufen* dort statt in *Alltag*. Gesprochenes *„… auf die Einkaufsliste“* geht in die Einkaufskategorie. |
 | Eine Karte zeigt noch eine alte Version | Die Ressource auf die aktuelle `?v=`-Nummer setzen und die Seite ohne Cache neu laden. |
 | Ein Echo wird nicht erkannt oder ignoriert | Die Echo-Auswahl unter [**Konfigurieren**](https://my.home-assistant.io/redirect/integration/?domain=brainstorm) prüfen. [**Einstellungen > Reparaturen**](https://my.home-assistant.io/redirect/repairs/) nennt gewählte Echos, die es nicht mehr gibt. |
 | Etwas anderes klappt nicht | Die Diagnose herunterladen (siehe *Entitäten*) und ein [Issue](https://github.com/nukleuz80/ha_brainstorm/issues) eröffnen. |

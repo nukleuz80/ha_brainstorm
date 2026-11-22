@@ -1932,6 +1932,7 @@ PACK = LanguagePack(
     skill_model=INTERACTION_MODEL,
     voice_prefixes=VOICE_PREFIXES,
     voice_suffixes=VOICE_SUFFIXES,
+    shopping_list="einkaufsliste",
     garden_words=("garten", "haus"),
     garden_match="garten",
     ai_cleanup_prompt=ai_cleanup_prompt,

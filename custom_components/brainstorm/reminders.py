@@ -8,7 +8,7 @@ import logging
 import re
 from typing import TYPE_CHECKING, Any
 
-from homeassistant.const import EVENT_STATE_CHANGED
+from homeassistant.const import EVENT_STATE_CHANGED, STATE_UNAVAILABLE
 from homeassistant.core import CALLBACK_TYPE, Event, HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
@@ -532,12 +532,23 @@ class ReminderManager:
     ) -> bool:
         """Speak a message on Echos and report whether that worked.
 
-        Echos in their lock time are left out. When none is left, this counts
-        as not spoken, so a reminder goes to the phone right away instead.
+        Echos in their lock time are left out, and so are Echos Alexa Media
+        lost (unavailable), which would swallow the message without a word.
+        When none is left, this counts as not spoken, so a reminder goes to the
+        phone right away instead.
         """
         if respect_locks:
             locked = locked_echos(self._options, dt_util.now())
             targets = [target for target in targets if target not in locked]
+        gone = [
+            target
+            for target in targets
+            if (state := self.hass.states.get(target)) is not None
+            and state.state == STATE_UNAVAILABLE
+        ]
+        if gone:
+            _LOGGER.info("Echos not available, left out of the announcement: %s", gone)
+            targets = [target for target in targets if target not in gone]
         if not targets or not self.hass.services.has_service("notify", "alexa_media"):
             return False
         try:

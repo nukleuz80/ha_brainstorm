@@ -97,6 +97,47 @@ async def test_all_echos_locked_goes_to_phone(
     assert len(push) == 1
 
 
+async def test_unavailable_echos_are_left_out(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that an Echo Alexa Media lost does not swallow the reminder."""
+    hass.states.async_set(KIDS, "unavailable")
+    hass.states.async_set(KITCHEN, "idle")
+    entry, alexa, push = await _setup(
+        hass,
+        setup_entry,
+        reminder_alexa="fixed",
+        reminder_echos=[KIDS, KITCHEN],
+        reminder_notify=[PUSH],
+        reminder_delay=15,
+    )
+    await _due_idea(entry)
+    await entry.runtime_data.reminders.async_check(dt_util.now())
+    await hass.async_block_till_done()
+    assert alexa[0].data["target"] == [KITCHEN]
+    assert not push
+
+
+async def test_all_echos_unavailable_goes_to_phone(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that the phone gets the reminder at once when no Echo is there."""
+    hass.states.async_set(KIDS, "unavailable")
+    entry, alexa, push = await _setup(
+        hass,
+        setup_entry,
+        reminder_alexa="fixed",
+        reminder_echos=[KIDS],
+        reminder_notify=[PUSH],
+        reminder_delay=15,
+    )
+    await _due_idea(entry)
+    await entry.runtime_data.reminders.async_check(dt_util.now())
+    await hass.async_block_till_done()
+    assert not alexa
+    assert len(push) == 1
+
+
 async def test_test_message_speaks_in_lock_time(
     hass: HomeAssistant, setup_entry: SetupEntry
 ) -> None:

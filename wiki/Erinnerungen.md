@@ -19,7 +19,7 @@ Brainstorm erinnert dich von selbst an fällige Einträge, und zwar über die Di
 | Bereich | Schalter | Was es tut |
 | :--- | :--- | :--- |
 | **Ein/Aus & Kanäle** | Erinnerungen nutzen | Hauptschalter für alles in diesem Menü |
-| | Alexa-Ansage | Aus, Echo des Eintrags, zuletzt genutzter Echo oder feste Echos (benötigt Alexa Media) |
+| | Alexa-Ansage | Aus, Echo des Eintrags, zuletzt genutzter Echo oder feste Echos (benötigt Alexa Media). Ein Echo, den Alexa Media als nicht verfügbar meldet, wird ausgelassen; ist keiner erreichbar, geht die Erinnerung sofort aufs Handy. |
 | | Benachrichtigungen senden | Beliebige `notify`-Dienste; die Companion-App bekommt die Knöpfe **Erledigt**, **1 Stunde später** und **Morgen** |
 | | Wichtige offene Einträge erneut senden | Hohe oder dringende Einträge gehen nach einer Wartezeit an weitere Dienste, z. B. Pushover |
 | **Ruhezeit, Briefing & Rückblick** | Ruhezeit nutzen | Erinnerungen warten; Dringendes erreicht das Handy, aber kein Echo spricht |

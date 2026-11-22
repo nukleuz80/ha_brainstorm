@@ -102,6 +102,10 @@ async def test_own_category_wins_over_standard_alias(store: BrainstormStore) -> 
     )
     assert store.parse_text_and_category("Einkauf: Milch")[:2] == ("Milch", "Einkauf")
     assert store.parse_text_and_category("Haushalt putzen")[1] == "Alltag"
+    # Longer forms of the own name go with it, not to the standard category
+    assert store.parse_text_and_category("Milch von der Einkaufsliste")[1] == "Einkauf"
+    assert store.parse_text_and_category("Toast einkaufen")[1] == "Einkauf"
+    assert store.category_for_alias("einkaufsliste") == "Einkauf"
 
 
 async def test_failing_auto_export_does_not_abort_add(

@@ -1181,7 +1181,7 @@ class BrainstormStore:
         "auto" picks reminder for a sentence starting with "remind".
         """
         # Imported here, both import this module
-        from .alexa_skill import clean_voice_text
+        from .alexa_skill import clean_voice_text, names_shopping_list
         from .reminders import build_reminder_request
 
         pack = self._pack(language)
@@ -1197,6 +1197,11 @@ class BrainstormStore:
         spoken = mode != SENTENCE_TEST_TYPED
         now = dt_util.now()
         work = clean_voice_text(original, pack) if spoken else original
+        shopping = (
+            self.category_for_alias(pack.shopping_list, pack.code)
+            if spoken and names_shopping_list(original, work, pack)
+            else None
+        )
         due: datetime | None = None
         trigger: dict[str, str | None] | None = None
         assignee: str | None = None
@@ -1212,8 +1217,10 @@ class BrainstormStore:
                 work = remaining
         reasons: dict[str, Any] = {}
         title, category, tags, priority = self.parse_text_and_category(
-            work, None, None, spoken=spoken, language=pack.code, reasons=reasons
+            work, shopping, None, spoken=spoken, language=pack.code, reasons=reasons
         )
+        if shopping:
+            reasons["category"] = ("list", pack.shopping_list)
         return {
             "original": original,
             "mode": mode,
@@ -1591,6 +1598,67 @@ class BrainstormStore:
             cancel()
         self._round_timers.clear()
 
+    def _category_lookup(
+        self, pack: LanguagePack
+    ) -> tuple[dict[str, list[str]], dict[str, list[str]]]:
+        """Return the aliases and keywords of every category but the Inbox."""
+        active_aliases: dict[str, list[str]] = {}
+        active_keywords: dict[str, list[str]] = {}
+
+        # A category of its own wins over a standard alias with its name, so that
+        # 'Einkauf' does not end up in 'Alltag' once the person created 'Einkauf'.
+        # Longer forms of its name go with it too: 'Einkaufsliste', 'einkaufen'.
+        own_names = {c.strip().lower() for c in self._categories}
+
+        def taken(word: str, cat_clean: str) -> bool:
+            return word != cat_clean and any(
+                word == own or (len(own) >= 5 and word.startswith(own))
+                for own in own_names
+                if own != cat_clean
+            )
+
+        for cat in self._categories:
+            if cat.lower() == "inbox":
+                continue
+            key = CATEGORY_KEYS.get(cat)
+            cat_clean = cat.strip().lower()
+            aliases = [
+                a for a in pack.category_aliases.get(key, []) if not taken(a, cat_clean)
+            ]
+            if cat_clean not in aliases:
+                aliases.append(cat_clean)
+            if "&" in cat_clean:
+                aliases.append(cat_clean.replace("&", pack.and_word).strip())
+            kws = [
+                k for k in pack.category_keywords.get(key, []) if not taken(k, cat_clean)
+            ]
+            for word in re.findall(r"[a-zA-Z0-9äöüÄÖÜß]{3,}", cat_clean):
+                if word not in kws and word not in pack.category_stop_words:
+                    kws.append(word)
+            active_aliases[cat] = aliases
+            active_keywords[cat] = kws
+        # The longer forms a standard category gave up go to the own category
+        for cat in self._categories:
+            cat_clean = cat.strip().lower()
+            if cat_clean == "inbox" or len(cat_clean) < 5 or cat not in active_aliases:
+                continue
+            for words, source in ((active_aliases[cat], pack.category_aliases),
+                                  (active_keywords[cat], pack.category_keywords)):
+                for group in source.values():
+                    for word in group:
+                        if word != cat_clean and word.startswith(cat_clean) and word not in words:
+                            words.append(word)
+        return active_aliases, active_keywords
+
+    def category_for_alias(self, alias: str, language: str | None = None) -> str | None:
+        """Return the category a list name like 'Einkaufsliste' stands for."""
+        aliases, keywords = self._category_lookup(self._pack(language))
+        wanted = alias.strip().lower()
+        for lookup in (aliases, keywords):
+            if found := next((cat for cat, names in lookup.items() if wanted in names), None):
+                return found
+        return None
+
     def parse_text_and_category(
         self,
         text: str,
@@ -1612,38 +1680,7 @@ class BrainstormStore:
         )
         category: str | None = None
 
-        # Build dynamic alias and keyword lookup for all registered categories
-        active_aliases: dict[str, list[str]] = {}
-        active_keywords: dict[str, list[str]] = {}
-
-        # A category of its own wins over a standard alias with its name, so that
-        # 'Einkauf' does not end up in 'Alltag' once the person created 'Einkauf'
-        own_names = {c.strip().lower() for c in self._categories}
-        for cat in self._categories:
-            if cat.lower() == "inbox":
-                continue
-            key = CATEGORY_KEYS.get(cat)
-            cat_clean = cat.strip().lower()
-            aliases = [
-                a
-                for a in pack.category_aliases.get(key, [])
-                if a == cat_clean or a not in own_names
-            ]
-            if cat_clean not in aliases:
-                aliases.append(cat_clean)
-            if "&" in cat_clean:
-                aliases.append(cat_clean.replace("&", pack.and_word).strip())
-            active_aliases[cat] = aliases
-
-            kws = [
-                k
-                for k in pack.category_keywords.get(key, [])
-                if k == cat_clean or k not in own_names
-            ]
-            for word in re.findall(r"[a-zA-Z0-9äöüÄÖÜß]{3,}", cat_clean):
-                if word not in kws and word not in pack.category_stop_words:
-                    kws.append(word)
-            active_keywords[cat] = kws
+        active_aliases, active_keywords = self._category_lookup(pack)
 
         # 0. Check explicit category if provided
         if explicit_category and explicit_category.strip() and explicit_category.lower() != "auto":
