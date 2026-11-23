@@ -401,12 +401,25 @@ def device_names(hass: HomeAssistant) -> set[str]:
     }
 
 
+def _command_with_punctuation(text: str, prefix: str) -> re.Match[str] | None:
+    """Match a command word followed by a comma or colon instead of a space."""
+    word = prefix.rstrip()
+    if not word:
+        return None
+    return re.match(rf"{re.escape(word)}\s*[,:;]\s*", text, re.IGNORECASE)
+
+
 def clean_voice_text(text: str, pack: LanguagePack) -> str:
     """Remove command words and list names, like the native voice capture."""
     cleaned = text.strip()
     for prefix in pack.voice_prefixes:
         if cleaned.lower().startswith(prefix):
             cleaned = cleaned[len(prefix) :]
+        elif match := _command_with_punctuation(cleaned, prefix):
+            # "Merke dir, dass ..." or "Notiere: ..." as typed by Siri or Assist
+            cleaned = cleaned[match.end() :]
+    # "Merke dir , dass ..." keeps the comma after the command word
+    cleaned = cleaned.strip().lstrip(",:;").strip()
     for suffix in pack.voice_suffixes:
         if cleaned.lower().endswith(suffix):
             cleaned = cleaned[: -len(suffix)]

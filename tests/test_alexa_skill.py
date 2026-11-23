@@ -23,7 +23,10 @@ from custom_components.brainstorm import alexa_display
 from custom_components.brainstorm import alexa_skill
 from custom_components.brainstorm.languages.de import PACK as GERMAN
 from custom_components.brainstorm.languages.en import PACK as ENGLISH
-from custom_components.brainstorm.alexa_skill import clean_voice_text
+from custom_components.brainstorm.alexa_skill import (
+    clean_voice_text,
+    names_shopping_list,
+)
 from custom_components.brainstorm.const import OVERVIEW_ENTITY_ID
 from custom_components.brainstorm.reminders import ReminderRequest
 
@@ -414,11 +417,32 @@ def test_skill_code_speaks_answer_from_home_assistant() -> None:
         ("ein buch auf die liste", "ein buch"),
         ("erinnere mich an den müll", "den müll"),
         ("neue idee kaffee kochen", "kaffee kochen"),
+        # A comma or colon after the command word (v1.28.1)
+        ("Merke dir, dass ich Reifen wechseln muss", "dass ich Reifen wechseln muss"),
+        ("Merke dir , dass ich Reifen wechseln muss", "dass ich Reifen wechseln muss"),
+        ("Notiere: Fenster putzen", "Fenster putzen"),
+        ("Idee: Hochbeet bauen", "Hochbeet bauen"),
+        # "schreib auf die Einkaufsliste" names the list like "setz auf" (v1.28.1)
+        ("Schreib auf die Einkaufsliste zwei Packungen Kaffee", "zwei Packungen Kaffee"),
+        ("schreibe auf meine einkaufsliste milch", "milch"),
+        ("pack auf die einkaufsliste butter", "butter"),
+        ("schreib auf die liste milch", "milch"),
+        ("schreib auf die to-do-liste steuer", "steuer"),
+        ("pack auf die liste brot", "brot"),
+        # A word that only starts like a command stays
+        ("merkel zitat suchen", "merkel zitat suchen"),
+        ("ideenbuch kaufen", "ideenbuch kaufen"),
     ],
 )
 def test_clean_voice_text(spoken: str, expected: str) -> None:
     """Test that spoken text is cleaned like in the native capture."""
     assert clean_voice_text(spoken, GERMAN) == expected
+
+
+def test_written_shopping_list_command_counts_as_shopping_list() -> None:
+    """Test that "schreib auf die Einkaufsliste" picks the shopping list (v1.28.1)."""
+    spoken = "Schreib auf die Einkaufsliste zwei Packungen Kaffee"
+    assert names_shopping_list(spoken, clean_voice_text(spoken, GERMAN), GERMAN)
 
 
 def _add_echo(hass: HomeAssistant, entity_id: str = ECHO_ENTITY, name: str = ECHO_NAME) -> None:

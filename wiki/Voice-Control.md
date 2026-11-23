@@ -135,7 +135,7 @@ With the skill Alexa answers only once. The setup is [above](#️-optional-your-
 
 | Goal | Examples |
 |---|---|
-| Add a note | "… **note** dim the basement light", "… **idea** build a raised bed", "… **remember** to change the tires", "… **add** milk", "… **write down** printer ink" |
+| Add a note | "… **note** dim the basement light", "… **idea** build a raised bed", "… **remember** to change the tires", "… **add** milk", "… **write down** printer ink". A comma or colon after the command word does not matter (German *„Merke dir, dass …“*, *„Notiere: …“*); *„Schreib auf die Einkaufsliste …“* picks the shopping category |
 | Reminder | "… **remind me** tomorrow at 8 to take out the bins" |
 | Complete | "… **done** take out the bins"; just "… **done**" completes the last reminder |
 | Postpone | "… **later**" moves the last reminder by one hour |

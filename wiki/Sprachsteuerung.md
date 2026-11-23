@@ -159,7 +159,7 @@ Mit dem Skill antwortet Alexa nur einmal. Die Einrichtung steht [oben](#variante
 
 | Ziel | Beispiele |
 |---|---|
-| Notiz anlegen | „… **notiere** Kellerlicht dimmen“, „… **neue Idee** Hochbeet bauen“, „… **merke dir** Reifen wechseln“, „… **schreib auf** Druckerpatronen“, „… **setze** Milch auf Einkaufen“ |
+| Notiz anlegen | „… **notiere** Kellerlicht dimmen“, „… **neue Idee** Hochbeet bauen“, „… **merke dir** Reifen wechseln“, „… **schreib auf** Druckerpatronen“, „… **setze** Milch auf Einkaufen“, „… **schreib auf die Einkaufsliste** Kaffee“ (Einkauf). Ein Komma oder Doppelpunkt nach dem Befehlswort stört nicht: *„Merke dir, dass …“*, *„Notiere: …“* |
 | Satzanfang ohne Befehlswort | „… **wir brauchen** Batterien“, „… **wir müssen** den Keller aufräumen“, „… **ich sollte** den Arzt anrufen“ |
 | Erinnerung | „… **erinnere mich** morgen um 8 an den Müll“, „… **termin** Zahnarzt am 25.11. um 14 Uhr“ |
 | Abhaken | „… **erledigt** Müll rausbringen“, „… **hake** Milch **ab**“, „… **fertig** Rasen mähen“; nur „… **erledigt**“ hakt die letzte Erinnerung ab |

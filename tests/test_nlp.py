@@ -373,3 +373,33 @@ def test_time_without_appointment_stays_text(spoken: str) -> None:
 def test_clauses_become_tasks(raw: str, expected: str) -> None:
     """A subordinate clause turns into a short task."""
     assert clean_and_format_idea_text(raw) == expected
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        # An adjective ending in "-tisch" is no table (v1.28.1)
+        (
+            "Meeting-Protokolle automatisch verschicken",
+            "Meeting-Protokolle automatisch verschicken",
+        ),
+        ("Regal praktisch einräumen", "Regal praktisch einräumen"),
+        ("Rechnung kritisch prüfen", "Rechnung kritisch prüfen"),
+        ("Ablauf spezifisch beschreiben", "Ablauf spezifisch beschreiben"),
+        # A real table or fish stays a noun
+        ("neuen schreibtisch kaufen", "Neuen Schreibtisch kaufen"),
+        ("gartentisch streichen", "Gartentisch streichen"),
+        ("goldfisch füttern", "Goldfisch füttern"),
+        ("klapptisch aufbauen", "Klapptisch aufbauen"),
+        ("werktisch aufräumen", "Werktisch aufräumen"),
+        ("esstisch abwischen", "Esstisch abwischen"),
+        ("neuen glastisch kaufen", "Neuen Glastisch kaufen"),
+        ("kaffeetisch abräumen", "Kaffeetisch abräumen"),
+        ("geburtstagstisch aufbauen", "Geburtstagstisch aufbauen"),
+        ("haifisch malen", "Haifisch malen"),
+    ],
+)
+def test_adjectives_ending_like_nouns_stay_lowercase(raw: str, expected: str) -> None:
+    """Test that "automatisch" is not capitalized as a compound of "Tisch"."""
+    assert clean_and_format_idea_text(raw) == expected
+

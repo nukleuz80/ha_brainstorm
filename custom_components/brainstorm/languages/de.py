@@ -361,10 +361,28 @@ BUILTIN_GLOSSARY: dict[str, str] = {
 }
 
 
+# Adjectives that end like a compound of "Tisch" or "Fisch"; a list instead of
+# an ending rule, since 'Glastisch' or 'Haifisch' end the same way
+ADJECTIVES_LIKE_COMPOUNDS: frozenset[str] = frozenset(
+    """
+    analytisch aromatisch authentisch automatisch bürokratisch chaotisch
+    demokratisch diplomatisch didaktisch dramatisch drastisch egoistisch elastisch
+    energetisch enthusiastisch exotisch fantastisch genetisch gigantisch hektisch
+    hypothetisch identisch idiotisch journalistisch klimatisch kosmetisch kritisch
+    logistisch magnetisch mathematisch optimistisch optisch pazifisch pessimistisch
+    plastisch politisch pragmatisch praktisch problematisch realistisch romantisch
+    sarkastisch schematisch semantisch skeptisch spezifisch statistisch stilistisch
+    synthetisch systematisch taktisch thematisch theoretisch touristisch ästhetisch
+    """.split()
+)
+
+
 def _is_noun(word: str) -> bool:
     """Return whether a lowercase word is a known noun or a compound ending in one."""
     if word in KNOWN_NOUNS or word in GERMAN_NOUNS:
         return True
+    if word in ADJECTIVES_LIKE_COMPOUNDS:
+        return False
     if len(word) > 4 and word.endswith(NOUN_SUFFIXES):
         return True
     if (
@@ -1373,8 +1391,24 @@ VOICE_PREFIXES: tuple[str, ...] = (
     "setz auf die liste ",
     "packe auf meine liste ",
     "pack auf meine liste ",
+    "schreibe auf meine einkaufsliste ",
+    "schreib auf meine einkaufsliste ",
+    "schreibe auf die einkaufsliste ",
+    "schreib auf die einkaufsliste ",
+    "packe auf meine einkaufsliste ",
+    "pack auf meine einkaufsliste ",
+    "packe auf die einkaufsliste ",
+    "pack auf die einkaufsliste ",
+    "schreibe auf meine to-do-liste ",
+    "schreib auf meine to-do-liste ",
+    "schreibe auf die to-do-liste ",
+    "schreib auf die to-do-liste ",
     "schreibe auf meine liste ",
     "schreib auf meine liste ",
+    "schreibe auf die liste ",
+    "schreib auf die liste ",
+    "packe auf die liste ",
+    "pack auf die liste ",
     "setze ",
     "setz ",
     "packe ",

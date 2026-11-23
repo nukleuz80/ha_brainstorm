@@ -143,3 +143,15 @@ async def test_device_command_is_flagged(
     ]
     assert not store.preview_idea("Küche Schrank an", "typed", "de")["device_command"]
     assert not store.preview_idea("Rufe morgen Oma an", "voice", "de")["device_command"]
+
+
+async def test_command_word_with_comma_is_removed(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that "Merke dir, dass ..." gives the same note as without comma."""
+    await setup_entry()
+    store = get_loaded_store(hass)
+    assert store is not None
+    with_comma = store.preview_idea("Merke dir, dass ich Reifen wechseln muss", "voice")
+    without = store.preview_idea("Merke dir dass ich Reifen wechseln muss", "voice")
+    assert with_comma["text"] == without["text"] == "Reifen wechseln"

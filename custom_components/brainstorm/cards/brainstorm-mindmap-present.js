@@ -6,7 +6,7 @@
  * methods are copied onto the card, so `this` is the card.
  */
 
-import { formatText, t } from "./brainstorm-i18n.js?v=1.28.0";
+import { formatText, t } from "./brainstorm-i18n.js?v=1.28.1";
 
 export default class MindmapPart {
   // Presentation: the map goes through its notes one by one, branch by branch
