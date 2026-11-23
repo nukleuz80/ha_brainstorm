@@ -22,5 +22,5 @@
     "pypdf==6.21.4"
   ],
   "single_config_entry": true,
-  "version": "1.28.1"
+  "version": "1.28.2"
 }

@@ -264,8 +264,12 @@ Ein gesprochener Satz mit einem Zeitpunkt bekommt eine Fälligkeit, z. B. nach *
 | „… nächste Woche“ | Montag nächster Woche 09:00 |
 | „… in 20 Minuten“, „in 2 Stunden“, „in 3 Tagen“ | jetzt + Zeitraum |
 | „… am 25.11. um 14 Uhr“ | 25.11. 14:00 |
-| „… am zweiten Dezember viertel nach drei“ | 02.12. 03:15 (mit „nachmittags“ 15:15) |
+| „… am zweiten Dezember viertel nach drei“ | 02.12. 15:15 |
+| „… am Freitag um 3 Uhr nachts“ | Freitag 03:00 |
+| „Termin beim Friseur um halb zehn“ | heute 09:30 (ohne Tag) |
 
 Tageszeiten ohne Uhrzeit: früh/morgens 8:00, vormittags 10:00, mittags 12:00, nachmittags 15:00, abends 19:00, nachts 22:00. Ohne jede Zeit gilt **9:00**.
+
+Uhrzeiten von **1 bis 5 Uhr** gelten ohne Tageszeit als Nachmittag (seit v1.28.2): *„um halb drei“* ist 14:30, *„um 3 Uhr“* 15:00. Mit *früh*, *morgens* oder *nachts* bleibt es bei der Nacht (*„um 3 Uhr nachts“* 03:00), ebenso bei einer geschriebenen Zeit wie *„03:00“* oder *„4:45“*; *„12 Uhr nachts“* ist Mitternacht. Ab 6 Uhr bleibt die Uhrzeit, wie sie ist. *Halb* und *viertel* gehen auch bei einem *Termin* ohne Tag.
 
 Wie und wo erinnert wird, stellst du unter [Erinnerungen](Einstellungen#integration) ein.

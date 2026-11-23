@@ -907,6 +907,8 @@ def _combine(
     """Add the spoken time of day to a date, which may not be known yet."""
     hour: int | None = None
     minute = 0
+    # 'um 03:00' or 'um 4:45' is a deliberate time, 'um 3' or 'halb drei' is not
+    written_24h = False
     if match := take(_RE_HALF):
         hour = (_number(match.group(1)) - 1) % 24
         minute = 30
@@ -914,7 +916,11 @@ def _combine(
         base = _number(match.group(2))
         hour, minute = ((base - 1) % 24, 45) if match.group(1).lower() == "vor" else (base, 15)
     elif match := take(_RE_CLOCK):
-        hour = _number(match.group(1) or match.group(4))
+        hour_text = match.group(1) or match.group(4)
+        hour = _number(hour_text)
+        written_24h = (
+            hour_text.startswith("0") or hour == 0 or bool(match.group(2) or match.group(5))
+        )
         minute_text = match.group(2) or match.group(5) or match.group(3) or match.group(6)
         if minute_text:
             minute = _number(minute_text)
@@ -923,11 +929,27 @@ def _combine(
 
     part = take(_RE_DAY_PART)
     if part:
-        default_hour, afternoon = _DAY_PARTS[part.group(1).lower()]
+        name = part.group(1).lower()
+        default_hour, afternoon = _DAY_PARTS[name]
         if hour is None:
             hour = default_hour
+        elif name.startswith("nacht"):
+            # '3 Uhr nachts' stays at night, '11 Uhr nachts' is 23:00
+            # and '12 Uhr nachts' midnight
+            if 6 <= hour < 12:
+                hour += 12
+            elif hour == 12:
+                hour = 0
+        elif name.startswith("mittag"):
+            # 'halb eins mittags' is 12:30, 'um 2 Uhr mittags' 14:00
+            if hour <= 5:
+                hour += 12
         elif afternoon and hour < 12:
             hour += 12
+    elif hour is not None and hour <= 5 and not written_24h:
+        # Nobody plans a task at 'halb drei' in the night: 01:00-05:59 without
+        # 'früh', 'morgens' or 'nachts' means the afternoon (v1.28.2)
+        hour += 12
 
     if day is None and hour is None:
         return None
@@ -962,13 +984,18 @@ _RE_NO_DUE_DATE = re.compile(
 )
 _RE_DATE_CONNECTOR = re.compile(
     r"\b(?:bis\s+(?:spätestens\s+)?|spätestens\s+|für\s+|ab\s+)"
-    rf"(?=(?:übermorgen|heute|morgen|nächste|kommende|am\s|um\s|\d|{'|'.join(_WEEKDAYS)})\b"
+    rf"(?=(?:übermorgen|heute|morgen|nächste|kommende|am\s|um\s|halb\s|viertel\s"
+    rf"|dreiviertel\s|\d|{'|'.join(_WEEKDAYS)})\b"
     rf"|(?:{_NUMBER})\s+uhr\b)",
     re.IGNORECASE,
 )
 # A note that says it is an appointment may give only a time of day
 _RE_APPOINTMENT = re.compile(r"\btermin\b", re.IGNORECASE)
-_RE_SPOKEN_TIME = re.compile(rf"\b(?:{_NUMBER})\s+uhr\b|\bum\s+(?:{_NUMBER})\b", re.I)
+_RE_SPOKEN_TIME = re.compile(
+    rf"\b(?:{_NUMBER})\s+uhr\b|\bum\s+(?:{_NUMBER})\b"
+    rf"|{_RE_HALF.pattern}|{_RE_QUARTER.pattern}",
+    re.I,
+)
 _RE_APPOINTMENT_WORDS = re.compile(
     r"^(?:(?:ein(?:en)?|neue[nr]?)\s+)?termin(?:\s+(?:für|am|um))?\s+", re.IGNORECASE
 )

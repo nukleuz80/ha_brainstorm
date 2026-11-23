@@ -12,6 +12,7 @@ from custom_components.brainstorm.languages.de import (
     extract_spoken_due,
     extract_spoken_priority,
     format_typed_text,
+    parse_due,
     participle_to_infinitive,
     validate_ai_rewrite,
 )
@@ -403,3 +404,57 @@ def test_adjectives_ending_like_nouns_stay_lowercase(raw: str, expected: str) ->
     """Test that "automatisch" is not capitalized as a compound of "Tisch"."""
     assert clean_and_format_idea_text(raw) == expected
 
+
+def _at(day: int, hour: int, minute: int = 0) -> datetime:
+    return datetime(2026, 11, day, hour, minute, tzinfo=timezone.utc)
+
+
+@pytest.mark.parametrize(
+    ("spoken", "due"),
+    [
+        # 1 to 5 o'clock without a part of the day is the afternoon
+        ("am freitag um halb drei elternabend", _at(6, 14, 30)),
+        ("am freitag um 3 uhr elternabend", _at(6, 15)),
+        ("am freitag viertel nach zwei elternabend", _at(6, 14, 15)),
+        ("am freitag um eins elternabend", _at(6, 13)),
+        # A part of the day, a 24 hour time and 6 o'clock and later stay
+        ("am freitag um 3 uhr nachts elternabend", _at(6, 3)),
+        ("am freitag um 11 uhr nachts elternabend", _at(6, 23)),
+        ("am freitag früh um 5 elternabend", _at(6, 5)),
+        ("am freitag morgens um 4 uhr elternabend", _at(6, 4)),
+        ("am freitag halb eins mittags elternabend", _at(6, 12, 30)),
+        ("am freitag um 03:00 elternabend", _at(6, 3)),
+        ("am freitag um 0 uhr elternabend", _at(6, 0)),
+        ("am freitag um 6 uhr elternabend", _at(6, 6)),
+        ("am freitag um halb zehn elternabend", _at(6, 9, 30)),
+        ("am freitag um 4:45 elternabend", _at(6, 4, 45)),
+        ("am freitag um 12 uhr nachts elternabend", _at(6, 0)),
+    ],
+)
+def test_early_hours_mean_the_afternoon(spoken: str, due: datetime) -> None:
+    """Test that nobody means 1 to 5 o'clock at night without saying so."""
+    assert extract_spoken_due(spoken, _APPOINTMENT_NOW) == (due, "elternabend")
+
+
+@pytest.mark.parametrize(
+    ("spoken", "due", "text"),
+    [
+        ("termin friseur um viertel nach zehn", _at(3, 10, 15), "friseur"),
+        ("termin friseur um halb drei", _at(3, 14, 30), "friseur"),
+        ("termin friseur viertel vor vier", _at(3, 15, 45), "friseur"),
+        ("termin friseur für viertel nach zehn", _at(3, 10, 15), "friseur"),
+        ("termin friseur ab halb drei", _at(3, 14, 30), "friseur"),
+    ],
+)
+def test_appointment_with_half_or_quarter(
+    spoken: str, due: datetime, text: str
+) -> None:
+    """Test that half and quarter also work for an appointment without a day."""
+    assert extract_spoken_due(spoken, _APPOINTMENT_NOW) == (due, text)
+
+
+def test_reminder_at_three_means_the_afternoon() -> None:
+    """Test that a reminder "um 3 Uhr" also lands in the afternoon (v1.28.2)."""
+    due, text = parse_due("erinnere mich um 3 uhr an den müll", _APPOINTMENT_NOW)
+    assert due == _at(3, 15)
+    assert text == "erinnere mich an den müll"
