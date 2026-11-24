@@ -86,6 +86,7 @@ AMBIGUOUS_PLURALS: frozenset[str] = frozenset(
     {
         "bitten", "duschen", "fragen", "pflanzen", "pflegen", "pumpen", "reisen",
         "schrauben", "bürsten", "feiern", "farben", "melden", "enden", "listen",
-        "seiten", "zahlen",
+        "seiten", "zahlen", "decken", "mieten", "rollen", "tanken", "updaten",
+        "wollen",
     }
 )

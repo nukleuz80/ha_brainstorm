@@ -545,6 +545,40 @@ def _drop_articles(text: str) -> str:
 _INDEFINITE_ARTICLES = {"ein", "eine", "einen", "einem", "einer", "eines"}
 _NOT_NOUNS_AFTER_ARTICLE = {"paar", "bisschen", "wenig", "mal", "bis", "und", "oder"}
 
+# Words in front of a plural noun ('meine decken', 'zwei rollen')
+_PLURAL_DETERMINERS = {
+    "die", "meine", "deine", "seine", "ihre", "unsere", "eure", "alle", "diese",
+    "welche", "viele", "einige", "mehrere", "paar", "zwei", "drei", "vier", "fünf",
+    "sechs", "sieben", "acht", "neun", "zehn", "zwölf",
+}
+# Words ending like an adjective that do not mark a noun ('bitte tanken')
+_NOT_ADJECTIVES = {
+    "bitte", "gerne", "ohne", "eher", "sie", "wie", "oder", "aber", "wieder",
+    "immer", "später", "vorher", "nachher", "sehr", "mehr", "weiter", "lieber",
+    "über", "unter", "hinter", "jeder", "jede", "jedes", "ganze",
+}
+
+
+def _is_ambiguous_plural_noun(word: str, previous: str) -> bool:
+    """Return whether a word like 'decken' is the noun, judged by the word before.
+
+    'neue decken kaufen' and 'zwei decken' name blankets, 'tisch decken' sets
+    the table.
+    """
+    if word not in AMBIGUOUS_PLURALS:
+        return False
+    previous = previous.strip("\"'([<>)].,!?:;").lower()
+    if previous in _PLURAL_DETERMINERS or previous.isdigit():
+        return True
+    return (
+        len(previous) > 3
+        and previous.endswith(("e", "er", "es"))
+        and previous not in _NOT_ADJECTIVES
+        and previous not in TIME_ADVERBS
+        and previous not in ARTICLES_AND_PRONOUNS
+        and not _is_noun(previous)
+    )
+
 
 def _format_words(text: str) -> str:
     """Correct spelling and apply German capitalization, word by word."""
@@ -565,7 +599,7 @@ def _format_words(text: str) -> str:
         # Capitalization rules
         if idx == 0:
             word_cap = capitalize_first(clean_w)
-        elif _is_noun(lower_w):
+        elif _is_noun(lower_w) or _is_ambiguous_plural_noun(lower_w, words[idx - 1]):
             word_cap = capitalize_first(clean_w)
         elif (
             words[idx - 1].lower() in PREPOSITION_TRIGGERS
@@ -1395,7 +1429,23 @@ CATEGORY_KEYWORDS: dict[str, list[str]] = {
         "geburtstag",
         "geschenk",
         "brot",
+        "brötchen",
         "milch",
+        "eier",
+        "butter",
+        "käse",
+        "joghurt",
+        "obst",
+        "gemüse",
+        "salz",
+        "pfeffer",
+        "zucker",
+        "mehl",
+        "öl",
+        "olivenöl",
+        "essig",
+        "gewürz",
+        "gewürze",
         "mittagessen",
         "abendessen",
     ],

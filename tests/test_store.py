@@ -79,6 +79,8 @@ async def test_fresh_store_has_defaults(store: BrainstormStore) -> None:
         ("Garten: Blumen pflanzen", "Blumen pflanzen", "Haus & Garten"),
         ("für den Garten Tomaten düngen", "Tomaten düngen", "Haus & Garten"),
         ("Haus, streichen", "Streichen", "Haus & Garten"),
+        ("Salz und Pfeffer", "Salz und Pfeffer", "Alltag"),
+        ("Zucker, Mehl und Olivenöl", "Zucker, Mehl und Olivenöl", "Alltag"),
     ],
 )
 async def test_parse_text_and_category(

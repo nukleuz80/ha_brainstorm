@@ -405,6 +405,34 @@ def test_adjectives_ending_like_nouns_stay_lowercase(raw: str, expected: str) ->
     assert clean_and_format_idea_text(raw) == expected
 
 
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("tisch decken", "Tisch decken"),
+        ("geburtstagstisch decken", "Geburtstagstisch decken"),
+        ("oma will tisch decken", "Oma will Tisch decken"),
+        ("auto tanken", "Auto tanken"),
+        ("wohnung mieten", "Wohnung mieten"),
+        ("app updaten", "App updaten"),
+        ("teig rollen", "Teig rollen"),
+        ("sie wollen grillen", "Sie wollen grillen"),
+        ("bitte auto tanken", "Auto tanken"),
+        ("morgen tanken", "Morgen tanken"),
+        # The noun after an adjective, a determiner or a number
+        ("neue decken kaufen", "Neue Decken kaufen"),
+        ("kuscheldecke und warme decken kaufen", "Kuscheldecke und warme Decken kaufen"),
+        ("meine decken waschen", "Meine Decken waschen"),
+        ("zwei rollen kaufen", "Zwei Rollen kaufen"),
+        ("2 rollen kaufen", "2 Rollen kaufen"),
+        ("alle fragen klären", "Alle Fragen klären"),
+        ("mieten zahlen", "Mieten zahlen"),
+    ],
+)
+def test_verbs_like_plurals_stay_lowercase(raw: str, expected: str) -> None:
+    """Test that "decken" sets the table and is only "Decken" after an adjective."""
+    assert clean_and_format_idea_text(raw) == expected
+
+
 def _at(day: int, hour: int, minute: int = 0) -> datetime:
     return datetime(2026, 11, day, hour, minute, tzinfo=timezone.utc)
 
