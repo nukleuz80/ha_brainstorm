@@ -32,7 +32,7 @@ from typing import Any
 import voluptuous as vol
 
 from homeassistant.components.todo import TodoListEntityFeature
-from homeassistant.const import ATTR_SUPPORTED_FEATURES
+from homeassistant.const import ATTR_RESTORED, ATTR_SUPPORTED_FEATURES
 from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
@@ -79,6 +79,8 @@ NEEDS_ACTION = "needs_action"
 COMPLETED = "completed"
 SYNC_INTERVAL = timedelta(minutes=5)
 SYNC_COOLDOWN = 1.0
+# Other integrations may still add their lists this long after the start
+STARTUP_GRACE = timedelta(minutes=10)
 
 LINK_ENTITY = "entity"
 LINK_UID = "uid"
@@ -163,6 +165,7 @@ class TodoSyncManager:
         self._watched: frozenset[str] = frozenset()
         self._pending_removals: list[tuple[str, str]] = []
         self._started = False
+        self._started_at: datetime | None = None
         self._failed: set[str] = set()
         self._debouncer = Debouncer(
             hass,
@@ -256,6 +259,7 @@ class TodoSyncManager:
     def _on_started(self, _hass: HomeAssistant) -> None:
         """Run the first sync once Home Assistant has started."""
         self._started = True
+        self._started_at = dt_util.utcnow()
         self._schedule()
 
     @callback
@@ -376,6 +380,15 @@ class TodoSyncManager:
                 try:
                     await self._async_sync_one(target, entities)
                 except HomeAssistantError as err:
+                    if self._in_startup_grace():
+                        # The list is still loading; its first state syncs it
+                        _LOGGER.debug(
+                            "Category %s waits for %s: %s",
+                            target.category,
+                            target.entity_id,
+                            err,
+                        )
+                        continue
                     if target.entity_id not in self._failed:
                         _LOGGER.warning(
                             "Could not sync category %s with %s: %s",
@@ -387,10 +400,22 @@ class TodoSyncManager:
                 else:
                     self._failed.discard(target.entity_id)
 
+    def _in_startup_grace(self) -> bool:
+        """Return whether Home Assistant started only a few minutes ago."""
+        return (
+            self._started_at is not None
+            and dt_util.utcnow() - self._started_at < STARTUP_GRACE
+        )
+
     async def _async_get_items(self, entity_id: str) -> dict[str, dict[str, Any]]:
         """Return the items of a list by their ID."""
         state = self.hass.states.get(entity_id)
-        if state is None or state.state == "unavailable":
+        # A restored state stands in for a list its integration has not added yet
+        if (
+            state is None
+            or state.state == "unavailable"
+            or state.attributes.get(ATTR_RESTORED)
+        ):
             raise HomeAssistantError(f"{entity_id} is not available")
         response = await self.hass.services.async_call(
             TODO_DOMAIN,

@@ -9,6 +9,7 @@ from unittest.mock import patch
 import pytest
 from homeassistant.core import Context, HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
@@ -291,10 +292,49 @@ async def test_a_missing_list_is_logged_once(
         options={"todo_sync": {"Einkauf": "todo.gone", "Weg": SHOPPING}},
     )
     store = entry.runtime_data
+    assert store.todo_sync is not None
+    store.todo_sync._started_at = dt_util.utcnow() - timedelta(minutes=11)  # noqa: SLF001
     await store.async_add_idea("Milch", category="Einkauf", source="dashboard")
     await _sync(hass, store)
     await _sync(hass, store)
     assert caplog.text.count("Could not sync category Einkauf") == 1
+
+
+async def test_a_list_still_loading_after_the_start_is_not_a_warning(
+    hass: HomeAssistant, setup_entry: SetupEntry, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Test that a list another integration adds late does not warn at the start."""
+    hass.states.async_set("todo.later", "unavailable", {"restored": True})
+    entry = await setup_entry(
+        stored={"ideas": [], "categories": ["Inbox", "Einkauf"]},
+        options={"todo_sync": {"Einkauf": "todo.later"}},
+    )
+    store = entry.runtime_data
+    assert store.todo_sync is not None
+    store.todo_sync._started_at = dt_util.utcnow()  # noqa: SLF001
+    await store.async_add_idea("Milch", category="Einkauf", source="dashboard")
+    await _sync(hass, store)
+    assert "Could not sync category Einkauf" not in caplog.text
+
+    # Still missing once the start is long over, it is worth a warning
+    store.todo_sync._started_at = dt_util.utcnow() - timedelta(minutes=11)  # noqa: SLF001
+    await _sync(hass, store)
+    assert caplog.text.count("Could not sync category Einkauf") == 1
+
+
+async def test_a_restored_state_counts_as_not_loaded(
+    hass: HomeAssistant, setup_entry: SetupEntry
+) -> None:
+    """Test that a restored state is not asked for its items."""
+    hass.states.async_set("todo.later", "0", {"restored": True})
+    entry = await setup_entry(
+        stored={"ideas": [], "categories": ["Inbox", "Einkauf"]},
+        options={"todo_sync": {"Einkauf": "todo.later"}},
+    )
+    store = entry.runtime_data
+    assert store.todo_sync is not None
+    with pytest.raises(HomeAssistantError, match="not available"):
+        await store.todo_sync._async_get_items("todo.later")  # noqa: SLF001
 
 
 async def test_unlinking_keeps_the_items_and_drops_the_links(
