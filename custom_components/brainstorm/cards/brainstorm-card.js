@@ -1,4 +1,4 @@
-import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, bringBadge, bringSentText, unblockedText, canSendToBring, renderBringSend, canHandOver, canHandOverProject, canMakeReward, choreopsBadge, choreopsRewardBadge, renderChoreHandover, renderChoreProject, renderChoreReward, commentBadge, renderComments, renderTrash, renderSpeech, renderTemplates, saveAsTemplate, needsPersonalData, reactionBadges, voteBadge, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, habitBadge, habitField, readHabit, snoozeBadge, snoozeField, readSnooze, SNOOZE_CHOICES, snoozeDay, snoozeLabel, parseSnoozeInput, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, timeBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t, linkedListMark, linkedListOf, linkedListSign, linkedListText, batteriesBringText, batteriesNeeded, calendarBadge, calendarOptions, readCalendar, renderStatistics } from "./brainstorm-i18n.js?v=1.30.0";
+import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, bringBadge, bringSentText, unblockedText, canSendToBring, renderBringSend, canHandOver, canHandOverProject, canMakeReward, choreopsBadge, choreopsRewardBadge, renderChoreHandover, renderChoreProject, renderChoreReward, commentBadge, renderComments, renderTrash, renderSpeech, renderTemplates, saveAsTemplate, needsPersonalData, reactionBadges, voteBadge, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, habitBadge, habitField, readHabit, snoozeBadge, snoozeField, readSnooze, SNOOZE_CHOICES, snoozeDay, snoozeLabel, parseSnoozeInput, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, timeBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t, linkedListMark, linkedListOf, linkedListSign, linkedListText, batteriesBringText, batteriesNeeded, calendarBadge, calendarOptions, readCalendar, renderStatistics } from "./brainstorm-i18n.js?v=1.30.1";
 
 // Same check as isSample() in brainstorm-onboarding.js, without loading it
 const hasSampleTag = (idea) => Array.isArray(idea && idea.tags)
@@ -7,7 +7,7 @@ const hasSampleTag = (idea) => Array.isArray(idea && idea.tags)
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.30.0 - Vorlagen
+ * Version 1.30.1 - Scrollable item menu
  */
 // The bulb lies next to this file, wherever Home Assistant serves it from
 const BULB_URL = new URL("./brainstorm-bulb.svg", import.meta.url).href;
@@ -4944,6 +4944,7 @@ class BrainstormCard extends HTMLElement {
           border-radius: 20px;
           border: 1px solid var(--ha-card-border-color, var(--divider-color, rgba(127, 127, 127, 0.2)));
           box-shadow: 0 20px 48px rgba(0, 0, 0, 0.32);
+          max-height: 100%;
           overflow: hidden;
           display: flex;
           flex-direction: column;
@@ -4980,6 +4981,15 @@ class BrainstormCard extends HTMLElement {
           display: flex;
           flex-direction: column;
           padding: 6px;
+          flex: 1 1 auto;
+          min-height: 0;
+          overflow-y: auto;
+          overscroll-behavior: contain;
+          -webkit-overflow-scrolling: touch;
+        }
+        .apple-menu-header,
+        .apple-menu-reactions {
+          flex-shrink: 0;
         }
         .apple-menu-btn {
           display: flex;
@@ -6728,7 +6738,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.30.0 ",
+  "%c BRAINSTORM-CARD %c v1.30.1 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

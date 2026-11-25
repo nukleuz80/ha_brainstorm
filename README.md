@@ -9,7 +9,7 @@
 [![Open in the Marketplace](https://img.shields.io/badge/Marketplace-Open%20Repository-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nukleuz80&repository=ha_brainstorm&category=integration)
 [![Marketplace Default](https://img.shields.io/badge/Marketplace%20(HACS)-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Start Config Flow](https://img.shields.io/badge/Home%20Assistant-Add%20Integration-41BDF5?logo=home-assistant&logoColor=white)](https://my.home-assistant.io/redirect/config_flow_start/?domain=brainstorm)
-[![Version](https://img.shields.io/badge/version-1.30.0-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
+[![Version](https://img.shields.io/badge/version-1.30.1-blue.svg)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![GitHub Release](https://img.shields.io/github/v/release/nukleuz80/ha_brainstorm)](https://github.com/nukleuz80/ha_brainstorm/releases)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold%20self--assessed-FFD700.svg)](https://contributors.home-assistant.io/core/quality-scale/)
 [![Wiki](https://img.shields.io/badge/Docs-Wiki-6f42c1.svg)](https://github.com/nukleuz80/ha_brainstorm/wiki)
@@ -269,11 +269,11 @@ The latest versions; every version is in [CHANGELOG.md](CHANGELOG.md).
 
 | Version | Date | Status & Highlights |
 | :--- | :--- | :--- |
+| **`v1.30.1`** | 2026-11-25 | **📱 The menu scrolls again.** The menu of a note had grown taller than a phone screen and was cut off at the top and bottom. Now it stays on screen, the header and reactions stay put and the entries below scroll. |
 | **`v1.30.0`** | 2026-11-25 | **📋 Your own templates.** A note with subtasks you need again and again, such as *packing list holiday* or *BBQ*, is saved once with *Save as template* (menu of the note, in the mind map in the edit dialog). *📋 Templates* above the list and in the mind map creates a fresh copy in the chosen category, everything open and in the same order. Spoken, it works with *"create packing list holiday"* or *"template BBQ"* when the template exists. With privacy, everyone has their own templates. New actions `save_template`, `create_from_template` (with `category` and `due`) and `delete_template`. |
 | **`v1.29.1`** | 2026-11-25 | **💤 Notes put off in the briefing.** The daily briefing now says what is back today: *"Back today: trim hedge."* The weekly review names what comes back within the next 7 days. A note still put off that has a due date is no longer named in the briefing. |
 | **`v1.29.0`** | 2026-11-25 | **💤 Put off until a day.** What is due later leaves the list until then: *Put off* in the menu (next week, next month, until spring, pick a day) or *💤 Put off until* in the edit dialog of both cards. Spoken, it works with *"trim hedge from March"*, *"not before summer"* or German *„ab dem 3. April“*. Notes put off do not count, are not read out and stay out of the to-do lists; *💤 N put off* at the bottom of the list unfolds them, the mind map shows them pale with 💤. On their day they are back at the top of the list, with the event `brainstorm_idea_woke`. Field `snoozed_until` in `add_idea` and `update_idea`. |
 | **`v1.28.5`** | 2026-11-25 | **🔤 Spelled abbreviations.** Alexa writes letters spoken one by one apart, so *„WLED-Matrix“* became *„W. l. e. d. Matrix“*. Now they become one word: *WLED*, *TÜV*, *USB*, *ESP*. Abbreviations like *z. B.* stay. Also, only a real adjective in front of *updaten*, *decken* and the like marks a noun now, so *„Firmware updaten“* no longer turns into *„Firmware Updaten“*. |
-| **`v1.28.4`** | 2026-11-24 | **🔕 No sync warning after a restart.** Right after a restart the log said *„Could not sync category Einkauf with todo.…“* while Bring! or another integration was still loading its lists. During the first 10 minutes after the start this now only goes to the debug log, and a list with a restored state counts as not loaded yet. Once the list is there, Brainstorm syncs it at once. If it is still missing afterwards, the warning comes once as before. |
 
 ---
 

@@ -1,0 +1,25 @@
+<!doctype html>
+<!-- Browser test: a long item menu scrolls on a small phone screen instead of being cut off.
+     Run: python3 -m http.server in the repo root, open http://localhost:8000/tests/js/menu_scroll.html. --><meta charset="utf-8"><body style="margin:0"><pre id="out">running</pre>
+<script type="module">
+const fails = [];
+const src = await (await fetch("../../custom_components/brainstorm/cards/brainstorm-card.js")).text();
+const start = src.indexOf("/* Apple Reminders Style Context Menu */");
+const css = src.slice(start, src.indexOf(".apple-menu-reactions {", start));
+const frame = document.createElement("iframe");
+frame.style.cssText = "width:375px;height:600px;border:0";
+document.body.appendChild(frame);
+const doc = frame.contentDocument;
+doc.head.innerHTML = `<style>${css}</style>`;
+const buttons = Array.from({ length: 30 }, (_, i) => `<button class="apple-menu-btn">Eintrag ${i}</button>`).join("");
+doc.body.innerHTML = `<div class="apple-menu-backdrop"><div class="apple-menu-card">
+  <div class="apple-menu-header">Kopf</div><div class="apple-menu-actions">${buttons}</div></div></div>`;
+await new Promise((r) => setTimeout(r, 300));
+const card = doc.querySelector(".apple-menu-card").getBoundingClientRect();
+const actions = doc.querySelector(".apple-menu-actions");
+if (card.top < 0 || card.bottom > 600) fails.push(`card outside the screen: ${card.top}..${card.bottom}`);
+if (actions.scrollHeight <= actions.clientHeight) fails.push("actions do not scroll");
+actions.scrollTop = 10000;
+if (actions.scrollTop === 0) fails.push("cannot scroll down");
+document.getElementById("out").textContent = fails.length ? "FAIL\n" + fails.join("\n") : "PASS";
+</script>
