@@ -183,3 +183,53 @@ async def test_ticking_off_ends_the_snooze(
     await _call(hass, "update_idea", id=idea["id"], snoozed_until=later.isoformat())
     await _call(hass, "update_idea", id=idea["id"], status="completed")
     assert "snoozed_until" not in store.get_idea(idea["id"])
+
+
+async def test_the_briefing_names_what_came_back(
+    hass: HomeAssistant, setup_entry: SetupEntry, freezer: FrozenDateTimeFactory
+) -> None:
+    """Test that the briefing says what is back today and skips what still waits."""
+    freezer.move_to("2026-11-25 12:00:00+00:00")
+    entry = await setup_entry()
+    store = entry.runtime_data
+    reminders = store.reminders
+    hedge = await store.async_add_idea("Hecke schneiden", category="Inbox")
+    pool = await store.async_add_idea("Pool öffnen", category="Inbox")
+    await _call(hass, "update_idea", id=hedge["id"], snoozed_until="2026-11-26")
+    # Due today but still put off: the briefing keeps quiet about it
+    await _call(
+        hass,
+        "update_idea",
+        id=pool["id"],
+        snoozed_until="2027-06-01",
+        due="2026-11-25T08:00:00+00:00",
+    )
+    assert reminders.build_digest(dt_util.now()) is None
+
+    freezer.move_to("2026-11-26 12:00:00+00:00")
+    await store.async_wake_snoozed()
+    assert store.get_idea(hedge["id"])["woke_on"] == "2026-11-26"
+    assert reminders.build_digest(dt_util.now()) == "Heute wieder da: Hecke schneiden."
+
+    # The next day it is a note like any other
+    freezer.move_to("2026-11-27 12:00:00+00:00")
+    assert reminders.build_digest(dt_util.now()) is None
+
+
+async def test_the_review_names_what_comes_back_this_week(
+    hass: HomeAssistant, setup_entry: SetupEntry, freezer: FrozenDateTimeFactory
+) -> None:
+    """Test that the weekly review lists the notes back within seven days."""
+    freezer.move_to("2026-11-25 12:00:00+00:00")
+    entry = await setup_entry()
+    store = entry.runtime_data
+    for text, day in (
+        ("Reifen wechseln", "2026-11-30"),
+        ("Hecke schneiden", "2026-11-27"),
+        ("Pool öffnen", "2027-06-01"),
+    ):
+        idea = await store.async_add_idea(text, category="Inbox")
+        await _call(hass, "update_idea", id=idea["id"], snoozed_until=day)
+    assert store.reminders.build_review(dt_util.now()) == (
+        "In den nächsten 7 Tagen kommt zurück: Hecke schneiden und Reifen wechseln."
+    )

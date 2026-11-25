@@ -288,6 +288,7 @@ HABIT_RECENT_DAYS = 126
 MY_DAY_PARTS = ("morning", "day", "evening")
 # Put off until a day (ISO date): hidden and not counted until then
 ATTR_SNOOZED = "snoozed_until"
+ATTR_WOKE = "woke_on"
 # Who a repeating note goes to in the next round: mode and the people (person
 # entities) taking turns
 ATTR_ROTATION = "rotation"

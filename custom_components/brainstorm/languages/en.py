@@ -982,6 +982,8 @@ MESSAGES: dict[str, str] = {
     "digest_many": "{count} things are due today: {items}.",
     "digest_my_day": "Planned for today: {parts}.",
     "digest_habits": "Habits for today: {items}.",
+    "digest_woke": "Back today: {items}.",
+    "review_upcoming": "Coming back in the next {days} days: {items}.",
     "digest_points": "Points: {items}.",
     "points_entry": "{name} {points}",
     "streak_bonus_reason": "{days}-day streak: {text}",

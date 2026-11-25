@@ -32,7 +32,9 @@ from .const import (
     ATTR_PRIORITY,
     ATTR_REMINDED_AT,
     ATTR_STATUS,
+    ATTR_SNOOZED,
     ATTR_TEXT,
+    ATTR_WOKE,
     ATTR_TRIGGER,
     ATTR_URGENT_SENT,
     CONF_AI_ENABLED,
@@ -101,6 +103,8 @@ CHECK_INTERVAL = timedelta(seconds=30)
 LATE_SCHEDULE_LIMIT = timedelta(hours=2)
 PRESENCE_SCHEDULE_LIMIT = timedelta(hours=6)
 REVIEW_MAX_ITEMS = 5
+# The weekly review names the notes coming back within this many days
+REVIEW_UPCOMING_DAYS = 7
 ACTION_PREFIX = "BRAINSTORM_"
 ACTION_DONE = "DONE"
 ACTION_SNOOZE = "SNOOZE"
@@ -953,9 +957,12 @@ class ReminderManager:
         due_today: list[str] = []
         planned: dict[str, list[str]] = {}
         habits: list[str] = []
+        woke: list[str] = []
         for idea in self._spoken_ideas():
-            if idea.get("status") != "active":
+            if idea.get("status") != "active" or is_snoozed(idea, now.date()):
                 continue
+            if idea.get(ATTR_WOKE) == now.date().isoformat():
+                woke.append(str(idea.get(ATTR_TEXT)))
             if habit := habit_summary(idea, now.date()):
                 if not habit["today"]:
                     habits.append(str(idea.get(ATTR_TEXT)))
@@ -986,6 +993,8 @@ class ReminderManager:
             )
         if habits:
             sentences.append(self._pack.msg("digest_habits", items=self._pack.join(habits)))
+        if woke:
+            sentences.append(self._pack.msg("digest_woke", items=self._pack.join(woke)))
         if points := self._digest_points():
             sentences.append(points)
         return " ".join(sentences) or None
@@ -1011,23 +1020,39 @@ class ReminderManager:
         return self._pack.msg("digest_points", items=self._pack.join(entries))
 
     def build_review(self, now: datetime) -> str | None:
-        """Return the review of long open ideas, None if there are none."""
+        """Return the review of long open ideas and of the notes coming back.
+
+        None if there are neither.
+        """
         days = int(self._options.get(CONF_REVIEW_DAYS, DEFAULT_REVIEW_DAYS))
         limit = now - timedelta(days=days)
         stale = []
+        upcoming: list[tuple[str, str]] = []
+        week_end = (now.date() + timedelta(days=REVIEW_UPCOMING_DAYS)).isoformat()
         for idea in self._spoken_ideas():
-            if idea.get("status") != "active" or is_snoozed(idea, now.date()):
+            if idea.get("status") != "active":
+                continue
+            if is_snoozed(idea, now.date()):
+                if str(idea[ATTR_SNOOZED]) <= week_end:
+                    upcoming.append((str(idea[ATTR_SNOOZED]), str(idea.get(ATTR_TEXT))))
                 continue
             created = dt_util.parse_datetime(idea.get(ATTR_CREATED_AT) or "")
             if created is not None and created < limit:
                 stale.append((created, str(idea.get(ATTR_TEXT))))
-        if not stale:
-            return None
-        stale.sort(key=lambda entry: entry[0])
-        oldest = [text for _, text in stale[:REVIEW_MAX_ITEMS]]
-        joined = ", ".join(oldest)
-        count = len(stale)
-        return self._pack.msg("review", count=count, days=days, items=joined)
+        sentences: list[str] = []
+        if stale:
+            stale.sort(key=lambda entry: entry[0])
+            oldest = [text for _, text in stale[:REVIEW_MAX_ITEMS]]
+            sentences.append(
+                self._pack.msg("review", count=len(stale), days=days, items=", ".join(oldest))
+            )
+        if upcoming:
+            upcoming.sort()
+            texts = [text for _, text in upcoming[:REVIEW_MAX_ITEMS]]
+            sentences.append(
+                self._pack.msg("review_upcoming", days=REVIEW_UPCOMING_DAYS, items=self._pack.join(texts))
+            )
+        return " ".join(sentences) or None
 
     def _someone_present(self) -> bool:
         """Return whether a chosen presence sensor reports someone."""

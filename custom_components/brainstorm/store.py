@@ -113,6 +113,7 @@ from .const import (
     ATTR_MY_DAY,
     MY_DAY_PARTS,
     ATTR_SNOOZED,
+    ATTR_WOKE,
     EVENT_IDEA_WOKE,
     ATTR_HABIT,
     HABIT_MAX_DAYS,
@@ -3341,6 +3342,7 @@ class BrainstormStore:
         now_iso = dt_util.now().isoformat()
         for idea in sorted(woke, key=lambda i: str(i[ATTR_SNOOZED]), reverse=True):
             idea.pop(ATTR_SNOOZED, None)
+            idea[ATTR_WOKE] = today.isoformat()
             idea[ATTR_ORDER] = top
             idea[ATTR_UPDATED_AT] = now_iso
             top -= 1

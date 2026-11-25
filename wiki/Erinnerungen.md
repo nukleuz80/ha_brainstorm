@@ -23,8 +23,8 @@ Brainstorm erinnert dich von selbst an fällige Einträge, und zwar über die Di
 | | Benachrichtigungen senden | Beliebige `notify`-Dienste; die Companion-App bekommt die Knöpfe **Erledigt**, **1 Stunde später** und **Morgen** |
 | | Wichtige offene Einträge erneut senden | Hohe oder dringende Einträge gehen nach einer Wartezeit an weitere Dienste, z. B. Pushover |
 | **Ruhezeit, Briefing & Rückblick** | Ruhezeit nutzen | Erinnerungen warten; Dringendes erreicht das Handy, aber kein Echo spricht |
-| | Tägliches Briefing | Zu einer Uhrzeit, optional erst wenn ein Sensor oder eine Person jemanden meldet. Nennt zuerst, was unter ☀️ Mein Tag für morgens, tagsüber und abends vorgenommen ist (v1.12.2), dann was fällig ist und welche 🔥 Gewohnheiten heute noch offen sind (v1.12.3). Mit ChoreOps folgt am Ende der Punktestand jeder Person (v1.13.11) |
-| | Wochenrückblick | Nennt lange offene Einträge |
+| | Tägliches Briefing | Zu einer Uhrzeit, optional erst wenn ein Sensor oder eine Person jemanden meldet. Nennt zuerst, was unter ☀️ Mein Tag für morgens, tagsüber und abends vorgenommen ist (v1.12.2), dann was fällig ist und welche 🔥 Gewohnheiten heute noch offen sind (v1.12.3) und welche 💤 zurückgestellten Notizen heute wieder da sind (v1.29.1). Zurückgestellte, die noch warten, nennt es nicht. Mit ChoreOps folgt am Ende der Punktestand jeder Person (v1.13.11) |
+| | Wochenrückblick | Nennt lange offene Einträge und seit v1.29.1, welche 💤 zurückgestellten Notizen in den nächsten 7 Tagen zurückkommen |
 | **Regeln pro Liste** | Regeln pro Liste nutzen | Pro Liste: normale Kanäle, nur Alexa, nur Benachrichtigungen (privat) oder nichts; eigene Dienste; an bestimmten Tagen senden; an einem Ort senden |
 | **Orte & Heimkommen** | Beim Heimkommen erinnern | *„erinnere mich wenn ich heimkomme an den Müll“* |
 | | An Orten erinnern | *„erinnere mich wenn ich bei Edeka bin an die Milch“* (nutzt deine Zonen) |
