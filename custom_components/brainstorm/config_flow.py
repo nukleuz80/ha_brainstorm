@@ -2519,6 +2519,12 @@ class BrainstormOptionsFlowHandler(config_entries.OptionsFlow):
             )
         if preview.get("zone"):
             lines.append(f"- {text('Ort', 'Place')}: {name_of(preview['zone'])}")
+        if snoozed := preview.get("snoozed_until"):
+            year, month, day = snoozed.split("-")
+            lines.append(
+                f"- {text('Zurückgestellt bis', 'Put off until')}: "
+                + text(f"{day}.{month}.{year}", snoozed)
+            )
         if preview.get("ai_cleanup"):
             lines.append(
                 text(

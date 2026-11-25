@@ -90,7 +90,7 @@ from .ai import async_generate_text
 from .echo_locks import locked_echos
 from .languages import get_pack
 from .languages.common import LanguagePack
-from .store import habit_summary, my_day_part
+from .store import habit_summary, is_snoozed, my_day_part
 
 if TYPE_CHECKING:
     from .store import BrainstormStore
@@ -1016,7 +1016,7 @@ class ReminderManager:
         limit = now - timedelta(days=days)
         stale = []
         for idea in self._spoken_ideas():
-            if idea.get("status") != "active":
+            if idea.get("status") != "active" or is_snoozed(idea, now.date()):
                 continue
             created = dt_util.parse_datetime(idea.get(ATTR_CREATED_AT) or "")
             if created is not None and created < limit:

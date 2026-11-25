@@ -4,7 +4,7 @@
 
 | Entität | Was sie zeigt |
 |---|---|
-| `sensor.brainstorm_ideen_ubersicht` | Anzahl offener Ideen. Attribute: `active_count`, `completed_count`, `category_counts`, `priority_counts`, `categories`, `active_categories`, `latest_idea`, `recent_ideas`, `ideas`, `speech_overview`, `voice_mode`, `allowed_echos`. Mit eingeschalteter Privatsphäre sind nur Zahlen zu sehen. |
+| `sensor.brainstorm_ideen_ubersicht` | Anzahl offener Ideen. Attribute: `active_count`, `completed_count`, `snoozed_count`, `category_counts`, `priority_counts`, `categories`, `active_categories`, `latest_idea`, `recent_ideas`, `ideas`, `speech_overview`, `voice_mode`, `allowed_echos`. Mit eingeschalteter Privatsphäre sind nur Zahlen zu sehen. |
 | `todo.<kategorie>` | Eine To-do-Liste pro Kategorie. Einträge lassen sich in der To-do-Ansicht anlegen, umbenennen, erledigen, mit Termin versehen und löschen; die Karten zeigen das sofort. Neue Kategorien bekommen gleich eine Liste, gelöschte verlieren ihre. |
 
 Alle Entitäten gehören zum Gerät **Brainstorm Hub**. Unter [**Einstellungen > Geräte & Dienste > Brainstorm Hub > ⋮ > Diagnose herunterladen**](https://my.home-assistant.io/redirect/integration/?domain=brainstorm) gibt es eine Datei für Fehlerberichte. Sie enthält Zahlen und Einstellungen, aber keine Ideen-Texte, Personen oder Echos.

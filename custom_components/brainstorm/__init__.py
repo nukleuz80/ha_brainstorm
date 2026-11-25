@@ -69,6 +69,7 @@ from .const import (
     REPEAT_RULES,
     ATTR_ROTATION,
     ATTR_MY_DAY,
+    ATTR_SNOOZED,
     ATTR_HABIT,
     MY_DAY_PARTS,
     ROTATION_MAX_PEOPLE,
@@ -216,6 +217,7 @@ SERVICE_ADD_IDEA_SCHEMA = vol.Schema(
         vol.Optional(ATTR_DESCRIPTION): vol.Any(
             None, vol.All(cv.string, vol.Length(max=DESCRIPTION_MAX_LENGTH))
         ),
+        vol.Optional(ATTR_SNOOZED): vol.Any(None, "", cv.date),
     },
     extra=vol.ALLOW_EXTRA,
 )
@@ -303,6 +305,7 @@ SERVICE_UPDATE_IDEA_SCHEMA = vol.Schema(
         vol.Optional(ATTR_NUMBERING): vol.Any(None, "", vol.In(NUMBERING_STYLES)),
         vol.Optional(ATTR_REPEAT): vol.Any(None, "", vol.In(REPEAT_RULES)),
         vol.Optional(ATTR_MY_DAY): vol.Any(None, "", vol.In(MY_DAY_PARTS)),
+        vol.Optional(ATTR_SNOOZED): vol.Any(None, "", cv.date),
         vol.Optional(ATTR_HABIT): cv.boolean,
         vol.Optional("habit_done"): cv.boolean,
         vol.Optional("habit_date"): cv.date,
@@ -541,10 +544,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: BrainstormConfigEntry) -
     # Register platforms (todo, sensor)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
-    # Habits and My day start fresh at midnight
+    # Habits and My day start fresh at midnight, and put off notes come back
     entry.async_on_unload(
         async_track_time_change(hass, store.async_new_day, hour=0, minute=0, second=5)
     )
+    # A snooze day that passed while Home Assistant was off
+    await store.async_wake_snoozed()
 
     # Register LLM API for Assist & Conversation Agents
     entry.async_on_unload(async_register_llm_api(hass))
@@ -740,6 +745,7 @@ def _register_services(hass: HomeAssistant) -> None:
             language=language,
             spoken=spoken,
             description=call.data.get(ATTR_DESCRIPTION),
+            snoozed=call.data.get(ATTR_SNOOZED) or None,
         )
         return {"success": True, "idea": idea}
 
@@ -868,6 +874,8 @@ def _register_services(hass: HomeAssistant) -> None:
             update_rotation=ATTR_ROTATION in call.data,
             my_day=call.data.get(ATTR_MY_DAY),
             update_my_day=ATTR_MY_DAY in call.data,
+            snoozed=call.data.get(ATTR_SNOOZED) or None,
+            update_snoozed=ATTR_SNOOZED in call.data,
             habit=call.data.get(ATTR_HABIT),
             habit_done=call.data.get("habit_done"),
             habit_date=call.data.get("habit_date"),

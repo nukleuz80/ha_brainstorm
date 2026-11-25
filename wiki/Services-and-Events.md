@@ -65,6 +65,7 @@ Adds a new idea and detects the category in the text, such as `Garden: plant flo
 | `parse_due` | No | Detects phrases like `tomorrow at 8` in the text and uses them as the time. |
 | `assignee` | No | The person to remind. |
 | `zone` | No | Reminds when entering this zone. |
+| `snoozed_until` | No | Puts the idea off until this day (v1.29.0): hidden, not counted, not read out, and back at the top of its list on that day. Spoken notes like "trim hedge from March" set it themselves. |
 | `language` | No | Language of the text, such as `de` or `en`. Without it, the language of Home Assistant applies. |
 
 ## `brainstorm.add_from_speech`
@@ -134,6 +135,7 @@ Changes an existing idea.
 | `callout` | No | Short remark shown in a speech bubble above the note, up to 200 characters. Empty or `null` removes it. |
 | `repeat` | No | Lets the idea come back when it is ticked off: `daily`, `weekdays`, `weekly`, `biweekly`, `monthly` or `yearly`. The new idea is due at the next date after now, with the same details and its subtasks open again. Empty or `null` stops it. |
 | `my_day` | No | Picks the idea for today (v1.12.2): `morning`, `day` or `evening`. Counts only today, shows in the cards under ☀️ My day and in the briefing. Empty or `null` takes it out. |
+| `snoozed_until` | No | Puts the idea off until this day (v1.29.0). A past day, empty or `null` brings it back now; ticking it off ends the snooze. |
 | `habit` | No | Makes the idea a daily habit (v1.12.3) or an ordinary note again (`false`; the days are kept for switching it on again). A habit never gets done: ticking it off (`status: completed`) counts today, `status: active` takes today back. |
 | `habit_done` | No | Marks (`true`) or unmarks (`false`) one day of a habit, today unless `habit_date` is given. |
 | `habit_date` | No | The day for `habit_done`, e.g. `2026-11-13`. Not in the future and at most 400 days back. |
@@ -512,6 +514,7 @@ Shares several ideas or a whole category. Needs privacy to be switched on.
 | `brainstorm_comment_added` | a new comment (`idea_id`, `idea_text`, `text`, `by`, `mentions`) |
 | `brainstorm_round_ended` | a hidden round was revealed (`category`, `revealed`) |
 | `brainstorm_idea_unblocked` | a note no longer waits: the last open note blocking it was ticked off (`id`, `text`, `category`, `assignee`, `by_id`, `by_text`); since v1.13.7 |
+| `brainstorm_idea_woke` | a note put off is back because its day has come (`id`, `text`, `category`, `assignee`, `entity_id`); since v1.29.0 |
 
 The event data holds the whole note (`id`, `text`, `category`, `priority`, `source`, …):
 

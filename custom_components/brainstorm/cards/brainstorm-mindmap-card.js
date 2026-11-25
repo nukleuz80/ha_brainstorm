@@ -1,8 +1,8 @@
-import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, BRING_TAB_ID, bringBadge, bringSentText, unblockedText, compactNodeInfo, nextNodeDetail, nodeDetailButton, nodeDetailCompact, nodeDetailMode, bringTab, canSendToBring, renderBringSend, CHORE_MAP_CSS, choreMapData, renderChoreMap, canHandOver, canHandOverProject, canMakeReward, choreopsBadge, choreopsRewardBadge, renderChoreHandover, renderChoreProject, renderChoreReward, MAP_TAB_CSS, activeMapTab, branchTabs, configTabs, mapTabBar, tabCounts, ruleFilter, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, timeBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, importFileText, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t, linkedListMark } from "./brainstorm-i18n.js?v=1.28.5";
+import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, BRING_TAB_ID, bringBadge, bringSentText, unblockedText, compactNodeInfo, nextNodeDetail, nodeDetailButton, nodeDetailCompact, nodeDetailMode, bringTab, canSendToBring, renderBringSend, CHORE_MAP_CSS, choreMapData, renderChoreMap, canHandOver, canHandOverProject, canMakeReward, choreopsBadge, choreopsRewardBadge, renderChoreHandover, renderChoreProject, renderChoreReward, MAP_TAB_CSS, activeMapTab, branchTabs, configTabs, mapTabBar, tabCounts, ruleFilter, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, habitBadge, habitField, readHabit, snoozeBadge, snoozeField, readSnooze, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, timeBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, importFileText, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t, linkedListMark } from "./brainstorm-i18n.js?v=1.29.0";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.28.5 - Abkürzungen
+ * Version: 1.29.0 - Zurückstellen
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -2851,6 +2851,9 @@ class BrainstormMindmapCard extends HTMLElement {
           color: var(--primary-color, #03a9f4);
           margin-right: 2px;
           font-variant-numeric: tabular-nums;
+        }
+        .note-cloud.is-snoozed {
+          opacity: 0.5;
         }
         .note-cloud.is-blocked {
           filter: grayscale(0.7);
@@ -9607,7 +9610,7 @@ class BrainstormMindmapCard extends HTMLElement {
           : "";
 
         html += `
-          <div class="note-cloud ${prioClass}${idea.blocked_by && idea.blocked_by.length ? " is-blocked" : ""}${idea.id === this._linkFrom ? " link-source" : ""} nshape-${shape}${svgShape ? " has-shape" : ""}${idea.id === this._selectedId ? " selected" : ""}${this._multi.has(idea.id) ? " multi-selected" : ""}${idea.id === this._menuId ? " menu-open" : ""}${idea.id === this._expandedId ? " expanded" : ""}" id="cloud_${this._escapeHtml(idea.id)}" data-id="${this._escapeHtml(idea.id)}" data-shape="${shape}" style="--cat-color: ${color};">
+          <div class="note-cloud ${prioClass}${idea.blocked_by && idea.blocked_by.length ? " is-blocked" : ""}${idea.snoozed_until ? " is-snoozed" : ""}${idea.id === this._linkFrom ? " link-source" : ""} nshape-${shape}${svgShape ? " has-shape" : ""}${idea.id === this._selectedId ? " selected" : ""}${this._multi.has(idea.id) ? " multi-selected" : ""}${idea.id === this._menuId ? " menu-open" : ""}${idea.id === this._expandedId ? " expanded" : ""}" id="cloud_${this._escapeHtml(idea.id)}" data-id="${this._escapeHtml(idea.id)}" data-shape="${shape}" style="--cat-color: ${color};">
             ${svgShape ? '<svg class="node-shape" aria-hidden="true"></svg>' : ""}
             ${branchToggle}
             ${idea.callout ? `<div class="cloud-callout" title="${t("Callout")}">💬 ${formatText(idea.callout)}</div>` : ""}
@@ -9616,7 +9619,7 @@ class BrainstormMindmapCard extends HTMLElement {
                 <ha-icon icon="${this._getCategoryIcon(idea.category)}" style="--mdc-icon-size: 12px; width: 12px; height: 12px; display: inline-flex; align-items: center; vertical-align: middle;"></ha-icon> ${this._escapeHtml(idea.category)}
               </span>
               ${prioBadge}
-              ${this._getReminderBadges(idea)}${repeatBadge(idea)}${myDayBadge(idea)}${habitBadge(idea)}${choreopsBadge(idea)}${choreopsRewardBadge(idea)}${bringBadge(idea)}
+              ${this._getReminderBadges(idea)}${repeatBadge(idea)}${myDayBadge(idea)}${snoozeBadge(idea)}${habitBadge(idea)}${choreopsBadge(idea)}${choreopsRewardBadge(idea)}${bringBadge(idea)}
               ${inProgressBadge(idea)}
               ${timeBadge(idea)}
               ${blockedBadge(idea)}
@@ -10272,6 +10275,7 @@ class BrainstormMindmapCard extends HTMLElement {
         <div class="dialog-label">${t("Mein Tag:")}</div>
         <select class="dialog-input" id="editMyDay" title="${t("Für heute vornehmen: morgens, tagsüber oder abends. Gilt nur heute und kommt ins Briefing.")}">${myDayOptions(idea.my_day)}</select>
         ${habitField(idea)}
+        ${snoozeField(idea)}
 
         ${echos.length ? `
           <details class="dialog-echo-details" data-lvl="pro">
@@ -10483,6 +10487,8 @@ class BrainstormMindmapCard extends HTMLElement {
         const newMyDay = body.querySelector("#editMyDay").value || "";
         if (newMyDay !== (idea.my_day || "")) payload.my_day = newMyDay || null;
         const newHabit = readHabit(body, idea);
+        const newSnooze = readSnooze(body, idea);
+        if (newSnooze !== undefined) payload.snoozed_until = newSnooze;
         if (newHabit !== undefined) payload.habit = newHabit;
         const newDescription = (body.querySelector("#editDescription").value || "").trim();
         if (newDescription !== (idea.description || "")) {
@@ -10523,6 +10529,7 @@ class BrainstormMindmapCard extends HTMLElement {
         if ("rotation" in payload) before.rotation = idea.rotation || null;
         if ("my_day" in payload) before.my_day = idea.my_day || null;
         if ("habit" in payload) before.habit = Boolean(idea.habit);
+        if ("snoozed_until" in payload) before.snoozed_until = idea.snoozed_until || null;
         try {
           await this._hass.callService("brainstorm", "update_idea", payload);
           this._pushUndo(currentText, () => this._hass.callService("brainstorm", "update_idea", before));
@@ -11359,7 +11366,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.28.5 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.29.0 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

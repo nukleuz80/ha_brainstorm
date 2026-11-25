@@ -1283,6 +1283,10 @@
         "zone": {
           "name": "Zone",
           "description": "Reminds when entering this zone."
+        },
+        "snoozed_until": {
+          "name": "Put off until",
+          "description": "Hides the idea until this day: it does not count, is not read out and comes back at the top of its list on that day. Spoken notes like \"trim hedge from March\" set it themselves."
         }
       }
     },
@@ -1405,6 +1409,10 @@
         "rotation": {
           "name": "Rotation",
           "description": "Who a repeating idea goes to in the next round, as an object with mode and people. mode is turn (taking turns), fewest (whoever finished the fewest of their notes in the last 30 days) or random; people lists 2 to 10 person entities. The idea goes to the first person at once if its assignee is not among them. Empty ends the rotation."
+        },
+        "snoozed_until": {
+          "name": "Put off until",
+          "description": "Hides the idea until this day; it comes back at the top of its list then. A past day or an empty value brings it back now."
         }
       }
     },

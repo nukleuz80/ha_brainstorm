@@ -112,6 +112,8 @@ from .const import (
     ATTR_ROTATION,
     ATTR_MY_DAY,
     MY_DAY_PARTS,
+    ATTR_SNOOZED,
+    EVENT_IDEA_WOKE,
     ATTR_HABIT,
     HABIT_MAX_DAYS,
     HABIT_RECENT_DAYS,
@@ -650,14 +652,17 @@ class BrainstormStore:
             ]
         active_ideas = [i for i in visible if i.get(ATTR_STATUS) == "active"]
         completed_ideas = [i for i in visible if i.get(ATTR_STATUS) == "completed"]
+        # A note put off until later is sent along, but counts nowhere
+        today = dt_util.now().date()
+        awake_ideas = [i for i in active_ideas if not is_snoozed(i, today)]
 
         counts_by_cat = {
-            cat: len([i for i in active_ideas if i.get(ATTR_CATEGORY) == cat])
+            cat: len([i for i in awake_ideas if i.get(ATTR_CATEGORY) == cat])
             for cat in self.categories
         }
         counts_by_prio = {
             prio: len(
-                [i for i in active_ideas if i.get(ATTR_PRIORITY, DEFAULT_PRIORITY) == prio]
+                [i for i in awake_ideas if i.get(ATTR_PRIORITY, DEFAULT_PRIORITY) == prio]
             )
             for prio in ("urgent", "high", "medium", "low")
         }
@@ -755,6 +760,8 @@ class BrainstormStore:
                 result[ATTR_NUMBERING] = numbering
             if repeat := idea.get(ATTR_REPEAT):
                 result[ATTR_REPEAT] = repeat
+            if is_snoozed(idea, today):
+                result[ATTR_SNOOZED] = idea[ATTR_SNOOZED]
             if part := my_day_part(idea):
                 result[ATTR_MY_DAY] = part
             if habit := habit_summary(idea):
@@ -790,7 +797,8 @@ class BrainstormStore:
         return {
             "speech_overview": self.get_announcement_text(user_id=user_id),
             "last_action": last_action,
-            "active_count": len(active_ideas),
+            "active_count": len(awake_ideas),
+            "snoozed_count": len(active_ideas) - len(awake_ideas),
             "completed_count": len(completed_ideas),
             "categories": self.categories,
             "category_icons": self.category_icons,
@@ -809,8 +817,8 @@ class BrainstormStore:
             "linked_lists": self._linked_lists_attributes(),
             "category_counts": counts_by_cat,
             "priority_counts": counts_by_prio,
-            "latest_idea": summary(active_ideas[0]) if active_ideas else None,
-            "recent_ideas": [summary(i) for i in active_ideas[:5]],
+            "latest_idea": summary(awake_ideas[0]) if awake_ideas else None,
+            "recent_ideas": [summary(i) for i in awake_ideas[:5]],
             "ideas": [
                 {
                     **details(i),
@@ -875,7 +883,7 @@ class BrainstormStore:
         counts = {cat: 0 for cat in self._categories}
         for idea in self._ideas.values():
             cat = idea.get(ATTR_CATEGORY)
-            if idea.get(ATTR_STATUS) == "active" and cat in counts:
+            if idea.get(ATTR_STATUS) == "active" and cat in counts and not is_snoozed(idea):
                 counts[cat] += 1
         return counts
 
@@ -1243,6 +1251,11 @@ class BrainstormStore:
         due: datetime | None = None
         trigger: dict[str, str | None] | None = None
         assignee: str | None = None
+        snoozed: str | None = None
+        if spoken and self._smart_formatting and mode != SENTENCE_TEST_REMINDER:
+            spoken_snooze, remaining = pack.extract_snooze(work, now)
+            if (snoozed := clean_snooze(spoken_snooze, now.date())) is not None:
+                work = remaining
         if mode == SENTENCE_TEST_REMINDER:
             request = build_reminder_request(
                 self.hass, self.options, REMINDER_START.sub("", work), now, pack.code
@@ -1261,7 +1274,7 @@ class BrainstormStore:
             reasons["category"] = ("list", pack.shopping_list)
         items = (
             self.items_of(title, category, pack.code, bool(shopping))
-            if spoken and due is None and trigger is None
+            if spoken and due is None and trigger is None and snoozed is None
             else [title]
         )
         return {
@@ -1273,6 +1286,7 @@ class BrainstormStore:
             "category_reason": reasons.get("category"),
             ATTR_PRIORITY: priority,
             ATTR_DUE: due.isoformat() if due else None,
+            ATTR_SNOOZED: snoozed,
             ATTR_TAGS: tags,
             ATTR_ASSIGNEE: assignee,
             "zone": (trigger or {}).get("zone"),
@@ -2085,6 +2099,7 @@ class BrainstormStore:
         verbatim: bool = False,
         description: str | None = None,
         list_named: bool = False,
+        snoozed: date | str | None = None,
     ) -> dict[str, Any]:
         """Add a new brainstorm idea.
 
@@ -2115,6 +2130,13 @@ class BrainstormStore:
             spoken = False
         elif spoken is None:
             spoken = source not in TYPED_SOURCES
+        original_text = text.strip()
+        snoozed_until = clean_snooze(snoozed)
+        # "Hecke schneiden ab März" comes back in March
+        if spoken and self._smart_formatting and snoozed_until is None:
+            spoken_snooze, remaining = pack.extract_snooze(original_text, dt_util.now())
+            if (snoozed_until := clean_snooze(spoken_snooze)) is not None:
+                text = remaining
         if (
             spoken
             and self._smart_formatting
@@ -2130,6 +2152,8 @@ class BrainstormStore:
                 raw_text = text.strip()
         else:
             raw_text = text.strip()
+        if snoozed_until is not None:
+            raw_text = original_text
 
         if verbatim:
             resolved_cat = (category or "").strip() or self._fallback_category
@@ -2149,6 +2173,7 @@ class BrainstormStore:
             spoken
             and not verbatim
             and not parent_id
+            and snoozed_until is None
             and due is None
             and trigger is None
             and not description
@@ -2161,6 +2186,7 @@ class BrainstormStore:
             self._merge_duplicates
             and not verbatim
             and not parent_id
+            and snoozed_until is None
             and due is None
             and trigger is None
             and not description
@@ -2216,6 +2242,8 @@ class BrainstormStore:
         }
         if description and description.strip():
             idea[ATTR_DESCRIPTION] = description.strip()
+        if snoozed_until is not None:
+            idea[ATTR_SNOOZED] = snoozed_until
         # Keeps what was really said, so a bad shortening can be undone
         if raw_text != clean_text:
             idea[ATTR_RAW_TEXT] = raw_text
@@ -2380,6 +2408,8 @@ class BrainstormStore:
         update_rotation: bool = False,
         my_day: str | None = None,
         update_my_day: bool = False,
+        snoozed: date | str | None = None,
+        update_snoozed: bool = False,
         habit: bool | None = None,
         habit_done: bool | None = None,
         habit_date: date | None = None,
@@ -2530,6 +2560,13 @@ class BrainstormStore:
                 idea[ATTR_REPEAT] = repeat
             else:
                 idea.pop(ATTR_REPEAT, None)
+        if update_snoozed:
+            if cleaned_snooze := clean_snooze(snoozed):
+                idea[ATTR_SNOOZED] = cleaned_snooze
+            else:
+                idea.pop(ATTR_SNOOZED, None)
+        if newly_completed:
+            idea.pop(ATTR_SNOOZED, None)
         if update_my_day:
             if my_day in MY_DAY_PARTS:
                 idea[ATTR_MY_DAY] = {"date": dt_util.now().date().isoformat(), "part": my_day}
@@ -2718,7 +2755,11 @@ class BrainstormStore:
 
     @callback
     def async_new_day(self, _now: datetime | None = None) -> None:
-        """Tell the cards and lists that a new day began, for habits and My day."""
+        """Tell the cards and lists that a new day began, for habits and My day.
+
+        Notes put off until today come back now.
+        """
+        self.hass.async_create_task(self.async_wake_snoozed())
         self._notify_listeners()
 
     def _assign(self, idea: dict[str, Any], person: str) -> None:
@@ -3282,6 +3323,40 @@ class BrainstormStore:
             if score > best_score:
                 best, best_score = idea, score
         return best if best_score >= 0.6 else None
+
+    async def async_wake_snoozed(self) -> list[dict[str, Any]]:
+        """Bring back the notes whose snooze day has come, at the top of the list."""
+        today = dt_util.now().date()
+        woke = [
+            idea
+            for idea in self._ideas.values()
+            if idea.get(ATTR_SNOOZED)
+            and idea.get(ATTR_STATUS) == "active"
+            and not is_snoozed(idea, today)
+        ]
+        if not woke:
+            return []
+        orders = [i[ATTR_ORDER] for i in self._ideas.values() if i.get(ATTR_ORDER) is not None]
+        top = min(orders, default=0) - 1
+        now_iso = dt_util.now().isoformat()
+        for idea in sorted(woke, key=lambda i: str(i[ATTR_SNOOZED]), reverse=True):
+            idea.pop(ATTR_SNOOZED, None)
+            idea[ATTR_ORDER] = top
+            idea[ATTR_UPDATED_AT] = now_iso
+            top -= 1
+        await self.async_save()
+        for idea in woke:
+            self.hass.bus.async_fire(
+                EVENT_IDEA_WOKE,
+                {
+                    ATTR_ID: idea[ATTR_ID],
+                    ATTR_TEXT: idea.get(ATTR_TEXT),
+                    ATTR_CATEGORY: idea.get(ATTR_CATEGORY),
+                    ATTR_ASSIGNEE: idea.get(ATTR_ASSIGNEE),
+                    "entity_id": OVERVIEW_ENTITY_ID,
+                },
+            )
+        return woke
 
     def next_due_idea(self) -> dict[str, Any] | None:
         """Return the active idea whose reminder comes next."""
@@ -4441,13 +4516,20 @@ class BrainstormStore:
         status: str | None = "active",
         priority: str | None = None,
         user_id: str | None = None,
+        include_snoozed: bool = False,
     ) -> list[dict[str, Any]]:
-        """Filter ideas by category, status and priority."""
+        """Filter ideas by category, status and priority.
+
+        A note put off until later is left out unless include_snoozed is set.
+        """
         results = []
+        today = dt_util.now().date()
         for idea in self.visible_ideas(user_id):
             if category and idea.get(ATTR_CATEGORY) != category:
                 continue
             if status and idea.get(ATTR_STATUS) != status:
+                continue
+            if not include_snoozed and is_snoozed(idea, today):
                 continue
             if priority and idea.get(ATTR_PRIORITY, DEFAULT_PRIORITY) != priority:
                 continue
@@ -4463,7 +4545,9 @@ class BrainstormStore:
         """Generate a concise, natural spoken text of the active ideas."""
         pack = self._pack(language)
         active_ideas = [
-            i for i in self.visible_ideas(user_id) if i.get(ATTR_STATUS) == "active"
+            i
+            for i in self.visible_ideas(user_id)
+            if i.get(ATTR_STATUS) == "active" and not is_snoozed(i)
         ]
 
         def _format_items(items: list[str]) -> str:
@@ -5242,6 +5326,31 @@ def habit_summary(idea: dict[str, Any], today: date | None = None) -> dict[str, 
         "total": len(days),
         "days": sorted(d.isoformat() for d in days if since < d <= today),
     }
+
+
+def is_snoozed(idea: dict[str, Any], today: date | None = None) -> bool:
+    """Return whether an open note is put off until a day still to come."""
+    until = idea.get(ATTR_SNOOZED)
+    if not until or idea.get(ATTR_STATUS) != "active":
+        return False
+    try:
+        return date.fromisoformat(str(until)[:10]) > (today or dt_util.now().date())
+    except ValueError:
+        return False
+
+
+def clean_snooze(value: Any, today: date | None = None) -> str | None:
+    """Return a snooze day as an ISO date when it lies ahead, else None."""
+    if isinstance(value, datetime):
+        value = dt_util.as_local(value).date()
+    elif isinstance(value, str) and value.strip():
+        try:
+            value = date.fromisoformat(value.strip()[:10])
+        except ValueError:
+            return None
+    if not isinstance(value, date):
+        return None
+    return value.isoformat() if value > (today or dt_util.now().date()) else None
 
 
 def my_day_part(idea: dict[str, Any], today: date | None = None) -> str | None:

@@ -182,6 +182,8 @@ EVENT_COMMENT_ADDED = "brainstorm_comment_added"
 EVENT_ROUND_ENDED = "brainstorm_round_ended"
 # A note no longer waits: the last open note blocking it was ticked off
 EVENT_IDEA_UNBLOCKED = "brainstorm_idea_unblocked"
+# A note put off with "snoozed_until" is back
+EVENT_IDEA_WOKE = "brainstorm_idea_woke"
 
 # Attributes
 ATTR_ID = "id"
@@ -284,6 +286,8 @@ HABIT_MAX_DAYS = 400
 # The days of a habit the cards get for the calendar
 HABIT_RECENT_DAYS = 126
 MY_DAY_PARTS = ("morning", "day", "evening")
+# Put off until a day (ISO date): hidden and not counted until then
+ATTR_SNOOZED = "snoozed_until"
 # Who a repeating note goes to in the next round: mode and the people (person
 # entities) taking turns
 ATTR_ROTATION = "rotation"

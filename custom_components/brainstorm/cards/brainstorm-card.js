@@ -1,4 +1,4 @@
-import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, bringBadge, bringSentText, unblockedText, canSendToBring, renderBringSend, canHandOver, canHandOverProject, canMakeReward, choreopsBadge, choreopsRewardBadge, renderChoreHandover, renderChoreProject, renderChoreReward, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, habitBadge, habitField, readHabit, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, timeBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t, linkedListMark, linkedListOf, linkedListSign, linkedListText, batteriesBringText, batteriesNeeded, calendarBadge, calendarOptions, readCalendar, renderStatistics } from "./brainstorm-i18n.js?v=1.28.5";
+import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, bringBadge, bringSentText, unblockedText, canSendToBring, renderBringSend, canHandOver, canHandOverProject, canMakeReward, choreopsBadge, choreopsRewardBadge, renderChoreHandover, renderChoreProject, renderChoreReward, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, habitBadge, habitField, readHabit, snoozeBadge, snoozeField, readSnooze, SNOOZE_CHOICES, snoozeDay, snoozeLabel, parseSnoozeInput, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, timeBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t, linkedListMark, linkedListOf, linkedListSign, linkedListText, batteriesBringText, batteriesNeeded, calendarBadge, calendarOptions, readCalendar, renderStatistics } from "./brainstorm-i18n.js?v=1.29.0";
 
 // Same check as isSample() in brainstorm-onboarding.js, without loading it
 const hasSampleTag = (idea) => Array.isArray(idea && idea.tags)
@@ -7,7 +7,7 @@ const hasSampleTag = (idea) => Array.isArray(idea && idea.tags)
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.28.5 - Abkürzungen
+ * Version 1.29.0 - Zurückstellen
  */
 // The bulb lies next to this file, wherever Home Assistant serves it from
 const BULB_URL = new URL("./brainstorm-bulb.svg", import.meta.url).href;
@@ -1252,6 +1252,22 @@ class BrainstormCard extends HTMLElement {
     });
   }
 
+  _renderSnoozedToggle(list, count, searching) {
+    if (!count || searching || this._myDayOnly) return;
+    const button = document.createElement("button");
+    button.className = "snoozed-toggle";
+    button.setAttribute("aria-expanded", String(!!this._showSnoozed));
+    button.textContent = this._showSnoozed
+      ? t("💤 Zurückgestellte ausblenden")
+      : t("💤 {count} zurückgestellt", { count });
+    button.title = t("Notizen, die erst später dran sind. Sie zählen nicht und kommen an ihrem Tag wieder nach oben.");
+    button.addEventListener("click", () => {
+      this._showSnoozed = !this._showSnoozed;
+      this._updateContent();
+    });
+    list.appendChild(button);
+  }
+
   _formatTargetBadges(item) {
     const name = (entityId) => {
       const state = entityId && this._hass && this._hass.states[entityId];
@@ -1280,6 +1296,27 @@ class BrainstormCard extends HTMLElement {
       await this._hass.callService("brainstorm", "update_idea", { id, due });
     } catch (err) {
       console.error("Failed to set reminder", err);
+    }
+  }
+
+  async _setItemSnooze(item, choice) {
+    let day = null;
+    if (choice === "custom") {
+      const input = window.prompt(t("Bis wann zurückstellen? ({format})", { format: t("TT.MM.JJJJ") }), "");
+      if (input === null) return;
+      day = parseSnoozeInput(input);
+      if (!day) {
+        window.alert(t("Bitte einen Tag in der Zukunft eingeben, z. B. {example}.", { example: t("1.3.") }));
+        return;
+      }
+    } else if (choice !== "clear") {
+      day = snoozeDay(choice);
+    }
+    try {
+      await this._hass.callService("brainstorm", "update_idea", { id: item.id, snoozed_until: day });
+    } catch (err) {
+      console.error("Failed to put the note off", err);
+      this._notify((err && err.message) || t("Das hat nicht geklappt."));
     }
   }
 
@@ -1718,6 +1755,7 @@ class BrainstormCard extends HTMLElement {
         <div class="action-dialog-label">${t("Mein Tag:")}</div>
         <select class="action-dialog-input" id="editMyDay" title="${t("Für heute vornehmen: morgens, tagsüber oder abends. Gilt nur heute und kommt ins Briefing.")}">${myDayOptions(idea.my_day)}</select>
         ${habitField(idea, "action-dialog")}
+        ${snoozeField(idea, "action-dialog")}
 
         ${echos.length ? `
           <details class="action-dialog-echo-details" data-lvl="pro">
@@ -1968,6 +2006,8 @@ class BrainstormCard extends HTMLElement {
         if (newMyDay !== (idea.my_day || "")) payload.my_day = newMyDay || null;
         const newHabit = readHabit(body, idea);
         if (newHabit !== undefined) payload.habit = newHabit;
+        const newSnooze = readSnooze(body, idea);
+        if (newSnooze !== undefined) payload.snoozed_until = newSnooze;
         const newMarkers = MARKERS.filter((marker) => selectedMarkers.has(marker));
         if (newMarkers.join() !== currentMarkers.join()) {
           payload.markers = newMarkers;
@@ -2575,6 +2615,23 @@ class BrainstormCard extends HTMLElement {
       `;
     }
 
+    // Put off until a later day, or bring back now
+    if (item.status !== "completed") {
+      actionsHtml += item.snoozed_until ? `
+        <button class="apple-menu-btn" data-act="snooze-clear">
+          <span class="btn-icon">⏰</span>
+          <div class="btn-content"><span>${t("Zurückholen")}</span></div>
+        </button>` : SNOOZE_CHOICES.map((choice) => `
+        <button class="apple-menu-btn" data-act="snooze-${choice}">
+          <span class="btn-icon">💤</span>
+          <div class="btn-content"><span>${t("Zurückstellen: {when}", { when: snoozeLabel(choice) })}</span></div>
+        </button>`).join("") + `
+        <button class="apple-menu-btn" data-act="snooze-custom">
+          <span class="btn-icon">💤</span>
+          <div class="btn-content"><span>${t("Zurückstellen: Tag wählen")}</span></div>
+        </button>`;
+    }
+
     // Someone is working on it, often a coding AI
     actionsHtml += `
       <button class="apple-menu-btn" data-act="in-progress" data-lvl="pro">
@@ -2813,6 +2870,11 @@ class BrainstormCard extends HTMLElement {
 
         if (act === "branch") {
           this._showAddSubtaskDialog(item);
+          return;
+        }
+
+        if (act && act.startsWith("snooze-")) {
+          await this._setItemSnooze(item, act.slice(7));
           return;
         }
 
@@ -4046,6 +4108,21 @@ class BrainstormCard extends HTMLElement {
           max-height: 480px;
           overflow-y: auto;
         }
+        .snoozed-toggle {
+          display: block;
+          width: 100%;
+          min-height: 40px;
+          margin-top: 8px;
+          padding: 8px 12px;
+          border: 1px dashed var(--divider-color, rgba(127, 127, 127, 0.4));
+          border-radius: 10px;
+          background: transparent;
+          color: var(--secondary-text-color);
+          font: inherit;
+          cursor: pointer;
+        }
+        .snoozed-toggle:hover { color: var(--primary-text-color); }
+        .idea-item.is-snoozed { opacity: 0.6; }
         .empty-state {
           text-align: center;
           padding: 24px 12px;
@@ -5255,9 +5332,9 @@ class BrainstormCard extends HTMLElement {
     if (badgeEl) {
       badgeEl.style.display = this._config.show_badge === true ? "inline-flex" : "none";
       if (completedCount > 0) {
-        badgeEl.textContent = t("{active} aktiv • {done} erledigt", { active: activeIdeas.length, done: completedCount });
+        badgeEl.textContent = t("{active} aktiv • {done} erledigt", { active: activeIdeas.filter((i) => !i.snoozed_until).length, done: completedCount });
       } else {
-        badgeEl.textContent = t("{count} Ideen", { count: activeIdeas.length });
+        badgeEl.textContent = t("{count} Ideen", { count: activeIdeas.filter((i) => !i.snoozed_until).length });
       }
     }
 
@@ -5462,6 +5539,12 @@ class BrainstormCard extends HTMLElement {
       : activeIdeas.filter((i) => String(i.category || "").trim() === String(this._selectedCategory || "").trim());
 
     const searching = this._searchActive();
+    // Notes put off until a later day wait folded at the end, a search still finds them
+    const snoozedIds = new Set(isCompletedView ? [] : filteredIdeas.filter((i) => i.snoozed_until).map((i) => i.id));
+    const snoozedCount = snoozedIds.size;
+    if (snoozedCount && !searching && !this._showSnoozed) {
+      filteredIdeas = filteredIdeas.filter((i) => !snoozedIds.has(i.id) && !snoozedIds.has(i.parent_id));
+    }
     if (searching) filteredIdeas = this._applySearch(filteredIdeas);
     if (this._myDayOnly && !isCompletedView) {
       // Picked notes with their parents for context, morning first, evening last
@@ -5544,6 +5627,7 @@ class BrainstormCard extends HTMLElement {
             }
           </div>
         `;
+        this._renderSnoozedToggle(ideasList, snoozedCount, searching);
       } else {
         const canEdit = this._config.allow_edit === true && !isCompletedView;
         const canDelete = this._config.allow_delete === true;
@@ -5569,7 +5653,7 @@ class BrainstormCard extends HTMLElement {
             const rule = !isCompletedView && this._rules.length ? ruleFor(item, this._rules, ruleNow) : null;
             const itemColor = rule && rule.color ? rule.color : this._getCategoryColor(item.category);
             return `
-            <div class="idea-item ${isSub ? "is-subtask" : ""} ${isCompletedView ? "completed" : ""} ${(searching || (this._myDayOnly && !isCompletedView)) && !this._searchHits.has(item.id) ? "search-context" : ""}${rule && rule.color ? " rule-hit" : ""}" data-id="${this._escapeHtml(item.id)}" data-idx="${idx}" style="--item-cat-color: ${itemColor};">
+            <div class="idea-item ${isSub ? "is-subtask" : ""} ${isCompletedView ? "completed" : ""} ${item.snoozed_until ? "is-snoozed" : ""} ${(searching || (this._myDayOnly && !isCompletedView)) && !this._searchHits.has(item.id) ? "search-context" : ""}${rule && rule.color ? " rule-hit" : ""}" data-id="${this._escapeHtml(item.id)}" data-idx="${idx}" style="--item-cat-color: ${itemColor};">
               ${!isCompletedView && itemEdit ? `<span class="drag-handle" title="${t("Halten & Ziehen zum Sortieren oder Unteraufgabe zuordnen")}" data-id="${this._escapeHtml(item.id)}">⠿</span>` : ""}
               <button 
                 class="check-btn ${isCompletedView || (item.habit && item.habit.today) ? "checked" : ""}" 
@@ -5590,7 +5674,7 @@ class BrainstormCard extends HTMLElement {
                   ${isSub ? `<span class="subtask-badge" title="${t("Unteraufgabe")}">${t("Unteraufgabe")}</span>` : ""}
                   <span class="category-tag ${itemEdit ? "clickable" : ""}" title="${itemEdit ? t("Kategorie ändern") : t("Kategorie")}" data-id="${this._escapeHtml(item.id)}" data-cat="${this._escapeHtml(item.category)}" style="color: ${this._getCategoryColor(item.category)}; background: color-mix(in srgb, ${this._getCategoryColor(item.category)} 12%, var(--secondary-background-color, rgba(0,0,0,0.06))); border: 1px solid color-mix(in srgb, ${this._getCategoryColor(item.category)} 25%, transparent);"><ha-icon icon="${this._getCategoryIcon(item.category)}" style="--mdc-icon-size: 11px; width: 11px; height: 11px; margin-right: 3px; display: inline-flex; align-items: center; vertical-align: middle;"></ha-icon>${this._escapeHtml(item.category)}${linkedListMark(sensorEntity, item.category)}</span>
                   ${this._getPriorityBadge(item.priority, item.id)}
-                  ${item.due ? this._formatDueBadge(item.due) : ""}${calendarBadge(item)}${repeatBadge(item)}${myDayBadge(item)}${isCompletedView ? "" : habitBadge(item)}${choreopsBadge(item)}${choreopsRewardBadge(item)}${bringBadge(item)}
+                  ${item.due ? this._formatDueBadge(item.due) : ""}${calendarBadge(item)}${repeatBadge(item)}${myDayBadge(item)}${snoozeBadge(item)}${isCompletedView ? "" : habitBadge(item)}${choreopsBadge(item)}${choreopsRewardBadge(item)}${bringBadge(item)}
                   ${this._formatTargetBadges(item)}
                   ${this._formatShareBadge(item)}
                   ${this._formatAuthorBadge(item)}
@@ -5631,6 +5715,7 @@ class BrainstormCard extends HTMLElement {
           })
           .join("");
         if (!isCompletedView && activeIdeas.some(hasSampleTag)) this._showOnboarding(ideasList, "samples", attributes);
+        this._renderSnoozedToggle(ideasList, snoozedCount, searching);
 
         // Reactions switch your own, − and + change your points
         ideasList.querySelectorAll("[data-react]").forEach((btn) => {
@@ -6621,7 +6706,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.28.5 ",
+  "%c BRAINSTORM-CARD %c v1.29.0 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

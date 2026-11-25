@@ -273,3 +273,18 @@ Tageszeiten ohne Uhrzeit: früh/morgens 8:00, vormittags 10:00, mittags 12:00, n
 Uhrzeiten von **1 bis 5 Uhr** gelten ohne Tageszeit als Nachmittag (seit v1.28.2): *„um halb drei“* ist 14:30, *„um 3 Uhr“* 15:00. Mit *früh*, *morgens* oder *nachts* bleibt es bei der Nacht (*„um 3 Uhr nachts“* 03:00), ebenso bei einer geschriebenen Zeit wie *„03:00“* oder *„4:45“*; *„12 Uhr nachts“* ist Mitternacht. Ab 6 Uhr bleibt die Uhrzeit, wie sie ist. *Halb* und *viertel* gehen auch bei einem *Termin* ohne Tag.
 
 Wie und wo erinnert wird, stellst du unter [Erinnerungen](Einstellungen#integration) ein.
+
+### Zurückstellen
+
+Sagst du, ab wann etwas dran ist, stellt Brainstorm die Notiz bis dahin zurück (seit v1.29.0): Sie ist ausgeblendet, zählt nicht, wird nicht vorgelesen und steht an dem Tag wieder oben in ihrer Liste. Das gilt nur für gesprochene Notizen; getippt bleibt der Wortlaut.
+
+| Du sagst | Zurückgestellt bis |
+|---|---|
+| „Hecke schneiden ab März“ | 1. März |
+| „Rasen mähen erst im Frühjahr“ | 1. März (Sommer 1. Juni, Herbst 1. September, Winter 1. Dezember) |
+| „Spielhaus streichen ab dem 3. April“ | 3. April |
+| „Reifen wechseln nicht vor dem 15.3.“ | 15. März |
+| „ab nächster Woche Zahnarzt anrufen“ | Montag nächster Woche |
+| „Garage aufräumen ab nächsten Monat“ | 1. des nächsten Monats |
+
+Ein Monat, der schon läuft oder vorbei ist, meint das nächste Jahr. *„ab 18 Uhr“* bleibt eine Uhrzeit, *„Müll ab holen“* bleibt, wie es ist.

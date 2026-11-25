@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from difflib import SequenceMatcher
 import re
 from typing import Any
@@ -38,6 +38,41 @@ class ReminderWords:
     place: str
     place_lead: str
     place_end: str
+
+
+# First month of a season, for "from spring"
+SEASON_MONTHS: dict[str, int] = {"spring": 3, "summer": 6, "autumn": 9, "winter": 12}
+
+
+def snooze_month(today: date, month: int) -> date:
+    """Return the first day of the next month of that name after today."""
+    year = today.year if month > today.month else today.year + 1
+    return date(year, month, 1)
+
+
+def snooze_day(today: date, day: int, month: int, year: int | None = None) -> date | None:
+    """Return a day for "from the 3rd of March", next year when it has passed."""
+    try:
+        wanted = date(year or today.year, month, day)
+        if year is None and wanted <= today:
+            wanted = date(today.year + 1, month, day)
+    except ValueError:
+        return None
+    return wanted if wanted > today else None
+
+
+def snooze_next(today: date, unit: str) -> date:
+    """Return the start of the next week, month or year."""
+    if unit == "week":
+        return today + timedelta(days=7 - today.weekday())
+    if unit == "month":
+        return date(today.year + (today.month == 12), today.month % 12 + 1, 1)
+    return date(today.year + 1, 1, 1)
+
+
+def no_snooze(text: str, _now: datetime) -> tuple[date | None, str]:
+    """Return no snooze date, for a language without the words for it."""
+    return None, text
 
 
 @dataclass(frozen=True)
@@ -95,6 +130,10 @@ class LanguagePack:
     item_pairs: tuple[str, ...] = field(default=())
     # Frequent words that say nothing about a category, never learned from a move
     common_words: frozenset[str] = field(default=frozenset())
+    # "Hecke schneiden ab März": the day a note comes back, and the text without it
+    extract_snooze: Callable[[str, datetime], tuple[date | None, str]] = field(
+        default=no_snooze
+    )
 
     def msg(self, key: str, **values: object) -> str:
         """Return a text of this language with its values filled in."""

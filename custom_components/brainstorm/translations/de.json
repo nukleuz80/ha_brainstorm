@@ -1283,6 +1283,10 @@
         "zone": {
           "name": "An diesem Ort erinnern (Optional)",
           "description": "Erinnert beim Betreten dieser Zone."
+        },
+        "snoozed_until": {
+          "name": "Zurückstellen bis",
+          "description": "Blendet die Idee bis zu diesem Tag aus: Sie zählt nicht, wird nicht vorgelesen und steht an dem Tag wieder oben in ihrer Liste. Gesprochene Notizen wie „Hecke schneiden ab März“ setzen das selbst."
         }
       }
     },
@@ -1405,6 +1409,10 @@
         "rotation": {
           "name": "Wechselnde Zuständigkeit",
           "description": "An wen eine wiederkehrende Idee in der nächsten Runde geht, als Objekt mit mode und people. mode ist turn (reihum), fewest (wer in den letzten 30 Tagen am wenigsten eigene Notizen erledigt hat) oder random (Zufall); people listet 2 bis 10 Personen. Gehört die Idee keiner dieser Personen, geht sie sofort an die erste. Leer beendet den Wechsel."
+        },
+        "snoozed_until": {
+          "name": "Zurückstellen bis",
+          "description": "Blendet die Idee bis zu diesem Tag aus; dann steht sie wieder oben in ihrer Liste. Ein vergangener Tag oder ein leerer Wert holt sie sofort zurück."
         }
       }
     },

@@ -133,6 +133,11 @@ add_idea:
       selector:
         entity:
           domain: zone
+    snoozed_until:
+      required: false
+      example: "2027-03-01"
+      selector:
+        date:
 
 update_idea:
   fields:
@@ -311,6 +316,11 @@ update_idea:
             - morning
             - day
             - evening
+    snoozed_until:
+      required: false
+      example: "2027-03-01"
+      selector:
+        date:
     habit:
       required: false
       selector:

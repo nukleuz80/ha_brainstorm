@@ -748,6 +748,22 @@ const DICTIONARIES = {
     "☀️ Mein Tag": "☀️ My day",
     "Nur Notizen, die du dir für heute vorgenommen hast": "Only notes you picked for today",
     "Für heute vornehmen: morgens, tagsüber oder abends. Gilt nur heute und kommt ins Briefing.": "Pick it for today: morning, during the day or evening. Counts only today and goes into the briefing.",
+    "Nächste Woche": "Next week",
+    "Zurückholen": "Bring back now",
+    "Zurückstellen: {when}": "Put off: {when}",
+    "Zurückstellen: Tag wählen": "Put off: pick a day",
+    "Bis wann zurückstellen? ({format})": "Put off until when? ({format})",
+    "TT.MM.JJJJ": "YYYY-MM-DD",
+    "Bitte einen Tag in der Zukunft eingeben, z. B. {example}.": "Please enter a day ahead, for example {example}.",
+    "1.3.": "2027-03-01",
+    "💤 Zurückgestellte ausblenden": "💤 Hide put-off notes",
+    "💤 {count} zurückgestellt": "💤 {count} put off",
+    "Notizen, die erst später dran sind. Sie zählen nicht und kommen an ihrem Tag wieder nach oben.": "Notes that are due later. They do not count and come back to the top on their day.",
+    "Nächsten Monat": "Next month",
+    "Bis zum Frühling": "Until spring",
+    "Zurückgestellt bis {day}: zählt nicht und kommt dann wieder nach oben": "Put off until {day}: does not count and comes back to the top then",
+    "💤 Zurückstellen bis": "💤 Put off until",
+    "Bis zu diesem Tag ausgeblendet, zählt nicht und wird nicht vorgelesen. Leer holt die Notiz zurück.": "Hidden until this day, not counted and not read out. Empty brings the note back.",
     "Reihum": "Taking turns",
     "Wer am wenigsten erledigt hat": "Whoever did the least",
     "Zufällig": "At random",
@@ -2876,6 +2892,80 @@ export function readHabit(body, idea) {
 }
 
 const isoDay = (date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+
+/** Put off until a day: the quick choices of the cards. */
+export const SNOOZE_CHOICES = ["week", "month", "spring"];
+
+/** Return the day a quick choice puts a note off to, "YYYY-MM-DD". */
+export function snoozeDay(choice, now = new Date()) {
+  const day = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (choice === "week") {
+    day.setDate(day.getDate() + ((8 - day.getDay()) % 7 || 7));
+  } else if (choice === "month") {
+    day.setDate(1);
+    day.setMonth(day.getMonth() + 1);
+  } else if (choice === "spring") {
+    return isoDay(new Date(day.getMonth() >= 2 ? day.getFullYear() + 1 : day.getFullYear(), 2, 1));
+  } else {
+    return null;
+  }
+  return isoDay(day);
+}
+
+/** Return the label of a quick choice. */
+export function snoozeLabel(choice) {
+  return { week: t("Nächste Woche"), month: t("Nächsten Monat"), spring: t("Bis zum Frühling") }[choice] || choice;
+}
+
+/**
+ * Read a typed day: "1.3.", "01.03.2027" or "2027-03-01". A day without a year
+ * is the next one to come; a day that has passed gives null.
+ */
+export function parseSnoozeInput(text, now = new Date()) {
+  const value = String(text || "").trim();
+  const today = isoDay(now);
+  let year;
+  let month;
+  let day;
+  let match = value.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (match) {
+    [, year, month, day] = match.map(Number);
+  } else if ((match = value.match(/^(\d{1,2})\.(\d{1,2})\.?(\d{2}|\d{4})?$/))) {
+    day = Number(match[1]);
+    month = Number(match[2]);
+    year = match[3] ? Number(match[3].length === 2 ? `20${match[3]}` : match[3]) : now.getFullYear();
+  } else {
+    return null;
+  }
+  const date = new Date(year, month - 1, day);
+  if (date.getMonth() !== month - 1 || date.getDate() !== day) return null;
+  if (!match[3] && match.length === 4 && isoDay(date) <= today) date.setFullYear(year + 1);
+  return isoDay(date) > today ? isoDay(date) : null;
+}
+
+/** The badge of a note put off until a day. */
+export function snoozeBadge(idea) {
+  const until = idea && idea.snoozed_until;
+  if (!until) return "";
+  const day = shortDate(new Date(`${until}T12:00`));
+  return `<span class="repeat-badge snooze-badge" title="${escapeHtml(t("Zurückgestellt bis {day}: zählt nicht und kommt dann wieder nach oben", { day }))}">💤 ${escapeHtml(day)}</span>`;
+}
+
+/** The field in the edit dialogs that puts a note off until a day. */
+export function snoozeField(idea, prefix = "dialog") {
+  const until = (idea && idea.snoozed_until) || "";
+  return `<label class="${prefix}-label" for="editSnooze">${t("💤 Zurückstellen bis")}</label>
+    <input type="date" class="${prefix}-input" id="editSnooze" value="${escapeHtml(until)}" min="${isoDay(new Date(Date.now() + 86400000))}" title="${escapeHtml(t("Bis zu diesem Tag ausgeblendet, zählt nicht und wird nicht vorgelesen. Leer holt die Notiz zurück."))}">`;
+}
+
+/** Return the new snooze day or null when the field changed, undefined if not. */
+export function readSnooze(body, idea) {
+  const input = body.querySelector("#editSnooze");
+  if (!input) return undefined;
+  const value = input.value || "";
+  if (value === ((idea && idea.snoozed_until) || "")) return undefined;
+  return value || null;
+}
 
 /**
  * Fill a dialog body with the calendar of a habit: the streak, the best one,

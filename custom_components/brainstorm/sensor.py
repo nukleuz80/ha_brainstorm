@@ -10,7 +10,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import ATTR_STATUS, DOMAIN, OVERVIEW_ENTITY_ID
-from .store import BrainstormConfigEntry, BrainstormStore
+from .store import BrainstormConfigEntry, BrainstormStore, is_snoozed
 
 PARALLEL_UPDATES = 0
 
@@ -74,8 +74,14 @@ class BrainstormOverviewSensor(SensorEntity):
 
     @property
     def native_value(self) -> int:
-        """Return the number of active ideas."""
-        return len([i for i in self._store.ideas if i.get(ATTR_STATUS) == "active"])
+        """Return the number of active ideas, without those put off until later."""
+        return len(
+            [
+                i
+                for i in self._store.ideas
+                if i.get(ATTR_STATUS) == "active" and not is_snoozed(i)
+            ]
+        )
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:

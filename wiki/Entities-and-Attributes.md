@@ -4,7 +4,7 @@
 
 | Entity | What it shows |
 |---|---|
-| `sensor.brainstorm_ideen_ubersicht` | Number of open ideas. Attributes: `active_count`, `completed_count`, `category_counts`, `priority_counts`, `categories`, `active_categories`, `latest_idea`, `recent_ideas`, `ideas`, `speech_overview`, `voice_mode`, `allowed_echos`. With privacy switched on, only counts are shown. |
+| `sensor.brainstorm_ideen_ubersicht` | Number of open ideas. Attributes: `active_count`, `completed_count`, `snoozed_count`, `category_counts`, `priority_counts`, `categories`, `active_categories`, `latest_idea`, `recent_ideas`, `ideas`, `speech_overview`, `voice_mode`, `allowed_echos`. With privacy switched on, only counts are shown. |
 | `todo.<category>` | One to-do list per category. Items can be added, renamed, completed, given a due date and deleted in the to-do panel; changes reach the cards at once. New categories get a list right away, removed ones lose theirs. |
 
 All entities belong to the device **Brainstorm Hub**. [**Settings > Devices & services > Brainstorm Hub > ⋮ > Download diagnostics**](https://my.home-assistant.io/redirect/integration/?domain=brainstorm) gives a file for bug reports. It holds counts and settings, but no idea texts, people or Echos.

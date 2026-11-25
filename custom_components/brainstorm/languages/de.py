@@ -12,11 +12,15 @@ from .common import (
     CATEGORY_HOME_GARDEN,
     CATEGORY_PROJECTS,
     CATEGORY_SMARTHOME,
+    SEASON_MONTHS,
     LanguagePack,
     ReminderWords,
     apply_glossary,
     capitalize_first,
     merge_glossary,
+    snooze_day,
+    snooze_month,
+    snooze_next,
     validate_rewrite,
 )
 from .german_nouns import AMBIGUOUS_PLURALS, GERMAN_NOUNS
@@ -1997,6 +2001,64 @@ WASTE_ICONS: tuple[tuple[str, str], ...] = (
 )
 
 
+_SEASONS = {
+    "frühling": "spring",
+    "frühjahr": "spring",
+    "sommer": "summer",
+    "herbst": "autumn",
+    "winter": "winter",
+}
+_NEXT_UNITS = {"woche": "week", "monat": "month", "jahr": "year"}
+# "ab März", "erst im Frühjahr", "nicht vor dem 3. April", "ab nächster Woche"
+_RE_SNOOZE = re.compile(
+    r"[,;]?\s*\b(?:erst\s+(?:ab|im|wieder\s+im)|ab|nicht\s+vor)\s+"
+    r"(?:(?:dem|den|im|anfang)\s+)?"
+    r"(?:"
+    r"(?P<day>\d{1,2})\.\s*(?:(?P<month_name>" + "|".join(_MONTHS) + r")|"
+    r"(?P<month_num>\d{1,2})\.(?P<year>\d{4})?)"
+    r"|(?P<month>" + "|".join(_MONTHS) + r")"
+    r"|(?P<season>" + "|".join(_SEASONS) + r")"
+    r"|nächste[nmrs]?\s+(?P<unit>woche|monat|jahr)"
+    r")(?!\w)\.?",
+    re.IGNORECASE,
+)
+
+
+def extract_snooze(text: str, now: datetime) -> tuple[date | None, str]:
+    """Find "ab März" in a note: the day it comes back, and the rest of the note.
+
+    Only words that name a later start are read; "am 3. März" stays a due date.
+    """
+    match = _RE_SNOOZE.search(text)
+    if match is None:
+        return None, text
+    today = now.date()
+    groups = {key: (value or "").lower() for key, value in match.groupdict().items()}
+    wanted: date | None
+    if groups["day"]:
+        month = (
+            _MONTHS.index(groups["month_name"]) + 1
+            if groups["month_name"]
+            else int(groups["month_num"])
+        )
+        year = int(groups["year"]) if groups["year"] else None
+        wanted = (
+            snooze_day(today, int(groups["day"]), month, year)
+            if 1 <= month <= 12
+            else None
+        )
+    elif groups["month"]:
+        wanted = snooze_month(today, _MONTHS.index(groups["month"]) + 1)
+    elif groups["season"]:
+        wanted = snooze_month(today, SEASON_MONTHS[_SEASONS[groups["season"]]])
+    else:
+        wanted = snooze_next(today, _NEXT_UNITS[groups["unit"]])
+    if wanted is None:
+        return None, text
+    rest = " ".join((text[: match.start()] + " " + text[match.end() :]).split())
+    return (wanted, rest) if rest.strip(" ,.;") else (None, text)
+
+
 PACK = LanguagePack(
     code="de",
     default_categories=tuple(DEFAULT_CATEGORIES),
@@ -2009,6 +2071,7 @@ PACK = LanguagePack(
     },
     category_aliases=CATEGORY_ALIASES,
     category_keywords=CATEGORY_KEYWORDS,
+    extract_snooze=extract_snooze,
     and_word="und",
     category_stop_words=frozenset({"und", "der", "die", "das"}),
     alias_lead=(

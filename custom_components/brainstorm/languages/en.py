@@ -13,11 +13,14 @@ from .common import (
     CATEGORY_PROJECTS,
     CATEGORY_SMARTHOME,
     ENGLISH_CATEGORIES,
+    SEASON_MONTHS,
     LanguagePack,
     ReminderWords,
     apply_glossary,
     capitalize_first,
     merge_glossary,
+    snooze_month,
+    snooze_next,
     validate_rewrite,
 )
 
@@ -1218,6 +1221,32 @@ WASTE_ICONS: tuple[tuple[str, str], ...] = (
 WASTE_PREFIXES: tuple[str, ...] = ("pickup", "collection", "collect")
 
 
+_SEASONS = {"spring": "spring", "summer": "summer", "autumn": "autumn", "fall": "autumn", "winter": "winter"}
+# "from March", "not before spring", "starting next week"
+_RE_SNOOZE = re.compile(
+    r"[,;]?\s*\b(?:from|not\s+before|starting|after)\s+(?:the\s+|early\s+)?"
+    r"(?:(?P<month>" + _MONTH + r")|(?P<season>" + "|".join(_SEASONS) + r")"
+    r"|next\s+(?P<unit>week|month|year))(?!\w)\.?",
+    re.IGNORECASE,
+)
+
+
+def extract_snooze(text: str, now: datetime) -> tuple[date | None, str]:
+    """Find "from March" in a note: the day it comes back, and the rest of the note."""
+    match = _RE_SNOOZE.search(text)
+    if match is None:
+        return None, text
+    today = now.date()
+    if month := match.group("month"):
+        wanted = snooze_month(today, _MONTHS.index(month.lower()) + 1)
+    elif season := match.group("season"):
+        wanted = snooze_month(today, SEASON_MONTHS[_SEASONS[season.lower()]])
+    else:
+        wanted = snooze_next(today, match.group("unit").lower())
+    rest = " ".join((text[: match.start()] + " " + text[match.end() :]).split())
+    return (wanted, rest) if rest.strip(" ,.;") else (None, text)
+
+
 PACK = LanguagePack(
     code="en",
     default_categories=ENGLISH_CATEGORIES,
@@ -1230,6 +1259,7 @@ PACK = LanguagePack(
     },
     category_aliases=CATEGORY_ALIASES,
     category_keywords=CATEGORY_KEYWORDS,
+    extract_snooze=extract_snooze,
     and_word="and",
     category_stop_words=frozenset({"and", "the", "for", "of"}),
     alias_lead=(

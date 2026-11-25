@@ -65,6 +65,7 @@ Fügt blitzschnell eine neue Brainstorm-Idee hinzu. Erkennt automatisch Kategori
 | `parse_due` | Nein | Erkennt Angaben wie "morgen um 8" im Text und nimmt sie als Termin. |
 | `assignee` | Nein | Wer erinnert werden soll. |
 | `zone` | Nein | Erinnert beim Betreten dieser Zone. |
+| `snoozed_until` | Nein | Stellt die Idee bis zu diesem Tag zurück (v1.29.0): ausgeblendet, zählt nicht, wird nicht vorgelesen und steht an dem Tag wieder oben in ihrer Liste. Gesprochene Notizen wie „Hecke schneiden ab März“ setzen das selbst. |
 | `language` | Nein | Sprache des Textes (z.B. "de" oder "en"). Ohne Angabe gilt die Sprache von Home Assistant. |
 
 ## `brainstorm.add_from_speech`
@@ -134,6 +135,7 @@ Aktualisiert Text, Kategorie oder Status einer bestehenden Idee.
 | `callout` | Nein | Kurze Anmerkung in einer Sprechblase über der Notiz, bis 200 Zeichen. Leer oder `null` entfernt sie. |
 | `repeat` | Nein | Lässt die Idee nach dem Abhaken wiederkommen: `daily`, `weekdays`, `weekly`, `biweekly`, `monthly` oder `yearly`. Die neue Idee ist zum nächsten Termin nach jetzt fällig, mit gleichen Angaben und wieder offenen Unteraufgaben. Leer oder `null` beendet es. |
 | `my_day` | Nein | Nimmt die Idee für heute vor (v1.12.2): `morning`, `day` oder `evening`. Gilt nur am heutigen Tag, erscheint in den Karten unter ☀️ Mein Tag und im Briefing. Leer oder `null` nimmt sie heraus. |
+| `snoozed_until` | Nein | Stellt die Idee bis zu diesem Tag zurück (v1.29.0). Ein vergangener Tag, leer oder `null` holt sie sofort zurück; Abhaken beendet das Zurückstellen. |
 | `habit` | Nein | Macht die Idee zur täglichen Gewohnheit (v1.12.3) oder wieder zur normalen Notiz (`false`; die Tage bleiben fürs Wiedereinschalten erhalten). Eine Gewohnheit wird nie erledigt: Abhaken (`status: completed`) zählt den heutigen Tag, `status: active` nimmt ihn zurück. |
 | `habit_done` | Nein | Hakt einen Tag der Gewohnheit ab (`true`) oder nimmt ihn zurück (`false`), heute, wenn `habit_date` fehlt. |
 | `habit_date` | Nein | Der Tag für `habit_done`, z. B. `2026-11-13`. Nicht in der Zukunft und höchstens 400 Tage zurück. |
@@ -512,6 +514,7 @@ Gibt mehrere Einträge oder eine ganze Kategorie für Personen frei. Braucht ein
 | `brainstorm_comment_added` | neuer Kommentar (`idea_id`, `idea_text`, `text`, `by`, `mentions`) |
 | `brainstorm_round_ended` | verdeckte Runde aufgedeckt (`category`, `revealed`) |
 | `brainstorm_idea_unblocked` | eine Notiz wartet nicht mehr: die letzte offene Notiz, die sie blockierte, ist abgehakt (`id`, `text`, `category`, `assignee`, `by_id`, `by_text`); seit v1.13.7 |
+| `brainstorm_idea_woke` | eine zurückgestellte Notiz ist wieder da, weil ihr Tag gekommen ist (`id`, `text`, `category`, `assignee`, `entity_id`); seit v1.29.0 |
 
 In den Ereignisdaten steckt die ganze Notiz (`id`, `text`, `category`, `priority`, `source`, …):
 

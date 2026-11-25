@@ -242,3 +242,15 @@ A spoken sentence with a point in time gets a due date, for example after **"rem
 | "… tomorrow afternoon" | tomorrow 15:00 |
 
 Without any time, **9:00** applies. In German, a time from **1 to 5 o'clock** without a part of the day counts as the afternoon (since v1.28.2): *„um halb drei“* is 14:30, *„um 3 Uhr“* 15:00. *Früh*, *morgens* or *nachts* keep the night (*„um 3 Uhr nachts“* 03:00), as does a written time like *„03:00“* or *„4:45“*; *„12 Uhr nachts“* is midnight. From 6 o'clock on the time stays as it is. *Halb* and *viertel* also work for an appointment (*Termin*) without a day. How and where you are reminded is set under [Reminders](Settings#integration).
+
+### Putting off
+
+Say from when something is due and Brainstorm puts the note off until then (since v1.29.0): it is hidden, not counted, not read out, and back at the top of its list on that day. This works for spoken notes only; typed text keeps its words.
+
+| You say | Put off until |
+|---|---|
+| "trim hedge from March" | 1 March |
+| "open pool not before summer" | 1 June (spring 1 March, autumn/fall 1 September, winter 1 December) |
+| "call dentist from next week" | Monday next week |
+
+A month that has started or passed means next year. *"from 5 pm"* stays a time.

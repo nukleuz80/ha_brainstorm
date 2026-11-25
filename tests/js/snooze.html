@@ -1,0 +1,35 @@
+<!doctype html>
+<!-- Browser test for putting notes off. Run: python3 -m http.server in the repo root,
+     open http://localhost:8000/tests/js/snooze.html, it shows PASS or the failures. --><html lang="de"><meta charset="utf-8"><body><pre id="out">running</pre>
+<script type="module">
+import { snoozeDay, parseSnoozeInput, snoozeBadge, snoozeField, readSnooze } from "../../custom_components/brainstorm/cards/brainstorm-i18n.js";
+const fails = [];
+const check = (name, got, want) => { if (JSON.stringify(got) !== JSON.stringify(want)) fails.push(`${name}: want ${JSON.stringify(want)}, got ${JSON.stringify(got)}`); };
+// Wednesday, 25 November 2026
+const now = new Date(2026, 10, 25);
+check("next monday", snoozeDay("week", now), "2026-11-30");
+check("next month", snoozeDay("month", now), "2026-12-01");
+check("spring next year", snoozeDay("spring", now), "2027-03-01");
+check("spring this year", snoozeDay("spring", new Date(2026, 1, 3)), "2026-03-01");
+check("january to february", snoozeDay("month", new Date(2027, 0, 31)), "2027-02-01");
+check("unknown", snoozeDay("later", now), null);
+check("day month", parseSnoozeInput("1.3.", now), "2027-03-01");
+check("full", parseSnoozeInput("01.03.2027", now), "2027-03-01");
+check("iso", parseSnoozeInput("2027-03-01", now), "2027-03-01");
+check("short year", parseSnoozeInput("1.3.27", now), "2027-03-01");
+check("passed this year", parseSnoozeInput("1.11.", now), "2027-11-01");
+check("passed with year", parseSnoozeInput("1.11.2026", now), null);
+check("today", parseSnoozeInput("25.11.2026", now), null);
+check("no such day", parseSnoozeInput("31.2.", now), null);
+check("text", parseSnoozeInput("bald", now), null);
+check("no badge", snoozeBadge({ id: "a" }), "");
+check("badge", snoozeBadge({ snoozed_until: "2027-03-01" }).includes("💤 01.03."), true);
+const form = document.createElement("div");
+form.innerHTML = snoozeField({ snoozed_until: "2027-03-01" });
+check("unchanged", readSnooze(form, { snoozed_until: "2027-03-01" }), undefined);
+form.querySelector("#editSnooze").value = "";
+check("cleared", readSnooze(form, { snoozed_until: "2027-03-01" }), null);
+form.querySelector("#editSnooze").value = "2027-04-01";
+check("changed", readSnooze(form, {}), "2027-04-01");
+document.getElementById("out").textContent = fails.length ? fails.join("\n") : "PASS";
+</script>
