@@ -426,10 +426,32 @@ def test_adjectives_ending_like_nouns_stay_lowercase(raw: str, expected: str) ->
         ("2 rollen kaufen", "2 Rollen kaufen"),
         ("alle fragen klären", "Alle Fragen klären"),
         ("mieten zahlen", "Mieten zahlen"),
+        ("günstige rollen kaufen", "Günstige Rollen kaufen"),
+        # An unknown noun ending in '-e' is no adjective
+        ("firmware updaten", "Firmware updaten"),
+        ("software updaten", "Software updaten"),
     ],
 )
 def test_verbs_like_plurals_stay_lowercase(raw: str, expected: str) -> None:
     """Test that "decken" sets the table and is only "Decken" after an adjective."""
+    assert clean_and_format_idea_text(raw) == expected
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("w. l. e. d. defekte matrix im garten", "WLED defekte matrix im Garten"),
+        ("w l e d matrix reparieren", "WLED matrix reparieren"),
+        ("auto zum t. ü. v. bringen", "Auto zum TÜV bringen"),
+        ("u s b kabel kaufen", "USB Kabel kaufen"),
+        ("notiere e. s. p. firmware updaten", "ESP firmware updaten"),
+        # Dotted abbreviations and lone letters stay
+        ("z. b. milch kaufen", "Z. b. Milch kaufen"),
+        ("vitamin d kaufen", "Vitamin d kaufen"),
+    ],
+)
+def test_spelled_letters_become_one_word(raw: str, expected: str) -> None:
+    """Test that letters spoken one by one are written as an abbreviation."""
     assert clean_and_format_idea_text(raw) == expected
 
 

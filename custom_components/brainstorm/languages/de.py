@@ -558,6 +558,18 @@ _NOT_ADJECTIVES = {
     "über", "unter", "hinter", "jeder", "jede", "jedes", "ganze",
 }
 
+# Stems of adjectives that stand in front of a plural ('neue decken')
+_COMMON_ADJECTIVES = frozenset(
+    """
+    alt neu groß gross klein warm kalt dick dünn weich hart schön gut schlecht
+    rot blau grün gelb weiß weiss schwarz grau braun bunt hell dunkel frisch
+    sauber lang kurz breit schmal billig teur günstig leer voll weit nah hoch
+    tief leicht schwer stark schwach ganz halb ander weiter extra letzt nächst
+    erst zweit dritt eigen best fest dicht glatt rund eckig flach
+    """.split()
+)
+_ADJECTIVE_SUFFIXES = ("ig", "isch", "lich", "bar", "sam", "haft", "los", "ell", "iv")
+
 
 def _is_ambiguous_plural_noun(word: str, previous: str) -> bool:
     """Return whether a word like 'decken' is the noun, judged by the word before.
@@ -570,14 +582,17 @@ def _is_ambiguous_plural_noun(word: str, previous: str) -> bool:
     previous = previous.strip("\"'([<>)].,!?:;").lower()
     if previous in _PLURAL_DETERMINERS or previous.isdigit():
         return True
-    return (
-        len(previous) > 3
-        and previous.endswith(("e", "er", "es"))
-        and previous not in _NOT_ADJECTIVES
-        and previous not in TIME_ADVERBS
-        and previous not in ARTICLES_AND_PRONOUNS
-        and not _is_noun(previous)
-    )
+    if previous in _NOT_ADJECTIVES or previous in ARTICLES_AND_PRONOUNS:
+        return False
+    # Only a word that is sure to be an adjective ('neue', 'warme', 'günstige');
+    # an unknown noun like 'firmware' ends in '-e' as well
+    for ending in ("e", "er", "es", "en"):
+        stem = previous.removesuffix(ending)
+        if stem != previous and (
+            stem in _COMMON_ADJECTIVES or stem.endswith(_ADJECTIVE_SUFFIXES)
+        ):
+            return True
+    return False
 
 
 def _format_words(text: str) -> str:
@@ -652,6 +667,28 @@ def build_glossary(custom_terms: str | None, names: list[str]) -> dict[str, str]
     return merge_glossary(BUILTIN_GLOSSARY, custom_terms, names, _RE_SENTENCE_WORD)
 
 
+# Letters spoken one by one ('w. l. e. d.'), which Alexa writes apart
+_RE_SPELLED_LETTERS = re.compile(
+    r"(?<![\w.])(?:[a-zäöü]\.?[ \t]+)+[a-zäöü]\.?(?!\w)", re.IGNORECASE
+)
+# Abbreviations that are written with dots and stay as they are
+_DOTTED_ABBREVIATIONS = frozenset(
+    {"zb", "dh", "ua", "uu", "oä", "ia", "iw", "sg", "evtl", "ca", "bzw"}
+)
+
+
+def _join_spelled_letters(text: str) -> str:
+    """Write letters spoken one by one as one word: 'w. l. e. d.' -> 'WLED'."""
+
+    def join(match: re.Match[str]) -> str:
+        letters = re.sub(r"[^\w]", "", match.group(0))
+        if letters.lower() in _DOTTED_ABBREVIATIONS:
+            return match.group(0)
+        return letters.upper()
+
+    return _RE_SPELLED_LETTERS.sub(join, text)
+
+
 def clean_and_format_idea_text(
     raw_text: str, glossary: dict[str, str] | None = None
 ) -> str:
@@ -664,7 +701,7 @@ def clean_and_format_idea_text(
     if not raw_text or not raw_text.strip():
         return ""
 
-    s = raw_text.strip()
+    s = _join_spelled_letters(raw_text.strip())
 
     # 1. Strip conversational prefixes repeatedly
     after_reminder_opener = False
