@@ -12,6 +12,7 @@ Alle Parameter stehen [weiter unten](#brainstormadd_idea) und unter [**Entwickle
 | `brainstorm.add_from_speech` | `text: "Morgen um zehn den Klempner anrufen, Anna kauft am Freitag Milch"` legt pro Aufgabe eine Notiz an |
 | `brainstorm.update_idea` | `id: …`, `status: completed`, `in_progress: true`, `markers: [question, money]`, `progress: 50`, `links: [{to: …, label: braucht, blocks: true}]`, `frame: Phase 1` oder `callout: Farbe offen` |
 | `brainstorm.delete_idea` | `id: …` |
+| `brainstorm.save_template` / `create_from_template` / `delete_template` | Notiz mit Unteraufgaben als Vorlage speichern, frisch anlegen (`template: Packliste Urlaub`) oder löschen |
 | `brainstorm.delete_done` | erledigte löschen, optional nur ältere (`older_than_days`) |
 | `brainstorm.restore_idea` | gelöschte Notiz zurückholen |
 | `brainstorm.get_ideas` | Liste als Antwort, z. B. `category: Einkaufen` |
@@ -501,6 +502,48 @@ Gibt mehrere Einträge oder eine ganze Kategorie für Personen frei. Braucht ein
 | `ids` | Nein | IDs der freizugebenden Einträge. |
 | `category` | Nein | Alle eigenen Einträge dieser Kategorie freigeben, auch spätere. |
 | `shares` | Ja | Benutzer-ID (oder "all") und Stufe, z. B. {"all": "view"}. Stufen sind view und edit; null entfernt die Freigabe. |
+
+## `brainstorm.save_template`
+
+▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.save_template)
+
+Speichert eine Notiz mit allen Unteraufgaben als Vorlage (seit v1.30.0). Eine Vorlage gleichen Namens wird ersetzt. Mit eingeschalteter Privatsphäre gehört die Vorlage der Person, die sie speichert.
+
+| Feld | Pflicht | Bedeutung |
+| :--- | :--- | :--- |
+| `id` | Ja | ID der Hauptnotiz. |
+| `name` | Nein | Name der Vorlage. Ohne Angabe der Text der Notiz. |
+
+## `brainstorm.create_from_template`
+
+▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.create_from_template)
+
+Legt eine frische Kopie einer Vorlage an, alle Unteraufgaben offen und in derselben Reihenfolge (seit v1.30.0). Die Antwort enthält die neue Hauptnotiz (`idea`).
+
+| Feld | Pflicht | Bedeutung |
+| :--- | :--- | :--- |
+| `template` | Ja | Name oder ID der Vorlage, Groß- und Kleinschreibung egal. |
+| `category` | Nein | Wohin die Kopie kommt. Ohne Angabe die Kategorie der Vorlage. |
+| `due` | Nein | Wann Brainstorm an die Hauptnotiz erinnert. |
+
+```yaml
+# Einen Tag vor dem Urlaub die Packliste anlegen
+actions:
+  - action: brainstorm.create_from_template
+    data:
+      template: Packliste Urlaub
+      due: "{{ (states('input_datetime.urlaub') | as_datetime - timedelta(days=1)).isoformat() }}"
+```
+
+## `brainstorm.delete_template`
+
+▶️ [In Home Assistant ausprobieren](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.delete_template)
+
+Entfernt eine Vorlage (seit v1.30.0). Daraus angelegte Notizen bleiben.
+
+| Feld | Pflicht | Bedeutung |
+| :--- | :--- | :--- |
+| `template` | Ja | Name oder ID der Vorlage. |
 
 ## Ereignisse
 

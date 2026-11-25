@@ -119,6 +119,15 @@
     },
     "import_mealplan": {
       "service": "mdi:silverware-fork-knife"
+    },
+    "save_template": {
+      "service": "mdi:content-save-outline"
+    },
+    "create_from_template": {
+      "service": "mdi:clipboard-list-outline"
+    },
+    "delete_template": {
+      "service": "mdi:clipboard-remove-outline"
     }
   }
 }

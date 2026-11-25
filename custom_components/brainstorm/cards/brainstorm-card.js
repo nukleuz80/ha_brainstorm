@@ -1,4 +1,4 @@
-import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, bringBadge, bringSentText, unblockedText, canSendToBring, renderBringSend, canHandOver, canHandOverProject, canMakeReward, choreopsBadge, choreopsRewardBadge, renderChoreHandover, renderChoreProject, renderChoreReward, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, habitBadge, habitField, readHabit, snoozeBadge, snoozeField, readSnooze, SNOOZE_CHOICES, snoozeDay, snoozeLabel, parseSnoozeInput, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, timeBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t, linkedListMark, linkedListOf, linkedListSign, linkedListText, batteriesBringText, batteriesNeeded, calendarBadge, calendarOptions, readCalendar, renderStatistics } from "./brainstorm-i18n.js?v=1.29.1";
+import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, bringBadge, bringSentText, unblockedText, canSendToBring, renderBringSend, canHandOver, canHandOverProject, canMakeReward, choreopsBadge, choreopsRewardBadge, renderChoreHandover, renderChoreProject, renderChoreReward, commentBadge, renderComments, renderTrash, renderSpeech, renderTemplates, saveAsTemplate, needsPersonalData, reactionBadges, voteBadge, addMoreFields, levelLabel, uiLevel, MARKERS, NODE_SHAPES, NUMBERING, numberingLabel, parentOptions, shapeLabel, sortChoices, alexaEchos, habitBadge, habitField, readHabit, snoozeBadge, snoozeField, readSnooze, SNOOZE_CHOICES, snoozeDay, snoozeLabel, parseSnoozeInput, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, emptyFilter, ideaMatches, loadRules, ruleFor, numberLabels, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, formatDueInput, formatText, ideaMarkers, inProgressBadge, timeBadge, markerBadges, markerIcon, markerLabel, nextProgress, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t, linkedListMark, linkedListOf, linkedListSign, linkedListText, batteriesBringText, batteriesNeeded, calendarBadge, calendarOptions, readCalendar, renderStatistics } from "./brainstorm-i18n.js?v=1.30.0";
 
 // Same check as isSample() in brainstorm-onboarding.js, without loading it
 const hasSampleTag = (idea) => Array.isArray(idea && idea.tags)
@@ -7,7 +7,7 @@ const hasSampleTag = (idea) => Array.isArray(idea && idea.tags)
 /**
  * Brainstorm Card for Home Assistant
  * Modern, sleek quick capture and idea manager
- * Version 1.29.1 - Zurückgestellte im Briefing
+ * Version 1.30.0 - Vorlagen
  */
 // The bulb lies next to this file, wherever Home Assistant serves it from
 const BULB_URL = new URL("./brainstorm-bulb.svg", import.meta.url).href;
@@ -755,6 +755,7 @@ class BrainstormCard extends HTMLElement {
       ${isCompletedView ? "" : `<button class="share-filter-btn ${this._myDayOnly ? "active" : ""}" id="myDayBtn" aria-pressed="${!!this._myDayOnly}" title="${t("Nur Notizen, die du dir für heute vorgenommen hast")}">${t("☀️ Mein Tag")}</button>`}
       ${canSelect ? `<button class="share-filter-btn ${this._selectionMode ? "active" : ""}" id="selectionToggleBtn" data-lvl="normal">${t("☑️ Auswählen")}</button>` : ""}
       <button class="share-filter-btn" id="statsBtn" data-lvl="normal" title="${t("Erledigt pro Woche, Durchlaufzeit und wer was abgehakt hat")}">${t("📊 Statistik")}</button>
+      ${canSelect ? `<button class="share-filter-btn" id="templatesBtn" data-lvl="normal" title="${t("Eigene Vorlagen: Notizen mit Unteraufgaben immer wieder anlegen")}">${t("📋 Vorlagen")}</button>` : ""}
       ${canSelect ? `<button class="share-filter-btn" id="trashBtn" data-lvl="normal" title="${t("Papierkorb: gelöschte Notizen zurückholen")}">${t("🗑️ Papierkorb")}</button>` : ""}
     `;
     const batteriesBtn = bar.querySelector("#batteriesBringBtn");
@@ -790,6 +791,14 @@ class BrainstormCard extends HTMLElement {
       statsBtn.addEventListener("click", () => {
         const category = selected && selected !== "all" && !isCompletedView ? selected : null;
         this._openDialog(t("📊 Statistik"), (body) => renderStatistics(body, { hass: this._hass, close: () => this._closeDialog(), category, prefix: "action-dialog" }));
+      });
+    }
+    const templatesBtn = bar.querySelector("#templatesBtn");
+    if (templatesBtn) {
+      templatesBtn.addEventListener("click", () => {
+        const current = this._selectedCategory;
+        const category = current && current !== "all" && current !== "__completed__" ? current : null;
+        this._openDialog(t("📋 Vorlagen"), (body) => renderTemplates(body, { hass: this._hass, category, close: () => this._closeDialog(), prefix: "action-dialog" }));
       });
     }
     const trashBtn = bar.querySelector("#trashBtn");
@@ -2615,6 +2624,14 @@ class BrainstormCard extends HTMLElement {
       `;
     }
 
+    // Keep it with its subtasks to create again and again
+    actionsHtml += `
+      <button class="apple-menu-btn" data-act="save-template" data-lvl="normal">
+        <span class="btn-icon">📋</span>
+        <div class="btn-content"><span>${t("📋 Als Vorlage speichern").replace("📋 ", "")}</span></div>
+      </button>
+    `;
+
     // Put off until a later day, or bring back now
     if (item.status !== "completed") {
       actionsHtml += item.snoozed_until ? `
@@ -2870,6 +2887,11 @@ class BrainstormCard extends HTMLElement {
 
         if (act === "branch") {
           this._showAddSubtaskDialog(item);
+          return;
+        }
+
+        if (act === "save-template") {
+          await saveAsTemplate(this._hass, item, (message) => this._notify(message));
           return;
         }
 
@@ -6706,7 +6728,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-CARD %c v1.29.1 ",
+  "%c BRAINSTORM-CARD %c v1.30.0 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

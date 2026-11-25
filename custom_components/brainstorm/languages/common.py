@@ -70,6 +70,11 @@ def snooze_next(today: date, unit: str) -> date:
     return date(today.year + 1, 1, 1)
 
 
+def no_template_names(_text: str) -> list[str]:
+    """Return no template names, for a language without the words for them."""
+    return []
+
+
 def no_snooze(text: str, _now: datetime) -> tuple[date | None, str]:
     """Return no snooze date, for a language without the words for it."""
     return None, text
@@ -134,6 +139,8 @@ class LanguagePack:
     extract_snooze: Callable[[str, datetime], tuple[date | None, str]] = field(
         default=no_snooze
     )
+    # The template names a spoken sentence may ask for, "Packliste Urlaub anlegen"
+    template_names: Callable[[str], list[str]] = field(default=no_template_names)
 
     def msg(self, key: str, **values: object) -> str:
         """Return a text of this language with its values filled in."""

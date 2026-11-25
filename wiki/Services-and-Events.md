@@ -12,6 +12,7 @@ All parameters are [further down](#brainstormadd_idea) and under [**Developer to
 | `brainstorm.add_from_speech` | `text: "Call the plumber tomorrow at ten, Anna buys milk on Friday"` creates one note per task |
 | `brainstorm.update_idea` | `id: …`, `status: completed`, `in_progress: true`, `markers: [question, money]`, `progress: 50`, `links: [{to: …, label: needs, blocks: true}]`, `frame: Phase 1` or `callout: colour open` |
 | `brainstorm.delete_idea` | `id: …` |
+| `brainstorm.save_template` / `create_from_template` / `delete_template` | save a note with subtasks as a template, create a fresh copy (`template: Packing list holiday`) or delete it |
 | `brainstorm.delete_done` | delete done notes, optionally only older ones (`older_than_days`) |
 | `brainstorm.restore_idea` | bring a deleted note back |
 | `brainstorm.get_ideas` | list as a response, e.g. `category: Shopping` |
@@ -501,6 +502,48 @@ Shares several ideas or a whole category. Needs privacy to be switched on.
 | `ids` | No | IDs of the ideas to share. |
 | `category` | No | Shares all your ideas in this category, including later ones. |
 | `shares` | Yes | User ID (or `all`) and level, such as `{"all": "view"}`. Levels are `view` and `edit`; `null` removes a share. |
+
+## `brainstorm.save_template`
+
+▶️ [Try it in Home Assistant](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.save_template)
+
+Keeps a note with all its subtasks as a template (since v1.30.0). A template of the same name is replaced. With privacy on, the template belongs to whoever saves it.
+
+| Field | Required | Meaning |
+| :--- | :--- | :--- |
+| `id` | Yes | ID of the main note. |
+| `name` | No | Name of the template. Without one, the text of the note. |
+
+## `brainstorm.create_from_template`
+
+▶️ [Try it in Home Assistant](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.create_from_template)
+
+Creates a fresh copy of a template, all subtasks open and in the same order (since v1.30.0). The response holds the new main note (`idea`).
+
+| Field | Required | Meaning |
+| :--- | :--- | :--- |
+| `template` | Yes | Name or ID of the template, case ignored. |
+| `category` | No | Where the copy goes. Without one, the category of the template. |
+| `due` | No | When Brainstorm reminds of the main note. |
+
+```yaml
+# Create the packing list a day before the holiday
+actions:
+  - action: brainstorm.create_from_template
+    data:
+      template: Packing list holiday
+      due: "{{ (states('input_datetime.holiday') | as_datetime - timedelta(days=1)).isoformat() }}"
+```
+
+## `brainstorm.delete_template`
+
+▶️ [Try it in Home Assistant](https://my.home-assistant.io/redirect/tools_perform_action/?service=brainstorm.delete_template)
+
+Removes a template (since v1.30.0). Notes created from it stay.
+
+| Field | Required | Meaning |
+| :--- | :--- | :--- |
+| `template` | Yes | Name or ID of the template. |
 
 ## Events
 

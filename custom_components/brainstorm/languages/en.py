@@ -1233,6 +1233,19 @@ _RE_SNOOZE = re.compile(
 )
 
 
+_RE_TEMPLATE = (
+    re.compile(r"^(?:the |my |our )?template (?P<name>.+?)$"),
+    re.compile(r"^(?:the |my |our )?(?P<name>.+?) from (?:the |my |our )?template$"),
+    re.compile(r"^(?:create|start|set up|use) (?:the |my |our |a |an |new )?(?P<name>.+?)$"),
+)
+
+
+def template_names(text: str) -> list[str]:
+    """Return the template names a sentence may ask for, the surest first."""
+    spoken = " ".join(text.casefold().strip(" .!?").split())
+    return [match["name"] for pattern in _RE_TEMPLATE if (match := pattern.match(spoken))]
+
+
 def extract_snooze(text: str, now: datetime) -> tuple[date | None, str]:
     """Find "from March" in a note: the day it comes back, and the rest of the note."""
     match = _RE_SNOOZE.search(text)
@@ -1262,6 +1275,7 @@ PACK = LanguagePack(
     category_aliases=CATEGORY_ALIASES,
     category_keywords=CATEGORY_KEYWORDS,
     extract_snooze=extract_snooze,
+    template_names=template_names,
     and_word="and",
     category_stop_words=frozenset({"and", "the", "for", "of"}),
     alias_lead=(

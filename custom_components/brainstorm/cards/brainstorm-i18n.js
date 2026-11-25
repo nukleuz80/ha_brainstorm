@@ -749,6 +749,19 @@ const DICTIONARIES = {
     "Nur Notizen, die du dir für heute vorgenommen hast": "Only notes you picked for today",
     "Für heute vornehmen: morgens, tagsüber oder abends. Gilt nur heute und kommt ins Briefing.": "Pick it for today: morning, during the day or evening. Counts only today and goes into the briefing.",
     "Nächste Woche": "Next week",
+    "Nur für dich": "Only for you",
+    "{count} Notizen · kommt nach {category}": "{count} notes · goes to {category}",
+    "Frische Kopie anlegen, alles offen": "Create a fresh copy, everything open",
+    "Vorlage löschen": "Delete template",
+    "Eine Notiz mit Unteraufgaben, die immer wieder gebraucht wird, z. B. eine Packliste. Speichern geht im Menü einer Notiz mit „Als Vorlage speichern“, gesprochen legt „Packliste Urlaub anlegen“ sie an.": "A note with subtasks you need again and again, such as a packing list. Save one from the menu of a note with \"Save as template\"; spoken, \"create packing list holiday\" creates it.",
+    "Noch keine Vorlagen.": "No templates yet.",
+    "„{name}“ angelegt.": "\"{name}\" created.",
+    "Vorlage „{name}“ löschen? Daraus angelegte Notizen bleiben.": "Delete the template \"{name}\"? Notes created from it stay.",
+    "Name der Vorlage:": "Name of the template:",
+    "Als Vorlage „{name}“ gespeichert. Anlegen geht über 📋 Vorlagen.": "Saved as the template \"{name}\". Create it from 📋 Templates.",
+    "📋 Als Vorlage speichern": "📋 Save as template",
+    "📋 Vorlagen": "📋 Templates",
+    "Eigene Vorlagen: Notizen mit Unteraufgaben immer wieder anlegen": "Your templates: create notes with subtasks again and again",
     "Zurückholen": "Bring back now",
     "Zurückstellen: {when}": "Put off: {when}",
     "Zurückstellen: Tag wählen": "Put off: pick a day",
@@ -3021,6 +3034,77 @@ export function renderHabit(body, { hass, idea, close, prefix = "dialog", today 
     );
   };
   draw();
+}
+
+/**
+ * Fill a dialog body with the saved templates: create a fresh copy of one in
+ * the current list, or delete one. A note is saved as a template from its menu.
+ */
+export function renderTemplates(body, { hass, category = null, close, created = () => {}, prefix = "dialog" }) {
+  const c = (names) => names.split(" ").map((n) => `${prefix}-${n}`).join(" ");
+  let templates = null;
+  const draw = (error = "", notice = "") => {
+    if (!body.isConnected) return;
+    const rows = (templates || []).map((tpl) => `
+      <div class="bs-trash-row bs-template-row" data-id="${escapeHtml(tpl.id)}">
+        <div class="bs-trash-text">
+          <div>📋 ${escapeHtml(tpl.name)}${tpl.private ? ` <span title="${escapeHtml(t("Nur für dich"))}">🔒</span>` : ""}</div>
+          <div class="bs-trash-meta">${escapeHtml(t("{count} Notizen · kommt nach {category}", { count: tpl.count, category: category || tpl.category }))}</div>
+        </div>
+        <button class="bs-trash-btn bs-template-use" data-id="${escapeHtml(tpl.id)}" title="${escapeHtml(t("Frische Kopie anlegen, alles offen"))}">${t("Anlegen")}</button>
+        <button class="bs-trash-btn bs-trash-del bs-template-del" data-id="${escapeHtml(tpl.id)}" title="${escapeHtml(t("Vorlage löschen"))}" aria-label="${escapeHtml(t("Vorlage löschen"))}">🗑</button>
+      </div>`).join("");
+    body.innerHTML = `
+      <div class="${c("hint")}">${t("Eine Notiz mit Unteraufgaben, die immer wieder gebraucht wird, z. B. eine Packliste. Speichern geht im Menü einer Notiz mit „Als Vorlage speichern“, gesprochen legt „Packliste Urlaub anlegen“ sie an.")}</div>
+      ${templates === null ? `<div class="${c("hint")}">${t("Lädt …")}</div>` : templates.length ? `<div class="bs-trash-list">${rows}</div>` : `<div class="${c("hint")}">${t("Noch keine Vorlagen.")}</div>`}
+      <div class="bs-trash-notice" style="display: ${notice ? "block" : "none"};">${escapeHtml(notice)}</div>
+      <div class="${c("error")}" style="display: ${error ? "flex" : "none"};">${escapeHtml(error)}</div>
+      <div class="${c("footer")}">
+        <button class="${c("btn btn-secondary")}" id="bsTemplatesClose">${t("Schließen")}</button>
+      </div>`;
+    body.querySelector("#bsTemplatesClose").addEventListener("click", close);
+    body.querySelectorAll(".bs-template-use").forEach((btn) => btn.addEventListener("click", async () => {
+      const tpl = templates.find((item) => item.id === btn.dataset.id);
+      btn.disabled = true;
+      try {
+        const data = { template: tpl.id };
+        if (category) data.category = category;
+        await hass.callService("brainstorm", "create_from_template", data);
+        created(tpl);
+        draw("", t("„{name}“ angelegt.", { name: tpl.name }));
+      } catch (err) {
+        draw((err && err.message) || t("Das hat nicht geklappt."));
+      }
+    }));
+    body.querySelectorAll(".bs-template-del").forEach((btn) => btn.addEventListener("click", async () => {
+      const tpl = templates.find((item) => item.id === btn.dataset.id);
+      if (!window.confirm(t("Vorlage „{name}“ löschen? Daraus angelegte Notizen bleiben.", { name: tpl.name }))) return;
+      try {
+        await hass.callService("brainstorm", "delete_template", { template: tpl.id });
+        templates = templates.filter((item) => item.id !== tpl.id);
+        draw();
+      } catch (err) {
+        draw((err && err.message) || t("Das hat nicht geklappt."));
+      }
+    }));
+  };
+  draw();
+  hass.callWS({ type: "brainstorm/templates" }).then(
+    (result) => { templates = result.templates || []; draw(); },
+    (err) => { templates = []; draw((err && err.message) || t("Das hat nicht geklappt.")); }
+  );
+}
+
+/** Ask for a name and keep a note with its subtasks as a template. */
+export async function saveAsTemplate(hass, idea, notify = () => {}) {
+  const name = window.prompt(t("Name der Vorlage:"), idea.text || "");
+  if (name === null || !name.trim()) return;
+  try {
+    await hass.callService("brainstorm", "save_template", { id: idea.id, name: name.trim().slice(0, 60) });
+    notify(t("Als Vorlage „{name}“ gespeichert. Anlegen geht über 📋 Vorlagen.", { name: name.trim() }));
+  } catch (err) {
+    notify((err && err.message) || t("Das hat nicht geklappt."));
+  }
 }
 
 /**

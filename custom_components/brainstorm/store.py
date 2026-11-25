@@ -51,6 +51,10 @@ from .const import (
     MAP_TAB_LAYOUTS,
     MAP_TAB_NAME_MAX,
     MAP_TABS_MAX,
+    TEMPLATE_DEPTH_MAX,
+    TEMPLATE_NAME_MAX,
+    TEMPLATE_NODES_MAX,
+    TEMPLATES_MAX,
     PIN_COLORS,
     ATTR_SHARES,
     ACCESS_OWNER,
@@ -403,6 +407,7 @@ class BrainstormStore:
         self._intercepted: list[dict[str, Any]] = []
         # Words of notes moved by hand and the category they belong to, oldest first
         self._learned: dict[str, str] = {}
+        self._templates: list[dict[str, Any]] = []
         self._categories: list[str] = list(self._pack().default_categories)
         self._category_icons: dict[str, str] = {}
         self._category_colors: dict[str, str] = {}
@@ -949,6 +954,11 @@ class BrainstormStore:
                 for tab in (_clean_map_tab(raw) for raw in data.get("map_tabs") or [])
                 if tab is not None
             ]
+            self._templates = [
+                template
+                for template in (_clean_template(raw) for raw in data.get("templates") or [])
+                if template is not None
+            ][:TEMPLATES_MAX]
             self._deleted = {
                 entry["idea"][ATTR_ID]: entry
                 for entry in data.get("trash", [])
@@ -989,6 +999,7 @@ class BrainstormStore:
             "rounds": self._rounds,
             "drawings": self._drawings,
             "map_tabs": self._map_tabs,
+            "templates": self._templates,
             "ideas": list(self._ideas.values()),
             "trash": list(self._deleted.values()),
             "intercepted": self._intercepted,
@@ -2132,6 +2143,14 @@ class BrainstormStore:
         elif spoken is None:
             spoken = source not in TYPED_SOURCES
         original_text = text.strip()
+        # "Packliste Urlaub anlegen" spoken creates the saved template
+        if spoken and not parent_id and self._templates:
+            user_id = owner or (context.user_id if context else None)
+            for name in pack.template_names(original_text):
+                if self.find_template(name, user_id) is not None:
+                    return await self.async_create_from_template(
+                        name, category=category, due=due, context=context, owner=owner
+                    )
         snoozed_until = clean_snooze(snoozed)
         # "Hecke schneiden ab März" comes back in March
         if spoken and self._smart_formatting and snoozed_until is None:
@@ -4239,6 +4258,157 @@ class BrainstormStore:
         await self.async_save()
         self._notify_listeners()
 
+    # Templates
+
+    def templates(self, user_id: str | None = None) -> list[dict[str, Any]]:
+        """Return the templates a user sees: shared ones and their own."""
+        return [
+            {
+                "id": template["id"],
+                "name": template["name"],
+                "category": template["category"],
+                "count": _count_nodes(template["items"]),
+                "private": template["owner"] is not None,
+                "items": template["items"],
+            }
+            for template in self._templates
+            if user_id is None or template["owner"] in (None, user_id)
+        ]
+
+    def find_template(
+        self, name_or_id: str, user_id: str | None = None
+    ) -> dict[str, Any] | None:
+        """Return a visible template by its id or its name, case ignored."""
+        wanted = _template_key(name_or_id)
+        visible = [
+            template
+            for template in self._templates
+            if user_id is None or template["owner"] in (None, user_id)
+        ]
+        for template in visible:
+            if template["id"] == name_or_id.strip():
+                return template
+        for template in visible:
+            if _template_key(template["name"]) == wanted:
+                return template
+        return None
+
+    def _template_tree(self, idea: dict[str, Any], depth: int = 0) -> dict[str, Any]:
+        node: dict[str, Any] = {"text": str(idea.get(ATTR_TEXT) or "")}
+        if idea.get(ATTR_DESCRIPTION):
+            node["description"] = str(idea[ATTR_DESCRIPTION])
+        if idea.get(ATTR_PRIORITY) in _TEMPLATE_PRIORITIES:
+            node["priority"] = idea[ATTR_PRIORITY]
+        if depth < TEMPLATE_DEPTH_MAX:
+            children = [
+                self._template_tree(child, depth + 1)
+                for child in self.children_of(idea[ATTR_ID])
+                if child.get(ATTR_STATUS) != "archived"
+            ]
+            if children:
+                node["children"] = children
+        return node
+
+    async def async_save_template(
+        self,
+        idea_id: str,
+        name: str | None = None,
+        user_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Keep a note with its subtasks as a template, one of the same name replaced.
+
+        With privacy on, the template belongs to whoever saves it.
+        """
+        idea = self.get_idea(idea_id)
+        if idea is None or (user_id is not None and not self.can_access(idea, user_id)):
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="idea_not_found",
+                translation_placeholders={"id": idea_id},
+            )
+        owner = user_id if self._privacy_enabled and user_id else None
+        tree = self._template_tree(idea)
+        raw = {
+            "id": uuid.uuid4().hex[:8],
+            "name": name or idea.get(ATTR_TEXT),
+            "category": idea.get(ATTR_CATEGORY),
+            "owner": owner,
+            "items": [tree],
+        }
+        current = self.find_template(str(raw["name"] or ""), user_id)
+        if current is not None and current["owner"] == owner:
+            raw["id"] = current["id"]
+        template = _clean_template(raw)
+        if template is None:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="template_invalid"
+            )
+        if current is not None and current["owner"] == owner:
+            self._templates[self._templates.index(current)] = template
+        elif len(self._templates) >= TEMPLATES_MAX:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="templates_full",
+                translation_placeholders={"max": str(TEMPLATES_MAX)},
+            )
+        else:
+            self._templates.append(template)
+        await self.async_save()
+        self._notify_listeners()
+        return next(t for t in self.templates(user_id) if t["id"] == template["id"])
+
+    async def async_delete_template(
+        self, name_or_id: str, user_id: str | None = None
+    ) -> bool:
+        """Remove a template the user sees."""
+        template = self.find_template(name_or_id, user_id)
+        if template is None:
+            return False
+        self._templates.remove(template)
+        await self.async_save()
+        self._notify_listeners()
+        return True
+
+    async def async_create_from_template(
+        self,
+        name_or_id: str,
+        category: str | None = None,
+        due: datetime | None = None,
+        context: Context | None = None,
+        owner: str | None = None,
+    ) -> dict[str, Any]:
+        """Create a fresh copy of a template, everything open, and return its main note."""
+        user_id = owner or (context.user_id if context else None)
+        template = self.find_template(name_or_id, user_id)
+        if template is None:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="template_not_found",
+                translation_placeholders={"name": name_or_id},
+            )
+        target = (category or "").strip() or template["category"]
+
+        async def add(node: dict[str, Any], parent: str | None) -> dict[str, Any]:
+            idea = await self.async_add_idea(
+                node["text"],
+                category=target,
+                priority=node.get("priority"),
+                source="template",
+                parent_id=parent,
+                context=context,
+                owner=owner,
+                due=due if parent is None else None,
+                verbatim=True,
+                description=node.get("description"),
+            )
+            # Each new note goes on top, so the last child is added first
+            for child in reversed(node.get("children") or []):
+                await add(child, idea[ATTR_ID])
+            return idea
+
+        roots = [await add(node, None) for node in reversed(template["items"])]
+        return self.get_idea(roots[-1][ATTR_ID]) or roots[-1]
+
     # Map tabs
 
     def map_tabs(self, user_id: str | None = None) -> list[dict[str, Any]]:
@@ -5081,6 +5251,70 @@ def _clean_points(value: Any) -> list[list[float]] | None:
         points.append([round(float(point[0]), 1), round(float(point[1]), 1)])
     return points
 
+
+
+_TEMPLATE_PRIORITIES = ("low", "medium", "high", "urgent")
+
+
+def _template_key(name: str) -> str:
+    """Return a template name as it is compared: lower case, plain spaces."""
+    return " ".join(str(name or "").casefold().replace("-", " ").split()).strip(" .!?")
+
+
+def _count_nodes(items: list[dict[str, Any]]) -> int:
+    return sum(1 + _count_nodes(node.get("children") or []) for node in items)
+
+
+def _clean_template_node(raw: Any, depth: int, budget: list[int]) -> dict[str, Any] | None:
+    if not isinstance(raw, dict) or budget[0] <= 0:
+        return None
+    text = " ".join(str(raw.get("text") or "").split())[:500]
+    if not text:
+        return None
+    budget[0] -= 1
+    node: dict[str, Any] = {"text": text}
+    if isinstance(raw.get("description"), str) and raw["description"].strip():
+        node["description"] = raw["description"].strip()[:2000]
+    if raw.get("priority") in _TEMPLATE_PRIORITIES:
+        node["priority"] = raw["priority"]
+    if depth < TEMPLATE_DEPTH_MAX and isinstance(raw.get("children"), list):
+        children = [
+            child
+            for child in (
+                _clean_template_node(item, depth + 1, budget) for item in raw["children"]
+            )
+            if child is not None
+        ]
+        if children:
+            node["children"] = children
+    return node
+
+
+def _clean_template(raw: Any) -> dict[str, Any] | None:
+    """Return a stored template in a known shape, or None when it is unusable."""
+    if not isinstance(raw, dict):
+        return None
+    template_id = str(raw.get("id") or "").strip()[:16]
+    name = " ".join(str(raw.get("name") or "").split())[:TEMPLATE_NAME_MAX]
+    category = str(raw.get("category") or "").strip()[:100] or "Inbox"
+    budget = [TEMPLATE_NODES_MAX]
+    items = [
+        node
+        for node in (
+            _clean_template_node(item, 0, budget) for item in raw.get("items") or []
+        )
+        if node is not None
+    ]
+    if not template_id or not name or not items:
+        return None
+    owner = raw.get("owner")
+    return {
+        "id": template_id,
+        "name": name,
+        "category": category,
+        "owner": owner if isinstance(owner, str) and owner else None,
+        "items": items,
+    }
 
 
 def _clean_map_tab(raw: Any) -> dict[str, Any] | None:

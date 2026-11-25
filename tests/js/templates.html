@@ -1,0 +1,50 @@
+<!doctype html>
+<!-- Browser test for the templates dialog. Run: python3 -m http.server in the repo root,
+     open http://localhost:8000/tests/js/templates.html, it shows PASS or the failures. --><html lang="de"><meta charset="utf-8"><body><pre id="out">running</pre>
+<script type="module">
+import { renderTemplates, saveAsTemplate } from "../../custom_components/brainstorm/cards/brainstorm-i18n.js";
+const fails = [];
+const check = (name, got, want) => { if (JSON.stringify(got) !== JSON.stringify(want)) fails.push(`${name}: want ${JSON.stringify(want)}, got ${JSON.stringify(got)}`); };
+const wait = () => new Promise((resolve) => setTimeout(resolve, 20));
+const calls = [];
+const hass = {
+  callWS: async () => ({ templates: [
+    { id: "t1", name: "Packliste Urlaub", category: "Reisen", count: 5, private: false },
+    { id: "t2", name: "Grillabend", category: "Alltag", count: 3, private: true },
+  ] }),
+  callService: async (domain, service, data) => { calls.push([service, data]); },
+};
+const body = document.createElement("div");
+document.body.appendChild(body);
+let made = null;
+renderTemplates(body, { hass, category: "Projekte", close: () => {}, created: (tpl) => { made = tpl.name; } });
+await wait();
+const rows = [...body.querySelectorAll(".bs-template-row")];
+check("two rows", rows.length, 2);
+check("target list", rows[0].textContent.includes("kommt nach Projekte"), true);
+check("private lock", rows[1].textContent.includes("🔒"), true);
+body.querySelector('.bs-template-use[data-id="t1"]').click();
+await wait();
+check("create call", calls[0], ["create_from_template", { template: "t1", category: "Projekte" }]);
+check("created", made, "Packliste Urlaub");
+check("notice", body.querySelector(".bs-trash-notice").textContent, "„Packliste Urlaub“ angelegt.");
+window.confirm = () => true;
+body.querySelector('.bs-template-del[data-id="t2"]').click();
+await wait();
+check("delete call", calls[1], ["delete_template", { template: "t2" }]);
+check("one left", body.querySelectorAll(".bs-template-row").length, 1);
+window.prompt = () => "  Urlaub  ";
+let note = "";
+await saveAsTemplate(hass, { id: "abc", text: "Packliste" }, (message) => { note = message; });
+check("save call", calls[2], ["save_template", { id: "abc", name: "Urlaub" }]);
+check("save notice", note.includes("„Urlaub“"), true);
+window.prompt = () => null;
+await saveAsTemplate(hass, { id: "abc", text: "Packliste" });
+check("cancel", calls.length, 3);
+const empty = document.createElement("div");
+document.body.appendChild(empty);
+renderTemplates(empty, { hass: { callWS: async () => ({ templates: [] }) }, close: () => {} });
+await wait();
+check("empty", empty.textContent.includes("Noch keine Vorlagen."), true);
+document.getElementById("out").textContent = fails.length ? fails.join("\n") : "PASS";
+</script>

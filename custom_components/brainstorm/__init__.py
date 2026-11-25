@@ -116,7 +116,11 @@ from .const import (
     SERVICE_IMPORT_MEALPLAN,
     CONF_MEALIE_CATEGORY,
     CONF_MEALIE_DAYS,
+    SERVICE_CREATE_FROM_TEMPLATE,
     SERVICE_DELETE_DONE,
+    SERVICE_DELETE_TEMPLATE,
+    SERVICE_SAVE_TEMPLATE,
+    TEMPLATE_NAME_MAX,
     SERVICE_SET_CATEGORY_STYLE,
     SHARE_EDIT,
     SHARE_VIEW,
@@ -456,6 +460,23 @@ SERVICE_DELETE_IDEA_SCHEMA = vol.Schema(
         vol.Required(ATTR_ID): cv.string,
     }
 )
+
+SERVICE_SAVE_TEMPLATE_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_ID): cv.string,
+        vol.Optional("name"): vol.All(cv.string, vol.Length(min=1, max=TEMPLATE_NAME_MAX)),
+    }
+)
+
+SERVICE_CREATE_FROM_TEMPLATE_SCHEMA = vol.Schema(
+    {
+        vol.Required("template"): cv.string,
+        vol.Optional(ATTR_CATEGORY): cv.string,
+        vol.Optional(ATTR_DUE): vol.Any(None, cv.datetime),
+    }
+)
+
+SERVICE_DELETE_TEMPLATE_SCHEMA = vol.Schema({vol.Required("template"): cv.string})
 
 SERVICE_DELETE_DONE_SCHEMA = vol.Schema(
     {
@@ -1721,4 +1742,49 @@ def _register_services(hass: HomeAssistant) -> None:
         schema=SERVICE_EXPORT_MARKDOWN_SCHEMA,
         supports_response=SupportsResponse.OPTIONAL,
     )
+
+    async def handle_save_template(call: ServiceCall) -> dict[str, Any]:
+        """Keep a note with its subtasks as a template."""
+        store = _require_store(hass)
+        template = await store.async_save_template(
+            call.data[ATTR_ID], call.data.get("name"), call.context.user_id
+        )
+        return {"template": template}
+
+    async def handle_create_from_template(call: ServiceCall) -> dict[str, Any]:
+        """Create a fresh copy of a template."""
+        store = _require_store(hass)
+        due = call.data.get(ATTR_DUE)
+        idea = await store.async_create_from_template(
+            call.data["template"],
+            category=call.data.get(ATTR_CATEGORY),
+            due=dt_util.as_local(due) if due else None,
+            context=call.context,
+        )
+        return {"idea": idea}
+
+    async def handle_delete_template(call: ServiceCall) -> dict[str, Any]:
+        """Remove a template."""
+        store = _require_store(hass)
+        deleted = await store.async_delete_template(
+            call.data["template"], call.context.user_id
+        )
+        return {"deleted": deleted}
+
+    for service, handler, schema in (
+        (SERVICE_SAVE_TEMPLATE, handle_save_template, SERVICE_SAVE_TEMPLATE_SCHEMA),
+        (
+            SERVICE_CREATE_FROM_TEMPLATE,
+            handle_create_from_template,
+            SERVICE_CREATE_FROM_TEMPLATE_SCHEMA,
+        ),
+        (SERVICE_DELETE_TEMPLATE, handle_delete_template, SERVICE_DELETE_TEMPLATE_SCHEMA),
+    ):
+        hass.services.async_register(
+            DOMAIN,
+            service,
+            handler,
+            schema=schema,
+            supports_response=SupportsResponse.OPTIONAL,
+        )
 

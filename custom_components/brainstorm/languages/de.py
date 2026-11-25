@@ -2026,6 +2026,28 @@ _RE_SNOOZE = re.compile(
 )
 
 
+_RE_TEMPLATE = (
+    re.compile(
+        r"^(?:die |meine |unsere )?vorlage (?P<name>.+?)"
+        r"(?: (?:anlegen|erstellen|holen|nehmen|benutzen|verwenden))?$"
+    ),
+    re.compile(
+        r"^(?:die |meine |unsere )?(?P<name>.+?) aus (?:der |meiner |unserer )?vorlage"
+        r"(?: (?:anlegen|erstellen|holen))?$"
+    ),
+    re.compile(
+        r"^(?:(?:die|meine|unsere|eine|einen|ein|neue|neuen) )*(?P<name>.+?)"
+        r" (?:anlegen|erstellen)$"
+    ),
+)
+
+
+def template_names(text: str) -> list[str]:
+    """Return the template names a sentence may ask for, the surest first."""
+    spoken = " ".join(text.casefold().strip(" .!?").split())
+    return [match["name"] for pattern in _RE_TEMPLATE if (match := pattern.match(spoken))]
+
+
 def extract_snooze(text: str, now: datetime) -> tuple[date | None, str]:
     """Find "ab März" in a note: the day it comes back, and the rest of the note.
 
@@ -2074,6 +2096,7 @@ PACK = LanguagePack(
     category_aliases=CATEGORY_ALIASES,
     category_keywords=CATEGORY_KEYWORDS,
     extract_snooze=extract_snooze,
+    template_names=template_names,
     and_word="und",
     category_stop_words=frozenset({"und", "der", "die", "das"}),
     alias_lead=(

@@ -67,6 +67,7 @@ def async_register_commands(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, websocket_restore_trash)
     websocket_api.async_register_command(hass, websocket_purge_trash)
     websocket_api.async_register_command(hass, websocket_get_map_tabs)
+    websocket_api.async_register_command(hass, websocket_get_templates)
     websocket_api.async_register_command(hass, websocket_save_map_tab)
     websocket_api.async_register_command(hass, websocket_delete_map_tab)
     websocket_api.async_register_command(hass, websocket_order_map_tabs)
@@ -862,6 +863,21 @@ def websocket_get_map_tabs(
     if (store := _trash_store(hass, connection, msg["id"])) is None:
         return
     connection.send_result(msg["id"], {"tabs": store.map_tabs(connection.user.id)})
+
+
+@websocket_api.websocket_command({vol.Required("type"): "brainstorm/templates"})
+@callback
+def websocket_get_templates(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Return the shared templates and the user's own."""
+    if (store := _trash_store(hass, connection, msg["id"])) is None:
+        return
+    connection.send_result(
+        msg["id"], {"templates": store.templates(connection.user.id)}
+    )
 
 
 _TAB_FILTER = vol.Schema(

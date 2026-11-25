@@ -1203,6 +1203,15 @@
     },
     "mealie_empty": {
       "message": "The meal plan of Mealie has no meals for these days."
+    },
+    "template_not_found": {
+      "message": "There is no template \"{name}\"."
+    },
+    "templates_full": {
+      "message": "There are already {max} templates. Delete one first."
+    },
+    "template_invalid": {
+      "message": "This note cannot be kept as a template."
     }
   },
   "services": {
@@ -1937,6 +1946,48 @@
         "config_entry_id": {
           "name": "Mealie entry",
           "description": "Which Mealie entry to read, when there are several. Without one the first."
+        }
+      }
+    },
+    "save_template": {
+      "name": "Save as template",
+      "description": "Keeps a note with all its subtasks as a template to create again and again. A template of the same name is replaced.",
+      "fields": {
+        "id": {
+          "name": "Idea",
+          "description": "ID of the main note."
+        },
+        "name": {
+          "name": "Name",
+          "description": "Name of the template. Without one, the text of the note."
+        }
+      }
+    },
+    "create_from_template": {
+      "name": "Create from template",
+      "description": "Creates a fresh copy of a template, everything open. Spoken, \"create packing list holiday\" does the same.",
+      "fields": {
+        "template": {
+          "name": "Template",
+          "description": "Name or ID of the template."
+        },
+        "category": {
+          "name": "Category",
+          "description": "Where the copy goes. Without one, the category of the template."
+        },
+        "due": {
+          "name": "Due",
+          "description": "When Brainstorm reminds of the main note."
+        }
+      }
+    },
+    "delete_template": {
+      "name": "Delete template",
+      "description": "Removes a template. Notes created from it stay.",
+      "fields": {
+        "template": {
+          "name": "Template",
+          "description": "Name or ID of the template."
         }
       }
     }

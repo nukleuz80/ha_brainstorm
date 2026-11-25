@@ -1203,6 +1203,15 @@
     },
     "mealie_empty": {
       "message": "Der Essensplan in Mealie hat für diese Tage keine Gerichte."
+    },
+    "template_not_found": {
+      "message": "Es gibt keine Vorlage „{name}“."
+    },
+    "templates_full": {
+      "message": "Es gibt schon {max} Vorlagen. Lösche zuerst eine."
+    },
+    "template_invalid": {
+      "message": "Diese Notiz lässt sich nicht als Vorlage speichern."
     }
   },
   "services": {
@@ -1937,6 +1946,48 @@
         "config_entry_id": {
           "name": "Mealie-Eintrag",
           "description": "Welcher Mealie-Eintrag gelesen wird, falls es mehrere gibt. Ohne Angabe der erste."
+        }
+      }
+    },
+    "save_template": {
+      "name": "Als Vorlage speichern",
+      "description": "Speichert eine Notiz mit allen Unteraufgaben als Vorlage, die sich immer wieder anlegen lässt. Eine Vorlage gleichen Namens wird ersetzt.",
+      "fields": {
+        "id": {
+          "name": "Idee",
+          "description": "ID der Hauptnotiz."
+        },
+        "name": {
+          "name": "Name",
+          "description": "Name der Vorlage. Ohne Angabe der Text der Notiz."
+        }
+      }
+    },
+    "create_from_template": {
+      "name": "Aus Vorlage anlegen",
+      "description": "Legt eine frische Kopie einer Vorlage an, alles offen. Gesprochen geht das mit „Packliste Urlaub anlegen“.",
+      "fields": {
+        "template": {
+          "name": "Vorlage",
+          "description": "Name oder ID der Vorlage."
+        },
+        "category": {
+          "name": "Kategorie",
+          "description": "Wohin die Kopie kommt. Ohne Angabe die Kategorie der Vorlage."
+        },
+        "due": {
+          "name": "Termin",
+          "description": "Wann Brainstorm an die Hauptnotiz erinnert."
+        }
+      }
+    },
+    "delete_template": {
+      "name": "Vorlage löschen",
+      "description": "Entfernt eine Vorlage. Daraus angelegte Notizen bleiben.",
+      "fields": {
+        "template": {
+          "name": "Vorlage",
+          "description": "Name oder ID der Vorlage."
         }
       }
     }

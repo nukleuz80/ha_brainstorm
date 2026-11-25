@@ -274,6 +274,10 @@ Uhrzeiten von **1 bis 5 Uhr** gelten ohne Tageszeit als Nachmittag (seit v1.28.2
 
 Wie und wo erinnert wird, stellst du unter [Erinnerungen](Einstellungen#integration) ein.
 
+### Vorlagen
+
+Eine gespeicherte [Vorlage](Listenkarte) legst du per Sprache frisch an (seit v1.30.0): *„Packliste Urlaub anlegen“*, *„Vorlage Grillabend“* oder *„Grillabend aus der Vorlage“*. Das klappt nur, wenn es eine Vorlage mit genau diesem Namen gibt; sonst wird wie bisher eine Notiz daraus, *„Konto anlegen“* bleibt also eine Aufgabe.
+
 ### Zurückstellen
 
 Sagst du, ab wann etwas dran ist, stellt Brainstorm die Notiz bis dahin zurück (seit v1.29.0): Sie ist ausgeblendet, zählt nicht, wird nicht vorgelesen und steht an dem Tag wieder oben in ihrer Liste. Das gilt nur für gesprochene Notizen; getippt bleibt der Wortlaut.

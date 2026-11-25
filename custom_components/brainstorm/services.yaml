@@ -829,3 +829,40 @@ end_round:
       example: "Ausflug"
       selector:
         text:
+
+save_template:
+  fields:
+    id:
+      required: true
+      example: "a1b2c3d4"
+      selector:
+        text:
+    name:
+      required: false
+      example: "Packliste Urlaub"
+      selector:
+        text:
+
+create_from_template:
+  fields:
+    template:
+      required: true
+      example: "Packliste Urlaub"
+      selector:
+        text:
+    category:
+      required: false
+      selector:
+        text:
+    due:
+      required: false
+      selector:
+        datetime:
+
+delete_template:
+  fields:
+    template:
+      required: true
+      example: "Packliste Urlaub"
+      selector:
+        text:

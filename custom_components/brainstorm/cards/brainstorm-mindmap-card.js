@@ -1,8 +1,8 @@
-import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, BRING_TAB_ID, bringBadge, bringSentText, unblockedText, compactNodeInfo, nextNodeDetail, nodeDetailButton, nodeDetailCompact, nodeDetailMode, bringTab, canSendToBring, renderBringSend, CHORE_MAP_CSS, choreMapData, renderChoreMap, canHandOver, canHandOverProject, canMakeReward, choreopsBadge, choreopsRewardBadge, renderChoreHandover, renderChoreProject, renderChoreReward, MAP_TAB_CSS, activeMapTab, branchTabs, configTabs, mapTabBar, tabCounts, ruleFilter, commentBadge, renderComments, renderTrash, renderSpeech, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, habitBadge, habitField, readHabit, snoozeBadge, snoozeField, readSnooze, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, timeBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, importFileText, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t, linkedListMark } from "./brainstorm-i18n.js?v=1.29.1";
+import { LEVEL_CSS, SOCIAL_CSS, BRING_SEND_CSS, BRING_TAB_ID, bringBadge, bringSentText, unblockedText, compactNodeInfo, nextNodeDetail, nodeDetailButton, nodeDetailCompact, nodeDetailMode, bringTab, canSendToBring, renderBringSend, CHORE_MAP_CSS, choreMapData, renderChoreMap, canHandOver, canHandOverProject, canMakeReward, choreopsBadge, choreopsRewardBadge, renderChoreHandover, renderChoreProject, renderChoreReward, MAP_TAB_CSS, activeMapTab, branchTabs, configTabs, mapTabBar, tabCounts, ruleFilter, commentBadge, renderComments, renderTrash, renderSpeech, renderTemplates, saveAsTemplate, needsPersonalData, reactionBadges, voteBadge, voteTotal, addMoreFields, levelAllows, levelLabel, uiLevel, BOARDS, MARKERS, NODE_SHAPES, NUMBERING, parentOptions, shapeLabel, sortChoices, habitBadge, habitField, readHabit, snoozeBadge, snoozeField, readSnooze, renderHabit, myDayBadge, myDayOptions, myDayRank, repeatBadge, repeatOptions, readRotation, rotationFields, rotationInvalid, wireRotation, attachmentUrl, coverAttachment, RULE_COLORS, filterToRule, loadRules, ruleFor, ruleSummary, saveRules, boardColumnOf, boardColumns, boardDrop, contentTemplates, alexaEchos, attachmentBadge, blockedBadge, dateLocale, dueFromInputValues, dueInputFormat, dueInputValues, emptyFilter, filterActive, formatDueInput, formatText, ideaMarkers, ideaMatches, ideaTags, inProgressBadge, timeBadge, markerBadges, markerIcon, markerLabel, nextProgress, numberingLabel, numberLabels, importFileText, outlineFreemind, outlineMarkdown, outlineOpml, outlinePdf, minimapFrame, minimapToMap, parseDueInput, progressBadge, renderAttachments, setLanguage, shortDate, t, linkedListMark } from "./brainstorm-i18n.js?v=1.30.0";
 
 /**
  * Brainstorm Hub - Interactive Mindmap Card
- * Version: 1.29.1 - Zurückgestellte im Briefing
+ * Version: 1.30.0 - Vorlagen
  * 
  * An interactive, visual mindmap for Home Assistant ideas and brainstorm notes.
  * Minimalist UI / Mushroom-inspired theme styling.
@@ -4094,6 +4094,7 @@ class BrainstormMindmapCard extends HTMLElement {
           <button class="control-btn" id="levelsBtn" data-lvl="normal" title="${t("Ebenen zeigen: 1, 2, 3 oder alle (Tasten 1–9, 0 = alle)")}">∞</button>
           <button class="control-btn" id="arrangeBtn" data-lvl="normal" title="${t("Neu ordnen: von Hand verschobene Notizen wieder automatisch platzieren")}">🪄</button>
           <button class="control-btn" id="undoBtn" title="${t("Rückgängig (Strg+Z)")}" disabled>↶</button>
+          <button class="control-btn" id="templatesBtn" data-lvl="normal" title="${t("Eigene Vorlagen: Notizen mit Unteraufgaben immer wieder anlegen")}">📋</button>
           <button class="control-btn" id="trashBtn" data-lvl="normal" title="${t("Papierkorb: gelöschte Notizen zurückholen")}">🗑️</button>
           <button class="control-btn" id="speechBtn" title="${t("Frei reden: mehrere Aufgaben auf einmal sagen oder tippen, die KI zerlegt sie")}"><ha-icon icon="mdi:account-voice" style="--mdc-icon-size: 20px; display: inline-flex;"></ha-icon></button>
         </div>
@@ -4444,6 +4445,13 @@ class BrainstormMindmapCard extends HTMLElement {
       speechBtn.addEventListener("click", () => {
         const category = this._selectedCategory && this._selectedCategory !== "all" ? this._selectedCategory : null;
         this._openDialog(t("🗣️ Frei reden"), (body) => renderSpeech(body, { hass: this._hass, category, close: () => this._closeDialog() }));
+      });
+    }
+    const templatesBtn = this.shadowRoot.getElementById("templatesBtn");
+    if (templatesBtn) {
+      templatesBtn.addEventListener("click", () => {
+        const category = this._selectedCategory && this._selectedCategory !== "all" ? this._selectedCategory : null;
+        this._openDialog(t("📋 Vorlagen"), (body) => renderTemplates(body, { hass: this._hass, category, close: () => this._closeDialog() }));
       });
     }
     const trashBtn = this.shadowRoot.getElementById("trashBtn");
@@ -10327,6 +10335,8 @@ class BrainstormMindmapCard extends HTMLElement {
         </div>
         <div class="dialog-hint dialog-shape-hint">${t("Automatisch: Sprachnotizen als Sprechblase, sonst die Form der Map.")}</div></div>
 
+        <div class="lvl" data-lvl="normal"><button class="dialog-btn dialog-btn-cancel" id="saveTemplateBtn" type="button" style="width: 100%; margin-top: 8px;">${t("📋 Als Vorlage speichern")}</button></div>
+
         <div class="dialog-footer">
           <button class="dialog-btn dialog-btn-cancel" id="cancelEditBtn">${t("Abbrechen")}</button>
           <button class="dialog-btn dialog-btn-primary" id="saveEditBtn">${t("Speichern")}</button>
@@ -10350,6 +10360,8 @@ class BrainstormMindmapCard extends HTMLElement {
       }
       const textError = body.querySelector("#editTextError");
       const saveBtn = body.querySelector("#saveEditBtn");
+      const saveTemplateBtn = body.querySelector("#saveTemplateBtn");
+      if (saveTemplateBtn) saveTemplateBtn.addEventListener("click", () => saveAsTemplate(this._hass, idea, (message) => this._showToast(message)));
       const cancelBtn = body.querySelector("#cancelEditBtn");
       const catChips = body.querySelectorAll("#editCatGrid .dialog-cat-chip");
       const prioChips = body.querySelectorAll("#editPrioGrid .dialog-prio-chip");
@@ -11366,7 +11378,7 @@ if (!window.customCards.some((c) => c.type === "brainstorm-mindmap-card")) {
 }
 
 console.info(
-  "%c BRAINSTORM-MINDMAP-CARD %c v1.29.1 ",
+  "%c BRAINSTORM-MINDMAP-CARD %c v1.30.0 ",
   "color: #07070e; background: #00f5ff; font-weight: bold; border-radius: 4px 0 0 4px; padding: 2px 4px;",
   "color: #ffffff; background: #9d4edd; font-weight: bold; border-radius: 0 4px 4px 0; padding: 2px 4px;"
 );

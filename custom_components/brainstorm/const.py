@@ -361,6 +361,14 @@ DRAW_MAX_STROKES = 300
 
 # Saved map views (tabs above the mind map)
 MAP_TABS_MAX = 40
+# Templates: a note with its subtasks to create again and again
+TEMPLATES_MAX = 50
+TEMPLATE_NAME_MAX = 60
+TEMPLATE_NODES_MAX = 200
+TEMPLATE_DEPTH_MAX = 6
+SERVICE_SAVE_TEMPLATE = "save_template"
+SERVICE_CREATE_FROM_TEMPLATE = "create_from_template"
+SERVICE_DELETE_TEMPLATE = "delete_template"
 MAP_TAB_NAME_MAX = 40
 # How much the notes of a tab show: by zoom, titles only or everything
 MAP_TAB_DETAILS = ("auto", "compact", "normal")
