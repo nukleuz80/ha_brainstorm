@@ -267,10 +267,14 @@ Ein gesprochener Satz mit einem Zeitpunkt bekommt eine Fälligkeit, z. B. nach *
 | „… am zweiten Dezember viertel nach drei“ | 02.12. 15:15 |
 | „… am Freitag um 3 Uhr nachts“ | Freitag 03:00 |
 | „Termin beim Friseur um halb zehn“ | heute 09:30 (ohne Tag) |
+| „… am ersten Advent um 15 Uhr“ | nächster 1. Advent 15:00 |
+| „an Heiligabend Oma anrufen“, „bis Silvester …“ | 24.12. bzw. 31.12. 09:00 |
 
 Tageszeiten ohne Uhrzeit: früh/morgens 8:00, vormittags 10:00, mittags 12:00, nachmittags 15:00, abends 19:00, nachts 22:00. Ohne jede Zeit gilt **9:00**.
 
 Uhrzeiten von **1 bis 5 Uhr** gelten ohne Tageszeit als Nachmittag (seit v1.28.2): *„um halb drei“* ist 14:30, *„um 3 Uhr“* 15:00. Mit *früh*, *morgens* oder *nachts* bleibt es bei der Nacht (*„um 3 Uhr nachts“* 03:00), ebenso bei einer geschriebenen Zeit wie *„03:00“* oder *„4:45“*; *„12 Uhr nachts“* ist Mitternacht. Ab 6 Uhr bleibt die Uhrzeit, wie sie ist. *Halb* und *viertel* gehen auch bei einem *Termin* ohne Tag.
+
+**Feiertage** (seit v1.30.2): *erster* bis *vierter Advent*, *Nikolaus(tag)*, *Heiligabend*, *Weihnachten* bzw. *erster/zweiter Weihnachtsfeiertag*, *Silvester*, *Neujahr*, *Valentinstag*, *Halloween*, *Karfreitag*, *Ostern*, *Ostermontag*, *Pfingsten* und *Pfingstmontag* zählen als Tag, wenn **„an“, „am“ oder „bis“** davorsteht. Ohne diese Wörter bleibt der Feiertag im Text: *„Silvester Raketen kaufen“* oder *„Geschenke zu Weihnachten kaufen“* bekommen keinen Termin. *„An Nikolaus“* kann ein Brief an ihn sein, deshalb zählt dort nur *„am Nikolaus“*. Ist der Feiertag dieses Jahr vorbei, gilt der im nächsten Jahr.
 
 Wie und wo erinnert wird, stellst du unter [Erinnerungen](Einstellungen#integration) ein.
 

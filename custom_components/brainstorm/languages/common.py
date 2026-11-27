@@ -61,6 +61,50 @@ def snooze_day(today: date, day: int, month: int, year: int | None = None) -> da
     return wanted if wanted > today else None
 
 
+def _easter_sunday(year: int) -> date:
+    """Return Easter Sunday of a year (Gregorian computus)."""
+    a = year % 19
+    b, c = divmod(year, 100)
+    d, e = divmod(b, 4)
+    g = (8 * b + 13) // 25
+    h = (19 * a + b - d - g + 15) % 30
+    i, k = divmod(c, 4)
+    l = (32 + 2 * e + 2 * i - h - k) % 7  # noqa: E741
+    m = (a + 11 * h + 19 * l) // 433
+    month = (h + l - 7 * m + 90) // 25
+    return date(year, month, (h + l - 7 * m + 33 * month + 19) % 32)
+
+
+def _holiday_in_year(key: str, year: int) -> date:
+    """Return the day of a named holiday in one year."""
+    fixed = {
+        "nikolaus": (12, 6),
+        "christmas_eve": (12, 24),
+        "christmas": (12, 25),
+        "christmas_2": (12, 26),
+        "new_years_eve": (12, 31),
+        "new_year": (1, 1),
+        "valentine": (2, 14),
+        "halloween": (10, 31),
+    }
+    if key in fixed:
+        return date(year, *fixed[key])
+    if key.startswith("advent_"):
+        # The fourth Advent is the last Sunday before Christmas Day
+        eve = date(year, 12, 24)
+        fourth = eve - timedelta(days=(eve.weekday() + 1) % 7)
+        return fourth - timedelta(weeks=4 - int(key[-1]))
+    offsets = {"good_friday": -2, "easter": 0, "easter_monday": 1, "pentecost": 49,
+               "pentecost_monday": 50}
+    return _easter_sunday(year) + timedelta(days=offsets[key])
+
+
+def holiday_date(key: str, today: date) -> date:
+    """Return the next day of a named holiday, today included (v1.30.2)."""
+    day = _holiday_in_year(key, today.year)
+    return day if day >= today else _holiday_in_year(key, today.year + 1)
+
+
 def snooze_next(today: date, unit: str) -> date:
     """Return the start of the next week, month or year."""
     if unit == "week":

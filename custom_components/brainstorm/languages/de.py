@@ -17,6 +17,7 @@ from .common import (
     ReminderWords,
     apply_glossary,
     capitalize_first,
+    holiday_date,
     merge_glossary,
     snooze_day,
     snooze_month,
@@ -864,6 +865,44 @@ _RE_ORDINAL_DATE = re.compile(
     rf"\b(?:am\s+|den\s+|der\s+)?({_ORDINAL})\s+({_ORDINAL_MONTH})\b(?!\s+(?:{_ORDINAL}))",
     re.I,
 )
+# Named holidays count as a date only after 'an', 'am' or 'bis': 'Geschenke zu
+# Weihnachten kaufen' or 'Silvester Raketen kaufen' keep the word (v1.30.2)
+_HOLIDAYS: tuple[tuple[str, str], ...] = (
+    *(
+        (rf"(?:{word}|{number}\.)\s+advent(?:ssonntag)?", f"advent_{number}")
+        for number, word in ((1, "ersten"), (2, "zweiten"), (3, "dritten"), (4, "vierten"))
+    ),
+    (r"nikolaus(?:tag)?", "nikolaus"),
+    (r"heilig(?:en)?\s*abend", "christmas_eve"),
+    (r"(?:zweiten|2\.)\s+weihnachts(?:feier)?tag", "christmas_2"),
+    (r"(?:(?:ersten|1\.)\s+)?weihnachts(?:feier)?tag|weihnachten", "christmas"),
+    (r"s[iy]lvester", "new_years_eve"),
+    (r"neujahr(?:stag)?", "new_year"),
+    (r"valentinstag", "valentine"),
+    (r"halloween", "halloween"),
+    (r"karfreitag", "good_friday"),
+    (r"ostersonntag|ostern", "easter"),
+    (r"ostermontag", "easter_monday"),
+    (r"pfingstsonntag|pfingsten", "pentecost"),
+    (r"pfingstmontag", "pentecost_monday"),
+)
+_HOLIDAY_NAMES = "(" + "|".join(pattern for pattern, _key in _HOLIDAYS) + ")"
+_RE_HOLIDAY = re.compile(
+    r"\b(?:(?:bis\s+)?spätestens\s+)?(?:"
+    # 'erinnere mich an Halloween', 'an Weihnachten denken' and 'Brief an Nikolaus'
+    # name what to think of, 'am Nikolaus' is the day
+    r"(?<!mich\s)(?<!dich\s)(?<!uns\s)(?<!euch\s)(?<!denk\s)(?<!denke\s)(?<!dran\s)"
+    rf"an(?!\s+nikolaus\b)\s+{_HOLIDAY_NAMES}\b(?!\s+(?:zu\s+)?denken\b)"
+    rf"|(?:am|bis(?:\s+spätestens)?(?:\s+(?:zum|an))?)\s+{_HOLIDAY_NAMES}\b)",
+    re.I,
+)
+
+
+def _holiday_key(name: str) -> str:
+    """Return the holiday key of a spoken holiday name."""
+    return next(key for pattern, key in _HOLIDAYS if re.fullmatch(pattern, name, re.I))
+
+
 _RE_HALF = re.compile(rf"\b(?:um\s+)?halb\s+({_NUMBER})\b", re.I)
 _RE_QUARTER = re.compile(rf"\b(?:um\s+)?viertel\s+(vor|nach)\s+({_NUMBER})\b", re.I)
 _RE_CLOCK = re.compile(
@@ -928,6 +967,9 @@ def parse_due(text: str, now: datetime) -> tuple[datetime | None, str]:
         elif match := take(_RE_ORDINAL_DATE):
             month = _ORDINALS[match.group(2).lower()]
             day = _date_in_future(now, _ORDINALS[match.group(1).lower()], month, None)
+        elif match := take(_RE_HOLIDAY):
+            # after the dates: 'am ersten ersten an Neujahr' keeps 'Neujahr' as text
+            day = holiday_date(_holiday_key(match.group(1) or match.group(2)), now.date())
         elif match := take(_RE_DAY):
             offset = {"heute": 0, "morgen": 1, "übermorgen": 2}[match.group(1).lower()]
             day = now.date() + timedelta(days=offset)
@@ -1049,7 +1091,8 @@ _RE_SPOKEN_DATE = re.compile(
     rf"|\b(?:{'|'.join(_WEEKDAYS)})\b"
     r"|\b\d{1,2}\.\s?\d{1,2}\.(?:\s?\d{2,4})?(?![\d.])"
     rf"|{_RE_MONTH_DATE.pattern}"
-    rf"|{_RE_ORDINAL_DATE.pattern}",
+    rf"|{_RE_ORDINAL_DATE.pattern}"
+    rf"|{_RE_HOLIDAY.pattern}",
     re.IGNORECASE,
 )
 _RE_NO_DUE_DATE = re.compile(

@@ -240,8 +240,10 @@ A spoken sentence with a point in time gets a due date, for example after **"rem
 | "… in 20 minutes", "in 2 hours", "in 3 days" | now + that time |
 | "… on November 25 at 2 pm" | 25 Nov 14:00 |
 | "… tomorrow afternoon" | tomorrow 15:00 |
+| "call grandma on Christmas Eve" | 24 Dec 09:00 |
+| "… on the first Sunday of Advent at 3 pm" | next first Advent 15:00 |
 
-Without any time, **9:00** applies. In German, a time from **1 to 5 o'clock** without a part of the day counts as the afternoon (since v1.28.2): *„um halb drei“* is 14:30, *„um 3 Uhr“* 15:00. *Früh*, *morgens* or *nachts* keep the night (*„um 3 Uhr nachts“* 03:00), as does a written time like *„03:00“* or *„4:45“*; *„12 Uhr nachts“* is midnight. From 6 o'clock on the time stays as it is. *Halb* and *viertel* also work for an appointment (*Termin*) without a day. How and where you are reminded is set under [Reminders](Settings#integration).
+Without any time, **9:00** applies. In German, a time from **1 to 5 o'clock** without a part of the day counts as the afternoon (since v1.28.2): *„um halb drei“* is 14:30, *„um 3 Uhr“* 15:00. *Früh*, *morgens* or *nachts* keep the night (*„um 3 Uhr nachts“* 03:00), as does a written time like *„03:00“* or *„4:45“*; *„12 Uhr nachts“* is midnight. From 6 o'clock on the time stays as it is. *Halb* and *viertel* also work for an appointment (*Termin*) without a day. **Holidays** (since v1.30.2): the first to fourth Sunday of Advent, St. Nicholas Day, Christmas Eve, Christmas (Day), Boxing Day, New Year's Eve, New Year's Day, Valentine's Day, Halloween, Good Friday, Easter, Easter Monday, Pentecost and Whit Monday count as a day after **"on", "at", "by" or "until"**. Without them the holiday stays in the text: *"buy presents for Christmas"* gets no due date. In German this works the same with *„an“, „am“* or *„bis“* (*„an Heiligabend“, „am ersten Advent“*). A holiday that has passed this year means next year's. How and where you are reminded is set under [Reminders](Settings#integration).
 
 ### Templates
 

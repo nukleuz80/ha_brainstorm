@@ -18,6 +18,7 @@ from .common import (
     ReminderWords,
     apply_glossary,
     capitalize_first,
+    holiday_date,
     merge_glossary,
     snooze_month,
     snooze_next,
@@ -433,6 +434,39 @@ _RE_LEADING_WORDS = re.compile(
 )
 _RE_TRAILING_WORDS = re.compile(r"\s*\b(?:please|by|on|at)$", re.I)
 
+# Named holidays count as a date only after 'on', 'at', 'by' or 'until': 'buy
+# presents for Christmas' keeps the word (v1.30.2)
+_HOLIDAYS: tuple[tuple[str, str], ...] = (
+    *(
+        (rf"(?:the\s+)?(?:{word}|{number}(?:st|nd|rd|th))\s+(?:sunday\s+of\s+)?advent",
+         f"advent_{number}")
+        for number, word in ((1, "first"), (2, "second"), (3, "third"), (4, "fourth"))
+    ),
+    (r"st\.?\s+nicholas(?:['’]?s?\s*day)?", "nikolaus"),
+    (r"christmas\s+eve", "christmas_eve"),
+    (r"boxing\s+day", "christmas_2"),
+    (r"christmas(?:\s+day)?", "christmas"),
+    (r"new\s+year['’]?s\s+eve", "new_years_eve"),
+    (r"new\s+year['’]?s(?:\s+day)?", "new_year"),
+    (r"valentine['’]?s(?:\s+day)?", "valentine"),
+    (r"halloween", "halloween"),
+    (r"good\s+friday", "good_friday"),
+    (r"easter\s+monday", "easter_monday"),
+    (r"easter(?:\s+sunday)?", "easter"),
+    (r"whit\s+monday", "pentecost_monday"),
+    (r"pentecost|whitsun(?:day)?", "pentecost"),
+)
+_RE_HOLIDAY = re.compile(
+    r"\b(?:no\s+later\s+than(?:\s+on)?|at\s+the\s+latest(?:\s+(?:by|on))?|on|at|by|until|till)\s+"
+    r"(" + "|".join(pattern for pattern, _key in _HOLIDAYS) + r")(?![\w'’])",
+    re.I,
+)
+
+
+def _holiday_key(name: str) -> str:
+    """Return the holiday key of a spoken holiday name."""
+    return next(key for pattern, key in _HOLIDAYS if re.fullmatch(pattern, name, re.I))
+
 
 def _number(value: str) -> int:
     """Convert a spoken or written number."""
@@ -585,6 +619,8 @@ def parse_due(text: str, now: datetime) -> tuple[datetime | None, str]:
             number = match.group(1) or match.group(4)
             month = (match.group(2) or match.group(3)).lower()
             day = _date_in_future(now, int(number), _MONTHS.index(month) + 1)
+        elif match := take(_RE_HOLIDAY):
+            day = holiday_date(_holiday_key(match.group(1)), now.date())
         elif match := take(_RE_DAY):
             word = re.sub(r"\s+", " ", match.group(1).lower())
             evening = word == "tonight"
@@ -625,7 +661,8 @@ _RE_SPOKEN_DATE = re.compile(
     rf"|{_RE_HALF_AN_HOUR.pattern}"
     rf"|{_RE_NEXT_WEEK.pattern}"
     rf"|\b(?:{'|'.join(_WEEKDAYS)})\b(?!s\b|'s)"
-    rf"|{_RE_MONTH_DATE.pattern}",
+    rf"|{_RE_MONTH_DATE.pattern}"
+    rf"|{_RE_HOLIDAY.pattern}",
     re.IGNORECASE,
 )
 _RE_NO_DUE_DATE = re.compile(
