@@ -60,6 +60,10 @@ RECOVER_MARGIN = 10
 # A battery must stay low this long before it gets a task: some sensors send a
 # single wrong level now and then, and the next report an hour later is fine
 CONFIRM_DELAY = timedelta(hours=3)
+# A good level must also last that long before a task counts as done, unless it is
+# clearly a fresh battery: an Aqara door contact took turns at 19 % and 42 % and
+# had its task ticked off 25 minutes after it was made (v1.30.3)
+NEW_BATTERY_LEVEL = 90
 _NAME_SUFFIXES = (" battery level", " battery", " batterie", " akku", " batteriestand")
 
 
@@ -130,6 +134,9 @@ class BatteryWatcher:
         # Since when a battery without a task has been low, and its re-check
         self._low_since: dict[str, datetime] = {}
         self._timers: dict[str, CALLBACK_TYPE] = {}
+        # Since when a battery with a task has looked good again, and its re-check
+        self._good_since: dict[str, datetime] = {}
+        self._good_timers: dict[str, CALLBACK_TYPE] = {}
         self._unsub_started: CALLBACK_TYPE | None = None
 
     async def async_start(self) -> None:
@@ -162,7 +169,10 @@ class BatteryWatcher:
             self._unsubs.pop()()
         while self._timers:
             self._timers.popitem()[1]()
+        while self._good_timers:
+            self._good_timers.popitem()[1]()
         self._low_since.clear()
+        self._good_since.clear()
         if self._unsub_started is not None:
             self._unsub_started()
             self._unsub_started = None
@@ -295,10 +305,14 @@ class BatteryWatcher:
         elif any(low is False for _state, low in levels):
             low = False
         else:
+            # Back in the gap above the threshold or gone: the good level did not last
+            self._forget_good(key)
             return
         task = next(
             (idea for idea in self._open_tasks() if idea[ATTR_BATTERY] == key), None
         )
+        if low or task is None:
+            self._forget_good(key)
         if low and task is None:
             if not self._low_confirmed(key, low_states):
                 return
@@ -309,6 +323,10 @@ class BatteryWatcher:
             )
             await self._async_create(key, state)
         elif not low and task is not None:
+            if not self._good_confirmed(
+                key, [state for state, is_low in levels if is_low is False]
+            ):
+                return
             # A new battery: tick the task off, or just close the case if done.
             # Closed first, so ticking it off is not reported as done by hand.
             await self.store.async_set_fields(
@@ -335,14 +353,52 @@ class BatteryWatcher:
             )
         return False
 
-    def _recheck_factory(self, key: str) -> Any:
+    def _good_confirmed(self, key: str, good_states: list[State]) -> bool:
+        """Return whether a battery has looked good long enough to be a new one.
+
+        A fresh battery counts at once. Until then, a re-check is planned.
+        """
+        if any(
+            (battery_level(state) or 0) >= NEW_BATTERY_LEVEL for state in good_states
+        ):
+            self._forget_good(key)
+            return True
+        # From when this check first saw it good: a level that read 60 % for days
+        # beside a weak flag that just went off says nothing about the new battery
+        since = self._good_since.setdefault(key, dt_util.utcnow())
+        waited = dt_util.utcnow() - since
+        if waited >= CONFIRM_DELAY:
+            self._forget_good(key)
+            return True
+        if key not in self._good_timers:
+            self._good_timers[key] = async_call_later(
+                self.hass,
+                CONFIRM_DELAY - waited,
+                self._recheck_factory(key, self._good_timers),
+            )
+        return False
+
+    def _forget_good(self, key: str) -> None:
+        """Drop the wait for a battery that is low again or has no task."""
+        self._good_since.pop(key, None)
+        if (cancel := self._good_timers.pop(key, None)) is not None:
+            cancel()
+
+    def _recheck_factory(
+        self, key: str, timers: dict[str, CALLBACK_TYPE] | None = None
+    ) -> Any:
         """Return the re-check of one battery once its wait is over."""
+        pending = self._timers if timers is None else timers
 
         async def _recheck(_now: datetime) -> None:
-            self._timers.pop(key, None)
+            pending.pop(key, None)
             groups = self._groups()
             if key in groups:
                 await self._async_check(key, groups[key])
+            else:
+                # Left out or removed meanwhile: an old wait must not count later
+                self._forget_low(key)
+                self._forget_good(key)
 
         return _recheck
 

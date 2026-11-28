@@ -468,3 +468,168 @@ async def test_weak_flag_alone_does_not_tick_off_a_level_device(
     _set_level(hass, "100", "sensor.wasser_batterie")
     await hass.async_block_till_done()
     assert _tasks(store, key)[0]["status"] == "completed"
+
+
+async def test_level_taking_turns_does_not_tick_off_the_task(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    freezer: Any,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test that one good report is no new battery (v1.30.3).
+
+    An Aqara door contact took turns at 19 % and 42 %: its task was made after
+    three hours low and ticked off 25 minutes later by the next 42 %.
+    """
+    monkeypatch.setattr(
+        "custom_components.brainstorm.battery.CONFIRM_DELAY", timedelta(hours=3)
+    )
+    store = await _setup(setup_entry)
+    _set_level(hass, "19")
+    await hass.async_block_till_done()
+    freezer.tick(timedelta(hours=3, minutes=1))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    assert _tasks(store)[0]["status"] == "active"
+
+    for _round in range(3):
+        freezer.tick(timedelta(minutes=25))
+        _set_level(hass, "42")
+        async_fire_time_changed(hass)
+        await hass.async_block_till_done()
+        assert _tasks(store)[0]["status"] == "active"
+        freezer.tick(timedelta(hours=2, minutes=30))
+        _set_level(hass, "19")
+        async_fire_time_changed(hass)
+        await hass.async_block_till_done()
+        assert _tasks(store)[0]["status"] == "active"
+        assert "battery_done" not in _tasks(store)[0]
+
+    # The wait of a good level is gone as soon as it is low again
+    freezer.tick(timedelta(hours=4))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    assert _tasks(store)[0]["status"] == "active"
+
+
+async def test_good_level_lasting_ticks_off_after_the_wait(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    freezer: Any,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test that a battery reporting less than full ticks off once it stays good."""
+    monkeypatch.setattr(
+        "custom_components.brainstorm.battery.CONFIRM_DELAY", timedelta(hours=3)
+    )
+    _set_level(hass, "10")
+    store = await _setup(setup_entry)
+    freezer.tick(timedelta(hours=3, minutes=1))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    assert _tasks(store)[0]["status"] == "active"
+
+    _set_level(hass, "65")
+    await hass.async_block_till_done()
+    assert _tasks(store)[0]["status"] == "active"
+    freezer.tick(timedelta(hours=1))
+    _set_level(hass, "64")
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    assert _tasks(store)[0]["status"] == "active"
+
+    freezer.tick(timedelta(hours=2, minutes=1))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    assert _tasks(store)[0]["status"] == "completed"
+    assert _tasks(store)[0]["battery_done"] is True
+
+
+async def test_good_level_wait_ends_on_unload(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    freezer: Any,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test that the wait of a good level does not outlive the entry."""
+    monkeypatch.setattr(
+        "custom_components.brainstorm.battery.CONFIRM_DELAY", timedelta(hours=3)
+    )
+    _set_level(hass, "10")
+    entry = await setup_entry(
+        stored={"ideas": [], "categories": ["Inbox", "Smarthome"]}, options=OPTIONS
+    )
+    store: BrainstormStore = entry.runtime_data
+    freezer.tick(timedelta(hours=3, minutes=1))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    _set_level(hass, "60")
+    await hass.async_block_till_done()
+    await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
+    freezer.tick(timedelta(hours=4))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    assert _tasks(store)[0]["status"] == "active"
+
+
+async def test_good_wait_starts_when_the_flag_clears(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    freezer: Any,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test that an old good level beside a weak flag does not end the wait at once."""
+    monkeypatch.setattr(
+        "custom_components.brainstorm.battery.CONFIRM_DELAY", timedelta(hours=3)
+    )
+    device = _device(hass, "Fenster")
+    _register(hass, "sensor.fenster_level", "mqtt", device)
+    _register(hass, "binary_sensor.fenster_low", "mqtt", device)
+    key = f"device:{device}"
+    _set_level(hass, "60", "sensor.fenster_level")
+    freezer.tick(timedelta(days=2))
+    store = await _setup(setup_entry)
+    hass.states.async_set("binary_sensor.fenster_low", "on", {"device_class": "battery"})
+    await hass.async_block_till_done()
+    freezer.tick(timedelta(hours=3, minutes=1))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    assert _tasks(store, key)[0]["status"] == "active"
+
+    hass.states.async_set("binary_sensor.fenster_low", "off", {"device_class": "battery"})
+    await hass.async_block_till_done()
+    assert _tasks(store, key)[0]["status"] == "active"
+    freezer.tick(timedelta(hours=3, minutes=1))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    assert _tasks(store, key)[0]["status"] == "completed"
+
+
+async def test_level_back_in_the_gap_restarts_the_wait(
+    hass: HomeAssistant,
+    setup_entry: SetupEntry,
+    freezer: Any,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test that a level between the threshold and the margin ends the good wait."""
+    monkeypatch.setattr(
+        "custom_components.brainstorm.battery.CONFIRM_DELAY", timedelta(hours=3)
+    )
+    _set_level(hass, "10")
+    store = await _setup(setup_entry)
+    freezer.tick(timedelta(hours=3, minutes=1))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    _set_level(hass, "42")
+    await hass.async_block_till_done()
+    freezer.tick(timedelta(minutes=30))
+    _set_level(hass, "25")
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    freezer.tick(timedelta(hours=4, minutes=30))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    _set_level(hass, "42")
+    await hass.async_block_till_done()
+    assert _tasks(store)[0]["status"] == "active"
